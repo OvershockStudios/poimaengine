@@ -13,4 +13,11 @@ struct GameLaunchOptions {
     std::uint32_t max_frames=0;
 };
 Reply run_game(const GameLaunchOptions& options);
+struct GameServeOptions {
+    std::string manifest,endpoint,save_root;
+};
+// Verify an immutable bundle, prepare its native runtime/gameplay, then pump
+// the same owner-thread local service used by authoring hosts. No window or
+// simulation tick is created until a client requests one.
+Reply serve_game(const GameServeOptions& options);
 }

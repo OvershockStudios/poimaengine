@@ -180,3 +180,23 @@ A relative Linux library layout does not establish broad Linux binary compatibil
 Tests are supplied in `tests/project_contract.py` and `tests/game_bundle_capture.py`. They target source preservation, malformed manifests, dependency inventories, relocation, clean working-directory/environment launch, exact replay images and final state. The linked checkpoint evidence records their successful runs and remaining qualification limits.
 
 Version 0.0.35 additionally uses `tests/project_gameplay_contract.py`, `scripts/verify_native_gameplay.py`, `scripts/verify_native_gameplay_parity.py` and `scripts/verify_native_game_bundle.py` to check actual compiled game modules, native/development correspondence, v2 inventories and relocated Vulkan game launch. [Native gameplay evidence](evidence/m2-native-gameplay.json).
+
+## Agent sessions for exported games
+
+For iterative testing, use [the native game service](GAME_SERVICE.md):
+
+```text
+poima game serve path/to/game.json --endpoint my-game --save-root path/to/external-saves
+poima connect my-game
+```
+
+The verified bundle's Runtime and declared native gameplay load at tick zero.
+No window opens until `player.start`; query `runtime.status` for its session.
+Existing guarded runtime, UI, settings, save and capture operations serve this
+actual game. Authoring/import/development mutations are unavailable, and
+mutable outputs must remain outside the entire bundle.
+
+`game inspect` also returns an optional bundle-root-relative `input_profile`.
+Resolve it against the parent of `game.json` before passing an absolute path
+to the player API. Entry IDs, audio, preferences and render choices remain
+explicit client launch parameters.

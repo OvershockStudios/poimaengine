@@ -1,0 +1,4874 @@
+{
+  "format": "poima.exported-game-service-qualification",
+  "version": 1,
+  "engine_version": "0.0.83",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "Verified immutable Windows bundles hosted through the existing agent API; automatic declared Runtime/Native AOT loading, same-owner shared player/UI/settings/checkpoint observation.",
+  "contracts": {
+    "protocol": 1,
+    "schema_revision": 70,
+    "authoring_core": "v1",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_epoch": 7,
+    "required_services_bytes": 256,
+    "required_features": [
+      "baseline_v7",
+      "player_preferences_v1"
+    ],
+    "callbacks": {
+      "preference_snapshot": 232,
+      "preference_patch": 240,
+      "preference_result": 248
+    },
+    "wire_sizes": {
+      "snapshot": 216,
+      "patch": 104,
+      "enqueue": 40,
+      "result": 56,
+      "ticket": 24
+    },
+    "earlier_named_prefixes": [
+      176,
+      192,
+      208,
+      216,
+      224,
+      232
+    ],
+    "retained_results": 32,
+    "authority": "Shared native PlayerPreferences outside authored worlds, input profiles and gameplay saves.",
+    "publication": "One prepared patch per whole Control/step boundary; publish only after complete native success, before queued storage/replacement. Failed boundaries consume no preference revision or ticket.",
+    "observations": "Committed configuration and sparse sources are distinct from cached observed/applied/presented device state; samples/frame slots remain next-launch intent.",
+    "availability": "Named host support is separate from an attached owner. Stop clears availability; new player creates an independent owner; replay rejects mutation."
+  },
+  "api_changes": {
+    "cli_action": "game serve <game.json> --endpoint <name> [--save-root external-directory]",
+    "capability": "game_runtime_service is enabled when simulation is compiled",
+    "inspection": "Optional input_profile in game.inspect, relative to bundle root",
+    "world_protocol_or_schema_changes": false,
+    "gameplay_abi_changes": false,
+    "host": "Existing owner-thread shared headless transport/pump and guards; no new action driver."
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 115.80412740900647,
+      "log_sha256": "e056b9ccd5e43a0c1c935c6221929b2856353dab9db741c8362843014124386a",
+      "binary_sha256": "5795eb4ffb324820c7f565193eefc09a5fde199305611f50a7fa06e4030c373f"
+    },
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 111.69538378799916,
+      "log_sha256": "8222ee60e6ba7a191352519b809f1c19b5e9bd18ddd051784e546850c9096942",
+      "binary_sha256": "29b8f20a09f3b6296fef3fb8c5889fdcbbad5d8bd25ad70249baae33d6b6bc37"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 112.93665206799778,
+      "log_sha256": "c8878185b599222c3e92dff6ed0d230299eec1c0e7eab12ea5d12a32e93c5f1d",
+      "binary_sha256": "8b06037484fa4b85fee5ca6ab7f809b3a7912b52d98cd9c9cbbdb9fd3e22b615"
+    }
+  ],
+  "selected_regression_checks": [
+    {
+      "host": "windows",
+      "binary_sha256": "5795eb4ffb324820c7f565193eefc09a5fde199305611f50a7fa06e4030c373f",
+      "raw_report_sha256": [
+        "dc1917c68f70d2e86bec509c04b6e8c6bcf093e8270824f0b8acafbe3516c16d",
+        "0a6cc50a9c8f155c0d006e9014ce4e468674ae9f3ffff908b905ff8f08f6ef46"
+      ],
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.6236483660031809,
+          "log_sha256": "ff9de13d5b06c365d59805946d630b7a67b5c98938fcc43021a6fc1d90b534e0"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.6190928459982388,
+          "log_sha256": "3383d2e4807a12ed232d0718e9300e6e98bc6722bdd04652dc7a9d0a48e17a94"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 3.028795228994568,
+          "log_sha256": "dab7c1baf95b4347952505abf1b2d8849b337fba618b58c2855e02b1de4139b4"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 7.6405185729963705,
+          "log_sha256": "a57764e7d26e1254e3156567190d01b130dc8d4ab54731f376da45445046858e"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 3.0274440059947665,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 6.037276824000003,
+          "log_sha256": "07e513c99382b0eb1a65ade286e1c6a6fa2c1a17b358e93cb10591bb9279b52f"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.7092703680000056,
+          "log_sha256": "4fcf7c7533d5491c1a1446e7b11c04f189ad5d6fc7cf7f76633bcc20035a1a37"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "binary_sha256": "29b8f20a09f3b6296fef3fb8c5889fdcbbad5d8bd25ad70249baae33d6b6bc37",
+      "raw_report_sha256": [
+        "346f52a58d09f2ead8ab1551b7d5b70f187e0dc57ee473e4818e93daeba840e1"
+      ],
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.4217141770000126,
+          "log_sha256": "816f4f907bbf77ddd45be4e795e90883fd36d32f8082701de279f051dad4feef"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5690217750000102,
+          "log_sha256": "6b69a72e782b8adfd98f353ddeb77b02eaed366116ce83896bcfd07227acf807"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.124062073999994,
+          "log_sha256": "61e4cbbb85987049ac37c0c82af33b0fc7559eb67e72690c1163d8dc8dfdf77a"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 11.555864121000013,
+          "log_sha256": "857430d4fb26562215a38756c26d00f804108a8b4ffce907d5458003c3bd404a"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 2.2756301130000054,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 15.165129435000011,
+          "log_sha256": "451debb266f1db12e949e8b9ed7ee226d18650243ec0b6fd30734013a52b2665"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.5735242449999873,
+          "log_sha256": "f3ff2f67bb1cc0d179b466dceb44bf2f6986b65f24489c64a2774d02aafe74eb"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "binary_sha256": "8b06037484fa4b85fee5ca6ab7f809b3a7912b52d98cd9c9cbbdb9fd3e22b615",
+      "raw_report_sha256": [
+        "041665c98744b7f18244c0610dda2090a926ca18f3f5a0ebcf8cb476772a7b4a"
+      ],
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.1216818990000093,
+          "log_sha256": "d02ccfa54c66b8adf2a2a7d01a1cc38e9da0b106080048d5ea55fe1085e6b25d"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.469208937000019,
+          "log_sha256": "c179ec3b4f00577f29d370b63512d197521c256f93d996d449c2cd323f9b0bf8"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.5229453359999923,
+          "log_sha256": "b97b69a32cd7d5ac94f44218d1f2da870c48e43f459c1263b3966284fad746e8"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 8.595308839000012,
+          "log_sha256": "6a3fe44c3255874df7460f335dc9b8dc135f322a11da82b9d93235e78cb3ee08"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 1.4224725149999813,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 13.359983139999997,
+          "log_sha256": "0a79239048eb987110c31831c5b19768b64cedff4afd9d53612f4b65af7a141e"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.0212870919999943,
+          "log_sha256": "8bcb4cea1ea444ebb61a66311f81f20836e0b15a5ceae3a4243f2a55e5339e94"
+        }
+      ]
+    }
+  ],
+  "compiled_cohorts": [
+    {
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_report_sha256": "5389323e62441c089a94a004436b66c4dab23ed3a3c6dec2bfd6f041d10bfd10",
+      "elapsed_seconds": 9.540954500000225,
+      "recorded_rpc_calls": 92,
+      "rpc_roles": {
+        "driver": 75,
+        "observer": 13,
+        "author": 4
+      },
+      "cli_command_count": 6,
+      "clean_transport_count": 4,
+      "menu_actions": [
+        "pref.open",
+        "pref.ui.plus",
+        "pref.fov.plus",
+        "pref.gain.minus",
+        "pref.refresh",
+        "pref.stage.save",
+        "pref.fov.plus",
+        "pref.refresh",
+        "pref.stage.load",
+        "pref.refresh"
+      ],
+      "checks": [
+        "Source-free immutable relocation serves one read-only world and automatically loaded genuine NativeAOT Runtime at tick0 without opening a window.",
+        "Explicit existing player.start presents the exported Runtime through the same native authority; no OS input emulation or second preference store.",
+        "Guarded compiled Control retry and stale settings rejection preserve exact authoritative state; explicit client reconnect retains the game/owner.",
+        "Compiled Save stages ticket4 at observed revision3; later Load commits current settings revision6 before replacing Runtime and preserves same owner/ticket4 accepted revision4.",
+        "Three actual native Vulkan captures contain the visible authored settings menu; final compiled/configured/applied/presented observations agree at FOV80/UI1.75/gain0.7.",
+        "Paused tick0, immutable bundle/supplied closures/durable save and explicit player/runtime/host/transport shutdown verified."
+      ],
+      "source_removed_before_service": true,
+      "relocation": "Outside checkout on the same drive; unrelated working directory with system-only PATH, DOTNET_/COREHOST_/POIMA_ removed.",
+      "saved_witness": {
+        "manifest_sha256": "1617895d8ddf4a6ec6d6d03b3e9a73004ee279b1401eea059bd44880e73b4a48",
+        "payload_sha256": "7bcb8bf6486fdb0a24e5aee96391924c3ac81a9d02bc8ea591cbdca83416cbc5",
+        "tick": 0,
+        "values": {
+          "AcceptedRevision": -1,
+          "AppliedRevision": 3,
+          "AudioOutcome": 0,
+          "Available": 1,
+          "Controls": 6,
+          "EffectiveFov": 65.0,
+          "EffectiveFovPresent": 1,
+          "EffectiveUi": 1.25,
+          "EffectiveUiPresent": 1,
+          "Fov": 65.0,
+          "FovPresent": 1,
+          "Gain": 0.9,
+          "GuardHigh": 0,
+          "GuardLow": 0,
+          "GuardRevision": 0,
+          "InvertX": 0,
+          "InvertY": 0,
+          "Mode": 0,
+          "NextFrames": 1,
+          "NextSamples": 1,
+          "ObservedRevision": 3,
+          "Overrides": 481,
+          "OwnerHigh": 6690174929716273805,
+          "OwnerLow": 4784302633446342553,
+          "PresentedRevision": 3,
+          "ReadAfterRevision": 3,
+          "ReadUnchanged": 1,
+          "Replay": 0,
+          "ResultRejection": 0,
+          "ResultState": 1,
+          "Revision": 3,
+          "SaveHigh": -5326093386647503062,
+          "SaveLow": -7515007560149376527,
+          "SaveSequence": 1,
+          "SensitivityX": 0.1,
+          "SensitivityY": 0.1,
+          "SinkGain": 0.0,
+          "SinkGainPresent": 0,
+          "SourceFov": 8,
+          "SourceUi": 8,
+          "StageRejection": 0,
+          "Target": "00000000000000000000000000000064",
+          "TicketHigh": 6690174929716273805,
+          "TicketLow": 4784302633446342553,
+          "TicketSequence": 4,
+          "Ticks": 0,
+          "UiPresent": 1,
+          "UiScale": 1.25
+        }
+      },
+      "final_compiled_values": {
+        "AcceptedRevision": 4,
+        "AppliedRevision": 6,
+        "AudioOutcome": 0,
+        "Available": 1,
+        "Controls": 7,
+        "EffectiveFov": 80.0,
+        "EffectiveFovPresent": 1,
+        "EffectiveUi": 1.75,
+        "EffectiveUiPresent": 1,
+        "Fov": 80.0,
+        "FovPresent": 1,
+        "Gain": 0.7000000000000001,
+        "GuardHigh": 0,
+        "GuardLow": 0,
+        "GuardRevision": 0,
+        "InvertX": 0,
+        "InvertY": 0,
+        "Mode": 0,
+        "NextFrames": 1,
+        "NextSamples": 1,
+        "ObservedRevision": 6,
+        "Overrides": 481,
+        "OwnerHigh": 6690174929716273805,
+        "OwnerLow": 4784302633446342553,
+        "PresentedRevision": 6,
+        "ReadAfterRevision": 3,
+        "ReadUnchanged": 1,
+        "Replay": 0,
+        "ResultRejection": 0,
+        "ResultState": 2,
+        "Revision": 6,
+        "SaveHigh": -5326093386647503062,
+        "SaveLow": -7515007560149376527,
+        "SaveSequence": 1,
+        "SensitivityX": 0.1,
+        "SensitivityY": 0.1,
+        "SinkGain": 0.0,
+        "SinkGainPresent": 0,
+        "SourceFov": 8,
+        "SourceUi": 8,
+        "StageRejection": 0,
+        "Target": "00000000000000000000000000000064",
+        "TicketHigh": 6690174929716273805,
+        "TicketLow": 4784302633446342553,
+        "TicketSequence": 4,
+        "Ticks": 0,
+        "UiPresent": 1,
+        "UiScale": 1.75
+      },
+      "native_backend": {
+        "backend": "native_aot",
+        "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+        "assembly_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "native_diagnostics": {
+          "dynamic_code_compiled": false,
+          "dynamic_code_supported": false
+        }
+      },
+      "current_settings": {
+        "application": {
+          "applied_revision": 6,
+          "audio_outcome": "disabled",
+          "effective_ui_scale": 1.75,
+          "effective_vertical_fov": 80.0,
+          "invert_x": false,
+          "invert_y": false,
+          "observed_revision": 6,
+          "presented_revision": 6,
+          "requested_master_gain": 0.7000000000000001,
+          "sensitivity_x": 0.1,
+          "sensitivity_y": 0.1,
+          "sink_gain": null
+        },
+        "fields": {
+          "audio.master_gain": {
+            "application": "live",
+            "effective": 0.7000000000000001,
+            "outcome": "disabled",
+            "requested": 0.7000000000000001,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "camera.vertical_fov": {
+            "application": "live",
+            "effective": 80.0,
+            "outcome": "applied",
+            "requested": 80.0,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "graphics.frames_in_flight": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "graphics.samples": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "input.invert_x": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.invert_y": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_x": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_y": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "ui.scale": {
+            "application": "live",
+            "effective": 1.75,
+            "outcome": "applied",
+            "requested": 1.75,
+            "requires_next_player": false,
+            "source": "live_override"
+          }
+        },
+        "format": "poima.player-preferences.v1",
+        "profile": {
+          "content_hash": null,
+          "revision": 0,
+          "source": "none"
+        },
+        "revision": 6,
+        "sources": {
+          "audio.master_gain": "live_override",
+          "camera.vertical_fov": "live_override",
+          "graphics.frames_in_flight": "explicit_option",
+          "graphics.samples": "explicit_option",
+          "ui.scale": "live_override"
+        },
+        "values": {
+          "audio.master_gain": 0.7000000000000001,
+          "camera.vertical_fov": 80.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.75
+        }
+      },
+      "same_preference_owner_and_saved_ticket": true,
+      "runtime": {
+        "tick": 0,
+        "control_sequence": 7,
+        "ui_revision": 7,
+        "scheduler": "single_threaded_fixed_60_hz"
+      },
+      "runtime_replacements": 1,
+      "paused": true,
+      "actual_presentations": [
+        {
+          "label": "initial",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 0,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.0,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 0,
+            "presented_revision": 0,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "ui-scale",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 1,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.25,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 1,
+            "presented_revision": 1,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "before-save",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 3,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.25,
+            "effective_vertical_fov": 65.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 3,
+            "presented_revision": 3,
+            "requested_master_gain": 0.9,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "saved",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 4,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.5,
+            "effective_vertical_fov": 70.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 4,
+            "presented_revision": 4,
+            "requested_master_gain": 0.8,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "before-load",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 5,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.5,
+            "effective_vertical_fov": 75.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 5,
+            "presented_revision": 5,
+            "requested_master_gain": 0.8,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "restored",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 6,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.75,
+            "effective_vertical_fov": 80.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 6,
+            "presented_revision": 6,
+            "requested_master_gain": 0.7000000000000001,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "restored-refresh",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 6,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.75,
+            "effective_vertical_fov": 80.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 6,
+            "presented_revision": 6,
+            "requested_master_gain": 0.7000000000000001,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        }
+      ],
+      "captures": {
+        "before-save": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "8e89cadd291207d22227b19d24a53e419acac026f7792179266d569561337161",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 17140,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    187,
+                    176,
+                    178
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    182,
+                    171,
+                    174
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    187,
+                    176,
+                    178
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    182,
+                    171,
+                    174
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    198,
+                    176,
+                    178
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            }
+          }
+        },
+        "before-load": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "4bd04c81ac1099015cb671e2ca5aa2299deb4cab393d1e4488dd0d7c46e48841",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 16882,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 75.0
+            }
+          }
+        },
+        "after-load": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "9cbac7eb2af5528884c34c9b4e9d934c2b5781db6d9d87f6d6e186223de2fcec",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 16606,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 80.0
+            }
+          }
+        }
+      },
+      "bundle_inventory": {
+        "content/default.poima-input.json": "bf7562fa3e1d8fd3e85fb244427488e069874d6dd82235894a75ad42e77f387a",
+        "content/world.json": "508022fe8c566ed2e9a7baca140c65625fcef216e9c2c7f10dc03f9ba7ed9008",
+        "game.json": "2931c0f354775a01b8a251c1bd119a79658f8bad5020efcedf159521830c9754",
+        "gameplay/native-gameplay.json": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "e53c1bf71a681e953c7b875f8e462e331300a11cc4f5dba99b01b8f9a9d2172c",
+        "runtime/bin/poima_desktop.dll": "1334f18af3270a5df1ff96e446e2c8402d6f32e1e09063e8d6de178f5f6015f1",
+        "runtime/runtime.json": "c173b0a392fc6bfa51de8faa6a0f1933f791e9eed39ee46bba1db397bae5ae90",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "bundle_files": 57,
+      "immutable_bundle_runtime_artifact_save": true,
+      "clean_host_exit": true,
+      "physical_input_qualified": false
+    },
+    {
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_report_sha256": "a29b4fa974dc739c5d52488316c16933953e7b6a69c2f5b8c98bdcd1d44ff2e1",
+      "elapsed_seconds": 9.550433099997463,
+      "recorded_rpc_calls": 92,
+      "rpc_roles": {
+        "driver": 75,
+        "observer": 13,
+        "author": 4
+      },
+      "cli_command_count": 6,
+      "clean_transport_count": 4,
+      "menu_actions": [
+        "pref.open",
+        "pref.ui.plus",
+        "pref.fov.plus",
+        "pref.gain.minus",
+        "pref.refresh",
+        "pref.stage.save",
+        "pref.fov.plus",
+        "pref.refresh",
+        "pref.stage.load",
+        "pref.refresh"
+      ],
+      "checks": [
+        "Source-free immutable relocation serves one read-only world and automatically loaded genuine NativeAOT Runtime at tick0 without opening a window.",
+        "Explicit existing player.start presents the exported Runtime through the same native authority; no OS input emulation or second preference store.",
+        "Guarded compiled Control retry and stale settings rejection preserve exact authoritative state; explicit client reconnect retains the game/owner.",
+        "Compiled Save stages ticket4 at observed revision3; later Load commits current settings revision6 before replacing Runtime and preserves same owner/ticket4 accepted revision4.",
+        "Three actual native Vulkan captures contain the visible authored settings menu; final compiled/configured/applied/presented observations agree at FOV80/UI1.75/gain0.7.",
+        "Paused tick0, immutable bundle/supplied closures/durable save and explicit player/runtime/host/transport shutdown verified."
+      ],
+      "source_removed_before_service": true,
+      "relocation": "Outside checkout on the same drive; unrelated working directory with system-only PATH, DOTNET_/COREHOST_/POIMA_ removed.",
+      "saved_witness": {
+        "manifest_sha256": "20be80710d24d8fba6b8f6a31a13f3b0c236f64b8f7349a09e7fb7108e144dd7",
+        "payload_sha256": "1383bc0c81c3a8f7af9238d6833ea4926b7fe8f159b78406b3a1c0187f980200",
+        "tick": 0,
+        "values": {
+          "AcceptedRevision": -1,
+          "AppliedRevision": 3,
+          "AudioOutcome": 0,
+          "Available": 1,
+          "Controls": 6,
+          "EffectiveFov": 65.0,
+          "EffectiveFovPresent": 1,
+          "EffectiveUi": 1.25,
+          "EffectiveUiPresent": 1,
+          "Fov": 65.0,
+          "FovPresent": 1,
+          "Gain": 0.9,
+          "GuardHigh": 0,
+          "GuardLow": 0,
+          "GuardRevision": 0,
+          "InvertX": 0,
+          "InvertY": 0,
+          "Mode": 0,
+          "NextFrames": 1,
+          "NextSamples": 1,
+          "ObservedRevision": 3,
+          "Overrides": 481,
+          "OwnerHigh": 7969442579944120168,
+          "OwnerLow": -6867023636313789427,
+          "PresentedRevision": 3,
+          "ReadAfterRevision": 3,
+          "ReadUnchanged": 1,
+          "Replay": 0,
+          "ResultRejection": 0,
+          "ResultState": 1,
+          "Revision": 3,
+          "SaveHigh": -3261247324969745696,
+          "SaveLow": -864790193431589915,
+          "SaveSequence": 1,
+          "SensitivityX": 0.1,
+          "SensitivityY": 0.1,
+          "SinkGain": 0.0,
+          "SinkGainPresent": 0,
+          "SourceFov": 8,
+          "SourceUi": 8,
+          "StageRejection": 0,
+          "Target": "00000000000000000000000000000064",
+          "TicketHigh": 7969442579944120168,
+          "TicketLow": -6867023636313789427,
+          "TicketSequence": 4,
+          "Ticks": 0,
+          "UiPresent": 1,
+          "UiScale": 1.25
+        }
+      },
+      "final_compiled_values": {
+        "AcceptedRevision": 4,
+        "AppliedRevision": 6,
+        "AudioOutcome": 0,
+        "Available": 1,
+        "Controls": 7,
+        "EffectiveFov": 80.0,
+        "EffectiveFovPresent": 1,
+        "EffectiveUi": 1.75,
+        "EffectiveUiPresent": 1,
+        "Fov": 80.0,
+        "FovPresent": 1,
+        "Gain": 0.7000000000000001,
+        "GuardHigh": 0,
+        "GuardLow": 0,
+        "GuardRevision": 0,
+        "InvertX": 0,
+        "InvertY": 0,
+        "Mode": 0,
+        "NextFrames": 1,
+        "NextSamples": 1,
+        "ObservedRevision": 6,
+        "Overrides": 481,
+        "OwnerHigh": 7969442579944120168,
+        "OwnerLow": -6867023636313789427,
+        "PresentedRevision": 6,
+        "ReadAfterRevision": 3,
+        "ReadUnchanged": 1,
+        "Replay": 0,
+        "ResultRejection": 0,
+        "ResultState": 2,
+        "Revision": 6,
+        "SaveHigh": -3261247324969745696,
+        "SaveLow": -864790193431589915,
+        "SaveSequence": 1,
+        "SensitivityX": 0.1,
+        "SensitivityY": 0.1,
+        "SinkGain": 0.0,
+        "SinkGainPresent": 0,
+        "SourceFov": 8,
+        "SourceUi": 8,
+        "StageRejection": 0,
+        "Target": "00000000000000000000000000000064",
+        "TicketHigh": 7969442579944120168,
+        "TicketLow": -6867023636313789427,
+        "TicketSequence": 4,
+        "Ticks": 0,
+        "UiPresent": 1,
+        "UiScale": 1.75
+      },
+      "native_backend": {
+        "backend": "native_aot",
+        "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+        "assembly_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "native_diagnostics": {
+          "dynamic_code_compiled": false,
+          "dynamic_code_supported": false
+        }
+      },
+      "current_settings": {
+        "application": {
+          "applied_revision": 6,
+          "audio_outcome": "disabled",
+          "effective_ui_scale": 1.75,
+          "effective_vertical_fov": 80.0,
+          "invert_x": false,
+          "invert_y": false,
+          "observed_revision": 6,
+          "presented_revision": 6,
+          "requested_master_gain": 0.7000000000000001,
+          "sensitivity_x": 0.1,
+          "sensitivity_y": 0.1,
+          "sink_gain": null
+        },
+        "fields": {
+          "audio.master_gain": {
+            "application": "live",
+            "effective": 0.7000000000000001,
+            "outcome": "disabled",
+            "requested": 0.7000000000000001,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "camera.vertical_fov": {
+            "application": "live",
+            "effective": 80.0,
+            "outcome": "applied",
+            "requested": 80.0,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "graphics.frames_in_flight": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "graphics.samples": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "input.invert_x": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.invert_y": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_x": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_y": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "ui.scale": {
+            "application": "live",
+            "effective": 1.75,
+            "outcome": "applied",
+            "requested": 1.75,
+            "requires_next_player": false,
+            "source": "live_override"
+          }
+        },
+        "format": "poima.player-preferences.v1",
+        "profile": {
+          "content_hash": null,
+          "revision": 0,
+          "source": "none"
+        },
+        "revision": 6,
+        "sources": {
+          "audio.master_gain": "live_override",
+          "camera.vertical_fov": "live_override",
+          "graphics.frames_in_flight": "explicit_option",
+          "graphics.samples": "explicit_option",
+          "ui.scale": "live_override"
+        },
+        "values": {
+          "audio.master_gain": 0.7000000000000001,
+          "camera.vertical_fov": 80.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.75
+        }
+      },
+      "same_preference_owner_and_saved_ticket": true,
+      "runtime": {
+        "tick": 0,
+        "control_sequence": 7,
+        "ui_revision": 7,
+        "scheduler": "single_threaded_fixed_60_hz"
+      },
+      "runtime_replacements": 1,
+      "paused": true,
+      "actual_presentations": [
+        {
+          "label": "initial",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 0,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.0,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 0,
+            "presented_revision": 0,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "ui-scale",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 1,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.25,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 1,
+            "presented_revision": 1,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "before-save",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 3,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.25,
+            "effective_vertical_fov": 65.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 3,
+            "presented_revision": 3,
+            "requested_master_gain": 0.9,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "saved",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 4,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.5,
+            "effective_vertical_fov": 70.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 4,
+            "presented_revision": 4,
+            "requested_master_gain": 0.8,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "before-load",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 5,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.5,
+            "effective_vertical_fov": 75.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 5,
+            "presented_revision": 5,
+            "requested_master_gain": 0.8,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "restored",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 6,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.75,
+            "effective_vertical_fov": 80.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 6,
+            "presented_revision": 6,
+            "requested_master_gain": 0.7000000000000001,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        },
+        {
+          "label": "restored-refresh",
+          "poll_observations": 1,
+          "runtime_tick": 0,
+          "ready": true,
+          "paused": true,
+          "application": {
+            "applied_revision": 6,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.75,
+            "effective_vertical_fov": 80.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 6,
+            "presented_revision": 6,
+            "requested_master_gain": 0.7000000000000001,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          }
+        }
+      ],
+      "captures": {
+        "before-save": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "16201986980eb50dc3a18b29b4b97ff54ccb8dbb444686341fb59da57c7b32c7",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 17140,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    187,
+                    176,
+                    179
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    182,
+                    171,
+                    174
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    187,
+                    176,
+                    179
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    67,
+                    62,
+                    69
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    182,
+                    171,
+                    174
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    198,
+                    175,
+                    179
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 3,
+                "samples": [
+                  [
+                    243,
+                    228,
+                    231
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            }
+          }
+        },
+        "before-load": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "ad9baf1da0e30e89a05dc07ab76d87b90a1068b359c1d5f228c62caf46439dba",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 16882,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 75.0
+            }
+          }
+        },
+        "after-load": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "4ada17cdf68295c24af04e0cd2a66186dbbf8ee8c6d7577daaa6c8448446aaf9",
+            "bytes": 2073738,
+            "width": 960,
+            "height": 540,
+            "panel_sample_count": 16606,
+            "button_oracles": {
+              "pref.fov.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.fov.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.sensitivity.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.invert": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.ui.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.minus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.gain.plus": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.reset.all": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.low": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.graphics.high": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.refresh": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.close": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ],
+                  [
+                    114,
+                    47,
+                    55
+                  ]
+                ]
+              },
+              "pref.stage.save": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              },
+              "pref.stage.load": {
+                "matching_interior_corners": 4,
+                "samples": [
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ],
+                  [
+                    53,
+                    48,
+                    57
+                  ]
+                ]
+              }
+            },
+            "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+          },
+          "metadata": {
+            "build_version": "0.0.83",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "width": 960,
+            "height": 540,
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true,
+            "lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 80.0
+            }
+          }
+        }
+      },
+      "bundle_inventory": {
+        "content/default.poima-input.json": "3da21e14803e3099133110799aab13a7b3ae517f120327f4cc0cf5065a41873d",
+        "content/world.json": "0d19505c31ca56a27f8edcf8295f2724a808e0dc4d84353e9dc6210700dcd995",
+        "game.json": "7864a856b1e44a1a15b315862a36d0ad2859843873382dd5adacde3bdf5a973b",
+        "gameplay/native-gameplay.json": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "e53c1bf71a681e953c7b875f8e462e331300a11cc4f5dba99b01b8f9a9d2172c",
+        "runtime/bin/poima_desktop.dll": "1334f18af3270a5df1ff96e446e2c8402d6f32e1e09063e8d6de178f5f6015f1",
+        "runtime/runtime.json": "c173b0a392fc6bfa51de8faa6a0f1933f791e9eed39ee46bba1db397bae5ae90",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "bundle_files": 57,
+      "immutable_bundle_runtime_artifact_save": true,
+      "clean_host_exit": true,
+      "physical_input_qualified": false
+    }
+  ],
+  "installation": {
+    "raw_report_sha256": "7c8e7a968b3162e753bcb77412550473a1486da4ed11dfcb4b5661ea73e4f871",
+    "steps": [
+      {
+        "kind": "desktop",
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 25.35064903899911,
+        "log_sha256": "a08148194e74daad499b20241085489fb4e1cc297904df45a79c61e694631a81"
+      },
+      {
+        "kind": "install",
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 45.424652280999,
+        "log_sha256": "91865c190a24acd5f509208f19a275cdef0ef8c714ab295438fb43425d065a87"
+      }
+    ]
+  },
+  "retained_artifact": {
+    "engine_version": "0.0.81",
+    "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+    "image_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+    "descriptor_sha256": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+    "running_engine_version": "0.0.83"
+  },
+  "artifact_descriptor": {
+    "format": "poima.native-gameplay",
+    "version": 2,
+    "engine_version": "0.0.81",
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 256,
+    "required_features": [
+      "baseline_v7",
+      "player_preferences_v1"
+    ],
+    "entry": "poima_gameplay_entry",
+    "library": "Poima.NativeGame.dll",
+    "identity": "poima.test.player-preferences",
+    "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+    "schema": {
+      "identity": "poima.test.player-preferences",
+      "bytes": 304,
+      "fields": [
+        {
+          "name": "AcceptedRevision",
+          "kind": "int64",
+          "offset": 128,
+          "bytes": 8
+        },
+        {
+          "name": "AppliedRevision",
+          "kind": "int64",
+          "offset": 168,
+          "bytes": 8
+        },
+        {
+          "name": "AudioOutcome",
+          "kind": "int32",
+          "offset": 280,
+          "bytes": 4
+        },
+        {
+          "name": "Available",
+          "kind": "int32",
+          "offset": 12,
+          "bytes": 4
+        },
+        {
+          "name": "Controls",
+          "kind": "int32",
+          "offset": 8,
+          "bytes": 4
+        },
+        {
+          "name": "EffectiveFov",
+          "kind": "float64",
+          "offset": 232,
+          "bytes": 8
+        },
+        {
+          "name": "EffectiveFovPresent",
+          "kind": "int32",
+          "offset": 28,
+          "bytes": 4
+        },
+        {
+          "name": "EffectiveUi",
+          "kind": "float64",
+          "offset": 240,
+          "bytes": 8
+        },
+        {
+          "name": "EffectiveUiPresent",
+          "kind": "int32",
+          "offset": 32,
+          "bytes": 4
+        },
+        {
+          "name": "Fov",
+          "kind": "float64",
+          "offset": 208,
+          "bytes": 8
+        },
+        {
+          "name": "FovPresent",
+          "kind": "int32",
+          "offset": 20,
+          "bytes": 4
+        },
+        {
+          "name": "Gain",
+          "kind": "float64",
+          "offset": 224,
+          "bytes": 8
+        },
+        {
+          "name": "GuardHigh",
+          "kind": "int64",
+          "offset": 136,
+          "bytes": 8
+        },
+        {
+          "name": "GuardLow",
+          "kind": "int64",
+          "offset": 144,
+          "bytes": 8
+        },
+        {
+          "name": "GuardRevision",
+          "kind": "int64",
+          "offset": 152,
+          "bytes": 8
+        },
+        {
+          "name": "InvertX",
+          "kind": "int32",
+          "offset": 272,
+          "bytes": 4
+        },
+        {
+          "name": "InvertY",
+          "kind": "int32",
+          "offset": 276,
+          "bytes": 4
+        },
+        {
+          "name": "Mode",
+          "kind": "int32",
+          "offset": 0,
+          "bytes": 4
+        },
+        {
+          "name": "NextFrames",
+          "kind": "int32",
+          "offset": 64,
+          "bytes": 4
+        },
+        {
+          "name": "NextSamples",
+          "kind": "int32",
+          "offset": 60,
+          "bytes": 4
+        },
+        {
+          "name": "ObservedRevision",
+          "kind": "int64",
+          "offset": 160,
+          "bytes": 8
+        },
+        {
+          "name": "Overrides",
+          "kind": "int32",
+          "offset": 56,
+          "bytes": 4
+        },
+        {
+          "name": "OwnerHigh",
+          "kind": "int64",
+          "offset": 88,
+          "bytes": 8
+        },
+        {
+          "name": "OwnerLow",
+          "kind": "int64",
+          "offset": 96,
+          "bytes": 8
+        },
+        {
+          "name": "PresentedRevision",
+          "kind": "int64",
+          "offset": 176,
+          "bytes": 8
+        },
+        {
+          "name": "ReadAfterRevision",
+          "kind": "int64",
+          "offset": 80,
+          "bytes": 8
+        },
+        {
+          "name": "ReadUnchanged",
+          "kind": "int32",
+          "offset": 68,
+          "bytes": 4
+        },
+        {
+          "name": "Replay",
+          "kind": "int32",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "name": "ResultRejection",
+          "kind": "int32",
+          "offset": 44,
+          "bytes": 4
+        },
+        {
+          "name": "ResultState",
+          "kind": "int32",
+          "offset": 40,
+          "bytes": 4
+        },
+        {
+          "name": "Revision",
+          "kind": "int64",
+          "offset": 72,
+          "bytes": 8
+        },
+        {
+          "name": "SaveHigh",
+          "kind": "int64",
+          "offset": 184,
+          "bytes": 8
+        },
+        {
+          "name": "SaveLow",
+          "kind": "int64",
+          "offset": 192,
+          "bytes": 8
+        },
+        {
+          "name": "SaveSequence",
+          "kind": "int64",
+          "offset": 200,
+          "bytes": 8
+        },
+        {
+          "name": "SensitivityX",
+          "kind": "float64",
+          "offset": 248,
+          "bytes": 8
+        },
+        {
+          "name": "SensitivityY",
+          "kind": "float64",
+          "offset": 256,
+          "bytes": 8
+        },
+        {
+          "name": "SinkGain",
+          "kind": "float64",
+          "offset": 264,
+          "bytes": 8
+        },
+        {
+          "name": "SinkGainPresent",
+          "kind": "int32",
+          "offset": 284,
+          "bytes": 4
+        },
+        {
+          "name": "SourceFov",
+          "kind": "int32",
+          "offset": 48,
+          "bytes": 4
+        },
+        {
+          "name": "SourceUi",
+          "kind": "int32",
+          "offset": 52,
+          "bytes": 4
+        },
+        {
+          "name": "StageRejection",
+          "kind": "int32",
+          "offset": 36,
+          "bytes": 4
+        },
+        {
+          "name": "Target",
+          "kind": "entity",
+          "offset": 288,
+          "bytes": 16
+        },
+        {
+          "name": "TicketHigh",
+          "kind": "int64",
+          "offset": 104,
+          "bytes": 8
+        },
+        {
+          "name": "TicketLow",
+          "kind": "int64",
+          "offset": 112,
+          "bytes": 8
+        },
+        {
+          "name": "TicketSequence",
+          "kind": "int64",
+          "offset": 120,
+          "bytes": 8
+        },
+        {
+          "name": "Ticks",
+          "kind": "int32",
+          "offset": 4,
+          "bytes": 4
+        },
+        {
+          "name": "UiPresent",
+          "kind": "int32",
+          "offset": 24,
+          "bytes": 4
+        },
+        {
+          "name": "UiScale",
+          "kind": "float64",
+          "offset": 216,
+          "bytes": 8
+        }
+      ]
+    },
+    "files": [
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-LICENSE.txt",
+        "size": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+        "size": 21133,
+        "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "role": "notice"
+      },
+      {
+        "path": "Poima.NativeGame.dll",
+        "size": 1388544,
+        "sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "role": "library"
+      }
+    ]
+  },
+  "runtime_descriptor": {
+    "format": "poima.runtime",
+    "version": 1,
+    "engine_version": "0.0.83",
+    "gameplay_services_version": 7,
+    "gameplay_call_version": 1,
+    "gameplay_call_bytes": 80,
+    "gameplay_services_bytes": 256,
+    "gameplay_features": [
+      "baseline_v7",
+      "gameplay_persistence_v1",
+      "component_collections_v1",
+      "animation_inertial_v1",
+      "animation_layers_v1",
+      "character_input_v1",
+      "hierarchical_instances_v1",
+      "player_preferences_v1",
+      "navigation_query_v1"
+    ],
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "executable": "bin/poima.exe",
+    "features": {
+      "asset_provenance": true,
+      "simulation": true,
+      "renderer": true,
+      "audio": true,
+      "managed": true,
+      "native_gameplay": true,
+      "game_ui": true,
+      "navigation": true,
+      "editor": true
+    }
+  },
+  "no_window_contract": {
+    "passed": true,
+    "raw_report_sha256": "2a118f54f34dac19d5cae8e0a0cf888549e4921db62ee93cfecbd951fd8e8a65",
+    "recorded_rpc_calls": 45,
+    "mcp_requests": 6,
+    "mcp_notifications": 1,
+    "mcp_replies": 6,
+    "cli_command_count": 27,
+    "clean_owner_count": 8,
+    "checks": [
+      "Actual MCP initialization, notification barrier, ping/catalog and tools share the CLI native session; readonly rejection preserves identical text/structured error content and closing MCP detaches cleanly.",
+      "Relocated source-free bundle starts native simulation at authored revision and tick0 without a player; queries/profile reads share the authoritative session.",
+      "Endpoint collision rejects before accessing a missing game manifest and leaves the existing owner intact.",
+      "Authoring, input/settings writes and development methods reject; save protection includes runtime directories outside the content folder.",
+      "Real native controller step survives detach/reconnect; exact receipt retry does not advance and changed/stale requests reject.",
+      "External save captures tick12; actual replacement restores exact controller state and an exact Load retry is inert; full bundle bytes remain unchanged.",
+      "Clean shutdown releases the endpoint; restart creates a fresh tick0 native session without inherited save configuration.",
+      "Malformed argv, nonexistent/inside-bundle save roots, malformed/duplicate/version/hash/extra-file bundles reject without writes; endpoint remains reusable."
+    ],
+    "source_removed": true,
+    "relocated": true,
+    "relocation": "Separate directory inside the owned test output; original owned source removed.",
+    "bundle_inventory": {
+      "content/default.poima-input.json": {
+        "bytes": 1520,
+        "sha256": "eaaf43748647986a9a60be3d3fbeec576a15e30b034d1cd1e067f09bbd493dcc"
+      },
+      "content/world.json": {
+        "bytes": 4011,
+        "sha256": "e2b6c29ccfd351b7b0f64c2669a2859f1b00079bb78f71558a9b017801fd6a72"
+      },
+      "game.json": {
+        "bytes": 10548,
+        "sha256": "d5fc2233f48e9b46e30137e1280272622f1186df3b31726a3e25347056c4542c"
+      },
+      "launch.cmd": {
+        "bytes": 123,
+        "sha256": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0"
+      },
+      "runtime/bin/phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "runtime/bin/poima.exe": {
+        "bytes": 20476928,
+        "sha256": "e53c1bf71a681e953c7b875f8e462e331300a11cc4f5dba99b01b8f9a9d2172c"
+      },
+      "runtime/bin/poima_desktop.dll": {
+        "bytes": 19262976,
+        "sha256": "1334f18af3270a5df1ff96e446e2c8402d6f32e1e09063e8d6de178f5f6015f1"
+      },
+      "runtime/runtime.json": {
+        "bytes": 763,
+        "sha256": "c173b0a392fc6bfa51de8faa6a0f1933f791e9eed39ee46bba1db397bae5ae90"
+      },
+      "runtime/share/poima/fonts/Inter-Regular.ttf": {
+        "bytes": 411640,
+        "sha256": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+      },
+      "runtime/share/poima/LICENSE": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "runtime/share/poima/licenses/cgltf/LICENSE": {
+        "bytes": 1066,
+        "sha256": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+      },
+      "runtime/share/poima/licenses/DearImGui/LICENSE.txt": {
+        "bytes": 1083,
+        "sha256": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf"
+      },
+      "runtime/share/poima/licenses/EnTT/LICENSE": {
+        "bytes": 1097,
+        "sha256": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+      },
+      "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": {
+        "bytes": 1115,
+        "sha256": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": {
+        "bytes": 5972,
+        "sha256": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": {
+        "bytes": 6743,
+        "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": {
+        "bytes": 1148,
+        "sha256": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": {
+        "bytes": 1197,
+        "sha256": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": {
+        "bytes": 1232,
+        "sha256": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": {
+        "bytes": 2149,
+        "sha256": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": {
+        "bytes": 3311,
+        "sha256": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b"
+      },
+      "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": {
+        "bytes": 1328,
+        "sha256": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+      },
+      "runtime/share/poima/licenses/game_ui/PROVENANCE.json": {
+        "bytes": 3022,
+        "sha256": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+      },
+      "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": {
+        "bytes": 2549,
+        "sha256": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6"
+      },
+      "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": {
+        "bytes": 1172,
+        "sha256": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e"
+      },
+      "runtime/share/poima/licenses/Inter/LICENSE.txt": {
+        "bytes": 4380,
+        "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+      },
+      "runtime/share/poima/licenses/Jolt/LICENSE": {
+        "bytes": 1052,
+        "sha256": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING": {
+        "bytes": 2326,
+        "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": {
+        "bytes": 12155,
+        "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": {
+        "bytes": 5905,
+        "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": {
+        "bytes": 2883,
+        "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": {
+        "bytes": 1099,
+        "sha256": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36"
+      },
+      "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": {
+        "bytes": 15141,
+        "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+      },
+      "runtime/share/poima/licenses/lodepng/LICENSE.txt": {
+        "bytes": 881,
+        "sha256": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+      },
+      "runtime/share/poima/licenses/mikktspace/mikktspace.h": {
+        "bytes": 8209,
+        "sha256": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+      },
+      "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": {
+        "bytes": 1076,
+        "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+      },
+      "runtime/share/poima/licenses/NVRHI/LICENSE.txt": {
+        "bytes": 1090,
+        "sha256": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a"
+      },
+      "runtime/share/poima/licenses/RecastNavigation/License.txt": {
+        "bytes": 877,
+        "sha256": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e"
+      },
+      "runtime/share/poima/licenses/SDL3/LICENSE.txt": {
+        "bytes": 884,
+        "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+      },
+      "runtime/share/poima/licenses/SourceSans3/LICENSE.md": {
+        "bytes": 4486,
+        "sha256": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5"
+      },
+      "runtime/share/poima/licenses/stb/LICENSE": {
+        "bytes": 2510,
+        "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+      },
+      "runtime/share/poima/licenses/SteamAudio/LICENSE.md": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": {
+        "bytes": 36284,
+        "sha256": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+      },
+      "runtime/share/poima/licenses/ufbx/LICENSE": {
+        "bytes": 2631,
+        "sha256": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+      },
+      "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": {
+        "bytes": 458,
+        "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+      },
+      "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": {
+        "bytes": 1084,
+        "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+      },
+      "runtime/share/poima/THIRD_PARTY_NOTICES.md": {
+        "bytes": 21133,
+        "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+      },
+      "runtime/share/poima/TRADEMARKS.md": {
+        "bytes": 512,
+        "sha256": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      }
+    },
+    "bundle_files": 49,
+    "saved": {
+      "bytes": 3847,
+      "cleanup_pending": false,
+      "configuration_generation": 1,
+      "generation": 1,
+      "recovered": false,
+      "replayed": false,
+      "sha256": "2d988175fd61fbbaa526cd9c0ddda8aa04e99669b64820eae73ef5d8c1b0271f",
+      "slot": "service"
+    },
+    "loaded": {
+      "authored_revision": 1,
+      "control_sequence": 0,
+      "current_authored_revision": 1,
+      "generation": 1,
+      "recovered": false,
+      "recovery_reason": "",
+      "replayed": false,
+      "selected_generation": 1,
+      "slot": "service",
+      "source_stale": false,
+      "structure_revision": 0,
+      "tick": 12,
+      "ui_revision": 0
+    },
+    "entities": {
+      "original_entity": {
+        "animation": null,
+        "ground": "in_air",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "structure_revision": 0,
+        "tick": 0,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          2.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      "moved_entity": {
+        "animation": null,
+        "ground": "in_air",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            0.14226572960615158,
+            0.7882746774703264,
+            1.5764114260673523
+          ],
+          "rotation": [
+            0.0,
+            0.06975647062063217,
+            0.0,
+            0.9975640773773193
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "structure_revision": 0,
+        "tick": 12,
+        "velocity": [
+          0.7113286256790161,
+          -1.9514049291610718,
+          -2.1179428100585938
+        ],
+        "world_matrix": [
+          0.9902680701353903,
+          0.0,
+          -0.13917309104252054,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.13917309104252054,
+          0.0,
+          0.9902680701353903,
+          0.0,
+          0.14226572960615158,
+          0.7882746774703264,
+          1.5764114260673523,
+          1.0
+        ],
+        "yaw": 8.0
+      },
+      "restored_entity": {
+        "animation": null,
+        "ground": "in_air",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            0.14226572960615158,
+            0.7882746774703264,
+            1.5764114260673523
+          ],
+          "rotation": [
+            0.0,
+            0.06975647062063217,
+            0.0,
+            0.9975640773773193
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "structure_revision": 0,
+        "tick": 12,
+        "velocity": [
+          0.7113286256790161,
+          -1.9514049291610718,
+          -2.1179428100585938
+        ],
+        "world_matrix": [
+          0.9902680701353903,
+          0.0,
+          -0.13917309104252054,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.13917309104252054,
+          0.0,
+          0.9902680701353903,
+          0.0,
+          0.14226572960615158,
+          0.7882746774703264,
+          1.5764114260673523,
+          1.0
+        ],
+        "yaw": 8.0
+      }
+    },
+    "invalid_bundle_cases": [
+      "malformed_json",
+      "duplicate_manifest_field",
+      "unsupported_manifest_version",
+      "invalid_camera_entry",
+      "payload_hash_mismatch"
+    ],
+    "coherent_admission_rejections": [
+      {
+        "case": "wrong_platform",
+        "diagnostics": [
+          {
+            "code": "game.serve_failed",
+            "message": "Game bundle targets a different platform or architecture."
+          }
+        ]
+      },
+      {
+        "case": "simulation_disabled",
+        "diagnostics": [
+          {
+            "code": "game.serve_failed",
+            "message": "Game bundles require a simulation and renderer runtime."
+          }
+        ]
+      },
+      {
+        "case": "audio_required",
+        "diagnostics": [
+          {
+            "code": "game.serve_failed",
+            "message": "Game needs an audio-enabled runtime."
+          }
+        ]
+      }
+    ],
+    "mcp": "Full initialize + initialized notification + ping + tools/list + three poima_call tools; same session, read-only description and -32081 mutation rejection.",
+    "immutable_bundle_and_supplied_runtime": true
+  },
+  "runtime_binaries": {
+    "development_exporter": {
+      "sha256": "5795eb4ffb324820c7f565193eefc09a5fde199305611f50a7fa06e4030c373f",
+      "bytes": 273612800
+    },
+    "installed_stripped_player": {
+      "sha256": "e53c1bf71a681e953c7b875f8e462e331300a11cc4f5dba99b01b8f9a9d2172c",
+      "bytes": 20476928
+    }
+  },
+  "retained_failed_attempts": [
+    {
+      "attempt": "initial Windows regression launcher",
+      "raw_report_sha256": "dc1917c68f70d2e86bec509c04b6e8c6bcf093e8270824f0b8acafbe3516c16d",
+      "passed": false,
+      "reason": "Five suites passed, then project_contract rejected the launcher-only --binary argument (exit2), before executing that suite. Correct positional argument and remaining suites are recorded separately; passed suites were not repeated."
+    }
+  ],
+  "limitations": [
+    "Bounded fixtures on one laptop; no whole Alpha or complete game-scale qualification.",
+    "Semantic shared API/compiled UI controls, not physical input or OS pointer hit testing.",
+    "Audio disabled in compiled cohorts: gain configuration, not sink/listening qualification.",
+    "Source removal and sanitized development-host launches are not clean-machine deployment tests.",
+    "One same-player checkpoint replacement per compiled cohort; no fresh-process compiled settings/save continuation or preference persistence claim.",
+    "Current game bundles require simulation and renderer runtimes. Linux headless builds pass selected regressions, but Linux native bundles/rendering are not newly qualified.",
+    "Elapsed times are execution records, not production performance measurements.",
+    "The public PNG exactly matches NVIDIA after-load RGB. AMD has independently checked menu pixels; cross-GPU exact full-image equality is not claimed."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": "d8cf8783c005d202c133411a4d60ffc338a34293b845eb0da87b2e177c2cf0ab",
+    "docs/DOCUMENTATION_COVERAGE.md": "558fcddf5f9b264b7f475a231eff98b2232d3b092238ac0c6cd95759c6736eaa",
+    "docs/GAME_SERVICE.md": "2bc687cf0e87b494ac21ec12a5eb6547b3e42a284c794dd9e4e9cdfcb0bd8dc6",
+    "docs/IMPLEMENTATION_STATUS.md": "d10165d0d8d43e18d9557e78c56d7b6310fd6af5cc8810daeb5116d0e5777ebb",
+    "docs/LIVE_PLAYER.md": "0320e80ff596d0a27bad7715e784444f7328f8716b34da7222097d2861a472e3",
+    "docs/PLAYBOOKS.md": "852e391e6e5b931093aa43727a18fda9018f99d52b6b9a6da1f02f3c9973c6e6",
+    "docs/PROJECTS.md": "747a0cc5869c8ae39ea68a0781919f5a7e6a32994596cd759193f77f61a81cac",
+    "docs/SHARED_SESSIONS.md": "3569b4f0c62da45da67d40f0d616f5a9db6db8c1caa7fea1924eefba6e583c1e",
+    "docs/evidence/m2-exported-player-settings.png": "61a60dddf11b88061c807cc7e611ab13e51778685d680d5231d304aa047f80a2",
+    "include/poima/game_launch.hpp": "3d77304927db5b345b05435cb6c3eecfa91cf0c635f9b86ba1da4af4a905c0fb",
+    "include/poima/shared_session.hpp": "7302334017a79f71e5844cdc987918c997fc2d265dca8de4a9d08b0613b0db04",
+    "src/core.cpp": "f51b10842a830a2bd970c7ff4e136a5e70ca5be942a5c63263f6bf7d976bf39a",
+    "src/game_launch.cpp": "8adcd8289b6eb47e6652351c3d9fb74bef614ba198b5636819587f1353c13ce7",
+    "src/main.cpp": "fa6e314b2a89db3e19563969f46fbf09e7a044b71222abe890851a14fe3705ee",
+    "src/project.cpp": "b8215b18fb68028a9481db5eff92bd3128a12dd77c8ffee41105b818463afa92",
+    "src/shared_session.cpp": "14f31507db60e9c479d539715ff4a0eb76f53aef7ce15615107c0c018b5169e0",
+    "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+    "tests/game_service_contract.py": "f4f6689eced0e0b946904728efdc1959f792f39c98c70c959083cfe76dd4cb29",
+    "tests/game_service_player.py": "850326a55532b2a07a0188d05e39a564a6a1ecf58e4355865542a6f4542b5fc4",
+    "tests/managed_player_preferences_gameplay/PlayerPreferencesMenuGame.cs": "f2300a7c6e2eb49fbc0ffbadb70d6374aa47230d54fc2f0b03dcfb0bdb5b95e3",
+    "tests/managed_player_preferences_gameplay/Poima.PlayerPreferencesMenuGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/player_live_settings_contract.py": "7e29e4db82c49e6d8ff37d1b911e89d3e222d5fa418b820e21e8f2a086051ad8",
+    "tests/player_preferences_gameplay_bundle.py": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+    "tests/player_preferences_gameplay_contract.py": "f08bdf0208a6153676dcb405b46e0b6f31826ccfd28e670b58a1472e58db062b",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/core_responses.v1.candidate.json": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90",
+    "tools/python/poima_client/core_responses.v1.json": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+  },
+  "public_capture": {
+    "path": "docs/evidence/m2-exported-player-settings.png",
+    "sha256": "61a60dddf11b88061c807cc7e611ab13e51778685d680d5231d304aa047f80a2",
+    "comparison": "NVIDIA .83 service after-load renderer BMP matches lossless PNG RGB exactly; existing image reused."
+  }
+}

@@ -1,8 +1,40 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.82**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.83**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.83 adds the [exported game service](GAME_SERVICE.md): `game serve`
+verifies the complete bundle, opens its read-only world, starts the declared
+Runtime and loads its optional native gameplay at tick zero. It acquires the
+local endpoint before initialization and reuses the existing owner-thread host
+loop. Clients discover the current runtime, step it, activate guarded compiled
+menus, adjust preferences, service external checkpoints and capture a live
+player through the same native API. No editor, new action-driver language,
+automatic player window or initial simulation tick is introduced.
+
+The no-window Windows contract exercises source deletion, relocation, native
+controller movement, client detach/reconnect, exact receipts, external save/load,
+MCP initialization/tools, rejected authoring and malformed bundle/endpoint
+recovery. The compiled service runs the retained genuine 0.0.81 Native AOT
+settings consumer on both laptop GPUs. Each performs 10 menu actions and three
+Vulkan captures, verifies one actual Runtime replacement and retains the same
+preference owner/ticket while current application/presentation reach revision 6.
+The two client connections observe the same authoritative game. These are
+semantic UI operations; physical pointer hit testing remains a separate check.
+
+Three native configurations pass 21 selected regression executions. The initial
+Windows launcher failure is retained separately from the corrected remaining
+checks; suites that had already passed were not repeated.
+
+Protocol 1, authoring-core v1, schema revision 70 and gameplay services epoch 7
+are unchanged. `game inspect` adds the optional bundle-root-relative input-profile
+path; resolve it before explicit `player.start` parameters. Current bundle export
+still requires simulation and rendering. Linux headless builds compile this
+service and retain their authoring/simulation regressions; native Linux game
+bundles/rendering are not newly qualified. Tiny fixtures do not establish full
+Alpha, clean-machine installation, audible output, broad failure recovery or
+representative performance. See [recorded evidence](evidence/m2-game-service.json).
 
 Version 0.0.82 qualifies the [exported settings/checkpoint workflow](EXPORTED_PLAYER_SETTINGS.md)
 using the retained genuine 0.0.81 Windows Native AOT consumer. The source project

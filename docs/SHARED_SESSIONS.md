@@ -49,6 +49,19 @@ a short transport wait between frames. GPU/audio/storage work can still stall
 all clients. Stop the player before stopping/replacing its runtime or shutting
 down the host. Disconnecting a client leaves presentation running.
 
+## Exported game sessions
+
+`game serve <game.json> --endpoint <name> [--save-root external-directory]`
+verifies the immutable bundle, starts its Runtime and declared Native AOT game,
+and exposes the same shared headless service. Query `runtime.status` for the
+created session; no window or tick starts automatically. Read-only discovery
+omits authoring/import/development mutations. Use the inspected entry IDs and
+resolved bundled profile when explicitly starting a player.
+
+The [exported game service task](GAME_SERVICE.md) covers source-free iteration,
+menu/settings control, captures, external checkpoints and shutdown. The local
+transport and same-user ownership rules remain the same.
+
 ## Desktop operations
 
 The current [desktop editor](DESKTOP_EDITOR.md) exposes `desktop.*` methods over this transport:

@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.83
+
+- Add `game serve` for verified immutable bundles, automatically starting the declared native Runtime and optional Native AOT gameplay before serving the existing agent API.
+- Reuse the owner-thread local host loop for CLI and MCP clients; preserve guarded operations, reconnect/retry behavior, player presentation and external checkpoints.
+- Keep whole-bundle read-only protection and acquire endpoint ownership before bundle/runtime initialization; malformed startup releases ownership cleanly.
+- Expose the bundled input-profile path through `game inspect` and add simulation-aware service capability discovery without changing authoring-core v1 or the gameplay ABI.
+- Verify source-free native menu/settings/save replacement and captures on both laptop GPUs, plus a separate no-window service/MCP contract. Publish the [service task](docs/GAME_SERVICE.md) and [recorded evidence](docs/evidence/m2-game-service.json).
+
 ## 0.0.82
 
 - Qualify compiled settings, native menu input and checkpoint restore inside a genuinely exported Windows Native AOT game, using the retained 0.0.81 gameplay artifact.

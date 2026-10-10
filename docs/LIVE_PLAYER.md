@@ -11,7 +11,9 @@ guarded change and see the result through the existing game window. The
 standalone launch. Desktop sessions use their separate `desktop.play.*` and
 `desktop.capture` operations.
 
-This guide covers the 0.0.77 native service.
+For verified exported content and automatic native gameplay loading, use the
+[exported game service](GAME_SERVICE.md). This guide supplies the shared player
+operations used by both authored-world and packaged-game hosts.
 
 ## Prerequisites and discovery
 
@@ -81,7 +83,9 @@ guarded live FOV, pointer, UI-scale and output-gain changes through
 `player.settings.transact`. Inspect accepted, applied and presented revisions
 separately. Stored profiles and next-player graphics choices remain independent;
 see the [live settings task](PLAYER_SETTINGS.md#task-adjust-and-observe-a-live-player).
-A compiled C# settings-menu interface remains separate work.
+[Compiled C# settings menus](COMPILED_PLAYER_SETTINGS.md) use the same preference
+owner; [exported game clients](GAME_SERVICE.md) can exercise them through this
+shared service.
 
 ## A guarded observation recipe
 

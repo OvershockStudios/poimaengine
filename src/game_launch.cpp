@@ -4,6 +4,8 @@
 #include "poima/world.hpp"
 #include "poima/runtime.hpp"
 #include "poima/build_metadata.hpp"
+#include "poima/local_session.hpp"
+#include "poima/shared_session.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -62,32 +64,54 @@ Json call(WorldSession& world,const std::string& method,Json params=Json::object
     if(reply.contains("error"))throw std::runtime_error(method+": "+reply.at("error").at("message").get<std::string>());
     return reply.at("result");
 }
+void validate_game_host(const GameDefinition& game) {
+    require(game.target_os==build_metadata().target_os && game.target_arch==build_metadata().target_arch,"Game bundle targets a different platform or architecture.");
+    require(Runtime::available(),"Game launch requires simulation in this executable.");
+    require(!game.audio || POIMA_AUDIO,"Game audio is unavailable in this executable.");
+}
+std::string prepare_game(WorldSession& world,const GameDefinition& game,const std::string& save_root) {
+    if(!save_root.empty()) {
+        require(save_root.find('\0')==std::string::npos,"Save root must be NUL-free.");
+        // Keep aliases for the existing storage validator; CLI-relative paths
+        // resolve against the caller's working directory in both launch modes.
+        const auto root=text_of(fs::absolute(path_of(save_root)).lexically_normal());
+        call(world,"save.configure",{{"request_id",id()},{"expected_generation",0},{"root",root}});
+    }
+    const auto session=id();
+    call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
+    if(!game.gameplay_descriptor.empty())call(world,"runtime.gameplay.load_native",{
+        {"session_id",session},{"request_id",id()},{"expected_tick",0},{"expected_revision",0},
+        {"descriptor",game.gameplay_descriptor},{"expected_descriptor_sha256",game.gameplay_descriptor_sha256},
+        {"values",Json::parse(game.gameplay_values)}});
+    return session;
+}
+}
+Reply serve_game(const GameServeOptions& options) {
+    try {
+        // A duplicate endpoint must fail before bundle/runtime/module work.
+        LocalSessionServer host(options.endpoint);
+        const auto game=load_game(options.manifest);validate_game_host(game);
+        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
+        prepare_game(world,game,options.save_root);
+        return {run_shared_session(world,host,options.endpoint),{}};
+    }catch(const std::exception& error) {
+        return {4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.serve"},{"status","error"},
+            {"result",nullptr},{"diagnostics",Json::array({{{"code","game.serve_failed"},{"message",error.what()}}})}}.dump()};
+    }
 }
 Reply run_game(const GameLaunchOptions& options) {
     Json result=nullptr,diagnostics=Json::array();bool success=false;
     try {
         const auto game=load_game(options.manifest);
-        require(game.target_os==build_metadata().target_os && game.target_arch==build_metadata().target_arch,"Game bundle targets a different platform or architecture.");
-        require(Runtime::available() && POIMA_RENDER_SMOKE,"Game launch requires simulation and the Vulkan player in this executable.");
-        require(!game.audio || POIMA_AUDIO,"Game audio is unavailable in this executable.");
+        validate_game_host(game);
+        require(POIMA_RENDER_SMOKE,"Game launch requires the Vulkan player in this executable.");
         require(options.max_frames<=36000,"Interactive frame limit must be 0..36000.");
         require(options.replay.empty() || !options.max_frames,"Replay and an interactive frame limit cannot be combined.");
         output_path(options.render.capture,game,options.replay);output_path(options.report,game,options.replay);
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
-        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);const auto session=id();
-        if(!options.save_root.empty()) {
-            require(options.save_root.find('\0')==std::string::npos,"Save root must be NUL-free.");
-            // CLI-relative paths resolve against the launch working directory.
-            // Do not canonicalize away aliases before the native storage checks.
-            const auto root=text_of(fs::absolute(path_of(options.save_root)).lexically_normal());
-            call(world,"save.configure",{{"request_id",id()},{"expected_generation",0},{"root",root}});
-        }
-        call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
-        if(!game.gameplay_descriptor.empty())call(world,"runtime.gameplay.load_native",{
-            {"session_id",session},{"request_id",id()},{"expected_tick",0},{"expected_revision",0},
-            {"descriptor",game.gameplay_descriptor},{"expected_descriptor_sha256",game.gameplay_descriptor_sha256},
-            {"values",Json::parse(game.gameplay_values)}});
+        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
+        const auto session=prepare_game(world,game,options.save_root);
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};

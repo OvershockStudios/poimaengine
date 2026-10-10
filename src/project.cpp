@@ -522,6 +522,6 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
 }
 GameDefinition load_game(const std::string& manifest) { return verify_game(manifest).definition; }
 Reply inspect_game(const std::string& manifest) {
-    return operation("game.inspect",[&] { const auto game=verify_game(manifest);Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"files",game.spec.at("files")}};if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");return result; });
+    return operation("game.inspect",[&] { const auto game=verify_game(manifest);Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"files",game.spec.at("files")}};if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");if(game.spec.contains("input_profile"))result["input_profile"]=game.spec.at("input_profile");return result; });
 }
 }

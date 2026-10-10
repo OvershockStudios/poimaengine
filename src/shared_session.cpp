@@ -21,7 +21,11 @@ struct Signals {
 int run_shared_world(const std::string& world,const std::string& endpoint) {
     // Acquire the endpoint first; an unavailable endpoint must not create a
     // world's writer sidecar. WorldSession never leaves its owning thread.
-    LocalSessionServer host(endpoint);WorldSession session(world);Signals signals;
+    LocalSessionServer host(endpoint);WorldSession session(world);
+    return run_shared_session(session,host,endpoint);
+}
+int run_shared_session(WorldSession& session,LocalSessionServer& host,const std::string& endpoint) {
+    Signals signals;
     std::cerr<<"Poima shared world ready: "<<endpoint<<'\n';
     while(!stopping && !session.closed()) {
         for(const auto& request:host.poll())
