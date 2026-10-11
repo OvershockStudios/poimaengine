@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.117
+
+- Add frozen query-only HitRegion spheres, boxes and capsules with self/ancestor owners and explicit names, including remapped hierarchical instances.
+- Add composite committed-pose hit tests with exact affine intersections, physics occlusion, independent owner-proxy filtering and deterministic ties; preserve existing raycasts and collision response.
+- Negotiate independent `hit_regions_v1` for C# Tick queries through a 272-byte epoch-7 services prefix, preserving earlier ABI prefixes. [Contract](docs/HIT_REGIONS.md).
+- Pass twelve Windows native suites, seven hit-region groups, four API groups, 78 compiled ABI checks and actual CoreCLR/Native AOT animated-query, rollback and fresh-save continuation. [Results](docs/evidence/m2-hit-regions.json).
+
 ## 0.0.116
 
 - Add optional explicit `node_map` correspondence to `reference-rotation-v1` for differently named imported character and animation nodes.

@@ -272,6 +272,19 @@ typedef struct PoimaGameInputActionServicesV1 {
     PoimaGamePlayerPreferenceServicesV1 preferences;
     int32_t (POIMA_CALL *input_action)(void*,const PoimaEntityId*,const char*,uint32_t,PoimaGameInputActionV1*,PoimaGameError*);
 } PoimaGameInputActionServicesV1;
+// Independent hit_regions_v1, Tick-only query. Caller initializes version=1,
+// bytes>=192 and reserved=0. Success writes the known 192-byte POD only.
+// A miss is zero except version/bytes. Region names are bounded ASCII
+// [a-z][a-z0-9_.-]{0,63}, without a trailing NUL; body hits have no region.
+typedef struct PoimaGameHitRegionResultV1 {
+    uint32_t version,bytes;PoimaGameHit hit;PoimaEntityId region_entity;
+    uint32_t region_name_bytes,triangle_present,triangle,reserved;
+    char region_name[64];
+} PoimaGameHitRegionResultV1;
+typedef struct PoimaGameHitRegionServicesV1 {
+    PoimaGameInputActionServicesV1 actions;
+    int32_t (POIMA_CALL *hit_test)(void*,const PoimaGameRay*,PoimaGameHitRegionResultV1*,PoimaGameError*);
+} PoimaGameHitRegionServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -282,6 +295,9 @@ typedef struct PoimaGameCall {
 #ifdef __cplusplus
 static_assert(sizeof(PoimaGameInputActionV1)==16 && alignof(PoimaGameInputActionV1)==4 && offsetof(PoimaGameInputActionV1,flags)==8 && offsetof(PoimaGameInputActionV1,reserved)==12);
 static_assert(sizeof(PoimaGameInputActionServicesV1)==264 && offsetof(PoimaGameInputActionServicesV1,preferences)==0 && offsetof(PoimaGameInputActionServicesV1,input_action)==256);
+static_assert(sizeof(PoimaGameHitRegionResultV1)==192 && alignof(PoimaGameHitRegionResultV1)==8 && offsetof(PoimaGameHitRegionResultV1,hit)==8 && offsetof(PoimaGameHitRegionResultV1,region_entity)==96);
+static_assert(offsetof(PoimaGameHitRegionResultV1,region_name_bytes)==112 && offsetof(PoimaGameHitRegionResultV1,triangle_present)==116 && offsetof(PoimaGameHitRegionResultV1,triangle)==120 && offsetof(PoimaGameHitRegionResultV1,reserved)==124 && offsetof(PoimaGameHitRegionResultV1,region_name)==128);
+static_assert(sizeof(PoimaGameHitRegionServicesV1)==272 && offsetof(PoimaGameHitRegionServicesV1,actions)==0 && offsetof(PoimaGameHitRegionServicesV1,hit_test)==264);
 static_assert(sizeof(PoimaGamePreferenceValuesV1)==56 && offsetof(PoimaGamePreferenceValuesV1,invert_x)==40 && offsetof(PoimaGamePreferenceValuesV1,frames_in_flight)==52);
 static_assert(sizeof(PoimaGamePreferenceSnapshotV1)==216 && offsetof(PoimaGamePreferenceSnapshotV1,owner)==16 && offsetof(PoimaGamePreferenceSnapshotV1,revision)==32 && offsetof(PoimaGamePreferenceSnapshotV1,values)==48);
 static_assert(offsetof(PoimaGamePreferenceSnapshotV1,sources)==104 && offsetof(PoimaGamePreferenceSnapshotV1,next_samples)==140 && offsetof(PoimaGamePreferenceSnapshotV1,observation_mask)==148 && offsetof(PoimaGamePreferenceSnapshotV1,reserved)==156);

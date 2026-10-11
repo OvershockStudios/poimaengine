@@ -54,11 +54,12 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==264u &&
+    check(capable.services_version==7 && capable.services_bytes==272u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
-        std::find(capable.features.begin(),capable.features.end(),input_actions_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
+        std::find(capable.features.begin(),capable.features.end(),input_actions_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),hit_regions_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
     check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
     check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
@@ -113,6 +114,7 @@ void policy() {
     auto synthetic=capable;synthetic.services_bytes=224;std::erase(synthetic.features,std::string(instances_feature));
     std::erase(synthetic.features,std::string(player_preferences_feature));
     std::erase(synthetic.features,std::string(input_actions_feature));
+    std::erase(synthetic.features,std::string(hit_regions_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -203,6 +205,25 @@ void policy() {
     }
     auto duplicate_actions=actions;duplicate_actions.features.push_back(input_actions_feature);
     check(!compatibility_error(duplicate_actions,capable).empty(),"Duplicate action feature accepted.");
+    auto regions=baseline;regions.services_bytes=272;regions.features.push_back(hit_regions_feature);
+    check(compatibility_error(regions,regions).empty() && compatibility_error(regions,capable).empty(),"Hit regions require an unrelated feature.");
+    auto unnamed_regions=capable;std::erase(unnamed_regions.features,std::string(hit_regions_feature));
+    check(!compatibility_error(regions,unnamed_regions).empty(),"Opaque extent granted hit regions.");
+    auto short_regions=regions;short_regions.services_bytes=264;
+    check(!compatibility_error(baseline,short_regions).empty(),"Hit region capability advertised past allocation.");
+    auto duplicate_regions=regions;duplicate_regions.features.push_back(hit_regions_feature);
+    check(!compatibility_error(duplicate_regions,capable).empty(),"Duplicate hit regions accepted.");
+    for(unsigned combination=0;combination<128;++combination) {
+        auto required=regions,all=capable;
+        const char* optional[]{animation_feature,animation_layers_feature,character_input_feature,navigation_feature,instances_feature,player_preferences_feature,input_actions_feature};
+        for(unsigned i=0;i<7;++i)if(combination&(1u<<i))required.features.push_back(optional[i]);
+        if(std::find(all.features.begin(),all.features.end(),navigation_feature)==all.features.end())all.features.push_back(navigation_feature);
+        check(compatibility_error(required,all).empty()==(!(combination&2) || bool(combination&1)),"Region prefix bypassed independent feature dependency.");
+        for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,271u,273u}) {
+            auto wrong=required;wrong.services_bytes=bytes;
+            check(!compatibility_error(wrong,all).empty(),"Hit regions accepted a wrong prefix.");
+        }
+    }
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

@@ -58,7 +58,19 @@ void graph_parents(const Json& rows,const std::string& root={}) {
         done.insert(visiting.begin(),visiting.end());
     }
 }
+void hit_region_references(const Json& rows) {
+    for(const auto& [id,entity]:rows.items())if(entity.at("components").contains("HitRegion")) {
+        const auto& target=entity.at("components").at("HitRegion").at("owner");check(target.is_string(),"HitRegion owner must be an identity.");
+        const auto owner=target.get<std::string>();identifier(owner);check(rows.contains(owner),"HitRegion owner is absent.");
+        auto ancestor=id;
+        while(ancestor!=owner && !ancestor.empty()) {
+            const auto& parent=rows.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : parent.get<std::string>();
+        }
+        check(ancestor==owner,"HitRegion owner must be self or an ancestor.");
+    }
+}
 void graph_references(const Json& rows) {
+    hit_region_references(rows);
     for(const auto& [id,entity]:rows.items()) {
         const auto& bag=entity.at("components");
         auto local=[&](const Json& target,const char* component,bool nullable=false) {
@@ -129,6 +141,7 @@ Registry normalize(Json& doc) {
         }
     };
     instances(doc.at("entities"),false);graph_parents(doc.at("entities"));
+    hit_region_references(doc.at("entities"));
     if(doc.contains("templates")) {
         auto& recipes=doc.at("templates");check(recipes.is_object() && recipes.size()<=max_runtime_spawn_templates,"Authored template catalog budget exceeded.");
         std::size_t total_nodes=0;

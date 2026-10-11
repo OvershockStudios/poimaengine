@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.116**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.117**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.117 implements immutable query-only HitRegion spheres, boxes and
+capsules on existing entities, including imported rig nodes and hierarchical
+instances. Composite hit tests use current native poses and geometry, exact
+affine shape intersections and deterministic tie rules. Enabled region owners
+suppress only their own physics proxy in this query; existing raycasts and
+collision response retain their behavior. The independent `hit_regions_v1`
+gameplay extension uses a 272-byte services prefix in epoch 7 and permits up to
+1,024 admitted read-only calls per Tick. Twelve Windows native suites, seven
+hit-region groups, four API groups and 78 compiled ABI checks pass. Actual
+CoreCLR and Native AOT consumers check committed/staged bone poses, quota and
+complete failure rollback, save intents and exact fresh-process continuation;
+CoreCLR also preserves the complete checkpoint across compatible reload.
+The API fixture records 56 interpreted calls; compiled consumers record 197
+lossless calls across four clean native owners. All accepted Windows Jobs close
+naturally with unchanged admitted inputs. [Results](evidence/m2-hit-regions.json).
+This does not provide automatic anatomical regions, damage rules, IK, network
+lag compensation or a production weapon framework. [Contract and example](HIT_REGIONS.md).
 
 Version 0.0.116 adds an optional explicit node map to
 `reference-rotation-v1` for differently named imported character and animation

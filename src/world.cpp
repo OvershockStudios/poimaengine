@@ -401,7 +401,35 @@ std::vector<RuntimeAnimationLayer> animation_layers_value(const Json& values) {
     }
     std::sort(result.begin(),result.end(),[](const auto& left,const auto& right) { return left.slot<right.slot; });return result;
 }
+RuntimeHitRegion hit_region_value(const Json& value) {
+    require(value.is_object() && value.contains("shape") && value.at("shape").is_string(),"HitRegion requires a shape.");
+    const auto shape=value.at("shape").get<std::string>();
+    if(shape=="sphere")fields(value,{"owner","name","shape","center","enabled","radius"},{"owner","name","shape","radius"});
+    else if(shape=="box")fields(value,{"owner","name","shape","center","enabled","half_extents"},{"owner","name","shape","half_extents"});
+    else if(shape=="capsule")fields(value,{"owner","name","shape","center","enabled","radius","half_height"},{"owner","name","shape","radius","half_height"});
+    else throw Error(-32602,"Unknown HitRegion shape.");
+    RuntimeHitRegion result;result.owner=identifier(value.at("owner"));
+    require(value.at("name").is_string(),"HitRegion name must be text.");result.name=value.at("name").get<std::string>();
+    require(!result.name.empty() && result.name.size()<=64 && result.name[0]>='a' && result.name[0]<='z' &&
+        result.name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.-")==std::string::npos,"Invalid HitRegion name.");
+    result.shape=shape=="sphere" ? HitRegionShape::Sphere : shape=="box" ? HitRegionShape::Box : HitRegionShape::Capsule;
+    auto number=[](const Json& value,double minimum,double maximum) {
+        require(value.is_number() && std::isfinite(value.get<double>()) && value.get<double>()>=minimum && value.get<double>()<=maximum,"HitRegion dimension/center is out of bounds.");return value.get<double>();
+    };
+    if(value.contains("center")) {
+        const auto& center=value.at("center");require(center.is_array() && center.size()==3,"HitRegion center needs three coordinates.");
+        for(std::size_t k=0;k<3;++k)result.center[k]=number(center[k],-10000,10000);
+    }
+    if(value.contains("enabled")) {require(value.at("enabled").is_boolean(),"HitRegion enabled must be boolean.");result.enabled=value.at("enabled").get<bool>();}
+    if(shape=="box") {
+        const auto& extent=value.at("half_extents");require(extent.is_array() && extent.size()==3,"HitRegion box needs three half extents.");
+        for(std::size_t k=0;k<3;++k)result.half_extents[k]=number(extent[k],.001,10000);
+    }else result.radius=number(value.at("radius"),.001,10000);
+    if(shape=="capsule")result.half_height=number(value.at("half_height"),0,10000);
+    return result;
+}
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="HitRegion") { (void)hit_region_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
             require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
@@ -754,6 +782,17 @@ void validate(const Json& doc) {
             current = parent.is_null() ? "" : parent.get<std::string>();
         }
         for (const auto& item : chain) colors[item] = 2;
+    }
+    std::set<std::pair<std::string,std::string>> regions;
+    for(const auto& [id,entity]:entities.items())if(entity.at("components").contains("HitRegion")) {
+        const auto region=hit_region_value(entity.at("components").at("HitRegion"));
+        require(regions.size()<max_runtime_hit_regions && regions.emplace(region.owner,region.name).second,"HitRegion count exceeds 4096 or owner/name is duplicated.");
+        require(entities.contains(region.owner),"HitRegion owner does not exist.");
+        auto ancestor=id;
+        while(ancestor!=region.owner && !ancestor.empty()) {
+            const auto& parent=entities.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : parent.get<std::string>();
+        }
+        require(ancestor==region.owner,"HitRegion owner must be self or an ancestor.");
     }
     require(doc.at("retired_ids").is_array(), "Invalid retired IDs.");
     std::set<std::string> retired;
@@ -1353,7 +1392,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -2402,6 +2441,7 @@ public:
                 }
                 value.mesh_collider=std::move(collider);
             }
+            if(components.contains("HitRegion"))value.hit_region=hit_region_value(components.at("HitRegion"));
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()}; }
             result.entities.push_back(std::move(value));
         }
@@ -2897,6 +2937,21 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.hit_test") {
+            fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            RuntimeRay ray;ray.origin=query_vector(params.at("origin"));ray.direction=query_vector(params.at("direction"));
+            require(params.at("distance").is_number(),"Ray distance must be numeric.");ray.distance=params.at("distance").get<double>();
+            if(params.contains("ignore")) {
+                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
+                for(const auto& id:ids)ray.ignore.push_back(identifier(id));
+            }
+            try {
+                const auto hit=runtime_->hit_test(ray);Json value=nullptr;
+                if(hit)value={{"entity",hit->entity},{"region_entity",hit->region_entity ? Json(*hit->region_entity) : Json(nullptr)},{"region",hit->region ? Json(*hit->region) : Json(nullptr)},{"fraction",hit->fraction},{"distance",hit->distance},{"position",hit->position},{"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)},{"triangle",hit->triangle ? Json(*hit->triangle) : Json(nullptr)}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
+            }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        }
         if(method=="runtime.entity") {
             fields(params,{"session_id","id","tick","structure_revision"},{"session_id","id"}); runtime_guard(params);structure_read_guard(params);
             if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3142,7 +3197,7 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

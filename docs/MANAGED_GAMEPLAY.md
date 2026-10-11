@@ -308,3 +308,12 @@ frozen catalog and live handles; it does not adopt edited recipes.
 ## Read named gameplay input
 
 `IInputActionsGame` opts into independent `input_actions_v1` and a 264-byte services prefix. `GameContext.GetInputAction(EntityId, string)` reads immutable Held, Pressed, Released and Present values during Tick only, with at most 1,024 reads per tick. Omitted input is absent and neutral; a quick tap can set both edges. This marker does not grant other extensions. [Bindings, replay, compatibility and example](INPUT_ACTIONS.md).
+
+## Query character hit regions
+
+`IHitRegionsGame` opts into independent `hit_regions_v1` and a 272-byte epoch-7
+services prefix. `GameContext.HitTest` reads the closest world collider or
+enabled frozen sphere, box or capsule during Tick, with up to 1,024 admitted
+queries per tick. Region results distinguish the damage owner, attachment
+entity and region name; ordinary geometry remains an occluder. Existing
+`Raycast` is unchanged. [Authoring, C# example and exact query semantics](HIT_REGIONS.md).

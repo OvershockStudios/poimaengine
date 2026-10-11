@@ -117,6 +117,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(entity.character)remap(entity.character->camera);
         if(entity.rig_node)remap(entity.rig_node->rig);
         if(entity.skinned_mesh)remap(entity.skinned_mesh->rig);
+        if(entity.hit_region)remap(entity.hit_region->owner);
         if(entity.environment)remap(entity.environment->sky.sun);
         remap_payloads(entity,nodes,schemas);result.push_back(std::move(entity));
     }
@@ -216,6 +217,7 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
         if(!recipe.entities.empty()) {
             RuntimeDefinition graph_definition;graph_definition.entities=entities;
             validate_runtime_animation(graph_definition);validate_runtime_mesh_colliders(graph_definition);
+            validate_runtime_hit_regions(graph_definition);
         }
     }
 }

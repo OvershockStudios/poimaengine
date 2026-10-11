@@ -6,6 +6,7 @@
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_entity_ids.hpp"
+#include "runtime_hit_regions.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -41,6 +42,7 @@
 #include <set>
 #include <stdexcept>
 #include <type_traits>
+#include <tuple>
 
 namespace poima {
 namespace {
@@ -153,6 +155,7 @@ struct Runtime::Impl {
     const std::vector<RuntimeInput>* game_input_source=nullptr;
     bool game_input_edges=false;
     std::size_t game_input_action_calls=0;
+    std::size_t game_hit_region_calls=0;
     std::uint64_t control_sequence=0;
     PoimaGameUiControlEvent control_event{};
     RuntimeControlIntent control_intent=RuntimeControlIntent::none;
@@ -373,6 +376,65 @@ struct Runtime::Impl {
             candidate.body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
         }
     }
+    std::optional<RuntimeRayHit> physics_raycast(const RuntimeRay& query,const std::set<std::string>& proxy_owners={}) const {
+        require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
+        double length=0;
+        for(double x:query.origin)require(std::isfinite(x) && std::abs(x)<=1e6,"Ray origin must be finite and within 1000 km.");
+        for(double x:query.direction) { require(std::isfinite(x) && std::abs(x)<=1e6,"Invalid ray direction.");length+=x*x; }
+        require(length>=1e-24,"Ray direction cannot be zero or near zero.");length=std::sqrt(length);
+        std::array<float,3> delta;
+        for(std::size_t k=0;k<3;++k) {
+            const auto x=query.direction[k]/length*query.distance;
+            require(std::abs(query.origin[k]+x)<=1e6,"Ray endpoint exceeds the 1000 km bound.");delta[k]=static_cast<float>(x);
+        }
+        require(query.ignore.size()<=128,"At most 128 ignored ray entities.");
+        JPH::IgnoreMultipleBodiesFilter filter;std::set<std::string> seen;
+        for(const auto& id:query.ignore) {
+            require(seen.insert(id).second,"Duplicate ignored ray entity.");const auto e=find(id);
+            if(const auto* b=registry.try_get<Body>(e))filter.IgnoreBody(b->id);
+            if(const auto* c=registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
+        }
+        // Proxy owners are trusted enabled live-region owners, independently
+        // bounded by the region catalog; they do not consume caller's 128 IDs.
+        for(const auto& id:proxy_owners) {
+            const auto e=find(id);
+            if(const auto* b=registry.try_get<Body>(e))filter.IgnoreBody(b->id);
+            if(const auto* c=registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
+        }
+        // Keep one hit without early-out pruning so exact equal-distance ties use
+        // stable entity IDs rather than broad-phase visitation order.
+        struct Collector final : JPH::CastRayCollector {
+            const std::map<JPH::uint32,std::string>& names;std::optional<JPH::RayCastResult> hit;
+            const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& meshes;
+            Collector(const std::map<JPH::uint32,std::string>& n,const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& m):names(n),meshes(m) {}
+            void AddHit(const JPH::RayCastResult& value) override {
+                if(value.mFraction<0 || value.mFraction>1)return;
+                bool better=!hit || value.mFraction<hit->mFraction;
+                if(hit && value.mFraction==hit->mFraction) {
+                    const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
+                    better=names.at(id)<names.at(old);
+                    if(id==old)if(const auto mesh=meshes.find(id);mesh!=meshes.end())
+                        better=mesh->second->GetTriangleUserData(value.mSubShapeID2)<mesh->second->GetTriangleUserData(hit->mSubShapeID2);
+                }
+                if(better)hit=value;
+            }
+        } collector(topology->body_names,topology->mesh_shapes);
+        const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
+        JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
+        physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
+        if(!collector.hit)return {};
+        const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
+        RuntimeRayHit result;result.entity=topology->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
+        result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
+        if(const auto mesh=topology->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=topology->mesh_shapes.end())
+            result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
+        if(hit.mFraction>0 || result.triangle) {
+            JPH::BodyLockRead lock(physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
+            const auto normal=lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,point);
+            result.normal=std::array<double,3>{normal.GetX(),normal.GetY(),normal.GetZ()};
+        }
+        return result;
+    }
     void initialize(const RuntimeDefinition& definition) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
@@ -381,6 +443,7 @@ struct Runtime::Impl {
         initialize_navigation(definition.navigation);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
+        validate_runtime_hit_regions(definition);
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
         animations=std::make_unique<RuntimeAnimations>(definition,executor);
         validate_runtime_mesh_colliders(definition);
@@ -690,6 +753,32 @@ struct Runtime::Impl {
             for(std::uint32_t i=0;i<source->ignore_count;++i)ray.ignore.push_back(gameplay_id(source->ignore[i]));
             const auto hit=static_cast<Impl*>(context)->owner->raycast(ray);*output={};
             if(hit) { output->hit=1;output->entity=gameplay_id(hit->entity);output->fraction=hit->fraction;output->distance=hit->distance;std::copy(hit->position.begin(),hit->position.end(),output->position);if(hit->normal) { output->normal_valid=1;std::copy(hit->normal->begin(),hit->normal->end(),output->normal); } }
+        });
+    }
+    static int32_t POIMA_CALL hit_test_gameplay(void* context,const PoimaGameRay* source,PoimaGameHitRegionResultV1* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && source && output,"Hit region query/output is absent.");
+            require(source->reserved==0 && source->ignore_count<=128 && (!source->ignore_count || source->ignore),"Invalid hit region ray reserved field or ignore array.");
+            require(output->version==1 && output->bytes>=sizeof(PoimaGameHitRegionResultV1) && output->reserved==0,"Hit region result requires version 1, at least 192 bytes and zero reserved.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(self.game_hit_region_calls<1024,"Gameplay exceeded 1024 hit region queries in one Tick.");
+            RuntimeRay ray;std::copy_n(source->origin,3,ray.origin.begin());std::copy_n(source->direction,3,ray.direction.begin());ray.distance=source->distance;
+            for(std::uint32_t i=0;i<source->ignore_count;++i)ray.ignore.push_back(gameplay_id(source->ignore[i]));
+            const auto hit=self.owner->hit_test(ray);
+            PoimaGameHitRegionResultV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);
+            if(hit) {
+                candidate.hit.hit=1;candidate.hit.entity=gameplay_id(hit->entity);candidate.hit.fraction=hit->fraction;candidate.hit.distance=hit->distance;
+                std::copy(hit->position.begin(),hit->position.end(),candidate.hit.position);
+                if(hit->normal) { candidate.hit.normal_valid=1;std::copy(hit->normal->begin(),hit->normal->end(),candidate.hit.normal); }
+                if(hit->triangle) { candidate.triangle_present=1;candidate.triangle=*hit->triangle; }
+                require(bool(hit->region)==bool(hit->region_entity),"Native hit region identity is incomplete.");
+                if(hit->region) {
+                    require(valid_input_action_name(*hit->region),"Invalid native hit region name.");
+                    candidate.region_entity=gameplay_id(*hit->region_entity);candidate.region_name_bytes=static_cast<std::uint32_t>(hit->region->size());
+                    std::copy(hit->region->begin(),hit->region->end(),candidate.region_name);
+                }
+            }
+            ++self.game_hit_region_calls;*output=candidate;
         });
     }
     static int32_t POIMA_CALL move_body(void* context,const PoimaGameMotion* source,PoimaGameError* error) {
@@ -1014,6 +1103,7 @@ struct Runtime::Impl {
         validate_scene_membership(*candidate);
         candidate->live=live_definition(*candidate);const auto& definition=candidate->live;
         validate_runtime_mesh_colliders(definition);
+        validate_runtime_hit_regions(definition);
         // Private candidate binding lets existing helpers resolve the complete
         // hierarchy. Outer tick/structure checkpoints restore it on any failure.
         topology=candidate;animations->rebind(definition,tick);animation_locals();world_matrices();
@@ -1144,10 +1234,10 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1245,7 +1335,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;
+            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             clear_player_preferences_commands();
@@ -1498,54 +1588,41 @@ std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) c
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request);}
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
-    require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
-    double length=0;
-    for(double x:query.origin)require(std::isfinite(x) && std::abs(x)<=1e6,"Ray origin must be finite and within 1000 km.");
-    for(double x:query.direction) { require(std::isfinite(x) && std::abs(x)<=1e6,"Invalid ray direction.");length+=x*x; }
-    require(length>=1e-24,"Ray direction cannot be zero or near zero.");length=std::sqrt(length);
-    std::array<float,3> delta;
-    for(std::size_t k=0;k<3;++k) {
-        const auto x=query.direction[k]/length*query.distance;
-        require(std::abs(query.origin[k]+x)<=1e6,"Ray endpoint exceeds the 1000 km bound.");delta[k]=static_cast<float>(x);
+    return impl_->physics_raycast(query);
+}
+std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay& query) const {
+    std::set<std::string> proxies;
+    for(const auto& [id,definition]:impl_->topology->definitions) {
+        (void)id;
+        if(definition.hit_region && definition.hit_region->enabled)proxies.insert(definition.hit_region->owner);
     }
-    require(query.ignore.size()<=128,"At most 128 ignored ray entities.");
-    JPH::IgnoreMultipleBodiesFilter filter;std::set<std::string> seen;
-    for(const auto& id:query.ignore) {
-        require(seen.insert(id).second,"Duplicate ignored ray entity.");const auto e=impl_->find(id);
-        if(const auto* b=impl_->registry.try_get<Body>(e))filter.IgnoreBody(b->id);
-        if(const auto* c=impl_->registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
-    }
-    // Keep one hit without early-out pruning so exact equal-distance ties use
-    // stable entity IDs rather than broad-phase visitation order.
-    struct Collector final : JPH::CastRayCollector {
-        const std::map<JPH::uint32,std::string>& names;std::optional<JPH::RayCastResult> hit;
-        const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& meshes;
-        Collector(const std::map<JPH::uint32,std::string>& n,const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& m):names(n),meshes(m) {}
-        void AddHit(const JPH::RayCastResult& value) override {
-            if(value.mFraction<0 || value.mFraction>1)return;
-            bool better=!hit || value.mFraction<hit->mFraction;
-            if(hit && value.mFraction==hit->mFraction) {
-                const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
-                better=names.at(id)<names.at(old);
-                if(id==old)if(const auto mesh=meshes.find(id);mesh!=meshes.end())
-                    better=mesh->second->GetTriangleUserData(value.mSubShapeID2)<mesh->second->GetTriangleUserData(hit->mSubShapeID2);
-            }
-            if(better)hit=value;
-        }
-    } collector(impl_->topology->body_names,impl_->topology->mesh_shapes);
-    const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
-    JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
-    impl_->physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
-    if(!collector.hit)return {};
-    const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
-    RuntimeRayHit result;result.entity=impl_->topology->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
-    result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
-    if(const auto mesh=impl_->topology->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=impl_->topology->mesh_shapes.end())
-        result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
-    if(hit.mFraction>0 || result.triangle) {
-        JPH::BodyLockRead lock(impl_->physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
-        const auto normal=lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,point);
-        result.normal=std::array<double,3>{normal.GetX(),normal.GetY(),normal.GetZ()};
+    // The existing physics admission validates the entire explicit ignore list
+    // before any region query, independently of the internal owner proxies.
+    const auto geometry=impl_->physics_raycast(query,proxies);
+    std::optional<RuntimeHitResult> result;
+    if(geometry)result=RuntimeHitResult{geometry->entity,{},{},geometry->fraction,geometry->distance,
+        geometry->position,geometry->normal,geometry->triangle};
+    const std::set<std::string> ignored(query.ignore.begin(),query.ignore.end());
+    const double length=std::sqrt(query.direction[0]*query.direction[0]+query.direction[1]*query.direction[1]+query.direction[2]*query.direction[2]);
+    std::array<double,3> delta{};for(std::size_t i=0;i<3;++i)delta[i]=query.direction[i]/length*query.distance;
+    // Only current membership participates. Retired entities remain owned for
+    // rollback but are deliberately absent from topology->definitions.
+    for(const auto& [id,definition]:impl_->topology->definitions) {
+        if(!definition.hit_region || !definition.hit_region->enabled)continue;
+        const auto& region=*definition.hit_region;
+        if(ignored.contains(id) || ignored.contains(region.owner))continue;
+        const auto& world=impl_->registry.get<Node>(impl_->find(id)).world;
+        const auto hit=hit_regions::intersect(region,world,query.origin,delta);if(!hit)continue;
+        bool better=!result || hit->fraction<result->fraction;
+        if(result && hit->fraction==result->fraction && result->region)
+            better=std::tie(region.owner,region.name,id)<std::tie(result->entity,*result->region,*result->region_entity);
+        // Exact geometry/region ties keep world geometry. Region-only ties use
+        // immutable owner/name/attachment identities, not traversal order.
+        if(!better)continue;
+        RuntimeHitResult value;value.entity=region.owner;value.region_entity=id;value.region=region.name;
+        value.fraction=hit->fraction;value.distance=query.distance*hit->fraction;value.normal=hit->normal;
+        for(std::size_t i=0;i<3;++i)value.position[i]=query.origin[i]+delta[i]*hit->fraction;
+        result=std::move(value);
     }
     return result;
 }

@@ -42,6 +42,25 @@ class Requirements(unittest.TestCase):
                          ['baseline_v7','input_actions_v1','future_action_v1']]:
             with self.subTest(features=features),self.assertRaises(ValueError):
                 self.read(dict(self.baseline,services_bytes=264,features=features))
+    def test_hit_regions_independent_and_all_nine_feature_names(self):
+        optional=['animation_inertial_v1','animation_layers_v1','character_input_v1',
+                  'navigation_query_v1','hierarchical_instances_v1','player_preferences_v1','input_actions_v1']
+        for mask in range(1 << len(optional)):
+            features=sorted(['baseline_v7','hit_regions_v1']+
+                            [name for index,name in enumerate(optional) if mask & (1 << index)])
+            required=dict(self.baseline,services_bytes=272,features=features)
+            with self.subTest(features=features):
+                if 'animation_layers_v1' in features and 'animation_inertial_v1' not in features:
+                    with self.assertRaises(ValueError):self.read(required)
+                else:self.assertEqual(self.read(required),required)
+            for extent in [176,192,208,216,224,232,256,264,271,273]:
+                with self.subTest(features=features,extent=extent),self.assertRaises(ValueError):
+                    self.read(dict(required,services_bytes=extent))
+        for features in [['baseline_v7'],['hit_regions_v1'],
+                         ['baseline_v7','hit_regions_v1','hit_regions_v1'],
+                         ['baseline_v7','hit_regions_v1','future_hit_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):
+                self.read(dict(self.baseline,services_bytes=272,features=features))
     def test_character_independence_and_combinations(self):
         for animation in [[], ['animation_inertial_v1'], ['animation_inertial_v1', 'animation_layers_v1']]:
             features=sorted(['baseline_v7', 'character_input_v1']+animation)

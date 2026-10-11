@@ -30,6 +30,8 @@ inline constexpr const char* player_preferences_feature="player_preferences_v1";
 inline constexpr std::uint32_t player_preferences_services_bytes=256;
 inline constexpr const char* input_actions_feature="input_actions_v1";
 inline constexpr std::uint32_t input_actions_services_bytes=264;
+inline constexpr const char* hit_regions_feature="hit_regions_v1";
+inline constexpr std::uint32_t hit_regions_services_bytes=272;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -49,6 +51,7 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=instances_services_bytes;result.features.push_back(instances_feature);
     result.services_bytes=player_preferences_services_bytes;result.features.push_back(player_preferences_feature);
     result.services_bytes=input_actions_services_bytes;result.features.push_back(input_actions_feature);
+    result.services_bytes=hit_regions_services_bytes;result.features.push_back(hit_regions_feature);
     return result;
 }
 
@@ -90,9 +93,10 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     const bool instances_required=std::find(required.features.begin(),required.features.end(),instances_feature)!=required.features.end();
     const bool preferences_required=std::find(required.features.begin(),required.features.end(),player_preferences_feature)!=required.features.end();
     const bool actions_required=std::find(required.features.begin(),required.features.end(),input_actions_feature)!=required.features.end();
+    const bool regions_required=std::find(required.features.begin(),required.features.end(),hit_regions_feature)!=required.features.end();
     if(layers_required && !animation_required)return "Gameplay animation_layers_v1 also requires animation_inertial_v1.";
-    if(required.services_bytes!=(actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
-        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264-byte extensions.";
+    if(required.services_bytes!=(regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
+        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272-byte extensions.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -111,9 +115,11 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         return "Runtime player_preferences_v1 requires a 256-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),input_actions_feature)!=available.features.end() && available.services_bytes<input_actions_services_bytes)
         return "Runtime input_actions_v1 requires a 264-byte service allocation.";
+    if(std::find(available.features.begin(),available.features.end(),hit_regions_feature)!=available.features.end() && available.services_bytes<hit_regions_services_bytes)
+        return "Runtime hit_regions_v1 requires a 272-byte service allocation.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

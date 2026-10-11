@@ -77,6 +77,15 @@ struct RuntimeAnimationRig {
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
+enum class HitRegionShape { Sphere, Box, Capsule };
+struct RuntimeHitRegion {
+    std::string owner,name;
+    HitRegionShape shape=HitRegionShape::Sphere;
+    std::array<double,3> center{0,0,0},half_extents{.5,.5,.5};
+    double radius=.5,half_height=0;
+    bool enabled=true;
+};
+inline constexpr std::size_t max_runtime_hit_regions=4096;
 enum class AnimationTransitionMode : std::uint32_t { Crossfade=0, Inertial=1 };
 struct AnimationCommand {
     std::string entity;
@@ -141,6 +150,7 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeSkinnedMesh> skinned_mesh;
     std::optional<MeshCollider> mesh_collider;
     std::map<std::string,components::Payload> components;
+    std::optional<RuntimeHitRegion> hit_region;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
@@ -183,6 +193,7 @@ struct RuntimeDefinition {
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
 void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
+void validate_runtime_hit_regions(const RuntimeDefinition& definition);
 // Validates recipe values/assets without creating entities or physics bodies.
 // Custom entity-reference liveness resolves against the eventual spawn candidate.
 void validate_runtime_templates(const RuntimeDefinition& definition);
@@ -226,6 +237,14 @@ struct RuntimeRayHit {
     std::array<double,3> position{};
     std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
+};
+struct RuntimeHitResult {
+    std::string entity;
+    std::optional<std::string> region_entity,region;
+    double fraction=0,distance=0;
+    std::array<double,3> position{};
+    std::optional<std::array<double,3>> normal;
+    std::optional<std::uint32_t> triangle;
 };
 struct RuntimeNavigationRequest {
     std::string entity;
@@ -388,6 +407,7 @@ public:
     RuntimeControlResult control(std::uint64_t expected_ui_revision,
         std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;
     // Immutable bound mesh, live capsule foot start; no state/time mutation.
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
     // The serialized owner installs a fresh epoch and a ledger that outlives

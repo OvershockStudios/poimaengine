@@ -65,6 +65,16 @@ int main(){try{
     }
     auto duplicate_actions=actions;duplicate_actions["features"].push_back("input_actions_v1");rejected(duplicate_actions.dump());
     auto unnamed_actions=actions;unnamed_actions["features"]=Json::array({"baseline_v7"});rejected(unnamed_actions.dump());
+    auto regions=baseline;regions["services_bytes"]=272;regions["features"].push_back("hit_regions_v1");
+    parsed=poima::parse_gameplay_service_contract(regions.dump());
+    check(parsed.services_bytes==272 && parsed.features.size()==2,"Independent hit region contract rejected.");
+    auto combined_regions=regions;combined_regions["features"].push_back("input_actions_v1");
+    (void)poima::parse_gameplay_service_contract(combined_regions.dump());
+    for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,271u,273u}) {
+        auto wrong=regions;wrong["services_bytes"]=bytes;rejected(wrong.dump());
+    }
+    auto duplicate_regions=regions;duplicate_regions["features"].push_back("hit_regions_v1");rejected(duplicate_regions.dump());
+    auto unnamed_regions=regions;unnamed_regions["features"]=Json::array({"baseline_v7"});rejected(unnamed_regions.dump());
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());
