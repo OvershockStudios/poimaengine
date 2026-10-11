@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.110
+
+- Use the normal-biased receiver position consistently when selecting point-light shadow-map faces, preventing light leaks at cube-face boundaries.
+- Verify both filters through 64 before/after captures, preserving 24 control bitmaps exactly; pass 49 forward shadow-regression captures and retain a public mirrored-seam test. [Results](docs/evidence/m2-point-shadow-face.json).
+
 ## 0.0.109
 
 - Add a bounded Python evidence journal that appends settled records and reconstructs the complete evidence once, with strict typed equality and finite storage limits. [Usage](docs/EVIDENCE_JOURNAL.md).

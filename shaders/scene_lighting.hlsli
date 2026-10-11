@@ -74,10 +74,11 @@ float light_visibility(SceneLight source,float3 position,float3 geometric_normal
     const float far=shadows[first].splits.y;if(distance>=far)return 1;
     uint face=0;
     if(source.position_kind.w<1.5) {
-        const float3 magnitude=abs(delta);
-        if(magnitude.x>=magnitude.y && magnitude.x>=magnitude.z)face=delta.x>=0 ? 0 : 1;
-        else if(magnitude.y>=magnitude.z)face=delta.y>=0 ? 2 : 3;
-        else face=delta.z>=0 ? 4 : 5;
+        const float3 face_delta=biased-source.position_kind.xyz;
+        const float3 magnitude=abs(face_delta);
+        if(magnitude.x>=magnitude.y && magnitude.x>=magnitude.z)face=face_delta.x>=0 ? 0 : 1;
+        else if(magnitude.y>=magnitude.z)face=face_delta.y>=0 ? 2 : 3;
+        else face=face_delta.z>=0 ? 4 : 5;
     }
     const float visibility=shadow_compare(first+face,biased,geometric_normal,source.shadow.z);
     return lerp(visibility,1,saturate((distance-.9*far)/(.1*far)));

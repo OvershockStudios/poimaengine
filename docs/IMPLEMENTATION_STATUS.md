@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.109**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.110**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.110 fixes a normal-bias point-shadow seam: cube-face selection and
+projection now use the same receiver position. Both filters pass mirrored
+deferred probes, with all 54 crossed-face measurements per filter staying
+shadowed. The 24 baseline control bitmaps remain byte-identical. The expanded
+public forward regression passes 49 captures, including cascades, all six point
+faces, spotlights and moving/hidden/indexed casters. The Windows build and eight
+selected native/SDK/Python groups pass. This fixes visibility correctness;
+physical soft shadows, cross-face filtering, caching, GI and RTAO remain separate.
+[Qualification](evidence/m2-point-shadow-face.json), [shadow behavior](SHADOWS.md).
 
 Version 0.0.109 adds a bounded Python [evidence journal](EVIDENCE_JOURNAL.md)
 with exact reconstruction; persistence success stays separate from experiment

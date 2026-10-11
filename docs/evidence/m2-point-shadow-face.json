@@ -1,0 +1,334 @@
+{
+  "format": "poima.point-shadow-face-evidence.v1",
+  "checkpoint": "0.0.110",
+  "passed": true,
+  "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "scope": "Consistent normal-biased point-shadow cube-face selection; controlled deferred receiver probes plus a forward shadow regression.",
+  "shader_sha256": "f391029c660ec2765642d1ca28d7feefffe0fa030064d0d1a4140844a6bdba82",
+  "native_image_sha256": "70a69cf60d1c24e1ab58384a7aac72d92ad8c60d1ad6d78968d02451224c0342",
+  "recipe": {
+    "size": [
+      1280,
+      720
+    ],
+    "vertical_fov": 12,
+    "near": 0.05,
+    "far": 10,
+    "shadow_resolution": 512,
+    "comparison_bias": 0.0001,
+    "normal_biases": [
+      0,
+      0.005,
+      0.01
+    ],
+    "ao": "none",
+    "lighting_path": "deferred",
+    "reconstruction": "none",
+    "light_position": [
+      0,
+      0,
+      0
+    ]
+  },
+  "controlled_fixture_sha256": "f88fc239219f2852003f15a78d172773e95aed9e983aba4bd7811862a843dde3",
+  "controlled_cohorts": [
+    {
+      "state": "baseline",
+      "engine_version": "0.0.109",
+      "shadow_filter": "pcf3_point",
+      "captures": 16,
+      "crossed_face_measurements": 54,
+      "fully_lit_crossings": 54,
+      "maximum_blocked_over_unblocked": 1.0,
+      "receiver_controls_passed": true,
+      "owner_receipt_sha256": "61bb819f03e20871a4cf24eeef0e0e1afbd0d52959733c879fa0b1ad835bb360",
+      "raw_evidence_sha256": "1f33b903db9a7940e554c22bcb69fad7257df20983d64b2046730c6c4d8d25cc",
+      "owned_processes": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    },
+    {
+      "state": "corrected",
+      "engine_version": "0.0.110",
+      "shadow_filter": "pcf3_point",
+      "captures": 16,
+      "crossed_face_measurements": 54,
+      "fully_lit_crossings": 0,
+      "maximum_blocked_over_unblocked": 0.007053325292901447,
+      "receiver_controls_passed": true,
+      "owner_receipt_sha256": "79c6c1478f0ccbb7d725e169b0dc5a3f92e8bae12f320d10a6daf43f48d7ecb4",
+      "raw_evidence_sha256": "e1993df6b458a67c9c7a2b13b78f79435d6f5758d0f77d47ac27473d3e7a4ee2",
+      "owned_processes": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    },
+    {
+      "state": "baseline",
+      "engine_version": "0.0.109",
+      "shadow_filter": "pcf3_fractional",
+      "captures": 16,
+      "crossed_face_measurements": 54,
+      "fully_lit_crossings": 54,
+      "maximum_blocked_over_unblocked": 1.0,
+      "receiver_controls_passed": true,
+      "owner_receipt_sha256": "b0db96b1551d3194b1f13fd18dd11f371e346d31fb364b6372c687b9ac9faabc",
+      "raw_evidence_sha256": "50b71967efb71ca759c6a35ef47bad306642efe65bb452912f20f00c3ba13293",
+      "owned_processes": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    },
+    {
+      "state": "corrected",
+      "engine_version": "0.0.110",
+      "shadow_filter": "pcf3_fractional",
+      "captures": 16,
+      "crossed_face_measurements": 54,
+      "fully_lit_crossings": 0,
+      "maximum_blocked_over_unblocked": 0.007053325292901447,
+      "receiver_controls_passed": true,
+      "owner_receipt_sha256": "30abdcf3233ab056a3771241acae5a71e16058467d3bc250293de77b1bfe67df",
+      "raw_evidence_sha256": "09e8900b83b33457012e72aae863bb43e18f938bb7ce30cd6bad149c51461b22",
+      "owned_processes": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    }
+  ],
+  "unchanged_control_bitmaps": [
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "off-n0",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "off-n0.01",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "blocked-n0",
+      "bitmap_sha256": "3f54efc55d55fb7c6ccaa1b4e0493a2139d62acb9874cd1201f46fb8f7c0f449",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "unblocked-n0",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "unblocked-n0.005",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "positive-x",
+      "case": "unblocked-n0.01",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "off-n0",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "off-n0.01",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "blocked-n0",
+      "bitmap_sha256": "57469a0e784903e69eeeba5fcc1e89eac1dae80ae23a154bb82ba4a870f1fbb6",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "unblocked-n0",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "unblocked-n0.005",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_point",
+      "orientation": "negative-x",
+      "case": "unblocked-n0.01",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "off-n0",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "off-n0.01",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "blocked-n0",
+      "bitmap_sha256": "3f54efc55d55fb7c6ccaa1b4e0493a2139d62acb9874cd1201f46fb8f7c0f449",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "unblocked-n0",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "unblocked-n0.005",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "positive-x",
+      "case": "unblocked-n0.01",
+      "bitmap_sha256": "1dd4d1bc4278dfa61072ae5019116114308811fb0c54f1d9515f9cde8787950e",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "off-n0",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "off-n0.01",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "blocked-n0",
+      "bitmap_sha256": "57469a0e784903e69eeeba5fcc1e89eac1dae80ae23a154bb82ba4a870f1fbb6",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "unblocked-n0",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "unblocked-n0.005",
+      "bitmap_sha256": "cb63b3f22f24ef0e07f393aaf74af4ce2f99a39875e591700ea8e05810006b7c",
+      "byte_exact": true
+    },
+    {
+      "filter": "pcf3_fractional",
+      "orientation": "negative-x",
+      "case": "unblocked-n0.01",
+      "bitmap_sha256": "0ff63954f35644319e864559e8bb32db296fc1852b3dd11b340f9893dc35e03d",
+      "byte_exact": true
+    }
+  ],
+  "native_build": {
+    "receipt_sha256": "e2b18dabba0063efd3bcbd984439cc4c013599fb2ee14552bafa9979e4660381",
+    "source_freeze_sha256": "ed2655fe993c356238990ac40078daea58c2339711b57d72815b26ffe7df201c",
+    "selected_native_feature_sources": 20,
+    "selected_python_inputs": 2,
+    "separate_shader_input": {
+      "path": "shaders/scene_lighting.hlsli",
+      "bytes": 8230,
+      "sha256": "f391029c660ec2765642d1ca28d7feefffe0fa030064d0d1a4140844a6bdba82"
+    },
+    "seconds": 115.60273604499525,
+    "incremental": true,
+    "full_renderer_build_qualified": false
+  },
+  "native_checks": {
+    "receipt_sha256": "7145cdd1e08c04ad6824973b32b6fd250f657c716cf0928a4b3b6a1e0c26c541",
+    "cases": 8,
+    "native_or_sdk_cases": 7,
+    "python_journal_regressions": 25,
+    "discovery_requests": 5,
+    "schema_revision": 79,
+    "passed": true
+  },
+  "forward_regression": {
+    "owner_receipt_sha256": "5dfca4d0a6b36c23b9baaee43c73393b42f83a752dd7901b630ca6692776fccc",
+    "raw_evidence_sha256": "4a6ea1679abf5474fece2e9b8fc13065b91a58b7b2aed0811839523a0070b1ef",
+    "public_fixture_sha256": "feba2a44a279f74ba95e206b0b28827a22064b1acc19b02722a53d2ad24afb46",
+    "gpu_index": 1,
+    "samples": 4,
+    "captures": 49,
+    "preserved_original_captures": 45,
+    "added_seam_captures": 4,
+    "native_batches": 102,
+    "checks": {
+      "smooth_normals_do_not_change_receiver_plane": true,
+      "all_resolutions_and_final_array_layer": true,
+      "directional_spot_point_occlusion": true,
+      "all_cascades_and_blends": true,
+      "shadow_distance_bound": true,
+      "moving_hidden_and_indexed_casters": true,
+      "six_point_faces_and_seam": true,
+      "point_normal_bias_face_selection": true,
+      "frozen_runtime_settings_and_moving_occluder": true
+    },
+    "owned_processes": {
+      "total_processes": 103,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "forced_cleanup": false
+  },
+  "limitations": [
+    "Two mirrored X/Z seam orientations on this GPU; not exhaustive cube-edge or hardware coverage.",
+    "Face-local PCF edge clamping remains; this does not add cross-face filtering, physical soft shadows or caching.",
+    "No frame-time improvement, general character-shadow quality, GI or RTAO qualification is claimed."
+  ]
+}

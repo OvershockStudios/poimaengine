@@ -98,6 +98,22 @@ try:
         edit([transform(2),shadow_light('point'),transform(100,target,aim(axis),(4,4,4)),transform(4,[2*x for x in axis],s=(.8,.8,.8)),transform(1,camera,aim([a-b for a,b in zip(target,camera)]))])
         batch([capture('face-'+str(i))]);dark('face-'+str(i))
         edit([shadow_light('point',False)]);batch([capture('face-'+str(i)+'-off')]);lit('face-'+str(i)+'-off')
+    # Normal bias can move the receiver across a point-light cubeface seam.
+    # Face selection must follow the same biased position that is projected.
+    for sign in (1,-1):
+        target=[sign,0,.9985];camera=[-.6*sign,.15,1.45]
+        seam_shadow={'enabled':True,'near':.05,'distance':8,'bias':.0001,'normal_bias':.01}
+        name='biased-seam-'+('positive-x' if sign==1 else 'negative-x')
+        edit([transform(2),light(kind='point',intensity=20*math.pi,range=8,shadow=seam_shadow),
+              transform(100,target,aim([sign,0,0]),(.06,.07,1)),
+              transform(4,[.5*sign,0,.5],s=(.2,.3,.2)),
+              transform(1,camera,aim([a-b for a,b in zip(target,camera)])),
+              component(1,'Camera',{'vertical_fov':12,'near':.05,'far':10})])
+        batch([capture(name)]);dark(name)
+        edit([light(kind='point',intensity=20*math.pi,range=8,
+                    shadow={**seam_shadow,'enabled':False})])
+        batch([capture(name+'-off')]);lit(name+'-off')
+    edit([component(1,'Camera',{'vertical_fov':60,'near':.1,'far':100})])
     # Exercise the final texture-array/constant-buffer slot with a -Z point face:
     # directional (4), dark point (6), active point (6) -> layer 15 is sampled.
     edit([transform(1,(0,0,6)),transform(100,s=(4,4,4)),transform(4,(1,0,2),s=(.8,.8,.8)),transform(2,(2,0,4),aim([-2,0,-4])),light(intensity=0,shadow={'enabled':True}),create(10),light(10,'point',intensity=0,shadow={'enabled':True}),create(11),transform(11,(2,0,4)),light(11,'point',intensity=20*math.pi,shadow={'enabled':True,'bias':.0001})])
@@ -111,7 +127,7 @@ try:
     edit([transform(1,(0,0,6)),transform(100,s=(4,4,4)),transform(2,(2,0,4),aim([-2,0,-4])),shadow_light('spot'),transform(4,(1,0,2),s=(.8,.8,.8)),component(4,'BoxCollider',{'half_extents':[.5,.5,.5],'motion':'dynamic','mass':1,'friction':.5,'restitution':0})])
     session=uid(900);rows=batch([('runtime.start',{'session_id':session,'revision':rev}),capture('runtime-initial',session),transaction([shadow_light('spot',False)]),capture('runtime-frozen',session),('runtime.step',{'session_id':session,'request_id':uid(901),'expected_tick':0,'ticks':30}),capture('runtime-moved',session,30)]);rev+=1
     dark('runtime-initial');assert pixels(run/'runtime-initial.bmp')==pixels(run/'runtime-frozen.bmp');lit('runtime-moved')
-    record['passed']=True;record['checks']={'smooth_normals_do_not_change_receiver_plane':True,'all_resolutions_and_final_array_layer':True,'directional_spot_point_occlusion':True,'all_cascades_and_blends':True,'shadow_distance_bound':True,'moving_hidden_and_indexed_casters':True,'six_point_faces_and_seam':True,'frozen_runtime_settings_and_moving_occluder':True}
+    record['passed']=True;record['checks']={'smooth_normals_do_not_change_receiver_plane':True,'all_resolutions_and_final_array_layer':True,'directional_spot_point_occlusion':True,'all_cascades_and_blends':True,'shadow_distance_bound':True,'moving_hidden_and_indexed_casters':True,'six_point_faces_and_seam':True,'point_normal_bias_face_selection':True,'frozen_runtime_settings_and_moving_occluder':True}
     record['images']={p.stem:{'path':str(p.resolve()),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in run.glob('*.bmp')}
 finally:
     (args.output/f'gpu-{args.gpu}.json').write_text(json.dumps(record,indent=2)+'\n')

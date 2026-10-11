@@ -46,7 +46,7 @@ Directional lights partition the camera depth interval into four practical split
 
 Directional depth bounds extend toward the light by the configured shadow distance beyond the receiver sphere, allowing relevant offscreen casters. Casters outside these bounds cannot contribute; there is no scene-wide caster-bound analysis yet.
 
-Local lights use a perspective depth map: one cone for a spot, or +X/−X/+Y/−Y/+Z/−Z views for a point. Point selection uses the receiver's dominant direction axis. Percentage-closer filtering averages depth comparisons. Each tap uses an analytic receiver-plane depth adjustment, so a sloping unoccluded surface does not shadow itself merely because adjacent texels store different depths. The triangle plane is derived from world-position derivatives before divergent light/cascade branches; smoothed vertex normals and normal maps affect shading, not this depth plane. A normal map does not change caster geometry.
+Local lights use a perspective depth map: one cone for a spot, or +X/−X/+Y/−Y/+Z/−Z views for a point. Point selection uses the dominant direction axis of the normal-biased receiver relative to the light. Percentage-closer filtering averages depth comparisons. Each tap uses an analytic receiver-plane depth adjustment, so a sloping unoccluded surface does not shadow itself merely because adjacent texels store different depths. The triangle plane is derived from world-position derivatives before divergent light/cascade branches; smoothed vertex normals and normal maps affect shading, not this depth plane. A normal map does not change caster geometry.
 
 Point-face filter taps clamp to the current face at its edges. Cross-face filtering is not seamless, and complex silhouettes crossing cube edges can show discontinuities. The tests cover six orientations and one seam-spanning blocker, not every seam configuration. The filter is fixed-width; it does not simulate area-light penumbrae or contact hardening. Bias can trade acne for detached shadows, especially with large near/far ratios or fine geometry. Floating-point precision at extreme scales remains unqualified.
 
@@ -104,6 +104,25 @@ silhouette. Character deformation, moved lights, changed caster eligibility and
 runtime replacement all require valid cache invalidation. GI is planned and
 currently absent. Optional RTAO belongs to a higher hardware tier, with raster
 AO retained and indirect-light composition checked separately.
+
+### Point-light face selection
+
+Version 0.0.110 removes a bias-dependent light leak near cube-face boundaries.
+Face selection and projection use the same normal-biased position; coverage
+distance and its fade still use the original receiver position. Filters, bias
+settings and spot/directional projection retain their existing behavior.
+
+On the RTX 4070 Laptop GPU, 64 before/after deferred captures test two mirrored
+X/Z seams with both filters, real blockers and zero-bias/unblocked controls. Each
+filter previously exposed 54 crossed-face measurements as fully lit. After the
+fix, all stay shadowed; all 24 comparison control BMPs remain byte-identical.
+The public `tests/shadow_capture.py` adds four mirrored seam captures to its
+existing 45 forward captures; all nine assertion groups pass.
+[Results and retained receipt hashes](evidence/m2-point-shadow-face.json).
+
+This is a face-selection correction. Face-local PCF edge clamping and broader
+hardware/seam coverage remain limits; the check establishes no frame-time or
+general character-quality improvement.
 
 ### Controlled character comparison
 
