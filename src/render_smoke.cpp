@@ -343,6 +343,7 @@ struct Context {
     nvrhi::ComputePipelineHandle deferred_pipeline;
     std::array<const void*,14> deferred_binding_key{};
     AmbientOcclusionOptions ambient_occlusion;
+    ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     bool ao_enabled=false;
     nvrhi::TextureHandle ao_raw,ao_filtered;
     nvrhi::BufferHandle ao_buffer;
@@ -562,6 +563,8 @@ struct Context {
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;player_context=player;
         deferred=options.deferred;diagnostics.deferred=deferred;
+        require(options.shadow_filter==ShadowFilter::pcf3_point || options.shadow_filter==ShadowFilter::pcf3_fractional,"Invalid shadow filter.");
+        shadow_filter=options.shadow_filter;diagnostics.shadow_filter=shadow_filter;
         ambient_occlusion=options.ambient_occlusion;diagnostics.ambient_occlusion=ambient_occlusion;
         require(ambient_occlusion.mode==AmbientOcclusionMode::none || ambient_occlusion.mode==AmbientOcclusionMode::gtao,"Invalid ambient occlusion mode.");
         require(ambient_occlusion.quality==AmbientOcclusionQuality::low || ambient_occlusion.quality==AmbientOcclusionQuality::medium || ambient_occlusion.quality==AmbientOcclusionQuality::high,"Invalid ambient occlusion quality.");
@@ -1578,6 +1581,9 @@ struct Context {
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
         frame_constants.light_count[1]=lighting.environment.shadow_resolution;
+        // Reserved scalar in the unchanged 1,584-byte shared frame layout.
+        // Write every scene preparation, including light/pose/session changes.
+        frame_constants.light_count[3]=static_cast<std::uint32_t>(shadow_filter);
         for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
         shadow_plan=shadow_views(*scene,aspect);
         frame_constants.light_count[2]=static_cast<std::uint32_t>(shadow_plan.size());

@@ -1371,7 +1371,7 @@ public:
         for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
             {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
         const auto& reconstruction=d.reconstruction;
-        return {{"lighting_path",d.deferred ? "deferred" : "forward"},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
+        return {{"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
             {"ambient_occlusion",{{"mode",ambient_occlusion_mode_name(d.ambient_occlusion.mode)},{"quality",ambient_occlusion_quality_name(d.ambient_occlusion.quality)},{"radius",d.ambient_occlusion.radius}}},
             {"ambient_occlusion_buffer_bytes",d.ambient_occlusion_buffer_bytes},{"ambient_occlusion_gpu",timing(d.ambient_occlusion_gpu)},{"ambient_occlusion_filter_gpu",timing(d.ambient_occlusion_filter_gpu)},
             {"reconstruction",{{"mode",reconstruction_mode_name(reconstruction.mode)},{"active",reconstruction.active},
@@ -1950,6 +1950,13 @@ public:
         options.samples = integer("samples", 4, 1, 4);
         options.frames_in_flight = integer("frames_in_flight", 2, 1, 2);
         options.frames = integer("capture_frames", 2, 1, 128);
+        if(params.contains("shadow_filter")) {
+            const auto& filter=params.at("shadow_filter");
+            require(filter.is_string(),"shadow_filter must be pcf3_point or pcf3_fractional.");
+            if(filter=="pcf3_point")options.shadow_filter=ShadowFilter::pcf3_point;
+            else if(filter=="pcf3_fractional")options.shadow_filter=ShadowFilter::pcf3_fractional;
+            else throw Error(-32602,"shadow_filter must be pcf3_point or pcf3_fractional.");
+        }
         if(params.contains("lighting_path")) {
             const auto& path=params.at("lighting_path");
             require(path.is_string(),"lighting_path must be forward or deferred.");
@@ -2028,7 +2035,7 @@ public:
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
@@ -2039,8 +2046,8 @@ public:
                 ui_scale=static_cast<float>(density);
             }
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "capture_frames", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "shadow_filter", "capture_frames", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));

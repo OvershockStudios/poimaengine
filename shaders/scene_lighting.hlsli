@@ -19,6 +19,30 @@ float shadow_compare(uint layer,float3 position,float3 normal,float bias) {
     const float3 plane=cross(dt.xyz-ndc*dt.w,db.xyz-ndc*db.w);
     const float2 gradient=abs(plane.z)>1e-12 ? -plane.xy/plane.z : float2(0,0);
     const int resolution=(int)light_count.y;
+    [branch] if(light_count.w==1) {
+        // Fractionally interpolate comparison boxes, not raw depth. Texel
+        // centers are at n+.5: each axis has weights [1-f,1,1,f], sum 3.
+        // This collapses four bilinearly blended nine-tap boxes into 16 taps.
+        const float2 lattice=uv*resolution-.5;
+        const int2 base=(int2)floor(lattice);
+        const float2 fraction=frac(lattice);
+        const float4 weights_x=float4(1-fraction.x,1,1,fraction.x);
+        const float4 weights_y=float4(1-fraction.y,1,1,fraction.y);
+        float fractional_visibility=0;
+        [unroll] for(int y=0;y<4;++y) [unroll] for(int x=0;x<4;++x) {
+            const int2 sample_pixel=clamp(base+int2(x-1,y-1),int2(0,0),int2(resolution-1,resolution-1));
+            // Extrapolate to the actual clamped texel being loaded. Repeated
+            // edge texels retain their weights; do not deduplicate/renormalize.
+            const float2 tap_uv=(float2(sample_pixel)+.5)/resolution;
+            const float2 delta_ndc=(tap_uv-uv)*float2(2,-2);
+            const float receiver_depth=ndc.z+dot(gradient,delta_ndc)-bias;
+            const float comparison=(receiver_depth<=shadow_map.Load(int4(sample_pixel,layer,0))) ? 1.0 : 0.0;
+            fractional_visibility+=weights_x[x]*weights_y[y]*comparison;
+        }
+        return fractional_visibility/9;
+    }
+    // Retained point-box reference: its support, depth comparisons and
+    // arithmetic stay unchanged for same-recipe old/new qualification.
     const int2 pixel=(int2)floor(uv*resolution);float visibility=0;
     [unroll] for(int y=-1;y<=1;++y) [unroll] for(int x=-1;x<=1;++x) {
         const int2 sample_pixel=clamp(pixel+int2(x,y),int2(0,0),int2(resolution-1,resolution-1));

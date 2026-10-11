@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.99
+
+- Add opt-in fractional shadow filtering with observable mode selection across captures and native play. Preserve the default filter, map allocation and receiver bias.
+- Compare 33 captures per mode with actual skinned runtime poses: all reference images match the previous engine, and shadow-disabled images remain exact between filters. [Comparison and reproduction](docs/SHADOWS.md#controlled-character-comparison).
+- Verify both modes through real paused player windows, including pose preservation, capture retries and clean shutdown.
+- Pass selected native contracts and record the remaining GPU-cost, moving-scene and broader light-type qualification limits. GI, RTAO, caching and physical soft shadows remain separate work.
+
 ## 0.0.98
 
 - Record 1,801 cumulative seconds of native-clock Performance Yard play through 40 exact save/load cycles and a separate fresh-process continuation. Preserve the earlier failed attempt and its unknown cause.

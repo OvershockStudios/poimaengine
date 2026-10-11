@@ -77,6 +77,16 @@ struct AmbientOcclusionOptions {
     float radius=1;
 };
 
+// Runtime rendering choice, independent of authored light data and saves.
+enum class ShadowFilter : std::uint32_t { pcf3_point=0, pcf3_fractional=1 };
+constexpr std::string_view shadow_filter_name(ShadowFilter filter) {
+    switch(filter) {
+    case ShadowFilter::pcf3_point: return "pcf3_point";
+    case ShadowFilter::pcf3_fractional: return "pcf3_fractional";
+    }
+    return "invalid";
+}
+
 enum class ReconstructionMode : std::uint32_t { none, fsr3_native, fsr3_quality, fsr3_balanced, fsr3_performance };
 constexpr std::string_view reconstruction_mode_name(ReconstructionMode mode) {
     switch(mode) {
@@ -128,6 +138,7 @@ struct RenderOptions {
     bool profile = false;
     bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
     bool fsr3_history_probes = false; // Native SDK qualification only; requires enabled reconstruction and capture probes.
+    ShadowFilter shadow_filter = ShadowFilter::pcf3_point; // Retained nine-tap reference is the default.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
@@ -187,6 +198,7 @@ struct RenderDiagnostics {
     LightAssignmentDiagnostics light_assignment;
     FrameExecutionDiagnostics frame_execution;
     TimingSummary prepare_cpu,record_cpu,render_call_cpu,completion_wait_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
+    ShadowFilter shadow_filter = ShadowFilter::pcf3_point;
 };
 
 struct RenderReport {

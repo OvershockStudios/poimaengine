@@ -38,7 +38,7 @@ The initial renderer permits **16 views** and **128 MiB of depth texels**. Both 
 
 `world.describe` schema revision 13 includes these fields and limits. `world.lighting`, `runtime.lighting`, captures and player results expose effective per-light shadow settings plus `shadow_resolution`, `shadow_views` and `shadow_bytes`. The view count represents the allocation for enabled shadowed lights. A directional camera whose near plane is already beyond the configured distance has no active cascades, although its reserved views still count toward allocation. Authoring inspection requires no GPU.
 
-All currently visible opaque MeshRenderer/StaticMesh geometry casts and receives shadows. Hidden geometry does neither. Collision-only objects do not cast. There are no per-object cast/receive masks, alpha-cutout casters or transparent transmission yet. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
+All currently visible opaque MeshRenderer/StaticMesh geometry, including GPU-skinned AnimationRig instances, casts and receives shadows. Hidden geometry does neither. Collision-only objects do not cast. There are no per-object cast/receive masks, alpha-cutout casters or transparent transmission yet. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
 
 ## Projection and filtering
 
@@ -46,9 +46,38 @@ Directional lights partition the camera depth interval into four practical split
 
 Directional depth bounds extend toward the light by the configured shadow distance beyond the receiver sphere, allowing relevant offscreen casters. Casters outside these bounds cannot contribute; there is no scene-wide caster-bound analysis yet.
 
-Local lights use a perspective depth map: one cone for a spot, or +X/−X/+Y/−Y/+Z/−Z views for a point. Point selection uses the receiver's dominant direction axis. A 3×3 percentage-closer filter averages depth comparisons. Each tap uses an analytic receiver-plane depth adjustment, so a sloping unoccluded surface does not shadow itself merely because adjacent texels store different depths. The triangle plane is derived from world-position derivatives before divergent light/cascade branches; smoothed vertex normals and normal maps affect shading, not this depth plane. A normal map does not change caster geometry.
+Local lights use a perspective depth map: one cone for a spot, or +X/−X/+Y/−Y/+Z/−Z views for a point. Point selection uses the receiver's dominant direction axis. Percentage-closer filtering averages depth comparisons. Each tap uses an analytic receiver-plane depth adjustment, so a sloping unoccluded surface does not shadow itself merely because adjacent texels store different depths. The triangle plane is derived from world-position derivatives before divergent light/cascade branches; smoothed vertex normals and normal maps affect shading, not this depth plane. A normal map does not change caster geometry.
 
 Point-face filter taps clamp to the current face at its edges. Cross-face filtering is not seamless, and complex silhouettes crossing cube edges can show discontinuities. The tests cover six orientations and one seam-spanning blocker, not every seam configuration. The filter is fixed-width; it does not simulate area-light penumbrae or contact hardening. Bias can trade acne for detached shadows, especially with large near/far ratios or fine geometry. Floating-point precision at extreme scales remains unqualified.
+
+### Filter selection
+
+The optional `shadow_filter` rendering parameter is available on `world.capture`,
+`runtime.capture`, `asset.animation.capture`, `runtime.play` and `player.start`.
+It uses the shared forward/deferred lighting implementation without changing
+authored light data or game saves. Omission selects `pcf3_point`.
+
+| Value | Behavior |
+| --- | --- |
+| `pcf3_point` | Default reference: nine equal-weight depth comparisons around the selected texel. |
+| `pcf3_fractional` | Sixteen weighted comparisons, interpolating four neighboring 3×3 comparison boxes. |
+
+Add `"shadow_filter":"pcf3_fractional"` to a supported capture or player-launch
+request. Capture and player reports expose the actual choice through
+`render_diagnostics.shadow_filter`. A launched player retains its filter; use
+`player.capture` to observe that window. Invalid values are rejected.
+
+Fractional mode evaluates texel-center coordinates `uv * resolution - 0.5` with
+axis weights `[1-f, 1, 1, f]`. Their products sum to nine; comparison results are
+interpolated, rather than raw depths. Each tap retains geometric receiver-plane
+correction at the actual clamped texel center. Bias, cascade fitting, distance
+fades, caster geometry and map allocations are unchanged.
+
+The extra comparisons run in forward opaque shading or deferred lighting,
+not shadow-depth generation. GPU cost has not been qualified; the tap-count
+increase alone does not establish a frame-time increase. This remains fixed-width
+filtering, with no physically sized penumbra or general moving-scene stability
+claim. The default remains the reference pending broader quality/cost checks.
 
 ## Runtime and costs
 
@@ -75,6 +104,53 @@ silhouette. Character deformation, moved lights, changed caster eligibility and
 runtime replacement all require valid cache invalidation. GI is planned and
 currently absent. Optional RTAO belongs to a higher hardware tier, with raster
 AO retained and indirect-light composition checked separately.
+
+### Controlled character comparison
+
+Version 0.0.99 compares both filters with a licensed
+[Kenney CC0 humanoid](https://kenney.nl/assets/animated-characters-protagonists),
+one directional light, a matte floor and a fixed camera. Each mode passes 33
+deferred captures: four map resolutions with shadows/AO toggled, nine bias pairs,
+and two additional clip poses at two resolutions with shadows on/off. Actual
+committed runtime poses are captured, with 1,029 GPU-skinned vertices.
+
+All 33 reference captures match the retained 0.0.98 engine exactly. Across modes,
+the 12 shadow-disabled images remain exact; the 21 shadowed images change.
+Twenty-five committed entity/animation states match. Depth/normal-verified floor
+samples and HDR darkening establish direct-light occlusion. Two real paused
+player windows verify filter forwarding, preserved poses, capture retries and
+successful terminal reports. All process trees close normally with unchanged
+inputs and zero NVRHI validation errors on the RTX 4070 Laptop GPU.
+[Qualification record](evidence/m2-shadow-filter-0.0.99.json).
+
+The captures with 512-pixel shadow maps below show smoother cast edges and
+self-shadow bands with fractional filtering. They use the same untextured character,
+pose, camera and biases; the BMPs were converted losslessly to RGB PNG.
+
+| Default reference | Fractional filter |
+| --- | --- |
+| ![Actual reference-filter character capture](evidence/m2-shadow-filter-0.0.99-point-512.png) | ![Actual fractional-filter character capture](evidence/m2-shadow-filter-0.0.99-fractional-512.png) |
+
+This is one stylized character and directional light, not a photorealistic
+character or universal quality gate. Higher map resolution improves silhouette
+detail in this fixture, but 2048 pixels is not physical ground truth. Moving
+scenes, transparent hair/cloth, forward-path images, fractional local-light seams
+and per-GPU cost remain unqualified. The default filter and biases are unchanged.
+
+The public verifier uses native Windows Python and a prepared
+[Performance Yard](../examples/performance-yard/README.md) manifest. Run the two modes with separate
+output directories after other graphics owners have stopped:
+
+```powershell
+python tests/character_shadow_probe.py --binary build/windows-runtime/poima.exe --manifest build/performance-world/manifest.json --output build/shadow-point --gpu 1 --shadow-filter pcf3_point
+python tests/character_shadow_probe.py --binary build/windows-runtime/poima.exe --manifest build/performance-world/manifest.json --output build/shadow-fractional --gpu 1 --shadow-filter pcf3_fractional
+python tests/character_shadow_player_probe.py --binary build/windows-runtime/poima.exe --fixture-world build/shadow-point/fixture/world.json --output build/shadow-player-filters --gpu 1
+```
+
+Use the actual prepared manifest path and selected GPU index. The player verifier
+copies the controlled world and cooked assets; it rejects the original gameplay
+yard. Recorded qualification additionally runs each verifier under a gated,
+bounded Windows Job supervisor, requiring an empty owned process tree on exit.
 
 ## Verification and example
 

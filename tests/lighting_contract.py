@@ -8,7 +8,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
-from world_contract import Client, BINARY, SCRATCH, create, uid
+from world_contract import Client, BINARY, SCRATCH, create, uid, native
 
 
 def component(n,kind,value):return {'op':'component.set','id':uid(n),'type':kind,'value':value}
@@ -112,6 +112,54 @@ class LightingContract(unittest.TestCase):
         c.txn(1,[light(2,enabled=False,shadow={'enabled':True}),component(1,'LightingEnvironment',{'ambient':[0,0,0],'exposure':1,'shadow_resolution':2048})])
         state=c.rpc('world.lighting');self.assertEqual(state['shadow_views'],5);self.assertEqual(state['shadow_resolution'],2048)
         c.close();c=self.open();self.assertEqual(c.rpc('world.lighting'),state)
+    def test_shadow_filter_discovery_admission_and_atomic_rejection_without_graphics(self):
+        c=self.open();discovery=c.rpc('world.describe')
+        self.assertGreaterEqual(discovery['schema_revision'],74)
+        # This fixture uses a standalone world owner. Only a pumped shared
+        # headless owner advertises player.start; the native player probe checks
+        # that method's actual discovery and rendering forwarding separately.
+        self.assertNotIn('player.start',discovery['methods'])
+        denied=c.rpc('player.start',{},error=-32080)
+        self.assertEqual(denied['message'],'Player service mutations require a pumped shared headless owner.')
+        for method in ('world.capture','runtime.capture','runtime.play','asset.animation.capture'):
+            self.assertEqual(discovery['methods'][method]['properties']['shadow_filter'],
+                             {'enum':['pcf3_point','pcf3_fractional'],'default':'pcf3_point'})
+        c.txn(0,[create(1),component(1,'Camera',{'vertical_fov':60,'near':.1,'far':100})])
+        authored=self.path.read_bytes();history=c.rpc('world.history');player=c.rpc('player.inspect')
+        capabilities=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
+        session=uid(960)
+        runtime=None
+        if capabilities['simulation']:
+            c.rpc('runtime.start',{'session_id':session,'revision':1})
+            runtime=c.rpc('runtime.inspect',{'session_id':session})
+        requests=[('world.capture',{'revision':1,'camera':uid(1)}),
+                  ('asset.animation.capture',{'revision':1,'camera':uid(1),'asset':'0'*64,'time':0})]
+        if runtime is not None:
+            requests += [('runtime.capture',{'session_id':session,'tick':0,'camera':uid(1)}),
+                         ('runtime.play',{'session_id':session,'request_id':uuid.uuid4().hex,
+                                          'expected_tick':0,'camera':uid(1),'mode':'interactive','max_frames':0})]
+        for method,base in requests:
+            output=Path(self.directory.name)/(method.replace('.','-')+'.bmp')
+            # A later common-parser error proves valid filter forwarding while
+            # guaranteeing that no graphics/window/device initialization occurs.
+            parameters={**base,'path':native(output),'samples':1,'scene_debug_view':'ambient_occlusion'}
+            for mode in ('pcf3_point','pcf3_fractional',None):
+                selected=parameters if mode is None else {**parameters,'shadow_filter':mode}
+                denied=c.rpc(method,selected,error=-32602)
+                self.assertEqual(denied['message'],'ambient_occlusion debug view requires enabled ambient occlusion.')
+                self.assertFalse(output.exists())
+                self.assertEqual(self.path.read_bytes(),authored)
+                self.assertEqual(c.rpc('world.history'),history)
+                self.assertEqual(c.rpc('player.inspect'),player)
+                if runtime is not None:self.assertEqual(c.rpc('runtime.inspect',{'session_id':session}),runtime)
+            for value in ('','unknown','PCF3_POINT','pcf3_bilinear',None,True,0,1.0,[],{}):
+                denied=c.rpc(method,{**parameters,'shadow_filter':value},error=-32602)
+                self.assertEqual(denied['message'],'shadow_filter must be pcf3_point or pcf3_fractional.')
+                self.assertFalse(output.exists())
+                self.assertEqual(self.path.read_bytes(),authored)
+                self.assertEqual(c.rpc('world.history'),history)
+                self.assertEqual(c.rpc('player.inspect'),player)
+                if runtime is not None:self.assertEqual(c.rpc('runtime.inspect',{'session_id':session}),runtime)
     def test_runtime_freezes_settings_and_tracks_moving_parent(self):
         # Capability is queried from the built binary, so this test also runs in headless-only builds.
         cap=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))

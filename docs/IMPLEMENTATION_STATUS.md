@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.98**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.99**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.99 adds opt-in `pcf3_fractional` shadow filtering, with the existing
+`pcf3_point` default preserved. On the RTX 4070 Laptop, each mode passes 33
+controlled deferred captures of a licensed skinned character. All 33 reference
+images match the retained 0.0.98 engine exactly; all 12 shadow-disabled images
+match between modes. Twenty-five committed pose variants match, and verified
+floor samples establish actual direct-light occlusion. Visual inspection shows
+smoother cast edges and self-shadow bands in this fixture. Two paused native
+player windows verify mode forwarding, frozen poses, capture retries and normal
+shutdown. All owners exit with empty process trees and no render validation errors.
+[Filter contract, comparison images and reproduction](SHADOWS.md#controlled-character-comparison).
+
+The 0.0.99 build passes 14 selected native/metadata contracts and six
+live-preference groups. The initial lighting test incorrectly requested a
+shared-player command from a standalone owner; the corrected test preserves
+filter admission and atomic rejection checks, with shared-player behavior
+qualified separately. [Build and checks](evidence/m2-checkpoint-0.0.99.json).
+Fractional-filter GPU cost, moving-scene stability, forward-path visual coverage
+and point/spot edge cases remain open. Physical penumbras, caching, per-object
+cast/receive controls, GI and RTAO are not implemented by this change.
 
 Checkpoint 0.0.98 records two separate real-game checks using the retained
 0.0.97 Windows engine. Performance Yard's 0.0.94 Native AOT image passes 40
@@ -1503,7 +1523,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Conservative object frustum culling for the camera and each shadow view, draw counters and optional CPU/64-bit GPU timestamps on capture/play. Exact pixel comparisons retain offscreen casters and moving runtime shadows on both laptop GPUs. Timings describe these small fixtures, not qualified game performance. [Visibility and render diagnostics](RENDER_DIAGNOSTICS.md).
 
-- Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. GPU occlusion and continuous shadowed replay are checked against independent observations. Caching, occlusion culling, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
+- Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. Rendering selects the default nine-tap reference or opt-in fractional comparison filter; the latter has bounded directional-character checks on one GPU. GPU occlusion and continuous shadowed replay are checked against independent observations. Caching, per-object controls, physical penumbras, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
 
 - Default procedural sky in new projects: editable linear colors, horizon falloff and directional Sun disk, shared by captures, player and desktop. Inspector settings use the native schema and guarded transactions; existing worlds retain their background. This is an artistic background, without atmospheric scattering, IBL, clouds or day/night simulation. [Sky contract](LIGHTING.md#procedural-sky) and [0.0.30 evidence](evidence/m2-procedural-sky.json): 44 captures and 59 GUI actions per laptop GPU.
 
