@@ -258,6 +258,20 @@ typedef struct PoimaGamePlayerPreferenceServicesV1 {
     int32_t (POIMA_CALL *preference_patch)(void*,const PoimaGamePreferencePatchV1*,PoimaGamePreferenceEnqueueV1*,PoimaGameError*);
     int32_t (POIMA_CALL *preference_result)(void*,const PoimaGamePreferenceTicket*,PoimaGamePreferenceResultV1*,PoimaGameError*);
 } PoimaGamePlayerPreferenceServicesV1;
+// Independent input_actions_v1: Tick-only cached input, not a movement command.
+// Names are borrowed ASCII [a-z][a-z0-9_.-]{0,63}, without a trailing NUL.
+// Caller initializes version=1/bytes=16/reserved=0. Success writes exactly
+// this POD; flags bit0=held, bit1=pressed, bit2=released, bit3=present.
+// A valid live entity without that named record returns flags=0. Invalid
+// entities/names and calls outside Tick fail without changing the output.
+typedef struct PoimaGameInputActionV1 {
+    uint32_t version,bytes,flags,reserved;
+} PoimaGameInputActionV1;
+// A larger prefix grants no intermediate feature without its own declaration.
+typedef struct PoimaGameInputActionServicesV1 {
+    PoimaGamePlayerPreferenceServicesV1 preferences;
+    int32_t (POIMA_CALL *input_action)(void*,const PoimaEntityId*,const char*,uint32_t,PoimaGameInputActionV1*,PoimaGameError*);
+} PoimaGameInputActionServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -266,6 +280,8 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameInputActionV1)==16 && alignof(PoimaGameInputActionV1)==4 && offsetof(PoimaGameInputActionV1,flags)==8 && offsetof(PoimaGameInputActionV1,reserved)==12);
+static_assert(sizeof(PoimaGameInputActionServicesV1)==264 && offsetof(PoimaGameInputActionServicesV1,preferences)==0 && offsetof(PoimaGameInputActionServicesV1,input_action)==256);
 static_assert(sizeof(PoimaGamePreferenceValuesV1)==56 && offsetof(PoimaGamePreferenceValuesV1,invert_x)==40 && offsetof(PoimaGamePreferenceValuesV1,frames_in_flight)==52);
 static_assert(sizeof(PoimaGamePreferenceSnapshotV1)==216 && offsetof(PoimaGamePreferenceSnapshotV1,owner)==16 && offsetof(PoimaGamePreferenceSnapshotV1,revision)==32 && offsetof(PoimaGamePreferenceSnapshotV1,values)==48);
 static_assert(offsetof(PoimaGamePreferenceSnapshotV1,sources)==104 && offsetof(PoimaGamePreferenceSnapshotV1,next_samples)==140 && offsetof(PoimaGamePreferenceSnapshotV1,observation_mask)==148 && offsetof(PoimaGamePreferenceSnapshotV1,reserved)==156);

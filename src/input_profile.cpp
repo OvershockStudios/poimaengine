@@ -141,9 +141,11 @@ void validate_input_profile(const InputProfile& profile) {
             pad.trigger_press>1 || pad.trigger_press<=pad.trigger_release)
             throw std::invalid_argument("Trigger thresholds require 0 <= release < press <= 1.");
     }
-    std::array<std::string_view,24> seen{};
+    if(profile.actions && profile.actions->size()>input_action_limit)
+        throw std::invalid_argument("An input profile accepts at most 32 named actions.");
+    std::array<std::string_view,24+input_action_limit*4> seen{};
     std::size_t count=0;
-    for(const auto& action:profile.bindings) {
+    const auto validate_bindings=[&](const std::vector<std::string>& action) {
         if(action.size()>4)throw std::invalid_argument("An action accepts at most four alternative controls.");
         for(const auto& id:action) {
             const auto* control=find_control(id);
@@ -155,6 +157,11 @@ void validate_input_profile(const InputProfile& profile) {
                 if(seen[i]==id)throw std::invalid_argument("A control may appear only once in an input profile: "+id);
             seen[count++]=id;
         }
+    };
+    for(const auto& action:profile.bindings)validate_bindings(action);
+    if(profile.actions)for(const auto& [name,action]:*profile.actions) {
+        if(!valid_input_action_name(name))throw std::invalid_argument("Invalid named input action: "+name);
+        validate_bindings(action);
     }
 }
 BoundPlayerInput::BoundPlayerInput(InputProfile profile):profile_(std::move(profile)) {
@@ -164,6 +171,14 @@ BoundPlayerInput::BoundPlayerInput(InputProfile profile):profile_(std::move(prof
             const auto& control=*find_control(id);
             bindings_[action].push_back({control.kind,control.code,false});
         }
+    if(profile_.actions)for(const auto& [name,ids]:*profile_.actions) {
+        NamedBinding action;action.name=name;
+        for(const auto& id:ids) {
+            const auto& control=*find_control(id);
+            action.bindings.push_back({control.kind,control.code,false});
+        }
+        named_.push_back(std::move(action));
+    }
 }
 void BoundPlayerInput::control(InputControlKind kind,std::uint16_t code,bool down) {
     if(kind==InputControlKind::gamepad_button) { gamepad_button(code,down);return; }
@@ -177,6 +192,16 @@ void BoundPlayerInput::apply_control(InputControlKind kind,std::uint16_t code,bo
             if(binding.kind==kind && binding.code==code)binding.held=down;
         const bool held=std::any_of(bindings.begin(),bindings.end(),[](const Binding& binding){return binding.held;});
         if(action>=4 && !was_held && held)edges_[kind==InputControlKind::gamepad_button ? 1 : 0][action-4]=true;
+    }
+    const auto origin=kind==InputControlKind::gamepad_button ? 1u : 0u;
+    for(auto& action:named_) {
+        const auto held=[](const Binding& binding){return binding.held;};
+        const bool before=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        for(auto& binding:action.bindings)
+            if(binding.kind==kind && binding.code==code)binding.held=down;
+        const bool after=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        if(!before && after)action.pressed[origin]=true;
+        if(before && !after)action.released[origin]=true;
     }
 }
 void BoundPlayerInput::motion(double dx,double dy) {
@@ -195,6 +220,10 @@ void BoundPlayerInput::tune(double sensitivity_x,double sensitivity_y,bool inver
 }
 void BoundPlayerInput::clear() {
     for(auto& action:bindings_)for(auto& binding:action)binding.held=false;
+    for(auto& action:named_) {
+        for(auto& binding:action.bindings)binding.held=false;
+        action.pressed={};action.released={};
+    }
     edges_={};input_.clear();gamepad_clear();
 }
 bool BoundPlayerInput::neutral() const {
@@ -217,6 +246,17 @@ void BoundPlayerInput::gamepad_clear() {
     for(auto& action:bindings_)for(auto& binding:action)
         if(binding.kind==InputControlKind::gamepad_button)binding.held=false;
     edges_[1]={};triggers_={};armed_=false;
+    for(auto& action:named_) {
+        const auto held=[](const Binding& binding){return binding.held;};
+        const bool before=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        for(auto& binding:action.bindings)
+            if(binding.kind==InputControlKind::gamepad_button)binding.held=false;
+        const bool after=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        action.pressed[1]=false;
+        // A disconnected/re-armed pad cannot keep firing. Preserve the release
+        // until commit, including repeated disconnect calls before that tick.
+        if(before && !after)action.released[1]=true;
+    }
 }
 void BoundPlayerInput::gamepad_disconnect() {
     gamepad_clear();connected_=false;axes_={};buttons_=0;
@@ -263,10 +303,18 @@ RuntimeInput BoundPlayerInput::frame(const std::string& entity,PlayerInput& pend
     result.move={static_cast<float>(std::clamp(double(held[3])-double(held[2])+analog_move[0],-1.0,1.0)),
         static_cast<float>(std::clamp(double(held[0])-double(held[1])-analog_move[1],-1.0,1.0))};
     result.jump=edges_[0][0] || edges_[1][0];result.use=edges_[0][1] || edges_[1][1];
+    result.actions.reserve(named_.size());
+    for(const auto& action:named_)
+        result.actions.push_back({action.name,
+            std::any_of(action.bindings.begin(),action.bindings.end(),[](const Binding& binding){return binding.held;}),
+            action.pressed[0] || action.pressed[1],action.released[0] || action.released[1]});
     return result;
 }
 RuntimeInput BoundPlayerInput::peek(const std::string& entity) const { auto pending=input_;return frame(entity,pending); }
-void BoundPlayerInput::commit_tick() noexcept { input_.commit_tick();edges_={}; }
+void BoundPlayerInput::commit_tick() noexcept {
+    input_.commit_tick();edges_={};
+    for(auto& action:named_) { action.pressed={};action.released={}; }
+}
 RuntimeInput BoundPlayerInput::consume(const std::string& entity) {
     auto pending=input_;auto result=frame(entity,pending);commit_tick();return result;
 }

@@ -66,8 +66,8 @@ class GamepadContract(unittest.TestCase):
         self.assertGreaterEqual(schema['schema_revision'],18)
         self.assertIn('input.devices',schema['methods']);self.assertIn('gamepad',schema['methods']['runtime.play']['properties'])
         self.assertEqual(description['defaults'],V1);self.assertEqual(description['gamepad_defaults'],V2)
-        self.assertEqual(description['supported_formats'],['poima.input.v1','poima.input.v2'])
-        self.assertEqual(len(description['profile_schema']['anyOf']),2)
+        self.assertEqual(description['supported_formats'],['poima.input.v1','poima.input.v2','poima.input.v3'])
+        self.assertEqual(len(description['profile_schema']['anyOf']),4)
         controls={c['id']:c for c in description['controls']}
         for name in ['gamepad.south','gamepad.west','gamepad.left_trigger','gamepad.right_trigger','gamepad.dpad_up']:
             self.assertEqual(controls[name]['device'],'gamepad');self.assertFalse(controls[name]['reserved'])
@@ -112,6 +112,38 @@ class GamepadContract(unittest.TestCase):
         self.result(self.requests(self.transaction(converted,path=target))[0]);self.assertEqual(self.profile.read_bytes(),raw)
         self.assertEqual(json.loads(target.read_bytes())['format'],'poima.input.v2')
         self.error(self.requests(self.transaction(V1,path=target,revision=1))[0])
+    def test_v3_gamepad_named_edges_hysteresis_and_disconnect(self):
+        old=self.root/'legacy-pad.poima-input.json'
+        legacy=self.transaction(path=old);prior=self.result(self.requests(legacy)[0]);old_bytes=old.read_bytes()
+        profile=copy.deepcopy(V2);profile['actions']={'fire':['gamepad.right_trigger','mouse.1'],
+            'reload':['gamepad.east','key.r']}
+        denied=self.transaction(profile,revision=1,path=old)
+        self.error(self.requests(denied)[0]);self.assertEqual(old.read_bytes(),old_bytes)
+        request=self.transaction(profile);first=self.result(self.requests(request)[0]);raw=self.profile.read_bytes()
+        self.assertEqual(json.loads(raw)['format'],'poima.input.v3')
+        events=[connect(buttons=2),consume(),button('gamepad.east',False),consume(),
+            axis('right_trigger',19000),consume(),axis('right_trigger',16000),consume(),
+            axis('right_trigger',14000),consume(),
+            button('key.r'),button('key.r',False),axis('right_trigger',19000),{'gamepad_disconnect':True},consume(),consume(),
+            connect(),axis('right_trigger',19000),consume(),button('mouse.1'),{'gamepad_disconnect':True},consume(),
+            button('mouse.1',False),consume(),connect(),button('gamepad.east'),{'clear':True},consume()]
+        result=self.evaluate(events,path=self.profile);self.assertEqual(result['input_profile']['format'],'poima.input.v3')
+        frames=result['frames'];self.assertFalse(frames[0]['armed']);self.assertTrue(frames[1]['armed'])
+        states=lambda name:[next(a for a in f['actions'] if a['name']==name) for f in frames]
+        expected=[(False,False,False),(False,False,False),(True,True,False),(True,False,False),
+            (False,False,True),(False,False,True),(False,False,False),(True,True,False),
+            (True,False,False),(False,False,True),(False,False,False)]
+        self.assertEqual(states('fire'),[dict(name='fire',held=h,pressed=p,released=r) for h,p,r in expected])
+        self.assertEqual(states('reload')[5],dict(name='reload',held=False,pressed=True,released=True))
+        self.assertFalse(frames[-1]['armed']);self.assertEqual(self.profile.read_bytes(),raw)
+        self.assertEqual(self.result(self.requests(request)[0]),dict(first,replayed=True))
+        self.assertEqual(self.result(self.requests(legacy)[0]),dict(prior,replayed=True));self.assertEqual(old.read_bytes(),old_bytes)
+        # Explicit empty named map remains v3 even with a gamepad. Omitting it
+        # would cross the format boundary and cannot rewrite this destination.
+        empty=copy.deepcopy(profile);empty['actions']={}
+        self.result(self.requests(self.transaction(empty,revision=1))[0])
+        self.assertEqual(json.loads(self.profile.read_bytes())['format'],'poima.input.v3')
+        self.error(self.requests(self.transaction(V2,revision=2))[0])
     def test_mixed_format_receipts_and_envelopes_are_corrupt(self):
         old=self.root/'old.poima-input.json';self.result(self.requests(self.transaction(V1,path=old))[0])
         self.result(self.requests(self.transaction())[0]);valid=json.loads(self.profile.read_bytes())

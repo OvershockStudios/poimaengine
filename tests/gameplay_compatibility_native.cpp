@@ -54,10 +54,11 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==256u &&
+    check(capable.services_version==7 && capable.services_bytes==264u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
-        std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
+        std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),input_actions_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
     check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
     check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
@@ -80,7 +81,7 @@ void policy() {
     check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
     auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
-    auto appended=capable;appended.services_bytes=256;appended.features.push_back("future_available_v1");
+    auto appended=capable;appended.services_bytes=272;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
     for(unsigned animation_kind:{0u,1u,2u}) {
@@ -111,6 +112,7 @@ void policy() {
     auto navigation=baseline;navigation.services_bytes=224;navigation.features.push_back(navigation_feature);
     auto synthetic=capable;synthetic.services_bytes=224;std::erase(synthetic.features,std::string(instances_feature));
     std::erase(synthetic.features,std::string(player_preferences_feature));
+    std::erase(synthetic.features,std::string(input_actions_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -163,7 +165,7 @@ void policy() {
     check(!compatibility_error(baseline,short_instances).empty(),"Instance capability advertised without allocation.");
     auto duplicate_instances=instances;duplicate_instances.features.push_back(instances_feature);
     check(!compatibility_error(duplicate_instances,capable).empty(),"Duplicate instance requirement accepted.");
-    auto future_instances=capable;future_instances.services_bytes=256;future_instances.features.push_back("future_available_v1");
+    auto future_instances=capable;future_instances.services_bytes=272;future_instances.features.push_back("future_available_v1");
     check(compatibility_error(instances,future_instances).empty(),"Larger same-epoch host rejects instance prefix.");
     auto preferences=baseline;preferences.services_bytes=256;preferences.features.push_back(player_preferences_feature);
     check(compatibility_error(preferences,capable).empty() && compatibility_error(preferences,preferences).empty(),
@@ -175,6 +177,32 @@ void policy() {
         "Preference callbacks advertised/read beyond allocated prefix.");
     auto duplicate_preferences=preferences;duplicate_preferences.features.push_back(player_preferences_feature);
     check(!compatibility_error(duplicate_preferences,capable).empty(),"Duplicate preference feature accepted.");
+    auto actions=baseline;actions.services_bytes=264;actions.features.push_back(input_actions_feature);
+    check(compatibility_error(actions,capable).empty() && compatibility_error(actions,actions).empty(),
+        "Input action observations require an unrelated service feature.");
+    auto unnamed_actions=capable;std::erase(unnamed_actions.features,std::string(input_actions_feature));
+    check(!compatibility_error(actions,unnamed_actions).empty(),"Opaque extent granted undeclared input actions.");
+    auto short_actions=actions;short_actions.services_bytes=256;
+    check(!compatibility_error(actions,short_actions).empty() && !compatibility_error(baseline,short_actions).empty(),
+        "Input actions advertised/read beyond the allocated prefix.");
+    for(unsigned combination=0;combination<64;++combination) {
+        auto required=actions,all=capable;
+        if(combination&1)required.features.push_back(animation_feature);
+        if(combination&2)required.features.push_back(animation_layers_feature);
+        if(combination&4)required.features.push_back(character_input_feature);
+        if(combination&8)required.features.push_back(navigation_feature);
+        if(combination&16)required.features.push_back(instances_feature);
+        if(combination&32)required.features.push_back(player_preferences_feature);
+        if(std::find(all.features.begin(),all.features.end(),navigation_feature)==all.features.end())all.features.push_back(navigation_feature);
+        check(compatibility_error(required,all).empty()==(!(combination&2) || bool(combination&1)),
+            "Action extent bypassed an independently negotiated feature dependency.");
+        for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,263u,265u,272u}) {
+            auto wrong=required;wrong.services_bytes=bytes;
+            check(!compatibility_error(wrong,all).empty(),"Input action requirement accepted a wrong extent.");
+        }
+    }
+    auto duplicate_actions=actions;duplicate_actions.features.push_back(input_actions_feature);
+    check(!compatibility_error(duplicate_actions,capable).empty(),"Duplicate action feature accepted.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

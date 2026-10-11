@@ -1900,7 +1900,7 @@ public:
                 auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("path"))) : input_profiles::load(input_profile_path(params.at("path"))));profile=std::move(loaded.profile);
                 info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
-            const bool has_gamepad=profile.gamepad.has_value();info["format"]=has_gamepad ? "poima.input.v2" : "poima.input.v1";
+            const bool has_gamepad=profile.gamepad.has_value();info["format"]=profile.actions ? "poima.input.v3" : has_gamepad ? "poima.input.v2" : "poima.input.v1";
             BoundPlayerInput evaluator(std::move(profile));Json frames=Json::array();
             for(std::size_t i=0;i<events.size();++i) {
                 try {
@@ -1941,7 +1941,12 @@ public:
                     evaluator.motion(motion[0].get<double>(),motion[1].get<double>());
                 }else if(event.contains("consume")) {
                     fields(event,{"consume"},{"consume"});require(event.at("consume").is_boolean() && event.at("consume")==Json(true),"consume must be true.");
-                    const auto frame=evaluator.consume("");frames.push_back({{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use},{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}});
+                    const auto frame=evaluator.consume("");Json observed={{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use},{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}};
+                    if(!frame.actions.empty()) {
+                        observed["actions"]=Json::array();for(const auto& action:frame.actions)
+                            observed["actions"].push_back({{"name",action.name},{"held",action.held},{"pressed",action.pressed},{"released",action.released}});
+                    }
+                    frames.push_back(std::move(observed));
                 }else {
                     fields(event,{"clear"},{"clear"});require(event.at("clear").is_boolean() && event.at("clear")==Json(true),"clear must be true.");evaluator.clear();
                 }
@@ -2404,7 +2409,7 @@ public:
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
-        fields(i,{"entity","move","look","jump","use"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
+        fields(i,{"entity","move","look","jump","use","actions"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
         for(const auto* key:{"move","look"}) if(i.contains(key)) {
             const auto& array=i.at(key); require(array.is_array() && array.size()==2,"Runtime input vector needs two numbers.");
             const double bound=std::string_view(key)=="move" ? 1 : 180;
@@ -2413,6 +2418,18 @@ public:
         }
         if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
         if(i.contains("use")) { require(i.at("use").is_boolean(),"Use must be boolean.");input.use=i.at("use"); }
+        if(i.contains("actions")) {
+            const auto& actions=i.at("actions");require(actions.is_array() && actions.size()<=input_action_limit,"Input permits at most 32 named actions.");
+            std::string previous;
+            for(const auto& value:actions) {
+                fields(value,{"name","held","pressed","released"},{"name","held","pressed","released"});
+                require(value.at("name").is_string(),"Input action name must be a string.");
+                const auto name=value.at("name").get<std::string>();
+                require(valid_input_action_name(name) && (previous.empty() || previous<name),"Input action names must be valid, sorted and unique.");
+                for(const auto* key:{"held","pressed","released"})require(value.at(key).is_boolean(),"Input action states must be Boolean.");
+                input.actions.push_back({name,value.at("held").get<bool>(),value.at("pressed").get<bool>(),value.at("released").get<bool>()});previous=name;
+            }
+        }
         return input;
     }
     static Json motion_json(const KinematicTarget& m) {
@@ -2550,7 +2567,7 @@ public:
                 const auto advanced=advance_runtime(1,segment.inputs,i==0 ? segment.motions : std::vector<KinematicTarget>{},i==0 ? segment.sounds : std::vector<SoundCommand>{});
                 if(advanced.replaced) { replaced=true;result["stop_reason"]="runtime_replaced";break; }
                 append();
-                for(auto& input:segment.inputs) { input.look={0,0};input.jump=false;input.use=false; }
+                for(auto& input:segment.inputs)clear_runtime_input_edges(input);
             }
               if(replaced)break;
             }

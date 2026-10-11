@@ -225,6 +225,69 @@ class InputProfile(unittest.TestCase):
                        [{'control':'key.w','down':True,'motion':[1,2]}],[{'mystery':True}],[{'consume':True}]*257]:
             with self.subTest(events=events[:2]):self.error(self.requests(rpc('input.evaluate',events=events))[0],-32602)
         self.error(self.requests(rpc('input.evaluate',path=self.native(self.profile),events=[]))[0]);self.assertFalse(self.profile.exists())
+    def test_v3_named_states_roundtrip_and_format_boundary(self):
+        old=self.root/'old.poima-input.json'
+        legacy=self.transaction();legacy['params']['path']=self.native(old)
+        prior=self.result(self.requests(legacy)[0]);old_bytes=old.read_bytes()
+        profile=copy.deepcopy(DEFAULT);profile['actions']={'reload':['key.r'],'fire':['mouse.1','key.f'],'aim':['mouse.3'],'empty':[]}
+        convert=self.transaction(profile,revision=1);convert['params']['path']=self.native(old)
+        for preview in [False,True]:
+            convert['params']['preview']=preview
+            self.error(self.requests(convert)[0],-32602);self.assertEqual(old.read_bytes(),old_bytes)
+        self.assertEqual(self.result(self.requests(legacy)[0]),dict(prior,replayed=True))
+        request=self.transaction(profile);committed=self.result(self.requests(request)[0]);raw=self.profile.read_bytes()
+        self.assertEqual(json.loads(raw)['format'],'poima.input.v3');self.assertEqual(self.inspect()['profile'],profile)
+        canonical=json.dumps(profile,sort_keys=True,separators=(',',':')).encode()
+        self.assertEqual(committed['content_hash'],hashlib.sha256(canonical).hexdigest())
+        self.assertEqual(self.result(self.requests(request)[0]),dict(committed,replayed=True))
+        conflict=copy.deepcopy(request);conflict['params']['profile']['actions']['fire']=[]
+        self.error(self.requests(conflict)[0],-32010);self.assertEqual(self.profile.read_bytes(),raw)
+        events=[{'control':'mouse.1','down':True},{'consume':True},{'consume':True},
+            {'control':'key.f','down':True},{'control':'mouse.1','down':False},{'consume':True},
+            {'control':'key.f','down':False},{'consume':True},
+            {'control':'key.r','down':True},{'control':'key.r','down':False},{'consume':True},
+            {'control':'mouse.3','down':True},{'clear':True},{'consume':True}]
+        result=self.result(self.requests(rpc('input.evaluate',path=self.native(self.profile),events=events))[0])
+        self.assertEqual(result['input_profile']['format'],'poima.input.v3')
+        frames=result['frames']
+        for frame in frames:self.assertEqual([a['name'] for a in frame['actions']],['aim','empty','fire','reload'])
+        fire=[next(a for a in f['actions'] if a['name']=='fire') for f in frames]
+        self.assertEqual(fire[:4],[dict(name='fire',held=h,pressed=p,released=r) for h,p,r in
+            [(True,True,False),(True,False,False),(True,False,False),(False,False,True)]])
+        self.assertEqual(next(a for a in frames[4]['actions'] if a['name']=='reload'),
+            dict(name='reload',held=False,pressed=True,released=True))
+        for row in frames[5]['actions']:self.assertEqual(row,dict(name=row['name'],held=False,pressed=False,released=False))
+        self.assertEqual(self.profile.read_bytes(),raw);self.assertEqual(old.read_bytes(),old_bytes)
+        empty=copy.deepcopy(profile);empty['actions']={}
+        self.result(self.requests(self.transaction(empty,revision=1))[0]);self.assertEqual(self.inspect()['format'],'poima.input.v3')
+        self.error(self.requests(self.transaction(DEFAULT,revision=2))[0],-32602)
+        REPORTS.append({'v3_named_actions':4,'complete_sorted_states':True,'quick_tap_press_and_release':True,
+            'legacy_conversion_requires_new_destination':True,'old_receipt_replay_unchanged':True})
+    def test_v3_strict_names_controls_limits_and_corrupt_receipts(self):
+        profile=copy.deepcopy(DEFAULT);profile['actions']={'fire':['mouse.1']}
+        self.result(self.requests(self.transaction(profile))[0]);good=self.profile.read_bytes()
+        variants=[]
+        for actions in [None,[],True,{'':[]},{'Fire':[]},{'1fire':[]},{'fire aim':[]},{'f/aim':[]},{'f\u00e9':[]},
+            {'a'*65:[]},{'fire':'mouse.1'},{'fire':[True]},{'fire':['mouse.1','mouse.1']},
+            {'fire':['key.w']},{'fire':['key.escape']},{'fire':['key.tab']},{'fire':['gamepad.start']},
+            {'fire':['gamepad.east']},{'fire':['key.unknown']},{'fire':['key.f','key.g','key.h','key.i','key.j']},
+            {f'action.{i}':[] for i in range(33)},{'fire':['mouse.1'],'aim':['mouse.1']}]:
+            value=copy.deepcopy(profile);value['actions']=actions;variants.append(value)
+        for value in variants:
+            with self.subTest(actions=value['actions']):
+                self.error(self.requests(self.transaction(value,revision=1))[0],-32602);self.assertEqual(self.profile.read_bytes(),good)
+        accepted=copy.deepcopy(profile);accepted['actions']={f'action.{i}':[] for i in range(31)}
+        accepted['actions']['a'*64]=['key.f','key.g','key.h','key.i']
+        self.result(self.requests(self.transaction(accepted,revision=1))[0]);valid=self.profile.read_bytes()
+        doc=json.loads(valid);wrong=copy.deepcopy(doc);wrong['format']='poima.input.v1'
+        mixed=copy.deepcopy(doc);mixed['receipts'][0]['params']['profile'].pop('actions')
+        duplicate=valid.replace(b'"actions":{',b'"actions":{"duplicate":[],"duplicate":[],',1)
+        self.assertNotEqual(valid,duplicate)
+        for raw in [json.dumps(wrong).encode(),json.dumps(mixed).encode(),duplicate]:
+            self.profile.write_bytes(raw)
+            self.error(self.requests(rpc('input.inspect',path=self.native(self.profile)))[0],-32070)
+            self.assertEqual(self.profile.read_bytes(),raw)
+        self.profile.write_bytes(valid)
 
 if __name__=='__main__':
     result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(InputProfile))

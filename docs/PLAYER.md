@@ -82,3 +82,7 @@ Rendering uses authored lighting, optional [shadow maps](SHADOWS.md), imported s
 The automated desktop declined the foreground request. That run therefore does **not** qualify physical keyboard/mouse control, nor does it claim targeted keyboard messages moved the character. Those checks are explicitly false in its evidence. The input adapter and timing logic are unit-tested; a foreground human session is still needed for end-to-end input/feel qualification. Native Linux graphics, other machines, multi-window operation, extended device-loss/recovery and sustained resource behavior remain unqualified.
 
 The SDL integration follows its main-thread [relative mouse mode](https://wiki.libsdl.org/SDL3/SDL_SetWindowRelativeMouseMode) and [drawable pixel size](https://wiki.libsdl.org/SDL3/SDL_GetWindowSizeInPixels) contracts. Dependencies remain pinned as in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
+## Named digital input
+
+Controller input and replay segments accept optional sorted, unique `actions` records with `name`, `held`, `pressed` and `released`. Up to 32 records are permitted per controller. Held repeats throughout the batch or segment; edges apply only on its first tick. Missing records are absent and neutral, and quick taps can set both edges with held=false. These records are transient and do not change legacy movement/Jump/Use behavior. [Profile and compiled gameplay guide](INPUT_ACTIONS.md).

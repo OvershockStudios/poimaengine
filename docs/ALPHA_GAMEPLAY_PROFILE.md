@@ -41,6 +41,7 @@ call ABI 1/80. Named service extensions have these minimum prefixes:
 | `navigation_query_v1` | 224 | [Navigation](NAVIGATION.md) |
 | `hierarchical_instances_v1` | 232 | [Runtime instances](RUNTIME_INSTANCES.md) |
 | `player_preferences_v1` | 256 | [Compiled preferences](COMPILED_PLAYER_SETTINGS.md) |
+| `input_actions_v1` | 264 | [Named gameplay actions](INPUT_ACTIONS.md) |
 
 `gameplay_persistence_v1` and `component_collections_v1` authorize their metadata
 formats without adding a services tail. Combined consumers declare every feature

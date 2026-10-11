@@ -150,6 +150,9 @@ struct Runtime::Impl {
     std::shared_ptr<ui::Model> ui_model;
     enum class GamePhase { idle,tick,control };
     GamePhase game_phase=GamePhase::idle;
+    const std::vector<RuntimeInput>* game_input_source=nullptr;
+    bool game_input_edges=false;
+    std::size_t game_input_action_calls=0;
     std::uint64_t control_sequence=0;
     PoimaGameUiControlEvent control_event{};
     RuntimeControlIntent control_intent=RuntimeControlIntent::none;
@@ -792,6 +795,28 @@ struct Runtime::Impl {
             static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode),source->slot,source->weight,source->weight_blend_ticks);
         });
     }
+    static int32_t POIMA_CALL get_input_action(void* context,const PoimaEntityId* id,const char* name,
+        std::uint32_t name_bytes,PoimaGameInputActionV1* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && id && name && output,"Input action query is absent.");
+            require(output->version==1 && output->bytes>=sizeof(PoimaGameInputActionV1),"Input action state requires version 1 and at least 16 bytes.");
+            require(output->reserved==0,"Input action reserved field must be zero.");
+            require(name_bytes>=1 && name_bytes<=64 && valid_input_action_name(std::string_view(name,name_bytes)),"Invalid named input action.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(self.game_input_source && self.game_input_action_calls<1024,"Gameplay exceeded 1024 named action reads in one Tick.");
+            const auto entity=gameplay_id(*id);(void)self.find(entity);
+            ++self.game_input_action_calls;
+            PoimaGameInputActionV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);
+            const auto input=std::find_if(self.game_input_source->begin(),self.game_input_source->end(),[&](const auto& value){return value.entity==entity;});
+            if(input!=self.game_input_source->end()) {
+                const std::string_view query(name,name_bytes);
+                const auto action=std::find_if(input->actions.begin(),input->actions.end(),[&](const auto& value){return value.name==query;});
+                if(action!=input->actions.end())candidate.flags=8u | (action->held ? 1u : 0u) |
+                    (self.game_input_edges && action->pressed ? 2u : 0u) | (self.game_input_edges && action->released ? 4u : 0u);
+            }
+            *output=candidate;
+        });
+    }
     static int32_t POIMA_CALL set_character_input(void* context,const PoimaGameCharacterInputV1* source,PoimaGameError* error) {
         return callback(error,[&] {
             require(context && source,"Character input command is absent.");
@@ -1053,12 +1078,18 @@ struct Runtime::Impl {
         for(std::size_t i=0;i<structure.size();++i)
             require(structure[i].offset<count && (i==0 || structure[i-1].offset<structure[i].offset),"Structural offsets must be unique, sorted and inside the batch.");
         std::vector<RuntimeStructureResult> structure_results;structure_results.reserve(structure.size());std::size_t next_structure=0;
+        require(inputs.size()<=32,"At most 32 character inputs per batch.");
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
             const auto e=find(input.entity);
             require(registry.all_of<Controller>(e) && controls.emplace(e,&input).second,"Input needs a unique CharacterController entity.");
             for(float v:input.move) require(std::isfinite(v) && std::abs(v)<=1,"Move input must be in [-1,1].");
             for(float v:input.look) require(std::isfinite(v) && std::abs(v)<=180,"Look input must be in [-180,180] degrees.");
+            require(input.actions.size()<=input_action_limit,"At most 32 named actions per character input.");
+            std::string_view previous;
+            for(const auto& action:input.actions) {
+                require(valid_input_action_name(action.name) && (previous.empty() || previous<action.name),"Named input actions must be valid, sorted and unique.");previous=action.name;
+            }
         }
         require(sound_commands.size()<=64,"At most 64 sound commands per batch.");
         auto prepared=prepare_motions(motions);
@@ -1113,11 +1144,11 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
-                        game_phase=GamePhase::idle;
+                        game->tick(api.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
                     clear_ui_commands();
@@ -1214,12 +1245,13 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
+            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
-            save_queue=save_checkpoint;ui_model=ui_checkpoint;game_phase=GamePhase::idle;clear_ui_commands();
+            save_queue=save_checkpoint;ui_model=ui_checkpoint;clear_ui_commands();
             animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);

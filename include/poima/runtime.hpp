@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/input_action.hpp"
 #include "poima/scene.hpp"
 #include "poima/navigation.hpp"
 #include "poima/animation_layers.hpp"
@@ -201,7 +202,13 @@ struct RuntimeInput {
     std::array<float,2> look{0,0}; // yaw-left, pitch-up degrees; applied on first tick
     bool use=false;
     bool jump=false;              // rising action on first tick only
+    std::vector<RuntimeAction> actions; // Optional named digital actions, max 32.
 };
+// Held state stays in a replay segment; one-shot edges drain after its first tick.
+inline void clear_runtime_input_edges(RuntimeInput& input) noexcept {
+    input.look={0,0};input.jump=false;input.use=false;
+    for(auto& action:input.actions)action.pressed=action.released=false;
+}
 struct KinematicTarget {
     std::string entity;
     std::array<double,3> position{}; // World-space root pose, fixed scale.

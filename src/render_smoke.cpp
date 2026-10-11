@@ -3437,7 +3437,7 @@ struct PlayerWindow::Impl {
         if(options.replay && !owner_paused) {
             if(segment==options.sequence.size()) { quit=true;result.stop_reason="replay_complete"; return; }
             auto control=options.sequence[segment].input;
-            if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
+            if(offset!=0)clear_runtime_input_edges(control);
             const bool save_serviced=session.advance({control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
             if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             after_advance(save_serviced);
@@ -3446,9 +3446,9 @@ struct PlayerWindow::Impl {
             if(diagnostic_sample)diagnostic_sample->clock=clock.last_sample();
             for(std::uint32_t tick=0;tick<ticks;++tick) {
                 const bool save_serviced=session.advance(options.controller.empty() ? std::vector<RuntimeInput>{} : std::vector<RuntimeInput>{input.peek(options.controller)});
+                if(!options.controller.empty())input.commit_tick();
                 if(diagnostic_sample)++diagnostic_sample->clock.committed_ticks;
                 if(after_advance(save_serviced))break;
-                if(!options.controller.empty())input.consume(options.controller);
                 // A gameplay tick can open a modal during catch-up. Clear
                 // held input before the next tick, not after all eight.
                 snapshot.logical_ui=session.ui_presentation();

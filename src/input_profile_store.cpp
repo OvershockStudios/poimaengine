@@ -30,7 +30,9 @@ std::string request_id(const Json& value) {
     require(value.is_string(),"Input request ID must be a string.");const auto result=value.get<std::string>();
     require(result.size()==32 && std::all_of(result.begin(),result.end(),[](char c) { return (c>='0' && c<='9') || (c>='a' && c<='f'); }),"Input request ID must contain 32 lowercase hexadecimal characters.");return result;
 }
-const char* profile_format(const Json& profile) { return profile.contains("gamepad") ? "poima.input.v2" : "poima.input.v1"; }
+const char* profile_format(const Json& profile) {
+    return profile.contains("actions") ? "poima.input.v3" : profile.contains("gamepad") ? "poima.input.v2" : "poima.input.v1";
+}
 StickProfile parse_stick(const Json& value) {
     fields(value,{"stick","inner_deadzone","outer_deadzone","response","invert_x","invert_y"});
     require(value.at("stick").is_string(),"Gamepad stick selector must be a string.");
@@ -48,7 +50,9 @@ Json stick_json(const StickProfile& profile) {
         {"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
 }
 InputProfile parse_profile(const Json& value) {
-    if(value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad"});
+    if(value.contains("actions") && value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad","actions"});
+    else if(value.contains("actions"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","actions"});
+    else if(value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad"});
     else fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"});
     const auto& bindings=value.at("bindings");fields(bindings,{"forward","backward","left","right","jump","use"});
     InputProfile result;
@@ -60,6 +64,19 @@ InputProfile parse_profile(const Json& value) {
     for(const auto* name:{"invert_x","invert_y"})require(value.at(name).is_boolean(),"Mouse axis inversion must be boolean.");
     result.sensitivity_x=value.at("sensitivity_x").get<double>();result.sensitivity_y=value.at("sensitivity_y").get<double>();
     result.invert_x=value.at("invert_x").get<bool>();result.invert_y=value.at("invert_y").get<bool>();
+    if(value.contains("actions")) {
+        const auto& actions=value.at("actions");
+        require(actions.is_object() && actions.size()<=input_action_limit,"Named actions require an object with at most 32 entries.");
+        result.actions.emplace();
+        for(const auto& [name,ids]:actions.items()) {
+            require(valid_input_action_name(name),"Invalid named input action: "+name);
+            require(ids.is_array() && ids.size()<=4,"Each named action permits zero to four input controls.");
+            auto& controls=(*result.actions)[name];
+            for(const auto& id:ids) {
+                require(id.is_string(),"Input control ID must be a string.");controls.push_back(id.get<std::string>());
+            }
+        }
+    }
     if(value.contains("gamepad")) {
         const auto& pad=value.at("gamepad");fields(pad,{"move","look","look_degrees_per_second","trigger_press","trigger_release"});
         GamepadProfile settings;settings.move=parse_stick(pad.at("move"));settings.look=parse_stick(pad.at("look"));
@@ -125,7 +142,7 @@ Json parse_document(const std::string& bytes) {
             return true;
         };
         auto doc=Json::parse(bytes,callback);fields(doc,{"format","revision","profile","receipts"});
-        require(doc.at("format")=="poima.input.v1" || doc.at("format")=="poima.input.v2","Unsupported input profile format; no automatic migration was performed.");
+        require(doc.at("format")=="poima.input.v1" || doc.at("format")=="poima.input.v2" || doc.at("format")=="poima.input.v3","Unsupported input profile format; no automatic migration was performed.");
         const auto current=revision(doc.at("revision"));doc["profile"]=profile_json(parse_profile(doc.at("profile")));
         require(doc.at("format")==profile_format(doc.at("profile")),"Input profile fields do not match its format.");
         const auto& receipts=doc.at("receipts");require(receipts.is_array() && receipts.size()==std::min<std::uint64_t>(current,max_receipts),"Invalid input profile receipt history.");
@@ -184,6 +201,7 @@ Json profile_json(const InputProfile& profile) {
         const auto& pad=*profile.gamepad;result["gamepad"]={{"move",stick_json(pad.move)},{"look",stick_json(pad.look)},
             {"look_degrees_per_second",pad.look_degrees_per_second},{"trigger_press",pad.trigger_press},{"trigger_release",pad.trigger_release}};
     }
+    if(profile.actions)result["actions"]=*profile.actions;
     return result;
 }
 Json profile_schema() {
@@ -201,23 +219,34 @@ Json profile_schema() {
         {"properties",{{"move",stick},{"look",stick},
             {"look_degrees_per_second",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",0},{"maximum",1080}}}}},
             {"trigger_press",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}},{"trigger_release",{{"type","number"},{"minimum",0},{"exclusiveMaximum",1}}}}},
-        {"description","Gamepad enabled in v2 profiles. Trigger press must exceed trigger release to provide hysteresis."}};
+        {"description","Gamepad enabled when its settings are present in v2 or v3 profiles. Trigger press must exceed trigger release to provide hysteresis."}};
     auto v2=v1;v2["required"].push_back("gamepad");v2["properties"]["gamepad"]=gamepad;
     for(const auto* name:action_names) {
         v1["properties"]["bindings"]["properties"][name]["items"]["pattern"]="^(key|mouse)\\.";
         v2["properties"]["bindings"]["properties"][name]["items"]["pattern"]="^(key|mouse|gamepad)\\.";
     }
-    return {{"anyOf",{v1,v2}}};
+    auto v3=v1,v3_pad=v2;
+    Json named={{"type","object"},{"maxProperties",input_action_limit},
+        {"propertyNames",{{"type","string"},{"minLength",1},{"maxLength",64},{"pattern","^[a-z][a-z0-9_.-]*$"}}},
+        {"additionalProperties",{{"type","array"},{"maxItems",4},{"uniqueItems",true},
+            {"items",{{"type","string"},{"maxLength",32},{"pattern","^(key|mouse)\\."},
+                {"description","Non-reserved catalog control; controls are unique across all legacy and named actions."}}}}}};
+    v3["required"].push_back("actions");v3["properties"]["actions"]=named;
+    named["additionalProperties"]["items"]["pattern"]="^(key|mouse|gamepad)\\.";
+    v3_pad["required"].push_back("actions");v3_pad["properties"]["actions"]=named;
+    return {{"anyOf",{v1,v2,v3,v3_pad}}};
 }
 Json describe() {
     Json controls=Json::array(),reserved=Json::array();for(const auto& control:input_controls()) {
         controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : control.kind==InputControlKind::mouse ? "mouse" : "gamepad"},{"code",control.code},{"reserved",control.reserved}});
         if(control.reserved)reserved.push_back(control.id);
     }
-    return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2"}},{"profile_schema",profile_schema()},{"actions",action_names},{"controls",controls},{"reserved_controls",reserved},
+    return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2","poima.input.v3"}},{"profile_schema",profile_schema()},{"actions",action_names},
+        {"named_actions",{{"max_actions",input_action_limit},{"max_name_length",64},{"name_pattern","^[a-z][a-z0-9_.-]*$"},{"states",{"held","pressed","released"}},{"default_bindings",false}}},
+        {"controls",controls},{"reserved_controls",reserved},
         {"defaults",profile_json(default_input_profile())},{"gamepad_defaults",profile_json(default_gamepad_input_profile())},{"application","next_play"},{"sensitivity_units","degrees per relative mouse count"},
         {"gamepad_units",{{"look_degrees_per_second","[yaw,pitch] degrees per second at full stick deflection"},{"deadzones","normalized radial stick magnitude"},{"response","dimensionless exponent after deadzone rescaling"},{"trigger_thresholds","normalized trigger position from 0 to 1; press must exceed release"}}},
-        {"binding_policy","Zero to four alternatives per action; a control can belong to only one action. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3). Gamepad controls require a v2 profile; adding gamepad enables its settings."},
+        {"binding_policy","Zero to four alternatives per action; a control can belong to only one legacy or named action. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3). Gamepad controls require gamepad settings. An actions object, including an empty object, selects v3; omission preserves v1/v2."},
         {"revision_policy","Every accepted non-preview set increments the revision, including unchanged values. Preview does not write. The latest 32 successful request receipts survive restart."},
         {"content_hash_scope","SHA256 of canonical compact profile JSON; excludes revision and receipts."},
         {"conversion_policy","Existing files cannot change format through transact. Inspect the old profile, explicitly construct a complete target-format profile and transact to a new destination path. The original file and receipts remain intact; there is no automatic migration."},

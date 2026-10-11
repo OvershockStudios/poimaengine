@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.114**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.115**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.115 adds opt-in named digital actions for independent fire, aim,
+reload and game-specific controls. Explicit v3 profiles hold up to 32 named
+bindings; omission preserves v1/v2 bytes and defaults. Marked C# games read
+Held, Pressed, Released and Present during Tick. Held state repeats through a
+batch; edges arrive on its first tick, including both edges of a quick tap.
+The independent `input_actions_v1` extension appends a 264-byte services prefix
+in epoch 7 while preserving legacy input and older negotiated prefixes.
+Ten Windows native CPU groups, 77 compiled ABI checks, 11 publisher tests and
+both input-profile/gamepad protocol groups pass; the profile suite skips one
+Windows symlink case requiring privileges. Actual CoreCLR and published Native
+AOT gameplay pass 149 and 140 recorded RPCs respectively: raycast hits, ammo,
+aiming state, reload, independent entity input, rejected records and callbacks,
+complete later-tick rollback, exact save restoration and fresh continuation.
+CoreCLR additionally passes compatible reload. Two hardware Vulkan replays on
+one AMD GPU match the full headless checkpoint across forward/deferred paths.
+All accepted owners close naturally; earlier harness and compiler-lifetime
+failures remain excluded. Desktop forwarding is source-reviewed, without a new
+physical-input/editor qualification. Contexts, chords, analog named values,
+rebinding UI, weapon assets and input-latency qualification remain separate
+work. This slice does not close the Alpha gate. [Contract](INPUT_ACTIONS.md),
+[results](evidence/m2-input-actions.json).
 
 Version 0.0.114 adds guarded live texture adoption on existing authored PBR
 primitives, static meshes and skinned meshes. Five maps, sampler settings and
@@ -1770,7 +1792,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Shared native `WorldSession` API, immutable external-camera snapshots and bounded session-local undo/redo, with revision guards, durable retry receipts and identity-preserving restoration. The retained desktop editor and earlier [ImGui frontend](EDITOR.md) use these same operations. Package management, production accessibility and large-project responsiveness remain unfinished.
 
-- Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. General action maps, in-game rebinding UI, haptics and general settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
+- Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. Action contexts, chords, analog named values, in-game rebinding UI, haptics and general settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
 
 - glTF and bounded FBX skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights, with opt-in compiled C# layer controls. Retargeting, IK and root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md), [FBX profile](FBX_IMPORT.md).
 

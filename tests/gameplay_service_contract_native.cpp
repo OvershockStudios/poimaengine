@@ -55,6 +55,16 @@ int main(){try{
     for(unsigned bytes:{176u,192u,208u,216u,223u,225u,240u}){auto wrong=navigation;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto missing_nav=navigation;missing_nav["features"]=Json::array({"baseline_v7"});rejected(missing_nav.dump());
     auto duplicate_nav=navigation;duplicate_nav["features"].push_back("navigation_query_v1");rejected(duplicate_nav.dump());
+    auto actions=baseline;actions["services_bytes"]=264;actions["features"].push_back("input_actions_v1");
+    parsed=poima::parse_gameplay_service_contract(actions.dump());
+    check(parsed.services_bytes==264 && parsed.features.size()==2,"Independent input action declaration rejected.");
+    auto combined_actions=actions;combined_actions["features"].push_back("player_preferences_v1");
+    (void)poima::parse_gameplay_service_contract(combined_actions.dump());
+    for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,263u,265u,272u}) {
+        auto wrong=actions;wrong["services_bytes"]=bytes;rejected(wrong.dump());
+    }
+    auto duplicate_actions=actions;duplicate_actions["features"].push_back("input_actions_v1");rejected(duplicate_actions.dump());
+    auto unnamed_actions=actions;unnamed_actions["features"]=Json::array({"baseline_v7"});rejected(unnamed_actions.dump());
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

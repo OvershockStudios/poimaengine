@@ -22,7 +22,12 @@ namespace {
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 void key(BoundPlayerInput& input,std::uint16_t code,bool down=true) { input.control(InputControlKind::keyboard,code,down); }
 bool equal(const RuntimeInput& a,const RuntimeInput& b) {
-    return a.entity==b.entity && a.move==b.move && a.look==b.look && a.jump==b.jump && a.use==b.use;
+    if(a.entity!=b.entity || a.move!=b.move || a.look!=b.look || a.jump!=b.jump || a.use!=b.use || a.actions.size()!=b.actions.size())return false;
+    for(std::size_t i=0;i<a.actions.size();++i) {
+        const auto& x=a.actions[i];const auto& y=b.actions[i];
+        if(x.name!=y.name || x.held!=y.held || x.pressed!=y.pressed || x.released!=y.released)return false;
+    }
+    return true;
 }
 void rejects(const InputProfile& profile) {
     bool validation=false,construction=false;
@@ -30,9 +35,90 @@ void rejects(const InputProfile& profile) {
     try { BoundPlayerInput input(profile); }catch(const std::invalid_argument&) { construction=true; }
     check(validation && construction,"Invalid profile passed validation or construction.");
 }
+const RuntimeAction& action(const RuntimeInput& frame,const std::string& name) {
+    for(const auto& row:frame.actions)if(row.name==name)return row;
+    throw std::runtime_error("Missing complete named action row.");
+}
+void state(const RuntimeInput& frame,const char* name,bool held,bool pressed,bool released) {
+    const auto& row=action(frame,name);
+    check(row.held==held && row.pressed==pressed && row.released==released,"Named action state differs.");
+}
+void named_actions() {
+    auto profile=default_input_profile();
+    check(BoundPlayerInput(profile).peek("player").actions.empty(),"Legacy defaults acquired named actions.");
+    profile.actions.emplace();
+    (*profile.actions)={{"reload",{"key.r"}},{"fire",{"mouse.1","key.f"}},{"aim",{"mouse.3"}},{"empty",{}}};
+    BoundPlayerInput input(profile);
+    auto initial=input.peek("player");
+    check(initial.actions.size()==4 && initial.actions[0].name=="aim" && initial.actions[1].name=="empty" &&
+        initial.actions[2].name=="fire" && initial.actions[3].name=="reload","Named states are incomplete or unsorted.");
+    input.control(InputControlKind::mouse,1,true);
+    auto pressed=input.peek("player");state(pressed,"fire",true,true,false);state(pressed,"empty",false,false,false);
+    check(equal(pressed,input.peek("player")),"Preparation consumed named edges.");
+    reject_allocations=true;input.commit_tick();reject_allocations=false;
+    state(input.peek("player"),"fire",true,false,false);
+    input.control(InputControlKind::mouse,1,true);key(input,9);
+    state(input.consume("player"),"fire",true,false,false);
+    input.control(InputControlKind::mouse,1,false);
+    state(input.consume("player"),"fire",true,false,false);
+    key(input,9,false);state(input.peek("player"),"fire",false,false,true);
+    reject_allocations=true;input.commit_tick();reject_allocations=false;
+    state(input.peek("player"),"fire",false,false,false);
+    key(input,21);key(input,21,false);input.tune(.5,.25,true,true);
+    state(input.peek("player"),"reload",false,true,true);
+    state(input.consume("player"),"reload",false,true,true);
+    state(input.consume("player"),"reload",false,false,false);
+    input.control(InputControlKind::mouse,3,true);input.clear();
+    state(input.peek("player"),"aim",false,false,false);
+
+    auto pad_profile=profile;pad_profile.gamepad.emplace();
+    (*pad_profile.actions)["fire"]={"mouse.1","gamepad.right_trigger"};
+    (*pad_profile.actions)["reload"]={"key.r","gamepad.east"};
+    BoundPlayerInput pad(pad_profile);
+    pad.gamepad_connect({},1u<<1);check(!pad.gamepad_armed(),"Held pad armed a named action.");
+    state(pad.peek("player"),"reload",false,false,false);
+    pad.gamepad_button(1,false);check(pad.gamepad_armed(),"Neutral pad did not re-arm.");
+    pad.gamepad_button(1,true);state(pad.consume("player"),"reload",true,true,false);
+    pad.gamepad_button(1,true);state(pad.consume("player"),"reload",true,false,false);
+    // An alternative key tap while the pad is held does not create aggregate
+    // edges. Final removal releases once; repeated removals cannot consume it.
+    key(pad,21);key(pad,21,false);pad.gamepad_disconnect();pad.gamepad_disconnect();
+    state(pad.consume("player"),"reload",false,false,true);
+    pad.gamepad_connect();pad.gamepad_axis(5,19000);
+    state(pad.consume("player"),"fire",true,true,false);
+    pad.gamepad_axis(5,16000);state(pad.consume("player"),"fire",true,false,false);
+    pad.gamepad_axis(5,14000);state(pad.consume("player"),"fire",false,false,true);
+    key(pad,21);key(pad,21,false);pad.gamepad_axis(5,19000);pad.gamepad_disconnect();
+    auto disconnected=pad.consume("player");
+    state(disconnected,"reload",false,true,true);state(disconnected,"fire",false,false,true);
+    pad.gamepad_connect();pad.gamepad_axis(5,19000);pad.consume("player");
+    pad.control(InputControlKind::mouse,1,true);pad.gamepad_disconnect();
+    state(pad.consume("player"),"fire",true,false,false);
+    pad.control(InputControlKind::mouse,1,false);state(pad.consume("player"),"fire",false,false,true);
+    pad.gamepad_connect();pad.gamepad_axis(5,19000);key(pad,21);pad.clear();
+    state(pad.peek("player"),"fire",false,false,false);state(pad.peek("player"),"reload",false,false,false);
+    check(!pad.gamepad_armed(),"Focus clear retained named gamepad arming.");
+
+    auto invalid=profile;(*invalid.actions)["fire"]={"key.w"};rejects(invalid);
+    invalid=profile;(*invalid.actions)["fire"]={"mouse.1","mouse.1"};rejects(invalid);
+    invalid=profile;(*invalid.actions)["fire"]={"key.escape"};rejects(invalid);
+    invalid=profile;(*invalid.actions)["fire"]={"gamepad.east"};rejects(invalid);
+    invalid=profile;(*invalid.actions)["fire"]={"key.f","key.g","key.h","key.i","key.j"};rejects(invalid);
+    invalid=profile;(*invalid.actions)["fire"]={"key.unknown"};rejects(invalid);
+    for(const auto& name:std::vector<std::string>{"","Fire","1fire","fire space","fire/aim",std::string(65,'a'),"f\xc3\xa9"}) {
+        invalid=profile;(*invalid.actions)[name]={};rejects(invalid);
+    }
+    auto limits=default_input_profile();limits.actions.emplace();
+    for(int i=0;i<32;++i)(*limits.actions)["action."+std::to_string(i)]={};
+    check(BoundPlayerInput(limits).peek("player").actions.size()==32,"Exact 32-action limit rejected.");
+    (*limits.actions)["overflow"]={};rejects(limits);
+    limits.actions->clear();(*limits.actions)[std::string(64,'a')]={"key.f","key.g","key.h","key.i"};
+    validate_input_profile(limits);
+}
 }
 int main() {
     try {
+        named_actions();
         auto defaults=default_input_profile();validate_input_profile(defaults);
         // Prepare every potentially allocating value before a committed tick.
         // A regression allocating during commit terminates this test under the

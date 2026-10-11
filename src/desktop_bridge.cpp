@@ -313,6 +313,10 @@ struct Bridge : ViewportState {
     }
     static Json input_frame(const RuntimeInput& value,bool entity=false) {
         Json result={{"move",value.move},{"look",value.look},{"jump",value.jump},{"use",value.use}};
+        if(!value.actions.empty()) {
+            result["actions"]=Json::array();for(const auto& action:value.actions)
+                result["actions"].push_back({{"name",action.name},{"held",action.held},{"pressed",action.pressed},{"released",action.released}});
+        }
         if(entity)result["entity"]=value.entity;
         return result;
     }

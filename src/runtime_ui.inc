@@ -75,15 +75,15 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGamePlayerPreferenceServicesV1 services() {
-        PoimaGamePlayerPreferenceServicesV1 result{};
-        result.instances.navigation={{{{{7,sizeof(PoimaGamePlayerPreferenceServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
+    PoimaGameInputActionServicesV1 services() {
+        PoimaGameInputActionServicesV1 result{};
+        result.preferences.instances.navigation={{{{{7,sizeof(PoimaGameInputActionServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
             &get_animation_extended,&set_animation_extended},&get_animation_layer,&set_animation_layer},&set_character_input},&query_navigation};
-        result.instances.instance_node=&resolve_instance_node;
-        result.preference_snapshot=&get_player_preferences;result.preference_patch=&patch_player_preferences;
-        result.preference_result=&get_player_preference_result;return result;
+        result.preferences.instances.instance_node=&resolve_instance_node;
+        result.preferences.preference_snapshot=&get_player_preferences;result.preferences.preference_patch=&patch_player_preferences;
+        result.preferences.preference_result=&get_player_preference_result;result.input_action=&get_input_action;return result;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
         if(ui_commands.empty() && !ui_modal)return {};
@@ -104,7 +104,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;const auto api=services();game->control(api.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;const auto api=services();game->control(api.preferences.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             validate_player_preferences_boundary();

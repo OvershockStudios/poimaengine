@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/input_action.hpp"
 #include "poima/player.hpp"
 #include <array>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
@@ -35,6 +37,8 @@ struct InputProfile {
     double sensitivity_x=.1, sensitivity_y=.1; // Degrees per relative mouse unit.
     bool invert_x=false, invert_y=false;
     std::optional<GamepadProfile> gamepad;
+    // Omission preserves legacy profile formats; an empty map opts into v3.
+    std::optional<std::map<std::string,std::vector<std::string>>> actions;
 };
 InputProfile default_input_profile();
 InputProfile default_gamepad_input_profile();
@@ -47,6 +51,12 @@ class BoundPlayerInput {
     struct Binding { InputControlKind kind; std::uint16_t code; bool held=false; };
     InputProfile profile_;
     std::array<std::vector<Binding>,6> bindings_;
+    struct NamedBinding {
+        std::string name;
+        std::vector<Binding> bindings;
+        std::array<bool,2> pressed{},released{}; // keyboard+mouse / gamepad
+    };
+    std::vector<NamedBinding> named_;
     // Jump/use edges retain their origin, so unplugging a pad cannot consume
     // a keyboard/mouse press that is still waiting for the next fixed tick.
     std::array<std::array<bool,2>,2> edges_{}; // [keyboard+mouse / gamepad][jump / use]

@@ -2,7 +2,7 @@
 
 Poima 0.0.20 adds SDL gamepad discovery and live input for **one assigned local player**, alongside the existing keyboard/mouse controls. Buttons, sticks and triggers resolve to the same native `RuntimeInput` used by the runtime, C# gameplay and semantic replay. The native evaluator also runs without SDL, a display or a GPU. Physical controller qualification remains outstanding; implementation and automated coverage do not establish device compatibility or input feel.
 
-This extends [input profiles](INPUT_PROFILES.md). General action maps, UI navigation, rumble, gyro, per-player multiplayer routing and console platform integration remain unfinished.
+This extends [input profiles](INPUT_PROFILES.md). Action contexts and chords, UI navigation, rumble, gyro, per-player multiplayer routing and console platform integration remain unfinished.
 
 ## Discover devices and select one
 
@@ -24,7 +24,7 @@ Add one of these `gamepad` values to the existing `runtime.play` parameters:
 | `{"mode":"only_connected"}` | Assign the sole connected gamepad; wait if none exist or selection is ambiguous. An existing assignment is retained when another device appears. |
 | `{"mode":"explicit","id":7}` | Assign the specified live ID; replace `7` with discovery's ID. Initial absence fails play; later disconnect does not silently substitute a different device. |
 
-The assigned gamepad controls the `controller` entity already specified by `runtime.play`; its local slot is 0. Other devices cannot inject gameplay or Start-button actions into that slot. Add/remove/remapping events are handled during play. Removal clears that pad's held controls and pending action edges while preserving keyboard/mouse input. With `only_connected`, an unassigned slot can adopt the sole remaining/arriving device; it must pass the neutral gate first.
+The assigned gamepad controls the `controller` entity already specified by `runtime.play`; its local slot is 0. Other devices cannot inject gameplay or Start-button actions into that slot. Add/remove/remapping events are handled during play. Removal clears that pad's held controls and pending presses while preserving keyboard/mouse input. Named actions retain a final release when the last held alternative disappears; see [named actions](INPUT_ACTIONS.md). With `only_connected`, an unassigned slot can adopt the sole remaining/arriving device; it must pass the neutral gate first.
 
 The play result includes `gamepad` assignment, connected/armed/active state, policy, diagnostic detail and attachment/disconnection counts. This is a report of the completed play call. The call still blocks its service connection, so concurrent live discovery or reassignment commands are not yet available.
 
@@ -119,7 +119,7 @@ Pass this object as `params` to `desktop.input.configure`. Replace `defaults` wi
 
 Hosted device polling updates SDL gamepads directly and consumes their events without pumping the editor’s Windows message loop. It removes at most 256 gamepad events and 256 duplicate raw joystick events per poll, preserving unrelated events. Raw-event filtering still traverses the queue; this bound is not a constant-time or frame-budget guarantee. The profiler records `input.gamepad.poll`. Event processing does not advance simulation: each successful automatic fixed tick consumes one evaluated frame, so stick look applies on every catch-up tick and button edges fire once.
 
-The editor does not yet provide physical-controller qualification, rumble, general action maps or controller-only editor navigation. Automated virtual-device and semantic-control tests are distinct from physical focus and cursor behavior. Editor audio output remains a separate unfinished integration.
+The editor does not yet provide physical-controller qualification, rumble, action contexts and chords or controller-only editor navigation. Automated virtual-device and semantic-control tests are distinct from physical focus and cursor behavior. Editor audio output remains a separate unfinished integration.
 
 ## Headless observations
 
@@ -151,3 +151,5 @@ Native tests in `tests/input_profile.cpp` cover stick shaping, endpoints, fixed-
 Physical Xbox/DualSense/other controllers, Bluetooth behavior, actual deadzone tuning, latency and prolonged foreground use still need qualification. Device labels reported by SDL are not an implemented prompt/glyph UI. There is one local assigned controller, no runtime rebinding menu, no rumble/gyro/touch integration, no general joystick mapping editor, and no console backend. Using a console-branded gamepad on Windows is not Xbox/PlayStation platform support.
 
 The [0.0.38 editor checkpoint](evidence/m2-editor-gamepads.json) records hosted-device ownership, virtual-controller routing, capture suspension, device cleanup, managed integration and actual Game Input controls on both tested GPUs. The [settings image](evidence/m2-editor-gamepads.png) is an attached Avalonia client render, not a desktop screenshot.
+
+V3 profiles add [named digital actions](INPUT_ACTIONS.md) using the same pad button/trigger catalog, neutral arming and trigger hysteresis. Their controls remain unique across all legacy and named bindings. Pad removal releases the final held alternative while preserving unrelated keyboard/mouse pending edges.

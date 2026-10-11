@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.115
+
+- Add optional named digital actions to v3 input profiles, scripted input and replay, preserving legacy bindings and defaults.
+- Deliver held state and first-tick press/release edges to marked C# gameplay; preserve quick taps, neutral absence and complete batch rollback.
+- Negotiate independent `input_actions_v1` through the SDK, bridge, generator and native publisher with a 264-byte services prefix, preserving epoch 7 and earlier prefixes.
+- Pass ten Windows native CPU groups, 77 compiled ABI checks, actual CoreCLR/Native AOT hitscan and save continuation, and forward/deferred player replay matching the full headless checkpoint. [Results](docs/evidence/m2-input-actions.json).
+
 ## 0.0.114
 
 - Add guarded live adoption of all five PBR texture maps, samplers and normal/occlusion strengths on existing authored drawables, preserving gameplay and original geometry/rig owners.

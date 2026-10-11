@@ -135,7 +135,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 83}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 84}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -243,7 +243,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     native_load["required"]={"session_id","request_id","expected_tick","expected_revision","descriptor"};
     methods["runtime.gameplay.load_native"]=native_load;
     auto input=object_schema({{"entity",id},{"move",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
-        {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}},{"use",{{"type","boolean"}}}}, {"entity"});
+        {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}},{"use",{{"type","boolean"}}},
+        {"actions",{{"type","array"},{"maxItems",32},{"description","Names must be sorted and unique. Held state repeats through a tick batch; pressed/released apply on its first tick only."},
+            {"items",object_schema({{"name",{{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,63}$"}}},
+                {"held",{{"type","boolean"}}},{"pressed",{{"type","boolean"}}},{"released",{{"type","boolean"}}}}, {"name","held","pressed","released"})}}}}, {"entity"});
     const auto motion=object_schema({{"entity",id},{"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
         {"rotation",vector({{"type","number"},{"minimum",-1},{"maximum",1}},4)},
         {"duration_ticks",{{"type","integer"},{"minimum",1},{"maximum",36000}}}}, {"entity","position","rotation","duration_ticks"});
@@ -352,6 +355,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
     result["invariants"].push_back("MeshCollider is an explicit static indexed model primitive, independent of rendering visibility. It cannot combine with BoxCollider/CharacterController or inherit moving/animation-owned transforms. Physics contacts use triangle front faces; rays query both sides and return the source triangle ordinal (null for non-mesh hits), retaining winding normals. No convexification, texture-cutout collision or deforming meshes. Limits: 100000 triangles/300000 vertices per body and 250000 triangles/750000 vertices per world. Geometry/material/transform validation runs at runtime preparation and export; malformed or degenerate geometry rejects.");
     result["invariants"].push_back("Managed gameplay is optional trusted project code. One module per runtime; typed native state is inspected/edited separately from authoring. Load/edit use tick/revision guards and shared retry receipts. Use input is a first-tick edge. Gameplay updates and queued motion join physics batch rollback.");
+    result["input_actions"]={{"maximum_controllers",32},{"maximum_actions_per_controller",32},{"name_pattern","^[a-z][a-z0-9_.-]{0,63}$"},
+        {"ordering","Names in runtime input records must be sorted and unique."},
+        {"state","Held repeats throughout a tick batch or replay segment. Pressed/released apply only on its first tick; a quick tap may set both with held=false. Omitted records are absent and neutral."},
+        {"profiles","An actions object selects poima.input.v3; omission preserves v1/v2. Keyboard, mouse and optional gamepad bindings share the existing control catalog and recovery policy."},
+        {"gameplay",{{"feature","input_actions_v1"},{"services_epoch",7},{"required_prefix_bytes",264},{"result_bytes",16},{"maximum_reads_per_tick",1024},{"phase","Tick only"}}},
+        {"persistence","Input is transient. Game state derived from input participates in rollback and durable saves."}};
     methods["world.lighting"]=object_schema({{"revision",rev}});
     methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});

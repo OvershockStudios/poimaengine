@@ -225,3 +225,7 @@ Each write creates and flushes an immutable payload, verifies it by reading it b
 Checksums detect accidental corruption, not authenticity. Wrong state/generation guards report `-32009`, conflicting request IDs `-32010`, and storage/content failures `-32070`. A failure after publication can have an uncertain result; retry the identical write request to resolve it. `cleanup_pending` reports retained staging debris when cleanup could not finish.
 
 This is synchronous, bounded storage for authored entities and supported spawned instances, including complete hierarchical membership and registered scalar/collection data. Autosave scheduling, general schema/content migrations, arbitrary entity/component lifecycle, platform/cloud providers, cancellation and large-save performance qualification remain unfinished. Runtime physics and audio reconstruction retain the snapshot limits above; loading is not a promise of bit-identical future contact simulation.
+
+## Named digital input
+
+Controller input and replay segments accept optional sorted, unique `actions` records with `name`, `held`, `pressed` and `released`. Up to 32 records are permitted per controller. Held repeats throughout the batch or segment; edges apply only on its first tick. Missing records are absent and neutral, and quick taps can set both edges with held=false. These records are transient and do not change legacy movement/Jump/Use behavior. [Profile and compiled gameplay guide](INPUT_ACTIONS.md).
