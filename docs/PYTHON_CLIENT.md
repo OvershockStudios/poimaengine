@@ -93,7 +93,11 @@ discovery, history bounds, sorted IDs and query filters/cursors. Additional
 result properties are allowed. Component-specific result validation is limited
 to `Transform` shape, finite numbers and positive scale. Generic component
 results require an object; full component semantics remain engine-owned.
-`response_contract()` returns a detached copy of the manifest.
+`response_contract()` returns a detached copy of the manifest. Read revisions
+must be safe JSON integers. Boolean and floating-point values cannot become
+valid guards through Python's equality with integers. An impossible successful
+reply raises `ResponseContractError`, preserving the original request context
+and leaving the transport usable.
 
 `validate_responses=False` explicitly disables these result checks. It does not
 disable transport validation, engine guards or bounded pagination checks.
@@ -116,6 +120,66 @@ complete current snapshot is required. Exceeding `max_pages` raises
 `PaginationError`; it never silently reports truncation as completion.
 Limits are 1–256 rows and 1–65,536 pages, with 1,024 pages by default. Timeouts
 apply per page, not to the entire traversal. `query` fetches just one page.
+
+## Traverse registered runtime components
+
+```python
+for page in engine.iter_component_observations(
+        session_id, paused_tick, inventory_type,
+        entity_fields=["world_matrix"],
+        components=[{"type": inventory_type, "fields": [quantity_field]}],
+        limit=32):
+    for entity in page["entities"]:
+        print(entity["id"], entity["components"][inventory_type])
+```
+
+Use an existing runtime session, its exact tick, a registered component type ID
+and stable field IDs from the native schema. Type IDs here are 32 lowercase hex
+digits without the authoring `game:` prefix. The helper uses `runtime.observe`
+query membership; it does not register schemas, start or pause play, discover
+components, advance the tick or write anything.
+
+The first reply supplies any omitted starting guards. Subsequent calls pin
+`structure_revision`, `component_revision`, `gameplay_revision`, `ui_revision`
+and `control_sequence`, as well as the session and tick. Replies must preserve
+the first page's authored/current source revisions and `source_stale` flag.
+Optional `pins` supplies starting values for any of those five runtime guards.
+Selected metadata and stable field projections must stay consistent. All rows
+retain native IDs, order, values and cursors; no missing row is synthesized.
+
+Select at most four component types and 32 stable fields per type. Omitting
+`entity_fields` selects the native default state fields; `[]` selects none.
+Omitting a component's `fields` requests all its native fields; `[]` requests an
+empty projection. A selected component absent from a row remains `None`.
+Membership in the queried component cannot be absent from its selected payload.
+`include_schemas=True` includes native component schemas in the metadata.
+
+A native conflict or transport error propagates unchanged. A malformed page,
+crossed boundary or exhausted `max_pages` raises `ObservationError`. Pages
+already yielded belong to the earlier observation; discard them after failure
+if a complete snapshot is required. There are no automatic retries or boundary
+repairs. This iterator still checks its own pagination and projection invariants
+when `validate_responses=False` is set. Field-value schemas and the complete
+field set for an omitted `fields` selector remain native authority.
+
+Page limits are 1–64 and `max_pages` is 1–65,536, with defaults of 32 and 1,024.
+`timeout` applies to each RPC, not the whole traversal. Iteration validates
+arguments when it starts; constructing the iterator sends no request. These
+pages observe runtime entities and selected components; they are not a retained
+save, gameplay/UI snapshot or a general response-schema validator.
+
+[Qualification](evidence/m2-python-runtime-observation.json) checks the SDK on
+Linux and Windows and the checkout/built wheel against the retained 0.0.99
+Windows native service: 65 entities in three pages, parity with individual
+native reads, empty membership, bounded traversal and real conflict rejection.
+This is a functional protocol check, with no renderer, managed build or
+performance benchmark. Run the native regression with matching-platform Python
+and a simulation-enabled engine:
+
+```sh
+python tests/python_runtime_observation_native.py --engine /path/to/poima
+```
+
 
 ## Failure and deliberate recovery
 

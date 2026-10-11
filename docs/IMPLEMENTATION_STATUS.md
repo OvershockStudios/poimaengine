@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.100**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.101**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.101 adds bounded Python SDK query pagination for registered runtime
+components. The first read supplies omitted guards; every continuation pins all
+five runtime revisions/control guards and verifies the same authored-source
+boundary, membership, cursor and selected projections. Native values remain
+authoritative, and incomplete traversals never become completed snapshots.
+Core-result validation also rejects boolean/float read guards that Python could
+otherwise equate to integers, retaining request context without retrying.
+
+Forty-six pure test groups pass on Linux and Windows. The built wheel passes ten
+wrapper groups on Windows. Checkout and wheel each pass four genuine native
+scenario groups using the retained 0.0.99 Windows engine: 65 entities across
+three pages, complete parity with individual state/component reads, empty query,
+page-budget rejection and a real same-tick component conflict. Each run makes
+146 native requests and closes normally. Native Linux runtime-query coverage,
+field-value schema validation and whole-traversal time budgets remain separate.
+This is SDK/protocol qualification, not renderer, game-performance or Alpha
+qualification. [Guide](PYTHON_CLIENT.md#traverse-registered-runtime-components),
+[evidence](evidence/m2-python-runtime-observation.json).
 
 Version 0.0.100 fixes development-job capture cleanup under the worker mutex.
 Forgetting a completed job can now destroy verifier captures that query or

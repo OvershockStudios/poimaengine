@@ -205,8 +205,11 @@ def validate_core_result(method, result, params=None):
     if not reason:
         if method in ('entity.get', 'entity.world_transform') and result['id'] != params.get('id'):
             reason = 'result entity ID differs from the requested ID'
-        if 'revision' in params and result.get('revision') != params['revision']:
-            reason = 'result revision differs from the requested read guard'
+        if 'revision' in params:
+            if _check(params['revision'], _CONTRACT['$defs']['revision']):
+                reason = 'successful core result used an invalid read guard'
+            elif result.get('revision') != params['revision']:
+                reason = 'result revision differs from the requested read guard'
         if method == 'world.history' and (result['undo_count']+result['redo_count'] > result['max_entries']
                                          or result['bytes'] > result['max_bytes']):
             reason = 'history exceeds its advertised bounds'

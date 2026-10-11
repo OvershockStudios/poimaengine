@@ -1,0 +1,131 @@
+{
+  "format": "poima.python-runtime-observation.v1",
+  "source_checkpoint": "0.0.101",
+  "date": "2026-10-10",
+  "passed": true,
+  "source_sha256": {
+    "tools/python/poima_client/client.py": "d37a71dd2385ffc861b34ab646f3eaa896f6187fb5182f050705f140f2c926ec",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/observation.py": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c",
+    "tools/python/poima_client/responses.py": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92",
+    "tools/python/poima_client/__init__.py": "08c23823398dbbba0be6745543359ba308670c96b3542b425990df94d06e3176",
+    "tools/python/poima_client/core_responses.v1.json": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507",
+    "tests/python_response_contract.py": "403ecd0e2962f7b650bffef63e9b1c3a03bbf35cc72b593b90a333feb3694ccb",
+    "tests/python_client_contract.py": "92801b9d67b131c11bf5b470d9c5b612f142cf3239279651ed9a6e43911d4732",
+    "tests/python_runtime_observation.py": "4ab42f431de37b9b0387b6b20b967ed31275f7612ffe80ee1d5f56641d4a199b",
+    "tests/python_runtime_observation_native.py": "a16f7beac93b24680a6b5d8076a9ade1c4d2d0bcce269f5d4c63fec32cf3562a"
+  },
+  "pure_checks": {
+    "linux_groups": {
+      "response": 19,
+      "wrapper": 10,
+      "runtime_observation": 17
+    },
+    "windows_groups": {
+      "response": 19,
+      "wrapper": 10,
+      "runtime_observation": 17
+    },
+    "installed_windows_wrapper_groups": 10,
+    "interpretation": "Counts are unittest test methods with subcases, not individual assertions or native scenarios."
+  },
+  "wheel": {
+    "file": "poima_client-0.0.101-py3-none-any.whl",
+    "sha256": "abb0c0034bc1d8cb3341cd70de77c44c2f3522d66369f8159d69d4abc676443a",
+    "bytes": 32310,
+    "module_and_contract_bytes_match_checkout": true
+  },
+  "native_runtime": {
+    "platform": "Windows",
+    "engine_version": "0.0.99",
+    "engine_sha256": "b47b49e73c3f7524aae88e74d11442c8742cc1f34ac2f14fb1349bbf9e91829e",
+    "runs": [
+      {
+        "distribution": "checkout",
+        "passed": true,
+        "groups": [
+          "65_entities_three_pages_individual_parity",
+          "empty_membership_supplied_pins",
+          "page_budget_never_silently_truncates",
+          "real_same_tick_conflict_no_retry_no_mutation"
+        ],
+        "entity_count": 65,
+        "rpc_count": 146,
+        "source_sha256": "a16f7beac93b24680a6b5d8076a9ade1c4d2d0bcce269f5d4c63fec32cf3562a",
+        "owner": {
+          "closed": true,
+          "returncode": 0,
+          "stderr_truncated": false
+        },
+        "elapsed_seconds": 0.3707068000076106
+      },
+      {
+        "distribution": "wheel",
+        "passed": true,
+        "groups": [
+          "65_entities_three_pages_individual_parity",
+          "empty_membership_supplied_pins",
+          "page_budget_never_silently_truncates",
+          "real_same_tick_conflict_no_retry_no_mutation"
+        ],
+        "entity_count": 65,
+        "rpc_count": 146,
+        "source_sha256": "a16f7beac93b24680a6b5d8076a9ade1c4d2d0bcce269f5d4c63fec32cf3562a",
+        "owner": {
+          "closed": true,
+          "returncode": 0,
+          "stderr_truncated": false
+        },
+        "elapsed_seconds": 0.1434714999923017
+      }
+    ],
+    "interpretation": "Two passes of the same four scenario groups, using checkout and extracted wheel. Runtime protocol is implemented by the retained engine; these checks do not qualify a newly built 0.0.101 engine."
+  },
+  "windows_owner": {
+    "passed": true,
+    "forced_cleanup": false,
+    "job_assigned": true,
+    "cleanup_errors": [],
+    "job_accounting_at_child_exit": {
+      "user_time": 11250000,
+      "kernel_time": 10156250,
+      "period_user_time": 11250000,
+      "period_kernel_time": 10156250,
+      "page_faults": 67108,
+      "total_processes": 9,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "job_accounting_after_cleanup": {
+      "user_time": 11250000,
+      "kernel_time": 10156250,
+      "period_user_time": 11250000,
+      "period_kernel_time": 10156250,
+      "page_faults": 67108,
+      "total_processes": 9,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "changed_inputs": []
+  },
+  "development_corrections": [
+    {
+      "kind": "test_authoring",
+      "detail": "Initial wrapper test placement left an existing request_id assertion in the new method; NameError fixed by restoring that assertion to its original test. Final pinned suites pass."
+    },
+    {
+      "kind": "local_packaging_tool",
+      "detail": "Active Python environment lacked pip; wheel was built using the existing system Python/setuptools without installing dependencies."
+    }
+  ],
+  "limits": [
+    "No renderer, GPU workload, managed compilation, agent-provider exercise or game-performance benchmark.",
+    "No new native Linux runtime-query qualification in this checkpoint. Pure SDK checks run on Linux and Windows.",
+    "Reader validates boundary, membership, cursors and projection shape. Native component-value schemas and omitted field sets remain authoritative.",
+    "Pages already yielded must be discarded after a later failure when a whole snapshot is required.",
+    "Per-RPC timeout and page budget do not provide a whole-traversal time budget.",
+    "Core read-guard fix validates impossible successful replies; native invalid guards were already rejected.",
+    "These changes do not qualify the full Alpha gate or general API stability."
+  ]
+}

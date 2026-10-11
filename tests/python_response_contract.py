@@ -116,6 +116,25 @@ class ResponseContract(unittest.TestCase):
                         with self.subTest(method=method, field=field, value=bad):
                             self.rejects(method, dict(result, **{field: bad}), params)
 
+    def test_read_guards_preserve_wire_types_and_safe_integer_bounds(self):
+        for method, params, result in fixtures():
+            if method not in ('entity.get', 'entity.query', 'entity.world_transform'):
+                continue
+            for alias in (False, True, 0.0, 1.0, 5.0):
+                with self.subTest(method=method, guard=alias, kind=type(alias).__name__):
+                    # Python equality aliases these to integers. A successful
+                    # native guarded read cannot have used this wire type.
+                    self.rejects(method, dict(result, revision=int(alias)),
+                                 dict(params, revision=alias))
+            for revision in (0, 1, 5, 9007199254740991):
+                self.accepts(method, dict(result, revision=revision),
+                             dict(params, revision=revision))
+            unguarded = dict(params)
+            unguarded.pop('revision', None)
+            self.accepts(method, result, unguarded)
+            for invalid in (None, -1, 9007199254740992, '5'):
+                self.rejects(method, result, dict(params, revision=invalid))
+
     def test_read_only_shared_and_build_specific_discovery_metadata(self):
         for scope in (None, 'shared_editor', 'shared_headless'):
             for available in (False, True):

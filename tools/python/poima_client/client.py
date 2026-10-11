@@ -10,6 +10,7 @@ import re
 import uuid
 
 from .errors import OutcomeUnknown, TransportError
+from .observation import iter_component_observations as _iter_component_observations
 from .responses import ResponseContractError, validate_core_result
 from .transport import JsonRpcProcess, REQUEST_LIMIT
 
@@ -281,6 +282,20 @@ class WorldClient:
         """Yield native query rows using the same bounded, revision-pinned traversal."""
         for page in self.iter_query_pages(**query_options):
             yield from page["entities"]
+
+    def iter_component_observations(self, session_id, tick, type_id, *, pins=None,
+                                    limit=32, max_pages=1024, entity_fields=None,
+                                    components=None, include_schemas=False, timeout=30.0):
+        """Yield guarded registered-component runtime query pages without retries.
+
+        Timeout applies to each RPC; max_pages bounds traversal, not a whole-task
+        deadline. Discard partial pages after failure when a complete snapshot
+        is required. Native field-value schemas and omitted component-field sets
+        remain authoritative. No discovery, stepping or mutation is implicit.
+        """
+        return _iter_component_observations(self, session_id, tick, type_id,
+            pins=pins, limit=limit, max_pages=max_pages, entity_fields=entity_fields,
+            components=components, include_schemas=include_schemas, timeout=timeout)
 
     def _mutation(self, method, params, timeout):
         # Share the exact original snapshot with generic calls rather than

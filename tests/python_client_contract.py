@@ -324,6 +324,35 @@ class WrapperContract(unittest.TestCase):
         self.assertEqual(original['base_revision'], 7)
         self.assertEqual(original['request_id'], B)
 
+    def test_malformed_successful_read_guard_keeps_channel_and_original_context(self):
+        identity = dict(position=[0, 0, 0], rotation=[0, 0, 0, 1], scale=[1, 1, 1])
+        cases = [
+            ('entity.get', dict(id=A, component='Transform'), dict(id=A, value=identity)),
+            ('entity.query', dict(limit=1), dict(entities=[
+                dict(id=A, name='Observed', parent=None, components=['Transform'])], next_after=None)),
+            ('entity.world_transform', dict(id=A), dict(id=A, matrix=[
+                1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], layout='column_major')),
+        ]
+        for method, selectors, value in cases:
+            with self.subTest(method=method):
+                reply = dict(value, revision=5)
+                transport = ScriptedTransport([reply, reply])
+                client = WorldClient(transport)
+                request = dict(selectors, revision=5.0)
+                with self.assertRaises(ResponseContractError) as caught:
+                    client.call(method, request)
+                request['revision'] = 999
+                error = caught.exception
+                self.assertEqual(error.method, method)
+                self.assertIs(error.result, reply)
+                self.assertEqual(json.loads(error.params_json)['revision'], 5.0)
+                self.assertIs(type(error.params['revision']), float)
+                self.assertEqual(len(transport.calls), 1)
+                self.assertFalse(transport.closed)
+                self.assertIs(client.call(method, dict(selectors, revision=5)), reply)
+                self.assertEqual(len(transport.calls), 2)
+                self.assertFalse(transport.closed)
+
     def test_generated_mutation_receipt_survives_unknown_outcome(self):
         for exception in (OutcomeUnknown('lost'), KeyboardInterrupt(), SystemExit(2)):
             ops = [{'op': 'entity.create', 'id': A, 'name': 'Before'}]

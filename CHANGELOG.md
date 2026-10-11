@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.101
+
+- Add Python SDK pagination for registered runtime components, preserving all runtime guards, source boundaries, native membership and selected fields across pages.
+- Reject boolean and floating-point read guards in otherwise successful core replies, preserving request context and transport usability.
+- Check the SDK on Linux and Windows and verify checkout/wheel queries against 65 real native components, including stale-read rejection without retry. [SDK contract and qualification](docs/PYTHON_CLIENT.md#traverse-registered-runtime-components).
+
 ## 0.0.100
 
 - Fix development-job cleanup deadlocks by releasing verifier captures outside the worker mutex. Keep capture construction and failed-admission cleanup outside the mutex too.
