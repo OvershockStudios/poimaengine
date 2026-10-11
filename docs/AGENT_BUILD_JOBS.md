@@ -13,7 +13,50 @@ Job IDs and receipts are session-local. Do not reconnect to a replacement host
 and assume that an equal numeric ID identifies the original work. This recipe
 does not submit, retry, reconnect, load artifacts, forget jobs or shut down hosts.
 
-## Poll under a finite budget
+## Use the Python client's bounded wait
+
+The client provides single-job inspection and waiting for a host advertising
+`development.inspect.include_output` (schema revision 79):
+
+```python
+from poima_client import JobWaitExpired
+
+try:
+    status = client.wait_for_development(accepted_job_id, timeout=30, poll_interval=0.1)
+except JobWaitExpired as error:
+    print(error.last_status)  # detached last observation, or None before the first read
+    raise
+
+if status["state"] == "succeeded":
+    full_status = client.development_status(accepted_job_id)
+    diagnostics = client.call("development.diagnostics", {
+        "job_id": accepted_job_id, "limit": 16
+    }, timeout=5)
+```
+
+Waiting uses compact `development.inspect` responses by default and returns
+every native terminal outcome, including failure and cancellation. It does not
+fetch logs at terminal automatically. `development_status` returns full output
+by default; pass `include_output=False` for one compact read. Full reads omit the
+optional flag, preserving older hosts' default behavior. Compact reads require
+native support; a rejection propagates without a discovery call or fallback.
+
+Both helpers check the requested safe integer ID, literal lifecycle state,
+terminal flag and nullable integer exit code; success requires exit code zero.
+They preserve the remaining native metadata and verified result. Malformed
+replies raise `DevelopmentJobError` with `job_id` and `status`; they do not
+invalidate an otherwise usable transport or establish that a job stopped.
+
+The total wait budget covers polling sleeps and supplies the remaining time to
+each RPC. `timeout` and `poll_interval` must be finite, positive and at most
+86,400 seconds. A trusted terminal response remains authoritative when decoding
+finishes after the local deadline. Local expiry raises `JobWaitExpired`, with a
+detached last validated observation, and leaves native work untouched. RPC and
+transport errors and interruptions propagate unchanged. No implicit submission,
+retry, cancellation, reconnection, loading or forgetting occurs. See the
+[client recovery contract](PYTHON_CLIENT.md#failure-and-deliberate-recovery).
+
+## Catalog polling for older hosts
 
 `development.jobs` returns retained job statuses without raw stdout/stderr.
 The function below selects one accepted job and returns its native terminal
@@ -149,7 +192,9 @@ and the worker error, call `development.inspect` only when needed. After recordi
 the result, `development.forget` can release retained-job capacity; it accepts
 terminal jobs only and does not make the old receipt ID reusable.
 
-The helper's offline checks exercise literal lifecycle records, timeout/error
-propagation and owned-cancellation sequencing. They do not add native process-tree,
-toolchain, provider or performance qualification beyond the linked development
-job evidence.
+The SDK's offline checks exercise lifecycle records, deadlines, detached timeout
+context and unchanged error propagation. The explicit
+[native fixture](../tests/python_development_jobs_native.py) builds package-free
+success, syntax failure and repair through the public helpers; Windows execution
+requires an external process-tree owner. It does not qualify gameplay, reload,
+rendering or iteration performance.

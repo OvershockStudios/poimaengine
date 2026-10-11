@@ -1,0 +1,174 @@
+{
+  "format": "poima.python-development-jobs.v1",
+  "date": "2026-10-11",
+  "passed": true,
+  "client_version": "0.0.108",
+  "native_version": "0.0.107",
+  "native_schema_revision": 79,
+  "sdk_version": "10.0.401",
+  "scope": "Python helper correctness with retained Windows native 0.0.107 and real package-free SDK builds; no new native build, gameplay, reload, rendering or iteration-performance qualification.",
+  "owner_sha256": "bce53a7a6203544c93d64baf7c340ac44856a046f31f9b77cc8744d6b0fbdef1",
+  "wheel_sha256": "913c3081ecaec41a1470fd1c6e29e77e10b5a63595ec0e4370bfe5a43434e001",
+  "native_image_sha256": "3fb23e25b7b737e6d647ff2a48880ea2b7b87854e26e8c8c631a4f5630e082f5",
+  "selected_input_count": 30,
+  "selected_inputs_unchanged": true,
+  "installed_files_equal": true,
+  "outer_job": {
+    "assigned_before_fixture_import": true,
+    "forced_cleanup": false,
+    "cleanup_errors": 0,
+    "total_processes": 41,
+    "active_processes": 0,
+    "terminated_processes": 0
+  },
+  "offline_contracts": [
+    {
+      "platform": "Windows",
+      "package": "checkout",
+      "tests": 12,
+      "passed": true,
+      "test_source_sha256": "0e890f559a13f5a72b45604bb1c4c50c650e1f1a944d58ea5a81faaf1f14d662",
+      "result_sha256": "a9f749f7467908722662bcc618064817198c619ea6537fc740c8cd51fc686cb6"
+    },
+    {
+      "platform": "Windows",
+      "package": "installed",
+      "tests": 12,
+      "passed": true,
+      "test_source_sha256": "0e890f559a13f5a72b45604bb1c4c50c650e1f1a944d58ea5a81faaf1f14d662",
+      "result_sha256": "ce6d7bad85263975e28b9ee32d1c3acae31fb79f14cc20a9769698bcb40da176"
+    }
+  ],
+  "native_cohorts": [
+    {
+      "package": "checkout",
+      "passed": true,
+      "raw_result_sha256": "fc3709e36584a4f3a42e344ae33aad01ed164e0fa3a92bf1e5f8a1501c9bc151",
+      "rpc_calls": 158,
+      "cases": [
+        {
+          "label": "success",
+          "state": "succeeded",
+          "polls": 55,
+          "poll_states": {
+            "queued": 1,
+            "running": 53,
+            "succeeded": 1,
+            "failed": 0
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "image_sha256": "29069170355485d37c2e85ea84fd6e575118434723cca8121df6be2c7d7f37b4"
+        },
+        {
+          "label": "syntax_failure",
+          "state": "failed",
+          "polls": 34,
+          "poll_states": {
+            "queued": 0,
+            "running": 33,
+            "succeeded": 0,
+            "failed": 1
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "4a3661945115407db0613d45915d3ed290d93f6a72613f19d6da42583cdfb34c",
+          "image_sha256": "29069170355485d37c2e85ea84fd6e575118434723cca8121df6be2c7d7f37b4"
+        },
+        {
+          "label": "repair",
+          "state": "succeeded",
+          "polls": 50,
+          "poll_states": {
+            "queued": 0,
+            "running": 49,
+            "succeeded": 1,
+            "failed": 0
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "image_sha256": "29069170355485d37c2e85ea84fd6e575118434723cca8121df6be2c7d7f37b4"
+        }
+      ],
+      "world_unchanged": true,
+      "unknown_job_error": -32004,
+      "native_exit_code": 0,
+      "client_closed": true,
+      "module_sha256": {
+        "package": "d722f614ce26f98e703f42e9c4466fd8fd0d474c4ab3055ecbfc8d8ba10fbb32",
+        "client": "73969153e90328358b6d1de70c76a3e0ea50daf48f2e267e502caf58495a2c85",
+        "development": "00cb5f5339ab6f1cd64eb6f6b99fc797b28343182b76a7c55d807059412011c9"
+      }
+    },
+    {
+      "package": "installed",
+      "passed": true,
+      "raw_result_sha256": "6aab7cfca017682a2c264953c005a210c0b1d41c019c9cfd87d0b283c61da29c",
+      "rpc_calls": 155,
+      "cases": [
+        {
+          "label": "success",
+          "state": "succeeded",
+          "polls": 54,
+          "poll_states": {
+            "queued": 1,
+            "running": 52,
+            "succeeded": 1,
+            "failed": 0
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "image_sha256": "9e3421d52ad0afe2fe39e32f315d19f9bf5973e5858886a076879940cf1a9f8e"
+        },
+        {
+          "label": "syntax_failure",
+          "state": "failed",
+          "polls": 33,
+          "poll_states": {
+            "queued": 0,
+            "running": 32,
+            "succeeded": 0,
+            "failed": 1
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "4a3661945115407db0613d45915d3ed290d93f6a72613f19d6da42583cdfb34c",
+          "image_sha256": "9e3421d52ad0afe2fe39e32f315d19f9bf5973e5858886a076879940cf1a9f8e"
+        },
+        {
+          "label": "repair",
+          "state": "succeeded",
+          "polls": 49,
+          "poll_states": {
+            "queued": 0,
+            "running": 48,
+            "succeeded": 1,
+            "failed": 0
+          },
+          "full_compact_equal": true,
+          "diagnostics_complete": true,
+          "receipt_replayed": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "image_sha256": "9e3421d52ad0afe2fe39e32f315d19f9bf5973e5858886a076879940cf1a9f8e"
+        }
+      ],
+      "world_unchanged": true,
+      "unknown_job_error": -32004,
+      "native_exit_code": 0,
+      "client_closed": true,
+      "module_sha256": {
+        "package": "d722f614ce26f98e703f42e9c4466fd8fd0d474c4ab3055ecbfc8d8ba10fbb32",
+        "client": "73969153e90328358b6d1de70c76a3e0ea50daf48f2e267e502caf58495a2c85",
+        "development": "00cb5f5339ab6f1cd64eb6f6b99fc797b28343182b76a7c55d807059412011c9"
+      }
+    }
+  ]
+}

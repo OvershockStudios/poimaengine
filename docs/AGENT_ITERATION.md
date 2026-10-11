@@ -155,7 +155,10 @@ bounded diagnostics; an empty or truncated diagnostic list is not proof of
 success. Cancellation acknowledgement also does not establish that the worker
 has stopped. Retain failed artifacts and their diagnostics separately from a
 corrected attempt. The [build-job recipe](AGENT_BUILD_JOBS.md) shows bounded
-polling and separate observation after an authorized cancellation.
+polling and separate observation after an authorized cancellation. The Python
+client's `wait_for_development` uses compact single-job reads by default and
+returns the native terminal outcome; retrieve full output and diagnostics
+deliberately. A local polling timeout leaves native work running.
 
 If an interactive player is attached, obtain an authorized pause and observe
 fresh runtime guards before loading. Running playback rejects the load with

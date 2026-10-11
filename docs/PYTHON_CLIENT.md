@@ -181,6 +181,26 @@ python tests/python_runtime_observation_native.py --engine /path/to/poima
 ```
 
 
+## Observe accepted development jobs
+
+`development_status(job_id, include_output=True, timeout=30)` reads one accepted
+job and preserves its native result. `wait_for_development(job_id, timeout=30,
+poll_interval=0.1, include_output=False)` waits using compact reads by default.
+Both validate identity and the lifecycle fields they consume, preserving future
+metadata rather than defining another job model. Compact inspection requires
+schema revision 79's optional `include_output` parameter; unsupported hosts
+reject it without an implicit fallback.
+
+The wait returns failed, cancelled, timed-out and launch-failed terminal outcomes
+as well as success. `JobWaitExpired` means the local observation budget expired;
+its `job_id` and detached `last_status` preserve recovery context. It does not
+cancel native work. `DevelopmentJobError` reports a malformed lifecycle response,
+with `job_id` and the received `status`. Neither helper retries, reconnects,
+cancels, forgets or loads anything implicitly. Full output and selected structured
+diagnostics remain deliberate reads. Job IDs identify work only in the same live
+host. See the [build-job recipe](AGENT_BUILD_JOBS.md) for examples, deadline
+semantics and deliberate cancellation.
+
 ## Failure and deliberate recovery
 
 There are no automatic retries, revision repairs or reconnects.
@@ -193,6 +213,8 @@ There are no automatic retries, revision repairs or reconnects.
 | `OutcomeUnknown` | A request began writing but received no trusted terminal result. It may have applied. The entire transport disconnects. |
 | `ResponseContractError` | A terminal success arrived with an unexpected core shape or invariant. It may already have committed. The channel remains usable; inspect deliberately. |
 | `PaginationError` | Traversal guards/cursors are invalid or the page budget was exhausted. |
+| `DevelopmentJobError` | A received job record violates the requested identity or lifecycle fields. |
+| `JobWaitExpired` | Local polling budget expired; native work remains uncancelled and terminal completion is unobserved. |
 
 `OutcomeUnknown` inherits `TransportError`; catch it first. Mutation helpers
 generate a receipt ID once when omitted. Failed-call recovery context retains

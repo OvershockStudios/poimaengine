@@ -10,6 +10,7 @@ import re
 import uuid
 
 from .errors import OutcomeUnknown, TransportError
+from .development import inspect_job, wait_for_job
 from .observation import iter_component_observations as _iter_component_observations
 from .responses import ResponseContractError, validate_core_result
 from .transport import JsonRpcProcess, REQUEST_LIMIT
@@ -196,6 +197,28 @@ class WorldClient:
 
     def inspect(self, *, timeout=30.0):
         return self.call("world.inspect", timeout=timeout)
+
+    def development_status(self, job_id, *, include_output=True, timeout=30.0):
+        """Inspect one accepted job, validating only identity and lifecycle.
+
+        Compact reads require a host advertising ``include_output``. Full reads
+        use the native default. Unknown metadata is preserved in the native reply.
+        Job IDs are local to the same live host; no reconnect or retry is implied.
+        """
+        return inspect_job(self, job_id, include_output=include_output, timeout=timeout)
+
+    def wait_for_development(self, job_id, *, timeout=30.0, poll_interval=0.1,
+                             include_output=False):
+        """Observe one accepted job until terminal, using compact reads by default.
+
+        The total finite budget bounds polling sleeps and each RPC's remaining
+        time, not transport cleanup. Return every terminal outcome; no implicit
+        submit, cancel, forget, full-log fetch, retry or reconnection occurs.
+        Local expiry retains the last observed status in ``JobWaitExpired``.
+        Transport/RPC failures and interruptions propagate unchanged.
+        """
+        return wait_for_job(self, job_id, timeout=timeout, poll_interval=poll_interval,
+                            include_output=include_output)
 
     def history(self, *, timeout=30.0):
         return self.call("world.history", timeout=timeout)

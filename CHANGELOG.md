@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.108
+
+- Add Python client helpers for inspecting and waiting for accepted build jobs, with compact progress reads and finite polling budgets.
+- Preserve native terminal outcomes and compiler metadata; retain detached timeout context without implicit cancellation, retries or reconnection.
+- Check strict lifecycle, deadline and error contracts on Linux and Windows. Verify checkout and installed-wheel clients through six real Windows SDK success, syntax-failure and repair builds against native 0.0.107. [Qualification](docs/evidence/m2-python-development-jobs.json).
+
 ## 0.0.107
 
 - Add compact single-job inspection with strict optional `include_output`, preserving full responses by default and keeping errors, verified results and compiler ownership metadata.

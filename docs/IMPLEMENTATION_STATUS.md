@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.107**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.108**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.108 adds Python `development_status` and `wait_for_development`.
+The latter uses compact reads by default, passes each RPC the remaining finite
+budget and returns native terminal outcomes. Local expiry retains detached last
+status without cancelling work; native errors and interruptions propagate.
+Twelve offline contract tests pass in checkout and installed-wheel form on both
+Linux and Windows. Six real Windows SDK builds check success, syntax failure and
+repair through both package origins, including complete diagnostics, exact
+full/compact terminal projections, receipt replay and unchanged authoring state.
+These client checks use the retained native 0.0.107 executable and schema 79;
+they do not qualify a new native build, gameplay or iteration latency.
+[Client recipe](AGENT_BUILD_JOBS.md),
+[Windows qualification](evidence/m2-python-development-jobs.json).
 
 Version 0.0.107 adds optional `development.inspect.include_output` in schema
 revision 79. Omitted/true preserve the full response; false keeps authoritative
