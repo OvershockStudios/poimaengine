@@ -1,0 +1,960 @@
+{
+  "format": "poima.evidence.viewmodel.v1",
+  "passed": true,
+  "publication_version": "0.0.120",
+  "renderer_scope": "Opaque output-local foreground with independent lens and self-depth, composed after world reconstruction before tone mapping.",
+  "native": {
+    "producer": {
+      "bytes": 35483,
+      "sha256": "94af9f00dcfdd435395a98e1cef5dec287128da1f0d41152830c58e349a76a44"
+    },
+    "source_freeze": {
+      "bytes": 46046,
+      "sha256": "8c5756c022992f158626149045017fc2f1102a737993c74f669e53c732c213fb"
+    },
+    "source_file_count": 304,
+    "native_owner": {
+      "bytes": 60087,
+      "sha256": "00e50be658e609178382efe99a46cef0bfc73c2eaa60de7ad095f88d1507c6ac"
+    },
+    "cpu_groups": 19,
+    "schema_revision": 89,
+    "protocol_groups": 4,
+    "protocol_native_owners": 2,
+    "protocol_rpc_count": 48,
+    "images": {
+      "poima.exe": {
+        "bytes": 25460736,
+        "sha256": "edcd25f64ec4d85f0831824dfc4265a7cb54967264b2a3ddc9e2c6aeac562d11"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-root-motion-test.exe": {
+        "bytes": 18334720,
+        "sha256": "28c6864e104e9f972702ec3b042a6b8b07169f617b40f0143e943b07da8b717f"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18338304,
+        "sha256": "0b2c055e3b9035ecce98a8af2c04ec1dde6bd086506177f6c07ac282e6c55518"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18310144,
+        "sha256": "4513d4465c486e5beca5910f75170ca4d6d58e633e69f1685664f020867b64b3"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18563072,
+        "sha256": "e5dafed249bf2d5a111779a1bd1bab1b7fd239189a3efcda094044b017ed5318"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2260992,
+        "sha256": "0861ebeb369eb71dd82ab3ae12eb4b24b575fc6b4f7282afd3e2e566dcc95175"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18343936,
+        "sha256": "9ebfec656986f75ad487865026d9605dd57e80c7d09321c65381219a546d945d"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18498560,
+        "sha256": "c714b2341e5b5676a92c42765d7fa28587af17273389fa65b3db6bf173800ade"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 23891968,
+        "sha256": "3cbd371e4accc23c76c498106f9658503f790c5702361357670ce398927c2d85"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 23900160,
+        "sha256": "023a3a29e64175670972a246374d051652c33f4d269a4558c768048a321f888f"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 15064064,
+        "sha256": "4363ea7d36cebcfa5486ccd0229acb0cbb866dacd0624004fa3f3af9a9e63684"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14947840,
+        "sha256": "22a99544e08dcb9826c8d133b089abef35fe6f483dbd97803c657ae99cf83b00"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14887936,
+        "sha256": "6fe99a0a25597167ead21f8c79126fcd7491ea3f03f7171259e217b8fec1c2fb"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1984000,
+        "sha256": "d7119f481fff3110eeb534128487d68ef4de5555a382a7e0a40448a8325df682"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18423296,
+        "sha256": "d93a8fb4cde5d95442477e95e428aad39757a03130fd2e6a7582b6457de660f5"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18349056,
+        "sha256": "af3010aa0d9f6cf17e5997a1e51c0be165806e71b450462843d2f1a9277f30d3"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2120192,
+        "sha256": "ce69005d41233197961bb1e717d57d8067ab9c10428fb7912d199819d79740db"
+      },
+      "poima-runtime-camera-draw-test.exe": {
+        "bytes": 18319360,
+        "sha256": "ab0d2a0d679c40925112348e50e84e8bf1f290656d2cfd4f151adae2e2f76059"
+      },
+      "poima-player-input-test.exe": {
+        "bytes": 1188864,
+        "sha256": "960d3326d8f370b181ce6d0904d24ba2b98b861aa230f51061e783854959715e"
+      },
+      "poima-render-schedule-test.exe": {
+        "bytes": 1403392,
+        "sha256": "6e259849178ec802a6cd76992cfdd5d9941e48a569070c835672faef9a4b4ac1"
+      }
+    },
+    "repository_files": {
+      "CMakeLists.txt": {
+        "bytes": 80367,
+        "sha256": "02c40b8af9f15f4b088ab8c135241004748d1cc3e7d3555df308449e4e686a41"
+      },
+      "cmake/render_smoke.cmake": {
+        "bytes": 7301,
+        "sha256": "a341d962684f20447413426d941593b243a0f99ec9f7e28052e05aab0bd8781f"
+      },
+      "include/poima/core.hpp": {
+        "bytes": 11185,
+        "sha256": "7b0d1321536608254a577aeeef1ae4302950ac5f51a65601701d3e6406b96954"
+      },
+      "include/poima/runtime.hpp": {
+        "bytes": 24037,
+        "sha256": "8f973897c87e588f465c3ac2bbd891836e84596c2b070396737edff2f66c6667"
+      },
+      "include/poima/scene.hpp": {
+        "bytes": 5503,
+        "sha256": "75f8bd2a11e2ea0b5a54108e164b8b609b281e7de1eb79ae645b6aa5f15caa7d"
+      },
+      "include/poima/render_schedule.hpp": {
+        "bytes": 46148,
+        "sha256": "af81000cad5f239b3b7ae7a2fd7ddc9209af508424724e46588e45283f2b75a2"
+      },
+      "src/player.cpp": {
+        "bytes": 6922,
+        "sha256": "11996e36ef9390ab5308be9019c71bde59b3e7b4d942a9b8f40d88cbb94ba6d2"
+      },
+      "src/render_smoke.cpp": {
+        "bytes": 314579,
+        "sha256": "83dea19b245083f5083d36189b5eb068f594630a2b49d205000f3267e1ad864d"
+      },
+      "src/scene_camera_draw.cpp": {
+        "bytes": 5835,
+        "sha256": "01d9cb3ad11c1b82fc2604715cc62c474d4c003dbfeb0ce90e58c1cb93f11e8b"
+      },
+      "src/runtime.cpp": {
+        "bytes": 131500,
+        "sha256": "f414585726c80259b2748a35d31a40305f5a082848217982dec4c678e2d53342"
+      },
+      "src/world.cpp": {
+        "bytes": 309204,
+        "sha256": "fe10829243445c9457fd9db625b6a7654325b4031f30152c2df55b4c43b6a5ba"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 98414,
+        "sha256": "d2670ac0e792967218871320549c856acead6c1267edb4abe2797edf8d94d795"
+      },
+      "src/runtime_templates.cpp": {
+        "bytes": 17704,
+        "sha256": "0fcfb581c0bf13c3e26ba664427fd3660ef90e3a03f9f59f87721df5b14138be"
+      },
+      "src/save_upgrade_document.cpp": {
+        "bytes": 24288,
+        "sha256": "ac132fd0edac48cccb71a02f205ca596c7c7604200404e2bcdd0a4dbd42f3595"
+      },
+      "shaders/viewmodel_composite.hlsl": {
+        "bytes": 1254,
+        "sha256": "577c6e923bc288c4b604962b4e29b5eaf83f10ff00fae39001a66ba8ee40c18a"
+      },
+      "tests/render_schedule.cpp": {
+        "bytes": 44222,
+        "sha256": "649f393bb5e6efe333ab8e271f34efd4d312c37c52b22d15f12b9c2ac5a29264"
+      },
+      "tests/runtime_camera_draw_native.cpp": {
+        "bytes": 18307,
+        "sha256": "75901bb5b24ef86e53e9b6727d2380f7a6b6da081c3e92572889d8f7755ece97"
+      },
+      "tests/runtime_camera_draw.py": {
+        "bytes": 17447,
+        "sha256": "08c6e6b7370b9dfa3ce75573f0564244bd0bdb2df9cdc8a195ec60b7e4dc3bc0"
+      },
+      "tests/viewmodel_capture.py": {
+        "bytes": 10445,
+        "sha256": "3eaa0c48e997ad3a9d8d9a558deacff7081ee436885c3864830893d3f4b67026"
+      }
+    }
+  },
+  "cohorts": [
+    {
+      "kind": "foreground",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 64692,
+        "sha256": "9e68585a69c643df1db1e6363fb1f2900f863804843f7f8c87ee99b1ee8e4871"
+      },
+      "evidence": {
+        "bytes": 276272,
+        "sha256": "072fcf8c53b45b6110b5643a2bc85f972151c39f34c3d5c166aab4520e2f08ac"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "independent_projection_pairs": 3,
+        "exact_world_probe_pairs": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976
+      }
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 64693,
+        "sha256": "fb0ff78b0fa66d1722584c3165c36d7b0bb996fc98c7451dbe7cb290f242daff"
+      },
+      "evidence": {
+        "bytes": 276453,
+        "sha256": "5ef689954f438ddf97593733bcee2a835a394641fb0b058ebfd434c7bdc25965"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "independent_projection_pairs": 3,
+        "exact_world_probe_pairs": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976
+      }
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 64703,
+        "sha256": "8bf672a8d7c6d58de30ed003b00d98c9fa4863de2887075a83c3b496f9336376"
+      },
+      "evidence": {
+        "bytes": 276165,
+        "sha256": "4de4d830c95117979569d0f4c4598ec89c7dcf9f4d82788a0d9f70f91b98a663"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "independent_projection_pairs": 3,
+        "exact_world_probe_pairs": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976
+      }
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 64706,
+        "sha256": "16e3cb631f0de9b7e1bda324a4c359f760f9434de3765da13c4a58071fb93851"
+      },
+      "evidence": {
+        "bytes": 276347,
+        "sha256": "07a10f712cbe456625654be8ff3e3159d89802907379ec66855865b51acb78e8"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "independent_projection_pairs": 3,
+        "exact_world_probe_pairs": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976
+      }
+    },
+    {
+      "kind": "omission",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 64574,
+        "sha256": "b2db9de6aa7ac04acc919995fd4518dd82b759bae5f70cdc3c67d3826f8b145d"
+      },
+      "evidence": {
+        "bytes": 109656,
+        "sha256": "e253fef3c324351f8be4f5a307afeea5cf6faf5e187fa39d12a499c6dcbe21ec"
+      },
+      "captures": 2,
+      "native_owners": 2,
+      "rpc_count": 24,
+      "image_sha256": [
+        "77e2b576954e3cb5db28eb70a515ebdff31938652292399c85373dcdea36696b",
+        "77e2b576954e3cb5db28eb70a515ebdff31938652292399c85373dcdea36696b"
+      ],
+      "assertions": {
+        "baseline_owner": {
+          "bytes": 10992,
+          "sha256": "0bf422fcc3e2f85bc440b8441884778f863b73e8c7b1fe74d46e725b48f6d695"
+        },
+        "baseline_version": "0.0.119",
+        "exact_full_bmp_pairs": 2
+      }
+    },
+    {
+      "kind": "omission",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 64579,
+        "sha256": "2e474529a0940cfe5c31108f692eeb769217038d881b27e007ca8f3a85288bcc"
+      },
+      "evidence": {
+        "bytes": 110348,
+        "sha256": "1d55d97ce463e0edc5975dc08cce804f52903bba451a87201aa32fe3f908acc1"
+      },
+      "captures": 2,
+      "native_owners": 2,
+      "rpc_count": 24,
+      "image_sha256": [
+        "5e18b22b1fea9bad4433f77658704eb4f94b4ce890b80954d136fe13fd03a790",
+        "5e18b22b1fea9bad4433f77658704eb4f94b4ce890b80954d136fe13fd03a790"
+      ],
+      "assertions": {
+        "baseline_owner": {
+          "bytes": 10997,
+          "sha256": "2cebbf229229e0960b34610f5167aad9c424935331500082b3e31f7f28479efc"
+        },
+        "baseline_version": "0.0.119",
+        "exact_full_bmp_pairs": 2
+      }
+    },
+    {
+      "kind": "omission",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 64588,
+        "sha256": "a30f5bca52cb590e30c40c38451efd30b3103cf81766e80f5756ead851d34098"
+      },
+      "evidence": {
+        "bytes": 109782,
+        "sha256": "14633d872b4a9136744769f6418a50eafe3eadaf0121861eeb0c9a42a09916e1"
+      },
+      "captures": 2,
+      "native_owners": 2,
+      "rpc_count": 24,
+      "image_sha256": [
+        "353a05abad1d5643849cc37527aa6320c07f12a3c5c7c6bfb89fcbed1f8af547",
+        "353a05abad1d5643849cc37527aa6320c07f12a3c5c7c6bfb89fcbed1f8af547"
+      ],
+      "assertions": {
+        "baseline_owner": {
+          "bytes": 10990,
+          "sha256": "95ea892e6f2bf3558da435c8a3d739c1dad9196b4fb4b05f27d03d7269596394"
+        },
+        "baseline_version": "0.0.119",
+        "exact_full_bmp_pairs": 2
+      }
+    },
+    {
+      "kind": "omission",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 64595,
+        "sha256": "8f7775c8f7295d82f8af3a69188f856cd29e34edf78de6338b330bff4a2abc4f"
+      },
+      "evidence": {
+        "bytes": 110098,
+        "sha256": "1cf06ad1c244c394ce446c7d44a6c29d1f8979d75eb03f47ad00e0be4814047c"
+      },
+      "captures": 2,
+      "native_owners": 2,
+      "rpc_count": 24,
+      "image_sha256": [
+        "af57cb137db42f49257c6fd0a1a3dcf81352b2797c870ee2e0215c71efd3781f",
+        "af57cb137db42f49257c6fd0a1a3dcf81352b2797c870ee2e0215c71efd3781f"
+      ],
+      "assertions": {
+        "baseline_owner": {
+          "bytes": 10995,
+          "sha256": "076c84c8f9a4f77450fed30f315603fde066fa45dc139c36c19128d00e85a845"
+        },
+        "baseline_version": "0.0.119",
+        "exact_full_bmp_pairs": 2
+      }
+    },
+    {
+      "kind": "skin",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 63727,
+        "sha256": "d818705581d722447ed47b35118c70e86b27599f772b27a289b48f0e8a797543"
+      },
+      "evidence": {
+        "bytes": 266995,
+        "sha256": "15190ac148263cee3042a591596a2757672e71bba11372a7736c9c264088868e"
+      },
+      "captures": 7,
+      "native_owners": 3,
+      "rpc_count": 28,
+      "image_sha256": [
+        "a3a2d83f69a5fa0b77e6af8c4139747938b190499c00f78001c53b101e5da1fa",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "animation_ticks": 60,
+        "independent_skin_pair": 1,
+        "exact_repeat_pair": 1,
+        "other_camera_omission_pair": 1,
+        "exact_world_probe_pairs": 36
+      }
+    },
+    {
+      "kind": "skin",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 63730,
+        "sha256": "d952ff15afa3583f1701d4c1701c403870989c913171ed505cd0514b8a126fe9"
+      },
+      "evidence": {
+        "bytes": 267201,
+        "sha256": "f36bfcf03f2788807c6e78a13b16b70b76871e545853ba839ee80c6ffa580399"
+      },
+      "captures": 7,
+      "native_owners": 3,
+      "rpc_count": 28,
+      "image_sha256": [
+        "a3a2d83f69a5fa0b77e6af8c4139747938b190499c00f78001c53b101e5da1fa",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "animation_ticks": 60,
+        "independent_skin_pair": 1,
+        "exact_repeat_pair": 1,
+        "other_camera_omission_pair": 1,
+        "exact_world_probe_pairs": 36
+      }
+    },
+    {
+      "kind": "skin",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 63737,
+        "sha256": "bb3f4ae79b670a2deb1a2841cbe23d40b5e181e81574348b929c38913705ec7c"
+      },
+      "evidence": {
+        "bytes": 267932,
+        "sha256": "6a77476659b658fc6108f8db54ee39d034373daf33f27b5cd10af4f8ac213422"
+      },
+      "captures": 7,
+      "native_owners": 3,
+      "rpc_count": 28,
+      "image_sha256": [
+        "a3a2d83f69a5fa0b77e6af8c4139747938b190499c00f78001c53b101e5da1fa",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "animation_ticks": 60,
+        "independent_skin_pair": 1,
+        "exact_repeat_pair": 1,
+        "other_camera_omission_pair": 1,
+        "exact_world_probe_pairs": 36
+      }
+    },
+    {
+      "kind": "skin",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 63741,
+        "sha256": "6440ee95130551d6fb3b80594ce832e1af865e7aa735b711c6e4685d4ff0b1d3"
+      },
+      "evidence": {
+        "bytes": 268137,
+        "sha256": "b642c0aff89490f50c89cdf6a450d2aed45e05d5bdb64b22fff8e339305866c6"
+      },
+      "captures": 7,
+      "native_owners": 3,
+      "rpc_count": 28,
+      "image_sha256": [
+        "a3a2d83f69a5fa0b77e6af8c4139747938b190499c00f78001c53b101e5da1fa",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "719e4add689284f9eee62ebfd5f8eaf7812946d48e8f3e12b3b5fd797caf659e",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "animation_ticks": 60,
+        "independent_skin_pair": 1,
+        "exact_repeat_pair": 1,
+        "other_camera_omission_pair": 1,
+        "exact_world_probe_pairs": 36
+      }
+    },
+    {
+      "kind": "lifecycle",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": null,
+      "owner": {
+        "bytes": 83917,
+        "sha256": "c76976c1431c56b47dbc870626e3948c9f412b5427cb37205053958b76cbe659"
+      },
+      "evidence": {
+        "bytes": 1651374,
+        "sha256": "1b4faa45fb8056dd09ded3cd79c1e257d6b6906aa973b0b13eeb153d4cbd2f83"
+      },
+      "captures": 8,
+      "native_owners": 2,
+      "rpc_count": 81,
+      "image_sha256": [
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "3436971f31c0eb36ccc1f19256ffe0988ebba64fad735ba693e70fb6cb5538bb",
+        "4436587c03b779390599829e26e948b9b57a0566198977e0b1c1c4c9d28a44e7",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "3436971f31c0eb36ccc1f19256ffe0988ebba64fad735ba693e70fb6cb5538bb",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b"
+      ],
+      "assertions": {
+        "scalar_adoptions": 1,
+        "texture_insertion": 1,
+        "texture_removal": 1,
+        "world_fov_preference_changes": 2,
+        "durable_complete_snapshot_receipts": 6,
+        "exact_payload_comparisons": 5
+      }
+    },
+    {
+      "kind": "lifecycle",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "recipe": null,
+      "owner": {
+        "bytes": 83920,
+        "sha256": "29647313a20ad51a031dd657366c7a6913e50870baed14830b9a9f078a1d9916"
+      },
+      "evidence": {
+        "bytes": 1651898,
+        "sha256": "9813d8604edba3a44b53f44345741cbf44a4cba913f1a6a4280864256c008f32"
+      },
+      "captures": 8,
+      "native_owners": 2,
+      "rpc_count": 81,
+      "image_sha256": [
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "3436971f31c0eb36ccc1f19256ffe0988ebba64fad735ba693e70fb6cb5538bb",
+        "4436587c03b779390599829e26e948b9b57a0566198977e0b1c1c4c9d28a44e7",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "3436971f31c0eb36ccc1f19256ffe0988ebba64fad735ba693e70fb6cb5538bb",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b",
+        "951ad283acdb44503d6eac609d457cebeea41b9a35077a6c3ed4444a1c93a31b"
+      ],
+      "assertions": {
+        "scalar_adoptions": 1,
+        "texture_insertion": 1,
+        "texture_removal": 1,
+        "world_fov_preference_changes": 2,
+        "durable_complete_snapshot_receipts": 6,
+        "exact_payload_comparisons": 5
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "recipe": "forward4",
+      "owner": {
+        "bytes": 64676,
+        "sha256": "cdacb1ecc7f3f654cff922bb43b35580152be5e3c0022f42eb682c95637c5d8d"
+      },
+      "evidence": {
+        "bytes": 572349,
+        "sha256": "f5a9d354b1551d6ab11f89e76c444f0eba0128680f539ece0c36ab333c2260e7"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "3440ebae5823be7b7f64983daed463549b9fc175608665ebc0877eae4a1a5082",
+        "3440ebae5823be7b7f64983daed463549b9fc175608665ebc0877eae4a1a5082",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 0,
+        "foreground_last_light_signal_pixels": 900
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "recipe": "deferred1",
+      "owner": {
+        "bytes": 67576,
+        "sha256": "13ae29ac8655f32a4b013e2b90c7b8dffc99ab96f17a93dc39cffd1f3f8de64a"
+      },
+      "evidence": {
+        "bytes": 585157,
+        "sha256": "76d85db5304fc035bd792414299408577b151e7c67a22ad7bd9c13afadca0e85"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "fe208c27e0fb614edb65e2822425149d6cb762ec152cca9d3e22c3a9a54afdc3",
+        "fe208c27e0fb614edb65e2822425149d6cb762ec152cca9d3e22c3a9a54afdc3",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 2,
+        "foreground_last_light_signal_pixels": 900
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "recipe": "forward-fsr-quality",
+      "owner": {
+        "bytes": 67593,
+        "sha256": "d8cdfb43f44776fa93362d3e1d6a6b172116a0da22a17539c9e6c3a7affd07d3"
+      },
+      "evidence": {
+        "bytes": 587465,
+        "sha256": "4f7462a5aa6bc1a94c9fe5656a2318cf73335e828d677325146c2b9a739f3208"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "0d9e1b5e89dc7a811240361a77e4c6b22b25822705c1778e2adeb8350aadec35",
+        "8141c07c761596a8be095b1d5357ff4ccc386b95a0dc9f7a9f819c12b5cc85f0",
+        "8141c07c761596a8be095b1d5357ff4ccc386b95a0dc9f7a9f819c12b5cc85f0",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 2,
+        "foreground_last_light_signal_pixels": 900
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": "forward4",
+      "owner": {
+        "bytes": 64686,
+        "sha256": "5f4ed785aa747b1a33d961a71d8716d9f30d5bb26a9906d073102aeea38088cf"
+      },
+      "evidence": {
+        "bytes": 571404,
+        "sha256": "4e7513927531a3aec37947cdd4b7e4139681220a5b301520f3ad95f2885b7e94"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "a1ceab4a3f3d9420b2897dc55733ddd5060dddd344957db6cd98d60e781e5cb8",
+        "a1ceab4a3f3d9420b2897dc55733ddd5060dddd344957db6cd98d60e781e5cb8",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 0,
+        "foreground_last_light_signal_pixels": 900
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "recipe": "deferred1",
+      "owner": {
+        "bytes": 67578,
+        "sha256": "4d58ac11609aca9a0037888a298376cd8b82e7cda90815a6628d147bc0a32fb3"
+      },
+      "evidence": {
+        "bytes": 584150,
+        "sha256": "33318e25bfb376175287531484cb2047789d629895ab293c8f39366ee6a46328"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "031c2b609d04bdc9b6a26468623e6500959d26599d96ca6fda0667a3712f4d79",
+        "031c2b609d04bdc9b6a26468623e6500959d26599d96ca6fda0667a3712f4d79",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 2,
+        "foreground_last_light_signal_pixels": 900
+      }
+    },
+    {
+      "kind": "lighting",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "recipe": "forward-fsr-quality",
+      "owner": {
+        "bytes": 67598,
+        "sha256": "904811b321546ac8f337ebd4aeac2db18bbcce5bbbb7da2f8d27fa354562d6a9"
+      },
+      "evidence": {
+        "bytes": 586495,
+        "sha256": "ace0ec9480f84cb4993ba5897e271b55db1972dc73d540db1d7976cbf8ef0b40"
+      },
+      "captures": 9,
+      "native_owners": 1,
+      "rpc_count": 33,
+      "image_sha256": [
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "49db4e58d5aeafee98fc9bbf9866a5d91c8d3530cc133656e096cae844dcd812",
+        "4903fbe32b3eb5eace218b34eb7593c52498c5bff31622fe25ac6a7f872496d7",
+        "4903fbe32b3eb5eace218b34eb7593c52498c5bff31622fe25ac6a7f872496d7",
+        "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "261ddeb5dd8c5b1a295d19676f50ddfbe9ae0803e45a99ff914bcbd8a77324e4",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8",
+        "da40c0354723ab4bb1a7ef61195427fbd2cc5b3388a8493ac657be526b4931b8"
+      ],
+      "assertions": {
+        "own_grid_pairs": 2,
+        "finite_overflow_lights": 65,
+        "hidden_shadow_combinations": 4,
+        "world_product_probe_controls": 2,
+        "foreground_last_light_signal_pixels": 900
+      }
+    }
+  ],
+  "total_gpu_captures": 130,
+  "accepted_windows_jobs_naturally_empty": true,
+  "excluded_history": [
+    {
+      "producer": {
+        "bytes": 17981,
+        "sha256": "405bfcb49ed76d4936215b134159969196739ee06d81562574945f9f8717f405"
+      },
+      "source_freeze": {
+        "bytes": 46046,
+        "sha256": "6de55c638d514d43020742ab6ddcdffb93e4bf894b94b6b2c4e9d515792f6106"
+      },
+      "retained_source_archive": {
+        "bytes": 3163,
+        "sha256": "adfdd9aa47048f3c52116cb5fe4107619bc7d973aae1f41eca7464b8a0f04b88"
+      },
+      "qualified": false,
+      "native_execution": false,
+      "forced_cleanup": false,
+      "reason": "Compilation setup/API error; preserved and excluded."
+    },
+    {
+      "producer": {
+        "bytes": 17779,
+        "sha256": "a90c3b219bbc63c39c15357b4b526edf09095006ddf85a6f3255ad08ddeefb63"
+      },
+      "source_freeze": {
+        "bytes": 46046,
+        "sha256": "b659a4207c03ba78542192c3f56322965cef3b3a4c62d3f7d7401a243b4f6745"
+      },
+      "retained_source_archive": {
+        "bytes": 3057,
+        "sha256": "36af21580d0d2200cb1963cebb9e8bf68cda8c4d5800072e60781f6b0466b73b"
+      },
+      "qualified": false,
+      "native_execution": false,
+      "forced_cleanup": false,
+      "reason": "Compilation setup/API error; preserved and excluded."
+    },
+    {
+      "producer": {
+        "bytes": 35290,
+        "sha256": "6d3daa453a6b5da37e02bb92ab1c77b93df4245893aa1f16be8a30ff2e52ec80"
+      },
+      "owner": {
+        "bytes": 45980,
+        "sha256": "fea68f5977c035f85064f02993122965dd8a73b603b037a7e907ff005f5abcbe"
+      },
+      "worker": {
+        "bytes": 15047,
+        "sha256": "ab4fafa698bd5473c02074e55985dc986fd2709b90b6b6fba6d1b9d0dae9a48a"
+      },
+      "retained_source_archive": {
+        "bytes": 3428,
+        "sha256": "4ee589eae40d31fcf75103789c3cc0129caff6366e92cdb3dd789bac2b718b19"
+      },
+      "qualified": false,
+      "forced_cleanup": false,
+      "reason": "Protocol setup expected a file before the first authoring transaction; retained and excluded."
+    },
+    {
+      "owner": {
+        "bytes": 63273,
+        "sha256": "5e56e773e464c2017a4f0a34a8a8d42c05bc924f9fa78ec49db52a9ea29dcff7"
+      },
+      "evidence": {
+        "bytes": 993627,
+        "sha256": "02bced15b506a5236ac2f0ae4f84cf5acc8429cb8122b9abd056b24014afd1c2"
+      },
+      "qualified": false,
+      "forced_cleanup": false,
+      "reason": "Fixture receipt validation failure; retained and excluded from accepted capture counts."
+    },
+    {
+      "owner": {
+        "bytes": 63285,
+        "sha256": "e9ed14df864fa394b761ec2202e0458cfbef082f453f654d774bb7d117b7c0ce"
+      },
+      "evidence": {
+        "bytes": 994224,
+        "sha256": "8e2580a78719598f9007333d384386a3bf63f2ab801b9d1fd90736e2464ddfd7"
+      },
+      "qualified": false,
+      "forced_cleanup": false,
+      "reason": "Fixture receipt validation failure; retained and excluded from accepted capture counts."
+    }
+  ],
+  "limitations": [
+    "No first-person gameplay loop, physical weapon clearance, transparent foreground, temporal foreground AA, performance or latency qualification.",
+    "Foreground receives available world-atlas shadows; it neither casts world shadows nor self-shadows.",
+    "World FSR and MSAA are qualified only in the explicit listed recipes; foreground itself remains single-sample and outside reconstruction.",
+    "Shared player scope is paused scalar/texture adoption and world-FOV preferences; no resize, camera-cut or mutable draw membership API claim.",
+    "Skin standalone captures qualify committed pose and receipts; they do not prove one-dispatch-per-frame or persistent renderer lifetime.",
+    "Logical384MiB resource admission is source-enforced, not a measured Vulkan resident heap or allocation-failure qualification.",
+    "Native build uses the retained incremental cache; not a complete third-party rebuild."
+  ]
+}

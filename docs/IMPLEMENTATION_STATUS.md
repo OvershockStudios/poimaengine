@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.119**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.120**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.120 adds a separate frozen Camera viewmodel lens and explicit
+CameraDraw bindings. Named Game cameras render bound opaque arms/weapons with
+independent FOV and self-depth; camera-hidden bodies retain world shadows.
+The output-resolution foreground uses its own cluster grid and composites in
+linear HDR after world resolve/reconstruction, before the shared tone map.
+World depth, normals, motion and reconstruction inputs remain world-only.
+Exact scene receipts include selected lens, drawable IDs and incarnations.
+Nineteen Windows native suites, nine camera-draw groups and four API groups
+with 48 lossless calls pass, including graph rejection, invisible binding caps,
+instance remapping and complete fresh save restoration. Twenty GPU cohorts
+record 130 actual 320x240 synthetic captures on AMD/NVIDIA forward/deferred paths,
+checking independent projection, weighted animation, other-camera omission,
+world-product isolation, unchanged default output and foreground light-grid
+parity/overflow. Explicit lighting recipes include world MSAA4 and FSR Quality.
+Two paused NVIDIA player windows check scalar/texture adoption, retained retries
+and world-FOV preferences against authored references and six complete durable
+checkpoints each. All accepted Windows Jobs close naturally with unchanged
+admitted inputs. Foreground stays opaque and single-sample, without temporal
+AA or reconstruction; it receives available world-atlas shadows but casts
+neither world shadows nor foreground self-shadows. Lens/membership changes,
+physical weapon clearance, gameplay ADS and game-scale performance remain
+separate work. Logical foreground resident-plus-staging payload is capped at
+384 MiB, with existing aggregate renderer budgets also enforced. This is not
+measured Vulkan heap use or allocation-failure qualification.
+[Contract](VIEWMODELS.md), [results](evidence/m2-first-person-viewmodels.json).
 
 Version 0.0.119 adds opt-in planar root motion from frozen original model
 nodes, with Extract diagnostics or collision-resolved Character locomotion.

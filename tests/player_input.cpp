@@ -102,6 +102,57 @@ int main() {
               materials.presented->player_generation==9,"Exact replacement receipt lost its owner boundary.");
         auto duplicate=*materials.submitted;
         check(!materials.submit(std::move(duplicate)),"Old frame sequence was acknowledged twice.");
+        // First-person lens and concrete selected drawable incarnations belong
+        // to the frame identity, even when material/source epochs match.
+        check(!renderer_scene_result(scene).camera_draw,"Omitted camera draw changed legacy receipt.");
+        scene.viewmodel=SceneViewmodel{SceneLens{75,.01,10},{}};
+        for(const auto& id:{"weapon","arms"}) {
+            SceneObject object;object.entity_id=id;object.world=identity_matrix();object.incarnation=4;
+            scene.viewmodel->objects.push_back(std::move(object));
+        }
+        SceneObject body;body.entity_id="body";body.world=identity_matrix();body.incarnation=8;
+        body.camera_visible=false;body.camera_draw=CameraDrawBinding{"camera",CameraDrawMode::Hidden};
+        scene.objects.push_back(body);
+        const auto selected=renderer_scene_result(scene);
+        check(selected.camera_draw && selected.camera_draw->viewmodel_lens==SceneLens{75,.01,10} &&
+              selected.camera_draw->viewmodels==std::vector<SceneDrawableIdentity>{{"arms",4},{"weapon",4}} &&
+              selected.camera_draw->hidden==std::vector<SceneDrawableIdentity>{{"body",8}},
+              "Frame selection metadata lost lens, sorted identity or shadow-only body.");
+        materials.observe(scene,"session-b",2,9);
+        for(unsigned mismatch=0;mismatch<5;++mismatch) {
+            auto wrong_view=*materials.observed;wrong_view.scene.frame_sequence=4;wrong_view.scene.submission_id=45;
+            auto& draw=*wrong_view.scene.camera_draw;
+            if(mismatch==0)draw.viewmodel_lens->vertical_fov=76;
+            if(mismatch==1)++draw.viewmodels[0].incarnation;
+            if(mismatch==2)draw.viewmodels.pop_back();
+            if(mismatch==3)draw.hidden[0].entity_id="other-body";
+            if(mismatch==4)wrong_view.scene.camera_draw.reset();
+            check(!materials.submit(std::move(wrong_view)),"Frame receipt accepted a mismatched camera draw domain.");
+        }
+        auto foreground_frame=*materials.observed;foreground_frame.scene.frame_sequence=4;foreground_frame.scene.submission_id=45;
+        auto foreground_shown=foreground_frame;
+        check(materials.submit(std::move(foreground_frame)) && materials.present(std::move(foreground_shown)),
+              "Exact foreground frame receipt failed submission/presentation.");
+        scene.viewmodel->objects.clear();scene.objects.clear();
+        const auto empty=renderer_scene_result(scene);
+        check(empty.camera_draw && empty.camera_draw->viewmodel_lens && empty.camera_draw->viewmodels.empty() &&
+              !same_renderer_snapshot(empty,selected),"Configured empty foreground aliased selected or absent domain.");
+        // A real player projection overrides the world lens only.
+        class LensOwner final:public PlayerSession {
+        public:
+            SceneSnapshot value;
+            std::string identity() const override {return "lens-owner";}
+            std::uint64_t tick() const override {return 0;}
+            bool controller_valid(const std::string&) const override {return false;}
+            SceneSnapshot snapshot(const std::string&) const override {return value;}
+            PlayerAudioState audio_state(const std::string&) const override {return {};}
+            bool advance(const std::vector<RuntimeInput>&,const std::vector<KinematicTarget>&,
+                         const std::vector<SoundCommand>&) override {return false;}
+        } lens_owner;
+        lens_owner.value=scene;PlayerOptions lens_options;lens_options.camera="camera";lens_options.vertical_fov=110;
+        const auto projected=player_snapshot(lens_options,lens_owner);
+        check(projected.vertical_fov==110 && projected.viewmodel->lens==SceneLens{75,.01,10} &&
+              lens_owner.value.vertical_fov==60,"Player world FOV override changed foreground or authored lens.");
         std::cout<<"Input/clock policy and exact material snapshot/submission/presentation receipts passed.\n";
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

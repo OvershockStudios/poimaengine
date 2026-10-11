@@ -37,12 +37,16 @@ struct CharacterController {
     float radius = 0.3f, height = 1.8f, speed = 4, jump_speed = 5;
     std::string camera;
 };
-struct RuntimeCamera { double vertical_fov=60, near_plane=0.1, far_plane=1000; };
+struct RuntimeCamera {
+    double vertical_fov=60, near_plane=0.1, far_plane=1000;
+    std::optional<SceneLens> viewmodel;
+};
 // Owned live camera and lighting values, without geometry, skin palettes or UI.
 struct RuntimeCameraState {
     Matrix4 camera_world=identity_matrix();
     double vertical_fov=60,near_plane=0.1,far_plane=1000;
     SceneLighting lighting;
+    std::optional<SceneLens> viewmodel;
 };
 struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;
@@ -195,6 +199,7 @@ struct RuntimeEntityDefinition {
     std::optional<MeshCollider> mesh_collider;
     std::map<std::string,components::Payload> components;
     std::optional<RuntimeHitRegion> hit_region;
+    std::optional<CameraDrawBinding> camera_draw;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
@@ -238,6 +243,11 @@ struct RuntimeDefinition {
 void validate_runtime_animation(const RuntimeDefinition& definition);
 void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 void validate_runtime_hit_regions(const RuntimeDefinition& definition);
+// Portable frozen graph validation; omission preserves legacy admission.
+void validate_runtime_camera_draw(const RuntimeDefinition& definition);
+// Partition a detached generic snapshot once, after named camera/lens and all
+// incarnations are assigned. Stages before publication; never mutates a cache.
+void select_scene_camera_draw(SceneSnapshot&,std::optional<SceneLens>);
 // Validates recipe values/assets without creating entities or physics bodies.
 // Custom entity-reference liveness resolves against the eventual spawn candidate.
 void validate_runtime_templates(const RuntimeDefinition& definition);

@@ -115,6 +115,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         auto entity=*definitions.at(local);entity.id=nodes.at(local);remap(entity.parent);
         if(local==recipe.root)entity.transform=root_transform;
         if(entity.character)remap(entity.character->camera);
+        if(entity.camera_draw)remap(entity.camera_draw->camera);
         if(entity.rig_node)remap(entity.rig_node->rig);
         if(entity.animation_rig && entity.animation_rig->root_motion)remap(entity.animation_rig->root_motion->actor);
         // Frozen IK chains use model indices in AnimationRig, not world IDs.
@@ -218,6 +219,8 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 components::validate_payload(*schema,payload);payload_bytes+=payload.size();
             }
         }
+        RuntimeDefinition camera_graph;camera_graph.entities=entities;
+        validate_runtime_camera_draw(camera_graph);
         if(!recipe.entities.empty()) {
             RuntimeDefinition graph_definition;graph_definition.entities=entities;
             validate_runtime_animation(graph_definition);validate_runtime_mesh_colliders(graph_definition);

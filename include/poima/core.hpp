@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "poima/scene.hpp"
 
 namespace poima {
 
@@ -156,6 +157,15 @@ struct LightAssignmentDiagnostics {
     std::uint64_t candidate_references=0,overflow_clusters=0,max_candidates=0,buffer_bytes=0;
     std::string fallback_reason;
 };
+struct ViewmodelDiagnostics {
+    bool rendered=false;
+    std::uint32_t output_width=0,output_height=0;
+    // Logical attachment, constant/object, cluster and readback payload.
+    // This is not the Vulkan allocator's measured heap consumption.
+    std::uint64_t logical_bytes=0;
+    DrawCounts draws;
+    LightAssignmentDiagnostics light_assignment;
+};
 struct FrameExecutionDiagnostics {
     std::uint32_t limit=2;
     std::uint64_t submitted=0,outstanding=0,peak_outstanding=0;
@@ -185,16 +195,27 @@ struct ReconstructionDiagnostics {
 // zero frame/submission IDs. Submitted means accepted queue work; presented
 // means frame() completed after a successful/suboptimal queue present. Neither
 // means scan-out, display latency, GPU retirement or pixels physically visible.
+struct SceneDrawableIdentity {
+    std::string entity_id;
+    std::uint64_t incarnation=0;
+    friend bool operator==(const SceneDrawableIdentity&,const SceneDrawableIdentity&)=default;
+};
+struct RendererCameraDrawResult {
+    std::optional<SceneLens> viewmodel_lens;
+    std::vector<SceneDrawableIdentity> viewmodels,hidden;
+    friend bool operator==(const RendererCameraDrawResult&,const RendererCameraDrawResult&)=default;
+};
 struct RendererSceneResult {
     std::string world_id,camera_id,presentation_source_id;
     std::uint64_t authored_revision=0,presentation_generation=0,material_revision=0;
     std::uint64_t frame_sequence=0,submission_id=0;
+    std::optional<RendererCameraDrawResult> camera_draw;
     friend bool operator==(const RendererSceneResult&,const RendererSceneResult&)=default;
 };
 inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSceneResult& b) noexcept {
     return a.world_id==b.world_id && a.camera_id==b.camera_id && a.presentation_source_id==b.presentation_source_id &&
         a.authored_revision==b.authored_revision && a.presentation_generation==b.presentation_generation &&
-        a.material_revision==b.material_revision;
+        a.material_revision==b.material_revision && a.camera_draw==b.camera_draw;
 }
 struct RenderDiagnostics {
     bool deferred=false;
@@ -215,6 +236,7 @@ struct RenderDiagnostics {
     TimingSummary prepare_cpu,record_cpu,render_call_cpu,completion_wait_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
     ShadowFilter shadow_filter = ShadowFilter::pcf3_point;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
+    std::optional<ViewmodelDiagnostics> viewmodel;
 };
 
 struct RenderReport {

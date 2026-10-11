@@ -72,6 +72,15 @@ Frustum make_frustum(const Matrix4& view_projection);
 bool intersects(const Bounds& world,const Frustum& frustum);
 struct MaterialTextures;
 struct SkinPose { std::vector<Matrix4> palette; };
+struct SceneLens {
+    double vertical_fov=60,near_plane=.1,far_plane=1000;
+    friend bool operator==(const SceneLens&,const SceneLens&)=default;
+};
+enum class CameraDrawMode { Viewmodel, Hidden };
+struct CameraDrawBinding {
+    std::string camera;
+    CameraDrawMode mode=CameraDrawMode::Viewmodel;
+};
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -84,7 +93,11 @@ struct SceneObject {
     std::uint64_t incarnation=0;
     // Per drawable; independent of visibility, materials and rig playback.
     bool cast_shadows=true,receive_shadows=true;
+    // Camera exclusion is independent of frustum culling and shadow eligibility.
+    bool camera_visible=true;
+    std::optional<CameraDrawBinding> camera_draw;
 };
+struct SceneViewmodel { SceneLens lens;std::vector<SceneObject> objects; };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;
@@ -104,6 +117,7 @@ struct SceneSnapshot {
     std::uint64_t view_cut_generation=0;
     // Session-local accepted scalar-material epoch, separate from authored/tick.
     std::uint64_t material_revision=0;
+    std::optional<SceneViewmodel> viewmodel;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

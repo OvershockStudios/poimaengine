@@ -109,6 +109,16 @@ Live membership indices are also separate from native object ownership. Batch ro
 
 Native hosts can use `WorldSession::advance_tick(expected_session, expected_tick, inputs)` for one guarded tick and post-commit save/load servicing. It returns fixed-size `WorldTickAdvance` metadata without a JSON round trip or RPC receipt. A successful call is already committed: presentation failure must not replay it. If `replaced` is true, `current_tick` belongs to the new session; discard old input and reacquire its identity before continuing. Automatic editor playback uses this route independently for each catch-up tick. This does not change explicit `runtime.step` batch atomicity.
 
+## Camera presentation
+
+A Camera may include a separate `viewmodel` lens. Explicit `CameraDraw`
+bindings select first-person arms/weapons for that camera's foreground pass,
+or hide a body from the camera while retaining world shadows. World FOV
+preferences leave the foreground lens unchanged. Rigs still use the shared
+native animation pose and fixed-tick runtime; this adds no second simulation.
+See [first-person viewmodels](VIEWMODELS.md) for strict schemas, hierarchy
+requirements, frozen membership, receipts and rendering limits.
+
 ## Physics components
 
 | Component | Fields and restrictions |

@@ -30,9 +30,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}};
-    const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
+    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}};
+    const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
+    auto camera=lens;camera["properties"]["viewmodel"]=lens;
+    auto draw_camera=id;draw_camera["not"]={{"const",std::string(32,'0')}};
+    const Json camera_draw=object_schema({{"camera",draw_camera},{"mode",{{"enum",{"viewmodel","hidden"}}}}},{"camera","mode"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
@@ -118,7 +121,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         hit_variants.push_back(object_schema(props,required));
     }
     const Json hit_region={{"oneOf",hit_variants},{"description","Immutable query-only region; owner is self or an ancestor. Unique owner/name pairs and at most 4096 regions include disabled members. Local spheres, boxes and Y capsules use exact affine poses; no physics body or collision response."}};
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -131,7 +134,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}}}}, {"type"});
+    op("component.remove", {{"type", {{"enum", {"Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}}}}, {"type"});
     ops.push_back(object_schema({{"op",{{"const","navigation.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
     const auto reference_owner=object_schema({{"kind",{{"enum",{"entity","template","world"}}}},{"id",id}},{"kind","id"});
@@ -161,7 +164,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 88}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 89}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -187,14 +190,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
                 {"preview", {{"type", "boolean"}, {"default", false}}}}, {"request_id", "base_revision", "ops"})}}},
         {"components", components},
         {"limits", {{"entities", 10000}, {"request_bytes", 1048576}, {"document_bytes", max_document_bytes},
-            {"receipt_window", 128}, {"json_depth", 64},{"enabled_lights",max_scene_lights},{"lighting_environments",1},{"shadow_views",max_shadow_views},{"shadow_bytes",max_shadow_bytes},
+            {"camera_draw_bindings_per_mode_per_camera",32},{"receipt_window", 128}, {"json_depth", 64},{"enabled_lights",max_scene_lights},{"lighting_environments",1},{"shadow_views",max_shadow_views},{"shadow_bytes",max_shadow_bytes},
             {"mesh_collider_triangles_per_body",100000},{"mesh_collider_vertices_per_body",300000},
             {"mesh_collider_triangles_world",250000},{"mesh_collider_vertices_world",750000}}},
         {"invariants", {"Normalized XYZW quaternion; meters; local transforms; positive scale.",
             "Stable IDs are caller-supplied and cannot be reused after deletion.",
             "Pagination with after requires the returned revision.",
             "Single cooperative writer per document; manual file changes require reopening.",
-            "Camera requires 0.001 <= near < far <= 10000000 and an unscaled world transform.",
+            "Camera and optional complete viewmodel lens require 5..150 degree FOV and 0.001 <= near < far <= 10000000; camera world transforms must be unscaled.",
+            "CameraDraw requires one drawable and an existing nonzero Camera reference. Viewmodels require that Camera's viewmodel lens and a strict descendant hierarchy. Hidden references need no lens or descendant relationship.",
+            "CameraDraw limits count at most 32 bindings per mode per camera, including invisible meshes. Templates require local camera references. Named Game views separate viewmodels globally and hide bodies only for the target camera while retaining body shadows; external editor Scene views keep ordinary geometry. Viewmodels never cast world shadows and retain receive_shadows.",
             "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
             "Custom components use registered stable scalar/collection schemas and game:<type-id> keys; collection capacities count toward the 512-byte component budget. Prefabs and keep_world reparenting remain unsupported.",

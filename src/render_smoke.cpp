@@ -42,6 +42,8 @@
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
 #include "poima/scene_output_products_ps.hpp"
+#include "poima/viewmodel_composite_vs.hpp"
+#include "poima/viewmodel_composite_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
 #include "poima/cluster_lights_cs.hpp"
@@ -291,13 +293,39 @@ struct Context {
     vk::SwapchainKHR swapchain;
     vk::Extent2D extent;
     vk::Format format = vk::Format::eUndefined;
+    // One serial-queue scratch bundle; accepted slots retain its exact handles.
+    // Replacement stages a complete bundle and counts old+new logical payload.
+    struct ViewmodelResources {
+        std::uint32_t width=0,height=0;
+        std::uint64_t bytes=0;
+        nvrhi::TextureHandle color,depth,composite;
+        nvrhi::BufferHandle frame,objects,counts,indices;
+        std::array<nvrhi::BufferHandle,2> readbacks;
+        nvrhi::ShaderHandle vertex,pixel,compose_vertex,compose_pixel;
+        nvrhi::InputLayoutHandle input;
+        nvrhi::BindingLayoutHandle compose_layout;
+        nvrhi::BindingSetHandle cluster_bindings,compose_bindings;
+        nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline,compose_pipeline;
+        nvrhi::FramebufferHandle framebuffer,compose_framebuffer;
+        std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> materials;
+    };
+    std::shared_ptr<ViewmodelResources> viewmodel;
+    std::vector<DrawItem> viewmodel_draws;
+    std::vector<ObjectData> viewmodel_objects;
+    FrameConstants viewmodel_frame{};
+    LightAssignmentDiagnostics viewmodel_lights;
+    bool viewmodel_enabled=false;
+    std::optional<ViewmodelDiagnostics> pending_viewmodel;
+    static constexpr std::uint64_t viewmodel_cap=384ull*1024*1024;
     struct FrameSlot {
         vk::Semaphore acquired;
         vk::QueryPool timestamps;
         nvrhi::BufferHandle cluster_readback,skin_readback;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
-        bool occupied=false,timing=false;
+        bool occupied=false,timing=false,has_skin=false;
+        std::shared_ptr<ViewmodelResources> viewmodel;
+        std::optional<ViewmodelDiagnostics> viewmodel_diagnostics;
         SteadyClock::time_point started;
         DrawCounts draws;
         LightAssignmentDiagnostics lights;
@@ -377,6 +405,7 @@ struct Context {
         std::array<float,16> view_projection{};
         std::array<float,4> viewport{};
         std::array<double,3> lens{};
+        std::optional<RendererCameraDrawResult> camera_draw;
         std::map<std::string,ObjectHistory> objects;
     } history,pending_history;
     bool pending_history_valid=false;
@@ -390,6 +419,7 @@ struct Context {
     nvrhi::BindingLayoutHandle output_layout;
     nvrhi::BindingSetHandle output_bindings;
     bool output_reconstruction_bound=false;
+    const void* output_source_bound=nullptr;
     nvrhi::GraphicsPipelineHandle output_pipeline;
     nvrhi::BufferHandle vertices;
     nvrhi::InputLayoutHandle input_layout;
@@ -495,7 +525,7 @@ struct Context {
             // Partial recording/submission faults can leave work outside a slot.
             if(renderer_fault)try {++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);} catch(...) {}
         }
-        commands = nullptr;
+        commands = nullptr;viewmodel.reset();viewmodel_draws.clear();viewmodel_objects.clear();for(auto& slot:slots)slot.viewmodel.reset();
         game_ui_framebuffers.clear();game_ui_pipeline=nullptr;game_ui_bindings.clear();game_ui_textures.clear();
         game_ui_vertices=nullptr;game_ui_indices=nullptr;game_ui_sampler=nullptr;game_ui_input=nullptr;
         game_ui_layout=nullptr;game_ui_vs=nullptr;game_ui_ps=nullptr;game_ui_frame.reset();
@@ -806,6 +836,7 @@ struct Context {
         std::copy_n(frame_constants.view_projection,16,pending_history.view_projection.begin());
         std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
         pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
+        pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
         pending_history_reset.clear();
         if(!scene_motion)pending_history_reset="products_unavailable";
         else if(pending_history.source.empty())pending_history_reset="source_unavailable";
@@ -818,6 +849,7 @@ struct Context {
         else if(history.camera!=pending_history.camera)pending_history_reset="camera_changed";
         else if(history.viewport!=pending_history.viewport)pending_history_reset="viewport_changed";
         else if(history.lens!=pending_history.lens)pending_history_reset="projection_changed";
+        else if(history.camera_draw!=pending_history.camera_draw)pending_history_reset="camera_draw_changed";
         pending_history_valid=pending_history_reset.empty();
         const auto& previous=pending_history_valid ? history.view_projection : pending_history.view_projection;
         std::copy(previous.begin(),previous.end(),frame_constants.previous_view_projection);
@@ -844,6 +876,16 @@ struct Context {
             require(pending_history.objects.emplace(item.entity_id,std::move(accepted)).second,"Scene object IDs must be unique within a submission.");
         }
         if(object_data.empty())object_data.push_back({});
+        viewmodel_objects.clear();
+        for(auto& item:viewmodel_draws) {
+            if(item.skin) {
+                auto& skin=*item.skin;skin.write_index=samples==1 && skin.accepted_sequence ? 1u-skin.accepted_index : 0u;
+                skin.vertices=skin.outputs[skin.write_index];skin.bindings=skin.output_bindings[skin.write_index];item.geometry.vertices=skin.vertices;
+            }
+            ObjectData data{};data.current=item.constants;std::copy_n(&item.constants.model[0][0],12,&data.previous_model[0][0]);data.history[1]=item.receive_shadows ? 0u : 1u;
+            viewmodel_objects.push_back(data);
+        }
+        if(viewmodel_enabled && viewmodel_objects.empty())viewmodel_objects.push_back({});
     }
     void commit_history() {
         if(!scene || (reconstruction && !scene_visible))return;
@@ -852,6 +894,7 @@ struct Context {
         for(auto& draw:draws)if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
             draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;
         }
+        for(auto& draw:viewmodel_draws)if(draw.skin && draw.camera_visible) {draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;}
         history=std::move(pending_history);
     }
     void prepare_light_resources() {
@@ -877,33 +920,33 @@ struct Context {
         cluster_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(cluster_shader).addBindingLayout(cluster_layout));
         require(cluster_bindings && cluster_pipeline,"Clustered light compute pipeline creation failed.");
     }
-    void configure_light_assignment() {
+    void configure_frame_lights(FrameConstants& frame_constants,LightAssignmentDiagnostics& pending_lights,const SceneLens& lens,const nvrhi::Viewport& viewport) {
         auto& info=pending_lights;info={};info.requested=clustered_requested;
         info.grid={cluster_x,cluster_y,cluster_z};info.cluster_count=cluster_cells;info.capacity=cluster_capacity;info.light_count=gpu_lights.size();
         // Steady-state storage bound: GPU indices/counts plus one CPU readback
         // per configured slot (readbacks are allocated lazily during warmup).
         info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
         for(const auto& light:gpu_lights)if(light.position_kind[3]<.5f || light.direction_range[3]==0)++info.global_lights;
-        const auto viewport=raster_viewport();
         frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
         frame_constants.cluster_viewport[2]=viewport.maxX-viewport.minX;frame_constants.cluster_viewport[3]=viewport.maxY-viewport.minY;
-        frame_constants.cluster_depth[2]=static_cast<float>(scene->near_plane);frame_constants.cluster_depth[3]=static_cast<float>(scene->far_plane);
+        frame_constants.cluster_depth[2]=static_cast<float>(lens.near_plane);frame_constants.cluster_depth[3]=static_cast<float>(lens.far_plane);
         frame_constants.cluster_grid[0]=cluster_x;frame_constants.cluster_grid[1]=cluster_y;frame_constants.cluster_grid[2]=cluster_z;frame_constants.cluster_grid[3]=0;
         if(!clustered_requested)info.fallback_reason="All-light reference requested.";
         else if(info.global_lights==info.light_count)info.fallback_reason="All lights have unbounded influence.";
         else if(!rigid_transform(scene->camera_world))info.fallback_reason="Non-rigid camera uses all-light reference.";
-        else if(scene->near_plane<1e-4 || scene->far_plane>1e7 || scene->far_plane/scene->near_plane>1e7 || scene->vertical_fov<1 || scene->vertical_fov>175)
+        else if(lens.near_plane<1e-4 || lens.far_plane>1e7 || lens.far_plane/lens.near_plane>1e7 || lens.vertical_fov<1 || lens.vertical_fov>175)
             info.fallback_reason="Extreme camera projection uses all-light reference.";
         else if(std::abs(scene->camera_world[12])>1e6 || std::abs(scene->camera_world[13])>1e6 || std::abs(scene->camera_world[14])>1e6)
             info.fallback_reason="Extreme camera translation uses all-light reference.";
         else if(!(frame_constants.cluster_viewport[2]>0 && frame_constants.cluster_viewport[3]>0))info.fallback_reason="Empty viewport uses all-light reference.";
         else {
-            frame_constants.cluster_depth[0]=static_cast<float>(std::log2(scene->near_plane));
-            frame_constants.cluster_depth[1]=static_cast<float>(std::log2(scene->far_plane/scene->near_plane)/cluster_z);
-            frame_constants.cluster_depth[2]=static_cast<float>(scene->near_plane);frame_constants.cluster_depth[3]=static_cast<float>(scene->far_plane);
+            frame_constants.cluster_depth[0]=static_cast<float>(std::log2(lens.near_plane));
+            frame_constants.cluster_depth[1]=static_cast<float>(std::log2(lens.far_plane/lens.near_plane)/cluster_z);
+            frame_constants.cluster_depth[2]=static_cast<float>(lens.near_plane);frame_constants.cluster_depth[3]=static_cast<float>(lens.far_plane);
             info.active=true;frame_constants.cluster_grid[3]=1;
         }
     }
+    void configure_light_assignment() { configure_frame_lights(frame_constants,pending_lights,{scene->vertical_fov,scene->near_plane,scene->far_plane},raster_viewport()); }
     void dispatch_light_assignment() {
         if(!pending_lights.active)return;
         nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(cluster_bindings);commands->setComputeState(state);
@@ -922,6 +965,14 @@ struct Context {
         }
         info.statistics_available=true;
         profiling::deferred_counter(slot.profile,"renderer.cluster_candidates",info.candidate_references);profiling::deferred_counter(slot.profile,"renderer.cluster_overflow",info.overflow_clusters);
+    }
+    void collect_viewmodel_assignment(FrameSlot& slot) {
+        if(!slot.viewmodel_diagnostics || !slot.viewmodel_diagnostics->light_assignment.active)return;
+        auto& info=slot.viewmodel_diagnostics->light_assignment;const auto readback=slot.viewmodel->readbacks.at(static_cast<std::size_t>(&slot-slots.data()));
+        const void* data=checked->mapBuffer(readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Foreground cluster statistics unavailable.");
+        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),data,sizeof(counts));checked->unmapBuffer(readback);
+        for(auto count:counts) {require(count<=info.light_count,"Foreground GPU cluster count exceeds light table.");info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,std::uint64_t(count));if(count>cluster_capacity)++info.overflow_clusters;}
+        info.statistics_available=true;
     }
     void prepare_timestamps() {
         if(timestamp_prepared)return;
@@ -1155,20 +1206,25 @@ struct Context {
         }
         return deformation;
     }
+    bool has_skin_draws() const {
+        for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list)if(draw.skin && (draw.camera_visible || draw.shadow_mask))return true;
+        return false;
+    }
     void dispatch_skinning() {
-        if(!pending_draws.skinned_instances)return;
-        commands->clearBufferUInt(skin_errors,0);
-        for(std::size_t i=0;i<draws.size();++i) {
-            const auto& draw=draws[i];if(!draw.skin || (!draw.camera_visible && !draw.shadow_mask))continue;
+        if(!has_skin_draws())return;
+        commands->clearBufferUInt(skin_errors,0);std::set<const SkinInstance*> dispatched;std::uint32_t index=0;
+        for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list) {
+            const auto error_index=index++;
+            if(!draw.skin || (!draw.camera_visible && !draw.shadow_mask) || !dispatched.insert(draw.skin).second)continue;
             const auto& deformation=*draw.skin;commands->writeBuffer(deformation.palette,deformation.joints.data(),deformation.joints.size()*sizeof(GpuJoint));
             nvrhi::ComputeState state;state.pipeline=skin_pipeline;state.bindings.push_back(deformation.bindings);commands->setComputeState(state);
-            const std::uint32_t parameters[4]={static_cast<std::uint32_t>(deformation.mesh->vertices.size()),static_cast<std::uint32_t>(deformation.joints.size()),static_cast<std::uint32_t>(i),0};
+            const std::uint32_t parameters[4]={static_cast<std::uint32_t>(deformation.mesh->vertices.size()),static_cast<std::uint32_t>(deformation.joints.size()),error_index,0};
             commands->setPushConstants(parameters,sizeof(parameters));commands->dispatch((parameters[0]+63)/64);
         }
         commands->copyBuffer(skin_readback,0,skin_errors,0,16);
     }
     void validate_skin_dispatch(FrameSlot& slot) {
-        if(!slot.draws.skinned_instances)return;
+        if(!slot.has_skin)return;
         const void* data=checked->mapBuffer(slot.skin_readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Skinning status readback failed.");
         std::uint32_t errors[4]{};std::memcpy(errors,data,sizeof(errors));checked->unmapBuffer(slot.skin_readback);
         if(errors[0]) {
@@ -1189,10 +1245,11 @@ struct Context {
         commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Texture upload failed.");
         texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
     }
-    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override) {
+    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override,bool foreground=false) {
+        auto& cache=foreground ? viewmodel->materials : material_cache;
         const auto key_material=std::make_pair(mesh,override);
-        if(const auto found=material_cache.find(key_material);found!=material_cache.end())return found->second;
-        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer));
+        if(const auto found=cache.find(key_material);found!=cache.end())return found->second;
+        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,foreground ? viewmodel->frame : frame_buffer));
         for(std::uint32_t slot=0;slot<5;++slot) {
             const TextureMap map=override ? override->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
             const auto texture=upload_texture(map.image ? map.image : white_image);
@@ -1209,9 +1266,9 @@ struct Context {
         }
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer));
-        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,foreground ? viewmodel->counts : cluster_counts))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,foreground ? viewmodel->indices : cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,foreground ? viewmodel->objects : object_buffer));
+        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");cache.emplace(key_material,result);return result;
     }
     void retain_scene_resources() {
         std::set<const MeshAsset*> meshes;
@@ -1226,7 +1283,7 @@ struct Context {
         retain_image(white_image);
         const TextureMap fallback;
         samplers.insert({fallback.wrap_s,fallback.wrap_t,fallback.min_filter,fallback.mag_filter});
-        for(const auto& object:scene->objects) {
+        auto retain_objects=[&](const std::vector<SceneObject>& objects) {for(const auto& object:objects) {
             if(object.skin)skin_ids.insert(object.entity_id);
             if(object.mesh) { meshes.insert(object.mesh.get());mesh_owners[object.mesh.get()]=object.mesh; }
             if(object.textures) { materials.insert(object.textures.get());material_owners[object.textures.get()]=object.textures; }
@@ -1236,9 +1293,11 @@ struct Context {
                 retain_image(map.image);samplers.insert({map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter});
             }
         }
+        };retain_objects(scene->objects);if(scene->viewmodel)retain_objects(scene->viewmodel->objects);
         // Owner maps retain old pointer identities until the associated GPU
         // cache entries are gone, preventing allocator-address reuse hits.
         std::erase_if(material_cache,[&](const auto& item){return !combinations.contains(item.first);});
+        if(viewmodel)std::erase_if(viewmodel->materials,[&](const auto& item){return !combinations.contains(item.first);});
         std::erase_if(geometry_cache,[&](const auto& item){return !meshes.contains(item.first);});
         std::erase_if(bounds_cache,[&](const auto& item){return item.first && !meshes.contains(item.first);});
         std::erase_if(skin_sources,[&](const auto& item){return !meshes.contains(item.first);});
@@ -1410,7 +1469,7 @@ struct Context {
             auto texture=checked->createTexture(desc);require(bool(texture),std::string("Reconstruction image allocation failed: ")+name);return texture;
         };
         const auto render_pixels=std::uint64_t(render.width)*render.height,output_pixels=std::uint64_t(output.width)*output.height;
-        require(render_pixels*((deferred ? 82 : 50)+(ao_enabled ? 4 : 0))+output_pixels*8<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
+        require(render_pixels*((deferred ? 82 : 50)+(ao_enabled ? 4 : 0))+output_pixels*8+viewmodel_resident_bytes()<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
         scene_hdr=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact scene radiance",true,deferred);
         scene_normal=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact shading normal",true,deferred);
         scene_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"Compact unjittered object motion",true,deferred);
@@ -1442,7 +1501,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_UAV(0,dense_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,reactive)),temporal_layout);
         require(bool(temporal_bindings),"Temporal input bindings creation failed.");
         reconstruction=std::make_unique<fsr3::Context>(static_cast<VkDevice>(device),static_cast<VkPhysicalDevice>(physical),dispatch.vkGetDeviceProcAddr,render,output);
-        require(reconstruction->gpu_bytes()+render_pixels*((deferred ? 82 : 50)+(ao_enabled ? 4 : 0))+output_pixels*8<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
+        require(reconstruction->gpu_bytes()+render_pixels*((deferred ? 82 : 50)+(ao_enabled ? 4 : 0))+output_pixels*8+viewmodel_resident_bytes()<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
         diagnostics.scene_products.normal_buffer_bytes=render_pixels*8;diagnostics.scene_products.motion_buffer_bytes=render_pixels*9;
         checked->runGarbageCollection();
     }
@@ -1486,6 +1545,142 @@ struct Context {
         // Its commands invalidate bindings, while NVRHI state tracking remains valid.
         commands->clearState();
     }
+    std::uint64_t viewmodel_resident_bytes(const std::shared_ptr<ViewmodelResources>& staged={}) const {
+        std::set<const ViewmodelResources*> identities;std::uint64_t bytes=0;
+        auto count=[&](const std::shared_ptr<ViewmodelResources>& bundle) {if(bundle && identities.insert(bundle.get()).second)bytes+=bundle->bytes;};
+        count(viewmodel);for(const auto& slot:slots)count(slot.viewmodel);count(staged);return bytes;
+    }
+    void validate_viewmodel_budget(std::uint64_t foreground_bytes) const {
+        require(foreground_bytes<=viewmodel_cap,"Foreground resident and staged payload exceeds the 384 MiB budget.");
+        if(reconstruction) {
+            const auto world=std::uint64_t(render_extent.width)*render_extent.height*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+std::uint64_t(output_extent.width)*output_extent.height*8;
+            require(world+foreground_bytes<=768ull*1024*1024,"World and foreground engine attachments exceed the 768 MiB reconstruction budget.");
+            require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
+        } else {
+            const auto pixels=std::uint64_t(extent.width)*extent.height;
+            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(samples==1 ? 17u : 0u)+(deferred ? 32u : 0u)+(ao_enabled ? 4u : 0u));
+            require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
+        }
+    }
+    std::shared_ptr<ViewmodelResources> stage_viewmodel(std::uint32_t width,std::uint32_t height) {
+        auto bundle=std::make_shared<ViewmodelResources>();bundle->width=width;bundle->height=height;
+        bundle->bytes=std::uint64_t(width)*height*20+sizeof(FrameConstants)+32*sizeof(ObjectData)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
+        validate_viewmodel_budget(viewmodel_resident_bytes(bundle));
+        auto image=[&](nvrhi::Format format,vk::Format vk_format,const char* name) {
+            const auto supported=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
+            const auto attachment=format==nvrhi::Format::D32 ? vk::FormatFeatureFlagBits::eDepthStencilAttachment : vk::FormatFeatureFlagBits::eColorAttachment;
+            const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|attachment;
+            require((supported&needed)==needed,"Foreground image format is unsupported.");
+            nvrhi::TextureDesc desc;desc.width=width;desc.height=height;desc.format=format;desc.sampleCount=1;desc.isRenderTarget=true;desc.isShaderResource=true;
+            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
+            auto result=checked->createTexture(desc);require(bool(result),std::string("Foreground allocation failed: ")+name);return result;
+        };
+        bundle->color=image(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Foreground output-local HDR coverage");
+        bundle->depth=image(nvrhi::Format::D32,vk::Format::eD32Sfloat,"Foreground independent self depth");
+        bundle->composite=image(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"World plus foreground linear HDR");
+        nvrhi::BufferDesc frame;frame.byteSize=sizeof(FrameConstants);frame.isConstantBuffer=true;frame.initialState=nvrhi::ResourceStates::ConstantBuffer;frame.keepInitialState=true;frame.debugName="Foreground frame constants";
+        bundle->frame=checked->createBuffer(frame);
+        nvrhi::BufferDesc objects;objects.byteSize=32*sizeof(ObjectData);objects.structStride=sizeof(ObjectData);objects.initialState=nvrhi::ResourceStates::ShaderResource;objects.keepInitialState=true;objects.debugName="Foreground immutable submission objects";
+        bundle->objects=checked->createBuffer(objects);
+        nvrhi::BufferDesc cells;cells.byteSize=cluster_cells*sizeof(std::uint32_t);cells.structStride=sizeof(std::uint32_t);cells.canHaveUAVs=true;cells.initialState=nvrhi::ResourceStates::ShaderResource;cells.keepInitialState=true;cells.debugName="Foreground cluster counts";
+        bundle->counts=checked->createBuffer(cells);cells.byteSize=cluster_cells*cluster_capacity*sizeof(std::uint32_t);cells.debugName="Foreground sorted cluster indices";bundle->indices=checked->createBuffer(cells);
+        nvrhi::BufferDesc readback;readback.byteSize=cluster_cells*sizeof(std::uint32_t);readback.cpuAccess=nvrhi::CpuAccessMode::Read;readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Foreground slot cluster count readback";
+        for(std::size_t slot=0;slot<diagnostics.frame_execution.limit;++slot) {bundle->readbacks[slot]=checked->createBuffer(readback);require(bool(bundle->readbacks[slot]),"Foreground readback allocation failed.");}
+        require(bundle->frame && bundle->objects && bundle->counts && bundle->indices,"Foreground buffer allocation failed.");
+        bundle->cluster_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,bundle->frame))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,bundle->counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(1,bundle->indices)),cluster_layout);
+        bundle->vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_vs);
+        bundle->pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_scene_ps);
+        const nvrhi::VertexAttributeDesc attributes[]={
+            nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
+            nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
+            nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex)),
+            nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(32).setElementStride(sizeof(Vertex))};
+        bundle->input=checked->createInputLayout(attributes,4,bundle->vertex);
+        bundle->framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->color).setDepthAttachment(bundle->depth));
+        bundle->compose_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->composite));
+        require(bundle->vertex && bundle->pixel && bundle->input && bundle->framebuffer && bundle->compose_framebuffer && bundle->cluster_bindings,"Foreground immutable bindings are unavailable.");
+        nvrhi::GraphicsPipelineDesc pipeline;pipeline.VS=bundle->vertex;pipeline.PS=bundle->pixel;pipeline.inputLayout=bundle->input;pipeline.bindingLayouts.push_back(binding_layout);
+        pipeline.renderState.depthStencilState.depthTestEnable=true;pipeline.renderState.depthStencilState.depthWriteEnable=true;pipeline.renderState.depthStencilState.depthFunc=nvrhi::ComparisonFunc::LessOrEqual;
+        pipeline.renderState.rasterState.frontCounterClockwise=true;pipeline.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+        bundle->pipeline=checked->createGraphicsPipeline(pipeline,bundle->framebuffer->getFramebufferInfo());pipeline.renderState.rasterState.cullMode=nvrhi::RasterCullMode::Back;
+        bundle->culled_pipeline=checked->createGraphicsPipeline(pipeline,bundle->framebuffer->getFramebufferInfo());
+        bundle->compose_vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_viewmodel_composite_vs);
+        bundle->compose_pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_viewmodel_composite_ps);
+        bundle->compose_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All).addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)));
+        nvrhi::GraphicsPipelineDesc composite;composite.VS=bundle->compose_vertex;composite.PS=bundle->compose_pixel;composite.bindingLayouts.push_back(bundle->compose_layout);
+        composite.renderState.depthStencilState.depthTestEnable=false;composite.renderState.depthStencilState.depthWriteEnable=false;composite.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+        bundle->compose_pipeline=checked->createGraphicsPipeline(composite,bundle->compose_framebuffer->getFramebufferInfo());
+        require(bundle->pipeline && bundle->culled_pipeline && bundle->compose_vertex && bundle->compose_pixel && bundle->compose_layout && bundle->compose_pipeline,"Foreground pipeline allocation failed.");
+        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->color)),bundle->compose_layout);
+        require(bool(bundle->compose_bindings),"Foreground staged composition bindings unavailable.");
+        return bundle;
+    }
+    void prepare_viewmodel(std::set<std::string>& active_skins) {
+        viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();if(scene->viewmodel)pending_viewmodel.emplace();viewmodel_enabled=scene_visible && scene->viewmodel.has_value() && scene_debug_view==SceneDebugView::color;
+        if(!viewmodel_enabled) {
+            if(viewmodel) {retire_frames(true);viewmodel.reset();output_bindings=nullptr;}
+            viewmodel_lights={};return;
+        }
+        try {
+            const auto& foreground=*scene->viewmodel;require(foreground.objects.size()<=32,"Foreground exceeds 32 drawables.");
+            const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+            const auto width=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxX-display.minX))),height=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxY-display.minY)));
+            if(!viewmodel || viewmodel->width!=width || viewmodel->height!=height) {
+                retire_frames(true);auto staged=stage_viewmodel(width,height);viewmodel.swap(staged);output_bindings=nullptr;
+            }
+            validate_viewmodel_budget(viewmodel_resident_bytes());
+            viewmodel->materials.clear();viewmodel_frame=frame_constants;
+            const auto& lens=foreground.lens;
+            require(std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Invalid foreground lens.");
+            const auto projection=multiply(perspective(lens.vertical_fov,double(width)/height,lens.near_plane,lens.far_plane),inverse_affine(scene->camera_world));
+            for(std::size_t i=0;i<16;++i) {require(std::isfinite(projection[i]) && std::abs(projection[i])<=std::numeric_limits<float>::max(),"Foreground projection exceeds float range.");viewmodel_frame.view_projection[i]=static_cast<float>(projection[i]);viewmodel_frame.previous_view_projection[i]=static_cast<float>(projection[i]);}
+            std::fill_n(viewmodel_frame.temporal_jitter,4,0.0f);std::fill_n(viewmodel_frame.temporal_right,4,0.0f);std::fill_n(viewmodel_frame.temporal_up,4,0.0f);std::fill_n(viewmodel_frame.temporal_forward,4,0.0f);
+            configure_frame_lights(viewmodel_frame,viewmodel_lights,lens,nvrhi::Viewport(float(width),float(height)));
+            viewmodel_lights.buffer_bytes=cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
+            pending_viewmodel->rendered=true;pending_viewmodel->logical_bytes=viewmodel->bytes;pending_viewmodel->output_width=width;pending_viewmodel->output_height=height;pending_viewmodel->light_assignment=viewmodel_lights;pending_viewmodel->draws.objects=foreground.objects.size();
+            Matrix4 rounded;std::copy_n(viewmodel_frame.view_projection,16,rounded.begin());const auto frustum=make_frustum(rounded);
+            auto number=[](double value) {require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Foreground transform exceeds float range.");return static_cast<float>(value);};
+            for(const auto& object:foreground.objects) {
+                DrawItem item;item.object_index=static_cast<std::uint32_t>(viewmodel_draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;
+                const auto inverse=inverse_affine(object.world);auto& draw=item.constants;
+                for(std::size_t row=0;row<3;++row) {for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);for(std::size_t col=0;col<3;++col)draw.normal[row][col]=number(inverse[row*4+col]);}
+                if(object.material || !scene->lighting.preview) {
+                    PbrMaterial material;if(object.material)material=*object.material;else {material.base_color=object.albedo;material.metallic=0;}
+                    for(std::size_t k=0;k<3;++k) {draw.base_metallic[k]=material.base_color[k];draw.emissive_roughness[k]=material.emissive[k];}
+                    draw.base_metallic[3]=material.metallic;draw.emissive_roughness[3]=material.roughness;item.cull=!material.double_sided;
+                } else {for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1;}
+                draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
+                draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
+                draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+                item.bindings=mesh_bindings(object.mesh.get(),object.textures.get(),true);item.geometry=mesh_geometry(object.mesh);Bounds bounds;
+                if(object.skin) {require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,"Foreground skin requires unique weighted instance.");auto& source=skin_source(object.mesh);bounds=posed_bounds(source.bounds,object.skin->palette);item.skin=&skin_instance(object,item.geometry,source);item.geometry.vertices=item.skin->vertices;}
+                else {require(!object.mesh || object.mesh->influences.empty(),"Foreground weighted mesh lacks a skin pose.");auto [entry,inserted]=bounds_cache.try_emplace(object.mesh.get());if(inserted)entry->second=mesh_bounds(object.mesh.get());bounds=entry->second;}
+                item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(transform_bounds(bounds,object.world),frustum));
+                if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
+                viewmodel_draws.push_back(std::move(item));
+            }
+            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->color)),viewmodel->compose_layout);
+            require(bool(composition),"Foreground composition bindings unavailable.");viewmodel->compose_bindings=std::move(composition);
+        } catch(...) {renderer_fault=true;throw;}
+    }
+    void render_viewmodel() {
+        nvrhi::GraphicsState state;state.framebuffer=viewmodel->framebuffer;state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
+        for(const auto& draw:viewmodel_draws)if(draw.camera_visible) {
+            state.pipeline=draw.cull ? viewmodel->culled_pipeline : viewmodel->pipeline;state.bindings={};state.bindings.push_back(draw.bindings);state.vertexBuffers={};state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(draw.geometry.vertices).setSlot(0));
+            state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+            commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
+            if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+        }
+    }
+    void composite_viewmodel() {
+        const auto display=scene_viewport.value_or(nvrhi::Viewport(float(extent.width),float(extent.height)));
+        const float parameters[8]={reconstruction ? 0.0f : display.minX,reconstruction ? 0.0f : display.minY,
+            reconstruction ? float(output_extent.width) : display.maxX-display.minX,reconstruction ? float(output_extent.height) : display.maxY-display.minY,float(viewmodel->width),float(viewmodel->height),0,0};
+        nvrhi::GraphicsState state;state.pipeline=viewmodel->compose_pipeline;state.framebuffer=viewmodel->compose_framebuffer;state.bindings.push_back(viewmodel->compose_bindings);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
+        commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
+
     void prepare_scene_output() {
         if(!scene)return;
         if(!output_layout) {
@@ -1499,12 +1694,14 @@ struct Context {
             output_layout=checked->createBindingLayout(layout);
             require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
         }
-        const bool use_reconstructed=reconstruction && scene_visible;
-        if(output_reconstruction_bound!=use_reconstructed)output_bindings=nullptr;
+        const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
+        const auto source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : scene_hdr.Get();
+        if(output_reconstruction_bound!=use_reconstructed || output_source_bound!=source)output_bindings=nullptr;
+        output_source_bound=source;
         output_reconstruction_bound=use_reconstructed;
         if(!output_bindings) {
             auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,use_reconstructed ? reconstructed.Get() : scene_hdr.Get()));
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source));
             if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
             if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,ao_filtered));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
@@ -1525,12 +1722,20 @@ struct Context {
         const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const float parameters[16]={frame_constants.ambient_exposure[3],
             (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,
-            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],reconstructed ? 1.0f : 0.0f,
-            display.minX,display.minY,display.maxX-display.minX,display.maxY-display.minY,static_cast<float>(output_reconstruction_bound ? output_extent.width : scene_hdr->getDesc().width),static_cast<float>(output_reconstruction_bound ? output_extent.height : scene_hdr->getDesc().height),0,0};
+            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],output_reconstruction_bound ? 1.0f : 0.0f,
+            display.minX,display.minY,display.maxX-display.minX,display.maxY-display.minY,static_cast<float>(viewmodel_enabled ? viewmodel->width : output_reconstruction_bound ? output_extent.width : scene_hdr->getDesc().width),static_cast<float>(viewmodel_enabled ? viewmodel->height : output_reconstruction_bound ? output_extent.height : scene_hdr->getDesc().height),0,0};
         commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
+    void validate_viewmodel_snapshot() const {
+        if(!scene->viewmodel)return;
+        const auto& foreground=*scene->viewmodel;const auto& lens=foreground.lens;
+        require(foreground.objects.size()<=32 && std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Malformed foreground snapshot lens or count.");
+        std::set<std::string> ids;for(const auto& object:scene->objects) {require(ids.insert(object.entity_id).second,"World snapshot drawable identities are duplicated.");}
+        for(const auto& object:foreground.objects)require(!object.entity_id.empty() && ids.insert(object.entity_id).second,"Foreground identity is missing, duplicated or also belongs to world geometry.");
+    }
     void update_scene() {
+        validate_viewmodel_snapshot();
         if(deferred || scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
             const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
             require(std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane>0 && far_plane>near_plane,
@@ -1642,9 +1847,10 @@ struct Context {
                 local_bounds=entry->second;
             }
             const auto bounds=transform_bounds(local_bounds,object.world);
-            item.camera_visible=!diagnostics.culling || intersects(bounds,camera_frustum);
-            if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }else ++pending_draws.camera_culled;
-            for(std::size_t layer=0;object.cast_shadows && layer<shadow_frusta.size();++layer) {
+            item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
+            if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
+            else if(object.camera_visible)++pending_draws.camera_culled;
+            for(std::size_t layer=0;object.cast_shadows && !(object.camera_draw && object.camera_draw->mode==CameraDrawMode::Viewmodel) && layer<shadow_frusta.size();++layer) {
                 ++pending_draws.shadow_candidates;
                 if(!diagnostics.culling || intersects(bounds,shadow_frusta[layer])) { item.shadow_mask|=1u<<layer;++pending_draws.shadow_draws;pending_draws.shadow_triangles+=item.geometry.count/3; }
                 else ++pending_draws.shadow_culled;
@@ -1652,6 +1858,7 @@ struct Context {
             if(item.skin && (item.camera_visible || item.shadow_mask)) { ++pending_draws.skinned_instances;pending_draws.skinned_vertices+=object.mesh->vertices.size(); }
             draws.push_back(std::move(item));
         }
+        prepare_viewmodel(active_skins);prepare_scene_output();
         for(auto it=skin_instances.begin();it!=skin_instances.end();) {
             if(!active_skins.contains(it->first)) { skin_bytes-=it->second.bytes;it=skin_instances.erase(it); }else ++it;
         }
@@ -1687,6 +1894,7 @@ struct Context {
         retire_frames(true);
         retire_presentation();
         reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
+        viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
@@ -2393,15 +2601,15 @@ struct Context {
                     if(diagnostics.profile_requested)timing_sample(diagnostics.completion_wait_cpu,elapsed_ms(started));
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
-                validate_skin_dispatch(slot);collect_light_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
+                validate_skin_dispatch(slot);collect_light_assignment(slot);collect_viewmodel_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
-                diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;
+                diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
                 if(slot.capture_probes)collect_product_probes();
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
-                checked->resetEventQuery(slot.completion);slot.occupied=false;slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
+                checked->resetEventQuery(slot.completion);slot.occupied=false;slot.viewmodel.reset();slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
                 if(reuse && !drain)break;
             }
             checked->runGarbageCollection();
@@ -2412,6 +2620,7 @@ struct Context {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
+        settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
@@ -2478,7 +2687,7 @@ struct Context {
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
                 f.cluster_readback=buffer(cluster_readback,rs::Lifetime::slot,false);
             }
-            for(const auto& draw:draws) {
+            for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list) {
                 if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
                     const auto& skin=*draw.skin;const auto* mesh=skin.mesh.get();
                     f.skins.push_back({buffer(geometry_cache.at(mesh).vertices,rs::Lifetime::imported,true),
@@ -2503,6 +2712,17 @@ struct Context {
                             input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
                     f.camera_draws.push_back(std::move(input));
                 }
+            }
+        }
+        if(settings.viewmodel) {
+            f.viewmodel_frame=buffer(viewmodel->frame,rs::Lifetime::shared,false);f.viewmodel_objects=buffer(viewmodel->objects,rs::Lifetime::shared,false,viewmodel_objects.size()*sizeof(ObjectData));
+            f.viewmodel_color=texture(viewmodel->color,rs::Lifetime::shared,false);f.viewmodel_depth=texture(viewmodel->depth,rs::Lifetime::shared,false);f.composite=texture(viewmodel->composite,rs::Lifetime::shared,false);
+            if(settings.viewmodel_clustered) {f.viewmodel_counts=buffer(viewmodel->counts,rs::Lifetime::shared,false);f.viewmodel_indices=buffer(viewmodel->indices,rs::Lifetime::shared,false);f.resources[f.viewmodel_indices].region=rs::Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;f.viewmodel_readback=buffer(viewmodel->readbacks.at(settings.slot),rs::Lifetime::slot,false);}
+            for(const auto& draw:viewmodel_draws)if(draw.camera_visible) {
+                rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
+                if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
+                for(const auto& binding:draw.bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV && binding.slot<5)input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
+                f.viewmodel_draws.push_back(std::move(input));
             }
         }
         settings.game_ui=game_ui_frame && (!game_ui_frame->vertices.empty() || !game_ui_frame->indices.empty());
@@ -2615,8 +2835,35 @@ struct Context {
                     }
                 }
             }
+            if(plan.settings.viewmodel) {
+                identity(f.viewmodel_frame,viewmodel->frame.Get());identity(f.viewmodel_objects,viewmodel->objects.Get());framebuffer(viewmodel->framebuffer,f.viewmodel_color,f.viewmodel_depth);framebuffer(viewmodel->compose_framebuffer,f.composite,rs::none);
+                if(plan.settings.viewmodel_clustered) {identity(f.viewmodel_counts,viewmodel->counts.Get());identity(f.viewmodel_indices,viewmodel->indices.Get());identity(f.viewmodel_readback,viewmodel->readbacks.at(plan.settings.slot).Get());}
+                std::size_t foreground_index=0;
+                for(const auto& draw:viewmodel_draws) {
+                    if(draw.skin && draw.camera_visible) {
+                        const auto& skin=*draw.skin;const auto& scheduled=f.skins.at(skin_index++);identity(scheduled.output,skin.vertices.Get());identity(scheduled.palette,skin.palette.Get());
+                        for(const auto& binding:skin.bindings->getDesc()->bindings) {
+                            if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(binding.slot==0 ? scheduled.source : binding.slot==1 ? scheduled.influences : scheduled.palette,binding.resourceHandle);
+                            if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(scheduled.output,binding.resourceHandle);
+                        }
+                    }
+                    if(!draw.camera_visible)continue;
+                    const auto& input=f.viewmodel_draws.at(foreground_index++);identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());std::size_t texture_index=0;
+                    for(const auto& binding:draw.bindings->getDesc()->bindings) {
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot<5 ? input.textures.at(texture_index++) : f.shadow,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
+                    }
+                }
+                for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : f.viewmodel_color,binding.resourceHandle);
+                if(plan.settings.viewmodel_clustered)for(const auto& binding:viewmodel->cluster_bindings->getDesc()->bindings) {
+                    if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
+                    if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(f.lights,binding.resourceHandle);
+                    if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(binding.slot==0 ? f.viewmodel_counts : f.viewmodel_indices,binding.resourceHandle);
+                }
+            }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
-            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : binding.slot==1 ? f.depth : binding.slot==2 ? f.normal : binding.slot==3 ? f.motion : binding.slot==4 ? f.motion_valid : f.ao_filtered,binding.resourceHandle);
+            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.viewmodel ? f.composite : plan.settings.reconstruction ? f.reconstructed : f.hdr) : binding.slot==1 ? f.depth : binding.slot==2 ? f.normal : binding.slot==3 ? f.motion : binding.slot==4 ? f.motion_valid : f.ao_filtered,binding.resourceHandle);
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
@@ -2668,6 +2915,8 @@ struct Context {
         auto submitted_scene=diagnostics.scene_observed;
         auto presented_scene=submitted_scene;
         auto slot_scene=submitted_scene;
+        auto slot_viewmodel=pending_viewmodel;
+        std::vector<std::string> submitted_skin_ids;for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list)submitted_skin_ids.push_back(draw.entity_id);
         require(next_slot<std::numeric_limits<std::uint64_t>::max(),"Renderer frame sequence exhausted.");
         for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->frame_sequence=next_slot+1;
         retire_frames();
@@ -2748,7 +2997,7 @@ struct Context {
             profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
             switch(pass.id) {
             case render_schedule::PassId::skinning:
-                if(scene) {commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
+                if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
                 timestamp(1);break;
             case render_schedule::PassId::light_assignment:
                 if(scene) {
@@ -2778,6 +3027,13 @@ struct Context {
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:
                 commands->resolveTexture(planned_texture(resources.hdr),nvrhi::AllSubresources,planned_texture(resources.color),nvrhi::AllSubresources);break;
+            case render_schedule::PassId::viewmodel_lights: {
+                nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(viewmodel->cluster_bindings);commands->setComputeState(state);commands->dispatch((cluster_cells+63)/64);commands->copyBuffer(planned_buffer(resources.viewmodel_readback),0,viewmodel->counts,0,cluster_cells*sizeof(std::uint32_t));break;
+            }
+            case render_schedule::PassId::viewmodel_clear:
+                commands->clearTextureFloat(planned_texture(resources.viewmodel_color),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));commands->clearDepthStencilTexture(planned_texture(resources.viewmodel_depth),nvrhi::AllSubresources,true,1.0f,false,0);break;
+            case render_schedule::PassId::viewmodel_opaque:render_viewmodel();break;
+            case render_schedule::PassId::viewmodel_composite:composite_viewmodel();break;
             case render_schedule::PassId::output:render_scene_output(index);break;
             case render_schedule::PassId::game_ui:render_game_ui(index);break;
             case render_schedule::PassId::overlay:render_overlay(index);break;
@@ -2812,7 +3068,8 @@ struct Context {
         PerformanceWallScope wall(performance_cpu?&performance_cpu->work.submit_ns:nullptr);
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
-        slot.skin_ids.clear();for(const auto& draw:draws)slot.skin_ids.push_back(draw.entity_id);
+        slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=has_skin_draws();slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
+        slot.skin_ids.swap(submitted_skin_ids);
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;

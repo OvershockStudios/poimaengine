@@ -476,6 +476,43 @@ RuntimeHitRegion hit_region_value(const Json& value) {
     if(shape=="capsule")result.half_height=number(value.at("half_height"),0,10000);
     return result;
 }
+SceneLens scene_lens_value(const Json& value) {
+    fields(value,{"vertical_fov","near","far"},{"vertical_fov","near","far"});
+    for(const auto* key:{"vertical_fov","near","far"})
+        require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid camera lens number.");
+    SceneLens result{value.at("vertical_fov"),value.at("near"),value.at("far")};
+    require(result.vertical_fov>=5 && result.vertical_fov<=150,"Camera field of view must be 5..150 degrees.");
+    require(result.near_plane>=.001 && result.far_plane<=1e7 && result.far_plane>result.near_plane,
+        "Camera needs 0.001 <= near < far <= 10000000.");
+    return result;
+}
+CameraDrawBinding camera_draw_value(const Json& value) {
+    fields(value,{"camera","mode"},{"camera","mode"});
+    const auto camera=identifier(value.at("camera"));require(camera!=std::string(32,'0'),"CameraDraw camera cannot be zero.");
+    require(value.at("mode").is_string() && (value.at("mode")=="viewmodel" || value.at("mode")=="hidden"),
+        "CameraDraw mode must be viewmodel or hidden.");
+    return {camera,value.at("mode")=="viewmodel" ? CameraDrawMode::Viewmodel : CameraDrawMode::Hidden};
+}
+void camera_draw_references(const Json& entities) {
+    std::map<std::pair<std::string,CameraDrawMode>,std::size_t> counts;
+    for(const auto& [id,entity]:entities.items()) {
+        const auto& bag=entity.at("components");if(!bag.contains("CameraDraw"))continue;
+        const auto binding=camera_draw_value(bag.at("CameraDraw"));
+        require(int(bag.contains("MeshRenderer"))+int(bag.contains("StaticMesh"))+int(bag.contains("SkinnedMesh"))==1,
+            "CameraDraw requires exactly one drawable component.");
+        require(entities.contains(binding.camera) && entities.at(binding.camera).at("components").contains("Camera"),
+            "CameraDraw camera does not exist.");
+        require(++counts[{binding.camera,binding.mode}]<=32,"CameraDraw permits at most 32 bindings per mode per camera, including invisible meshes.");
+        if(binding.mode==CameraDrawMode::Viewmodel) {
+            require(entities.at(binding.camera).at("components").at("Camera").contains("viewmodel"),"Viewmodel CameraDraw requires a configured camera lens.");
+            auto ancestor=entity.at("parent").is_null() ? std::string{} : identifier(entity.at("parent"));
+            while(!ancestor.empty() && ancestor!=binding.camera) {
+                const auto& parent=entities.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : identifier(parent);
+            }
+            require(ancestor==binding.camera,"Viewmodel drawable must be a strict descendant of its camera.");
+        }
+    }
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
@@ -500,13 +537,12 @@ void validate_component(const std::string& type, const Json& value) {
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
-        fields(value, {"vertical_fov", "near", "far"}, {"vertical_fov", "near", "far"});
-        for (const auto* key : {"vertical_fov", "near", "far"})
-            require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()), "Invalid camera number.");
-        require(value.at("vertical_fov") >= 5 && value.at("vertical_fov") <= 150, "Camera field of view must be 5..150 degrees.");
-        require(value.at("near") >= 0.001 && value.at("far") <= 1e7 && value.at("far") > value.at("near"), "Camera needs 0.001 <= near < far <= 10000000.");
+        fields(value,{"vertical_fov","near","far","viewmodel"},{"vertical_fov","near","far"});
+        (void)scene_lens_value(Json{{"vertical_fov",value.at("vertical_fov")},{"near",value.at("near")},{"far",value.at("far")}});
+        if(value.contains("viewmodel"))(void)scene_lens_value(value.at("viewmodel"));
         return;
     }
+    if(type=="CameraDraw") { (void)camera_draw_value(value);return; }
     if (type == "MeshRenderer") {
         fields(value, {"primitive", "albedo", "visible", "cast_shadows", "receive_shadows"}, {"primitive", "albedo", "visible"});
         require(value.at("primitive") == "box" && value.at("visible").is_boolean(), "MeshRenderer currently supports box primitives and boolean visibility.");
@@ -703,6 +739,7 @@ void validate_template_graph(const Json& document,const Json& recipe,
             require(members.at(value).at("components").contains(expected),"Template native reference targets the wrong component.");
         };
         if(bag.contains("CharacterController"))local_reference(bag.at("CharacterController").at("camera"),"Camera");
+        if(bag.contains("CameraDraw"))local_reference(bag.at("CameraDraw").at("camera"),"Camera");
         if(bag.contains("RigNode"))local_reference(bag.at("RigNode").at("rig"),"AnimationRig");
         if(bag.contains("AnimationRig") && bag.at("AnimationRig").contains("root_motion") && bag.at("AnimationRig").at("root_motion").contains("actor"))
             local_reference(bag.at("AnimationRig").at("root_motion").at("actor"),"CharacterController");
@@ -833,6 +870,7 @@ void validate(const Json& doc) {
         }
         for (const auto& item : chain) colors[item] = 2;
     }
+    camera_draw_references(entities);
     std::set<std::pair<std::string,std::string>> regions;
     for(const auto& [id,entity]:entities.items())if(entity.at("components").contains("HitRegion")) {
         const auto region=hit_region_value(entity.at("components").at("HitRegion"));
@@ -945,6 +983,7 @@ class World {
             for(const char* kind:{"MeshRenderer","StaticMesh","SkinnedMesh"})if(c.contains(kind)) {
                 auto shape=c.at(kind);if(std::string_view(kind)=="MeshRenderer")shape.erase("albedo");
                 binding={{"kind",kind},{"shape",std::move(shape)}};
+                if(c.contains("CameraDraw"))binding["camera_draw"]=c.at("CameraDraw");
                 if(std::string_view(kind)=="SkinnedMesh") {
                     const auto rig=c.at(kind).at("rig").get<std::string>();
                     binding["rig_nodes"]=rig_nodes[rig];
@@ -1192,7 +1231,8 @@ public:
                     for(std::size_t i=0;i<binding.joints.size();++i)pose->palette.push_back(multiply(multiply(inverse,matrices.at(nodes.at(ref.rig).at(binding.joints[i]))),binding.inverse_bind[i]));
                     skin=std::move(pose);
                 }
-                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,mesh->cast_shadows,mesh->receive_shadows});
+                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
+                    mesh->cast_shadows && (!e.camera_draw || e.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,e.camera_draw});
             }
             if(!preview)authored_cache_=result;
         }
@@ -1253,7 +1293,9 @@ public:
         EditorCamera camera;
         camera.world=world_matrices(entities).at(id);camera.vertical_fov=lens.at("vertical_fov");
         camera.near_plane=lens.at("near");camera.far_plane=lens.at("far");
-        auto result=editor_snapshot(camera,false);result.camera_id=id;return result;
+        auto result=editor_snapshot(camera,false);result.camera_id=id;
+        select_scene_camera_draw(result,lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(lens.at("viewmodel"))) : std::nullopt);
+        return result;
     }
     Json asset_reference_dispatch(const Json& params) const {
         fields(params,{"revision","asset","owner","after","limit"});current_revision(params);
@@ -1442,7 +1484,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -1478,9 +1520,17 @@ public:
 #include "world_navigation.inc"
 #include "world_provenance.inc"
     static Json renderer_scene_result_json(const RendererSceneResult& scene) {
-        return {{"world_id",scene.world_id},{"camera_id",scene.camera_id},{"presentation_source_id",scene.presentation_source_id},
+        Json result={{"world_id",scene.world_id},{"camera_id",scene.camera_id},{"presentation_source_id",scene.presentation_source_id},
             {"authored_revision",scene.authored_revision},{"presentation_generation",scene.presentation_generation},
             {"material_revision",scene.material_revision},{"frame_sequence",scene.frame_sequence},{"submission_id",scene.submission_id}};
+        if(scene.camera_draw) {
+            const auto& draw=*scene.camera_draw;Json foreground=Json::array(),hidden=Json::array();
+            for(const auto& object:draw.viewmodels)foreground.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
+            for(const auto& object:draw.hidden)hidden.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
+            Json lens=nullptr;if(draw.viewmodel_lens)lens={{"vertical_fov",draw.viewmodel_lens->vertical_fov},{"near",draw.viewmodel_lens->near_plane},{"far",draw.viewmodel_lens->far_plane}};
+            result["camera_draw"]={{"viewmodel_lens",std::move(lens)},{"viewmodels",std::move(foreground)},{"hidden",std::move(hidden)}};
+        }
+        return result;
     }
     static Json renderer_scene_optional_json(const std::optional<RendererSceneResult>& scene) {
         return scene ? renderer_scene_result_json(*scene) : Json(nullptr);
@@ -1494,15 +1544,27 @@ public:
         return {{"observed",player_material_receipt_json(material.observed)},{"submitted",player_material_receipt_json(material.submitted)},
             {"presented",player_material_receipt_json(material.presented)}};
     }
+    static Json draw_counts_json(const DrawCounts& c) {
+        return {{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
+            {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles}};
+    }
+    static Json light_assignment_json(const LightAssignmentDiagnostics& l) {
+        return {{"requested",l.requested},{"active",l.active},{"statistics_available",l.statistics_available},
+            {"grid",l.grid},{"light_count",l.light_count},{"global_lights",l.global_lights},{"cluster_count",l.cluster_count},{"capacity",l.capacity},
+            {"candidate_references",l.statistics_available ? Json(l.candidate_references) : Json(nullptr)},
+            {"overflow_clusters",l.statistics_available ? Json(l.overflow_clusters) : Json(nullptr)},
+            {"max_candidates",l.statistics_available ? Json(l.max_candidates) : Json(nullptr)},
+            {"buffer_bytes",l.buffer_bytes},{"fallback_reason",l.fallback_reason}};
+    }
     static Json render_diagnostics(const RenderDiagnostics& d) {
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
-        const auto& c=d.last_draws;const auto& l=d.light_assignment;const auto& f=d.frame_execution;
+        const auto& f=d.frame_execution;
         Json probes=Json::array();
         for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
             {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
         const auto& reconstruction=d.reconstruction;
-        return {{"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
+        Json result={{"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
             {"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
             {"ambient_occlusion",{{"mode",ambient_occlusion_mode_name(d.ambient_occlusion.mode)},{"quality",ambient_occlusion_quality_name(d.ambient_occlusion.quality)},{"radius",d.ambient_occlusion.radius}}},
             {"ambient_occlusion_buffer_bytes",d.ambient_occlusion_buffer_bytes},{"ambient_occlusion_gpu",timing(d.ambient_occlusion_gpu)},{"ambient_occlusion_filter_gpu",timing(d.ambient_occlusion_filter_gpu)},
@@ -1522,17 +1584,17 @@ public:
             {"frame_execution",{{"limit",f.limit},{"submitted",f.submitted},{"outstanding",f.outstanding},{"peak_outstanding",f.peak_outstanding},
                 {"slot_waits",f.slot_waits},{"drain_waits",f.drain_waits},{"device_idle_waits",f.device_idle_waits},
                 {"presentation_fences",f.presentation_fences},{"presentation_retirement",f.presentation_retirement}}},
-            {"light_assignment",{{"requested",l.requested},{"active",l.active},{"statistics_available",l.statistics_available},
-                {"grid",l.grid},{"light_count",l.light_count},{"global_lights",l.global_lights},{"cluster_count",l.cluster_count},{"capacity",l.capacity},
-                {"candidate_references",l.statistics_available ? Json(l.candidate_references) : Json(nullptr)},
-                {"overflow_clusters",l.statistics_available ? Json(l.overflow_clusters) : Json(nullptr)},
-                {"max_candidates",l.statistics_available ? Json(l.max_candidates) : Json(nullptr)},
-                {"buffer_bytes",l.buffer_bytes},{"fallback_reason",l.fallback_reason}}},
-            {"last_draws",{{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
-                {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles}}},
+            {"light_assignment",light_assignment_json(d.light_assignment)},
+            {"last_draws",draw_counts_json(d.last_draws)},
             {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
             {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
                 {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+        if(d.viewmodel) {
+            const auto& v=*d.viewmodel;
+            result["viewmodel"]={{"rendered",v.rendered},{"output_width",v.output_width},{"output_height",v.output_height},
+                {"logical_bytes",v.logical_bytes},{"draws",draw_counts_json(v.draws)},{"light_assignment",light_assignment_json(v.light_assignment)}};
+        }
+        return result;
     }
     static Json lighting_json(const SceneLighting& lighting) {
         Json lights=Json::array();std::size_t shadow_count=0;
@@ -2269,7 +2331,8 @@ public:
                             pose->palette.push_back(multiply(multiply(inverse_mesh,matrices.at(nodes.at(ref.rig).at(binding.joints[joint]))),binding.inverse_bind[joint]));
                         skin=std::move(pose);
                     }
-                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,mesh->cast_shadows,mesh->receive_shadows});
+                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
+                        mesh->cast_shadows && (!owner.camera_draw || owner.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,owner.camera_draw});
                 }
             }
             }
@@ -2278,6 +2341,10 @@ public:
         if(!live) {
             if(asset_preview) { snapshot.presentation_source_id=new_presentation_source_id();for(auto& object:snapshot.objects)object.incarnation=1; }
             else stamp_authored(snapshot);
+        }
+        if(!live && !asset_preview) {
+            const auto& authored_lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
+            select_scene_camera_draw(snapshot,authored_lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(authored_lens.at("viewmodel"))) : std::nullopt);
         }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         if(ui_scale && snapshot.logical_ui && !snapshot.logical_ui->elements.empty()) {
@@ -2441,7 +2508,11 @@ public:
                 value.components[type]=component_checked([&]{return poima::components::parse_values(schema,data.dump());});
             }
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
-            if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
+            if(components.contains("Camera")) {
+                const auto& c=components.at("Camera");value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")};
+                if(c.contains("viewmodel"))value.camera->viewmodel=scene_lens_value(c.at("viewmodel"));
+            }
+            if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));
             if(components.contains("AnimationRig")) {
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
@@ -2499,7 +2570,7 @@ public:
             result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache);
             result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
         }
-        try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
+        try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_camera_draw(result);validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         return result;
     }
@@ -3305,7 +3376,7 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.120
+
+- Add optional Camera viewmodel lenses and explicit CameraDraw bindings for first-person arms/weapons and camera-hidden bodies, with atomic graph validation and instance remapping.
+- Render foreground with separate FOV, self-depth and clustered lighting; composite after world resolve/reconstruction in linear HDR before tone mapping. Preserve world-only products and body shadows.
+- Retain frozen lens, membership and resource identities across animation, saves and live material/texture edits; include exact camera-draw descriptors in rendering receipts. [Contract](docs/VIEWMODELS.md).
+- Pass nineteen Windows native suites, four API groups and 130 GPU captures covering both adapters, forward/deferred, explicit world MSAA/FSR recipes and paused live-player adoption. [Results](docs/evidence/m2-first-person-viewmodels.json).
+
 ## 0.0.119
 
 - Add frozen planar root-motion bindings with Extract diagnostics or Character locomotion through native collision, gravity and jump handling.

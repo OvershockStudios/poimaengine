@@ -5,6 +5,7 @@
 #include "asset_provenance.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -56,6 +57,35 @@ void graph_parents(const Json& rows,const std::string& root={}) {
             current=parent.get<std::string>();
         }
         done.insert(visiting.begin(),visiting.end());
+    }
+}
+void viewmodel_lens(const Json& value) {
+    keys(value,{"vertical_fov","near","far"});
+    for(const auto* field:{"vertical_fov","near","far"})check(value.at(field).is_number() && std::isfinite(value.at(field).get<double>()),"Camera lens number must be finite.");
+    const double fov=value.at("vertical_fov"),near_plane=value.at("near"),far_plane=value.at("far");
+    check(fov>=5 && fov<=150 && near_plane>=.001 && far_plane<=1e7 && far_plane>near_plane,"Camera lens bounds are invalid.");
+}
+void camera_draw_references(const Json& rows) {
+    std::map<std::pair<std::string,std::string>,std::size_t> counts;
+    for(const auto& [id,entity]:rows.items()) {
+        const auto& bag=entity.at("components");
+        if(bag.contains("Camera") && bag.at("Camera").contains("viewmodel"))viewmodel_lens(bag.at("Camera").at("viewmodel"));
+        if(!bag.contains("CameraDraw"))continue;
+        const auto& draw=bag.at("CameraDraw");keys(draw,{"camera","mode"});
+        check(draw.at("camera").is_string() && draw.at("mode").is_string(),"CameraDraw needs camera and mode strings.");
+        const auto camera=draw.at("camera").get<std::string>(),mode=draw.at("mode").get<std::string>();identifier(camera,true);
+        check(mode=="viewmodel" || mode=="hidden","CameraDraw mode is invalid.");
+        check(int(bag.contains("MeshRenderer"))+int(bag.contains("StaticMesh"))+int(bag.contains("SkinnedMesh"))==1,"CameraDraw requires exactly one drawable.");
+        check(rows.contains(camera) && rows.at(camera).at("components").contains("Camera"),"CameraDraw needs a local Camera.");
+        check(++counts[{camera,mode}]<=32,"CameraDraw count exceeds 32 per mode per camera, invisible included.");
+        if(mode=="viewmodel") {
+            check(rows.at(camera).at("components").at("Camera").contains("viewmodel"),"Viewmodel CameraDraw requires a lens.");
+            auto ancestor=entity.at("parent").is_null() ? std::string{} : entity.at("parent").get<std::string>();
+            while(!ancestor.empty() && ancestor!=camera) {
+                const auto& parent=rows.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : parent.get<std::string>();
+            }
+            check(ancestor==camera,"Viewmodel drawable must be a strict camera descendant.");
+        }
     }
 }
 void hit_region_references(const Json& rows) {
@@ -195,6 +225,7 @@ Registry normalize(Json& doc) {
     };
     instances(doc.at("entities"),false);graph_parents(doc.at("entities"));
     hit_region_references(doc.at("entities"));
+    camera_draw_references(doc.at("entities"));
     if(doc.contains("templates")) {
         auto& recipes=doc.at("templates");check(recipes.is_object() && recipes.size()<=max_runtime_spawn_templates,"Authored template catalog budget exceeded.");
         std::size_t total_nodes=0;
@@ -206,10 +237,12 @@ Registry normalize(Json& doc) {
                 const auto root=recipe.at("root").get<std::string>();identifier(root,true);
                 auto& nodes=recipe.at("entities");check(nodes.is_object() && !nodes.empty() && nodes.size()<=max_runtime_template_entities,"Hierarchical template requires 1..1024 members.");
                 check(nodes.size()<=max_runtime_template_total_entities-total_nodes,"Expanded template catalog exceeds 4096 members.");total_nodes+=nodes.size();
-                instances(nodes,true,true);graph_parents(nodes,root);graph_references(nodes);
+                instances(nodes,true,true);graph_parents(nodes,root);graph_references(nodes);camera_draw_references(nodes);
             }else {
                 check(total_nodes<max_runtime_template_total_entities,"Expanded template catalog exceeds 4096 members.");++total_nodes;
-                Json legacy={{id,recipe}};instances(legacy,true);recipe=std::move(legacy.at(id));
+                Json legacy={{id,recipe}};instances(legacy,true);
+                check(!legacy.at(id).at("components").contains("CameraDraw"),"Legacy templates cannot bind an external camera.");
+                recipe=std::move(legacy.at(id));
             }
         }
     }

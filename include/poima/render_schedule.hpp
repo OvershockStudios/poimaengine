@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_composite,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
@@ -33,6 +33,8 @@ inline const char* pass_name(PassId id) {
     case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
+    case PassId::viewmodel_lights:return "render.pass.viewmodel_lights";case PassId::viewmodel_clear:return "render.pass.viewmodel_clear";
+    case PassId::viewmodel_opaque:return "render.pass.viewmodel_opaque";case PassId::viewmodel_composite:return "render.pass.viewmodel_composite";
     case PassId::resolve:return "render.pass.resolve";case PassId::output:return "render.pass.output";
     case PassId::game_ui:return "render.pass.game_ui";case PassId::overlay:return "render.pass.overlay";
     case PassId::editor_clear:return "render.pass.editor_clear";case PassId::editor_ui:return "render.pass.editor_ui";
@@ -72,12 +74,14 @@ struct FrameResources {
     std::vector<ProbePoint> probe_points;
     std::vector<ProbeCopy> probe_copies;
     std::vector<SkinInputs> skins;
-    std::vector<DrawInputs> camera_draws,shadow_draws;
+    std::vector<DrawInputs> camera_draws,shadow_draws,viewmodel_draws;
+    ResourceId viewmodel_frame=none,viewmodel_objects=none,viewmodel_counts=none,viewmodel_indices=none,viewmodel_readback=none,viewmodel_color=none,viewmodel_depth=none,composite=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
     std::uint32_t slot=0,image=0;
     std::uint64_t history_sequence=0;
+    bool viewmodel=false,viewmodel_clustered=false;
 };
 struct Schedule {
     FrameResources frame;
@@ -134,7 +138,7 @@ struct Schedule {
             std::unordered_set<ResourceId> distinct={frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.shadow,frame.swapchain,frame.material_base,frame.material_surface,frame.material_correspondence,
                 frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.frame,frame.objects,frame.lights,frame.counts,frame.indices,frame.cluster_readback,frame.skin_errors,frame.skin_readback,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,frame.editor_vertices,frame.editor_indices};
             for(const auto& skin:frame.skins)for(auto id:{skin.source,skin.influences,skin.palette,skin.output})distinct.insert(id);
-            for(const auto* draws:{&frame.camera_draws,&frame.shadow_draws})for(const auto& draw:*draws) {distinct.insert(draw.vertices);distinct.insert(draw.indices);distinct.insert(draw.previous_vertices);for(auto id:draw.textures)distinct.insert(id);}
+            for(const auto* draws:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*draws) {distinct.insert(draw.vertices);distinct.insert(draw.indices);distinct.insert(draw.previous_vertices);for(auto id:draw.textures)distinct.insert(id);}
             const auto& hdr=resource(frame.hdr);
             for(auto id:{frame.ao_raw,frame.ao_filtered}) {
                 const auto& r=resource(id);
@@ -158,10 +162,30 @@ struct Schedule {
             if(resource(frame.hdr).width>resource(frame.reconstructed).width || resource(frame.hdr).height>resource(frame.reconstructed).height)fail("reconstruction output smaller than input");
         }
         if(settings.clustered) {if(!settings.scene)fail("clustered pass without a scene");required(frame.lights);required(frame.counts);required(frame.indices);required(frame.cluster_readback);}
+        if(settings.viewmodel) {
+            if(!settings.scene || settings.products_debug)fail("foreground requires color scene output");
+            for(auto id:{frame.viewmodel_frame,frame.viewmodel_objects,frame.viewmodel_color,frame.viewmodel_depth,frame.composite})required(id);
+            std::unordered_set<ResourceId> distinct={frame.hdr,frame.color,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.reconstructed,frame.material_base,frame.material_surface,frame.material_correspondence,frame.ao_raw,frame.ao_filtered,frame.shadow,frame.swapchain,frame.frame,frame.objects,frame.counts,frame.indices,frame.cluster_readback,frame.lights,frame.ao_constants,frame.skin_errors,frame.skin_readback,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,frame.editor_vertices,frame.editor_indices};
+            for(const auto& skin:frame.skins)for(auto id:{skin.source,skin.influences,skin.palette,skin.output})distinct.insert(id);
+            for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*list) {distinct.insert(draw.vertices);distinct.insert(draw.indices);distinct.insert(draw.previous_vertices);for(auto id:draw.textures)distinct.insert(id);}
+            const auto& color=resource(frame.viewmodel_color);
+            for(auto id:{frame.viewmodel_color,frame.viewmodel_depth,frame.composite}) {
+                const auto& r=resource(id);
+                if(!distinct.insert(id).second || r.kind!=Kind::texture || r.samples!=1 || r.width!=color.width || r.height!=color.height || r.format!=(id==frame.viewmodel_depth ? Format::depth32 : Format::rgba16_float))fail("invalid or aliased foreground attachment");
+            }
+            for(auto id:{frame.viewmodel_frame,frame.viewmodel_objects})if(!distinct.insert(id).second || resource(id).kind!=Kind::buffer)fail("aliased foreground constants");
+            if(std::uint64_t(color.width)*color.height*20>384ull*1024*1024)fail("foreground attachment payload exceeds limit");
+            if(settings.reconstruction && (color.width!=resource(frame.reconstructed).width || color.height!=resource(frame.reconstructed).height))fail("foreground must use reconstruction output extent");
+            if(settings.viewmodel_clustered) {
+                for(auto id:{frame.lights,frame.viewmodel_counts,frame.viewmodel_indices,frame.viewmodel_readback})required(id);
+                for(auto id:{frame.viewmodel_counts,frame.viewmodel_indices,frame.viewmodel_readback})if(!distinct.insert(id).second || resource(id).kind!=Kind::buffer)fail("aliased foreground clusters");
+                if(resource(frame.viewmodel_counts).bytes!=16u*9u*24u*4u || resource(frame.viewmodel_indices).bytes!=16u*9u*24u*64u*4u || resource(frame.viewmodel_indices).region!=Region::cluster_members || resource(frame.viewmodel_indices).counts!=frame.viewmodel_counts)fail("invalid foreground cluster capacity");
+            }
+        } else if(settings.viewmodel_clustered || !frame.viewmodel_draws.empty() || frame.viewmodel_color!=none || frame.viewmodel_depth!=none || frame.composite!=none || frame.viewmodel_frame!=none || frame.viewmodel_objects!=none || frame.viewmodel_counts!=none || frame.viewmodel_indices!=none || frame.viewmodel_readback!=none)fail("foreground resources without foreground output");
         if(settings.capture)required(frame.capture);
         if(!frame.skins.empty()) {required(frame.skin_errors);required(frame.skin_readback);}
         for(const auto& s:frame.skins) {required(s.source);required(s.influences);required(s.palette);required(s.output);}
-        for(const auto* list:{&frame.camera_draws,&frame.shadow_draws})for(const auto& d:*list)required(d.vertices);
+        for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& d:*list)required(d.vertices);
         if(settings.products)for(const auto& d:frame.camera_draws)required(d.previous_vertices);
         if(!frame.probe_points.empty()) {
             if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6 && !(settings.ambient_occlusion && frame.probe_copies.size()==8)))fail("product probes require a bounded single-sample capture");
@@ -186,12 +210,15 @@ struct Schedule {
             if(r.lifetime==Lifetime::swapchain && !before_acquire && r.owner!=settings.image)fail("wrong swapchain image");
             initialized.push_back(r.initialized);
         }
+        bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;unsigned previous=0;bool first=true;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(pass.id==PassId::opaque)world_opaque=true;
+            if(pass.id==PassId::resolve)world_resolved=true;
             if(settings.deferred && pass.id==PassId::scene_clear)
                 for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence})if(!has(id,Use::clear_color))fail("missing deferred material clear");
             if(settings.deferred && pass.id==PassId::opaque) {
@@ -238,16 +265,39 @@ struct Schedule {
                 reconstructed=true;
             }
             if(pass.id==PassId::output && settings.ambient_occlusion && settings.products_debug && !has(frame.ao_filtered,Use::sampled))fail("missing ambient occlusion diagnostic input");
-            if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
+            if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(settings.viewmodel ? frame.composite : frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
+            if(pass.id==PassId::skinning && settings.viewmodel && (!has(frame.viewmodel_frame,Use::upload) || !has(frame.viewmodel_objects,Use::upload)))fail("missing foreground constant upload");
+            if(pass.id==PassId::viewmodel_lights) {
+                if(!settings.viewmodel || !settings.viewmodel_clustered || !has(frame.viewmodel_frame,Use::constant) || !has(frame.lights,Use::storage_read) || !has(frame.viewmodel_counts,Use::storage_write) || !has(frame.viewmodel_indices,Use::storage_write))fail("invalid foreground cluster assignment");
+                foreground_lights=true;
+            }
+            if(pass.id==PassId::viewmodel_clear) {
+                if(!settings.viewmodel || !world_opaque || (frame.color!=frame.hdr && !world_resolved) || !has(frame.viewmodel_color,Use::clear_color) || !has(frame.viewmodel_depth,Use::clear_depth) || (settings.reconstruction && !reconstructed) || (settings.deferred && !deferred_lit))fail("invalid or premature foreground clear");
+                foreground_cleared=true;
+            }
+            if(pass.id==PassId::viewmodel_opaque) {
+                if(!settings.viewmodel || !foreground_cleared || !has(frame.viewmodel_color,Use::color) || !has(frame.viewmodel_depth,Use::depth) || !has(frame.viewmodel_frame,Use::constant) || !has(frame.viewmodel_objects,Use::storage_read) || !has(frame.shadow,Use::sampled))fail("invalid foreground opaque pass");
+                if(frame.lights!=none && !has(frame.lights,Use::storage_read))fail("missing foreground lights");
+                if(settings.viewmodel_clustered && (!foreground_lights || !has(frame.viewmodel_counts,Use::storage_read) || !has(frame.viewmodel_indices,Use::storage_read)))fail("missing foreground clusters");
+                for(const auto& a:pass.accesses)if(a.resource==frame.hdr || a.resource==frame.depth || a.resource==frame.normal || a.resource==frame.motion || a.resource==frame.motion_valid)fail("foreground writes or samples world products");
+                for(const auto& draw:frame.viewmodel_draws) {if(!has(draw.vertices,Use::vertex) || (draw.indices!=none && !has(draw.indices,Use::index)))fail("missing foreground geometry");for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing foreground material input");}
+                foreground_drawn=true;
+            }
+            if(pass.id==PassId::viewmodel_composite) {
+                if(!settings.viewmodel || !foreground_drawn || !has(frame.viewmodel_color,Use::sampled) || !has(settings.reconstruction ? frame.reconstructed : frame.hdr,Use::sampled) || !has(frame.composite,Use::color_overwrite))fail("invalid foreground composition");
+                if(pass.accesses.size()!=3)fail("foreground composite must have exactly two sources and a distinct output");
+                foreground_composed=true;
+            }
+            if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(frame.composite,Use::sampled)))fail("display precedes foreground composition");
             if(settings.products) {
                 if(pass.id==PassId::scene_clear && (!has(frame.normal,Use::clear_color) || !has(frame.motion,Use::clear_color) || !has(frame.motion_valid,Use::clear_color)))fail("missing normal validity clear");
                 if(pass.id==PassId::opaque && !settings.deferred && (!has(frame.normal,Use::color) || !has(frame.motion,Use::color) || !has(frame.motion_valid,Use::color)))fail("missing opaque normal output");
                 if(pass.id==PassId::sky && std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.normal || a.resource==frame.motion || a.resource==frame.motion_valid;}))fail("sky must preserve invalid normal background");
                 if(pass.id==PassId::output && settings.products_debug && (!has(frame.depth,Use::sampled) || !has(frame.normal,Use::sampled) || !has(frame.motion,Use::sampled) || !has(frame.motion_valid,Use::sampled)))fail("missing diagnostic product inputs");
             }
-            if((pass.id==PassId::skinning && !frame.skins.empty()) || (pass.id==PassId::light_assignment && settings.clustered)) {
-                const auto source=pass.id==PassId::skinning ? frame.skin_errors : frame.counts;
-                const auto destination=pass.id==PassId::skinning ? frame.skin_readback : frame.cluster_readback;
+            if((pass.id==PassId::skinning && !frame.skins.empty()) || (pass.id==PassId::light_assignment && settings.clustered) || (pass.id==PassId::viewmodel_lights && settings.viewmodel_clustered)) {
+                const auto source=pass.id==PassId::skinning ? frame.skin_errors : pass.id==PassId::viewmodel_lights ? frame.viewmodel_counts : frame.counts;
+                const auto destination=pass.id==PassId::skinning ? frame.skin_readback : pass.id==PassId::viewmodel_lights ? frame.viewmodel_readback : frame.cluster_readback;
                 if(!has(source,Use::copy_source) || !has(destination,Use::copy_destination))fail("missing diagnostic readback copy");
                 const auto& src=resource(source);const auto& dst=resource(destination);
                 if(src.kind!=Kind::buffer || dst.kind!=Kind::buffer || src.bytes!=dst.bytes || dst.lifetime!=Lifetime::slot)fail("invalid diagnostic readback copy");
@@ -276,7 +326,7 @@ struct Schedule {
                 if(r.region==Region::cluster_members) {
                     if(r.counts==none || !initialized.at(r.counts))fail("cluster members need initialized count storage");
                     const bool count_access=std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& x){return x.resource==r.counts;});
-                    if(!count_access || (write && pass.id!=PassId::light_assignment))fail("cluster member access lacks count contract");
+                    if(!count_access || (write && pass.id!=PassId::light_assignment && pass.id!=PassId::viewmodel_lights))fail("cluster member access lacks count contract");
                 }
                 if(a.initialize)initialized[a.resource]=true;
                 if(a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth) {
@@ -304,6 +354,7 @@ struct Schedule {
         if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
+        if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
         if(!exported)fail("missing presentation export");
         if(!frame.probe_points.empty() && !probed)fail("missing product probe pass");
     }
@@ -321,6 +372,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
     };
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
+    if(settings.viewmodel) {add(skin,f.viewmodel_frame,Use::upload,true);add(skin,f.viewmodel_objects,Use::upload,true);}
     if(settings.ambient_occlusion)add(skin,f.ao_constants,Use::upload,true);
     if(!f.skins.empty()) {
         add(skin,f.skin_errors,Use::storage_write,true);
@@ -368,7 +420,15 @@ inline Schedule build(FrameResources frame,Settings settings) {
         for(auto id:{f.hdr,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
         for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})add(reconstruct,id,Use::image_write,true);
     }
-    if(settings.scene) {auto& output=pass(PassId::output);add(output,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
+    if(settings.viewmodel) {
+        if(settings.viewmodel_clustered) {auto& cluster=pass(PassId::viewmodel_lights);add(cluster,f.viewmodel_frame,Use::constant);add(cluster,f.lights,Use::storage_read);add(cluster,f.viewmodel_counts,Use::storage_write,true);add(cluster,f.viewmodel_indices,Use::storage_write,true);add(cluster,f.viewmodel_counts,Use::copy_source);add(cluster,f.viewmodel_readback,Use::copy_destination,true);}
+        auto& clear=pass(PassId::viewmodel_clear);add(clear,f.viewmodel_color,Use::clear_color,true);add(clear,f.viewmodel_depth,Use::clear_depth,true);
+        auto& draw=pass(PassId::viewmodel_opaque);add(draw,f.viewmodel_color,Use::color);add(draw,f.viewmodel_depth,Use::depth);add(draw,f.viewmodel_frame,Use::constant);add(draw,f.viewmodel_objects,Use::storage_read);add(draw,f.lights,Use::storage_read);add(draw,f.shadow,Use::sampled);
+        if(settings.viewmodel_clustered) {add(draw,f.viewmodel_counts,Use::storage_read);add(draw,f.viewmodel_indices,Use::storage_read);}
+        for(const auto& d:f.viewmodel_draws) {add(draw,d.vertices,Use::vertex);add(draw,d.indices,Use::index);for(auto t:d.textures)add(draw,t,Use::sampled);}
+        auto& compose=pass(PassId::viewmodel_composite);add(compose,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);add(compose,f.viewmodel_color,Use::sampled);add(compose,f.composite,Use::color_overwrite,true);
+    }
+    if(settings.scene) {auto& output=pass(PassId::output);add(output,settings.viewmodel ? f.composite : settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}
     if(settings.editor) {

@@ -259,6 +259,69 @@ void reconstruction_contracts(){
     }
 }
 
+void viewmodel_contracts(){
+    auto foreground=[](Fixture& fixture) {
+        auto& f=fixture.f;fixture.settings.viewmodel=true;
+        f.viewmodel_frame=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_objects=fixture.add(Kind::buffer,Lifetime::shared);
+        auto image=[&](Format format) {auto id=fixture.add(Kind::texture,Lifetime::shared);f.resources[id].format=format;return id;};
+        f.viewmodel_color=image(Format::rgba16_float);f.viewmodel_depth=image(Format::depth32);f.composite=image(Format::rgba16_float);
+        f.viewmodel_draws.push_back({f.camera_draws.front().vertices,f.camera_draws.front().indices,f.camera_draws.front().textures});
+        if(fixture.settings.viewmodel_clustered) {
+            f.viewmodel_counts=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_indices=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_readback=fixture.add(Kind::buffer,Lifetime::slot);
+            f.resources[f.viewmodel_counts].bytes=f.resources[f.viewmodel_counts].allocation_bytes=16u*9u*24u*4u;
+            f.resources[f.viewmodel_readback].bytes=f.resources[f.viewmodel_readback].allocation_bytes=16u*9u*24u*4u;
+            f.resources[f.viewmodel_indices].bytes=f.resources[f.viewmodel_indices].allocation_bytes=16u*9u*24u*64u*4u;
+            f.resources[f.viewmodel_indices].region=Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;
+        }
+    };
+    // Foreground stays one-sample even when world color/depth are four-sample;
+    // its opaque pass consumes current skin output, never previous world input.
+    for(bool deferred:{false,true})for(bool clustered:{false,true})for(bool skin:{false,true})for(unsigned samples:{1u,4u}) {
+        if(deferred && samples!=1)continue;
+        auto settings=rich();settings.deferred=deferred;settings.products=deferred || samples==1;settings.viewmodel_clustered=clustered;
+        Fixture fixture(settings,samples,skin);foreground(fixture);auto plan=fixture.plan();plan.validate();++accepted;
+        check(plan.frame.resources[plan.frame.viewmodel_color].samples==1,"Foreground inherited world MSAA");
+        unsigned draws=0,composites=0;plan.execute([&](const Pass& pass,const Schedule&){draws+=pass.id==PassId::viewmodel_opaque;composites+=pass.id==PassId::viewmodel_composite;});
+        check(draws==1 && composites==1,"Foreground draw/composite population differs");
+    }
+    auto settings=rich();settings.products=settings.viewmodel_clustered=true;
+    Fixture fixture(settings,1,true);foreground(fixture);const auto original=fixture.plan();original.validate();
+    auto bad=[&](const char* label,const auto& edit) {auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("foreground depth aliases world",[](auto& p){p.frame.viewmodel_depth=p.frame.depth;});
+    bad("foreground output aliases input",[](auto& p){p.frame.composite=p.frame.hdr;});
+    bad("foreground frame aliases world",[](auto& p){p.frame.viewmodel_frame=p.frame.frame;});
+    bad("foreground cluster aliases world",[](auto& p){p.frame.viewmodel_counts=p.frame.counts;});
+    bad("foreground attachment extent",[](auto& p){++p.frame.resources[p.frame.viewmodel_depth].width;});
+    bad("foreground inherited MSAA",[](auto& p){p.frame.resources[p.frame.viewmodel_color].samples=4;});
+    bad("foreground oversized attachment",[](auto& p){for(auto id:{p.frame.viewmodel_color,p.frame.viewmodel_depth,p.frame.composite})p.frame.resources[id].width=p.frame.resources[id].height=8192;});
+    bad("foreground missing clear",[](auto& p){std::erase_if(p.passes,[](const Pass& work){return work.id==PassId::viewmodel_clear;});});
+    bad("foreground missing depth clear",[](auto& p){erase_access(p,PassId::viewmodel_clear,p.frame.viewmodel_depth,Use::clear_depth);});
+    bad("foreground missing self depth",[](auto& p){erase_access(p,PassId::viewmodel_opaque,p.frame.viewmodel_depth,Use::depth);});
+    bad("foreground samples world depth",[](auto& p){pass(p,PassId::viewmodel_opaque).accesses.push_back({p.frame.depth,Use::sampled,false});});
+    bad("foreground missing owned frame upload",[](auto& p){erase_access(p,PassId::skinning,p.frame.viewmodel_frame,Use::upload);});
+    bad("foreground missing geometry",[](auto& p){erase_access(p,PassId::viewmodel_opaque,p.frame.viewmodel_draws.front().vertices,Use::vertex);});
+    bad("foreground missing world atlas read",[](auto& p){erase_access(p,PassId::viewmodel_opaque,p.frame.shadow,Use::sampled);});
+    bad("foreground missing own clusters",[](auto& p){erase_access(p,PassId::viewmodel_opaque,p.frame.viewmodel_indices,Use::storage_read);});
+    bad("foreground missing count readback",[](auto& p){erase_access(p,PassId::viewmodel_lights,p.frame.viewmodel_readback,Use::copy_destination);});
+    bad("foreground wrong cluster shape",[](auto& p){p.frame.resources[p.frame.viewmodel_indices].bytes/=2;});
+    bad("foreground composite sampled while overwritten",[](auto& p){pass(p,PassId::viewmodel_composite).accesses.push_back({p.frame.composite,Use::sampled,false});});
+    bad("display bypasses foreground",[](auto& p){erase_access(p,PassId::output,p.frame.composite,Use::sampled);});
+    bad("foreground before completed world",[](auto& p){auto& work=pass(p,PassId::viewmodel_clear);work.id=PassId::scene_clear;});
+    bad("world diagnostic includes foreground",[](auto& p){p.settings.products_debug=true;});
+    bad("foreground disabled but retains resources",[](auto& p){p.settings.viewmodel=false;});
+    // A compact world reconstructs before the output-resolution foreground.
+    auto reconstructed=settings;reconstructed.reconstruction=true;Fixture fsr(reconstructed,1,true);foreground(fsr);
+    auto image=[&](Format format){auto id=fsr.add(Kind::texture,Lifetime::shared);fsr.f.resources[id].format=format;return id;};auto& f=fsr.f;f.resources[f.hdr].format=Format::rgba16_float;
+    f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
+    for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}) {f.resources[id].width=192;f.resources[id].height=108;}
+    auto plan=fsr.plan();plan.validate();++accepted;
+    check(pass(plan,PassId::viewmodel_composite).accesses.front().resource==f.reconstructed,"Foreground composition samples compact world instead of completed output");
+    auto broken=plan;std::erase_if(broken.passes,[](const Pass& work){return work.id==PassId::reconstruction;});rejects("foreground before reconstruction",[&]{broken.validate();});
+    broken=plan;++broken.frame.resources[f.viewmodel_color].width;rejects("foreground FSR output extent mismatch",[&]{broken.validate();});
+    // Default omission retains the old graph with no new pass/resources.
+    auto ordinary=Fixture(rich(),4,true).plan();ordinary.validate();check(std::none_of(ordinary.passes.begin(),ordinary.passes.end(),[](const Pass& work){return work.id>=PassId::viewmodel_lights && work.id<=PassId::viewmodel_composite;}),"Default graph acquired foreground passes");
+}
+
 void deferred_contracts(){
     for(bool sky:{false,true})for(bool clustered:{false,true})for(bool debug:{false,true})for(bool skin:{false,true}){
         auto settings=rich();settings.products=settings.deferred=true;settings.sky=sky;settings.clustered=clustered;settings.products_debug=debug;
@@ -411,4 +474,4 @@ void ambient_occlusion_contracts(){
 }
 
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();ambient_occlusion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

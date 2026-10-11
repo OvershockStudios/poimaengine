@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.119.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.120.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -50,7 +50,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [agent iteration gui
 
 | Area | Implemented foundations |
 | --- | --- |
-| Graphics | Vulkan PBR, HDR composition, clustered direct lights and [shadows](docs/SHADOWS.md), procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md), [spatial ambient occlusion](docs/AMBIENT_OCCLUSION.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
+| Graphics | Vulkan PBR, HDR composition, clustered direct lights and [shadows](docs/SHADOWS.md), procedural sky, MSAA, GPU skinning, [first-person viewmodels](docs/VIEWMODELS.md) and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md), [spatial ambient occlusion](docs/AMBIENT_OCCLUSION.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
 | Gameplay | Fixed-step Jolt physics, player and [compiled NPC character controls](docs/CHARACTER_INPUT.md), [named gameplay actions](docs/INPUT_ACTIONS.md), [bone-attached hit regions](docs/HIT_REGIONS.md), [two-bone IK](docs/TWO_BONE_IK.md), [collision-aware planar root motion](docs/ROOT_MOTION.md), [static NPC pathfinding](docs/NAVIGATION.md), static triangle-mesh collision, raycasts, [complete hierarchy instances](docs/RUNTIME_INSTANCES.md) and [crossfades, inertial transitions and masked animation layers](docs/RUNTIME_ANIMATION.md). |
 | Execution | Shared [native jobs](docs/JOBS.md) for parallel animation sampling, procedural material baking and opt-in [background gameplay save writes](docs/GAMEPLAY_SAVES.md), separate frame/background budgets, cancellation and actual worker-thread profiling. Physics and C# callbacks remain on the owner thread. |
 | C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. [Opt-in C# inertial transitions and masked layers](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c) pass Windows/Linux CoreCLR and Native AOT fixtures while preserving older animation calls. Bounded collections and [explicit hierarchy/collection save upgrades](docs/SAVE_UPGRADES.md) preserve retained fields, instance identities and allocator history; collection resizing requires an approved plan and rejects overflow. Windows CoreCLR also supports explicitly approved new component types with defaults on retained authored entities. |

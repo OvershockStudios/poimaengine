@@ -31,8 +31,27 @@ SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& 
     return result;
 }
 RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
-    return {snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
+    RendererSceneResult result{snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
         snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0};
+    RendererCameraDrawResult draw;
+    if(snapshot.viewmodel) {
+        draw.viewmodel_lens=snapshot.viewmodel->lens;
+        for(const auto& object:snapshot.viewmodel->objects)
+            draw.viewmodels.push_back({object.entity_id,object.incarnation});
+    }
+    for(const auto& object:snapshot.objects)
+        if(!object.camera_visible && object.camera_draw &&
+           object.camera_draw->mode==CameraDrawMode::Hidden && object.camera_draw->camera==snapshot.camera_id)
+            draw.hidden.push_back({object.entity_id,object.incarnation});
+    const auto normalize=[](auto& identities) {
+        if(identities.size()>32)throw std::invalid_argument("Camera draw receipt exceeds its 32-drawable mode budget.");
+        std::sort(identities.begin(),identities.end(),[](const auto& a,const auto& b){return a.entity_id<b.entity_id;});
+        if(std::adjacent_find(identities.begin(),identities.end(),[](const auto& a,const auto& b){return a.entity_id==b.entity_id;})!=identities.end())
+            throw std::invalid_argument("Camera draw receipt contains a duplicate drawable identity.");
+    };
+    normalize(draw.viewmodels);normalize(draw.hidden);
+    if(draw.viewmodel_lens || !draw.hidden.empty())result.camera_draw=std::move(draw);
+    return result;
 }
 void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation) {
     PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation};

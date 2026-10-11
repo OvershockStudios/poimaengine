@@ -215,6 +215,7 @@ struct Runtime::Impl {
         RuntimeCameraState result;
         result.camera_world=registry.get<Node>(e).world;
         result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
+        result.viewmodel=lens.viewmodel;
         require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
         return result;
     }
@@ -456,6 +457,7 @@ struct Runtime::Impl {
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         validate_runtime_hit_regions(definition);
+        validate_runtime_camera_draw(definition);
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
         animations=std::make_unique<RuntimeAnimations>(definition,executor);
         validate_runtime_mesh_colliders(definition);
@@ -1120,6 +1122,7 @@ struct Runtime::Impl {
         candidate->live=live_definition(*candidate);const auto& definition=candidate->live;
         validate_runtime_mesh_colliders(definition);
         validate_runtime_hit_regions(definition);
+        validate_runtime_camera_draw(definition);
         // Private candidate binding lets existing helpers resolve the complete
         // hierarchy. Outer tick/structure checkpoints restore it on any failure.
         topology=candidate;animations->rebind(definition,tick);animation_locals();world_matrices();
@@ -1757,6 +1760,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     if(!impl_->ui_model->definition().empty())result.logical_ui=impl_->ui_model->presentation();
     result.camera_world=projection.camera_world;result.vertical_fov=projection.vertical_fov;
     result.near_plane=projection.near_plane;result.far_plane=projection.far_plane;
+    select_scene_camera_draw(result,projection.viewmodel);
     return result;
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
@@ -1764,7 +1768,10 @@ SceneSnapshot Runtime::snapshot() const {
     SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;result.material_revision=impl_->material_revision;result.presentation_generation=impl_->material_revision;
     for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
         const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
-            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1,mesh->cast_shadows,mesh->receive_shadows});
+            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1,mesh->cast_shadows,mesh->receive_shadows,true,
+            impl_->topology->definitions.at(node.id).camera_draw});
+        auto& appended=result.objects.back();
+        if(appended.camera_draw && appended.camera_draw->mode==CameraDrawMode::Viewmodel)appended.cast_shadows=false;
     }
     return result;
 }
