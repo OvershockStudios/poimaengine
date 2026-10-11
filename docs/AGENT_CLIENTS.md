@@ -8,6 +8,9 @@ For custom automation and evaluation scripts, the [Python client](PYTHON_CLIENT.
 uses the same native API through an owned world process or shared endpoint.
 It does not authenticate providers or replace their MCP clients.
 
+Once connected, follow the [agent iteration guide](AGENT_ITERATION.md) to combine
+focused discovery, coherent reads, guarded changes, compilation and verification.
+
 Two separate game-authoring exercises extend these bounded checks: a
 [Codex escape room](evidence/fixtures/agent-escape/README.md) and a
 [Claude wave-defense game](evidence/fixtures/agent-defense/README.md). Their

@@ -42,7 +42,7 @@ A [native reliability check](docs/evidence/m2-performance-yard-reliability.json)
 
 Joined [runtime observations](docs/RUNTIME_OBSERVATION.md) let tools inspect live poses and selected component fields together. A provider-free Workshop replay comparison uses 49% fewer native RPCs with identical checked gameplay and checkpoint state. [Reproduction and results](docs/RUNTIME_OBSERVATION.md#reproduce-the-replay-comparison).
 
-Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WORLD_SERVICE.md), [shared-session guide](docs/SHARED_SESSIONS.md) and [C# gameplay guide](docs/MANAGED_GAMEPLAY.md).
+Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [agent iteration guide](docs/AGENT_ITERATION.md), [world API](docs/WORLD_SERVICE.md) and [C# gameplay guide](docs/MANAGED_GAMEPLAY.md).
 
 ## What works today
 
