@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "development_service.hpp"
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -70,8 +71,17 @@ int main(int argc,char** argv) {
         error("development.compile",invalid,-32602);invalid=params;invalid["configuration"]="Bogus";error("development.compile",invalid,-32602);
         invalid=params;invalid["configuration"]=7;error("development.compile",invalid,-32602);
         invalid=params;invalid["project"]=utf8(root/"not-a-project.txt");error("development.compile",invalid,-32602);
+        const auto invalid_budget=service.dispatch("development.jobs",Json::object()).at("request_budget_remaining");
+        for(const Json& value:Json::array({nullptr,0,1,0.0,1.0,"false",Json::array(),Json::object()})) {
+            invalid=params;invalid["restore"]=value;error("development.compile",invalid,-32602);
+            check(service.dispatch("development.jobs",Json::object()).at("jobs").empty(),"Malformed restore launched a job.");
+            check(service.dispatch("development.jobs",Json::object()).at("request_budget_remaining")==invalid_budget,"Malformed restore consumed a receipt.");
+        }
         const auto first=service.dispatch("development.compile",params);check(!first.at("replayed").get<bool>(),"Initial compile replayed.");
         check(service.dispatch("development.compile",params).at("job_id")==first.at("job_id"),"Retry created another job.");
+        auto explicit_restore=params;explicit_restore["restore"]=true;
+        check(service.dispatch("development.compile",explicit_restore)==Json({{"job_id",first.at("job_id")},{"replayed",true},{"receipt_scope","session"}}),"Omitted and explicit restore:true differ.");
+        invalid=params;invalid["restore"]=false;error("development.compile",invalid,-32009);
         check(service.dispatch("development.jobs",Json::object()).at("jobs").size()==1,"Retry duplicated job.");
         invalid=params;invalid["configuration"]="Release";error("development.compile",invalid,-32009);
         const auto result=wait(first);check(result.at("state")=="succeeded","Generated compiler command failed.");
@@ -92,7 +102,18 @@ int main(int argc,char** argv) {
         error("development.forget",{{"job_id",slow.at("job_id")}},-32090);
         check(service.dispatch("development.cancel",{{"job_id",slow.at("job_id")}}).at("requested")==true,"Cancellation not requested.");
         check(wait(slow).at("state")=="cancelled","Cancellation did not complete.");
-        auto diagnostic_job=service.dispatch("development.compile",compile("5",root/"diagnostics.csproj",executable));
+        auto skipped=compile("7",project,executable);skipped["restore"]=false;
+        const auto skipped_job=service.dispatch("development.compile",skipped);
+        const auto skipped_result=wait(skipped_job);
+        check(skipped_result.at("state")=="succeeded","Explicit no-restore command failed.");
+        auto no_restore_expected=expected;no_restore_expected.push_back("--no-restore");
+        const auto skipped_echo=Json::parse(skipped_result.at("stdout").get<std::string>());
+        check(skipped_echo.at("arguments")==no_restore_expected && skipped_echo.at("cwd")==utf8(root),"No-restore changed other arguments or cwd.");
+        check(service.dispatch("development.compile",skipped)==Json({{"job_id",skipped_job.at("job_id")},{"replayed",true},{"receipt_scope","session"}}),"No-restore retry created another job.");
+        auto changed_restore=skipped;changed_restore["restore"]=true;error("development.compile",changed_restore,-32009);
+        changed_restore.erase("restore");error("development.compile",changed_restore,-32009);
+        auto diagnostic_request=compile("5",root/"diagnostics.csproj",executable);diagnostic_request["restore"]=false;
+        auto diagnostic_job=service.dispatch("development.compile",diagnostic_request);
         check(wait(diagnostic_job).at("state")=="failed","Compiler error result was lost.");
         const auto diagnostics=service.dispatch("development.diagnostics",{{"job_id",diagnostic_job.at("job_id")}});
         check(diagnostics.at("diagnostics").size()==2 && diagnostics.at("recognized_lines")==3 && diagnostics.at("more")==false,"Compiler diagnostics were not deduplicated.");
@@ -124,7 +145,11 @@ int main(int argc,char** argv) {
         for(int i=0;i<129;++i) {auto accepted=service.dispatch("development.compile",stress(sequence++));wait(accepted);service.dispatch("development.forget",{{"job_id",accepted.at("job_id")}});}
         error("development.compile",params,-32009); // Tombstone protects an expired receipt.
         const auto schemas=Service::schemas();check(schemas.size()==9 && schemas.contains("development.diagnostics"),"Operation discovery incomplete.");
-        std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
+        const auto& restore_schema=schemas.at("development.compile").at("properties").at("restore");
+        check(restore_schema.at("type")=="boolean" && restore_schema.at("default")==true,"Restore discovery differs from admission default.");
+        const auto& required=schemas.at("development.compile").at("required");
+        check(std::find(required.begin(),required.end(),Json("restore"))==required.end(),"Restore became required.");
+        std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","explicit_restore_argv","restore_boolean_admission","restore_retry_normalization","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
             {"diagnostic_checks",{"structured_source_location","summary_deduplication","limited_results_explicit","invalid_limits","invalid_utf8_diagnostic","unrecognized_output_preserves_failure"}},
             {"scope","Development service and real self-child processes; no actual SDK or world-host qualification."}}).dump(2)<<'\n';
         return 0;

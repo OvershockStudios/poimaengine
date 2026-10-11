@@ -174,7 +174,7 @@ Json Service::dispatch(const std::string& method,const Json& p) {
     }
     if(method=="development.compile" || method=="development.publish" || method=="development.export") {
         const bool compile=method=="development.compile",publish=method=="development.publish";
-        if(compile)fields(p,{"request_id","executable","project","output","configuration","timeout_ms"},{"request_id","executable","project","output"});
+        if(compile)fields(p,{"request_id","executable","project","output","configuration","restore","timeout_ms"},{"request_id","executable","project","output"});
         else if(publish)fields(p,{"request_id","profile","project","output","type","timeout_ms"},{"request_id","profile","project","output","type"});
         else fields(p,{"request_id","profile","project","output","timeout_ms"},{"request_id","profile","project","output"});
         const auto id=request_id(p.at("request_id"));Request request;std::optional<fs::path> reservation;
@@ -187,9 +187,11 @@ Json Service::dispatch(const std::string& method,const Json& p) {
             auto extension=project.extension().string();std::transform(extension.begin(),extension.end(),extension.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
             need(extension==".csproj","Compile expects a C# project (.csproj).");
             const auto configuration=p.contains("configuration") ? text(p.at("configuration"),32):std::string("Debug");need(configuration=="Debug" || configuration=="Release","Configuration must be Debug or Release.");
-            normalized.update({{"executable",utf8(executable)},{"project",utf8(project)},{"output",utf8(output)},{"configuration",configuration}});
+            const auto restore=p.contains("restore") ? p.at("restore"):Json(true);need(restore.is_boolean(),"Restore must be a boolean.");
+            normalized.update({{"executable",utf8(executable)},{"project",utf8(project)},{"output",utf8(output)},{"configuration",configuration},{"restore",restore}});
             request.executable=executable;request.working_directory=project.parent_path();
             request.arguments={"build",utf8(project),"-c",configuration,"--nologo","--disable-build-servers","--artifacts-path",utf8(output/"artifacts"),"-o",utf8(output/"managed")};
+            if(!restore.get<bool>())request.arguments.push_back("--no-restore");
         }else {
             const auto name=text(p.at("profile"),64);const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);profile=&selected->second;
             need(publish ? bool(profile->verify_publish):bool(profile->verify_export),"Development profile does not enable this operation.",-32004);
@@ -282,7 +284,7 @@ Json Service::schemas() {
         {"development.export",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},{"timeout_ms",timeout}},
             {"request_id","profile","project","output"})},
         {"development.compile",object({{"request_id",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},{"executable",path},{"project",path},{"output",path},
-            {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
+            {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"restore",{{"type","boolean"},{"default",true}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
         {"development.jobs",object(Json::object())},
         {"development.inspect",object({{"job_id",id}},{"job_id"})},
         {"development.diagnostics",object({{"job_id",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",32}}}},{"job_id"})},

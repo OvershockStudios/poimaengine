@@ -1,0 +1,266 @@
+{
+  "format": "poima.development-compile-restore.v1",
+  "engine_version": "0.0.104",
+  "schema_revision": 77,
+  "passed": true,
+  "scope": "Explicit dependency restore policy; native command/retry/discovery contracts and package-free Windows SDK builds. No gameplay execution, reload or iteration-budget qualification.",
+  "source_scope": "Selected changed source cohort; not a full native build freeze.",
+  "source_sha256": {
+    "CMakeLists.txt": "d44bae42b3de7e249df6405fda2fd70f4ba493e5b099918a8aabf7b286b8cdcd",
+    "src/development_service.cpp": "36201db4de2dc9ef9c93118ea54264ddc5278e605f50b651c3cfc52012fa265e",
+    "src/world_schema.cpp": "26671ee8e07c2c5f23f0d355999fa7d614240ab5f970cde8eb9648f534fe238c",
+    "tests/development_service.cpp": "415076f515cb23fc053c0c512e27bc657e34a4e3e0797048128b5796bc04e788",
+    "tests/world_schema_native.cpp": "c11c8f1dc1f67295ac651acf8f9cbeb8fb732a494b9a208ee11e9c68e93d0121",
+    "tests/development_compile_restore.py": "283f422423bdbeb09905f2cb1722d47472bbfa7d96dd42e8d6ccb6cf4d78f94d"
+  },
+  "receipts_sha256": {
+    "source-freeze-v1.json": "e4d3fcabe011b833f0a6ec87f67742659726a3b965059719c65cca30b0eea0cb",
+    "windows-results-v1.json": "9b35bd7542d5b6b4a482d487cf7600ac82fbff630ebce62f958534b642f75cbf",
+    "linux-service-result.json": "d5148e337f546af258102c81dee6ec5b6057446b742fb4446d306f61f971eb13",
+    "sdk-run/evidence.json": "922cc264677f32297d31d4577b808cd6b06142190a8693dc51fe66e7131c0ea6",
+    "native-build.log": "cc99a3ad6424c3fa3662176e5d0ff8f47464688bbebccdb2abef3985193da9a2",
+    "test-build.log": "4a836a873e24073ef32003f850bb2faffdf7b02c04e08c9afc4a9b03f990ca8e"
+  },
+  "artifacts_sha256": {
+    "poima.exe": "8b813222f54f4c9fa8af68f86e74165580360b79bce5efc2d04af670c9610e13",
+    "poima-development-service-test.exe": "48f81e12011e4b178240347f06fd112423d042005d559bb14a70e4dd82bdcc19",
+    "poima-world-schema-test.exe": "e762cd58ef2c9ce1e2924d4827ea7412a29275a25eff7949d05407cdcacf1073"
+  },
+  "qualification": {
+    "windows": [
+      {
+        "case": "service",
+        "passed": true,
+        "seconds": 5.297850899994955,
+        "exit_code": 0,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "job_accounting_at_child_exit": {
+          "user_time": 15468750,
+          "kernel_time": 18281250,
+          "period_user_time": 15468750,
+          "period_kernel_time": 18281250,
+          "page_faults": 563192,
+          "total_processes": 325,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 15468750,
+          "kernel_time": 18281250,
+          "period_user_time": 15468750,
+          "period_kernel_time": 18281250,
+          "page_faults": 563192,
+          "total_processes": 325,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "cleanup_errors": []
+      },
+      {
+        "case": "schema",
+        "passed": true,
+        "seconds": 5.561818300004234,
+        "exit_code": 0,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "job_accounting_at_child_exit": {
+          "user_time": 52187500,
+          "kernel_time": 2343750,
+          "period_user_time": 52187500,
+          "period_kernel_time": 2343750,
+          "page_faults": 149147,
+          "total_processes": 2,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 52187500,
+          "kernel_time": 2343750,
+          "period_user_time": 52187500,
+          "period_kernel_time": 2343750,
+          "page_faults": 149147,
+          "total_processes": 2,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "cleanup_errors": []
+      },
+      {
+        "case": "sdk",
+        "passed": true,
+        "seconds": 9.261779199994635,
+        "exit_code": 0,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "job_accounting_at_child_exit": {
+          "user_time": 69843750,
+          "kernel_time": 30156250,
+          "period_user_time": 69843750,
+          "period_kernel_time": 30156250,
+          "page_faults": 313812,
+          "total_processes": 21,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 69843750,
+          "kernel_time": 30156250,
+          "period_user_time": 69843750,
+          "period_kernel_time": 30156250,
+          "page_faults": 313812,
+          "total_processes": 21,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "cleanup_errors": []
+      }
+    ],
+    "linux_service": {
+      "checks": [
+        "literal_argv_and_cwd",
+        "incremental_build_arguments",
+        "explicit_restore_argv",
+        "restore_boolean_admission",
+        "restore_retry_normalization",
+        "invalid_parameters",
+        "exact_retry",
+        "changed_retry_rejected",
+        "compact_catalog",
+        "forget_does_not_recompile",
+        "launch_failure",
+        "invalid_utf8_diagnostics",
+        "cancel_and_terminal_forget",
+        "capacity_failure_retry_rollback",
+        "expired_receipt_tombstone",
+        "discovery"
+      ],
+      "diagnostic_checks": [
+        "structured_source_location",
+        "summary_deduplication",
+        "limited_results_explicit",
+        "invalid_limits",
+        "invalid_utf8_diagnostic",
+        "unrecognized_output_preserves_failure"
+      ],
+      "passed": true,
+      "scope": "Development service and real self-child processes; no actual SDK or world-host qualification."
+    },
+    "windows_service": {
+      "checks": [
+        "literal_argv_and_cwd",
+        "incremental_build_arguments",
+        "explicit_restore_argv",
+        "restore_boolean_admission",
+        "restore_retry_normalization",
+        "invalid_parameters",
+        "exact_retry",
+        "changed_retry_rejected",
+        "compact_catalog",
+        "forget_does_not_recompile",
+        "launch_failure",
+        "invalid_utf8_diagnostics",
+        "cancel_and_terminal_forget",
+        "capacity_failure_retry_rollback",
+        "expired_receipt_tombstone",
+        "discovery"
+      ],
+      "diagnostic_checks": [
+        "structured_source_location",
+        "summary_deduplication",
+        "limited_results_explicit",
+        "invalid_limits",
+        "invalid_utf8_diagnostic",
+        "unrecognized_output_preserves_failure"
+      ],
+      "passed": true,
+      "scope": "Development service and real self-child processes; no actual SDK or world-host qualification."
+    },
+    "world_discovery": {
+      "responses": 1183,
+      "owner_scopes": 6,
+      "state_history_files_unchanged": true
+    },
+    "windows_sdk": {
+      "checks": [
+        "optional_schema_and_strict_boolean_no_work",
+        "cold_no_restore_real_failure_no_fallback",
+        "default_restore_success_omitted_true_retry_false_conflict",
+        "source_edit_no_restore_changes_dll_and_preserves_assets",
+        "syntax_failure_retains_prior_dll_and_failed_receipt",
+        "repair_success_five_real_jobs_unchanged_owner_and_inputs"
+      ],
+      "rpc_calls": 393,
+      "native_exit_code": 0,
+      "jobs": [
+        {
+          "label": "cold-no-restore",
+          "restore": false,
+          "source_sha256": "7b7df0925d1a447f295e4ad2d618db419532f96a2a3ffceba2cb7e57b88684ee",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_elapsed_ms": 809,
+          "diagnostic_codes": [
+            "NETSDK1004"
+          ]
+        },
+        {
+          "label": "default-restore",
+          "restore": "omitted",
+          "source_sha256": "7b7df0925d1a447f295e4ad2d618db419532f96a2a3ffceba2cb7e57b88684ee",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_elapsed_ms": 2612,
+          "diagnostic_codes": [],
+          "dll_sha256": "a717226af66470d8b335c0a736e9ea6c5184cb0bf7cd0da3c8cd590c68ed4a2f",
+          "assets": {
+            "artifacts/obj/Probe/project.assets.json": "98b0e4be5f8152c63d6091fb137993a50c628639e112fbb452ba8d0cafb6eb56"
+          }
+        },
+        {
+          "label": "source-edit-no-restore",
+          "restore": false,
+          "source_sha256": "04b570c3a9379dc02b74748c0fd022fb2a4e0e1a91c549cc1e924c79674763c7",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_elapsed_ms": 2003,
+          "diagnostic_codes": [],
+          "dll_sha256": "9c637b6c054d8e8b83b5e6f81c00ecba6223f5ce778fba9793377eb1dcc57f63",
+          "assets": {
+            "artifacts/obj/Probe/project.assets.json": "98b0e4be5f8152c63d6091fb137993a50c628639e112fbb452ba8d0cafb6eb56"
+          }
+        },
+        {
+          "label": "syntax-error-no-restore",
+          "restore": false,
+          "source_sha256": "9d63d67a1d089f445419c729f97e9bab08013758c9fe0616aafd8b5a639be518",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_elapsed_ms": 1196,
+          "diagnostic_codes": [
+            "CS1525"
+          ],
+          "retained_prior_dll_sha256": "9c637b6c054d8e8b83b5e6f81c00ecba6223f5ce778fba9793377eb1dcc57f63"
+        },
+        {
+          "label": "repair-no-restore",
+          "restore": false,
+          "source_sha256": "b3189661916ea43ad2f3ca8aa5c0512cc74b3dfcf8007ce8dc548dd541a79fb4",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_elapsed_ms": 1955,
+          "diagnostic_codes": [],
+          "dll_sha256": "c1785955c8b36109fc8b82fd38d95c4b6964a9dcc4d146605da3d5bd1bb264af",
+          "assets": {
+            "artifacts/obj/Probe/project.assets.json": "98b0e4be5f8152c63d6091fb137993a50c628639e112fbb452ba8d0cafb6eb56"
+          }
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Caller is responsible for restoring after dependency/project/import/SDK/configuration changes; no automatic prepared-dependency validation.",
+    "Five package-free SDK builds do not establish a performance improvement.",
+    "No C# gameplay execution or renderer/editor/package integration was exercised by this SDK fixture."
+  ]
+}

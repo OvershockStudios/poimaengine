@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Provider/GPU-free exact discovery transcript for a compiled WorldSession.
 #include "poima/world.hpp"
+#include <algorithm>
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -54,7 +55,14 @@ int main(int argc,char** argv) {
                     const auto result=invoke(owner,"world.describe",params,scope);cases.push_back({{"params",params},{"reply",result}});++total;return result;
                 };
                 const auto full=capture(Json::object()).at("result");
-                need(full.at("schema_revision").get<unsigned>()>=59,"Expected schema revision at least 59.");
+                need(full.at("schema_revision").get<unsigned>()>=77,"Expected compile restore discovery revision.");
+                if(mode==poima::WorldOpenMode::authoring) {
+                    const auto& compile=full.at("methods").at("development.compile");
+                    need(compile.at("properties").at("restore")==Json({{"type","boolean"},{"default",true}}),
+                        "Compile restore discovery differs from native admission.");
+                    need(std::find(compile.at("required").begin(),compile.at("required").end(),Json("restore"))==compile.at("required").end(),
+                        "Compile restore must remain optional.");
+                }else need(!full.at("methods").contains("development.compile"),"Read-only worlds exposed compilation.");
                 const auto& diagnostics=full.at("methods").at("player.diagnostics.inspect");
                 need(diagnostics.at("required")==Json::array({"player_id","generation"}) &&
                     diagnostics.at("additionalProperties")==false,"Diagnostic identity/generation schema differs.");

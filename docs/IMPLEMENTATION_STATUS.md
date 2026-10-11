@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.103**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.104**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.104 adds an explicit `development.compile.restore` boolean, defaulting
+to `true`. Setting it to `false` skips implicit dependency restore while keeping
+the native worker, diagnostics and retry guards. The caller owns restore
+invalidation; Poima does not automatically validate a prepared dependency cache.
+[Build policy](DEVELOPMENT_JOBS.md#dependency-restore-during-c-iteration).
+
+Native service contracts pass on Windows and Linux. The World discovery check
+passes 1,183 responses across six owner scopes. Five real Windows .NET builds
+verify cold failure without fallback, ordinary restore, changed source without
+restore, syntax failure retaining the prior DLL, and a successful repair.
+Windows process trees exit cleanly. This check covers compilation and artifact
+identity, without qualifying gameplay reload or a faster iteration budget.
+[Evidence](evidence/m2-compile-restore.json).
 
 Version 0.0.103 exposes `--save-write-mode synchronous|background` on standalone
 game launches and headless game serving. CLI discovery includes the mode and

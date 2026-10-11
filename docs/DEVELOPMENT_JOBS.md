@@ -184,6 +184,47 @@ bytes. A real .NET 10 SDK build through this adapter produces the escape-room
 fixture assembly. Full world-host and packaged integration qualification is
 recorded separately.
 
+## Dependency restore during C# iteration
+
+`development.compile` accepts an optional boolean `restore`, defaulting to
+`true`. Set it to `false` to pass `--no-restore` to the selected .NET build.
+Compiler servers remain disabled; job ownership, diagnostics, cancellation and
+timeouts use the same path as ordinary builds. Omission and `true` share a retry
+receipt. Changing the flag while reusing a request ID rejects the request.
+
+First complete an ordinary build using the same project, configuration and
+output directory. The output's `artifacts` directory holds its restore files.
+Restore again after changing the project, imported build files, dependencies,
+SDK selection or NuGet configuration. Poima does not determine whether those
+inputs still match. A missing assets file produces a compiler failure, with no
+automatic restore fallback. Treat only the new job's terminal success as build
+success; an older DLL can remain after a failed build.
+
+```python
+job = client.call("development.compile", {
+    "request_id": new_id(),
+    "executable": dotnet_path,
+    "project": project_path,
+    "output": output_path,
+    "configuration": "Release",
+    "restore": False,
+})
+```
+
+Use the [bounded observation recipe](AGENT_BUILD_JOBS.md) to inspect that job
+before validating or loading its artifacts. The option follows [.NET build's
+restore contract](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore).
+It exposes build policy; it does not promise a particular iteration time.
+
+The [real SDK check](../tests/development_compile_restore.py) takes explicit
+`--binary`, `--dotnet` and a fresh `--output` directory. Run it with native Windows
+Python inside an owned, gated process tree. It uses a package-free .NET 10
+library and clears NuGet sources; the selected SDK's targeting packs must already
+be installed. Its [recorded qualification](evidence/m2-compile-restore.json)
+includes cold failure, a default restore, source-only compilation, syntax failure
+with the prior DLL retained, and repair. Native command and retry contracts also
+pass on Linux. These are correctness checks rather than an iteration benchmark.
+
 ## Structured compiler feedback (development)
 
 Agents can request recognized compiler errors and warnings without retrieving

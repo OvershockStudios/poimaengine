@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.104
+
+- Add an explicit dependency-restore option to C# compile jobs, preserving ordinary builds by default and allowing prepared projects to select `--no-restore`.
+- Guard the option's type and retry identity, and expose it through schema revision 77.
+- Verify native contracts and five real Windows SDK builds, including genuine missing-restore and syntax failures. [Build policy and qualification](docs/DEVELOPMENT_JOBS.md#dependency-restore-during-c-iteration).
+
 ## 0.0.103
 
 - Add `--save-write-mode synchronous|background` to native game launch and serving, with strict admission and matching CLI discovery.
