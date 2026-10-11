@@ -20,6 +20,17 @@ three-second target. That interval includes the verification and artifact
 retention described below. This paused CoreCLR result does not qualify Native
 AOT reload or close the full Alpha reliability gate.
 
+A separate [native 0.0.108 journal cohort](evidence/m2-iteration-journal.json)
+with retained 0.0.88 tooling passes twenty real edits and 25 build jobs, preserving
+full supported state and the original edit-to-first-verified-Tick timer. It uses
+compact polling, batched observations, owned compilation, prepared restore and
+[evidence checkpoints](EVIDENCE_JOURNAL.md). Mean is **2.854906 seconds** and p95
+is **3.003971 seconds**, still missing three seconds. The six-edit guard pilot is
+separate; [all twenty samples](evidence/iteration-journal-native.json.gz) remain
+recorded. Earlier rewrite cohorts have different fixture bytes, and the rejected
+journal attempt is excluded. This is not a matched or causal comparison. The
+command below remains the original fixture, rather than the exact journal recipe.
+
 ## Prepare the inputs
 
 Run native Windows Python without `-O` from the repository root. Supply:

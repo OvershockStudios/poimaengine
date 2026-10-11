@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.109
+
+- Add a bounded Python evidence journal that appends settled records and reconstructs the complete evidence once, with strict typed equality and finite storage limits. [Usage](docs/EVIDENCE_JOURNAL.md).
+- Retain pending replies, errors, duplicate records and failed-run metadata; keep persistence success separate from the recorded experiment's outcome.
+- Pass 25 journal regressions on Linux and Windows; verify the fresh Windows build, native development contracts and real SDK success, failure and repair. [Checks](docs/evidence/m2-evidence-journal.json).
+- Record one fresh native 0.0.108 Relay Yard cohort with 20 real compatible edits, 25 build jobs and complete state/first-Tick checks. End-to-end p95 is 3.004 seconds, still above the three-second target; this is not a matched performance comparison. [Qualification](docs/evidence/m2-iteration-journal.json).
+
 ## 0.0.108
 
 - Add Python client helpers for inspecting and waiting for accepted build jobs, with compact progress reads and finite polling budgets.

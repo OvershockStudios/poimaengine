@@ -1,0 +1,280 @@
+{
+  "format": "poima.evidence-journal-qualification.v1",
+  "checkpoint": "0.0.109",
+  "passed": true,
+  "scope": "Bounded Python evidence persistence; selected Windows native development contracts and three real SDK builds. Gameplay iteration is measured separately on native 0.0.108.",
+  "source_sha256": {
+    "CMakeLists.txt": "1f51c0636fe0ef3b98045df7aa3cccad7d50f1d8978a4d76b99033b885cb8e1a",
+    "include/poima/development_jobs.hpp": "51987820e06511574e651c6d1e974bd8c21ce568ddd6cedaacd10397a2b3817a",
+    "src/development_jobs.cpp": "a3db87c304c1536c4ccd11b3cd6e0b2ab2c3097a20df274b69ae7933e757b792",
+    "src/development_compiler_owned.hpp": "f849ff2d68eea556081c51075a376aff6324850dd094b81751bb59ed912549ab",
+    "src/development_compiler_owned.cpp": "7c1c32b646264b48a0ff138fec1ee85f2450b18c51ad4d9381e82b1aad711edc",
+    "src/development_compiler_session.hpp": "222965150012813d248ee276286dbe267a672ddeed35725e61de476e93529320",
+    "src/development_service.hpp": "73b5ce0b93561fe16dd023231a623ea1a24be906137b004400dea6d2a3a6c68c",
+    "src/development_service.cpp": "cfc1a513684fd84de2f400bdbfe428702128c0166aece86cbb513d9badc97703",
+    "src/development_diagnostics.hpp": "26b2b0f92941f8ff14972b902dc1c7cdfc2589dab5cf8ec0464b699846d9fa6a",
+    "src/development_diagnostics.cpp": "51af2a549b1542898b5b503ccc918fc6f35f2340fe05488913cc4705910f2e92",
+    "src/world_schema.cpp": "178054b0ac56716049db9cc8b6b6c3ca28eaee547a56fb9e0611553406d81e31",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "include/poima/development_profiles.hpp": "7d778df8fc57ffa179d77d048c427a118d179c3e21725b00b0e572d3bb67966a",
+    "tests/development_jobs.cpp": "f1679a0f1f0d66bd49e1d8d1e0559a6e77ab8ec20dadd43249665016b0e0fc85",
+    "tests/development_service.cpp": "1c9cbe921e8c160f6162b2a6087839cdcc48d027defb24098a2a47e463f9cde6",
+    "tests/development_diagnostics.cpp": "c13c18ec56b55fd12ba224dbbd59da95d4893bfa02de57864ead369a4cacccf6",
+    "tests/world_schema_native.cpp": "c7561d479d8287666da4b87dd80de377653eff46ecca4e598826e3e727bcb99b",
+    "third_party/nlohmann/json.hpp": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63",
+    "tests/development_compact_poll.cpp": "c615ca94e82b9a5b2a00f892db94baf6c39aa806876b1829fdab92f1e5a25193",
+    "tools/evidence_journal.py": "a8bca455d735e2b64a0494cb720ee87e6cc697dbe6337099a73b71b0a19c2659",
+    "tests/python_evidence_journal.py": "77526a64f18fa7a8fa01f303cb0090c6682b55524a354b739ec7154da45b2b33"
+  },
+  "helper_lineage": {
+    "measured_helper_sha256": "36104e8096424a9796daf756e174ae3108370dee6eabcc0b6a50508b5d264eba",
+    "published_helper_sha256": "a8bca455d735e2b64a0494cb720ee87e6cc697dbe6337099a73b71b0a19c2659",
+    "byte_exact": false,
+    "executable_ast_equal": true,
+    "delta": "Leading module docstring only"
+  },
+  "native_build": {
+    "receipt_sha256": "32e725ddec0d67f3da0ed2311edf45e7f5a2f95bfb4d153bbd48e6b09a56ab95",
+    "source_freeze_sha256": "7e23e07667c5e80cfb59bf45af9c8ad6cfb3875b2076c6502e7f8d545f9cb196",
+    "selected_inputs": 22,
+    "native_feature_inputs": 20,
+    "python_inputs": 2,
+    "seconds": 83.79320058299345,
+    "incremental": true,
+    "full_renderer_rebuild_qualified": false,
+    "forced_cleanup": false
+  },
+  "artifacts": {
+    "poima.exe": {
+      "bytes": 24700928,
+      "sha256": "18903ddd173cb538b0b2d16c9816409edaf8841cc2dab358ca6f912dfd489cc9"
+    },
+    "phonon.dll": {
+      "bytes": 52950168,
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    },
+    "poima-development-jobs-test.exe": {
+      "bytes": 1649152,
+      "sha256": "843c4086ade1a77cb94b3aa28a828a59dac9cf9a91fb40354ec7ce3be19be794"
+    },
+    "poima-development-service-test.exe": {
+      "bytes": 1968128,
+      "sha256": "88e11e25fb497477e3d7f13cf61973de47f9c1a5a1e919534325f98d7a191f0d"
+    },
+    "poima-development-diagnostics-test.exe": {
+      "bytes": 1153536,
+      "sha256": "e39d196fd266d8b98179f07a782822e74c1b92bad50aaec52aae6e21a98d4641"
+    },
+    "poima-development-compact-poll-test.exe": {
+      "bytes": 1912832,
+      "sha256": "a4cfc86adc5d6786bacdfc95ac7f75cae54fe3262b4dffd30939de6e93ee8fed"
+    }
+  },
+  "windows": {
+    "engine_version": "0.0.109",
+    "schema_revision": 79,
+    "owner_sha256": "578275c4d299fc1474b6634bd48501010595edc9caf4562de005f04f81e40ceb",
+    "worker_report_sha256": "22c6b3d0e94a81ab43bc637ef5198e04619735c360c06fd4c2d80257eea0ad25",
+    "cases": [
+      {
+        "name": "jobs",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 5.99950049999461,
+        "stdout": {
+          "bytes": 191,
+          "sha256": "5f74f8cca3d1d599690a4d0f968f499a5541d1e6f0ec75b642ba79550e71b822"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "service",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 5.405502499997965,
+        "stdout": {
+          "bytes": 948,
+          "sha256": "e99190cfb465260dc7abee8f316fe12c43e94e20cc2462f8a7f8237d105261b2"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "diagnostics",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 0.08665209999890067,
+        "stdout": {
+          "bytes": 130,
+          "sha256": "3cb65731c5b9e41ac847784a7201ef46642cd793c4687308e105d66797d95f69"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "compact-poll",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 0.36130260000936687,
+        "stdout": {
+          "bytes": 98,
+          "sha256": "2940c56583f6d547e69a0fb5a45ebcf3f4b80864a31b5f0118d24afb9dcce1d9"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "sdk-success",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 3.6128926999954274,
+        "stdout": {
+          "bytes": 62931,
+          "sha256": "07cd6f0be52a3c656d3d171614d34d25e55d843172e2638949e3bdda2701ae25"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 0,
+        "recognized_lines": 0,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "compact_full_projection_checked_by_native_fixture": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "b295b3019366a4155eda6fbfe4709a7a24d01844c237d07d0f5ae6403375fe10"
+        }
+      },
+      {
+        "name": "sdk-syntax-failure",
+        "passed": true,
+        "expected_exit_code": 1,
+        "exit_code": 1,
+        "seconds": 1.9824164000019664,
+        "stdout": {
+          "bytes": 61131,
+          "sha256": "5344952c36f0a6e400b5b5fbc4483cddf3c8049c8608c0ee48f7849bc837ba22"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 1,
+        "recognized_lines": 2,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "compact_full_projection_checked_by_native_fixture": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "b295b3019366a4155eda6fbfe4709a7a24d01844c237d07d0f5ae6403375fe10"
+        }
+      },
+      {
+        "name": "sdk-repair",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 3.321964400005527,
+        "stdout": {
+          "bytes": 60286,
+          "sha256": "d3e7fad118618756d02acf989c16a443e8a72a2b87951eacd31288cf42e98d24"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 0,
+        "recognized_lines": 0,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "compact_full_projection_checked_by_native_fixture": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "b295b3019366a4155eda6fbfe4709a7a24d01844c237d07d0f5ae6403375fe10"
+        }
+      },
+      {
+        "name": "python-evidence-journal",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 2.094508099995437,
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 129,
+          "sha256": "c98230f8ea45b00f29e86b5cbb81ef533264510f3e7862f9395f80f5a2a870db"
+        },
+        "pure_python_test_methods": 25,
+        "engine_launches": 0
+      }
+    ],
+    "discovery": {
+      "requests": 5,
+      "schema_revision": 79,
+      "include_output_default": true,
+      "malformed_type_error": -32602,
+      "unknown_job_error": -32004,
+      "read_only_job_catalog_unchanged": true
+    },
+    "owner": {
+      "total_processes": 444,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "forced_cleanup": false
+  },
+  "linux": {
+    "receipt_sha256": "18f18de71ea796bb6b133298045c325982adabb3755b559705dc90612e9ee586",
+    "cases": [
+      {
+        "name": "python_evidence_journal",
+        "test_methods": 25,
+        "passed": true,
+        "seconds": 0.5767617289966438,
+        "source_sha256": "77526a64f18fa7a8fa01f303cb0090c6682b55524a354b739ec7154da45b2b33"
+      },
+      {
+        "name": "python_development_jobs",
+        "test_methods": 12,
+        "passed": true,
+        "seconds": 0.44373287398775574,
+        "source_sha256": "0e890f559a13f5a72b45604bb1c4c50c650e1f1a944d58ea5a81faaf1f14d662"
+      },
+      {
+        "name": "python_runtime_observation",
+        "test_methods": 17,
+        "passed": true,
+        "seconds": 0.35995643500064034,
+        "source_sha256": "4ab42f431de37b9b0387b6b20b967ed31275f7612ffe80ee1d5f56641d4a199b"
+      }
+    ],
+    "engine_execution": false
+  },
+  "limitations": [
+    "Pure persistence success is independent of recorded experiment success.",
+    "Selected incremental Windows build and CPU/SDK checks do not qualify GPU behavior, packaged delivery or the complete Alpha gate.",
+    "The native 0.0.108 twenty-edit timing cohort is recorded separately; these 0.0.109 checks add no iteration timing samples."
+  ]
+}

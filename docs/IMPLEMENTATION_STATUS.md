@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.108**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.109**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.109 adds a bounded Python [evidence journal](EVIDENCE_JOURNAL.md)
+with exact reconstruction; persistence success stays separate from experiment
+success. An independent native 0.0.108 cohort with retained 0.0.88 managed tooling
+passes 20 full-state C# edits and 25 build jobs using compact polling, batched
+reads, an owned compiler, prepared restore and journal checkpoints. Mean is
+**2.854906 seconds**; p95 is **3.003971 seconds**, missing the unchanged
+three-second target. A fresh six-edit guard pilot is separate. Earlier full and
+compact rewrite observations use different fixture bytes; the rejected journal
+attempt is excluded. No matched comparison, causal improvement or Alpha closure
+is qualified. [Results](evidence/m2-iteration-journal.json),
+[all twenty samples](evidence/iteration-journal-native.json.gz).
+
+The fresh 0.0.109 Windows build passes seven native/SDK cases, five discovery
+requests and 25 pure journal regressions. Linux passes the journal, build-job and
+runtime-observation suites (54 tests). These separate checks qualify persistence
+and selected development contracts, without adding iteration timing samples.
+[Qualification](evidence/m2-evidence-journal.json).
 
 Version 0.0.108 adds Python `development_status` and `wait_for_development`.
 The latter uses compact reads by default, passes each RPC the remaining finite
