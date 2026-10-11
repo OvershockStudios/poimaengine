@@ -151,7 +151,8 @@ Poll under a finite deadline. Inspect the terminal job state, exit status and
 bounded diagnostics; an empty or truncated diagnostic list is not proof of
 success. Cancellation acknowledgement also does not establish that the worker
 has stopped. Retain failed artifacts and their diagnostics separately from a
-corrected attempt.
+corrected attempt. The [build-job recipe](AGENT_BUILD_JOBS.md) shows bounded
+polling and separate observation after an authorized cancellation.
 
 If an interactive player is attached, obtain an authorized pause and observe
 fresh runtime guards before loading. Running playback rejects the load with

@@ -42,6 +42,11 @@ argument bytes at 64 KiB, paths at 32,768 native units and timeout at 24 hours.
 IDs remain in the exact JSON-integer range. Windows additionally enforces its
 32,766 UTF-16-unit command-line bound before launch.
 
+For agent clients, the [build-job recipe](AGENT_BUILD_JOBS.md) combines compact
+status polling, a finite local budget and deliberate cancellation followed by
+terminal observation. It distinguishes a polling timeout from a native job
+timeout and preserves uncertain transport outcomes.
+
 Windows starts children suspended, restricts inherited handles, assigns a
 kill-on-close Job Object, then resumes them. Completion and cancellation terminate
 remaining owned children and wait up to five seconds for zero active processes;
