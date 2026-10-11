@@ -82,6 +82,10 @@
     }
     struct PlayerSessionAdapter final : PlayerSession {
             World& owner;explicit PlayerSessionAdapter(World& value):owner(value) {}
+            void owner_poll() noexcept override {
+                owner.pump_gameplay_save_writer();
+                if(auto executor=jobs::peek_owner_executor())profiling::collect_jobs(*executor);
+            }
             frame_performance::Recorder* frame_recorder() noexcept override { return &owner.performance_.recorder(); }
             void preference_observation(const PlayerReport& report) noexcept override { owner.observe_gameplay_player_preferences(report); }
             std::string identity() const override { return owner.runtime_id_; }

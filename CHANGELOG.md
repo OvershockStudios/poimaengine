@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.103
+
+- Add `--save-write-mode synchronous|background` to native game launch and serving, with strict admission and matching CLI discovery.
+- Pump background save completion during player polling, including paused polls, without advancing gameplay or waiting for storage.
+- Report any pending gameplay save at the final blocking-play boundary; retain synchronous defaults and original retry outcomes.
+
 ## 0.0.102
 
 - Add opt-in background gameplay save writes, capturing one immutable checkpoint and publishing storage results on the owning engine thread.

@@ -49,6 +49,10 @@ struct PlayerReport;
 class PlayerSession {
 public:
     virtual ~PlayerSession()=default;
+    // Owner maintenance on every player poll, including paused/no-tick polls.
+    // Must not step, invoke gameplay callbacks, drain devices or wait for I/O.
+    // Default adapters need no maintenance. The session outlives this window.
+    virtual void owner_poll() noexcept {}
     // Optional owner-thread diagnostic storage; outlives this player and its GPU slots.
     virtual frame_performance::Recorder* frame_recorder() noexcept { return nullptr; }
     // Cached value observations only; called outside compiled callbacks, never
@@ -65,8 +69,8 @@ public:
     // A presentation supplies only the stable target and observed UI epoch.
     // Implementations route through the same receipt/commit boundary as agents.
     virtual PlayerControlResult control(const std::string& session,std::uint64_t ui_revision,const std::string& target);
-    // True when synchronous save/load servicing occurred, including a failed
-    // storage operation: its wall time must not become simulation catch-up.
+    // True when owner snapshot capture or synchronous save/load servicing
+    // occurred, including failed storage: exclude its wall time from catch-up.
     virtual bool advance(const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={})=0;
 };

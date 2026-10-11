@@ -35,6 +35,14 @@ against the launch working directory. The endpoint uses 1–64 ASCII letters,
 digits, underscores or hyphens. A duplicate endpoint fails before bundle opening
 or native gameplay initialization.
 
+Gameplay writes default to synchronous storage. Add
+`--save-write-mode background` with `--save-root` to use the native background
+writer, or `--save-write-mode synchronous` to select the default explicitly.
+The option requires an external save root; malformed or repeated options reject
+before bundle opening. Background mode requires a positive native worker count.
+`save.status` reports the selected mode. Loads and external `save.write` remain
+synchronous; see the [gameplay-save contract](GAMEPLAY_SAVES.md).
+
 The host runs until explicit shutdown or a termination signal. Diagnostics go to
 stderr; clients exchange JSON-RPC through the existing same-user local transport.
 Successful host exit is zero, with no unsolicited stdout messages. Startup
@@ -156,6 +164,27 @@ mouse/controller interaction, audible output, clean-machine installation,
 representative performance and full Alpha release qualification.
 
 ## Recorded integration
+
+The [0.0.103 save-mode checks](evidence/m2-standalone-save-mode.json) use a
+freshly exported primitive bundle and its matching runtime. Twenty-seven CLI
+commands and twenty service calls verify both launch forms' discovery and
+parser admission, plus headless `game serve` defaults, explicit modes and
+external-root/worker rejection. No gameplay ticks, player window or durable
+save are exercised by that CLI fixture. The compiled CoreCLR save check in
+the same record is a separate native World fixture.
+
+To repeat the headless check, supply a verified primitive bundle without
+compiled gameplay or audio and use a fresh output directory:
+
+```powershell
+python tests/game_save_write_mode_cli.py `
+  --engine path/to/bundle/runtime/bin/poima.exe `
+  --game path/to/bundle/game.json --output build/save-mode-check
+```
+
+On Windows, run the fixture under a process-tree supervisor that assigns its
+gated child to a kill-on-close Job Object before any native process starts.
+Emergency cleanup fails the check. The fixture builds and downloads nothing.
 
 [The 0.0.83 evidence](evidence/m2-game-service.json) records the no-window
 Windows service/MCP contract and both GPU-backed compiled game runs. The latter

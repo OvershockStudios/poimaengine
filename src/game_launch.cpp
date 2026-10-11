@@ -69,13 +69,21 @@ void validate_game_host(const GameDefinition& game) {
     require(Runtime::available(),"Game launch requires simulation in this executable.");
     require(!game.audio || POIMA_AUDIO,"Game audio is unavailable in this executable.");
 }
-std::string prepare_game(WorldSession& world,const GameDefinition& game,const std::string& save_root) {
+void validate_save_launch(const std::string& save_root,const std::optional<std::string>& write_mode) {
+    if(!write_mode)return;
+    require(*write_mode=="synchronous" || *write_mode=="background","Save write mode must be synchronous or background.");
+    require(!save_root.empty(),"Save write mode requires --save-root.");
+}
+std::string prepare_game(WorldSession& world,const GameDefinition& game,const std::string& save_root,
+    const std::optional<std::string>& write_mode) {
     if(!save_root.empty()) {
         require(save_root.find('\0')==std::string::npos,"Save root must be NUL-free.");
         // Keep aliases for the existing storage validator; CLI-relative paths
         // resolve against the caller's working directory in both launch modes.
         const auto root=text_of(fs::absolute(path_of(save_root)).lexically_normal());
-        call(world,"save.configure",{{"request_id",id()},{"expected_generation",0},{"root",root}});
+        Json params={{"request_id",id()},{"expected_generation",0},{"root",root}};
+        if(write_mode)params["write_mode"]=*write_mode;
+        call(world,"save.configure",std::move(params));
     }
     const auto session=id();
     call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
@@ -88,11 +96,12 @@ std::string prepare_game(WorldSession& world,const GameDefinition& game,const st
 }
 Reply serve_game(const GameServeOptions& options) {
     try {
+        validate_save_launch(options.save_root,options.save_write_mode);
         // A duplicate endpoint must fail before bundle/runtime/module work.
         LocalSessionServer host(options.endpoint);
         const auto game=load_game(options.manifest);validate_game_host(game);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
-        prepare_game(world,game,options.save_root);
+        prepare_game(world,game,options.save_root,options.save_write_mode);
         return {run_shared_session(world,host,options.endpoint),{}};
     }catch(const std::exception& error) {
         return {4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.serve"},{"status","error"},
@@ -102,6 +111,7 @@ Reply serve_game(const GameServeOptions& options) {
 Reply run_game(const GameLaunchOptions& options) {
     Json result=nullptr,diagnostics=Json::array();bool success=false;
     try {
+        validate_save_launch(options.save_root,options.save_write_mode);
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         require(POIMA_RENDER_SMOKE,"Game launch requires the Vulkan player in this executable.");
@@ -111,7 +121,7 @@ Reply run_game(const GameLaunchOptions& options) {
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
-        const auto session=prepare_game(world,game,options.save_root);
+        const auto session=prepare_game(world,game,options.save_root,options.save_write_mode);
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};

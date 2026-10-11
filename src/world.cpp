@@ -2543,8 +2543,13 @@ public:
         PlayerSessionAdapter session(*this);
         BlockingPreferenceScope preference_scope(*this,prepared.gameplay_preferences);
         const auto report=run_player(prepared.options,session);
+        // A final Tick can accept a write immediately before playback ends.
+        // Observe completed work without adding storage waits to the player.
+        session.owner_poll();
         require(report.render.available,report.render.detail,-32003);
         auto result=player_report_json(prepared.options,std::move(prepared.input_info),std::move(prepared.settings_application),report,params.at("mode"));
+        const auto* pending=runtime_->gameplay_saves().pending();
+        result["pending_gameplay_save"]=pending ? gameplay_save_json(runtime_->gameplay_saves().query(pending->ticket,&gameplay_save_ledger_)) : Json(nullptr);
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
 

@@ -1,0 +1,889 @@
+{
+  "format": "poima.standalone-save-mode-evidence.v1",
+  "checkpoint": "0.0.103",
+  "date": "2026-10-11",
+  "passed": true,
+  "source_pin_count": 23,
+  "sources": [
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 75547,
+      "sha256": "53b301024f0aac1f811419fde1724cee4db8cbb05c4b3198121da32dbd5e52f1"
+    },
+    {
+      "path": "include/poima/player.hpp",
+      "bytes": 8609,
+      "sha256": "3ed76e20f1c4c4f113345bfeae5278508091f0d9708573782784e27ad6b93f98"
+    },
+    {
+      "path": "include/poima/game_launch.hpp",
+      "bytes": 935,
+      "sha256": "e1821034be4e29ded03d2b0f78e088c256fa3d5a21623e8530ad489bc6002a1e"
+    },
+    {
+      "path": "src/main.cpp",
+      "bytes": 19159,
+      "sha256": "caeaebe2554455fb841cf3d8c51151bb17ada12b5b39a20d8382985dfd1c1ed8"
+    },
+    {
+      "path": "src/core.cpp",
+      "bytes": 18662,
+      "sha256": "8163c0b98b0f7fd049c81d83f110ff0d6d7dcfd1625a2fd0b6fa1cf08103bc38"
+    },
+    {
+      "path": "src/game_launch.cpp",
+      "bytes": 12006,
+      "sha256": "bfb4e2436f935f7b1b50d6a1ec0eba4ffcf65ccbd234f1d95c07d719261deef7"
+    },
+    {
+      "path": "src/render_smoke.cpp",
+      "bytes": 280155,
+      "sha256": "f251f935b08c183c3091a050cdf0f84074dea570a1b94188dcc1e9e013413530"
+    },
+    {
+      "path": "src/render_smoke_disabled.cpp",
+      "bytes": 4313,
+      "sha256": "c4ca5ef03d0e8ac224bc92eb681042111775da766871874424cdce17e13d46dd"
+    },
+    {
+      "path": "src/world.cpp",
+      "bytes": 283487,
+      "sha256": "9b07aae6c651b024af35fa2d66a30270e41c2d568b20e5573f5eb4c492a546e8"
+    },
+    {
+      "path": "src/world_player_service.inc",
+      "bytes": 49786,
+      "sha256": "9cefabc0946bff968df60245e479ed180e4e83381198d5690b2c10d259615e1a"
+    },
+    {
+      "path": "src/world_gameplay_save.inc",
+      "bytes": 13553,
+      "sha256": "10fd559418ded533c2ffcde414eaee0b931d621d8853b4bdd14fd93401ebad48"
+    },
+    {
+      "path": "src/world_schema.cpp",
+      "bytes": 83236,
+      "sha256": "a1d055749e15e64ab7354ab483108061b1e76369970a0dc678af54a01e5832ff"
+    },
+    {
+      "path": "src/gameplay_save_writer.cpp",
+      "bytes": 8491,
+      "sha256": "c52b969ea8fe0970c762de5569342bf23c871da41996d9bb2b6e7266263405cc"
+    },
+    {
+      "path": "src/jobs.cpp",
+      "bytes": 28651,
+      "sha256": "6eb8b6e14dd81a3ea0efbb29c6aa97f9cf2c0fa115f814ad1e367ccb0c584c27"
+    },
+    {
+      "path": "src/profiler.cpp",
+      "bytes": 11235,
+      "sha256": "3fc59009e8a49d4daf0a1691253da149e3e7660182ed574daa1a0609570bf289"
+    },
+    {
+      "path": "src/player.cpp",
+      "bytes": 4148,
+      "sha256": "19fae996e95ecb64870df29e7684f6ba06c9e31fa832b461af282d8ec4b8128c"
+    },
+    {
+      "path": "src/input_profile.cpp",
+      "bytes": 16694,
+      "sha256": "5c739b5dcee63d4c1877ae106b208333da6cf5ae037812fc7bf2e5510afcf5ba"
+    },
+    {
+      "path": "tests/player_owner_poll_disabled.cpp",
+      "bytes": 7464,
+      "sha256": "4a09ca04c8a21770fba2e4dd282d589943110af6e71a31a709191b168a2663ae"
+    },
+    {
+      "path": "tests/player_window_native.cpp",
+      "bytes": 20341,
+      "sha256": "479a9a891187a4e6974a8f0df77ee19a4dfb2c5cf458596a03fcd23d6e0da2be"
+    },
+    {
+      "path": "tests/game_save_write_mode_cli.py",
+      "bytes": 12347,
+      "sha256": "dc32c2f84811531fe5d189188de24714a45ab935ab03153fb26dea867f630185"
+    },
+    {
+      "path": "tests/world_gameplay_save_background.cpp",
+      "bytes": 19739,
+      "sha256": "57b36fbea9674ba85759c87660442a360229e166c50f58743632f400499409b7"
+    },
+    {
+      "path": "tests/world_schema_native.cpp",
+      "bytes": 9567,
+      "sha256": "681d58d32f3656d0d987fba838e8e6bad24cd28a34e0651c6651ed6bee22e790"
+    },
+    {
+      "path": "src/scene.cpp",
+      "bytes": 3376,
+      "sha256": "adc020695b8ce72b959624ded070a1aae1fb47e302681c0941d357196ab8890f"
+    }
+  ],
+  "sdk_sources": [
+    {
+      "path": "tools/python/poima_client/client.py",
+      "bytes": 15720,
+      "sha256": "d37a71dd2385ffc861b34ab646f3eaa896f6187fb5182f050705f140f2c926ec"
+    },
+    {
+      "path": "tools/python/poima_client/errors.py",
+      "bytes": 858,
+      "sha256": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739"
+    },
+    {
+      "path": "tools/python/poima_client/observation.py",
+      "bytes": 9608,
+      "sha256": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c"
+    },
+    {
+      "path": "tools/python/poima_client/responses.py",
+      "bytes": 14658,
+      "sha256": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593"
+    },
+    {
+      "path": "tools/python/poima_client/transport.py",
+      "bytes": 18110,
+      "sha256": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+    },
+    {
+      "path": "tools/python/poima_client/__init__.py",
+      "bytes": 578,
+      "sha256": "08c23823398dbbba0be6745543359ba308670c96b3542b425990df94d06e3176"
+    },
+    {
+      "path": "tools/python/poima_client/core_responses.v1.candidate.json",
+      "bytes": 25153,
+      "sha256": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90"
+    },
+    {
+      "path": "tools/python/poima_client/core_responses.v1.json",
+      "bytes": 25150,
+      "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+    }
+  ],
+  "freeze_sha256": "71e0941c22e15a81958c3649522afa2db5e98de81f2f661ca826eb30b0504238",
+  "windows_native_checks": [
+    {
+      "case": "disabled_poll",
+      "binary": {
+        "path": "build/standalone-saves-0.0.103/bin/poima-player-owner-poll-disabled-test.exe",
+        "sha256": "5495c5a5cf828d2f5beac3b5b4aec7771517d456f1f7310c25333e1df5034c89"
+      },
+      "worker_sha256": "c427a686a9fe8b6c2a7aba4f51b855ca66de1d7f10e6fbca153b7b0b66f8b245",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "total_processes": 2,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false,
+        "seconds": 0.19235789999947883,
+        "receipt_sha256": "c9957ebd78dfe7214cc7ba2bb7beb8fc7e3a0ea986a95faffe32ef951f8faccf",
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 138,
+            "sha256": "3b67f27a4c9a7f498921b23746a548a661d4e1bd44b54c584f86ed325d553446"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        }
+      }
+    },
+    {
+      "case": "deferred_poll",
+      "binary": {
+        "path": "build/standalone-saves-0.0.103/bin/poima-player-window-test.exe",
+        "sha256": "8c0200270bd858b182723be54ff5a25b87b3cbae6cdf0fca76f37269b13a00f5"
+      },
+      "worker_sha256": "33fca8ee49461dd953748fc4c3e57af2d620300d3392568a930fd2a93cea0b68",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "total_processes": 2,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false,
+        "seconds": 0.2145438000006834,
+        "receipt_sha256": "d84f0457cc7a83d08102ded9e9ea494e60ccf64062e41cdcfcd7e1a44c39f767",
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 150,
+            "sha256": "b5058bc3baae31206bb4f56ff85b7933221028f8a39cdf50229fa2f77447ae04"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        }
+      }
+    },
+    {
+      "case": "world_schema",
+      "binary": {
+        "path": "build/standalone-saves-0.0.103/bin/poima-world-schema-test.exe",
+        "sha256": "9667aeb703c7b51029ddbc676502b850cde01287cb22750e20f62704595dd7cb"
+      },
+      "worker_sha256": "e4f98bb52c067ba40d10c0c20c38a253a26d250a9a71b6653fc3d664e1400978",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "total_processes": 2,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false,
+        "seconds": 11.962747300000046,
+        "receipt_sha256": "36401a6044c0b1884411f1b57ae5ff21ce61c271b6b026af77a870b4972aa907",
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 110,
+            "sha256": "35b5a21edf3ac8cb5d231ea81cebbcd86b6361759ee1372972f0ec93c113bbe8"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        }
+      }
+    },
+    {
+      "case": "world_background",
+      "binary": {
+        "path": "build/standalone-saves-0.0.103/bin/poima-world-gameplay-save-background-test.exe",
+        "sha256": "2d879eed34a543ca7242e42e9190a5e49a850f09e4c57aab0d1e4bbb6ca31898"
+      },
+      "worker_sha256": "97c076ef526a02c4712d1dfb1c030867d9e17c53f58a1f08cf9a448fa8f6cf8f",
+      "inputs": [
+        {
+          "path": "hostfxr.dll",
+          "bytes": 379688,
+          "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.dll",
+          "bytes": 36352,
+          "sha256": "e2335d279f9423f29e0f03ce22e427bb3e60e54e57f0351b17099b4ed41ae93d"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.GameplaySaveProbe.dll",
+          "bytes": 7168,
+          "sha256": "7b2d16cecc58806f6c47b1d6dc58bd08902909e86ef0e7bf0bf4329685298096"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.Gameplay.deps.json",
+          "bytes": 414,
+          "sha256": "35e491806515d1b4f7b32e3c1403432b1df051e7deb058d54e7f254c2da70e8b"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.Gameplay.dll",
+          "bytes": 133120,
+          "sha256": "bc5b351537088eb1a0ea9eb7b5e6c9bff74c22af6969055a77ccdf2ad69572a4"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.deps.json",
+          "bytes": 808,
+          "sha256": "b879f4fcc050493e4be039ca78a3f9765d1ab334915d066f42d9e4972ade4290"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.runtimeconfig.json",
+          "bytes": 364,
+          "sha256": "29ad26ea2193b41244bb055eb0fb499a4b878854601f33bf46869377a674eeab"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.Gameplay.deps.json",
+          "bytes": 414,
+          "sha256": "35e491806515d1b4f7b32e3c1403432b1df051e7deb058d54e7f254c2da70e8b"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.Gameplay.dll",
+          "bytes": 133120,
+          "sha256": "bc5b351537088eb1a0ea9eb7b5e6c9bff74c22af6969055a77ccdf2ad69572a4"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.GameplaySaveProbe.deps.json",
+          "bytes": 820,
+          "sha256": "122842cae81eac0bad12f0aac3f8ed42094d26aa4952550471c5e5cfaaeb4136"
+        }
+      ],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "total_processes": 2,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false,
+        "seconds": 1.0178072999988217,
+        "receipt_sha256": "83a63d37c45108d65c12df9cad7290dd4ad5508800d45f87c3dc9ae9805277a7",
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 191,
+            "sha256": "f34c19eb570886560e31f79ad5e2266da5f456197aaf6017cefc0392821ec827"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        }
+      }
+    }
+  ],
+  "windows_native_record_sha256": "19a9e7500c4f3f4e3d75b9c0f19f2ac382aa543d91fd12192fea5f5cb0ffab33",
+  "windows_build": {
+    "passed": true,
+    "build_exit_code": 0,
+    "configure_exit_code": 0,
+    "install_exit_code": 0,
+    "record_sha256": "dea48e7f39fd23db7655441c74e168193c22ea8e089c8dae9a1900c97c03ed05",
+    "logs": {
+      "build-windows-v2.log": {
+        "bytes": 8861,
+        "sha256": "9ea067a86179d06088d45e756bd0fe5158edee14087a01977af4ffc569de58a4"
+      },
+      "configure-windows-v3.log": {
+        "bytes": 7326,
+        "sha256": "d902a27b0383cce058e450d8eae0721655fb0a31c96c068d10b944bb441b78a1"
+      },
+      "build-windows-v3.log": {
+        "bytes": 273,
+        "sha256": "5f85e38c6d2d4d09e8abb7039880671659940aea99ee6c4dcf93efecca31d5ac"
+      },
+      "install-windows-v1.log": {
+        "bytes": 6010,
+        "sha256": "6dbe21be41c1d1dc0da13be1d3da1d58aec8b6ab3ce7ce7b6046edc687fe9c48"
+      }
+    }
+  },
+  "windows_cli": {
+    "owner": {
+      "passed": true,
+      "exit_code": 0,
+      "total_processes": 35,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 11.990613600006327,
+      "receipt_sha256": "3acf36595d13b29bfe0046737c1be82ba2caafc6ca570ac8845e4c31bc2bc64d",
+      "outputs": {
+        "stdout.txt": {
+          "bytes": 73,
+          "sha256": "5176a3cbe22835f77603e431fd0766c484b8111133d23bb8ac85dcacb6fdfb8e"
+        },
+        "stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "gated.py": {
+          "bytes": 346,
+          "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+        }
+      }
+    },
+    "worker_sha256": "41d70e1c87b9162edf998015a3dcadb40da08b86a3b958d8cf2411d04562d0f1",
+    "setup_commands": 3,
+    "setup_sha256": "f95e8c6b50107cef0ace3b2b52eb7ac0a4ec85cc7dffd42f898caa9f67c56093",
+    "record_sha256": "ba863c22c1e4dab8cdfc295570804c6acc24333ab8a1a7f18769c01541fa82dc",
+    "fixture_sha256": "5a53ce4a7460278a3caf64b7f50c44af0abaadd6ddbfebf6ff9dd64500c5959c",
+    "runtime_inventory": {
+      "bin/phonon.dll": [
+        52950168,
+        "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      ],
+      "bin/poima.exe": [
+        20894720,
+        "9a015c8863983fb1cb8a2bc2bf8d9aff7c65e75f40a794d700e3d160b3cc3496"
+      ],
+      "bin/poima_desktop.dll": [
+        19922432,
+        "acea2debe84e826e72d3d093611f7119338af586ac164a5f25181e176e3334eb"
+      ],
+      "runtime.json": [
+        764,
+        "eca36bc68e81dd63861de3b8ba6a36962a59ef74333affcf3ce27a77ea904e89"
+      ],
+      "share/poima/LICENSE": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "share/poima/THIRD_PARTY_NOTICES.md": [
+        21133,
+        "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+      ],
+      "share/poima/TRADEMARKS.md": [
+        512,
+        "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      ],
+      "share/poima/fonts/Inter-Regular.ttf": [
+        411640,
+        "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+      ],
+      "share/poima/licenses/DearImGui/LICENSE.txt": [
+        1083,
+        "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf"
+      ],
+      "share/poima/licenses/EnTT/LICENSE": [
+        1097,
+        "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+      ],
+      "share/poima/licenses/FidelityFX-SDK/LICENSE.txt": [
+        1115,
+        "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a"
+      ],
+      "share/poima/licenses/Inter/LICENSE.txt": [
+        4380,
+        "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+      ],
+      "share/poima/licenses/Jolt/LICENSE": [
+        1052,
+        "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3"
+      ],
+      "share/poima/licenses/LLVM-MinGW/COPYING": [
+        2326,
+        "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+      ],
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": [
+        12155,
+        "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+      ],
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": [
+        5905,
+        "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+      ],
+      "share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": [
+        2883,
+        "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      ],
+      "share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": [
+        1099,
+        "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36"
+      ],
+      "share/poima/licenses/LLVM-MinGW/LICENSE.TXT": [
+        15141,
+        "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+      ],
+      "share/poima/licenses/NVRHI/LICENSE.txt": [
+        1090,
+        "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a"
+      ],
+      "share/poima/licenses/RecastNavigation/License.txt": [
+        877,
+        "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e"
+      ],
+      "share/poima/licenses/SDL3/LICENSE.txt": [
+        884,
+        "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+      ],
+      "share/poima/licenses/SourceSans3/LICENSE.md": [
+        4486,
+        "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5"
+      ],
+      "share/poima/licenses/SteamAudio/LICENSE.md": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "share/poima/licenses/SteamAudio/THIRDPARTY.md": [
+        36284,
+        "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+      ],
+      "share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "share/poima/licenses/Vulkan-Headers/LICENSE.md": [
+        458,
+        "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+      ],
+      "share/poima/licenses/Vulkan-Headers/MIT.txt": [
+        1084,
+        "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+      ],
+      "share/poima/licenses/cgltf/LICENSE": [
+        1066,
+        "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+      ],
+      "share/poima/licenses/game_ui/FreeType-BDF.txt": [
+        5972,
+        "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe"
+      ],
+      "share/poima/licenses/game_ui/FreeType-FTL.TXT": [
+        6743,
+        "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+      ],
+      "share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": [
+        1148,
+        "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302"
+      ],
+      "share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": [
+        1197,
+        "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d"
+      ],
+      "share/poima/licenses/game_ui/FreeType-LICENSE.TXT": [
+        2149,
+        "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b"
+      ],
+      "share/poima/licenses/game_ui/FreeType-PCF.txt": [
+        3311,
+        "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b"
+      ],
+      "share/poima/licenses/game_ui/FreeType-hash.txt": [
+        1232,
+        "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d"
+      ],
+      "share/poima/licenses/game_ui/FreeType-zlib.txt": [
+        1328,
+        "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+      ],
+      "share/poima/licenses/game_ui/PROVENANCE.json": [
+        3022,
+        "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+      ],
+      "share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": [
+        2549,
+        "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6"
+      ],
+      "share/poima/licenses/game_ui/RmlUi-LICENSE.txt": [
+        1172,
+        "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e"
+      ],
+      "share/poima/licenses/lodepng/LICENSE.txt": [
+        881,
+        "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+      ],
+      "share/poima/licenses/mikktspace/mikktspace.h": [
+        8209,
+        "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+      ],
+      "share/poima/licenses/nlohmann-json/LICENSE.MIT": [
+        1076,
+        "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+      ],
+      "share/poima/licenses/stb/LICENSE": [
+        2510,
+        "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+      ],
+      "share/poima/licenses/ufbx/LICENSE": [
+        2631,
+        "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+      ]
+    },
+    "commands": 27,
+    "service_calls": 20,
+    "parser_rejections": 16,
+    "root_worker_rejections": 5,
+    "discovery_commands": 2,
+    "served_hosts": [
+      {
+        "index": 18,
+        "with_root": true,
+        "requested_mode": null,
+        "observed_mode": "synchronous",
+        "runtime_tick": 0,
+        "player_active": false,
+        "native_exit": 0,
+        "client_exit": 0,
+        "ready_stderr_exact": true
+      },
+      {
+        "index": 19,
+        "with_root": true,
+        "requested_mode": "synchronous",
+        "observed_mode": "synchronous",
+        "runtime_tick": 0,
+        "player_active": false,
+        "native_exit": 0,
+        "client_exit": 0,
+        "ready_stderr_exact": true
+      },
+      {
+        "index": 20,
+        "with_root": true,
+        "requested_mode": "background",
+        "observed_mode": "background",
+        "runtime_tick": 0,
+        "player_active": false,
+        "native_exit": 0,
+        "client_exit": 0,
+        "ready_stderr_exact": true
+      },
+      {
+        "index": 21,
+        "with_root": false,
+        "requested_mode": null,
+        "observed_mode": "synchronous",
+        "runtime_tick": 0,
+        "player_active": false,
+        "native_exit": 0,
+        "client_exit": 0,
+        "ready_stderr_exact": true
+      }
+    ],
+    "simulation_ticks": 0,
+    "bundle_sha256": "36568c9a903df6ac96a5f9094536eea25e7f0ebae31d595987bcc382623215f4",
+    "bundle_inventory": {
+      "content/default.poima-input.json": [
+        1520,
+        "0b2cfba63c7100afbf7ffb57b4e83d9586e45f51e3e7f507c421bd8292fcedd6"
+      ],
+      "content/world.json": [
+        4011,
+        "d4bdebc2c5d6c492061ecd0e0acebc82a09fe49144e60ad59bc7e805080a28d9"
+      ],
+      "game.json": [
+        10545,
+        "36568c9a903df6ac96a5f9094536eea25e7f0ebae31d595987bcc382623215f4"
+      ],
+      "launch.cmd": [
+        123,
+        "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0"
+      ],
+      "runtime/bin/phonon.dll": [
+        52950168,
+        "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      ],
+      "runtime/bin/poima.exe": [
+        20894720,
+        "9a015c8863983fb1cb8a2bc2bf8d9aff7c65e75f40a794d700e3d160b3cc3496"
+      ],
+      "runtime/bin/poima_desktop.dll": [
+        19922432,
+        "acea2debe84e826e72d3d093611f7119338af586ac164a5f25181e176e3334eb"
+      ],
+      "runtime/runtime.json": [
+        764,
+        "eca36bc68e81dd63861de3b8ba6a36962a59ef74333affcf3ce27a77ea904e89"
+      ],
+      "runtime/share/poima/fonts/Inter-Regular.ttf": [
+        411640,
+        "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+      ],
+      "runtime/share/poima/LICENSE": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "runtime/share/poima/licenses/cgltf/LICENSE": [
+        1066,
+        "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+      ],
+      "runtime/share/poima/licenses/DearImGui/LICENSE.txt": [
+        1083,
+        "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf"
+      ],
+      "runtime/share/poima/licenses/EnTT/LICENSE": [
+        1097,
+        "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+      ],
+      "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": [
+        1115,
+        "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": [
+        5972,
+        "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": [
+        6743,
+        "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": [
+        1148,
+        "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": [
+        1197,
+        "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": [
+        1232,
+        "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": [
+        2149,
+        "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": [
+        3311,
+        "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b"
+      ],
+      "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": [
+        1328,
+        "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+      ],
+      "runtime/share/poima/licenses/game_ui/PROVENANCE.json": [
+        3022,
+        "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+      ],
+      "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": [
+        2549,
+        "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6"
+      ],
+      "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": [
+        1172,
+        "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e"
+      ],
+      "runtime/share/poima/licenses/Inter/LICENSE.txt": [
+        4380,
+        "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+      ],
+      "runtime/share/poima/licenses/Jolt/LICENSE": [
+        1052,
+        "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING": [
+        2326,
+        "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": [
+        12155,
+        "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": [
+        5905,
+        "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": [
+        2883,
+        "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": [
+        1099,
+        "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36"
+      ],
+      "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": [
+        15141,
+        "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+      ],
+      "runtime/share/poima/licenses/lodepng/LICENSE.txt": [
+        881,
+        "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+      ],
+      "runtime/share/poima/licenses/mikktspace/mikktspace.h": [
+        8209,
+        "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+      ],
+      "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": [
+        1076,
+        "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+      ],
+      "runtime/share/poima/licenses/NVRHI/LICENSE.txt": [
+        1090,
+        "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a"
+      ],
+      "runtime/share/poima/licenses/RecastNavigation/License.txt": [
+        877,
+        "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e"
+      ],
+      "runtime/share/poima/licenses/SDL3/LICENSE.txt": [
+        884,
+        "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+      ],
+      "runtime/share/poima/licenses/SourceSans3/LICENSE.md": [
+        4486,
+        "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5"
+      ],
+      "runtime/share/poima/licenses/stb/LICENSE": [
+        2510,
+        "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+      ],
+      "runtime/share/poima/licenses/SteamAudio/LICENSE.md": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": [
+        36284,
+        "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+      ],
+      "runtime/share/poima/licenses/ufbx/LICENSE": [
+        2631,
+        "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+      ],
+      "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": [
+        11358,
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      ],
+      "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": [
+        458,
+        "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+      ],
+      "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": [
+        1084,
+        "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+      ],
+      "runtime/share/poima/THIRD_PARTY_NOTICES.md": [
+        21133,
+        "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+      ],
+      "runtime/share/poima/TRADEMARKS.md": [
+        512,
+        "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      ]
+    },
+    "native_binary_sha256": "9a015c8863983fb1cb8a2bc2bf8d9aff7c65e75f40a794d700e3d160b3cc3496"
+  },
+  "linux_disabled_hook": {
+    "passed": true,
+    "groups": 3,
+    "exit_code": 0,
+    "binary_sha256": "29d434d8ce5f3a3f5331fd0a13b3cec348ff00d6a8ee59ba7e651c32ca882167",
+    "record_sha256": "ee2cdaee2b1795399ca11846a9050ce958e856b9f421919b17711c02d52e0e08",
+    "outputs": {
+      "linux-owner-poll-stdout-v2.txt": {
+        "bytes": 137,
+        "sha256": "6506b9ade3531c5d972531319e37abe9678b40f021b5d9273f7193716c6f13d0"
+      },
+      "linux-owner-poll-stderr-v2.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "scopes": [
+    "Linux/Windows actual disabled backend owner-hook admission and thread/terminal boundaries.",
+    "Renderer-linked Windows deferred stop/terminal polling before device initialization.",
+    "Current .103 native CLI create/export plus headless serve mode forwarding; primitive bundle, zero ticks, no game module.",
+    "Separate .103 native CoreCLR World save using retained .102 managed inputs; immutable capture and a fresh World owner in the SAME process."
+  ],
+  "nonclaims": [
+    "Valid rendered game run forwarding",
+    "Paused native-window durable integration",
+    "GPU or device/physical input qualification",
+    "Fresh-process restoration",
+    "Save or capture latency",
+    "Power-loss durability",
+    "Whole Alpha qualification"
+  ],
+  "retained_attempts": [
+    {
+      "classification": "Linux link failure before test entry; missing scene identity helper dependency.",
+      "log_sha256": "70da0d21fe8fe512a8e7c4020f9335d6388fef580fbab5977b1b00501dc6b531"
+    },
+    {
+      "classification": "Stopped alias-triggered rebuild after 798 input invalidations; no check executed.",
+      "record_sha256": "4426df78f69d6c1a9c98a8103ce3b6084936f2e14aa03a2e756df488d506ff11"
+    },
+    {
+      "classification": "Windows generated link rule omitted scene.cpp; disabled-hook target failed to link before test entry. Other preceding target builds are not classified as failures. Corrected canonical configure and final build/install are separate successful steps.",
+      "log_sha256": "9ea067a86179d06088d45e756bd0fe5158edee14087a01977af4ffc569de58a4"
+    }
+  ]
+}

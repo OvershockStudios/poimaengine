@@ -3481,7 +3481,8 @@ PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,b
 }
 PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
-    auto& state=*impl_;state.check_thread();if(state.done)return false;
+    auto& state=*impl_;state.check_thread();
+    if(state.done) {state.session.owner_poll();return false;}
     profiling::SourceScope source(profiling::Source::player);
     auto* recorder=state.session.frame_recorder();fp::FrameToken token;fp::CpuSample sample;
     if(recorder && recorder->status().admitting) {
@@ -3501,7 +3502,7 @@ bool PlayerWindow::poll() {
     state.diagnostic_sample=&diagnostic;
     state.context.performance=token?recorder:nullptr;state.context.performance_token=token;state.context.performance_cpu=&sample;
     try {
-        {PerformanceWallScope wall(&sample.work.owner_prepare_ns);state.synchronize();if(!state.quit && !state.initialized)state.initialize();}
+        {PerformanceWallScope wall(&sample.work.owner_prepare_ns);state.session.owner_poll();state.synchronize();if(!state.quit && !state.initialized)state.initialize();}
         if(!state.quit)state.frame();
         {PerformanceWallScope wall(&sample.work.report_ns);if(state.quit)state.finish();else state.refresh_report();}
     }catch(const std::exception& error) {state.intervention(fp::Flag::error);state.fail(error);}

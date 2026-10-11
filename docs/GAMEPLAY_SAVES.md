@@ -10,6 +10,8 @@ In the editor, use **Window > Saves**, or call `save.configure` through the worl
 
 ```sh
 poima game run path/to/game.json --save-root path/to/saves
+# Opt into background gameplay writes with an existing external save directory:
+poima game run path/to/game.json --save-root path/to/saves --save-write-mode background
 ```
 
 Relative launch paths resolve from the launch directory. Storage must be outside the immutable bundle and asset store. Omit the option to disable gameplay saving. Games receive slot names and operation tickets; they cannot select filesystem or executable paths through this API. Native `Runtime` instances outside a configured owner also start with saving disabled.
@@ -26,7 +28,10 @@ Relative RPC roots resolve from the world file's directory. Refresh
 `expected_generation` from `save.status` when reconfiguring an existing owner.
 Background mode requires at least one [native job worker](JOBS.md);
 `POIMA_JOB_WORKERS=0` rejects that configuration. The standalone `--save-root`
-option keeps the synchronous default. Background mode changes gameplay save
+option keeps the synchronous default; `game run` and `game serve` accept
+`--save-write-mode background` or explicit `synchronous` when `--save-root` is
+provided. Unknown, repeated or missing mode values reject before bundle opening.
+Background mode changes gameplay save
 requests only; gameplay loads and external `save.write` remain synchronous.
 The managed API and negotiated services prefix are unchanged.
 
@@ -70,14 +75,14 @@ If any later tick in that batch fails, gameplay state, ticket allocation and the
 
 Automatic editor playback and the standalone player use one-tick commits. A save requested at tick zero therefore snapshots committed tick one, even when the editor poll has more catch-up ticks to run. A later automatic tick failure cannot undo that earlier committed save. Explicit multi-tick `runtime.step` still defers servicing until its entire batch succeeds. A successful load ends the editor’s remaining catch-up work and opens the restored session paused with old input released.
 
-Writes use retained operation identities and durable receipts. If storage reports an error after publication, the same receipt is checked before deciding success or failure. When storage cannot be inspected, or the relevant receipt has fallen outside retained history, the request stays `Resolving`; gameplay must not interpret this as permission to issue a fresh write. Synchronous unresolved work blocks another simulation batch. An owner-dispatched background save permits ordinary `Tick` and non-saving `Control` callbacks while keeping the captured request and its original committed tick unchanged. Another save or load remains `Busy`. Pending work also prevents reconfiguring storage, external writes/replacement, stopping, code reload, structural changes and external field/UI edits.
+Writes use retained operation identities and durable receipts. If storage reports an error after publication, the same receipt is checked before deciding success or failure. When storage cannot be inspected, or the relevant receipt has fallen outside retained history, the request stays `Resolving`; gameplay must not interpret this as permission to issue a fresh write. Synchronous unresolved work blocks another simulation batch. An owner-dispatched background save permits ordinary `Tick` and non-saving `Control` callbacks while keeping the captured request and its original committed tick unchanged. Another save or load remains `Busy`. Pending work also prevents reconfiguring storage, external writes/replacement, stopping, code reload, external structural changes and external field/UI edits.
 
 In background mode the owner captures one immutable checkpoint after the complete
 successful batch. A background worker inspects the slot, selects the generation,
 constructs the retained identity, writes the checkpoint and resolves uncertain
 receipts. Resolution retries keep that identity and never write or recapture.
 The owner polls completed work in memory and publishes its result at request
-entry or shared-player polling, including paused playback and owners without an
+entry or player polling, including paused playback and owners without an
 active player. Save completion timing is an asynchronous external boundary; CPU
 worker scheduling is not deterministic simulation state.
 
@@ -101,6 +106,13 @@ A `runtime.step` result preserves the source `session_id`, `previous_tick`, comm
 
 The owner retains 32 advance receipts across load, stop and restart. An exact retry returns the original outcome before checking the currently active session; it cannot step the replacement or repeat a load. Changing a retained request's parameters rejects. A historical advance result is not a substitute for querying a currently resolving operation. Player/audio replay receipts also survive replacement.
 
+`runtime.play` reports `pending_gameplay_save` at its final report boundary:
+the original queued/resolving operation, or `null`. This is an observation, not
+a storage fence; `null` does not mean a save succeeded. Query
+`runtime.save.result` using the original operation ticket for its outcome.
+Exact playback retries retain the original observation rather than waiting or
+replaying ticks.
+
 ## Limits
 
 Snapshot capture and serialization remain on the owner and may hitch even with
@@ -112,10 +124,13 @@ Shutdown waits for its own accepted write without shutting down another
 consumer's shared pool. Generic job cancellation after write entry cannot erase
 an actual durable receipt; cancellation before the callback starts writes nothing.
 
-Blocking `runtime.play` does not yet pump completed background saves while
-paused. Shared-player polling and subsequent service requests do pump them.
-Standalone game launches retain synchronous writing; a launch option and the
-blocking player's idle-completion hook remain separate work.
+Player polling now pumps completed writes in the shared and blocking player
+paths. The idle hook does not step simulation, invoke gameplay, initialize
+devices or wait for storage. Finishing playback may leave a save queued or
+resolving at its report boundary; owner destruction still waits for its own
+accepted writer group. Standalone launches retain synchronous writing unless
+explicitly configured. Rendered paused-player completion and save hitch budgets
+require separate qualification.
 
 Supported spawned root props and [complete hierarchical instances](RUNTIME_INSTANCES.md#save-and-reload-boundaries), including their typed bounded component arrays, persist in checkpoints. This is registered native/typed state, not arbitrary C# object serialization.
 
@@ -142,6 +157,14 @@ qualification. [Background-save evidence](evidence/m2-background-gameplay-saves.
 The historical evidence below describes the synchronous checkpoint.
 
 ## Qualification
+
+The [0.0.103 evidence](evidence/m2-standalone-save-mode.json) records four
+Windows native checks, three Linux disabled-backend groups, and a freshly
+exported primitive bundle exercising 27 CLI commands and 20 service calls.
+These verify owner-poll boundaries without device initialization, compiled
+CoreCLR save continuation and same-process restoration, and headless launch
+configuration. They do not qualify a rendered `game run`, durable completion
+in a paused native window, fresh-process restoration or save latency.
 
 [Recorded evidence](evidence/m2-gameplay-save-requests.json) binds source and binary hashes to real CoreCLR/Native AOT requests on Linux and Windows, a native-only Linux engine, final packaged editor checks and a relocated compiled game. It also records player replacement on both laptop GPUs, 100 compatible C# reloads, and 42 runtime/34 authoring-only Linux suites. The Windows session was locked; synthetic input and semantic GUI checks do not establish physical-input or OS-screenshot qualification.
 

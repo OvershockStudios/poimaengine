@@ -212,6 +212,12 @@ See [gameplay saves](GAMEPLAY_SAVES.md#configure-storage) for continuation,
 completion and pending-write guards. Protocol version 1 and authoring-core v1
 are unchanged.
 
+Schema revision 76 describes background-save completion during player polling
+and the final `runtime.play.pending_gameplay_save` observation. Paused polls do
+not advance gameplay or wait for storage; a pending report is not a durability
+guarantee. Use the original save ticket to query its outcome. The CLI's
+`schema game` separately advertises `save_write_mode` and its required save root.
+
 ## Logical UI definitions and state
 
 Authored `ui.element.set/remove` transactions and `world.ui.get/list` use format 4

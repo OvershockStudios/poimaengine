@@ -11,10 +11,12 @@ struct GameLaunchOptions {
     std::optional<std::uint64_t> settings_revision;
     bool samples_explicit=false,frames_in_flight_explicit=false;
     std::uint32_t max_frames=0;
+    std::optional<std::string> save_write_mode={};
 };
 Reply run_game(const GameLaunchOptions& options);
 struct GameServeOptions {
     std::string manifest,endpoint,save_root;
+    std::optional<std::string> save_write_mode={};
 };
 // Verify an immutable bundle, prepare its native runtime/gameplay, then pump
 // the same owner-thread local service used by authoring hosts. No window or

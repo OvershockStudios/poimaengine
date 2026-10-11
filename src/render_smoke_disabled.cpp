@@ -19,10 +19,11 @@ RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot&
 }
 struct PlayerWindow::Impl {
     PlayerReport result;
+    PlayerSession& session;
     std::shared_ptr<PlayerPreferences> preferences;
     std::thread::id owner=std::this_thread::get_id();
     bool done=false,is_paused=false,stopping=false;
-    Impl(const PlayerOptions& options,PlayerSession& session,bool paused):preferences(options.preferences),is_paused(paused) {
+    Impl(const PlayerOptions& options,PlayerSession& value,bool paused):session(value),preferences(options.preferences),is_paused(paused) {
         result.render=run_render_smoke(options.render);
         result.initial_tick=result.final_tick=session.tick();
         result.initial_session=result.final_session=session.identity();
@@ -54,7 +55,7 @@ PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,b
 }
 PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
-    impl_->check_thread();if(impl_->done)return false;
+    impl_->check_thread();impl_->session.owner_poll();if(impl_->done)return false;
     impl_->observe();
     impl_->done=true;impl_->result.stop_reason=impl_->stopping ? "requested_stop" : "unavailable";return false;
 }

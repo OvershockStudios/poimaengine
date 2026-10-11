@@ -35,7 +35,8 @@ public:
     std::string session="original";
     std::uint64_t current_tick=7;
     mutable unsigned snapshots=0;
-    unsigned advances=0;
+    unsigned advances=0,owner_polls=0;
+    void owner_poll() noexcept override {++owner_polls;}
     std::string identity() const override {return session;}
     std::uint64_t tick() const override {return current_tick;}
     bool controller_valid(const std::string& id) const override {return id=="controller";}
@@ -75,14 +76,19 @@ std::string utf8(const std::filesystem::path& path) {
 void basic() {
     Owner owner;PlayerWindow window(options(),owner,true);
     check(!window.ready() && !window.finished() && window.paused(),"Deferred native window state changed");
-    check(owner.snapshots==0 && owner.advances==0,"Construction touched graphics/simulation snapshot");
+    check(owner.snapshots==0 && owner.advances==0 && owner.owner_polls==0,"Construction touched graphics/simulation snapshot or maintenance");
     rejects([&]{window.capture("never-before-ready.bmp");},"Unready capture was accepted");
     check(owner.snapshots==0 && owner.advances==0,"Unready capture called owner");
     bool rejected=false;
     std::thread other([&]{try {(void)window.ready();}catch(const std::exception&) {rejected=true;}});
     other.join();check(rejected,"Foreign-thread native window call was accepted");
+    rejected=false;
+    std::thread foreign_poll([&]{try {(void)window.poll();}catch(const std::exception&) {rejected=true;}});
+    foreign_poll.join();
+    check(rejected && owner.owner_polls==0,"Foreign poll invoked owner maintenance before rejection");
     window.request_stop();window.request_stop();
     check(!window.poll() && window.finished() && !window.ready(),"Deferred cancellation did not finish");
+    check(owner.owner_polls==1,"Paused deferred stop omitted or duplicated owner maintenance");
     const auto report=window.report();
     check(report.stop_reason=="requested_stop" && report.initial_tick==7 && report.final_tick==7,
           "Cancellation changed tick or reason");
@@ -90,6 +96,11 @@ void basic() {
           "Zero-frame cancellation initialized or advanced");
     check(report.effective_ui_scale==1.5,"Zero-frame report lost configured absolute UI scale");
     check(!window.poll(),"Terminal poll resumed canceled owner");
+    check(owner.owner_polls==2,"Terminal native poll omitted owner maintenance");
+    rejected=false;
+    std::thread foreign_terminal([&]{try {(void)window.poll();}catch(const std::exception&) {rejected=true;}});
+    foreign_terminal.join();
+    check(rejected && owner.owner_polls==2,"Foreign terminal poll entered owner maintenance");
     rejects([&]{window.pause(false);},"Finished window accepted pause");
     rejects([&]{window.capture("never-after-stop.bmp");},"Finished window accepted capture");
 }

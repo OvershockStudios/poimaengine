@@ -139,7 +139,7 @@ void synchronous_default(const fs::path& root,const Json& config) {
     fs::create_directory(root/"sync");poima::WorldSession world(text(root/"sync.json"));Rpc rpc{world};
     check(rpc.call("save.status").at("write_mode")=="synchronous","Default write mode changed.");
     const auto schema=rpc.call("world.describe",{{"view","method"},{"name","save.configure"}});
-    check(schema.at("schema_revision").get<unsigned>()>=75,"Background save discovery did not invalidate cached schemas.");
+    check(schema.at("schema_revision").get<unsigned>()>=76,"Background save discovery did not invalidate cached schemas.");
     check(schema.at("methods").at("save.configure").at("properties").at("write_mode").at("enum")==Json::array({"synchronous","background"}),"Write-mode discovery differs.");
     const auto unconfigured=rpc.call("save.status");
     for(const auto& value:Json::array({nullptr,1,true,Json::array(),Json::object()})) {

@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.102**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.103**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.103 exposes `--save-write-mode synchronous|background` on standalone
+game launches and headless game serving. CLI discovery includes the mode and
+required external root. Player polling performs owner maintenance at paused,
+active and terminal boundaries; it does not advance gameplay or wait for storage.
+Blocking playback reports its final pending save observation without turning
+window close into a storage fence. Synchronous writing remains the default.
+[Launch and completion contract](GAMEPLAY_SAVES.md#configure-storage).
+
+Four Windows native checks pass: disabled-backend owner polling, renderer-linked
+deferred stop/terminal polling before device initialization, schema discovery,
+and compiled CoreCLR background saves with a fresh World owner in the same
+process. The disabled backend also passes three Linux correctness groups.
+A newly exported primitive game bundle passes 27 native CLI commands and 20
+service calls for discovery, admission, defaults and headless mode forwarding.
+Every Windows check exits with no remaining descendants or forced cleanup.
+Rendered launch forwarding, durable completion in a paused native window,
+fresh-process restoration and save hitch budgets remain separate checks.
+[Evidence](evidence/m2-standalone-save-mode.json).
 
 Version 0.0.102 adds opt-in background gameplay save writes through
 `save.configure.write_mode`. The owner captures one immutable checkpoint after
@@ -17,8 +36,8 @@ unmeasured. Eight Windows native checks cover writer faults/cancellation and
 compiled CoreCLR dispatch, continued ticks, rollback, guards, retries and a
 fresh-owner restore in the same process. The separate retained Native AOT UI
 check uses a manually dispatched queue. No player window or save-performance
-measurement is included. Blocking `runtime.play` still needs an idle-completion
-hook, and standalone game launches keep synchronous writing.
+measurement is included. That original checkpoint did not include the standalone
+mode flag or blocking-player idle hook; those are added by 0.0.103.
 [Contract](GAMEPLAY_SAVES.md#commit-and-rollback) and
 [evidence](evidence/m2-background-gameplay-saves.json).
 

@@ -73,28 +73,37 @@ poima::Reply run(int argc, char** argv) {
         return poima::usage_error("Invalid project command. Use: schema project");
     }
     if(command=="game") {
-        if(argc<4 || !*argv[3])return poima::usage_error("Use: game inspect <game.json> | run <game.json> [options] | serve <game.json> --endpoint <name> [--save-root external-directory].");
+        if(argc<4 || !*argv[3])return poima::usage_error("Use: game inspect <game.json> | run <game.json> [options] | serve <game.json> --endpoint <name> [--save-root external-directory] [--save-write-mode synchronous|background].");
         const std::string_view action=argv[2];if(action=="inspect" && argc==4)return poima::inspect_game(argv[3]);
         if(action=="serve") {
             poima::GameServeOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
             for(int i=4;i<argc;i+=2) {
                 const std::string_view key=argv[i];
-                if(i+1>=argc || !seen.insert(key).second || (key!="--endpoint" && key!="--save-root"))return poima::usage_error("Game serve accepts one --endpoint and an optional --save-root.");
+                if(i+1>=argc || !seen.insert(key).second || (key!="--endpoint" && key!="--save-root" && key!="--save-write-mode"))return poima::usage_error("Game serve accepts one --endpoint, optional --save-root and optional --save-write-mode.");
                 const std::string_view value=argv[i+1];
                 if(value.empty() || value.starts_with("--"))return poima::usage_error("Game serve arguments require nonempty values.");
                 if(key=="--endpoint") { if(!endpoint_name(value))return poima::usage_error("Endpoint name must be 1..64 ASCII letters/digits/_/-.");options.endpoint=value; }
-                else options.save_root=value;
+                else if(key=="--save-root")options.save_root=value;
+                else {
+                    if(value!="synchronous" && value!="background")return poima::usage_error("Save write mode must be synchronous or background.");
+                    options.save_write_mode=value;
+                }
             }
             if(options.endpoint.empty())return poima::usage_error("Game serve requires --endpoint <name>.");
+            if(options.save_write_mode && options.save_root.empty())return poima::usage_error("Save write mode requires --save-root.");
             return poima::serve_game(options);
         }
         if(action!="run")return poima::usage_error("Invalid game command. Use: schema game");
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--width" && key!="--height" && key!="--samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides"))return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
+            if(key=="--save-write-mode") {
+                if(value!="synchronous" && value!="background")return poima::usage_error("Save write mode must be synchronous or background.");
+                options.save_write_mode=value;continue;
+            }
             if(key=="--replay" || key=="--capture" || key=="--report" || key=="--save-root" || key=="--settings-profile" || key=="--settings-overrides") {
                 if(value.empty() || value.starts_with("--"))return poima::usage_error("Game file arguments need nonempty paths.");
                 if(key=="--replay")options.replay=value;else if(key=="--capture")options.render.capture=value;else if(key=="--save-root")options.save_root=value;else if(key=="--settings-profile")options.settings_profile=value;else if(key=="--settings-overrides") { if(value.size()>65536)return poima::usage_error("Settings overrides exceed 64 KiB.");options.settings_overrides=value; }else options.report=value;continue;
@@ -112,6 +121,7 @@ poima::Reply run(int argc, char** argv) {
             else if(key=="--frames-in-flight") { if(n!=1 && n!=2)return poima::usage_error("Frames in flight must be 1 or 2.");options.render.frames_in_flight=n;options.frames_in_flight_explicit=true; }
             else { if(n<128 || n>4096)return poima::usage_error("Game dimensions must be 128..4096.");if(key=="--width")options.render.width=n;else options.render.height=n; }
         }
+        if(options.save_write_mode && options.save_root.empty())return poima::usage_error("Save write mode requires --save-root.");
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
         return poima::run_game(options);
     }
