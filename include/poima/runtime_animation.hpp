@@ -24,6 +24,8 @@ class RuntimeAnimations {
         // Snapshot at construction: sampling never reads mutable asset aliases.
         std::vector<double> clip_durations;
         std::vector<NodePose> baseline;
+        std::vector<int> model_parents;
+        std::vector<RuntimeTwoBoneIk> ik;
         std::vector<std::string> nodes;
         std::vector<LayerDefinition> layers;
         std::vector<std::pair<std::string,std::string>> parents;
@@ -70,6 +72,8 @@ public:
         std::vector<std::vector<LayerPlayback>> layers;
         // Opaque immutable definitions, owned across structural rollback.
         std::shared_ptr<const Membership> membership;
+        std::vector<std::vector<RuntimeIkCommand>> ik;
+        std::vector<std::vector<RuntimeIkState>> ik_states;
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
@@ -79,6 +83,8 @@ private:
         std::uint64_t tick,const Membership* compiled_cache);
     std::vector<Clock> clocks_;
     std::vector<std::vector<LayerPlayback>> layers_;
+    std::vector<std::vector<RuntimeIkCommand>> ik_;
+    std::vector<std::vector<RuntimeIkState>> ik_states_;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
     ModelPose composed(std::size_t index,const Clock& base,const std::vector<LayerPlayback>& layers,std::uint64_t tick) const;
     Clock replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const;
@@ -94,12 +100,16 @@ public:
     // Added rigs begin at tick, removed rigs disappear atomically.
     void rebind(const RuntimeDefinition& definition,std::uint64_t tick);
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
-    std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
+    bool has_ik() const noexcept;
+    std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
+    void apply_ik(const std::vector<RuntimeIkCommand>& commands);
+    std::vector<RuntimeAnimationPose> sample(std::uint64_t tick,
+        const std::function<const Matrix4&(const std::string&)>& wrapper_world={});
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    Checkpoint checkpoint() const { return {clocks_,layers_,membership_}; }
-    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers); }
+    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_}; }
+    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

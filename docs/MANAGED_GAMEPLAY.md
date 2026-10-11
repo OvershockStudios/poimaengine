@@ -76,6 +76,8 @@ public sealed class CounterGame : Game<CounterState>
 | `Raycast(origin, direction, distance, ignore)` | Closest collider hit, or null; see the [native ray contract](PHYSICS_INTERACTIONS.md). |
 | `PlaySound(emitter, gain)` / `StopSound(voice)` | Create/stop a native voice in the gameplay transaction; [event/recording contract](AUDIO_EVENTS.md). |
 | `MoveKinematic(entity, position, rotation, ticks)` | Queue a validated native kinematic target for this tick. |
+| `GetTwoBoneIk(entity, slot)` | Tick-only committed controls and cached solved diagnostics; requires independent `ITwoBoneIkGame`. |
+| `SetTwoBoneIk(entity, slot, target, pole, enabled, space, weight)` | Stage complete persistent controls for a configured chain slot; requires `ITwoBoneIkGame`. |
 | `GetAnimation(entity)` | Copy native playback and active transition state; null for an existing non-rig entity. |
 | `SetAnimation(entity, clip, time, speed, loop, playing, blendTicks)` | Queue complete native playback state and an optional fixed-tick crossfade for this tick. |
 | `SetAnimation(entity, clip, transitionMode, time, speed, loop, playing, blendTicks)` | Opt-in versioned command selecting `Crossfade` or `Inertial`; requires `IInertialAnimationGame`. |
@@ -139,7 +141,7 @@ Invalid commands, failed curve samples and managed exceptions restore animation 
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, and 264 named input actions; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs, IK and controller root motion remain unfinished. Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, and 288 named two-bone IK; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and controller root motion remain unfinished. Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
 
 ## Control masked layers from C#
 
@@ -317,3 +319,43 @@ enabled frozen sphere, box or capsule during Tick, with up to 1,024 admitted
 queries per tick. Region results distinguish the damage owner, attachment
 entity and region name; ordinary geometry remains an occluder. Existing
 `Raycast` is unchanged. [Authoring, C# example and exact query semantics](HIT_REGIONS.md).
+
+
+## Control two-bone IK from C#
+
+`ITwoBoneIkGame` independently requests `animation_ik_v1` and the 288-byte
+services-7 prefix before construction. It grants no inertial-animation, masked
+layer, input, hit-region or other extension rights; declare each marker your
+game uses. Existing unmarked games retain their 176-byte view.
+
+`GameContext.GetTwoBoneIk(entity, slot)` returns an immutable nullable `IkState`
+with the frozen root/middle/end model indices, committed controls and cached
+solved endpoint/error/clamp/pole-fallback diagnostics. It does not solve or
+advance animation. An existing non-rig or absent configured slot returns null;
+an unknown live entity rejects. `SetTwoBoneIk` accepts complete persistent
+controls, either through the arguments below or an immutable `IkCommand`.
+Both APIs are Tick-only: at most 1,024 admitted reads and 64 admitted writes per
+Tick. Slots are 1–8, targets and poles are finite points within ±1,000,000 units
+in the selected space, and weight is finite in 0–1. Defaults are enabled,
+`IkSpace.World`, and weight 1.
+
+```csharp
+// The game class declares ITwoBoneIkGame. The authored AnimationRig has slot 1.
+var committed = context.GetTwoBoneIk(state.Rig, 1);
+context.SetTwoBoneIk(state.Rig, 1, new Vector3d(1, 1, 0),
+    new Vector3d(0, 0, 1), space: IkSpace.Rig, weight: 1);
+// A second read still sees committed controls until native batch publication.
+```
+
+World-space points remain fixed as the wrapper moves; rig-space points follow
+its transform. Writes publish after successful native validation, after base
+and layer animation, and remain invisible to reads in the same callback.
+Animation and IK may target the same rig, but duplicate IK slots and a caller
+and game targeting the same slot reject the whole batch. A reserved instance
+birth can accept a configured setter; getters expose only committed entities.
+Failures roll back the native batch, including gameplay state and save intents.
+[Authoring, solve restrictions and exact saved controls](TWO_BONE_IK.md) describe
+the supported chain geometry; this API does not add automatic grounding,
+full-body solving, joint limits or root motion. The [0.0.118 qualification](evidence/m2-two-bone-ik.json)
+records actual CoreCLR and Native AOT consumers, including complete rollback
+and fresh saved continuation; compatible reload is checked only with CoreCLR.

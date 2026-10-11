@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.117**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.118**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.118 adds explicit native two-bone IK after base animation and
+masked layers, with world/rig targets, pole points, weights, reach clamping and
+cached committed observations. Frozen original-index chains remap through
+hierarchical instances; commands, skinning and attached hit regions share the
+corrected pose and complete rollback. IK worlds save nested animation-state
+version 4, while worlds without IK preserve earlier serialization. Independent
+`animation_ik_v1` appends a 288-byte epoch-7 services prefix without changing
+older prefixes. Fifteen Windows native suites, nine IK groups, three API groups
+with 88 recorded calls, 79 compiled ABI checks and 13 publisher tests pass.
+Actual CoreCLR and Native AOT consumers record 118 and 109 lossless calls,
+checking read/write limits, staged controls, complete failure rollback, save
+intents and exact fresh-process continuation; CoreCLR also checks compatible
+reload. Eight synthetic GPU captures across AMD and NVIDIA adapters and both
+forward/deferred paths match independently calculated static geometry exactly
+in full BMP pixels and HDR/depth/normal probes. All accepted Windows Jobs close
+naturally with unchanged admitted inputs. Automatic grounding, full-body IK,
+joint limits, root motion, desktop IK controls and game-scale performance remain
+separate work. These checks do not qualify an unpaused player-service route or
+close Alpha. [Contract](TWO_BONE_IK.md), [results](evidence/m2-two-bone-ik.json).
 
 Version 0.0.117 implements immutable query-only HitRegion spheres, boxes and
 capsules on existing entities, including imported rig nodes and hierarchical

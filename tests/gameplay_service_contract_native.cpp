@@ -75,6 +75,16 @@ int main(){try{
     }
     auto duplicate_regions=regions;duplicate_regions["features"].push_back("hit_regions_v1");rejected(duplicate_regions.dump());
     auto unnamed_regions=regions;unnamed_regions["features"]=Json::array({"baseline_v7"});rejected(unnamed_regions.dump());
+    auto ik=baseline;ik["services_bytes"]=288;ik["features"].push_back("animation_ik_v1");
+    parsed=poima::parse_gameplay_service_contract(ik.dump());
+    check(parsed.services_bytes==288 && parsed.features.size()==2,"Independent IK contract rejected.");
+    auto combined_ik=ik;for(const char* name:{"animation_inertial_v1","animation_layers_v1","character_input_v1","hierarchical_instances_v1","player_preferences_v1","input_actions_v1","hit_regions_v1"})combined_ik["features"].push_back(name);
+    if(poima::runtime_navigation_available())combined_ik["features"].push_back("navigation_query_v1");
+    parsed=poima::parse_gameplay_service_contract(combined_ik.dump());
+    check(parsed.features.size()==(poima::runtime_navigation_available()?10u:9u),"IK named-feature combination rejected.");
+    for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,280u,287u,289u}){auto wrong=ik;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_ik=ik;duplicate_ik["features"].push_back("animation_ik_v1");rejected(duplicate_ik.dump());
+    auto unnamed_ik=ik;unnamed_ik["features"]=Json::array({"baseline_v7"});rejected(unnamed_ik.dump());
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

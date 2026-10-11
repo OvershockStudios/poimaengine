@@ -291,7 +291,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             : std::vector<components::Schema>{};
         s.components->validate_module(declared);
     }
-    s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
+    s.animations->load_state(data.at("animation").dump(),tick);
+    if(!s.animations->has_ik())s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
     std::string previous;
     for(const auto& row:rows) {
@@ -357,6 +358,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     // Rebuild support from current geometry only after every body is restored.
     s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
+    if(s.animations->has_ik()) { s.animation_locals();s.sync(); }
     for(const auto& [id,saved]:locals) {
         const auto& actual=s.registry.get<Node>(s.find(id)).local;
         require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) && save_near(saved.scale,actual.scale),"Saved local transform does not match reconstructed state/content.");

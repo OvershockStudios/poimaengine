@@ -401,6 +401,38 @@ std::vector<RuntimeAnimationLayer> animation_layers_value(const Json& values) {
     }
     std::sort(result.begin(),result.end(),[](const auto& left,const auto& right) { return left.slot<right.slot; });return result;
 }
+RuntimeIkCommand ik_control_value(const Json& value) {
+    RuntimeIkCommand result;
+    const auto slot=revision(value.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");result.slot=static_cast<std::uint32_t>(slot);
+    for(const auto* key:{"target","pole"}) {
+        const auto& vector=value.at(key);require(vector.is_array() && vector.size()==3,"IK target/pole requires three coordinates.");
+        for(const auto& x:vector)require(x.is_number() && std::isfinite(x.get<double>()) && std::abs(x.get<double>())<=1e6,"IK target/pole must be finite and within1e6.");
+    }
+    result.target=value.at("target").get<std::array<double,3>>();result.pole=value.at("pole").get<std::array<double,3>>();
+    if(value.contains("enabled")) {require(value.at("enabled").is_boolean(),"IK enabled must be boolean.");result.enabled=value.at("enabled").get<bool>();}
+    if(value.contains("space")) {
+        require(value.at("space").is_string() && (value.at("space")=="world" || value.at("space")=="rig"),"IK space must be world or rig.");
+        result.space=value.at("space")=="rig" ? IkSpace::Rig : IkSpace::World;
+    }
+    if(value.contains("weight")) {
+        require(value.at("weight").is_number() && std::isfinite(value.at("weight").get<double>()) && value.at("weight")>=0 && value.at("weight")<=1,"IK weight must be within0..1.");
+        result.weight=value.at("weight").get<double>();
+    }
+    return result;
+}
+std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
+    require(values.is_array() && values.size()<=8,"AnimationRig IK permits at most eight chains.");
+    std::vector<RuntimeTwoBoneIk> result;std::set<std::uint32_t> slots;
+    for(const auto& value:values) {
+        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight"},{"slot","root","middle","end","target","pole"});
+        const auto control=ik_control_value(value);require(slots.insert(control.slot).second,"Duplicate authored IK slot.");
+        RuntimeTwoBoneIk chain;chain.slot=control.slot;chain.enabled=control.enabled;chain.space=control.space;chain.target=control.target;chain.pole=control.pole;chain.weight=control.weight;
+        const auto root=revision(value.at("root")),middle=revision(value.at("middle")),end=revision(value.at("end"));
+        require(root<10000 && middle<10000 && end<10000 && root!=middle && root!=end && middle!=end,"IK chain requires three distinct model indices0..9999.");
+        chain.root=static_cast<std::uint32_t>(root);chain.middle=static_cast<std::uint32_t>(middle);chain.end=static_cast<std::uint32_t>(end);result.push_back(chain);
+    }
+    std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.slot<b.slot;});return result;
+}
 RuntimeHitRegion hit_region_value(const Json& value) {
     require(value.is_object() && value.contains("shape") && value.at("shape").is_string(),"HitRegion requires a shape.");
     const auto shape=value.at("shape").get<std::string>();
@@ -434,9 +466,9 @@ void validate_component(const std::string& type, const Json& value) {
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
             require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
     if(type=="AnimationRig") {
-        fields(value,{"asset","clip","time","speed","loop","playing","layers"},{"asset","clip","time","speed","loop","playing"});
+        fields(value,{"asset","clip","time","speed","loop","playing","layers","ik"},{"asset","clip","time","speed","loop","playing"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"AnimationRig requires a model content hash.");
-        (void)animation_value(value);if(value.contains("layers"))(void)animation_layers_value(value.at("layers"));return;
+        (void)animation_value(value);if(value.contains("layers"))(void)animation_layers_value(value.at("layers"));if(value.contains("ik"))(void)animation_ik_value(value.at("ik"));return;
     }
     if(type=="RigNode") {
         fields(value,{"rig","node"},{"rig","node"});identifier(value.at("rig"));require(revision(value.at("node"))<10000,"RigNode index must be 0..9999.");return;
@@ -2396,7 +2428,7 @@ public:
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
                 catch(const std::exception& error) { throw Error(-32050,error.what()); }
-                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));value.animation_rig=std::move(rig);
+                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));if(ref.contains("ik"))rig.ik=animation_ik_value(ref.at("ik"));value.animation_rig=std::move(rig);
             }
             if(components.contains("RigNode")) {
                 const auto& ref=components.at("RigNode");value.rig_node=RuntimeRigNode{identifier(ref.at("rig")),static_cast<std::uint32_t>(revision(ref.at("node")))};
@@ -2539,6 +2571,16 @@ public:
                 if(value.contains("weight_blend_ticks")) { const auto ticks=revision(value.at("weight_blend_ticks"));require(ticks<=3600,"Animation weight blend duration must be0..3600.");command.weight_blend_ticks=static_cast<std::uint32_t>(ticks); }
             } else require(!value.contains("weight") && !value.contains("weight_blend_ticks"),"Base animation commands do not accept layer weight fields.");
             require(seen.emplace(command.entity,command.layer.value_or(0)).second,"Duplicate animation command target.");result.push_back(std::move(command));
+        }
+        return result;
+    }
+    static std::vector<RuntimeIkCommand> parse_ik(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"IK must contain at most64 complete commands.");
+        std::vector<RuntimeIkCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","slot","target","pole","enabled","space","weight"},{"entity","slot","target","pole"});
+            auto command=ik_control_value(value);command.entity=identifier(value.at("entity"));
+            require(seen.emplace(command.entity,command.slot).second,"Duplicate IK command target.");result.push_back(std::move(command));
         }
         return result;
     }
@@ -2952,6 +2994,19 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.ik") {
+            fields(params,{"session_id","tick","entity","slot"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");
+            try { (void)runtime_->entity(entity); }catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->ik(entity,static_cast<std::uint32_t>(slot));Json value=nullptr;
+                if(state)value={{"entity",state->entity},{"slot",state->slot},{"root",state->root},{"middle",state->middle},{"end",state->end},
+                    {"enabled",state->enabled},{"space",state->space==IkSpace::Rig ? "rig" : "world"},{"target",state->target},{"pole",state->pole},{"weight",state->weight},
+                    {"end_position",state->end_position},{"target_error",state->target_error},{"clamped",state->clamped},{"pole_fallback",state->pole_fallback}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.entity") {
             fields(params,{"session_id","id","tick","structure_revision"},{"session_id","id"}); runtime_guard(params);structure_read_guard(params);
             if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -2962,10 +3017,17 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
+            if(!normalized.contains("ik"))normalized["ik"]=Json::array();
+            const auto ik=parse_ik(normalized.at("ik"));
+            for(auto& command:normalized["ik"]) {
+                if(!command.contains("enabled"))command["enabled"]=true;
+                if(!command.contains("space"))command["space"]="world";
+                if(!command.contains("weight"))command["weight"]=1;
+            }
             if(normalized["animations"].is_array())for(auto& command:normalized["animations"])if(command.is_object()) {
                 if(!command.contains("blend_ticks"))command["blend_ticks"]=0;
                 // JSON numeric equality treats 0 and 0.0 alike. Validate this
@@ -2999,7 +3061,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

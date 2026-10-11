@@ -132,7 +132,7 @@
         finish_gameplay_save(request,completion);return true;
     }
     RuntimeAdvance advance_runtime(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,
-        const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={}) {
+        const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeIkCommand>& ik={}) {
         require(bool(runtime_),"No runtime is active.",-32030);
         profiling::SessionScope trace_session(runtime_id_);
         profiling::Scope trace_advance("owner.advance",static_cast<std::int64_t>(runtime_->inspect().tick));
@@ -148,7 +148,7 @@
         result.previous_tick=runtime_->inspect().tick;result.committed_tick=result.previous_tick+ticks;result.current_tick=result.committed_tick;result.stepped=ticks;
         result.first_voice=runtime_->sound_state().next_id();
         prepare_gameplay_player_preferences_boundary();
-        try { runtime_->step(ticks,inputs,motions,sounds,animations); }
+        try { runtime_->step(ticks,inputs,motions,sounds,animations,{},ik); }
         catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
         // Publish only after the complete native batch succeeds, before a
         // queued Load can replace the Runtime that staged the preference.

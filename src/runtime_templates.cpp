@@ -116,6 +116,9 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(local==recipe.root)entity.transform=root_transform;
         if(entity.character)remap(entity.character->camera);
         if(entity.rig_node)remap(entity.rig_node->rig);
+        // Frozen IK chains use model indices in AnimationRig, not world IDs.
+        // Copy their configuration unchanged; remapped RigNode ownership
+        // is validated against that exact model and direct-parent graph.
         if(entity.skinned_mesh)remap(entity.skinned_mesh->rig);
         if(entity.hit_region)remap(entity.hit_region->owner);
         if(entity.environment)remap(entity.environment->sky.sun);

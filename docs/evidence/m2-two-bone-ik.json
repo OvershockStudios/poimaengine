@@ -1,0 +1,642 @@
+{
+  "format": "poima.two-bone-ik-qualification.v1",
+  "passed": true,
+  "publication_version": "0.0.118",
+  "scope": "Windows x86_64 native post-layer two-bone IK and synthetic compiled CoreCLR/Native AOT consumers.",
+  "native": {
+    "producer_sha256": "bdefb331c7328c8f6bcf446acc9d34564d3f75aab942b009fadee6130991c500",
+    "source_freeze_sha256": "886ca513f7cdb6e7549419784092d370b7e1fc6316f4fed07e1ab63c866899e5",
+    "source_file_count": 292,
+    "selected_repository_sources": {
+      "CMakeLists.txt": {
+        "bytes": 79151,
+        "sha256": "18e3ec7a4bb1c848a9050c0594e4c3feb8f586d4c254452db45841597b4e2ba8"
+      },
+      "include/poima/runtime.hpp": {
+        "bytes": 22659,
+        "sha256": "976f7322ec69b1f0d1c4f2cb2c09128bab28347c7cd2a19ba8a5c86b8f51cd58"
+      },
+      "include/poima/runtime_animation.hpp": {
+        "bytes": 5825,
+        "sha256": "36a66dee3bab2da51dd3d5bb6a2c52698563b0c86027e120f12de6873c377177"
+      },
+      "include/poima/runtime_ik.hpp": {
+        "bytes": 668,
+        "sha256": "5a0b4b56e893808a217f82fb12e0cda52908243d4057676527c8af55b140b38e"
+      },
+      "include/poima/gameplay_abi.h": {
+        "bytes": 31997,
+        "sha256": "ddc2e16386c3a73c5f545c4d0878975336a1a82940de696d7ff5c5ece1b4179a"
+      },
+      "include/poima/gameplay_compatibility.hpp": {
+        "bytes": 11442,
+        "sha256": "7d9c17a0999a3118c803b995f242f40b30e32c77848874233d4a8edeade1ac2d"
+      },
+      "src/runtime.cpp": {
+        "bytes": 128857,
+        "sha256": "e3de50e53a75f4b391132014e4401191317ed536bca04709456eb2b31cc00203"
+      },
+      "src/runtime_animation.cpp": {
+        "bytes": 70696,
+        "sha256": "fc560bb68d7f94c785d1d94b95f177e202256d992ef51f37aa643d6d57c443ad"
+      },
+      "src/runtime_ik.cpp": {
+        "bytes": 10669,
+        "sha256": "939f0e74b4bfa32cd2494c52a7411187fff15ad2d6a68b4a3d9344d1db4adfc1"
+      },
+      "src/runtime_save.inc": {
+        "bytes": 33186,
+        "sha256": "c59d740ac87c92e3ba259743dca24dd339ef4951798f4970cacaf9ab50826318"
+      },
+      "src/runtime_templates.cpp": {
+        "bytes": 17398,
+        "sha256": "da120009360eb1893440bcf486e7986f30749bce445683369468bf592adb69c9"
+      },
+      "src/runtime_disabled.cpp": {
+        "bytes": 8493,
+        "sha256": "594dfa3ab5ba20b2e7dea5a05f9eee166d6c7c9088252eb5546098dd7561d5d8"
+      },
+      "src/runtime_ui.inc": {
+        "bytes": 10665,
+        "sha256": "c5187768a33bdd196c3758ce6675e4ae14ad65d34f105ba80615f2014f5b1e11"
+      },
+      "src/world.cpp": {
+        "bytes": 299858,
+        "sha256": "a814b87744741da90dad25abd8f0cb82a910f547f753d45ccd216f357d8e2a0d"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 95363,
+        "sha256": "efd8fbfc5049a9e15fe65f650566110521a3c945c6ea96e14ff890186dd68103"
+      },
+      "src/save_upgrade_document.cpp": {
+        "bytes": 19502,
+        "sha256": "94119f90f9a564cfabdddd0a5f92982a79c3061dab5f71f87c4c2b7737cbcdfe"
+      },
+      "tests/runtime_two_bone_ik_native.cpp": {
+        "bytes": 19698,
+        "sha256": "71d4cbdaf7bd6361f7bae0ec0c40aeda47322e88e7af1d20d25277cf768d3f95"
+      },
+      "tests/runtime_two_bone_ik.py": {
+        "bytes": 17207,
+        "sha256": "582873a7215c234d6601b77172bcd1a7b3107801215e37017442de2a2d716bf1"
+      }
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25181696,
+        "sha256": "89816fb5db5f6b891c2328a564ab9ec3e53ebcce741ef901b9615be5eb8b6888"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18143744,
+        "sha256": "ef2e283dce0927d34a61bd852f514edd9eda92f53e3251cbf65893ebbff027dc"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18117120,
+        "sha256": "70ee903da505cf38546abc54b8c8255e8c7ae4782f62f17630f88638e1b572d7"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18361344,
+        "sha256": "887eac9ee3e745fa75ebe01e3627448cdfa63d3d1d9eac25d7b585e433855f1c"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2170368,
+        "sha256": "5733c4b9dafa3970da0ba6a822fb8bd115d995fc8b8f6ffd758856c029481ee2"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18150400,
+        "sha256": "368bd200feb2e6e6400cd318ffdff96ca7998316676e65efca42fdb10a76fe84"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18300928,
+        "sha256": "746f19fd1d1f8a4a63f4db9d1362220281b8b46b963820d2471c3070a09dc759"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 23613952,
+        "sha256": "763cbc7742449f348433ee19aa43f96a67fe8c874c30a813538012894bf4aaf7"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 23621120,
+        "sha256": "337638608144029dd5147f6ffbfbbf7b2157273db666c186b099cbb25d606ce0"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 14971392,
+        "sha256": "683605db14ed13ce97299bbc40d4504199bf30192c5050a6c6c38c9d154b122b"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14858240,
+        "sha256": "2aab19d137bf07d41fbb1c4d9f095c631242d9bb8165b8731d89ca033ed05cb6"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14806528,
+        "sha256": "b708f6e5f8d60647941c5a7ad3c5597dd43f12103d9b3d93a816a0bb9a369c07"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1909760,
+        "sha256": "253fe7cc44ace955b34d0e93bb183e56e8f396462860c0487b6e1a410e57f4fb"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18222592,
+        "sha256": "f6481793db269e31cefbf3f40f33cad9fff9e72d2566565d1234ac6231eb8f44"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18153984,
+        "sha256": "d1290e87d51b2916d0e2fb2a754cce152cc7d21cbc2270c040c5c3179734c5dd"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2046976,
+        "sha256": "29ac6309f42dabd0e0afada8ae230a5a129b206b18f6c709d9724c0d588cc39b"
+      }
+    },
+    "qualification_owner_sha256": "d426285af4053652b7b817e245c19d3cf3ce66b006990ed4d0f2920c4b02babe",
+    "suites": [
+      "two-bone-ik",
+      "hit-regions",
+      "runtime",
+      "templates",
+      "instances",
+      "runtime-save",
+      "world-save",
+      "world-schema",
+      "gameplay-compatibility",
+      "gameplay-service-contract",
+      "gameplay-player-preferences",
+      "animation-membership",
+      "animation",
+      "animation-layers",
+      "animation-save"
+    ],
+    "two_bone_ik_check_groups": 9,
+    "preserved_hit_region_check_groups": 7,
+    "schema_revision": 87,
+    "ownership": {
+      "total_processes": 39,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    }
+  },
+  "protocol": {
+    "evidence": {
+      "bytes": 1131980,
+      "sha256": "42797e45439bace90fa406eb7fe67bdcb37867de3c5729d071d4a2abcc885c29"
+    },
+    "functional_groups": 3,
+    "rpc_count": 88,
+    "clean_native_owners": 2,
+    "recording": "Interpreted native results and errors; no raw transport-envelope claim.",
+    "full_durable_payload_comparisons": 3
+  },
+  "managed": {
+    "owner_sha256": "57560b7020f58bf329b1de34a4d9c5bf07ecb534e5a7bbc9b8219b6b6fffcdcf",
+    "source_file_count": 55,
+    "artifacts": {
+      "bridge\\Poima.Gameplay.deps.json": {
+        "bytes": 436,
+        "sha256": "6ef504dc100b9692f5ebb5b0c86a47f10791f95521c9d634f679e6cb69173c8e"
+      },
+      "bridge\\Poima.Gameplay.dll": {
+        "bytes": 153600,
+        "sha256": "9a1a092eb3fdcb8b76f064321bb6072d262c13b0052b92a5f5c7fd9ba993bc3f"
+      },
+      "bridge\\Poima.Gameplay.pdb": {
+        "bytes": 72820,
+        "sha256": "bc6a34c8d44f7fb50905c4a691cec4eda434faf05dd910c4cf0e457a082c1ddf"
+      },
+      "bridge\\Poima.ManagedBridge.deps.json": {
+        "bytes": 846,
+        "sha256": "8cfc18f62f0a37c83186370a260603cdbcbed96f1ae9d099608aa4c17cac812d"
+      },
+      "bridge\\Poima.ManagedBridge.dll": {
+        "bytes": 36352,
+        "sha256": "4efb086aa883f72a4218fc3d73a9c741f89a243545bd46c7a0be52511ea6629e"
+      },
+      "bridge\\Poima.ManagedBridge.pdb": {
+        "bytes": 23532,
+        "sha256": "fbe94555a1cc82966e9a3fd1b3ecbeec7f43dbb097030880bafe5a82fcd95dda"
+      },
+      "bridge\\Poima.ManagedBridge.runtimeconfig.json": {
+        "bytes": 377,
+        "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+      },
+      "game\\Poima.Gameplay.deps.json": {
+        "bytes": 436,
+        "sha256": "6ef504dc100b9692f5ebb5b0c86a47f10791f95521c9d634f679e6cb69173c8e"
+      },
+      "game\\Poima.Gameplay.dll": {
+        "bytes": 153600,
+        "sha256": "9a1a092eb3fdcb8b76f064321bb6072d262c13b0052b92a5f5c7fd9ba993bc3f"
+      },
+      "game\\Poima.Gameplay.pdb": {
+        "bytes": 72820,
+        "sha256": "bc6a34c8d44f7fb50905c4a691cec4eda434faf05dd910c4cf0e457a082c1ddf"
+      },
+      "game\\Poima.ManagedTwoBoneIkGame.deps.json": {
+        "bytes": 867,
+        "sha256": "5d347dda2cff3baf3347a1c4ff87a11f3ab6ae52ef6df163a815ad964d2b6d77"
+      },
+      "game\\Poima.ManagedTwoBoneIkGame.dll": {
+        "bytes": 9216,
+        "sha256": "f73de1a0104cc5f7646da45c4ea1d28fd5c0f483d648fc7d11275cc85af0a3ae"
+      },
+      "game\\Poima.ManagedTwoBoneIkGame.pdb": {
+        "bytes": 13912,
+        "sha256": "5fa19ede566eb8570e6c0147b8e0585eb3350d9e5883c06d11d4caa94d592ec2"
+      },
+      "abi\\ManagedServiceAbi.deps.json": {
+        "bytes": 1958,
+        "sha256": "da8d6a1e6eddf7ee179c45f97b1f6fa71a6e80f43b09273b37b9f90dc15e844c"
+      },
+      "abi\\ManagedServiceAbi.dll": {
+        "bytes": 158720,
+        "sha256": "bf961e618cc4f505f90c331ed90121e092988808ce98d73bc0a0c14f066a8a65"
+      },
+      "abi\\ManagedServiceAbi.exe": {
+        "bytes": 162304,
+        "sha256": "ebd952a44bea15148e2c51abd0d4235aec38ce223c0aacdefa1b4e369e30be85"
+      },
+      "abi\\ManagedServiceAbi.pdb": {
+        "bytes": 92236,
+        "sha256": "ef8f93e2e3a74746746aff5148cd8930972525823a9b469f5232938224b9140f"
+      },
+      "abi\\ManagedServiceAbi.runtimeconfig.json": {
+        "bytes": 342,
+        "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+      },
+      "abi\\Poima.Components.Generator.deps.json": {
+        "bytes": 472,
+        "sha256": "7d26a4bd7fb93e4ad8a6485389880893054ce1bbef968a75fc807ff281370dc8"
+      },
+      "abi\\Poima.Components.Generator.dll": {
+        "bytes": 49152,
+        "sha256": "69f31124e65b8ed2bb49d466bc8f81d29d7056ea027ad2a3632672ccbbf2bb9b"
+      },
+      "abi\\Poima.Components.Generator.pdb": {
+        "bytes": 23440,
+        "sha256": "8b60fc526135810a1a2d56da5bee3781a4bfcaf64de7e55a479d004ed9f8d460"
+      },
+      "abi\\Poima.Gameplay.dll": {
+        "bytes": 153600,
+        "sha256": "9a1a092eb3fdcb8b76f064321bb6072d262c13b0052b92a5f5c7fd9ba993bc3f"
+      },
+      "abi\\Poima.Gameplay.pdb": {
+        "bytes": 72820,
+        "sha256": "bc6a34c8d44f7fb50905c4a691cec4eda434faf05dd910c4cf0e457a082c1ddf"
+      },
+      "abi\\Poima.ManagedBridge.dll": {
+        "bytes": 36352,
+        "sha256": "4efb086aa883f72a4218fc3d73a9c741f89a243545bd46c7a0be52511ea6629e"
+      },
+      "abi\\Poima.ManagedBridge.pdb": {
+        "bytes": 23532,
+        "sha256": "fbe94555a1cc82966e9a3fd1b3ecbeec7f43dbb097030880bafe5a82fcd95dda"
+      },
+      "abi\\Poima.NativeGame.deps.json": {
+        "bytes": 845,
+        "sha256": "b074d2b081a572edde797e3a25f705b466dec34d42884b46fadfb9432d5dd3e1"
+      },
+      "abi\\Poima.NativeGame.dll": {
+        "bytes": 11776,
+        "sha256": "86d0a5af9b9299ec5c01c93bf14f7d849a4c9c073e91365fffd22fe10bcf3f59"
+      },
+      "abi\\Poima.NativeGame.pdb": {
+        "bytes": 15820,
+        "sha256": "b40eac697f64df94e89681aeb72b4795893758e75a336ae19a9114d6270b92b8"
+      },
+      "artifact\\native-gameplay.json": {
+        "bytes": 4088,
+        "sha256": "58fb659a028263f69f57801c5b9a642a0afa26ee749dbe760fb8f7a548850e10"
+      },
+      "artifact\\Poima.NativeGame.dll": {
+        "bytes": 1363456,
+        "sha256": "554658aff4ea6b14de089a433a4964442dace01fa8cc98a032630ff03ac61007"
+      },
+      "artifact\\notices\\DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": {
+        "bytes": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+      },
+      "artifact\\notices\\DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": {
+        "bytes": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+      },
+      "artifact\\notices\\DOTNET-RUNTIME-10.0.12-LICENSE.txt": {
+        "bytes": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+      },
+      "artifact\\notices\\DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": {
+        "bytes": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+      },
+      "artifact\\notices\\POIMA-LICENSE.txt": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "artifact\\notices\\POIMA-THIRD-PARTY-NOTICES.md": {
+        "bytes": 21133,
+        "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+      }
+    },
+    "abi_evidence": {
+      "bytes": 8255,
+      "sha256": "c6d34d9de8a597c8a1ddb84db0ff33c0b2f47102c639818871bd68dc6125c744"
+    },
+    "abi_check_groups": 79,
+    "publisher_test_cases": 13,
+    "stages": [
+      "bridge-build",
+      "game-build",
+      "abi-build",
+      "abi-test",
+      "publisher-test",
+      "native-publish"
+    ],
+    "ownership": {
+      "total_processes": 48,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "feature": "animation_ik_v1",
+    "services_bytes": 288,
+    "abi_epoch": 7,
+    "fixture_wall_seconds": 66.71690369999851
+  },
+  "compiled": {
+    "coreclr": {
+      "owner_sha256": "d681ee54b722a3e35ac5a8b5d5f71b8222f0bbd0b7351f8712f371850f5d747d",
+      "evidence": {
+        "bytes": 11944752,
+        "sha256": "0b959e306992a5d30a2fdf771f41de7891b5e6517f86e7d9b3ff7092e4194021"
+      },
+      "rpc_count": 118,
+      "functional_groups": 3,
+      "clean_native_owners": 2,
+      "ownership": {
+        "total_processes": 5,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "complete_durable_snapshots": 18,
+      "exact_checkpoint_pairs": 8,
+      "actual_native_rejections": 5,
+      "configured_rigs": 65,
+      "read_limit_per_tick": 1024,
+      "write_limit_per_tick": 64,
+      "compatible_reload": true,
+      "staged_controls_and_committed_pose": true,
+      "compiled_animation_and_ik": true,
+      "save_intent": true,
+      "fresh_process_continuation_ticks": 3,
+      "fixture_wall_seconds": 3.7432734000030905
+    },
+    "native_aot": {
+      "owner_sha256": "3198a0a3fcea6a24c0cf7d8377fd83840b6e77a60a85660d2ae14e746fd5d969",
+      "evidence": {
+        "bytes": 10648544,
+        "sha256": "3f8f1b1155a8011a609126acec6627101f0073a0e32214f1e6a29fed95175be4"
+      },
+      "rpc_count": 109,
+      "functional_groups": 2,
+      "clean_native_owners": 2,
+      "ownership": {
+        "total_processes": 5,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "complete_durable_snapshots": 16,
+      "exact_checkpoint_pairs": 8,
+      "actual_native_rejections": 5,
+      "configured_rigs": 65,
+      "read_limit_per_tick": 1024,
+      "write_limit_per_tick": 64,
+      "compatible_reload": false,
+      "staged_controls_and_committed_pose": true,
+      "compiled_animation_and_ik": true,
+      "save_intent": true,
+      "fresh_process_continuation_ticks": 3,
+      "fixture_wall_seconds": 2.930659400008153
+    }
+  },
+  "gpu": {
+    "qualified": true,
+    "capture_count": 8,
+    "scope": "Original synthetic skin compared with independently specified static geometry.",
+    "cohorts": [
+      {
+        "gpu_index": 0,
+        "gpu_name": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "owner_sha256": "2e1e0fd9104afa8792704d8f664d0b94614c144a2bd62c51e12c7aa9988fa9a6",
+        "evidence": {
+          "bytes": 103196,
+          "sha256": "1242b4676635bdc665e719e688e2bbcab3fbd9fd15976d619d8c7e9752f2340e"
+        },
+        "images": [
+          {
+            "bytes": 307338,
+            "sha256": "dd5e7d1cd39dcbe154c909d333889f65c297f599264127b269b5531d35541bd9"
+          },
+          {
+            "bytes": 307338,
+            "sha256": "dd5e7d1cd39dcbe154c909d333889f65c297f599264127b269b5531d35541bd9"
+          }
+        ],
+        "captures": 2,
+        "native_owners": 2,
+        "rpc_count": 24,
+        "comparison": {
+          "rgb": {
+            "max_rgb_delta": 0,
+            "changed_pixels": 0,
+            "strong_changed_pixels": 0,
+            "total_rgb_delta": 0
+          },
+          "probe_max_errors": {
+            "raw_hdr": 0.0,
+            "depth": 0.0,
+            "shading_normal": 0.0
+          },
+          "valid_probes": 8
+        },
+        "ownership": {
+          "total_processes": 3,
+          "active_processes": 0,
+          "terminated_processes": 0,
+          "forced_cleanup": false
+        },
+        "fixture_wall_seconds": 1.6944673999969382
+      },
+      {
+        "gpu_index": 0,
+        "gpu_name": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "owner_sha256": "bae87fd4c03d22e901ac71e9ee974f20e939426a93eb24ab750e4c8b69fdf0d3",
+        "evidence": {
+          "bytes": 103087,
+          "sha256": "b7793d36158f664e3d6063e8e69ab26ee9aa4f44844981bfdb534b929f91ce27"
+        },
+        "images": [
+          {
+            "bytes": 307338,
+            "sha256": "e16832f26a867b2c892c0964435f0c85c240926849681a89e8bcee6dc4776dee"
+          },
+          {
+            "bytes": 307338,
+            "sha256": "e16832f26a867b2c892c0964435f0c85c240926849681a89e8bcee6dc4776dee"
+          }
+        ],
+        "captures": 2,
+        "native_owners": 2,
+        "rpc_count": 24,
+        "comparison": {
+          "rgb": {
+            "max_rgb_delta": 0,
+            "changed_pixels": 0,
+            "strong_changed_pixels": 0,
+            "total_rgb_delta": 0
+          },
+          "probe_max_errors": {
+            "raw_hdr": 0.0,
+            "depth": 0.0,
+            "shading_normal": 0.0
+          },
+          "valid_probes": 8
+        },
+        "ownership": {
+          "total_processes": 3,
+          "active_processes": 0,
+          "terminated_processes": 0,
+          "forced_cleanup": false
+        },
+        "fixture_wall_seconds": 1.9129810000013094
+      },
+      {
+        "gpu_index": 1,
+        "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "owner_sha256": "87e40a6341be6112f189044a62d967cb86f3bd2b3827c4efcf3548da912d9be7",
+        "evidence": {
+          "bytes": 102962,
+          "sha256": "70ebbd70064d44d50b69fe90e2656930d83aff7058a910c76164d972966fc270"
+        },
+        "images": [
+          {
+            "bytes": 307338,
+            "sha256": "934cd43683a68858b65c74fd0ccf5f0723d43eabbe0234a900389e6b8d326c9b"
+          },
+          {
+            "bytes": 307338,
+            "sha256": "934cd43683a68858b65c74fd0ccf5f0723d43eabbe0234a900389e6b8d326c9b"
+          }
+        ],
+        "captures": 2,
+        "native_owners": 2,
+        "rpc_count": 24,
+        "comparison": {
+          "rgb": {
+            "max_rgb_delta": 0,
+            "changed_pixels": 0,
+            "strong_changed_pixels": 0,
+            "total_rgb_delta": 0
+          },
+          "probe_max_errors": {
+            "raw_hdr": 0.0,
+            "depth": 0.0,
+            "shading_normal": 0.0
+          },
+          "valid_probes": 8
+        },
+        "ownership": {
+          "total_processes": 3,
+          "active_processes": 0,
+          "terminated_processes": 0,
+          "forced_cleanup": false
+        },
+        "fixture_wall_seconds": 2.0153394999797456
+      },
+      {
+        "gpu_index": 1,
+        "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "owner_sha256": "0daa30cffab03149abc8c01df7628d3454fb2746ded26208d24df7e311a3e1f9",
+        "evidence": {
+          "bytes": 102853,
+          "sha256": "13d3947aa1f2313723151f3ee86833be64bb839f9350c3c6648117bdf1ad14f2"
+        },
+        "images": [
+          {
+            "bytes": 307338,
+            "sha256": "354752af6e82b3c114864f04fe0b3c9b358d3c118258f2ec74a7c0ec301cb0fa"
+          },
+          {
+            "bytes": 307338,
+            "sha256": "354752af6e82b3c114864f04fe0b3c9b358d3c118258f2ec74a7c0ec301cb0fa"
+          }
+        ],
+        "captures": 2,
+        "native_owners": 2,
+        "rpc_count": 24,
+        "comparison": {
+          "rgb": {
+            "max_rgb_delta": 0,
+            "changed_pixels": 0,
+            "strong_changed_pixels": 0,
+            "total_rgb_delta": 0
+          },
+          "probe_max_errors": {
+            "raw_hdr": 0.0,
+            "depth": 0.0,
+            "shading_normal": 0.0
+          },
+          "valid_probes": 8
+        },
+        "ownership": {
+          "total_processes": 3,
+          "active_processes": 0,
+          "terminated_processes": 0,
+          "forced_cleanup": false
+        },
+        "fixture_wall_seconds": 2.6072168999817222
+      }
+    ]
+  },
+  "excluded_attempts": [
+    {
+      "role": "native_qualification_1",
+      "receipt_sha256": "200534c667bb5dbd249f49a1f636b52c8a441612603eef473d35d49e3c8d3693",
+      "passed": false,
+      "included_in_accepted_results": false
+    },
+    {
+      "role": "native_qualification_2",
+      "receipt_sha256": "26941011688e66d3966932335a0943f3a0e00d84684879c965b49972c67e6366",
+      "passed": false,
+      "included_in_accepted_results": false
+    },
+    {
+      "role": "native_qualification_3",
+      "receipt_sha256": "70b27062270d9c869312f96fd7abdd88015b0dcaf61c1030e48dd910841d5cbd",
+      "passed": false,
+      "included_in_accepted_results": false
+    },
+    {
+      "role": "managed_harness_1",
+      "receipt_sha256": "5ee47fe036dd746e2fabbd9b1fa8f7b9b544b06f541c0e7cf5cbc6a4eab5455a",
+      "passed": false,
+      "included_in_accepted_results": false
+    }
+  ],
+  "curator_sha256": "621d3a814d0afdfe697b0c8bc6872763d76173c573dde2fc9ef63dc36f19bed6",
+  "limitations": [
+    "Analytic chains and compiled synthetic decisions; no automatic grounding, full-body solver, joint limits or root motion.",
+    "No game-scale performance, physical input, damage-system or Alpha readiness qualification.",
+    "Native AOT is process-pinned; only CoreCLR checks compatible hot reload.",
+    "Build scope is an incremental affected-input rebuild, not a full vendored-dependency rebuild.",
+    "Reported seconds are fixture wall time, not an iteration or renderer performance benchmark."
+  ]
+}

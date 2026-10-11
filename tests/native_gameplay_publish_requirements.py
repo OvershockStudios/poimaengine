@@ -137,6 +137,20 @@ class Requirements(unittest.TestCase):
                          ['baseline_v7','player_preferences_v1','future_feature_v1']]:
             with self.subTest(features=features),self.assertRaises(ValueError):
                 self.read(dict(self.baseline,services_bytes=256,features=features))
+    def test_ik_independent_all_named_combinations(self):
+        optional=['animation_inertial_v1','animation_layers_v1','character_input_v1',
+                  'navigation_query_v1','hierarchical_instances_v1','player_preferences_v1','input_actions_v1','hit_regions_v1']
+        for mask in range(256):
+            features=sorted(['baseline_v7','animation_ik_v1']+[name for i,name in enumerate(optional) if mask & (1 << i)])
+            required=dict(self.baseline,services_bytes=288,features=features)
+            if 'animation_layers_v1' in features and 'animation_inertial_v1' not in features:
+                with self.subTest(features=features),self.assertRaises(ValueError):self.read(required)
+                continue
+            with self.subTest(features=features):self.assertEqual(self.read(required),required)
+            for extent in [176,192,208,216,224,232,256,264,272,280,287,289]:
+                with self.subTest(features=features,extent=extent),self.assertRaises(ValueError):self.read(dict(required,services_bytes=extent))
+        for features in [['baseline_v7'],['animation_ik_v1'],['baseline_v7','animation_ik_v1','animation_ik_v1'],['baseline_v7','animation_ik_v1','future_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=288,features=features))
     def test_prefix_cannot_grant_undeclared_feature(self):
         for extent in [175,180,192,193,240]:
             with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=extent))

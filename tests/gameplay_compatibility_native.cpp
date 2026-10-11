@@ -54,12 +54,13 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==272u &&
+    check(capable.services_version==7 && capable.services_bytes==288u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),input_actions_feature)!=capable.features.end() &&
-        std::find(capable.features.begin(),capable.features.end(),hit_regions_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
+        std::find(capable.features.begin(),capable.features.end(),hit_regions_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),two_bone_ik_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
     check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
     check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
@@ -82,7 +83,7 @@ void policy() {
     check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
     auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
-    auto appended=capable;appended.services_bytes=272;appended.features.push_back("future_available_v1");
+    auto appended=capable;appended.services_bytes=288;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
     for(unsigned animation_kind:{0u,1u,2u}) {
@@ -115,6 +116,7 @@ void policy() {
     std::erase(synthetic.features,std::string(player_preferences_feature));
     std::erase(synthetic.features,std::string(input_actions_feature));
     std::erase(synthetic.features,std::string(hit_regions_feature));
+    std::erase(synthetic.features,std::string(two_bone_ik_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -167,7 +169,7 @@ void policy() {
     check(!compatibility_error(baseline,short_instances).empty(),"Instance capability advertised without allocation.");
     auto duplicate_instances=instances;duplicate_instances.features.push_back(instances_feature);
     check(!compatibility_error(duplicate_instances,capable).empty(),"Duplicate instance requirement accepted.");
-    auto future_instances=capable;future_instances.services_bytes=272;future_instances.features.push_back("future_available_v1");
+    auto future_instances=capable;future_instances.services_bytes=288;future_instances.features.push_back("future_available_v1");
     check(compatibility_error(instances,future_instances).empty(),"Larger same-epoch host rejects instance prefix.");
     auto preferences=baseline;preferences.services_bytes=256;preferences.features.push_back(player_preferences_feature);
     check(compatibility_error(preferences,capable).empty() && compatibility_error(preferences,preferences).empty(),
@@ -222,6 +224,25 @@ void policy() {
         for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,271u,273u}) {
             auto wrong=required;wrong.services_bytes=bytes;
             check(!compatibility_error(wrong,all).empty(),"Hit regions accepted a wrong prefix.");
+        }
+    }
+    auto ik=baseline;ik.services_bytes=288;ik.features.push_back(two_bone_ik_feature);
+    check(compatibility_error(ik,ik).empty() && compatibility_error(ik,capable).empty(),"IK requires unrelated features.");
+    auto unnamed_ik=capable;std::erase(unnamed_ik.features,std::string(two_bone_ik_feature));
+    check(!compatibility_error(ik,unnamed_ik).empty(),"Opaque extent granted IK.");
+    auto short_ik=ik;short_ik.services_bytes=272;
+    check(!compatibility_error(baseline,short_ik).empty(),"IK advertised past allocation.");
+    auto duplicate_ik=ik;duplicate_ik.features.push_back(two_bone_ik_feature);
+    check(!compatibility_error(duplicate_ik,capable).empty(),"Duplicate IK feature accepted.");
+    for(unsigned combination=0;combination<256;++combination) {
+        auto required=ik,all=capable;
+        const char* optional[]{animation_feature,animation_layers_feature,character_input_feature,navigation_feature,instances_feature,player_preferences_feature,input_actions_feature,hit_regions_feature};
+        for(unsigned i=0;i<8;++i)if(combination&(1u<<i))required.features.push_back(optional[i]);
+        if(std::find(all.features.begin(),all.features.end(),navigation_feature)==all.features.end())all.features.push_back(navigation_feature);
+        check(compatibility_error(required,all).empty()==(!(combination&2) || bool(combination&1)),"IK prefix bypassed independent feature dependency.");
+        for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,280u,287u,289u}) {
+            auto wrong=required;wrong.services_bytes=bytes;
+            check(!compatibility_error(wrong,all).empty(),"IK accepted wrong prefix.");
         }
     }
     Host context;auto source=host(context);const auto copy=source;

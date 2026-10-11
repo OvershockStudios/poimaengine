@@ -58,6 +58,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     layer_fields["mask"]={{"type","array"},{"maxItems",10000},{"items",object_schema({{"node",model_node},{"weight",unit}},{"node","weight"})}};
     layer_fields["reference_clip"]=animation_fields.at("clip");layer_fields["reference_time"]=animation_fields.at("time");
     rig_fields["layers"]={{"type","array"},{"maxItems",4},{"items",object_schema(layer_fields,{"slot","mode","clip","time","speed","loop","playing","weight","mask"})}};
+    const Json ik_slot={{"type","integer"},{"minimum",1},{"maximum",8}};
+    const Json ik_fields={{"slot",ik_slot},{"enabled",{{"type","boolean"},{"default",true}}},
+        {"space",{{"enum",{"world","rig"}},{"default","world"}}},{"weight",{{"type","number"},{"minimum",0},{"maximum",1},{"default",1}}},
+        {"target",vector(Json{{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"pole",vector(Json{{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)}};
+    auto ik_chain=ik_fields;ik_chain["root"]=model_node;ik_chain["middle"]=model_node;ik_chain["end"]=model_node;
+    rig_fields["ik"]={{"type","array"},{"maxItems",8},{"items",object_schema(ik_chain,{"slot","root","middle","end","target","pole"})}};
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
     auto skin_fields=static_mesh.at("properties");skin_fields["rig"]=id;skin_fields["node"]=model_node;
@@ -147,7 +154,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 86}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 87}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -270,6 +277,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}}, {"session_id","tick","origin","direction","distance"});
     methods["runtime.hit_test"]=methods.at("runtime.raycast");
     methods["runtime.hit_test"]["description"]="Read-only closest committed-pose collider/HitRegion query. Enabled region owners suppress only their own physics proxy; ignored owners suppress their regions, ignored attachments suppress that region. Exact ties prefer world geometry then region owner/name/attachment. Hit includes nullable region_entity and region; entity is damage owner for regions. Exact session/tick required, no tick advance.";
+    methods["runtime.ik"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},{"slot",ik_slot}}, {"session_id","tick","entity","slot"});
+    methods["runtime.ik"]["description"]="Read cached committed two-bone IK controls and diagnostics with exact session/tick. Returns source=runtime and state=null for an existing nonrig or absent configured slot; missing entity rejects. State includes frozen model indices, target/pole/space/weight/enabled, actual world end_position/target_error and clamped/pole_fallback. Inspection never samples or advances.";
     const Json sounds={{"type","array"},{"maxItems",64},{"items",{{"oneOf",Json::array({
         object_schema({{"op",{{"const","play"}}},{"emitter",id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4},{"default",1}}}}, {"op","emitter"}),
         object_schema({{"op",{{"const","stop"}}},{"voice",{{"type","integer"},{"minimum",1},{"maximum",max_revision}}}}, {"op","voice"})
@@ -290,6 +299,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         object_schema(animation_command,{"entity","clip","time","speed","loop","playing"}),
         object_schema(layer_command,{"entity","layer","clip","time","speed","loop","playing","weight"})});
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},{"items",animation_item}};
+    auto ik_command=ik_fields;ik_command["entity"]=id;
+    methods["runtime.step"]["properties"]["ik"]={{"type","array"},{"maxItems",64},{"items",object_schema(ik_command,{"entity","slot","target","pole"})}};
+    result["invariants"].push_back("AnimationRig optionally freezes up to eight IK chains with unique slots1..8 and distinct direct-parent model indices root/middle/end, exact matching RigNode graph and no overlapping solved branches. IK wrappers cannot be below RigNode. Active chains require positive uniform evaluated model-ancestor/root/middle scales; wrapper affine transforms must be invertible. Rotation-only post-layer corrections preserve local translation/scale/end rotation and pre-IK animation histories. World goals stay fixed as the wrapper moves; rig goals follow it. Weight0/disabled preserve incoming locals exactly; reach clamping uses rig metric and pole fallback is deterministic.");
+    result["invariants"].push_back("runtime.step ik complete controls persist, apply on the first Tick and share full batch rollback. Up to64 independent caller/gameplay IK writes are permitted per Tick with unique rig/slot targets; same-slot conflicts reject, while playback and IK can address the same rig. runtime.ik is cached committed state. IK-configured worlds use nested animation-statev4, preserving old absent-IK serialization and save-upgrade permissions. No automatic grounding, full-body solving, root motion or joint-limit system is implied.");
     result["invariants"].push_back("MeshRenderer, StaticMesh and SkinnedMesh optionally define strict boolean cast_shadows and receive_shadows, each defaulting to true when omitted. visible=false suppresses the drawable entirely. These controls do not change colliders, acoustics, material ambient/AO or AnimationRig playback; AnimationRig and RigNode are not drawables and do not inherit controls to their children.");
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");

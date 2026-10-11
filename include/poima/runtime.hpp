@@ -68,12 +68,38 @@ struct RuntimeAnimationLayer {
     std::optional<std::uint32_t> reference_clip;
     double reference_time=0;
 };
+enum class IkSpace : std::uint32_t { World=0, Rig=1 };
+struct RuntimeTwoBoneIk {
+    std::uint32_t slot=1,root=0,middle=0,end=0;
+    bool enabled=true;
+    IkSpace space=IkSpace::World;
+    std::array<double,3> target{},pole{0,0,1};
+    double weight=1;
+};
+struct RuntimeIkCommand {
+    std::string entity;
+    std::uint32_t slot=1;
+    bool enabled=true;
+    IkSpace space=IkSpace::World;
+    std::array<double,3> target{},pole{0,0,1};
+    double weight=1;
+};
+struct RuntimeIkState {
+    std::string entity;
+    std::uint32_t slot=1,root=0,middle=0,end=0;
+    bool enabled=true;
+    IkSpace space=IkSpace::World;
+    std::array<double,3> target{},pole{0,0,1},end_position{};
+    double weight=1,target_error=0;
+    bool clamped=false,pole_fallback=false;
+};
 struct RuntimeAnimationRig {
     std::shared_ptr<const ModelAsset> model;
     std::optional<std::uint32_t> clip;
     double time=0,speed=1;
     bool loop=true,playing=false;
     std::vector<RuntimeAnimationLayer> layers;
+    std::vector<RuntimeTwoBoneIk> ik;
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
@@ -387,9 +413,11 @@ public:
     // offsets. Results become observable only after the entire batch commits.
     std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
-        const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={});
+        const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={},
+        const std::vector<RuntimeIkCommand>& ik={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
+    std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;
     std::uint64_t component_revision() const;

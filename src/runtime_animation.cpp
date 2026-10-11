@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime_animation.hpp"
+#include "poima/runtime_ik.hpp"
 #include "poima/jobs.hpp"
 #include "poima/profiler.hpp"
 #include <algorithm>
@@ -205,7 +206,22 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
         if(e.mesh && e.mesh->mesh && !e.mesh->mesh->influences.empty())check(bool(e.skinned_mesh),"Weighted runtime geometry requires SkinnedMesh binding.");
     }
     for(const auto& [id,binding]:mappings) {
-        (void)id;check(std::all_of(binding.begin(),binding.end(),[](const Entity* e) { return e!=nullptr; }),"AnimationRig requires one ordinary RigNode entity for every model node, including unselected nodes.");
+        check(std::all_of(binding.begin(),binding.end(),[](const Entity* e) { return e!=nullptr; }),"AnimationRig requires one ordinary RigNode entity for every model node, including unselected nodes.");
+        const auto& source=*rigs.at(id)->animation_rig;
+        if(!source.ik.empty()) {
+            for(auto parent=rigs.at(id)->parent;!parent.empty();parent=entities.at(parent)->parent)
+                check(!entities.at(parent)->rig_node,"An IK rig cannot be below any RigNode.");
+            std::vector<int> parents;std::vector<NodePose> rest;parents.reserve(binding.size());rest.reserve(binding.size());
+            for(std::size_t i=0;i<binding.size();++i) {
+                parents.push_back(source.model->nodes[i].parent);const auto& t=binding[i]->transform;
+                rest.push_back({t.position,t.scale,t.rotation});
+            }
+            ik::validate_chains(parents,rest,source.ik);
+            for(const auto& chain:source.ik)for(int node=static_cast<int>(chain.end);node>=0;node=parents[static_cast<std::size_t>(node)]) {
+                const auto parent=parents[static_cast<std::size_t>(node)];
+                check(binding[static_cast<std::size_t>(node)]->parent==(parent<0?id:binding[static_cast<std::size_t>(parent)]->id),"IK model and authored chain/ancestor direct parents must correspond exactly.");
+            }
+        }
     }
     for(const auto& e:definition.entities)if(e.skinned_mesh) {
         const auto& binding=*e.skinned_mesh;const auto found=rigs.find(binding.rig);
@@ -231,6 +247,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
     if(compiled_cache)for(const auto& rig:compiled_cache->rigs)compiled.emplace(rig.model.get(),rig.compiled);
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto& source=*entity.animation_rig;Rig rig;rig.entity=entity.id;rig.model=source.model;
+        rig.ik=source.ik;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
         rig.compiled=compiled.at(rig.model.get());
         rig.parents.emplace_back(entity.id,entity.parent);
@@ -254,8 +271,14 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
         }
     }
     layers_.resize(membership->rigs.size());
+    ik_.resize(membership->rigs.size());ik_states_.resize(membership->rigs.size());
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto index=membership->indices.at(entity.id);auto& rig=membership->rigs[index];auto definitions=entity.animation_rig->layers;
+        for(const auto& chain:rig.ik) {
+            ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight});
+            RuntimeIkState state{entity.id,chain.slot,chain.root,chain.middle,chain.end,chain.enabled,chain.space,chain.target,chain.pole};state.weight=chain.weight;
+            ik_states_[index].push_back(state);
+        }
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){ return a.slot<b.slot; });
         for(const auto& layer:definitions) {
             LayerDefinition frozen;frozen.slot=layer.slot;frozen.mode=layer.mode;frozen.mask=layer.mask;frozen.reference_clip=layer.reference_clip;frozen.reference_time=layer.reference_time;
@@ -290,14 +313,20 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
         }
         return true;
     };
+    auto ik_equal=[](const std::vector<RuntimeTwoBoneIk>& a,const std::vector<RuntimeTwoBoneIk>& b) {
+        if(a.size()!=b.size())return false;
+        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight)return false;}
+        return true;
+    };
     for(const auto& [entity,index]:candidate.membership_->indices) {
         const auto old=membership_->indices.find(entity);if(old==membership_->indices.end())continue;
         const auto& previous=membership_->rigs[old->second];const auto& next=candidate.membership_->rigs[index];
         check(previous.model==next.model && previous.nodes==next.nodes && previous.parents==next.parents &&
             previous.skins==next.skins && previous.skin_geometry==next.skin_geometry && previous.clip_durations==next.clip_durations &&
-            poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers),
+            previous.model_parents==next.model_parents && poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers) && ik_equal(previous.ik,next.ik),
             "Surviving animation rig bindings cannot change during membership replacement.");
         candidate.clocks_[index]=clocks_[old->second];candidate.layers_[index]=layers_[old->second];
+        candidate.ik_[index]=ik_[old->second];candidate.ik_states_[index]=ik_states_[old->second];
         auto history_at_boundary=[tick](const Clock& clock) {
             check(!clock.current || clock.current->tick<=tick,"Animation membership boundary predates retained output history.");
         };
@@ -308,7 +337,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     // This is read-only: no history or transition buffer is replaced here.
     for(std::size_t index=0;index<candidate.membership_->rigs.size();++index)
         (void)candidate.composed(index,candidate.clocks_[index],candidate.layers_[index],tick);
-    membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);
+    membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);ik_.swap(candidate.ik_);ik_states_.swap(candidate.ik_states_);
 }
 
 namespace {
@@ -482,10 +511,33 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
     for(const auto index:changed)(void)composed(index,candidate[index],candidate_layers[index],tick);
     clocks_.swap(candidate);layers_.swap(candidate_layers);
 }
-std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) {
+bool RuntimeAnimations::has_ik() const noexcept {
+    return std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig){return !rig.ik.empty();});
+}
+std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& entity,std::uint32_t slot) const {
+    check(slot>=1&&slot<=8,"IK slot must be 1..8.");const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return {};
+    const auto& states=ik_states_[found->second];for(const auto& state:states)if(state.slot==slot)return state;return {};
+}
+void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
+    check(commands.size()<=64,"IK command budget is 64 per tick.");if(commands.empty())return;auto candidate=ik_;std::set<std::pair<std::string,std::uint32_t>> seen;
+    for(const auto& command:commands) {
+        validate_ik_command(command);check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
+        const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"IK command entity has no AnimationRig.");
+        auto& controls=candidate[found->second];const auto control=std::find_if(controls.begin(),controls.end(),[&](const auto& c){return c.slot==command.slot;});
+        check(control!=controls.end(),"IK command slot is not configured.");*control=command;
+    }
+    ik_.swap(candidate);
+}
+std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world) {
     // Every job owns one candidate clock/layer/output partition. Nothing live
     // changes until all evaluations and output allocations have succeeded.
-    auto candidate=clocks_;auto candidate_layers=layers_;
+    auto candidate=clocks_;auto candidate_layers=layers_;const bool configured_ik=has_ik();
+    auto candidate_ik_states=configured_ik?ik_states_:std::vector<std::vector<RuntimeIkState>>{};
+    // Only the owner invokes the provider; tasks see these value snapshots.
+    std::vector<Matrix4> wrappers(configured_ik?membership_->rigs.size():0,identity_matrix());
+    if(configured_ik&&wrapper_world)for(std::size_t i=0;i<membership_->rigs.size();++i)
+        if(!membership_->rigs[i].ik.empty())wrappers[i]=wrapper_world(membership_->rigs[i].entity);
     std::vector<std::vector<RuntimeAnimationPose>> outputs(membership_->rigs.size());
     std::size_t total_nodes=0;
     for(std::size_t index=0;index<membership_->rigs.size();++index) {
@@ -510,6 +562,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) 
             if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();
         }
         if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
+        for(std::size_t i=0;i<rig.ik.size();++i)candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);
         auto& output=outputs[index];
         for(std::size_t node=0;node<rig.nodes.size();++node) {
             const auto& local=pose.local[node];output.push_back({rig.nodes[node],{local.position,local.rotation,local.scale}});
@@ -532,7 +585,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) 
     // Flatten only in frozen rig/node order, never completion order. Moving
     // strings uses the already-reserved result storage before publication.
     for(auto& output:outputs)for(auto& pose:output)result.push_back(std::move(pose));
-    clocks_.swap(candidate);layers_.swap(candidate_layers);return result;
+    clocks_.swap(candidate);layers_.swap(candidate_layers);if(configured_ik)ik_states_.swap(candidate_ik_states);return result;
 }
 namespace {
 using StateJson=nlohmann::json;
@@ -638,7 +691,8 @@ void equal_parameter(double actual,double expected) {
 }
 std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
-    const bool layered=std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
+    const bool configured_ik=has_ik();
+    const bool layered=configured_ik || std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
     const bool modern=layered || std::any_of(clocks_.begin(),clocks_.end(),[](const Clock& clock) { return clock.inertial_ever_used; });
     auto save_clock=[&](std::size_t index,const Clock& clock,const std::string& entity) {
         check(clock.inertial_ever_used || clock.control.transition_mode==AnimationTransitionMode::Crossfade,"Inertial control requires its history flag.");
@@ -684,15 +738,26 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
             }
             record["layers"]=std::move(saved_layers);
         }
+        if(configured_ik) {
+            auto saved=StateJson::array();const auto& rig=membership_->rigs[index];
+            for(std::size_t i=0;i<rig.ik.size();++i) {
+                const auto& frozen=rig.ik[i];const auto& control=ik_[index][i];validate_ik_command(control);
+                saved.push_back({{"slot",frozen.slot},{"root",frozen.root},{"middle",frozen.middle},{"end",frozen.end},
+                    {"enabled",control.enabled},{"space",control.space==IkSpace::World?"world":"rig"},
+                    {"target",control.target},{"pole",control.pole},{"weight",control.weight}});
+            }
+            record["ik"]=std::move(saved);
+        }
         records.push_back(std::move(record));
     }
-    auto result=StateJson{{"format","poima.animation-state"},{"version",layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
+    auto result=StateJson{{"format","poima.animation-state"},{"version",configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
 void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     check(tick<=animation_state_max_tick,"Animation load tick is out of range.");
     const bool configured=std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
-    check(text.size()<=(configured ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
+    const bool configured_ik=has_ik();
+    check(text.size()<=(configured || configured_ik ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
     // Reject duplicate keys and excessive nesting instead of allowing ambiguous
     // records or allocating an unbounded recursive object tree.
     std::vector<std::set<std::string>> keys;
@@ -707,10 +772,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     };
     const auto document=StateJson::parse(text,callback);
     state_fields(document,{"format","version","tick","rigs"});
-    const auto version=state_uint(document.at("version"),3);
-    check(document.at("format")=="poima.animation-state" && (version==1 || version==2 || version==3),"Unsupported animation state format/version.");
-    const bool modern=version>=2;const bool layered=version==3;
-    check(layered==configured,"Animation state version does not match configured layers.");
+    const auto version=state_uint(document.at("version"),4);
+    check(document.at("format")=="poima.animation-state" && version>=1 && version<=4,"Unsupported animation state format/version.");
+    const bool modern=version>=2;const bool layered=version>=3;
+    check((version==4)==configured_ik && (version==4 || layered==configured),"Animation state version does not match configured layers/IK.");
     check(layered || text.size()<=animation_state_bytes,"Legacy animation state exceeds 16 MiB.");
     check(state_uint(document.at("tick"),animation_state_max_tick)==tick,"Animation state tick differs from restore boundary.");
     const auto& records=document.at("rigs");check(records.is_array() && records.size()==membership_->rigs.size(),"Animation state must contain every current rig exactly once.");
@@ -771,9 +836,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         }
         (void)evaluate(index,next,tick);return next;
     };
-    auto candidate=clocks_;auto candidate_layers=layers_;std::set<std::string> seen;
+    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;std::set<std::string> seen;
     for(const auto& record:records) {
-        if(layered)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"});
+        if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
+        else if(layered)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"});
         else if(modern)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history"});
         else state_fields(record,{"entity","control","anchor_tick","transition"});
         check(record.at("entity").is_string(),"Animation state rig identity must be a string.");
@@ -812,9 +878,27 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             }
             (void)composed(index,candidate[index],candidate_layers[index],tick);
         }
+        if(configured_ik) {
+            const auto& saved=record.at("ik");const auto& rig=membership_->rigs[index];
+            check(saved.is_array()&&saved.size()==rig.ik.size(),"Animation state must contain every configured IK chain exactly once.");
+            for(std::size_t i=0;i<saved.size();++i) {
+                const auto& value=saved[i];const auto& frozen=rig.ik[i];
+                state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"});
+                check(state_uint(value.at("slot"),8)==frozen.slot&&state_uint(value.at("root"),UINT32_MAX)==frozen.root&&
+                    state_uint(value.at("middle"),UINT32_MAX)==frozen.middle&&state_uint(value.at("end"),UINT32_MAX)==frozen.end,"Animation state IK chain differs from frozen configuration.");
+                check(value.at("space")=="world"||value.at("space")=="rig","Unknown animation state IK space.");
+                RuntimeIkCommand control{entity,frozen.slot,state_bool(value.at("enabled")),value.at("space")=="world"?IkSpace::World:IkSpace::Rig,
+                    state_vector<3>(value.at("target")),state_vector<3>(value.at("pole")),state_number(value.at("weight"))};
+                validate_ik_command(control);candidate_ik[index][i]=std::move(control);
+            }
+            // Validate the evaluated model metric now; world-space diagnostics
+            // are reconstructed only after the owner restores physical poses.
+            auto pose=composed(index,candidate[index],candidate_layers[index],tick);
+            for(std::size_t i=0;i<rig.ik.size();++i)(void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
+        }
     }
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
-    clocks_.swap(candidate);layers_.swap(candidate_layers);
+    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(candidate_ik);
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {
     const auto found=membership_->skins.find(entity);if(found==membership_->skins.end())return {};

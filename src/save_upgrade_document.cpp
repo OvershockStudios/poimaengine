@@ -71,6 +71,34 @@ void hit_region_references(const Json& rows) {
 }
 void graph_references(const Json& rows) {
     hit_region_references(rows);
+    // IK configuration is frozen built-in content, never an authorized custom
+    // schema/default addition. Validate its local graph references as well as
+    // retaining the complete component in the later exact document comparison.
+    for(const auto& [rig,entity]:rows.items()) {
+        const auto& bag=entity.at("components");
+        if(!bag.contains("AnimationRig") || !bag.at("AnimationRig").contains("ik"))continue;
+        std::map<std::uint32_t,std::string> bindings;
+        for(const auto& [node,member]:rows.items()) {
+            const auto& components=member.at("components");
+            if(!components.contains("RigNode") || components.at("RigNode").at("rig")!=rig)continue;
+            const auto& index=components.at("RigNode").at("node");
+            check(index.is_number_integer() && index>=0 && index<10000,"IK RigNode index is invalid.");
+            check(bindings.emplace(index.get<std::uint32_t>(),node).second,"Duplicate IK RigNode binding.");
+        }
+        const auto& chains=bag.at("AnimationRig").at("ik");check(chains.is_array() && chains.size()<=8,"Invalid frozen IK chain count.");
+        std::set<std::uint32_t> slots;
+        for(const auto& chain:chains) {
+            check(chain.is_object() && chain.contains("slot") && chain.at("slot").is_number_integer() && chain.at("slot")>=1 && chain.at("slot")<=8,"Invalid frozen IK slot.");
+            check(slots.insert(chain.at("slot").get<std::uint32_t>()).second,"Duplicate frozen IK slot.");
+            std::array<std::string,3> nodes;
+            for(std::size_t i=0;i<3;++i) {
+                const auto* key=i==0 ? "root" : i==1 ? "middle" : "end";
+                check(chain.contains(key) && chain.at(key).is_number_integer() && chain.at(key)>=0 && chain.at(key)<10000,"Invalid frozen IK model index.");
+                const auto found=bindings.find(chain.at(key).get<std::uint32_t>());check(found!=bindings.end(),"Frozen IK node binding is absent.");nodes[i]=found->second;
+            }
+            check(nodes[0]!=nodes[1] && nodes[0]!=nodes[2] && nodes[1]!=nodes[2] && rows.at(nodes[1]).at("parent")==nodes[0] && rows.at(nodes[2]).at("parent")==nodes[1],"Frozen IK requires distinct direct-parent nodes.");
+        }
+    }
     for(const auto& [id,entity]:rows.items()) {
         const auto& bag=entity.at("components");
         auto local=[&](const Json& target,const char* component,bool nullable=false) {

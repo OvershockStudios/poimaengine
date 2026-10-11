@@ -2,7 +2,7 @@
 using System.Text.Json;
 namespace Poima;
 
-[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128 }
+[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256 }
 internal static unsafe class GameplayRequirements
 {
     internal const string Baseline="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
@@ -20,13 +20,15 @@ internal static unsafe class GameplayRequirements
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences)=>Features(inertial,masked,character,navigation,instances)|(preferences ? GameplayRequiredFeatures.PlayerPreferences : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions)=>Features(inertial,masked,character,navigation,instances,preferences)|(actions ? GameplayRequiredFeatures.InputActions : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions)=>Features(inertial,masked,character,navigation,instances,preferences,actions)|(regions ? GameplayRequiredFeatures.HitRegions : GameplayRequiredFeatures.None);
+    internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions,bool ik)=>Features(inertial,masked,character,navigation,instances,preferences,actions,regions)|(ik ? GameplayRequiredFeatures.TwoBoneIk : GameplayRequiredFeatures.None);
     internal static string Json(GameplayRequiredFeatures features)
     {
         ValidateRequired(features);
-        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions))!=0)
+        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk))!=0)
         {
             // Known names only; avoid reflection-based JSON serialization in AOT.
             var names=new List<string>();
+            if((features & GameplayRequiredFeatures.TwoBoneIk)!=0)names.Add("animation_ik_v1");
             if((features & GameplayRequiredFeatures.InertialAnimation)!=0)names.Add("animation_inertial_v1");
             if((features & GameplayRequiredFeatures.MaskedAnimation)!=0)names.Add("animation_layers_v1");
             names.Add("baseline_v7");
@@ -36,7 +38,7 @@ internal static unsafe class GameplayRequirements
             if((features & GameplayRequiredFeatures.InputActions)!=0)names.Add("input_actions_v1");
             if((features & GameplayRequiredFeatures.Navigation)!=0)names.Add("navigation_query_v1");
             if((features & GameplayRequiredFeatures.PlayerPreferences)!=0)names.Add("player_preferences_v1");
-            return "{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":"+((features & GameplayRequiredFeatures.HitRegions)!=0 ? "272" : (features & GameplayRequiredFeatures.InputActions)!=0 ? "264" : (features & GameplayRequiredFeatures.PlayerPreferences)!=0 ? "256" : (features & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? "232" : "224")+",\"features\":["+string.Join(",",names.Select(name=>"\""+name+"\""))+"]}";
+            return "{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":"+((features & GameplayRequiredFeatures.TwoBoneIk)!=0 ? "288" : (features & GameplayRequiredFeatures.HitRegions)!=0 ? "272" : (features & GameplayRequiredFeatures.InputActions)!=0 ? "264" : (features & GameplayRequiredFeatures.PlayerPreferences)!=0 ? "256" : (features & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? "232" : "224")+",\"features\":["+string.Join(",",names.Select(name=>"\""+name+"\""))+"]}";
         }
         if((features & GameplayRequiredFeatures.CharacterInput)!=0)
             return (features & GameplayRequiredFeatures.MaskedAnimation)!=0 ? MaskedCharacter :
@@ -45,7 +47,7 @@ internal static unsafe class GameplayRequirements
     }
     private static void ValidateRequired(GameplayRequiredFeatures required)
     {
-        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions))!=0 ||
+        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk))!=0 ||
             ((required & GameplayRequiredFeatures.MaskedAnimation)!=0 && (required & GameplayRequiredFeatures.InertialAnimation)==0))
             throw new ArgumentException("Invalid gameplay required features.");
     }
@@ -61,7 +63,7 @@ internal static unsafe class GameplayRequirements
                 throw new ArgumentException("Invalid or duplicate generated gameplay requirement field.");
         if(keys.Count!=5 || Integer(value,"call_version")!=1 || Integer(value,"call_bytes")!=80 || Integer(value,"services_version")!=ServiceAbi.Epoch)
             throw new ArgumentException("Invalid generated gameplay requirement ABI.");
-        if(!value.TryGetProperty("features",out var array) || array.ValueKind!=JsonValueKind.Array || array.GetArrayLength() is <1 or >9)
+        if(!value.TryGetProperty("features",out var array) || array.ValueKind!=JsonValueKind.Array || array.GetArrayLength() is <1 or >10)
             throw new ArgumentException("Invalid generated gameplay required features.");
         var names=new HashSet<string>(StringComparer.Ordinal);GameplayRequiredFeatures result=GameplayRequiredFeatures.None;
         foreach(var feature in array.EnumerateArray())
@@ -76,13 +78,15 @@ internal static unsafe class GameplayRequirements
                 case "navigation_query_v1":result|=GameplayRequiredFeatures.Navigation;break;
                 case "hierarchical_instances_v1":result|=GameplayRequiredFeatures.HierarchicalInstances;break;
                 case "player_preferences_v1":result|=GameplayRequiredFeatures.PlayerPreferences;break;
+                case "animation_ik_v1":result|=GameplayRequiredFeatures.TwoBoneIk;break;
                 case "hit_regions_v1":result|=GameplayRequiredFeatures.HitRegions;break;
                 case "input_actions_v1":result|=GameplayRequiredFeatures.InputActions;break;
                 default:throw new ArgumentException("Unknown generated gameplay required feature.");
             }
         }
         ValidateRequired(result);
-        uint bytes=(result & GameplayRequiredFeatures.HitRegions)!=0 ? HitRegionServiceAbi.RequiredBytes :
+        uint bytes=(result & GameplayRequiredFeatures.TwoBoneIk)!=0 ? TwoBoneIkServiceAbi.RequiredBytes :
+            (result & GameplayRequiredFeatures.HitRegions)!=0 ? HitRegionServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.InputActions)!=0 ? InputActionServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.PlayerPreferences)!=0 ? PlayerPreferenceServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? InstanceServiceAbi.RequiredBytes :
@@ -146,6 +150,9 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.InputActions)!=0 &&
             (Integer(host,"services_bytes")<InputActionServiceAbi.RequiredBytes || !features.Contains("input_actions_v1")))
             throw new ArgumentException("Gameplay host lacks input_actions_v1 with at least 264 service bytes.");
+        if((required & GameplayRequiredFeatures.TwoBoneIk)!=0 &&
+            (Integer(host,"services_bytes")<TwoBoneIkServiceAbi.RequiredBytes || !features.Contains("animation_ik_v1")))
+            throw new ArgumentException("Gameplay host lacks animation_ik_v1 with at least 288 service bytes.");
         if((required & GameplayRequiredFeatures.HitRegions)!=0 &&
             (Integer(host,"services_bytes")<HitRegionServiceAbi.RequiredBytes || !features.Contains("hit_regions_v1")))
             throw new ArgumentException("Gameplay host lacks hit_regions_v1 with at least 272 service bytes.");
@@ -168,6 +175,7 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.HierarchicalInstances)!=0)_=InstanceServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.PlayerPreferences)!=0)_=PlayerPreferenceServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.InputActions)!=0)_=InputActionServiceAbi.Validate(services);
+        if((required & GameplayRequiredFeatures.TwoBoneIk)!=0)_=TwoBoneIkServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.HitRegions)!=0)_=HitRegionServiceAbi.Validate(services);
     }
 }

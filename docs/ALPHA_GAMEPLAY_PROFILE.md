@@ -13,7 +13,7 @@ separate completed evidence from remaining release work.
 | --- | --- | --- |
 | Authored editing | [Authoring-core v1](AUTHORING_API_COMPATIBILITY.md) releases selected world/entity reads, atomic edits, Transform data, guards and receipts. Its request, response and native behavioral gates are separate. | Every mutation exposed by `world.describe` is stable, or authored edits patch the running simulation. |
 | Native gameplay | Call ABI 1/80 and services epoch 7 negotiate named features and readable prefixes. A consumer declares its exact requirements and the host checks availability. | A larger service allocation grants undeclared operations, or arbitrary SDK/bridge versions can be mixed. |
-| Content | Documented intake profiles produce hashed cooked assets with explicit bindings and provenance. Export verifies the declared dependency closure and runtime/artifact requirements. | Every exporter, Unity scene, FBX rig or material works, or rebuilding an importer preserves existing cooked bytes. |
+| Content | Documented intake profiles produce hashed cooked assets with explicit bindings and provenance. Export verifies the declared dependency closure and runtime/artifact requirements. | Every exporter, FBX rig or material works, or rebuilding an importer preserves existing cooked bytes. |
 | Checkpoints | Ordinary restores bind the saved backend, trusted compiled image/type and complete schema. Supported updates need an explicit source-to-target upgrade plan. | Compatible development reload authorizes loading old saves, or a version number replaces image/schema identities. |
 
 Only the selected authoring contract currently carries the released stability
@@ -42,6 +42,8 @@ call ABI 1/80. Named service extensions have these minimum prefixes:
 | `hierarchical_instances_v1` | 232 | [Runtime instances](RUNTIME_INSTANCES.md) |
 | `player_preferences_v1` | 256 | [Compiled preferences](COMPILED_PLAYER_SETTINGS.md) |
 | `input_actions_v1` | 264 | [Named gameplay actions](INPUT_ACTIONS.md) |
+| `hit_regions_v1` | 272 | [Committed hit regions](HIT_REGIONS.md) |
+| `animation_ik_v1` | 288 | [Two-bone IK](TWO_BONE_IK.md) |
 
 `gameplay_persistence_v1` and `component_collections_v1` authorize their metadata
 formats without adding a services tail. Combined consumers declare every feature
@@ -77,7 +79,8 @@ glTF/GLB and [FBX intake](FBX_IMPORT.md), explicit rigs/clips and reviewed mater
 bindings. [Imported characters](IMPORTED_CHARACTER.md) and
 [retargeting](ANIMATION_RETARGETING.md) define their supported rig, frame and
 reference-pose constraints. Unsupported constructs require an actionable report,
-not a silent promise of visual parity. Broader exporter coverage, contact/IK,
+not a silent promise of visual parity. [Two-bone IK](TWO_BONE_IK.md) supports
+explicit configured chains. Broader exporter coverage, automatic contact solving,
 character creation and arbitrary material conversion remain separate work.
 
 Preserve the original licensed input and its recorded hashes. Cooked content

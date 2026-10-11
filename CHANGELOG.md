@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.118
+
+- Add frozen native two-bone IK chains with world/rig targets, pole controls, weights and deterministic reach handling after base animation and masked layers.
+- Expose committed IK observations and staged C# controls through independent `animation_ik_v1`, preserving earlier epoch-7 services prefixes; extend the required prefix to 288 bytes. [Contract](docs/TWO_BONE_IK.md).
+- Preserve instance remapping, corrected skin/HitRegion poses, complete rollback and fresh durable continuation with nested animation-state version 4 only for IK worlds.
+- Pass fifteen Windows native suites, nine IK groups, three API groups, 79 compiled ABI checks, actual CoreCLR/Native AOT consumers and four exact GPU reference comparisons on AMD and NVIDIA. [Results](docs/evidence/m2-two-bone-ik.json).
+
 ## 0.0.117
 
 - Add frozen query-only HitRegion spheres, boxes and capsules with self/ancestor owners and explicit names, including remapped hierarchical instances.

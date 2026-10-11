@@ -285,6 +285,26 @@ typedef struct PoimaGameHitRegionServicesV1 {
     PoimaGameInputActionServicesV1 actions;
     int32_t (POIMA_CALL *hit_test)(void*,const PoimaGameRay*,PoimaGameHitRegionResultV1*,PoimaGameError*);
 } PoimaGameHitRegionServicesV1;
+// Independent animation_ik_v1. Complete controls stage during Tick; getters
+// return committed state only. Coordinates are World(0) or Rig(1), not directions.
+typedef struct PoimaGameTwoBoneIkCommandV1 {
+    uint32_t version,bytes;PoimaEntityId entity;
+    uint32_t slot,enabled,space,reserved;
+    double weight,target[3],pole[3];
+} PoimaGameTwoBoneIkCommandV1;
+// Canonical absent state is zero except version=1/bytes=160. Callers initialize
+// those headers and zero reserved fields. Hosts write exactly the known POD.
+typedef struct PoimaGameTwoBoneIkStateV1 {
+    uint32_t version,bytes,present,slot;PoimaEntityId entity;
+    uint32_t root,middle,end,enabled,space,reserved;
+    double weight,target[3],pole[3],end_position[3],target_error;
+    uint32_t clamped,pole_fallback;uint64_t reserved_tail;
+} PoimaGameTwoBoneIkStateV1;
+typedef struct PoimaGameTwoBoneIkServicesV1 {
+    PoimaGameHitRegionServicesV1 regions;
+    int32_t (POIMA_CALL *ik_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameTwoBoneIkStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *ik_set)(void*,const PoimaGameTwoBoneIkCommandV1*,PoimaGameError*);
+} PoimaGameTwoBoneIkServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -298,6 +318,14 @@ static_assert(sizeof(PoimaGameInputActionServicesV1)==264 && offsetof(PoimaGameI
 static_assert(sizeof(PoimaGameHitRegionResultV1)==192 && alignof(PoimaGameHitRegionResultV1)==8 && offsetof(PoimaGameHitRegionResultV1,hit)==8 && offsetof(PoimaGameHitRegionResultV1,region_entity)==96);
 static_assert(offsetof(PoimaGameHitRegionResultV1,region_name_bytes)==112 && offsetof(PoimaGameHitRegionResultV1,triangle_present)==116 && offsetof(PoimaGameHitRegionResultV1,triangle)==120 && offsetof(PoimaGameHitRegionResultV1,reserved)==124 && offsetof(PoimaGameHitRegionResultV1,region_name)==128);
 static_assert(sizeof(PoimaGameHitRegionServicesV1)==272 && offsetof(PoimaGameHitRegionServicesV1,actions)==0 && offsetof(PoimaGameHitRegionServicesV1,hit_test)==264);
+static_assert(sizeof(PoimaGameTwoBoneIkCommandV1)==96 && alignof(PoimaGameTwoBoneIkCommandV1)==8);
+static_assert(offsetof(PoimaGameTwoBoneIkCommandV1,entity)==8 && offsetof(PoimaGameTwoBoneIkCommandV1,slot)==24 && offsetof(PoimaGameTwoBoneIkCommandV1,enabled)==28 && offsetof(PoimaGameTwoBoneIkCommandV1,space)==32 && offsetof(PoimaGameTwoBoneIkCommandV1,reserved)==36);
+static_assert(offsetof(PoimaGameTwoBoneIkCommandV1,weight)==40 && offsetof(PoimaGameTwoBoneIkCommandV1,target)==48 && offsetof(PoimaGameTwoBoneIkCommandV1,pole)==72);
+static_assert(sizeof(PoimaGameTwoBoneIkStateV1)==160 && alignof(PoimaGameTwoBoneIkStateV1)==8);
+static_assert(offsetof(PoimaGameTwoBoneIkStateV1,present)==8 && offsetof(PoimaGameTwoBoneIkStateV1,slot)==12 && offsetof(PoimaGameTwoBoneIkStateV1,entity)==16 && offsetof(PoimaGameTwoBoneIkStateV1,root)==32 && offsetof(PoimaGameTwoBoneIkStateV1,middle)==36 && offsetof(PoimaGameTwoBoneIkStateV1,end)==40);
+static_assert(offsetof(PoimaGameTwoBoneIkStateV1,enabled)==44 && offsetof(PoimaGameTwoBoneIkStateV1,space)==48 && offsetof(PoimaGameTwoBoneIkStateV1,reserved)==52 && offsetof(PoimaGameTwoBoneIkStateV1,weight)==56 && offsetof(PoimaGameTwoBoneIkStateV1,target)==64 && offsetof(PoimaGameTwoBoneIkStateV1,pole)==88);
+static_assert(offsetof(PoimaGameTwoBoneIkStateV1,end_position)==112 && offsetof(PoimaGameTwoBoneIkStateV1,target_error)==136 && offsetof(PoimaGameTwoBoneIkStateV1,clamped)==144 && offsetof(PoimaGameTwoBoneIkStateV1,pole_fallback)==148 && offsetof(PoimaGameTwoBoneIkStateV1,reserved_tail)==152);
+static_assert(sizeof(PoimaGameTwoBoneIkServicesV1)==288 && offsetof(PoimaGameTwoBoneIkServicesV1,regions)==0 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_get)==272 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_set)==280);
 static_assert(sizeof(PoimaGamePreferenceValuesV1)==56 && offsetof(PoimaGamePreferenceValuesV1,invert_x)==40 && offsetof(PoimaGamePreferenceValuesV1,frames_in_flight)==52);
 static_assert(sizeof(PoimaGamePreferenceSnapshotV1)==216 && offsetof(PoimaGamePreferenceSnapshotV1,owner)==16 && offsetof(PoimaGamePreferenceSnapshotV1,revision)==32 && offsetof(PoimaGamePreferenceSnapshotV1,values)==48);
 static_assert(offsetof(PoimaGamePreferenceSnapshotV1,sources)==104 && offsetof(PoimaGamePreferenceSnapshotV1,next_samples)==140 && offsetof(PoimaGamePreferenceSnapshotV1,observation_mask)==148 && offsetof(PoimaGamePreferenceSnapshotV1,reserved)==156);
