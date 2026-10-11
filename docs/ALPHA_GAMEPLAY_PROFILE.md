@@ -115,6 +115,17 @@ defaults are explicit. Component arrays need exact capacity permissions and
 reject overflow rather than truncating. Native topology, assets, built-in
 components and UI stay exact under this policy.
 
+Version-3 plans additionally permit explicit new custom types, defaulted on
+listed entities that are present in both frozen authored worlds and the saved
+live state. Each type is absent from the source catalog and bound to its exact
+target fingerprint and full schema/content identities. This requires snapshot
+versions 2–6 without format conversion. Existing-type membership, templates,
+spawned entities, removals and arbitrary authored values are outside this
+addition policy. Ordinary loads and compiled gameplay load requests remain
+exact; adding a component to a running development scene is not authorization
+to migrate a retained checkpoint. The [component-addition recipe](../tests/fixtures/relay_component_addition/README.md)
+keeps target compilation and retained-game continuation as separate checks.
+
 Read and verify the original source save and complete runtime snapshot before
 mapping. Failed preparation must retain the committed runtime, authored content
 and original slot. Successful replacement does not publish a new checkpoint;

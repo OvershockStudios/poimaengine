@@ -46,8 +46,12 @@
             for(const auto* key:{"backend","assembly_sha256","type","schema"})metadata[key]=inspected.at(key);
         }
         const auto actual_target=upgrade_identity(target,metadata);save_upgrades::require_edge(plan,source,actual_target);
+        // The authorization is bound to original authored entities, not live
+        // spawned nodes reconstructed from the checkpoint's allocation history.
+        std::vector<std::string> source_authored_entities;source_authored_entities.reserve(load.frozen.definition.entities.size());
+        for(const auto& entity:load.frozen.definition.entities)source_authored_entities.push_back(entity.id);
         const auto mapped=save_upgrades::transform_runtime_snapshot(bytes,source,actual_target,metadata.dump(),target.definition.authored_revision,plan,
-            load.frozen.definition.component_schemas,target.definition.component_schemas);
+            load.frozen.definition.component_schemas,target.definition.component_schemas,source_authored_entities);
         if(config.native_aot)load.runtime=Runtime::from_snapshot(target.definition,target.hash,mapped.snapshot,config);
         else load.runtime=Runtime::from_snapshot_with_gameplay(target.definition,target.hash,mapped.snapshot,std::move(selected));
         Json components=Json::array();
@@ -59,5 +63,10 @@
             {"source_schema_sha256",source.schema_sha256},{"target_schema_sha256",actual_target.schema_sha256},
             {"preserved_globals",mapped.preserved_globals},{"retired_globals",mapped.retired_globals},{"defaulted_globals",mapped.defaulted_globals},
             {"components",std::move(components)},{"authored_components",std::move(authored_counts)}};
+        if(!plan.add_components.empty()) {
+            Json added=Json::array();for(const auto& type:mapped.additions)added.push_back({{"id",type.id},{"instances",type.instances},{"defaulted_fields",type.defaulted_fields}});
+            Json authored_added=Json::array();for(const auto& type:authored.additions)authored_added.push_back({{"id",type.id},{"authored_instances",type.authored_instances}});
+            load.upgrade["added_components"]=std::move(added);load.upgrade["authored_added_components"]=std::move(authored_added);
+        }
         load.frozen=std::move(target);
     }

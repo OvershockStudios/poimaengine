@@ -154,8 +154,10 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
     auto source=parse(source_document),target=parse(target_document);
     const auto old=normalize(source),next=normalize(target);
     check(source.at("world_id")==plan.source.world_id && target.at("world_id")==plan.target.world_id && plan.source.world_id==plan.target.world_id,"Upgrade document world differs from plan.");
-    check(old.size()==next.size(),"Save upgrade cannot change component type membership.");
-    for(const auto& [id,schema]:old) {(void)schema;check(next.contains(id),"Save upgrade cannot change component type membership.");}
+    check(old.size()+plan.add_components.size()==next.size(),"Save upgrade component additions do not cover the target catalog.");
+    for(const auto& [id,schema]:old) {(void)schema;check(next.contains(id),"Save upgrade cannot remove component types.");}
+    check(plan.add_components.size()<=components::max_types,"Added component type budget exceeded.");
+    if(!plan.add_components.empty())check(source.at("version")>=2 && target.at("version")==source.at("version"),"Component additions cannot convert authored document formats.");
     check(plan.components.size()<=components::max_types,"Upgrade document component plan budget exceeded.");
     std::map<std::string,const ComponentPlan*> approved;std::string previous;
     DocumentMappingResult result;
@@ -183,6 +185,26 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
     if(source.contains("templates"))for(auto& recipe:source.at("templates")) {
         if(recipe.contains("entities"))for(auto& entity:recipe.at("entities"))map_bag(entity.at("components"),true);
         else map_bag(recipe.at("components"),true);
+    }
+    std::string prior_addition;std::size_t added_pairs=0;
+    for(const auto& row:plan.add_components) {
+        identifier(row.id,true);
+        check(prior_addition.empty() || prior_addition<row.id,"Added types must be sorted and unique.");prior_addition=row.id;
+        check(!old.contains(row.id) && next.contains(row.id),"Component additions require a source-absent target type.");
+        const auto& schema=next.at(row.id);
+        check(row.target_fingerprint==components::fingerprint_hex(schema),"Added component fingerprint differs.");
+        check(!row.entities.empty() && row.entities.size()<=10000-added_pairs,"Added component entity/type pair budget exceeded.");added_pairs+=row.entities.size();
+        const auto defaults=Json::parse(components::values_json(schema,components::defaults(schema)));
+        std::string prior_entity;
+        for(const auto& entity:row.entities) {
+            identifier(entity,true);check(prior_entity.empty() || prior_entity<entity,"Added component entities must be sorted and unique.");prior_entity=entity;
+            check(source.at("entities").contains(entity) && target.at("entities").contains(entity),"Added component needs an existing authored entity.");
+            auto& bag=source["entities"][entity]["components"];
+            check(!bag.contains("game:"+row.id),"Added component already belongs to its source entity.");
+            bag["game:"+row.id]=defaults;
+        }
+        source["component_schemas"][row.id]=target.at("component_schemas").at(row.id);
+        result.additions.push_back({row.id,row.entities.size(),0});
     }
     source["revision"]=target.at("revision");
     // dump() comparison retains JSON scalar kinds and exact int64 strings;

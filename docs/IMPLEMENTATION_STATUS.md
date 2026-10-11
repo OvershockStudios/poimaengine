@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.111**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.112**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.112 adds explicit version-3 save plans for entirely new custom
+component types. Each type is bound to its exact target schema and listed
+original authored entities that remain live in the checkpoint; new instances
+receive declared defaults. Existing types, globals, native state and allocator
+history stay preserved. Eight Windows native checks pass, including legacy-v1
+restore and actual schema-81 discovery. A retained CoreCLR Relay Yard checkpoint
+at tick 140 restores with its original image, upgrades to a separately compiled
+target, verifies defaults before Tick, completes the remaining game at tick 777,
+and exact-restores in a fresh process before five further callbacks. The 4,292
+recorded native request/result/error rows also cover rejected edges, stale guards
+and receipt retries. Source saves, compiled images and assets remain unchanged.
+This qualifies the recorded Windows CoreCLR addition workflow; Native AOT
+additions and automatic gameplay/editor upgrade selection remain unqualified.
+[Results](evidence/m2-defaulted-component-additions.json),
+[plan contract](SAVE_UPGRADES.md#add-a-defaulted-component-type),
+[retained-game recipe](../tests/fixtures/relay_component_addition/README.md).
 
 Version 0.0.111 adds independent `cast_shadows` and `receive_shadows` controls
 for primitive, static and GPU-skinned drawables. Optional Boolean fields default

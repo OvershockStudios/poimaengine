@@ -100,6 +100,67 @@ void run(){
         // A missing executable cannot be bypassed by transformed metadata.
         rejects([&]{(void)Runtime::from_snapshot(target_definition,target_hash,result.snapshot);});
     }
+    // New defaulted cells on an existing authored entity; live spawned and
+    // retired IDs never become eligible through checkpoint membership alone.
+    const auto added=components::parse_schema(Json{{"id",id('5')},{"name","Progression"},{"version",2},{"fields",Json::array({
+        {{"id",id('1')},{"name","Bonus"},{"kind","int32"},{"default",37}},
+        {{"id",id('2')},{"name","Counter"},{"kind","int64"},{"default","9223372036854775807"}},
+        {{"id",id('3')},{"name","Target"},{"kind","entity"},{"default",std::string(32,'0')}},
+        {{"id",id('4')},{"name","History"},{"kind","array"},{"element_kind","int32"},{"capacity",2},{"default",Json::array()}}
+    })}}.dump());
+    auto added_descriptor=target_game;added_descriptor["schema"]=globals(true,{b,added});
+    auto added_identity=target;added_identity.schema_sha256=hash(added_descriptor.at("schema").dump());
+    auto added_plan=plan;added_plan.target=added_identity;added_plan.add_components.push_back({added.id,components::fingerprint_hex(added),{id('1')}});
+    const std::vector<components::Schema> added_catalog{added,b,unused};const std::vector<std::string> authored_ids{id('1')};
+    auto add_map=[&](const std::string& value,const Plan& selected,const Json& descriptor,const std::vector<std::string>& authored) {
+        auto identity=added_identity;identity.schema_sha256=hash(descriptor.at("schema").dump());
+        return transform_runtime_snapshot(value,source,identity,descriptor.dump(),8,selected,before,added_catalog,authored);
+    };
+    const auto addition=add_map(bytes,added_plan,added_descriptor,authored_ids);const auto added_snapshot=Json::parse(addition.snapshot);
+    check(addition.additions.size()==1 && addition.additions[0].id==added.id && addition.additions[0].instances==1 &&
+        addition.additions[0].preserved_fields==0 && addition.additions[0].retired_fields==0 && addition.additions[0].defaulted_fields==4,
+        "Snapshot additions report confused new defaults with preserved mappings.");
+    const auto& added_rows=added_snapshot.at("payload").at("components").at("types");
+    check(added_rows.size()==3 && added_rows[0].at("id")==added.id && added_rows[1].at("id")==a.id && added_rows[2].at("id")==unused.id,
+        "Added type did not retain complete sorted catalog including unused types.");
+    check(added_rows[0].at("instances")==Json::array({{{"entity",id('1')},{"values",Json::array({37,"9223372036854775807",std::string(32,'0'),Json::array()})}}}),
+        "Snapshot addition did not use typed declared defaults or exact authored membership.");
+    auto expected=result; // The existing upgrade remains the independent base.
+    auto expected_json=Json::parse(expected.snapshot),stripped=added_snapshot;
+    expected_json.erase("sha256");stripped.erase("sha256");
+    expected_json["payload"]["gameplay"]["schema"]=added_descriptor.at("schema");
+    stripped["payload"]["components"]["types"].erase(0);
+    check(stripped.dump()==expected_json.dump(),"Addition altered native state, old cells/revisions, UI/control or allocator beyond its exact new row.");
+    check(added_snapshot.at("sha256")==hash(added_snapshot.at("payload").dump()),"Added snapshot checksum differs.");
+    if(Runtime::available()) {
+        auto converted=definition;converted.authored_revision=8;converted.component_schemas=added_catalog;
+        const auto old_mapped=map_component_scalars(components::schema_json(a),components::schema_json(b),components::values_json(a,source_values),cm.dump()).target_payload;
+        converted.entities[0].components[a.id]=old_mapped;converted.entities[0].components[added.id]=components::defaults(added);
+        converted.templates[0].components[a.id]=old_mapped; // recipe itself acquires no new type
+        Runtime::validate_snapshot(converted,target_hash,addition.snapshot);
+    }
+    auto reject_added=[&](const auto& change) {auto selected=added_plan;change(selected);rejects([&]{add_map(bytes,selected,added_descriptor,authored_ids);});};
+    reject_added([](Plan& p){p.add_components.clear();});
+    reject_added([](Plan& p){p.add_components[0].target_fingerprint=std::string(64,'0');});
+    reject_added([](Plan& p){p.add_components[0].id=id('a');});
+    reject_added([](Plan& p){p.add_components[0].entities.clear();});
+    reject_added([](Plan& p){p.add_components[0].entities={id('1'),id('1')};});
+    reject_added([](Plan& p){p.add_components[0].entities={std::string(32,'0')};});
+    reject_added([&](Plan& p){p.add_components[0].entities={second};}); // genuinely live spawned root, not authored
+    reject_added([&](Plan& p){p.add_components[0].entities={first};}); // actually retired source instance
+    reject_added([](Plan& p){p.add_components[0].entities={id('f')};});
+    reject_added([](Plan& p){p.add_components.push_back(p.add_components[0]);});
+    rejects([&]{add_map(bytes,added_plan,added_descriptor,{});});
+    rejects([&]{add_map(bytes,added_plan,added_descriptor,{id('1'),id('1')});});
+    auto undeclared=added_descriptor;undeclared["schema"]=new_schema;
+    auto undeclared_identity=added_identity;undeclared_identity.schema_sha256=hash(new_schema.dump());
+    auto undeclared_plan=added_plan;undeclared_plan.target=undeclared_identity;
+    rejects([&]{transform_runtime_snapshot(bytes,source,undeclared_identity,undeclared.dump(),8,undeclared_plan,before,added_catalog,authored_ids);});
+    // Identity matches this negative target: rejection must reach its missing
+    // new instantiated declaration, not a mismatched authorized schema hash.
+    auto unsupported=original;unsupported["version"]=1;unsupported["payload"].erase("components");unsupported["payload"].erase("structure");unsupported["payload"].erase("ui");unsupported["payload"].erase("control_sequence");
+    rejects([&]{add_map(seal(unsupported),added_plan,added_descriptor,authored_ids);});
+    check(add_map(bytes,added_plan,added_descriptor,authored_ids).snapshot==addition.snapshot,"Rejected additions changed later valid snapshot output.");
     // Versions 1..5 remain unchanged. These stripped envelopes test the pure
     // adapter grammar only; the real native source above covers version 5.
     for(unsigned version=1;version<=5;++version){
@@ -213,6 +274,31 @@ void hierarchical_collections(){
         for(auto& entity:converted.entities)rewrite(entity);
         for(auto& entity:converted.templates[0].entities)rewrite(entity);
         Runtime::validate_snapshot(converted,new_hash,result.snapshot);
+    }
+    // The same narrow addition works beside a genuine version6 hierarchical
+    // save: root/child maps and retired allocator history are never rewritten.
+    const auto progression=components::parse_schema(Json{{"id",id('6')},{"name","Progression"},{"version",1},
+        {"fields",Json::array({{{"id",id('1')},{"name","Completed"},{"kind","int32"},{"default",37}}})}}.dump());
+    auto addition_game=new_game;addition_game["schema"]=globals(true,{after,progression});
+    auto addition_identity=target;addition_identity.schema_sha256=hash(addition_game.at("schema").dump());
+    auto addition_plan=plan;addition_plan.target=addition_identity;
+    addition_plan.add_components.push_back({progression.id,components::fingerprint_hex(progression),{anchor.id}});
+    const std::vector<std::string> authored_only{anchor.id};
+    const auto added_result=transform_runtime_snapshot(original,source,addition_identity,addition_game.dump(),8,addition_plan,{before},{after,progression},authored_only);
+    auto added_json=Json::parse(added_result.snapshot),expected_added=mapped;
+    const auto& added_types=added_json.at("payload").at("components").at("types");
+    check(added_types.size()==2 && added_types[0].at("id")==progression.id &&
+        added_types[0].at("instances")==Json::array({{{"entity",anchor.id},{"values",Json::array({37})}}}),"v6 addition membership/default differ");
+    added_json.erase("sha256");expected_added.erase("sha256");
+    added_json["payload"]["components"]["types"].erase(0);expected_added["payload"]["gameplay"]["schema"]=addition_game.at("schema");
+    check(added_json.dump()==expected_added.dump(),"v6 addition changed existing state/lineage beyond the declared row");
+    if(Runtime::available()) {
+        auto converted=definition;converted.authored_revision=8;converted.component_schemas={after,progression};
+        auto rewrite=[&](RuntimeEntityDefinition& entity){entity.components[before.id]=map_component_fields(components::schema_json(before),components::schema_json(after),components::values_json(before,entity.components.at(before.id)),cm.dump()).target_payload;};
+        for(auto& entity:converted.entities)rewrite(entity);
+        for(auto& entity:converted.templates[0].entities)rewrite(entity);
+        converted.entities[0].components[progression.id]=components::defaults(progression);
+        Runtime::validate_snapshot(converted,new_hash,added_result.snapshot);
     }
     auto missing=plan;auto unsupported=cm;unsupported.erase("array_capacity");missing.components[0].mapping=unsupported.dump();rejects([&]{map(snapshot,missing);});
     auto bad=snapshot;bad["payload"].erase("control_sequence");rejects([&]{map(bad,plan);});

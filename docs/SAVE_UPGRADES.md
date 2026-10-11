@@ -8,26 +8,29 @@ The contract below includes hierarchical checkpoints and bounded component array
 
 Global state uses [persistent field IDs](GAMEPLAY_PERSISTENCE.md). A retained ID can change its C# name or layout position, but not its scalar kind. New IDs receive the target's literal persistence defaults; changed defaults never overwrite retained saved values. Removed fields require explicit retirement. A legacy source without persistence metadata requires a complete, explicit old-name-to-ID mapping.
 
-Custom components support scalar schema 1 and bounded-array schema 2. Stable type IDs and instance membership remain unchanged. Retained scalar kinds/units and array element kinds/units cannot change. Fields may be renamed or reordered while retaining their persistent IDs. New scalar fields use approved target defaults, new entity fields default to null handles, and new arrays start empty. Removed scalar or array fields need explicit retirement. See [component collections](COMPONENT_COLLECTIONS.md) for their declared layouts and bounds.
+Custom components support scalar schema 1 and bounded-array schema 2. Existing type IDs and instance membership remain unchanged. Retained scalar kinds/units and array element kinds/units cannot change. Fields may be renamed or reordered while retaining their persistent IDs. New scalar fields use approved target defaults, new entity fields default to null handles, and new arrays start empty. Removed scalar or array fields need explicit retirement. See [component collections](COMPONENT_COLLECTIONS.md) for their declared layouts and bounds.
 
-Approved mapping covers ordinary authored entities, legacy root-prop templates and every root/child in a hierarchical recipe. Recipe-local entity references retain their local IDs; this does not allocate instances or rebase handles. Saved component values and ordered live-reference arrays come from the checkpoint, not new authored defaults. Complete source-runtime validation checks references even in fields being retired, before mapping can remove them.
+Version-3 plans can separately authorize entirely new custom component types on explicitly named entities. Each type must be absent from the source catalog, present in the exact target catalog, and instantiated only on the listed entities. Those entities must exist in both frozen authored documents and in the saved live state. Every new instance receives the target schema's typed defaults; caller-supplied values are not permitted. This path does not add membership for an existing type, alter templates, allocate entities or resurrect removed instances.
 
-Runtime snapshot versions 1–6 are supported within their existing format restrictions. Version-6 instance maps, initial root transforms, allocator lineage, native physics, animation clocks/layers/history, sound, UI and control sequence are preserved. A restored session and save epoch are new owner identities; they are not persistent object handles.
+Existing-type field mapping covers ordinary authored entities, legacy root-prop templates and every root/child in a hierarchical recipe. Recipe-local entity references retain their local IDs; this does not allocate instances or rebase handles. Saved component values and ordered live-reference arrays come from the checkpoint, not new authored defaults. Complete source-runtime validation checks references even in fields being retired, before mapping can remove them.
 
-World ID, backend, module identity and gameplay type remain the same. Built-in components, entity topology, recipe roots/member IDs/names, assets/provenance and UI definitions stay exact. Only approved component declarations/values, gameplay schema/image identities and the authored revision may change. Numeric conversions, conversion callbacks, upgrade chains, added/removed component types or instances, geometry changes and general world rebasing are unsupported.
+Runtime snapshot versions 1–6 are supported within their existing format restrictions. New-type additions require snapshot versions 2–6 and an authored document already supporting custom components; document and snapshot versions do not change. Version-6 instance maps, initial root transforms, allocator lineage, native physics, animation clocks/layers/history, sound, UI and control sequence are preserved. A restored session and save epoch are new owner identities; they are not persistent object handles.
+
+World ID, backend, module identity and gameplay type remain the same. Built-in components, entity topology, recipe roots/member IDs/names, assets/provenance and UI definitions stay exact. Only approved component declarations/values, gameplay schema/image identities and the authored revision may change. Numeric conversions, conversion callbacks, upgrade chains, removed component types, new membership for existing types, additions on template-local or spawned entities, geometry changes and general world rebasing are unsupported. Component or entity removals are not authorized by the new-type addition contract.
 
 ## Plan contract
 
-`poima.save-upgrade` accepts versions 1 and 2, is bounded to 1 MiB, and rejects duplicate keys, unknown members and excessive nesting or field counts. Version 1 retains its original plan shape and forbids `array_capacity`. Version 2 permits explicit array-capacity authorizations; selecting it alone does not approve resizing. Existing scalar-only native mapping APIs retain their strict scalar contract.
+`poima.save-upgrade` accepts versions 1, 2 and 3, is bounded to 1 MiB, and rejects duplicate keys, unknown members and excessive nesting or field counts. Version 1 retains its original plan shape and forbids `array_capacity`. Versions 2 and 3 permit explicit array-capacity authorizations; selecting either alone does not approve resizing. Version 3 requires `add_components`, including an empty array when no types are added. Versions 1 and 2 forbid that member. Existing scalar-only native mapping APIs retain their strict scalar contract.
 
 | Member | Meaning |
 | --- | --- |
-| `format`, `version` | `"poima.save-upgrade"`, integer `1` or `2`. |
+| `format`, `version` | `"poima.save-upgrade"`, integer `1`, `2` or `3`. |
 | `id` | Nonzero lowercase 32-hex plan identifier. |
 | `source`, `target` | Exact identities, each containing `world_id`, `content_sha256`, `backend`, `module_identity`, `type`, `image_sha256`, `schema_sha256`. |
 | `global` | `preserve`, `retire`, `default` lists of stable global field IDs. |
 | `legacy_global_ids` | Optional source-only list of `{name,id}` records; required for legacy sources and forbidden for sources already carrying stable IDs. |
-| `components` | Entries containing `id`, `source_fingerprint`, `target_fingerprint`, and the three mapping lists; version 2 also permits `array_capacity`. Unlisted types must have unchanged complete schemas. |
+| `components` | Existing-type entries containing `id`, `source_fingerprint`, `target_fingerprint`, and the three mapping lists; versions 2 and 3 also permit `array_capacity`. Unlisted existing types must have unchanged complete schemas. |
+| `add_components` | Required in version 3 only. New-type entries containing exactly `id`, `target_fingerprint` and a nonempty `entities` list. |
 
 Each mapping list is sorted by ID, unique and disjoint from the others. Every source field is preserved or retired; every target field is preserved or defaulted. Retirements name source-only IDs and defaults name target-only IDs. Component entries and legacy records are sorted by stable ID. The limits are 128 global fields, 32 fields per component and 64 component types.
 
@@ -35,7 +38,7 @@ Hashes are lowercase SHA-256. `schema_sha256` binds the complete schema serializ
 
 ### Authorize a capacity change
 
-Inside a version-2 component entry, authorize each changed **preserved array**:
+Inside a version-2 or version-3 existing-type component entry, authorize each changed **preserved array**:
 
 ```json
 "array_capacity": [
@@ -51,6 +54,29 @@ Inside a version-2 component entry, authorize each changed **preserved array**:
 This is a component-entry fragment. Its field ID and capacities must match the actual source/target declarations. Records are sorted by ID and unique; capacities are integers 1–31 and must differ. `overflow` is exactly `reject`. Missing, redundant or wrong-capacity permissions reject, as do permissions naming scalar, added or retired fields.
 
 Growing preserves length and order. Shrinking succeeds only when every source array being mapped fits, including authored/template values and saved instances; it never truncates entries. Inactive target storage is zeroed. Mapping uses each field's actual layout, preserving fields after an array as well as array contents. All source values are validated before retirement, so an invalid removed field cannot be hidden by the upgrade.
+
+### Add a defaulted component type
+
+In a version-3 plan, list each new type and every authorized authored entity:
+
+```json
+"add_components": [
+  {
+    "id": "c1120000000000000000000000000001",
+    "target_fingerprint": "<observed target schema fingerprint>",
+    "entities": [
+      "00000000000000000000000000000064",
+      "0000000000000000000000000000012c"
+    ]
+  }
+]
+```
+
+This is a plan fragment; replace the fingerprint with its actual 64-character lowercase SHA-256 value. Type IDs and each entity list are sorted, unique, nonzero lowercase 32-hex IDs. The list permits at most 64 new types and 10,000 entity/type pairs in total, within the combined target catalog and payload limits. New-type entries are separate from existing-type mappings and cannot overlap them.
+
+The target authored instances must contain exactly the schema defaults: scalar defaults as declared, null entity handles and empty arrays. All target-only types and their instances require explicit authorization. An unused new type, extra instance, missing listed instance, nondefault value, or entity absent from either authored document or the saved live state rejects the edge. Recipe-local and live-spawned IDs cannot be used in this list, even if a spawned entity is still alive. Existing component values, component revision and structural allocator history remain unchanged.
+
+Source validation uses the original module and its original instantiated types. Target validation requires the new module to declare the added types. The original module need not declare a target-only type. The complete content and gameplay-schema identities still bind declarations beyond their fingerprints; additions do not bypass ordinary target restore validation.
 
 ## Loading
 
@@ -69,7 +95,7 @@ The host chooses the plan and executable. Saved bytes never choose paths or gran
 
 `Initialize` is skipped. Trusted CoreCLR constructors/static initializers may still run during metadata inspection, and their external effects cannot be rolled back. The same registered CoreCLR instance is consumed by restore. Native AOT process-level image pinning remains in effect; changing a pinned image requires a fresh process.
 
-The result includes an `upgrade` report with plan, content, image and schema digests plus field/instance counts. It does not dump saved values. A retained exact request retry returns its receipt without rereading the plan or activating again, even if the plan file has since been removed. Different parameters under the same retained request ID reject.
+The result includes an `upgrade` report with plan, content, image and schema digests plus field/instance counts. New-type additions are reported separately in `added_components` (`id`, `instances`, `defaulted_fields`) and `authored_added_components` (`id`, `authored_instances`); the field count is the new schema's field count. It does not dump saved values. A retained exact request retry returns its receipt without rereading the plan or activating again, even if the plan file has since been removed. Different parameters under the same retained request ID reject.
 
 Recovery remains separate consent: `allow_recovery:true` permits the store-selected prior generation. The plan must match that selected checkpoint. Results distinguish the manifest generation from `selected_generation`; last-restore metadata records the selected generation.
 
@@ -89,6 +115,8 @@ and positive imported weighted mesh submissions. It does not change component
 layouts, geometry or the compiled
 menu's exact-load policy. The [gameplay/content profile](ALPHA_GAMEPLAY_PROFILE.md)
 keeps API, artifact, content and save compatibility separate.
+
+The separate [defaulted-component recipe](../tests/fixtures/relay_component_addition/README.md) adds one typed progression component to a retained CoreCLR Relay Yard target. Its verifier consumes the original checkpoint, compiled image and cooked closure; it does not rebuild the source. The recipe describes actual target compilation and component-manifest extraction, then checks an explicit v3 edge and gameplay continuation. Consult implementation status for its recorded qualification; the recipe and native mapper contracts alone do not establish Native AOT or game continuation support on every backend.
 
 ## Task: upgrade a retained hierarchical game
 
@@ -110,6 +138,8 @@ The fixture verifier accepts source/target backend configuration files, a target
 Failed preparation preserves the committed current runtime, authored world and original slot. Trusted CoreCLR constructor/static-initializer effects remain outside rollback. Resolve ambiguous storage publication through its durable receipt; do not infer that a reported I/O error permits a fresh unguarded write.
 
 Existing bounds apply independently to source and target: 16 MiB authored documents, 64 MiB snapshots, 64 component types, 32 fields and at most 512 bytes per component payload. Array capacity is 1–31. A catalog permits 256 recipes, 1,024 members per hierarchical recipe, 4,096 members across all recipes and 2 MiB total template custom payloads. A larger target layout must still fit its own payload budgets. Frozen authored history arrays must already be empty; runtime allocator/structural history is separate preserved checkpoint state.
+
+The new-type list's 64-type and 10,000-pair limits do not raise those limits. The combined mapped snapshot also remains bounded to 32,768 component instances and 16 MiB of custom payload storage. First-ever custom components on a version-1 checkpoint require format conversion and are outside this contract.
 
 ## Tests
 

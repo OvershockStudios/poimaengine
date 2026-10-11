@@ -36,7 +36,7 @@ int main() {try {
     auto invalid=[&](const std::function<void(Json&)>& edit) {auto c=j;edit(c);rejects([&]{(void)parse(c);});};
     for(const auto* key:{"format","version","id","source","target","global","components"})invalid([&](auto& c){c.erase(key);});
     invalid([](auto& c){c["path"]="executable";});invalid([](auto& c){c["version"]=1.0;});
-    invalid([](auto& c){c["version"]=3;});invalid([](auto& c){c["id"]=std::string(32,'0');});
+    invalid([](auto& c){c["version"]=4;});invalid([](auto& c){c["id"]=std::string(32,'0');});
     invalid([](auto& c){c["id"]=std::string(32,'A');});invalid([](auto& c){c["global"]["preserve"]={id('1'),id('1')};});
     invalid([](auto& c){c["global"]["default"]={id('1')};});invalid([](auto& c){c["global"]["preserve"]={id('2'),id('1')};});
     invalid([](auto& c){c["global"]["default"]=nullptr;});invalid([](auto& c){c["global"]["callback"]="run";});
@@ -118,5 +118,38 @@ int main() {try {
     check(cap_at!=std::string::npos);duplicate_capacity.insert(cap_at,"\"source_capacity\":1,");
     rejects([&]{(void)parse_plan(duplicate_capacity,hash(duplicate_capacity));});
     check(parse(j).sha256==result.sha256 && Json::parse(parse(v2).components[0].mapping)==capacity_mapping);
+    // Version3 additions are a distinct authorization, not component remaps.
+    auto v3=j;v3["version"]=3;v3["add_components"]=Json::array();
+    check(parse(v3).add_components.empty() && Json::parse(parse(v3).components[0].mapping)==mapping);
+    const Json addition={{"id",id('b')},{"target_fingerprint",std::string(64,'a')},{"entities",{id('1'),id('2')}}};
+    v3["add_components"].push_back(addition);
+    const auto added=parse(v3);check(added.add_components.size()==1 && added.add_components[0].id==id('b') &&
+        added.add_components[0].target_fingerprint==std::string(64,'a') && added.add_components[0].entities==std::vector<std::string>{id('1'),id('2')});
+    auto v3_invalid=[&](const std::function<void(Json&)>& edit) {auto c=v3;edit(c);rejects([&]{(void)parse(c);});};
+    for(unsigned version:{1u,2u}) {auto c=j;c["version"]=version;c["add_components"]=Json::array();rejects([&]{parse(c);});}
+    v3_invalid([](auto& c){c.erase("add_components");});
+    for(const Json& bad:std::vector<Json>{nullptr,true,1,Json::object()})v3_invalid([&](auto& c){c["add_components"]=bad;});
+    for(const auto* key:{"id","target_fingerprint","entities"})v3_invalid([&](auto& c){c["add_components"][0].erase(key);});
+    v3_invalid([](auto& c){c["add_components"][0]["values"]=Json::object();});
+    v3_invalid([](auto& c){c["add_components"][0]["id"]=id('a');}); // overlaps a remap
+    v3_invalid([](auto& c){c["add_components"].push_back(c["add_components"][0]);});
+    v3_invalid([](auto& c){c["add_components"][0]["target_fingerprint"]=std::string(64,'A');});
+    for(const Json& bad:std::vector<Json>{nullptr,true,Json::object(),Json::array()})v3_invalid([&](auto& c){c["add_components"][0]["entities"]=bad;});
+    v3_invalid([](auto& c){c["add_components"][0]["entities"]={id('2'),id('1')};});
+    v3_invalid([](auto& c){c["add_components"][0]["entities"]={id('1'),id('1')};});
+    v3_invalid([](auto& c){c["add_components"][0]["entities"]={std::string(32,'0')};});
+    v3_invalid([](auto& c){c["add_components"][0]["entities"]={1};});
+    v3_invalid([](auto& c){c["add_components"][0]["id"]=std::string(32,'0');});
+    auto full_additions=v3;full_additions["components"]=Json::array();full_additions["add_components"]=Json::array();
+    for(unsigned n=1;n<=64;++n) {auto a=addition;a["id"]=numbered(n);a["entities"]={numbered(1)};full_additions["add_components"].push_back(a);}
+    check(parse(full_additions).add_components.size()==64);
+    auto extra_add=addition;extra_add["id"]=numbered(65);full_additions["add_components"].push_back(extra_add);rejects([&]{parse(full_additions);});
+    auto exact_pairs=v3;exact_pairs["add_components"][0]["entities"]=list(10000);
+    check(parse(exact_pairs).add_components[0].entities.size()==10000);
+    exact_pairs["add_components"][0]["entities"].push_back(numbered(10001));rejects([&]{parse(exact_pairs);});
+    auto combined=v3;combined["add_components"][0]["entities"]=list(5000);auto more=addition;more["id"]=id('c');more["entities"]=list(5001);
+    combined["add_components"].push_back(more);rejects([&]{parse(combined);});
+    auto v3_capacity=v2;v3_capacity["version"]=3;v3_capacity["add_components"]=Json::array({addition});
+    check(Json::parse(parse(v3_capacity).components[0].mapping)==capacity_mapping);
     std::cout<<"Save upgrade plan guards passed: "<<rejected<<" rejected cases; exact identities, byte digest and normalized mappings.\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

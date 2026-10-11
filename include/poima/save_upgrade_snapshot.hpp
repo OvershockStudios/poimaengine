@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <span>
 #include <vector>
 namespace poima::save_upgrades {
 struct SnapshotComponentMapping {
@@ -15,6 +16,7 @@ struct SnapshotMappingResult {
     std::string snapshot;
     std::size_t preserved_globals=0,retired_globals=0,defaulted_globals=0;
     std::vector<SnapshotComponentMapping> components; // Planned types, ascending ID.
+    std::vector<SnapshotComponentMapping> additions{}; // New types/defaulted fields only.
 };
 // Pure transformation, NOT source validation or authorization to activate.
 // PRE: owner validates the original checkpoint with Runtime::validate_snapshot,
@@ -33,10 +35,16 @@ struct SnapshotMappingResult {
 // maps, allocator history, native state and control/UI state are not rebased.
 // Planned schema-2 collections use explicit capacity policy; global state is
 // still the scalar persistence model.
-// No IO, code execution, schema/type/instance creation, or persistence writes.
+// Version-3 additions create only authorized new component rows/defaulted cells
+// on trusted source-authored IDs that also occur in the saved live entity set.
+// The owner supplies those IDs from the original frozen authored definition,
+// never expanded spawned/template IDs. Missing IDs reject without resurrection.
+// Additions require snapshot version >=2; no envelope-format conversion occurs.
+// No IO, code execution, entity creation, or persistence writes.
 SnapshotMappingResult transform_runtime_snapshot(const std::string& original,
     const Identity& actual_source,const Identity& actual_target,
     const std::string& target_gameplay,std::uint64_t target_authored_revision,
     const Plan&,const std::vector<components::Schema>& source_component_schemas,
-    const std::vector<components::Schema>& target_component_schemas);
+    const std::vector<components::Schema>& target_component_schemas,
+    std::span<const std::string> source_authored_entity_ids={});
 }

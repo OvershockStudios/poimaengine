@@ -12,13 +12,16 @@ struct DocumentComponentMapping {
 struct DocumentMappingResult {
     std::string mapped_document;
     std::vector<DocumentComponentMapping> components;
+    std::vector<DocumentComponentMapping> additions{}; // Added types; template count zero.
 };
 // Pure compatibility check/transformation of already validated FROZEN authored
 // documents (freeze_content output). Receipts/retired-ID arrays must be empty;
 // no history is discarded here. Only root revision, explicitly planned schemas
 // and explicitly mapped custom scalar/bounded-array values may differ. Frozen
 // root-prop and local hierarchical recipes are traversed without rebasing IDs;
-// membership, root, topology, native components and asset references stay exact.
+// root, topology, native components and asset references stay exact. Version-3
+// additions may insert only declared new types with exact typed defaults on
+// listed existing authored entities; template membership remains exact.
 // Full schema comparison includes
 // names/units, which the component fingerprint deliberately excludes.
 //

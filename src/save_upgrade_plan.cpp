@@ -79,10 +79,12 @@ Plan parse_plan(const std::string& bytes,const std::string& expected_sha256) {
         if(event==Json::parse_event_t::object_end)objects.pop_back();
         return true;
     });
-    keys(j,{"format","version","id","source","target","global","components","legacy_global_ids"},
+    keys(j,{"format","version","id","source","target","global","components","legacy_global_ids","add_components"},
         {"format","version","id","source","target","global","components"});
-    check(j.at("format")=="poima.save-upgrade" && j.at("version").is_number_integer() && (j.at("version")==1 || j.at("version")==2),"Unsupported save upgrade format/version.");
-    const bool version_two=j.at("version")==2;
+    check(j.at("format")=="poima.save-upgrade" && j.at("version").is_number_integer() && (j.at("version")==1 || j.at("version")==2 || j.at("version")==3),"Unsupported save upgrade format/version.");
+    const bool version_two=j.at("version")>=2;
+    const bool version_three=j.at("version")==3;
+    check(version_three==j.contains("add_components"),"Version-3 plans require add_components; older plans forbid it.");
     Plan out;out.id=hex(j.at("id"),32);out.sha256=actual;out.source=identity(j.at("source"));out.target=identity(j.at("target"));
     check(out.source.world_id==out.target.world_id && out.source.backend==out.target.backend && out.source.module_identity==out.target.module_identity && out.source.type==out.target.type,
         "Save upgrade cannot change world, backend, module identity or gameplay type.");
@@ -103,6 +105,27 @@ Plan parse_plan(const std::string& bytes,const std::string& expected_sha256) {
         ComponentPlan c;c.id=hex(row.at("id"),32);check(previous.empty() || previous<c.id,"Component upgrade IDs must be sorted and unique.");previous=c.id;
         c.source_fingerprint=hex(row.at("source_fingerprint"),64);c.target_fingerprint=hex(row.at("target_fingerprint"),64);
         c.mapping=component_mapping(row,version_two).dump();out.components.push_back(std::move(c));
+    }
+    if(version_three) {
+        const auto& additions=j.at("add_components");
+        check(additions.is_array() && additions.size()<=64,"Added component type budget exceeded.");
+        std::string prior;std::size_t pairs=0;
+        for(const auto& row:additions) {
+            keys(row,{"id","target_fingerprint","entities"},{"id","target_fingerprint","entities"});
+            ComponentAddition added;added.id=hex(row.at("id"),32);
+            check(prior.empty() || prior<added.id,"Added component types must be sorted and unique.");prior=added.id;
+            check(std::none_of(out.components.begin(),out.components.end(),[&](const auto& existing){return existing.id==added.id;}),"Added type overlaps an existing component mapping.");
+            added.target_fingerprint=hex(row.at("target_fingerprint"),64);
+            const auto& entities=row.at("entities");
+            check(entities.is_array() && !entities.empty() && entities.size()<=10000-pairs,"Added component entity/type pair budget exceeded.");
+            pairs+=entities.size();std::string previous_entity;
+            for(const auto& value:entities) {
+                const auto entity=hex(value,32);
+                check(previous_entity.empty() || previous_entity<entity,"Added component entities must be sorted and unique.");previous_entity=entity;
+                added.entities.push_back(entity);
+            }
+            out.add_components.push_back(std::move(added));
+        }
     }
     return out;
 }

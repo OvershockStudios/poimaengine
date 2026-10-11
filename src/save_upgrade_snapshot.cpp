@@ -64,7 +64,8 @@ Identity identity(const Json& game,const std::string& world,const std::string& c
 }
 SnapshotMappingResult transform_runtime_snapshot(const std::string& original,const Identity& actual_source,const Identity& actual_target,
     const std::string& target_gameplay,std::uint64_t target_revision,const Plan& plan,
-    const std::vector<components::Schema>& source_schemas,const std::vector<components::Schema>& target_schemas) {
+    const std::vector<components::Schema>& source_schemas,const std::vector<components::Schema>& target_schemas,
+    std::span<const std::string> source_authored_entity_ids) {
     check(target_revision<=integer_limit,"Target authored revision exceeds safe integer range.");
     require_edge(plan,actual_source,actual_target);
     check(actual_source.world_id==actual_target.world_id && actual_source.backend==actual_target.backend &&
@@ -85,7 +86,9 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
     const auto target_identity=identity(replacement,actual_target.world_id,actual_target.content_sha256);
     check(source_identity==actual_source && target_identity==actual_target,"Snapshot/verified gameplay identities differ from the authorized edge.");
     const auto old=catalog(source_schemas),next=catalog(target_schemas);
-    check(old.size()==next.size(),"Snapshot upgrade cannot change component type membership.");
+    check(old.size()+plan.add_components.size()==next.size(),"Snapshot additions do not cover the target catalog.");
+    check(plan.add_components.size()<=components::max_types,"Added snapshot type budget exceeded.");
+    if(!plan.add_components.empty())check(version>=2,"Component additions require snapshot version 2 or later.");
     for(const auto& [key,schema]:old){(void)schema;check(next.contains(key),"Snapshot target component type is missing.");}
     if(version==1)check(old.empty(),"Version-1 snapshot cannot contain a component catalog.");
     check(data.at("entities").is_array() && data.at("entities").size()<=10000,"Snapshot entity budget exceeded.");
@@ -130,7 +133,38 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
             row["fingerprint"]=components::fingerprint_hex(to);
         }
     }
-    bind_module(module_catalog(game.at("schema")),old,instantiated);bind_module(module_catalog(replacement.at("schema")),next,instantiated);
+    // Source declaration checks use only saved source membership. A new target
+    // type must never become a requirement on the retained source executable.
+    bind_module(module_catalog(game.at("schema")),old,instantiated);
+    auto target_instantiated=instantiated;
+    if(!plan.add_components.empty()) {
+        check(source_authored_entity_ids.size()<=10000,"Trusted source authored entity budget exceeded.");
+        std::set<std::string> authored;
+        for(const auto& entity:source_authored_entity_ids)check(authored.insert(id(Json(entity))).second,"Duplicate trusted authored entity ID.");
+        std::string prior_addition;std::size_t added_pairs=0;
+        auto& types=data["components"]["types"];
+        for(const auto& row:plan.add_components) {
+            (void)id(Json(row.id));check(prior_addition.empty() || prior_addition<row.id,"Added snapshot types must be sorted and unique.");prior_addition=row.id;
+            check(!old.contains(row.id) && next.contains(row.id),"Snapshot additions require a source-absent target type.");
+            const auto& schema=next.at(row.id);
+            check(row.target_fingerprint==components::fingerprint_hex(schema),"Added snapshot fingerprint differs.");
+            check(!row.entities.empty() && row.entities.size()<=10000-added_pairs,"Added snapshot entity/type pair budget exceeded.");added_pairs+=row.entities.size();
+            check(row.entities.size()<=components::max_instances-total_instances,"Added snapshot instance budget exceeded.");total_instances+=row.entities.size();
+            check(row.entities.size()<=(components::max_payload_bytes-target_bytes)/schema.bytes(),"Added snapshot payload budget exceeded.");target_bytes+=row.entities.size()*schema.bytes();
+            const auto defaults=Json::parse(components::values_json(schema,components::defaults(schema),true));
+            Json instances=Json::array();std::string prior_entity;
+            for(const auto& entity:row.entities) {
+                (void)id(Json(entity));check(prior_entity.empty() || prior_entity<entity,"Added snapshot entities must be sorted and unique.");prior_entity=entity;
+                check(authored.contains(entity) && entities.contains(entity),"Added snapshot component needs an existing authored and saved-live entity.");
+                instances.push_back({{"entity",entity},{"values",defaults}});
+            }
+            types.push_back({{"id",row.id},{"fingerprint",components::fingerprint_hex(schema)},{"instances",std::move(instances)}});
+            target_instantiated.insert(row.id);
+            result.additions.push_back({row.id,row.entities.size(),0,0,schema.fields.size()});
+        }
+        std::sort(types.begin(),types.end(),[](const auto& a,const auto& b){return a.at("id").template get<std::string>()<b.at("id").template get<std::string>();});
+    }
+    bind_module(module_catalog(replacement.at("schema")),next,target_instantiated);
     replacement["values"]=Json::parse(globals.target_values);data["gameplay"]=std::move(replacement);
     data["content_sha256"]=digest(Json(actual_target.content_sha256));data["authored_revision"]=target_revision;
     envelope["sha256"]=hash(data.dump());result.snapshot=envelope.dump();

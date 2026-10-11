@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.112
+
+- Add explicit version-3 save-upgrade plans for new custom component types, defaulted only on approved original authored entities still live in the checkpoint.
+- Bind new types to exact target fingerprints; preserve existing state and reject unlisted types, unsupported membership changes and nondefault target values. Expose separate addition reports through schema revision 81.
+- Pass eight native checks and a retained Windows CoreCLR game upgrade: verify defaults before callbacks, finish the objective, save and restore in a fresh process. Retain 4,292 lossless native request/result/error rows. [Results](docs/evidence/m2-defaulted-component-additions.json).
+
 ## 0.0.111
 
 - Add independent cast/receive shadow controls to primitive, static and skinned drawables, preserving default behavior and frozen runtime values.

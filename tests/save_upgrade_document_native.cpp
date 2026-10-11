@@ -270,6 +270,47 @@ int main() {
         reject(payload_over,payload_over,unchanged_plan);
         check(tree_source.dump()==tree_source_bytes && tree_target.dump()==tree_target_bytes,"Hierarchy/collection transformation changed original caller inputs.");
         check(map_authored_document(tree_source_bytes,tree_target_bytes,tree_plan).mapped_document==tree_mapped.mapped_document,"Rejected hierarchy/collection edges changed later mapping output.");
+        // A new type may default onto named authored entities only. The old
+        // remap and immutable recipe payloads still obey their original rules.
+        Json added_schema={{"id",id('6')},{"name","Player progression"},{"version",2},{"fields",Json::array({
+            {{"id",id('1')},{"name","Bonus"},{"kind","int32"},{"default",37}},
+            {{"id",id('2')},{"name","Counter"},{"kind","int64"},{"default","9223372036854775807"}},
+            {{"id",id('3')},{"name","Target"},{"kind","entity"},{"default",std::string(32,'0')}},
+            {{"id",id('4')},{"name","History"},{"kind","array"},{"element_kind","int32"},{"capacity",2},{"default",Json::array()}}
+        })}};
+        const auto added_type=poima::components::parse_schema(added_schema.dump());
+        const auto added_values=Json::parse(poima::components::values_json(added_type,poima::components::defaults(added_type)));
+        auto added_target=target;added_target["component_schemas"][added_type.id]=added_schema;
+        for(const auto entity:{id('b'),id('c')})added_target["entities"][entity]["components"]["game:"+added_type.id]=added_values;
+        auto added_plan=approved;added_plan.add_components.push_back({added_type.id,poima::components::fingerprint_hex(added_type),{id('b'),id('c')}});
+        const auto added_result=map_authored_document(source.dump(),added_target.dump(),added_plan);
+        check(Json::parse(added_result.mapped_document)==canonical_schemas(added_target) && added_result.components.size()==1 &&
+            added_result.additions.size()==1 && added_result.additions[0].authored_instances==2 && added_result.additions[0].template_instances==0,
+            "Authorized new type/default instances or separate report differ.");
+        check(Json::parse(added_result.mapped_document)["templates"]==canonical_schemas(target)["templates"],"New type altered frozen recipes.");
+        auto bad_added_target=[&](const auto& edit) {auto value=added_target;edit(value);reject(source,value,added_plan);};
+        auto bad_added_plan=[&](const auto& edit) {auto value=added_plan;edit(value);reject(source,added_target,value);};
+        bad_added_plan([](Plan& p){p.add_components.clear();});
+        bad_added_plan([](Plan& p){p.add_components[0].id=id('a');});
+        bad_added_plan([](Plan& p){p.add_components[0].target_fingerprint=std::string(64,'0');});
+        bad_added_plan([](Plan& p){p.add_components[0].entities.clear();});
+        bad_added_plan([](Plan& p){p.add_components[0].entities={id('c'),id('b')};});
+        bad_added_plan([](Plan& p){p.add_components[0].entities={id('b'),id('b')};});
+        bad_added_plan([](Plan& p){p.add_components[0].entities={id('d')};}); // recipe ID is not authored
+        bad_added_plan([](Plan& p){p.add_components[0].entities={id('9')};});
+        bad_added_plan([](Plan& p){p.add_components.push_back(p.add_components[0]);});
+        bad_added_target([](Json& d){d["entities"][id('b')]["components"]["game:"+id('6')][id('1')]=38;});
+        bad_added_target([](Json& d){d["entities"][id('b')]["components"]["game:"+id('6')][id('3')]=id('b');});
+        bad_added_target([](Json& d){d["entities"][id('b')]["components"]["game:"+id('6')][id('4')]=Json::array({1});});
+        bad_added_target([](Json& d){d["entities"][id('c')]["components"].erase("game:"+id('6'));});
+        bad_added_target([&](Json& d){d["templates"][id('d')]["components"]["game:"+id('6')]=added_values;});
+        bad_added_target([](Json& d){d["entities"][id('b')]["components"]["Transform"]["position"][0]=1;});
+        bad_added_target([](Json& d){d["entities"][id('c')]["name"]="Rebased";});
+        auto original_membership=source;original_membership["entities"][id('b')]["components"].erase("game:"+id('a'));
+        reject(original_membership,target,approved); // old type cannot acquire membership
+        auto format_changed=added_target;format_changed["version"]=3;format_changed.erase("ui");format_changed.erase("retired_ui_ids");reject(source,format_changed,added_plan);
+        check(source.dump()==source_before && target.dump()==target_before && map_authored_document(source.dump(),added_target.dump(),added_plan).mapped_document==added_result.mapped_document,
+            "Rejected addition changed caller inputs or later valid output.");
         std::cout<<"Frozen authored document mapping passed; "<<rejected<<" rejection cases. No IO/runtime activation claim.\n";return 0;
     }catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}
 }
