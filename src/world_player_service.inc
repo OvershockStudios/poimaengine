@@ -123,6 +123,7 @@
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
             {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",build_metadata().version}};
         result["initial_session_id"]=report.initial_session;result["current_session_id"]=report.final_session;result["runtime_replacements"]=report.runtime_replacements;
+        result["materials"]=player_materials_json(report.materials);
         result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
         if(!settings_application.is_null()) {
             finish_player_settings(settings_application,options,report,camera);
@@ -362,6 +363,7 @@
             metadata["gpu"]=capture.gpu_name;metadata["hardware"]=capture.hardware;
             metadata["frames_presented"]=capture.frames_presented;metadata["capture_written"]=capture.capture_written;
             metadata["nvrhi_errors"]=capture.validation_errors;metadata["render_diagnostics"]=render_diagnostics(capture.diagnostics);
+            metadata["material_revision"]=capture.diagnostics.scene_presented ? Json(capture.diagnostics.scene_presented->material_revision) : Json(nullptr);
         }
         return result;
     }
@@ -526,6 +528,7 @@
             auto candidate=std::make_unique<PlayerOwner>();candidate->id=new_id();candidate->mode=launch.at("mode");
             candidate->prepared=std::move(prepared);candidate->observed_session=runtime_id_;
             candidate->session=std::make_unique<PlayerSessionAdapter>(*this);
+            candidate->prepared.options.player_generation=player_generation_+1;
             candidate->window=std::make_unique<PlayerWindow>(candidate->prepared.options,*candidate->session,params.value("initially_paused",false));
             candidate->observed_paused=candidate->window->paused();player_boundary(*candidate);
             // All admission/ack allocation precedes publication. GPU creation is deferred.
@@ -561,17 +564,19 @@
             freeze_player_control(receipt);return player_receipt_json(receipt,false);
         }
         require(method=="player.capture","Unknown player service method.",-32601);
-        fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision"},
+        fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
             {"player_id","request_id","expected_control_revision","session_id","tick","path"});
         identifier(params.at("player_id"));identifier(params.at("request_id"));revision(params.at("expected_control_revision"));
         identifier(params.at("session_id"));revision(params.at("tick"));
         if(params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
         if(params.contains("expected_ui_revision"))revision(params.at("expected_ui_revision"));
+        if(params.contains("expected_material_revision"))revision(params.at("expected_material_revision"));
         auto normalized=params;normalized["method"]=method;
         if(auto replay=player_retry(normalized))return *replay;
         player_control_guard(params);runtime_guard(params);
         require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         structure_mutation_guard(params);
+        material_guard(params,"expected_material_revision");
         if(params.contains("expected_ui_revision"))require(revision(params.at("expected_ui_revision"))==runtime_->ui_model().revision(),"Runtime UI revision conflict.",-32009);
         require(player_owner_->window->ready(),"Player has no successful presentation yet.",-32003);
         const auto output=render_options(Json{{"path",params.at("path")}}).capture;
@@ -587,6 +592,7 @@
             auto capture=player_owner_->window->capture(output);
             require(capture.available,capture.detail,-32003);
             require(capture.success && capture.capture_written,capture.detail,-32020);
+            require(capture.diagnostics.scene_presented && same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Player capture receipt differs from its immutable snapshot.",-32020);
             static_assert(std::is_nothrow_move_constructible_v<RenderReport>);
             receipt.capture.emplace(std::move(capture));
         }catch(...) {receipt.failure=std::current_exception();}
@@ -599,7 +605,7 @@
         if(!method.starts_with("runtime."))return false;
         // Runtime collector performs managed GC/unloading; it is not a pure read.
         constexpr std::array reads{"runtime.status","runtime.inspect","runtime.observe","runtime.entity","runtime.lighting",
-            "runtime.raycast","runtime.components","runtime.component.get","runtime.component.query","runtime.gameplay.inspect",
+            "runtime.raycast","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.gameplay.inspect",
             "runtime.template.get","runtime.template.query","runtime.instance","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
             "runtime.save.status","runtime.save.result"};
         return std::find(reads.begin(),reads.end(),method)==reads.end();
@@ -610,7 +616,7 @@
             "Stop the native player before changing its owner lifetime.",-32080);
         require(method!="runtime.play" && method!="runtime.audio.replay" && !method.ends_with(".capture"),
             "An attached player owns graphics/audio presentation; capture through player.capture.",-32080);
-        if(player_runtime_mutation(method))require(!player_owner_->prepared.options.replay && player_owner_->window->paused(),
+        if(player_runtime_mutation(method))require(!player_owner_->prepared.options.replay && (method=="runtime.material.apply" || player_owner_->window->paused()),
             "Pause an interactive player before runtime mutation; recorded replay forbids intervening mutations.",-32080);
     }
     void synchronize_player_request(const std::string& method,const Json& result) noexcept {

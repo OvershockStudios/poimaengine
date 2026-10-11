@@ -50,7 +50,7 @@ Built-in boxes have per-face UVs and tangent frames. Adding `PbrTextures` select
 
 The result contains the revision, factor material (or null for a legacy box), effective map references/samplers, normal scale and occlusion strength. It resolves inherited and authored maps in one bounded response. `entity.get` still returns the authored component values; `entity.material` reports what rendering will use. Both are read-only and accept a revision guard.
 
-Runtime creation freezes the resolved image references and factors. Subsequent authored edits do not change a running scene, including continuous replay. Restart the runtime to apply authored material changes. Live runtime material editing, graph compilation, texture transforms, compressed formats and streaming remain future work.
+Runtime creation freezes the resolved image references and factors. Ordinary authored edits leave the running scene unchanged. Explicit [live material editing](LIVE_MATERIALS.md) can adopt only base color, emission, metallic and roughness on existing authored drawables with `PbrMaterial`, preserving their live state and asset owners. Texture replacement, samplers, `double_sided` and general scene changes still require a new runtime. Recorded replay forbids intervening material adoption. Graph compilation, texture transforms, compressed formats and streaming remain future work.
 
 ## Normal mapping and tangents
 

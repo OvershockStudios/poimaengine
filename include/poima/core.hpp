@@ -181,6 +181,21 @@ struct ReconstructionDiagnostics {
     std::string reset_reason,sdk_version;
     TimingSummary gpu;
 };
+// Exact immutable scene used by one renderer context. Observed receipts have
+// zero frame/submission IDs. Submitted means accepted queue work; presented
+// means frame() completed after a successful/suboptimal queue present. Neither
+// means scan-out, display latency, GPU retirement or pixels physically visible.
+struct RendererSceneResult {
+    std::string world_id,camera_id,presentation_source_id;
+    std::uint64_t authored_revision=0,presentation_generation=0,material_revision=0;
+    std::uint64_t frame_sequence=0,submission_id=0;
+    friend bool operator==(const RendererSceneResult&,const RendererSceneResult&)=default;
+};
+inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSceneResult& b) noexcept {
+    return a.world_id==b.world_id && a.camera_id==b.camera_id && a.presentation_source_id==b.presentation_source_id &&
+        a.authored_revision==b.authored_revision && a.presentation_generation==b.presentation_generation &&
+        a.material_revision==b.material_revision;
+}
 struct RenderDiagnostics {
     bool deferred=false;
     std::uint64_t deferred_buffer_bytes=0;
@@ -199,6 +214,7 @@ struct RenderDiagnostics {
     FrameExecutionDiagnostics frame_execution;
     TimingSummary prepare_cpu,record_cpu,render_call_cpu,completion_wait_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
     ShadowFilter shadow_filter = ShadowFilter::pcf3_point;
+    std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
 };
 
 struct RenderReport {

@@ -92,7 +92,7 @@ Use `world.describe` for the current parameter schemas. Input vectors are `move:
 
 Entity creation order, controller update order and hierarchy traversal are explicit and independent of EnTT's storage iteration order. Body state is synchronized into runtime transforms after a batch; camera and mesh snapshots derive from those transforms. Rendering owns copies and never changes physics state.
 
-Authored edits remain allowed while a runtime runs. They do not silently update live physics. `runtime.inspect` marks the source stale; `world.capture` observes current authoring and `runtime.capture` observes the frozen runtime plus its evolved state. Stop and start with a fresh session ID to adopt authored changes. Runtime structural transactions change live props without changing the authored scene; their scope is described above.
+Authored edits remain allowed while a runtime runs. They do not silently update live physics. `runtime.inspect` marks the source stale; `world.capture` observes current authoring and `runtime.capture` observes the frozen runtime plus its evolved state. Stop and start with a fresh session ID to adopt general authored changes. [Explicit scalar material adoption](LIVE_MATERIALS.md) is a bounded exception: it updates selected existing materials and the frozen save baseline without restarting. Runtime structural transactions change live props without changing the authored scene; their scope is described above.
 
 The last 32 successful step receipts support identical retries without advancing twice. Reusing a receipt ID with changed parameters fails; an evicted receipt's stale `expected_tick` still prevents duplicate simulation. Receipts live only for that runtime session. Repeating the active session's identical start returns the original start receipt without rewinding. A stopped session ID cannot be reused in the same authoring process; up to 10,000 distinct session IDs are retained. The most recently stopped session can be stopped again safely.
 
@@ -132,7 +132,7 @@ Native Windows Vulkan captures passed on both the NVIDIA and AMD GPUs. View the 
 
 An initial [C# gameplay API](MANAGED_GAMEPLAY.md) now supports typed state, use-driven interactions and compatible-field reload. General save migrations, clocks beyond the tick counter, seeded random streams, general component/event APIs, stairs, crouching, swimming, moving-platform handling, configurable input actions, render interpolation and packaging remain unimplemented. Earlier C# reload/shipping lab measurements remain separate experiments. M0, M1 and M2 remain open.
 
-Static mesh geometry and PBR factors are frozen with the runtime definition. Imported geometry does not automatically supply a collider. See [static assets](ASSETS.md).
+Static mesh geometry and PBR factors start frozen with the runtime definition. Selected explicit PBR scalar factors can change through guarded material adoption; geometry and texture owners remain frozen. Imported geometry does not automatically supply a collider. See [static assets](ASSETS.md).
 
 [Lights and environment settings](LIGHTING.md) are frozen at runtime creation. `runtime.lighting` exposes their resolved state with an optional tick guard; light poses follow their runtime entity hierarchy. Authoring a different intensity or exposure affects future sessions, not the current one.
 

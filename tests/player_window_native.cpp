@@ -33,7 +33,7 @@ template<class F> void rejects(F&& call,const char* message) {
 class Owner final:public PlayerSession {
 public:
     std::string session="original";
-    std::uint64_t current_tick=7;
+    std::uint64_t current_tick=7,material_revision=0;
     mutable unsigned snapshots=0;
     unsigned advances=0,owner_polls=0;
     void owner_poll() noexcept override {++owner_polls;}
@@ -46,7 +46,7 @@ public:
         // A valid rigid camera is required even for a scene with no mesh objects.
         // SceneSnapshot's Matrix4 has no default initializer.
         result.camera_world=identity_matrix();
-        result.presentation_source_id=session;result.presentation_generation=1;
+        result.presentation_source_id=session;result.presentation_generation=material_revision;result.material_revision=material_revision;
         return result;
     }
     PlayerAudioState audio_state(const std::string&) const override {
@@ -92,6 +92,8 @@ void basic() {
     const auto report=window.report();
     check(report.stop_reason=="requested_stop" && report.initial_tick==7 && report.final_tick==7,
           "Cancellation changed tick or reason");
+    check(!report.materials.observed && !report.materials.submitted && !report.materials.presented,
+          "Deferred stop forged a material snapshot or frame receipt");
     check(report.render.frames_presented==0 && owner.snapshots==0 && owner.advances==0,
           "Zero-frame cancellation initialized or advanced");
     check(report.effective_ui_scale==1.5,"Zero-frame report lost configured absolute UI scale");
@@ -146,7 +148,7 @@ void preferences_without_window() {
           "Zero-frame stop claimed preferences were presented or audible");
 }
 void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
-    auto settings=options();settings.render.gpu=gpu;
+    auto settings=options();settings.render.gpu=gpu;settings.player_generation=12;
     {
         Owner owner;auto configured=settings;
         PlayerPreferences::Values values;values.ui_scale=settings.ui_scale;values.samples=settings.render.samples;
@@ -177,7 +179,29 @@ void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
             settled=next;
         }
         check(stable==3 && owner.current_tick==7 && owner.advances==0,"Initial surface remained unstable or advanced its paused owner");
-        const auto before_rebuilds=settled.swapchain_rebuilds;
+        check(settled.materials.observed && settled.materials.submitted && settled.materials.presented &&
+              settled.materials.presented->scene.material_revision==0 && settled.materials.presented->session_id==owner.session &&
+              settled.materials.presented->tick==7 && settled.materials.presented->player_generation==12,
+              "Native presentation lost its exact material/session/tick/generation receipt");
+        const auto old_presented=*settled.materials.presented;
+        owner.material_revision=1;
+        check(window.report().materials.observed->scene.material_revision==0,
+              "Read-only report polled a new owner snapshot");
+        window.synchronize();const auto material_observed=window.report();
+        check(material_observed.materials.observed->scene.material_revision==1 &&
+              *material_observed.materials.presented==old_presented &&
+              material_observed.materials.submitted->scene.material_revision==0,
+              "Snapshot observation forged a material frame acknowledgement");
+        const auto material_capture=window.capture(utf8(output/"material-epoch.bmp"));
+        const auto material_shown=window.report();
+        check(material_capture.success && material_capture.diagnostics.scene_submitted &&
+              material_capture.diagnostics.scene_presented && material_shown.materials.presented &&
+              material_capture.diagnostics.scene_submitted->material_revision==1 &&
+              *material_capture.diagnostics.scene_submitted==*material_capture.diagnostics.scene_presented &&
+              material_shown.materials.presented->scene==*material_capture.diagnostics.scene_presented &&
+              material_shown.materials.presented->tick==7 && owner.current_tick==7 && owner.advances==0,
+              "Native capture did not bind its exact latest material snapshot without stepping");
+        const auto before_rebuilds=window.report().swapchain_rebuilds;
         configured.preferences->publish(configured.preferences->prepare(R"({"expected_revision":0,"set":{"camera.vertical_fov":90,"ui.scale":2,"input.sensitivity_y":0.25,"input.invert_y":true,"audio.master_gain":0.5,"graphics.samples":4}})"));
         window.synchronize();const auto live=window.report();
         check(live.swapchain_rebuilds==before_rebuilds,"Preference synchronization rebuilt the graphics surface");

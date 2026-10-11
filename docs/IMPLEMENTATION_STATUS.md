@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.112**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.113**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.113 adds explicit guarded scalar material adoption on existing
+authored drawables with `PbrMaterial`. Base color, emission, metallic and roughness
+change together with the frozen save baseline; the runtime session, simulation
+state, gameplay image and asset owners remain intact. Schema revision 82 exposes
+separate accepted material epochs and exact observed/submitted/presented snapshot
+receipts. Eight Windows native checks and actual discovery pass. On one AMD GPU,
+42 forward/deferred captures cover primitive, static and weighted bind-pose meshes;
+ten further captures verify paused and running adoption in the same player window.
+All authored/live comparisons match exactly. Four native window graphics groups
+and Linux syntax checks of both disabled backends also pass. A retained CoreCLR
+game adopts at tick 140 without changing its complete saved payload except the
+frozen authored/content identity, completes at tick 777, and restores exactly in
+a fresh process before five further callbacks. Its 4,180 settled native RPC rows
+are retained losslessly. Corrected harness failures remain separate from passed
+qualification. These checks establish functional behavior, not material latency,
+texture/general scene adoption, physical scanout or Alpha completion.
+[Material contract](LIVE_MATERIALS.md), [results](evidence/m2-live-materials.json).
 
 Version 0.0.112 adds explicit version-3 save plans for entirely new custom
 component types. Each type is bound to its exact target schema and listed

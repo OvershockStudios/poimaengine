@@ -1015,7 +1015,7 @@ public:
     }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
-        if(runtime_) { status.presentation_source_id=runtime_->presentation_source_id();status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence(); }
+        if(runtime_) { status.presentation_source_id=runtime_->presentation_source_id();status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence();status.material_revision=runtime_->material_revision(); }
         return status;
     }
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
@@ -1372,6 +1372,23 @@ public:
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
 #include "world_navigation.inc"
 #include "world_provenance.inc"
+    static Json renderer_scene_result_json(const RendererSceneResult& scene) {
+        return {{"world_id",scene.world_id},{"camera_id",scene.camera_id},{"presentation_source_id",scene.presentation_source_id},
+            {"authored_revision",scene.authored_revision},{"presentation_generation",scene.presentation_generation},
+            {"material_revision",scene.material_revision},{"frame_sequence",scene.frame_sequence},{"submission_id",scene.submission_id}};
+    }
+    static Json renderer_scene_optional_json(const std::optional<RendererSceneResult>& scene) {
+        return scene ? renderer_scene_result_json(*scene) : Json(nullptr);
+    }
+    static Json player_material_receipt_json(const std::optional<PlayerMaterialReceipt>& receipt) {
+        if(!receipt)return nullptr;
+        return {{"session_id",receipt->session_id},{"tick",receipt->tick},{"player_generation",receipt->player_generation},
+            {"scene",renderer_scene_result_json(receipt->scene)}};
+    }
+    static Json player_materials_json(const PlayerMaterialReport& material) {
+        return {{"observed",player_material_receipt_json(material.observed)},{"submitted",player_material_receipt_json(material.submitted)},
+            {"presented",player_material_receipt_json(material.presented)}};
+    }
     static Json render_diagnostics(const RenderDiagnostics& d) {
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
@@ -1380,7 +1397,8 @@ public:
         for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
             {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
         const auto& reconstruction=d.reconstruction;
-        return {{"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
+        return {{"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
+            {"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
             {"ambient_occlusion",{{"mode",ambient_occlusion_mode_name(d.ambient_occlusion.mode)},{"quality",ambient_occlusion_quality_name(d.ambient_occlusion.quality)},{"radius",d.ambient_occlusion.radius}}},
             {"ambient_occlusion_buffer_bytes",d.ambient_occlusion_buffer_bytes},{"ambient_occlusion_gpu",timing(d.ambient_occlusion_gpu)},{"ambient_occlusion_filter_gpu",timing(d.ambient_occlusion_filter_gpu)},
             {"reconstruction",{{"mode",reconstruction_mode_name(reconstruction.mode)},{"active",reconstruction.active},
@@ -2046,8 +2064,9 @@ public:
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            material_guard(params,"material_revision");
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
             if(params.contains("ui_scale")) {
@@ -2159,9 +2178,10 @@ public:
         const auto report = run_render_scene(options, snapshot);
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
+        require(report.diagnostics.scene_presented && same_renderer_snapshot(*report.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Capture presentation receipt differs from its immutable scene snapshot.",-32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
             {"source",asset_preview ? "asset_animation" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
-            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
+            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"material_revision",snapshot.material_revision}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"ui_scale",ui_scale ? params.at("ui_scale") : Json(nullptr)},
@@ -2367,11 +2387,12 @@ public:
     }
 #include "world_save.inc"
 #include "world_gameplay_save.inc"
+#include "world_material.inc"
     Json runtime_summary() const {
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
             {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
-            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
+            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"material_revision",runtime_->material_revision()},{"content_sha256",runtime_content_hash_},{"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
@@ -2758,11 +2779,12 @@ public:
             auto result=inspect_templates(runtime_document_,params,method=="runtime.template.get");result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result;
         }
         if(method.starts_with("runtime.ui."))return ui_dispatch(method,params);
+        if(method.starts_with("runtime.material."))return material_dispatch(method,params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
             return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
-                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"ui_revision",s.active ? Json(s.ui_revision) : Json(nullptr)},{"control_sequence",s.active ? Json(s.control_sequence) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
+                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"material_revision",s.active ? Json(s.material_revision) : Json(nullptr)},{"ui_revision",s.active ? Json(s.ui_revision) : Json(nullptr)},{"control_sequence",s.active ? Json(s.control_sequence) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
         }
         if(method=="runtime.save.status") {
             fields(params,{"session_id"},{"session_id"});runtime_guard(params);const auto& queue=runtime_->gameplay_saves();

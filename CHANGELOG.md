@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.113
+
+- Add explicit guarded adoption of authored PBR scalar changes on selected existing drawables, preserving the running owner, supported live state and immutable asset owners.
+- Separate native acceptance from exact renderer observation/submission/presentation receipts; bind captures and saves to the material epoch through schema revision 82.
+- Preserve durable adopted baselines and exact retries; reject unrelated authoring, pending saves and stale guards.
+- Pass eight Windows native checks, 52 scalar-material captures across both render paths, same-window paused/running edits and retained C# game continuation through fresh restore. [Results](docs/evidence/m2-live-materials.json).
+
 ## 0.0.112
 
 - Add explicit version-3 save-upgrade plans for new custom component types, defaulted only on approved original authored entities still live in the checkpoint.

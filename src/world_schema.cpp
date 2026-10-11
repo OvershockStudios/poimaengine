@@ -135,7 +135,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 81}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 82}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -536,6 +536,21 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.component.query"]=object_schema({{"session_id",id},{"tick",rev},{"type",stable_type},{"after",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}},{"session_id","tick","type"});
     methods["runtime.component.edit"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_revision",rev},{"id",id},{"type",stable_type},{"values",custom_values}},
         {"session_id","request_id","expected_tick","expected_revision","id","type","values"});
+    const Json material_ids={{"type","array"},{"minItems",1},{"maxItems",32},{"uniqueItems",true},{"items",id},{"description","IDs must be in ascending order."}};
+    methods["runtime.material.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"material_revision",rev},{"ids",material_ids}},
+        {"session_id","tick","ids"});
+    methods["runtime.material.apply"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_structure_revision",rev},
+        {"expected_material_revision",rev},{"revision",rev},{"expected_authored_revision",rev},{"expected_content_sha256",asset_id},{"ids",material_ids}},
+        {"session_id","request_id","expected_tick","expected_structure_revision","expected_material_revision","revision","expected_authored_revision","expected_content_sha256","ids"});
+    methods["runtime.material.apply"]["description"]="Explicitly adopt authored base_color/emissive/metallic/roughness changes on existing explicit PbrMaterial drawables without restarting gameplay. Full content and asset closure guards reject unrelated edits. Accepted state is distinct from renderer submission/presentation. Outside authoring-core v1.";
+    methods["runtime.capture"]["properties"]["material_revision"]=rev;
+    methods["player.capture"]["properties"]["expected_material_revision"]=rev;
+    methods["save.write"]["properties"]["expected_material_revision"]=rev;
+    methods["save.load"]["properties"]["expected_material_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
+    result["live_materials"]={{"maximum_entities",32},{"fields",{"base_color","emissive","metallic","roughness"}},
+        {"baseline","Explicit apply adopts the exact guarded authored material/save baseline; immutable native assets and gameplay state remain owned by the same runtime."},
+        {"guards","After material_revision becomes nonzero, save.write/load and exact runtime/player captures require its guard. Retained retries resolve first. Session replacement resets this observation epoch; values persist in the frozen saved document."},
+        {"limitations","No texture, geometry, double_sided or general live scene adoption. Every selected ID must have an actual scalar change. Preparation validates complete assets synchronously; no hitch-free latency guarantee."}};
     methods["save.write"]["properties"]["expected_component_revision"]=rev;
     methods["save.load"]["properties"]["expected_component_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",7},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},

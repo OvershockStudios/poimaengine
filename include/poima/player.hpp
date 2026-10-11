@@ -92,6 +92,9 @@ struct PlayerOptions {
     bool replay=false,audio=false;
     std::uint32_t max_frames=0; // Interactive: zero runs until window close/Escape.
     std::vector<PlayerSegment> sequence;
+    // Shared service sets the next admitted player generation before creation.
+    // Direct native callers retain zero as their unspecialized owner tag.
+    std::uint64_t player_generation=0;
 };
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
 // apply its camera override to the returned copy. No borrowed runtime survives.
@@ -120,6 +123,22 @@ struct PlayerPreferenceReport {
     std::optional<double> sink_gain;
     std::string audio_outcome="disabled";
 };
+RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot);
+struct PlayerMaterialReceipt {
+    RendererSceneResult scene;
+    std::string session_id;
+    std::uint64_t tick=0,player_generation=0;
+    friend bool operator==(const PlayerMaterialReceipt&,const PlayerMaterialReceipt&)=default;
+};
+struct PlayerMaterialReport {
+    // Observed is the latest owned snapshot, not the native accepted edit epoch.
+    // Old submitted/presented receipts survive skips, errors and replacement;
+    // their own session/source/generation tags expose that they are stale.
+    std::optional<PlayerMaterialReceipt> observed,submitted,presented;
+    void observe(const SceneSnapshot&,std::string session,std::uint64_t tick,std::uint64_t player_generation);
+    bool submit(PlayerMaterialReceipt&& frame) noexcept;
+    bool present(PlayerMaterialReceipt&& frame) noexcept;
+};
 struct PlayerReport {
     std::string initial_session,final_session;
     std::uint32_t runtime_replacements=0; // Diagnostic only; saturates at UINT32_MAX.
@@ -132,6 +151,7 @@ struct PlayerReport {
     double effective_ui_scale=1; // Absolute player UI scale or actual window density.
     PlayerPreferenceReport preferences;
     std::string stop_reason;
+    PlayerMaterialReport materials;
 };
 // One frame-driven native graphics lifetime. Every call and destruction belongs
 // to the creating thread; session must outlive the window. Initialization is

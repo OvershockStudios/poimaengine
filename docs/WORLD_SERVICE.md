@@ -185,7 +185,7 @@ The [continuous player](PLAYER.md) is exposed as `runtime.play` in schema revisi
 
 Schema revision 7 adds [static asset import, inspection and instantiation](ASSETS.md), plus `StaticMesh` and `PbrMaterial`. Keep the `<world>.assets` directory with the world document. Import writes cooked assets without changing the authored revision; instantiation uses normal transactions.
 
-Image imports and effective material inspection are available through `asset.image.import`, `asset.image.inspect` and `entity.material`; per-object maps use `PbrTextures`. See the [material authoring contract](MATERIAL_AUTHORING.md) for inheritance, null overrides, resource-resolution errors and frozen runtime behavior.
+Image imports and effective material inspection are available through `asset.image.import`, `asset.image.inspect` and `entity.material`; per-object maps use `PbrTextures`. See the [material authoring contract](MATERIAL_AUTHORING.md) for inheritance, null overrides, resource-resolution errors and frozen runtime behavior. Schema revision 82 adds [guarded live scalar adoption](LIVE_MATERIALS.md) and separate renderer observation/submission/presentation receipts; this remains outside stable authoring-core v1.
 
 Schema revision 8 adds [authored lighting](LIGHTING.md): `Light` and `LightingEnvironment`, plus `world.lighting` and `runtime.lighting`. Captures/player results include resolved lighting. A scene with any authored lighting suppresses the old preview fallback, including when its lights are disabled.
 

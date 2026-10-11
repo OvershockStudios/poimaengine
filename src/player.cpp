@@ -30,6 +30,28 @@ SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& 
         throw std::invalid_argument("Player UI scale must be finite and within 0.25..8.");
     return result;
 }
+RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
+    return {snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
+        snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0};
+}
+void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation) {
+    PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation};
+    observed=std::move(receipt);
+}
+bool PlayerMaterialReport::submit(PlayerMaterialReceipt&& frame) noexcept {
+    if(!observed || !frame.scene.frame_sequence || !frame.scene.submission_id ||
+       frame.session_id!=observed->session_id || frame.tick!=observed->tick ||
+       frame.player_generation!=observed->player_generation || !same_renderer_snapshot(frame.scene,observed->scene) ||
+       (submitted && frame.scene.frame_sequence<=submitted->scene.frame_sequence))return false;
+    submitted=std::move(frame);return true;
+}
+bool PlayerMaterialReport::present(PlayerMaterialReceipt&& frame) noexcept {
+    if(!observed || !submitted || frame!=*submitted || frame.session_id!=observed->session_id ||
+       frame.tick!=observed->tick || frame.player_generation!=observed->player_generation ||
+       !same_renderer_snapshot(frame.scene,observed->scene) ||
+       (presented && frame.scene.frame_sequence<=presented->scene.frame_sequence))return false;
+    presented=std::move(frame);return true;
+}
 void PlayerInput::button(PlayerAction action, bool down) {
     const auto index=static_cast<std::size_t>(action);
     if(index>=held_.size()) throw std::invalid_argument("Invalid player action.");

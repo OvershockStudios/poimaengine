@@ -308,6 +308,7 @@ struct Context {
         std::uint64_t history_sequence=0;
         std::string history_reset;
         ReconstructionDiagnostics reconstruction;
+        std::optional<RendererSceneResult> scene;
     };
     std::array<FrameSlot,2> slots;
     // Borrowed only during a player poll. Slots retain detached generation
@@ -372,7 +373,7 @@ struct Context {
     struct ObjectHistory {std::array<float,12> model{};std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;bool skinned=false;};
     struct ViewHistory {
         std::string source,world,camera;
-        std::uint64_t generation=0,cut=0,sequence=0;
+        std::uint64_t generation=0,cut=0,sequence=0,material_revision=0;
         std::array<float,16> view_projection{};
         std::array<float,4> viewport{};
         std::array<double,3> lens{};
@@ -800,6 +801,7 @@ struct Context {
     void prepare_history() {
         pending_history={};pending_history.source=scene->presentation_source_id;pending_history.world=scene->world_id;pending_history.camera=scene->camera_id;
         pending_history.generation=scene->presentation_generation;pending_history.cut=scene->view_cut_generation;
+        pending_history.material_revision=scene->material_revision;
         pending_history.sequence=history_sequence+1;
         std::copy_n(frame_constants.view_projection,16,pending_history.view_projection.begin());
         std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
@@ -810,6 +812,7 @@ struct Context {
         else if(!history.sequence)pending_history_reset="first_submission_or_resize";
         else if(history.source!=pending_history.source)pending_history_reset="source_changed";
         else if(history.world!=pending_history.world)pending_history_reset="world_changed";
+        else if(history.material_revision!=pending_history.material_revision)pending_history_reset="material_revision_changed";
         else if(history.generation!=pending_history.generation)pending_history_reset="source_generation_changed";
         else if(history.cut!=pending_history.cut)pending_history_reset="view_cut";
         else if(history.camera!=pending_history.camera)pending_history_reset="camera_changed";
@@ -1664,6 +1667,7 @@ struct Context {
         profiling::counter("renderer.skin_instances",skin_instances.size());
         profiling::counter("renderer.texture_payload_bytes",texture_bytes);
         profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
+        diagnostics.scene_observed=renderer_scene_result(*scene);
     }
 
     void retire_presentation() {
@@ -2659,6 +2663,13 @@ struct Context {
         const auto frame_started=SteadyClock::now();
         if(!swapchain) { swapchain_dirty=true; return false; }
         const auto submitted_lights=pending_lights;
+        // Allocate all receipt strings before acquiring/submitting. Each slot
+        // owns the exact prepared snapshot; later snapshots cannot rewrite it.
+        auto submitted_scene=diagnostics.scene_observed;
+        auto presented_scene=submitted_scene;
+        auto slot_scene=submitted_scene;
+        require(next_slot<std::numeric_limits<std::uint64_t>::max(),"Renderer frame sequence exhausted.");
+        for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->frame_sequence=next_slot+1;
         retire_frames();
         auto& slot=slots[next_slot%diagnostics.frame_execution.limit];
         if(slot.occupied)retire_frames(false,true);
@@ -2811,6 +2822,8 @@ struct Context {
         slot.performance=performance;slot.performance_ticket={};
         if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token);
         require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
+        for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->submission_id=slot.submission;
+        slot.scene.swap(slot_scene);diagnostics.scene_submitted.swap(submitted_scene);
         commit_history();
         checked->setEventQuery(slot.completion,nvrhi::CommandQueue::Graphics);
         slot.occupied=true;++next_slot;++diagnostics.frame_execution.submitted;
@@ -2842,6 +2855,9 @@ struct Context {
         if(diagnostics.profile_requested) {
             timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,elapsed_ms(frame_started));
         }
+        // OUT_OF_DATE, post-submit validation/retirement errors and skipped
+        // frames preserve the last completed successful-present receipt.
+        if(presented!=vk::Result::eErrorOutOfDateKHR)diagnostics.scene_presented.swap(presented_scene);
         failure.complete=true;
         return presented!=vk::Result::eErrorOutOfDateKHR;
     }
@@ -3144,8 +3160,30 @@ struct PlayerWindow::Impl {
         configuration=latest;
     }
     void fresh_snapshot() {
-        snapshot=player_snapshot(options,session);
+        const auto identity=session.identity();const auto tick=session.tick();
+        auto fresh=player_snapshot(options,session);
+        require(session.identity()==identity && session.tick()==tick,"Player snapshot changed its owner boundary.");
+        result.materials.observe(fresh,identity,tick,options.player_generation);
+        snapshot=std::move(fresh);
         if(initialized && configuration)result.preferences.applied_revision=configuration->revision;
+    }
+    bool draw_frame(bool capture) {
+        require(result.materials.observed.has_value(),"Player frame requires an owned snapshot receipt.");
+        // Prepare owned receipt storage before queue work. These tags describe
+        // the current frame, not a later snapshot or an older retiring slot.
+        auto submitted=*result.materials.observed,presented=submitted;
+        auto acknowledge=[&](bool drawn) noexcept {
+            const auto& actual=context.diagnostics.scene_submitted;
+            if(!actual || !same_renderer_snapshot(submitted.scene,*actual))return;
+            submitted.scene.frame_sequence=actual->frame_sequence;submitted.scene.submission_id=actual->submission_id;
+            if(!result.materials.submit(std::move(submitted)) || !drawn)return;
+            const auto& shown=context.diagnostics.scene_presented;
+            if(!shown || *shown!=*actual)return;
+            presented.scene.frame_sequence=shown->frame_sequence;presented.scene.submission_id=shown->submission_id;
+            result.materials.present(std::move(presented));
+        };
+        try {const bool drawn=context.frame(capture);acknowledge(drawn);return drawn;}
+        catch(...) {acknowledge(false);throw;}
     }
     void presented_preferences() {
         if(configuration)result.preferences.presented_revision=configuration->revision;
@@ -3424,7 +3462,7 @@ struct PlayerWindow::Impl {
         profiling::SessionScope render_session(result.final_session);
         profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
         {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.scene_prepare_ns:nullptr);fresh_snapshot();context.update_scene();}
-        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.render_ns:nullptr);ui_ready=context.frame(false);}ui_presented=ui_ready;
+        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.render_ns:nullptr);ui_ready=draw_frame(false);}ui_presented=ui_ready;
         if(ui_ready) {++result.render.frames_presented;presented_preferences();}
         if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) { quit=true;result.stop_reason="frame_limit"; }
     }
@@ -3444,8 +3482,8 @@ struct PlayerWindow::Impl {
                 // Final artifact observes the exact final tick without simulating an
                 // extra tick. Rebuild once if the surface changed during shutdown.
                 fresh_snapshot(); context.update_scene();
-                bool drawn=context.frame(true);
-                if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
+                bool drawn=draw_frame(true);
+                if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=draw_frame(true); }
                 require(drawn,"Surface kept changing during final player capture.");
                 ++result.render.frames_presented; context.capture(options.render.capture); result.render.capture_written=true;
                 presented_preferences();
@@ -3577,10 +3615,10 @@ RenderReport PlayerWindow::capture(const std::string& path) {
     try {
         state.synchronize();require(ready(),"Player changed before capture; present the new owner first.");
         state.fresh_snapshot();state.context.update_scene();
-        bool drawn=state.context.frame(true);
+        bool drawn=state.draw_frame(true);
         if(!drawn) {
             require(state.context.rebuild(state.options.render),"Window is minimized; player capture unavailable.");
-            ++state.result.swapchain_rebuilds;state.context.update_scene();drawn=state.context.frame(true);
+            ++state.result.swapchain_rebuilds;state.context.update_scene();drawn=state.draw_frame(true);
         }
         require(drawn,"Surface kept changing during player capture.");
         ++state.result.render.frames_presented;state.context.capture(path);

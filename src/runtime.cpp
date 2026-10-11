@@ -181,7 +181,7 @@ struct Runtime::Impl {
     float navigation_radius=0,navigation_height=0;
     const std::string presentation_source_id=new_presentation_source_id();
     std::string world_id;
-    std::uint64_t revision=0, tick=0;
+    std::uint64_t revision=0, tick=0, material_revision=0;
     ~Impl() {
         for (auto e : owned_entities) {
             if (auto* c=registry.try_get<Controller>(e); c && c->character) {
@@ -1243,6 +1243,77 @@ struct Runtime::Impl {
 #include "runtime_save.inc"
 
 bool Runtime::available() { return true; }
+struct Runtime::PreparedMaterialUpdate::Data {
+    const Impl* owner=nullptr;
+    std::shared_ptr<const Impl::Topology> original,candidate;
+    std::vector<std::pair<entt::entity,PbrMaterial>> edits;
+    std::uint64_t tick=0,authored_revision=0,material_revision=0;
+    std::uint64_t component_revision=0,gameplay_revision=0,ui_revision=0,control_sequence=0;
+};
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate() noexcept=default;
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate(std::unique_ptr<Data> data) noexcept:data_(std::move(data)) {}
+Runtime::PreparedMaterialUpdate::~PreparedMaterialUpdate()=default;
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate(PreparedMaterialUpdate&&) noexcept=default;
+Runtime::PreparedMaterialUpdate& Runtime::PreparedMaterialUpdate::operator=(PreparedMaterialUpdate&&) noexcept=default;
+std::uint64_t Runtime::material_revision() const { return impl_->material_revision; }
+Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expected,
+    std::uint64_t authored_revision,const std::vector<RuntimeMaterialEdit>& edits) const {
+    require(impl_->game_phase==Impl::GamePhase::idle,"Material adoption requires an idle owner boundary.");
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before material adoption.");
+    require(expected==impl_->material_revision,"Stale runtime material revision.");
+    require(expected<9007199254740991ULL,"Runtime material revision exhausted.");
+    require(authored_revision<=9007199254740991ULL && authored_revision!=impl_->revision,
+        "Material adoption needs a different bounded authored revision.");
+    require(!edits.empty() && edits.size()<=32,"Material adoption needs one to 32 drawables.");
+    auto data=std::make_unique<PreparedMaterialUpdate::Data>();
+    data->owner=impl_.get();data->original=impl_->topology;
+    data->tick=impl_->tick;data->authored_revision=impl_->revision;data->material_revision=expected;
+    data->component_revision=component_revision();data->gameplay_revision=gameplay_revision();
+    data->ui_revision=impl_->ui_model->revision();data->control_sequence=impl_->control_sequence;
+    auto candidate=std::make_shared<Impl::Topology>(*impl_->topology);data->edits.reserve(edits.size());
+    std::string previous;
+    for(const auto& edit:edits) {
+        require(!edit.id.empty() && (previous.empty() || previous<edit.id),"Material IDs must be sorted and unique.");previous=edit.id;
+        const auto found=candidate->identities.find(edit.id);
+        require(found!=candidate->identities.end(),"Material adoption needs a live authored drawable.");
+        for(const auto& [root,instance]:candidate->spawned) {
+            (void)root;
+            for(const auto& [local,id]:instance.nodes) {
+                (void)local;require(id!=edit.id,"Material adoption cannot edit spawned members.");
+            }
+        }
+        auto* mesh=impl_->registry.try_get<RuntimeMesh>(found->second);
+        require(mesh && mesh->material.has_value(),"Material adoption needs an existing PBR drawable.");
+        require(edit.material.double_sided==mesh->material->double_sided,"Material adoption cannot change double_sided.");
+        const auto factor=[](float value) {return std::isfinite(value) && value>=0 && value<=1;};
+        for(const auto value:edit.material.base_color)require(factor(value),"Invalid material base color.");
+        for(const auto value:edit.material.emissive)require(factor(value),"Invalid material emissive color.");
+        require(factor(edit.material.metallic) && factor(edit.material.roughness),"Invalid material metallic/roughness.");
+        auto& definition=candidate->definitions.at(edit.id);
+        require(definition.mesh && definition.mesh->material.has_value(),"Material definition is not a PBR drawable.");
+        definition.mesh->material=edit.material;data->edits.emplace_back(found->second,edit.material);
+    }
+    candidate->live.authored_revision=authored_revision;
+    candidate->live=impl_->live_definition(*candidate);data->candidate=std::move(candidate);
+    return PreparedMaterialUpdate(std::move(data));
+}
+bool Runtime::commit_materials(PreparedMaterialUpdate&& prepared) noexcept {
+    auto data=std::move(prepared.data_);
+    if(!data || data->owner!=impl_.get() || data->original!=impl_->topology ||
+        data->tick!=impl_->tick || data->authored_revision!=impl_->revision ||
+        data->material_revision!=impl_->material_revision ||
+        data->component_revision!=component_revision() || data->gameplay_revision!=gameplay_revision() ||
+        data->ui_revision!=impl_->ui_model->revision() || data->control_sequence!=impl_->control_sequence ||
+        impl_->game_phase!=Impl::GamePhase::idle || impl_->save_queue.pending())return false;
+    for(const auto& [entity,material]:data->edits) {
+        const auto* mesh=impl_->registry.try_get<RuntimeMesh>(entity);
+        if(!mesh || !mesh->material || mesh->material->double_sided!=material.double_sided)return false;
+    }
+    static_assert(std::is_nothrow_copy_assignable_v<PbrMaterial>);
+    for(const auto& [entity,material]:data->edits)*impl_->registry.get<RuntimeMesh>(entity).material=material;
+    impl_->topology.swap(data->candidate);impl_->revision=impl_->topology->live.authored_revision;
+    ++impl_->material_revision;return true;
+}
 Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor) {
     static Library library;
     impl_=std::make_unique<Impl>();impl_->owner=this;
@@ -1436,7 +1507,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
 SceneSnapshot Runtime::snapshot() const {
-    SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;
+    SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;result.material_revision=impl_->material_revision;result.presentation_generation=impl_->material_revision;
     for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
         const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
             impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1,mesh->cast_shadows,mesh->receive_shadows});

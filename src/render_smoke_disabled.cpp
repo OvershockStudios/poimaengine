@@ -42,6 +42,7 @@ struct PlayerWindow::Impl {
         result.preferences.invert_x=values.invert_x;result.preferences.invert_y=values.invert_y;
         result.preferences.requested_master_gain=values.master_gain;
         result.effective_ui_scale=values.ui_scale.value_or(1.f);
+        // No scene extraction or material receipt exists without a renderer.
         // No native window/sink exists: application/presentation and effective
         // camera remain unavailable even when configuration is valid.
     }

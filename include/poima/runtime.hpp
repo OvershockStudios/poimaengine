@@ -50,6 +50,9 @@ struct RuntimeMesh {
     std::shared_ptr<const MaterialTextures> textures;
     bool cast_shadows=true,receive_shadows=true;
 };
+// Trusted owner proves the complete authored delta and explicit PbrMaterial provenance.
+// Native staging changes scalar factors only; mesh/texture owners stay immutable.
+struct RuntimeMaterialEdit { std::string id; PbrMaterial material; };
 struct RuntimeAnimationLayer {
     std::uint32_t slot=1;
     AnimationLayerMode mode=AnimationLayerMode::Override;
@@ -270,6 +273,26 @@ class Runtime {
     static std::unique_ptr<Runtime> bind_snapshot_gameplay(std::unique_ptr<Runtime> candidate,
         const std::string& saved_gameplay,std::uint64_t saved_gameplay_revision,std::unique_ptr<Gameplay> gameplay);
 public:
+    class PreparedMaterialUpdate {
+        struct Data;
+        std::unique_ptr<Data> data_;
+        explicit PreparedMaterialUpdate(std::unique_ptr<Data>) noexcept;
+        friend class Runtime;
+    public:
+        PreparedMaterialUpdate() noexcept;
+        ~PreparedMaterialUpdate();
+        PreparedMaterialUpdate(PreparedMaterialUpdate&&) noexcept;
+        PreparedMaterialUpdate& operator=(PreparedMaterialUpdate&&) noexcept;
+        PreparedMaterialUpdate(const PreparedMaterialUpdate&)=delete;
+        PreparedMaterialUpdate& operator=(const PreparedMaterialUpdate&)=delete;
+    };
+    // Serialized owner only. Preparation allocates and validates a new immutable
+    // root; publishing a valid stage cannot allocate, tick or replace gameplay.
+    // A stage invalidated by intervening state/Save changes publishes nothing.
+    PreparedMaterialUpdate prepare_materials(std::uint64_t expected_material_revision,
+        std::uint64_t authored_revision,const std::vector<RuntimeMaterialEdit>& edits) const;
+    bool commit_materials(PreparedMaterialUpdate&& prepared) noexcept;
+    std::uint64_t material_revision() const;
     static constexpr double fixed_dt=1.0/60.0;
     static bool available();
     explicit Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});

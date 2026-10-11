@@ -63,6 +63,45 @@ int main() {
         check(bounded.advance(0,true)==0,"Suspension retained capped fractional time.");
         bool rejected=false; try { paused.advance(std::numeric_limits<double>::quiet_NaN(),true); } catch(const std::invalid_argument&) { rejected=true; }
         check(rejected,"NaN frame duration accepted.");
-        std::cout<<"Input edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n";
+        SceneSnapshot scene;scene.world_id="world";scene.camera_id="camera";scene.presentation_source_id="source-a";
+        scene.revision=6;scene.presentation_generation=4;scene.material_revision=4;
+        PlayerMaterialReport materials;materials.observe(scene,"session-a",17,9);
+        check(materials.observed && !materials.submitted && !materials.presented,"Observation forged a GPU receipt.");
+        auto no_submission=*materials.observed;
+        check(!materials.submit(std::move(no_submission)),"Observation IDs forged submitted work.");
+        for(unsigned mismatch=0;mismatch<3;++mismatch) {
+            auto wrong_owner=*materials.observed;wrong_owner.scene.frame_sequence=1;wrong_owner.scene.submission_id=41;
+            if(mismatch==0)++wrong_owner.tick;
+            if(mismatch==1)++wrong_owner.player_generation;
+            if(mismatch==2)wrong_owner.session_id="other-session";
+            check(!materials.submit(std::move(wrong_owner)),"Frame receipt lost an owner guard.");
+        }
+        auto frame=*materials.observed;frame.scene.frame_sequence=1;frame.scene.submission_id=41;
+        auto shown=frame;
+        check(materials.submit(std::move(frame)) && !materials.presented,"Submission forged presentation.");
+        check(materials.present(std::move(shown)),"Successful exact submitted receipt was rejected.");
+        const auto retained=*materials.presented;
+        scene.material_revision=5;scene.presentation_generation=5;materials.observe(scene,"session-a",17,9);
+        auto wrong=retained;wrong.scene.frame_sequence=2;wrong.scene.submission_id=42;
+        check(!materials.submit(std::move(wrong)) && *materials.presented==retained,"Old material epoch acknowledged a new snapshot.");
+        auto current=*materials.observed;current.scene.frame_sequence=2;current.scene.submission_id=42;
+        auto not_submitted=current;not_submitted.scene.submission_id=43;
+        check(materials.submit(std::move(current)) && !materials.present(std::move(not_submitted)) &&
+              *materials.presented==retained,"Presentation accepted an unrelated queue submission.");
+        // Same revision after replacement is insufficient: source/session tags
+        // must match, and historical successful presentation remains visible.
+        scene.presentation_source_id="source-b";materials.observe(scene,"session-b",2,9);
+        auto prior_present=*materials.submitted;
+        check(!materials.present(std::move(prior_present)),"An older submitted snapshot was presented as the replacement.");
+        auto stale=*materials.submitted;stale.scene.frame_sequence=3;stale.scene.submission_id=44;
+        check(!materials.submit(std::move(stale)) && *materials.presented==retained,"Replacement aliased material revision.");
+        auto replacement=*materials.observed;replacement.scene.frame_sequence=3;replacement.scene.submission_id=44;
+        auto replacement_shown=replacement;
+        check(materials.submit(std::move(replacement)) && materials.present(std::move(replacement_shown)) &&
+              materials.presented->session_id=="session-b" && materials.presented->tick==2 &&
+              materials.presented->player_generation==9,"Exact replacement receipt lost its owner boundary.");
+        auto duplicate=*materials.submitted;
+        check(!materials.submit(std::move(duplicate)),"Old frame sequence was acknowledged twice.");
+        std::cout<<"Input/clock policy and exact material snapshot/submission/presentation receipts passed.\n";
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

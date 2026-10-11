@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include <cmath>
+#include <algorithm>
+#include <limits>
+#include "poima/assets.hpp"
 #include <iostream>
 #include <stdexcept>
 
@@ -15,6 +18,161 @@ RuntimeDefinition fixture() {
     RuntimeEntityDefinition player; player.id="player"; player.transform.position={0,1,2}; player.character=CharacterController{}; player.character->camera="camera";
     RuntimeEntityDefinition camera; camera.id="camera"; camera.parent="player"; camera.transform.position={0,1.6,0}; camera.camera=RuntimeCamera{};
     d.entities={player,box,camera,wall,floor}; return d;
+}
+void material_adoption() {
+    const auto id=[](const std::string& name) {
+        const std::vector<std::string> names={"box","camera","floor","hidden","legacy","player","wall","missing"};
+        const auto found=std::find(names.begin(),names.end(),name);
+        require(found!=names.end(),"Unknown fixture identity.");
+        return std::string(31,'e')+std::to_string(1+std::distance(names.begin(),found));
+    };
+    auto definition=fixture();
+    for(auto& entity:definition.entities) {
+        entity.id=id(entity.id);if(!entity.parent.empty())entity.parent=id(entity.parent);
+        if(entity.character)entity.character->camera=id(entity.character->camera);
+    }
+    auto mesh=std::make_shared<MeshAsset>();mesh->has_uv=true;
+    mesh->vertices={{{-1,0,0},{0,1,0},{0,0}},{{1,0,0},{0,1,0},{1,0}},{{0,0,1},{0,1,0},{0,1}}};
+    mesh->indices={0,2,1};
+    auto image=std::make_shared<TextureImage>();image->srgb=true;image->mips={{1,1,{255,255,255,255}}};
+    auto textures=std::make_shared<MaterialTextures>();textures->maps[0].image=image;
+    for(auto& entity:definition.entities)if(entity.id==id("floor") || entity.id==id("box")) {
+        entity.mesh=RuntimeMesh{};entity.mesh->material=PbrMaterial{};
+        entity.mesh->mesh=mesh;entity.mesh->textures=textures;
+    }
+    RuntimeEntityDefinition hidden;hidden.id=id("hidden");hidden.mesh=RuntimeMesh{};
+    hidden.mesh->material=PbrMaterial{};hidden.mesh->visible=false;definition.entities.push_back(hidden);
+    RuntimeEntityDefinition legacy;legacy.id=id("legacy");legacy.mesh=RuntimeMesh{};definition.entities.push_back(legacy);
+    const auto schema=components::parse_schema("{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"name\":\"Counter\",\"version\":1,\"fields\":[{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"name\":\"Count\",\"kind\":\"int32\",\"default\":0}]}");
+    definition.component_schemas={schema};definition.entities[0].components[schema.id]=components::defaults(schema);
+    RuntimeSpawnTemplate prop;prop.id=std::string(32,'c');prop.name="PBR spawn";prop.mesh=RuntimeMesh{};
+    prop.mesh->material=PbrMaterial{};definition.templates={prop};
+    Runtime runtime(definition);runtime.step(2,{});
+    const std::string hash(64,'a');const auto original=runtime.save_snapshot(hash);
+    const auto old=runtime.snapshot(id("camera"));const auto original_source=runtime.presentation_source_id();
+    const auto player=runtime.entity(id("player")),body=runtime.entity(id("box"));
+    const auto old_component=runtime.component_read(schema.id,id("player"));
+    const auto material=[](const SceneSnapshot& snapshot,const std::string& id)->const SceneObject& {
+        for(const auto& value:snapshot.objects)if(value.entity_id==id)return value;
+        throw std::runtime_error("Material snapshot omitted drawable.");
+    };
+    PbrMaterial changed;changed.base_color={.25f,.5f,.75f};changed.emissive={.1f,.2f,.3f};changed.metallic=.4f;changed.roughness=.6f;
+    const std::vector<RuntimeMaterialEdit> edits={{id("box"),changed},{id("floor"),changed},{id("hidden"),changed}};
+    auto caller_edits=edits;auto prepared=runtime.prepare_materials(0,8,caller_edits);
+    caller_edits[0].material.base_color={0,0,0};
+    require(runtime.save_snapshot(hash)==original && runtime.snapshot().revision==7 && runtime.material_revision()==0,
+        "Material preparation changed live state.");
+    auto moved=std::move(prepared);
+    require(!runtime.commit_materials(std::move(prepared)),"Moved-from material stage committed.");
+    require(runtime.commit_materials(std::move(moved)),"Valid material stage did not commit.");
+    const auto now=runtime.snapshot(id("camera"));
+    require(now.revision==8 && now.material_revision==1 && now.presentation_generation==1 &&
+        now.presentation_source_id==original_source && runtime.inspect().tick==2 && runtime.structure_revision()==0 &&
+        runtime.component_revision()==0 && runtime.gameplay_revision()==0 && runtime.control_sequence()==0,
+        "Material adoption changed unrelated identity/revisions.");
+    for(const auto& object_id:{id("box"),id("floor")}) {
+        const auto& current=material(now,object_id);const auto& previous=material(old,object_id);
+        require(current.material->base_color==changed.base_color && current.material->emissive==changed.emissive &&
+            current.material->metallic==changed.metallic && current.material->roughness==changed.roughness,
+            "Material scalar publication lost a field.");
+        require(previous.material->base_color==PbrMaterial{}.base_color && previous.material->emissive==PbrMaterial{}.emissive &&
+            previous.material->metallic==1 && previous.material->roughness==1 && old.revision==7 && old.material_revision==0 &&
+            old.presentation_generation==0,"Published adoption mutated an earlier snapshot.");
+        require(current.mesh==mesh && current.textures==textures && previous.mesh==mesh && previous.textures==textures &&
+            current.world==previous.world && current.albedo==previous.albedo && current.incarnation==previous.incarnation &&
+            current.cast_shadows==previous.cast_shadows && current.receive_shadows==previous.receive_shadows,
+            "Material adoption replaced resources or unrelated drawable state.");
+    }
+    const auto hidden_live=std::find_if(runtime.live_definition().entities.begin(),runtime.live_definition().entities.end(),
+        [&](const auto& entity){return entity.id==id("hidden");});
+    require(hidden_live!=runtime.live_definition().entities.end() && hidden_live->mesh->material->roughness==changed.roughness &&
+        !hidden_live->mesh->visible && now.objects.size()==old.objects.size(),"Hidden material adoption changed visibility.");
+    const auto same_state=[](RuntimeEntityState a,RuntimeEntityState b) {
+        return a.id==b.id && a.world==b.world && a.local.position==b.local.position && a.local.rotation==b.local.rotation &&
+            a.local.scale==b.local.scale && a.velocity==b.velocity && a.ground==b.ground && a.yaw==b.yaw && a.pitch==b.pitch &&
+            a.has_body==b.has_body && a.is_character==b.is_character && a.motion==b.motion &&
+            a.motion_remaining_ticks==b.motion_remaining_ticks;
+    };
+    require(same_state(player,runtime.entity(id("player"))) && same_state(body,runtime.entity(id("box"))) &&
+        old_component==runtime.component_read(schema.id,id("player")),"Material adoption changed controller/body/custom state.");
+    // Complete logical checkpoint payload differs only in adopted authored revision.
+    const auto payload=[](const std::string& bytes) {
+        const auto begin=bytes.find("\"payload\":")+10;const auto end=bytes.find(",\"sha256\":",begin);
+        require(begin>=10 && end!=std::string::npos,"Unexpected save envelope ordering.");return bytes.substr(begin,end-begin);
+    };
+    auto adopted=runtime.save_snapshot(hash);auto normalized=payload(adopted);
+    const auto revision=normalized.find("\"authored_revision\":8");require(revision!=std::string::npos,"Save did not adopt material revision.");
+    normalized.replace(revision,std::string("\"authored_revision\":8").size(),"\"authored_revision\":7");
+    require(normalized==payload(original),"Material adoption changed another logical checkpoint field.");
+    auto target=definition;target.authored_revision=8;
+    for(auto& entity:target.entities)for(const auto& edit:edits)if(entity.id==edit.id)entity.mesh->material=edit.material;
+    auto restored=Runtime::from_snapshot(target,hash,adopted);
+    require(restored->save_snapshot(hash)==adopted && restored->material_revision()==0 &&
+        material(restored->snapshot(),id("box")).material->roughness==changed.roughness,
+        "Fresh restore lost adopted baseline or persisted an ephemeral epoch.");
+    const auto reject=[&](std::uint64_t expected,std::uint64_t revision,const std::vector<RuntimeMaterialEdit>& bad) {
+        const auto before=runtime.save_snapshot(hash);const auto epoch=runtime.material_revision();bool rejected=false;
+        try { auto stage=runtime.prepare_materials(expected,revision,bad);(void)stage; }catch(const std::exception&) {rejected=true;}
+        require(rejected && runtime.save_snapshot(hash)==before && runtime.material_revision()==epoch,
+            "Rejected material preparation mutated native state.");
+    };
+    reject(0,9,edits);reject(1,8,edits);reject(1,9007199254740992ULL,edits);reject(1,9,{});
+    reject(1,9,{{id("missing"),changed}});reject(1,9,{{id("camera"),changed}});reject(1,9,{{id("legacy"),changed}});
+    reject(1,9,{{id("floor"),changed},{id("box"),changed}});reject(1,9,{{id("box"),changed},{id("box"),changed}});
+    reject(1,9,std::vector<RuntimeMaterialEdit>(33,{id("box"),changed}));
+    auto invalid=changed;invalid.double_sided=true;reject(1,9,{{id("box"),invalid}});
+    for(const float bad:{-.01f,1.01f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        invalid=changed;invalid.base_color[2]=bad;reject(1,9,{{id("box"),changed},{id("floor"),invalid}});
+        invalid=changed;invalid.emissive[1]=bad;reject(1,9,{{id("box"),invalid}});
+        invalid=changed;invalid.metallic=bad;reject(1,9,{{id("box"),invalid}});
+        invalid=changed;invalid.roughness=bad;reject(1,9,{{id("box"),invalid}});
+    }
+    Runtime other(target);auto wrong_owner=runtime.prepare_materials(1,9,edits);
+    require(!other.commit_materials(std::move(wrong_owner)) && other.material_revision()==0,"Foreign material stage committed.");
+    auto stale_tick=runtime.prepare_materials(1,9,edits);runtime.step(1,{});
+    require(!runtime.commit_materials(std::move(stale_tick)) && runtime.material_revision()==1,"Stale-tick material stage committed.");
+    auto stale_component=runtime.prepare_materials(1,9,edits);
+    runtime.component_edit(schema.id,id("player"),components::parse_values(schema,"{\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\":5}"));
+    require(!runtime.commit_materials(std::move(stale_component)) && runtime.material_revision()==1,"Stale-component stage committed.");
+    auto stale_structure=runtime.prepare_materials(1,9,edits);
+    const auto spawned=runtime.change_structure(0,{{prop.id,{}}},{}).spawned.front();
+    require(!runtime.commit_materials(std::move(stale_structure)),"Changed membership accepted an old material stage.");
+    reject(1,9,{{spawned,changed}});
+    auto spawned_save=runtime.save_snapshot(hash);auto expanded=Runtime::from_snapshot(target,hash,spawned_save);
+    bool reject_restored_spawn=false;
+    try {auto stage=expanded->prepare_materials(0,9,{{spawned,changed}});(void)stage;}catch(const std::exception&) {reject_restored_spawn=true;}
+    require(reject_restored_spawn,"Restore expansion misclassified spawned member as authored.");
+    runtime.change_structure(1,{}, {spawned});reject(1,9,{{spawned,changed}});
+    GameplaySaveLedger ledger;runtime.gameplay_save_host({1,2},&ledger);
+    require(runtime.gameplay_saves().configure(true,1),"Cannot configure material save guard.");
+    auto pending_stage=runtime.prepare_materials(1,9,edits);
+    const auto queued=runtime.gameplay_saves().enqueue(GameplaySaveKind::save,"material",std::nullopt,false,runtime.inspect().tick);
+    require(queued.rejection==GameplaySaveRejection::none && runtime.gameplay_saves().commit(runtime.inspect().tick) &&
+        runtime.gameplay_saves().mark_dispatched(queued.ticket),"Cannot dispatch material Save guard.");
+    require(!runtime.commit_materials(std::move(pending_stage)),"Pending dispatched Save accepted prepared adoption.");
+    reject(1,9,edits);require(runtime.gameplay_saves().clear(queued.ticket),"Cannot clear test Save intent.");
+    auto one=runtime.prepare_materials(1,9,edits),two=runtime.prepare_materials(1,9,edits);
+    require(runtime.commit_materials(std::move(one)) && !runtime.commit_materials(std::move(two)) &&
+        runtime.material_revision()==2,"Duplicate stages applied twice.");
+    // Boundary-sized batch succeeds without reallocating or replacing owners at commit.
+    RuntimeDefinition bounded;bounded.world_id="material-boundary";bounded.authored_revision=1;
+    std::vector<RuntimeMaterialEdit> boundary;
+    for(unsigned i=0;i<32;++i) {RuntimeEntityDefinition entity;entity.id="drawable-"+std::to_string(100+i);
+        entity.mesh=RuntimeMesh{};entity.mesh->material=PbrMaterial{};bounded.entities.push_back(entity);boundary.push_back({entity.id,changed});}
+    Runtime maximum(bounded);auto maximum_stage=maximum.prepare_materials(0,2,boundary);
+    require(maximum.commit_materials(std::move(maximum_stage)) && maximum.snapshot().objects.size()==32 && maximum.material_revision()==1,
+        "The 32-drawable material boundary did not commit.");
+    // A real failed post-adoption Jolt update rolls back to the adopted root.
+    RuntimeDefinition crowded;crowded.world_id="material-rollback";crowded.authored_revision=1;
+    for(int i=0;i<150;++i) {RuntimeEntityDefinition e;e.id="body-"+std::to_string(i);e.collider=BoxCollider{};
+        e.collider->motion=BodyMotion::Dynamic;if(i==0) {e.mesh=RuntimeMesh{};e.mesh->material=PbrMaterial{};}crowded.entities.push_back(e);}
+    Runtime rollback(crowded);auto stage=rollback.prepare_materials(0,2,{{"body-0",changed}});
+    require(rollback.commit_materials(std::move(stage)),"Cannot stage rollback fixture material.");
+    const auto before_failure=rollback.save_snapshot(hash);bool failed=false;
+    try {rollback.step(2,{});}catch(const std::exception&) {failed=true;}
+    require(failed && rollback.save_snapshot(hash)==before_failure && rollback.material_revision()==1 &&
+        rollback.snapshot().revision==2 && material(rollback.snapshot(),"body-0").material->base_color==changed.base_color,
+        "Failed Tick restored pre-adoption material/topology.");
 }
 void renderer_shadow_controls() {
     // Defaults preserve existing aggregate users and ordinary visible geometry.
@@ -366,7 +524,7 @@ void camera_state() {
 }
 int main() {
     try {
-        renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
+        material_adoption();renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

@@ -102,6 +102,8 @@ struct SceneSnapshot {
     std::string presentation_source_id;
     std::uint64_t presentation_generation=0;
     std::uint64_t view_cut_generation=0;
+    // Session-local accepted scalar-material epoch, separate from authored/tick.
+    std::uint64_t material_revision=0;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

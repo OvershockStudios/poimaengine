@@ -307,7 +307,7 @@ Use `player.capture` to observe this window.
 
 Running interactive playback rejects external simulation/gameplay/UI/structure
 mutations and save operations that require a stable state. Pause first, obtain
-current revisions, then perform the guarded operation. Authored world changes
+current revisions, then perform the guarded operation. [Scalar material adoption](LIVE_MATERIALS.md) also admits running interactive playback, subject to exact tick guards; it cannot intervene in recorded replay. Its accepted material epoch is separate from `report.materials.observed`, `.submitted` and `.presented`, which identify actual immutable snapshots and frames. Authored world changes
 remain separate from the runtime's frozen definition; editing an authored
 camera does not silently change the playing camera.
 

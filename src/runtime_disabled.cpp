@@ -3,6 +3,15 @@
 #include <stdexcept>
 namespace poima {
 struct Runtime::Impl {};
+struct Runtime::PreparedMaterialUpdate::Data {};
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate() noexcept=default;
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate(std::unique_ptr<Data> data) noexcept:data_(std::move(data)) {}
+Runtime::PreparedMaterialUpdate::~PreparedMaterialUpdate()=default;
+Runtime::PreparedMaterialUpdate::PreparedMaterialUpdate(PreparedMaterialUpdate&&) noexcept=default;
+Runtime::PreparedMaterialUpdate& Runtime::PreparedMaterialUpdate::operator=(PreparedMaterialUpdate&&) noexcept=default;
+Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t,std::uint64_t,const std::vector<RuntimeMaterialEdit>&) const { throw std::runtime_error("Simulation is not built."); }
+bool Runtime::commit_materials(PreparedMaterialUpdate&&) noexcept { return false; }
+std::uint64_t Runtime::material_revision() const { throw std::runtime_error("Simulation is not built."); }
 bool Runtime::available() { return false; }
 Runtime::Runtime(const RuntimeDefinition&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON."); }
 Runtime::~Runtime()=default;

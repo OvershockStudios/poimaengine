@@ -109,3 +109,13 @@ qualified workflows under the [documentation standard](DOCUMENTATION.md).
 6. Retain workload, hardware, build/settings identity and raw evidence. The small
    [qualification probe](../tests/player_performance.py) checks telemetry integrity;
    it does not establish a game-scale performance result.
+
+## Change a running material
+
+1. Discover `runtime.material.apply` and inspect the authored material. Preserve its texture bindings and `double_sided` value.
+2. Author only the selected scalar changes, then inspect the live tick, structure/material revisions and frozen content identity.
+3. Apply with all guards and reuse the same request only for an exact retry. An interactive pause provides a stable tick; running ticks may conflict.
+4. Inspect accepted values and compare full snapshot identities in capture or player submission/presentation receipts.
+5. Save with the material guard. Restore to verify the adopted document, remembering that the session-local material epoch resets.
+
+See [live material editing](LIVE_MATERIALS.md) for the request, errors and boundaries. Texture replacement and general scene adoption use separate workflows.
