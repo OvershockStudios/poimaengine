@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <condition_variable>
+#include <cwctype>
 #include <deque>
 #include <map>
 #include <mutex>
@@ -15,6 +16,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
+#include "development_compiler_session.hpp"
 #else
 #include <cerrno>
 #include <cstring>
@@ -125,7 +127,7 @@ const char* state_name(State state) noexcept {
     return "unknown";
 }
 struct Jobs::Impl {
-    struct Job { Request request;Status status;Clock::time_point started;bool launched=false; };
+    struct Job { Request request;Status status;Clock::time_point started;bool launched=false;std::optional<Request> effective_request; };
     Limits limits;
     mutable std::mutex mutex;
     std::condition_variable wake;
@@ -149,9 +151,12 @@ struct Jobs::Impl {
         auto& total=error?job.status.error_bytes:job.status.output_bytes;
         auto& truncated=error?job.status.error_truncated:job.status.output_truncated;
         total+=count;
-        if(count>=limits.diagnostic_bytes_per_stream)text.assign(bytes+count-limits.diagnostic_bytes_per_stream,limits.diagnostic_bytes_per_stream);
+        // Opt-in normal-verbosity Csc can exceed the ordinary 32 KiB tail.
+        // Keep its actual-use evidence bounded without changing isolated jobs.
+        const auto capacity=job.request.compiler_server?std::max<std::size_t>(limits.diagnostic_bytes_per_stream,131072):limits.diagnostic_bytes_per_stream;
+        if(count>=capacity)text.assign(bytes+count-capacity,capacity);
         else {
-            if(text.size()+count>limits.diagnostic_bytes_per_stream)text.erase(0,text.size()+count-limits.diagnostic_bytes_per_stream);
+            if(text.size()+count>capacity)text.erase(0,text.size()+count-capacity);
             text.append(bytes,count);
         }
         truncated=total>text.size();
@@ -168,8 +173,11 @@ struct Jobs::Impl {
         return result;
     }
     struct Result { State state;std::optional<int> exit_code;std::string error; };
-    Result run(Job& job) {
-        const auto& request=job.request;
+    Result run(Job& job,const std::function<void()>& server_pump={}) {
+#ifndef _WIN32
+        (void)server_pump;
+#endif
+        const auto& request=job.effective_request?*job.effective_request:job.request;
         // Filesystem checks happen on the worker, never on the authoring thread.
         if(!std::filesystem::is_regular_file(request.executable))throw std::runtime_error("Executable is not a regular file.");
         if(!std::filesystem::is_directory(request.working_directory))throw std::runtime_error("Working directory does not exist.");
@@ -218,10 +226,17 @@ struct Jobs::Impl {
                 append(job,error,buffer.data(),read);
             }
         };
-        std::optional<State> reason;
+        std::optional<State> reason;std::string server_error;
         while(true) {
             drain(output_read.value,false);drain(error_read.value,true);
             reason=stop_reason(job);
+            if(!reason && server_pump){
+                // A server failure must still pass the existing request-owned
+                // child cleanup fence, not throw past it with a child alive.
+                try{server_pump();}
+                catch(const std::exception& e){reason=stop_reason(job).value_or(State::failed);server_error=e.what();}
+                catch(...){reason=State::failed;server_error="Unknown compiler server pump failure.";}
+            }
             if(reason) { if(!TerminateJobObject(group.value,1))throw std::runtime_error("Cannot terminate child process group.");break; }
             const auto waited=WaitForSingleObject(process.value,10);
             if(waited==WAIT_OBJECT_0)break;
@@ -237,9 +252,18 @@ struct Jobs::Impl {
             if(Clock::now()>=cleanup_deadline)throw std::runtime_error("Child process group cleanup timed out.");
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
+        // ActiveProcesses may reach zero before asynchronous termination has
+        // completed the original child's pending IO and signaled its handle.
+        // Keep the same absolute cleanup deadline and fence before draining or
+        // reporting its exit; do not expose STILL_ACTIVE as a terminal code.
+        const auto settled_at=Clock::now();
+        const DWORD remaining=settled_at<cleanup_deadline?static_cast<DWORD>(
+            std::chrono::ceil<std::chrono::milliseconds>(cleanup_deadline-settled_at).count()):0;
+        if(WaitForSingleObject(process.value,remaining)!=WAIT_OBJECT_0)
+            throw std::runtime_error("Child process retirement timed out or failed.");
         drain(output_read.value,false);drain(error_read.value,true);
         DWORD code=0;if(!GetExitCodeProcess(process.value,&code))throw std::runtime_error("Cannot read process exit code.");
-        return {reason.value_or(code==0?State::succeeded:State::failed),static_cast<int>(code),{}};
+        return {reason.value_or(code==0?State::succeeded:State::failed),static_cast<int>(code),std::move(server_error)};
 #else
         Fd output_read,output_write,error_read,error_write,input;
         auto above_standard=[](Fd& descriptor) {
@@ -315,27 +339,85 @@ struct Jobs::Impl {
 #endif
     }
     void loop() {
+#ifdef _WIN32
+        // Construction, all lifecycle work and destruction stay on this worker.
+        detail::CompilerSession compiler;
+#endif
         while(true) {
-            std::shared_ptr<Job> job;
+            std::shared_ptr<Job> job;bool queued_cancelled=false,leave=false;
             {
-                std::unique_lock lock(mutex);wake.wait(lock,[this]{return stopping || !queue.empty();});
-                if(stopping && queue.empty())return;
-                job=queue.front();queue.pop_front();
-                if(job->status.cancellation_requested) { job->status.state=State::cancelled;continue; }
-                job->status.state=State::running;job->started=Clock::now();
+                std::unique_lock lock(mutex);
+#ifdef _WIN32
+                if(compiler.active())wake.wait_for(lock,std::chrono::milliseconds(100),[this]{return stopping || !queue.empty();});
+                else wake.wait(lock,[this]{return stopping || !queue.empty();});
+#else
+                wake.wait(lock,[this]{return stopping || !queue.empty();});
+#endif
+                if(stopping && queue.empty())leave=true;
+                else if(!queue.empty()){
+                    job=queue.front();queue.pop_front();queued_cancelled=job->status.cancellation_requested;
+                    if(!queued_cancelled){job->status.state=State::running;job->started=Clock::now();}
+                }
             }
-            Result result{State::launch_failed,{}, {}};
-            try { result=run(*job); }
-            catch(const std::exception& error) { result.state=job->launched?State::failed:State::launch_failed;result.error=std::string(error.what()).substr(0,4096); }
-            catch(...) { result.state=job->launched?State::failed:State::launch_failed;result.error="Unexpected development worker failure."; }
+#ifdef _WIN32
+            if(leave){(void)compiler.retire(true);return;}
+            if(!job){compiler.idle();continue;}
+#else
+            if(leave)return;
+#endif
+            Result result{queued_cancelled?State::cancelled:State::launch_failed,{}, {}};
+            std::optional<CompilerServerStatus> compiler_observation;
+            [[maybe_unused]] bool server_retired=false;
+            auto retire_compiler=[&](bool graceful){
+#ifdef _WIN32
+                if(compiler.active() || compiler.blocked()){
+                    if(job->request.compiler_server && compiler.active()){
+                        const auto current=compiler.observation();
+                        if(!compiler_observation)compiler_observation=current;
+                        else compiler_observation->diagnostics=current.diagnostics;
+                    }
+                    const auto retired=compiler.retire(graceful);
+                    server_retired=true;
+                    if(compiler_observation)compiler_observation->retirement=retired;
+                    if(!retired.cleanup_verified || !retired.error.empty()){
+                        result.state=State::failed;
+                        result.error+=(result.error.empty()?"":"; ")+std::string("Compiler retirement failed: ")+retired.error;
+                    }
+                }
+#else
+                (void)graceful;
+#endif
+            };
+            if(!queued_cancelled){
+                try {
+#ifdef _WIN32
+                    if(job->request.compiler_server){
+                        job->effective_request=job->request;
+                        compiler_observation=compiler.prepare(*job->effective_request,[&]{return bool(stop_reason(*job));});
+                        {std::lock_guard lock(mutex);job->status.compiler_server=compiler_observation;}
+                        result=run(*job,[&]{compiler.pump([&]{return bool(stop_reason(*job));});});
+                        Status current;{std::lock_guard lock(mutex);current=job->status;}
+                        compiler_observation=compiler.complete(current,*compiler_observation);
+                    }else{
+                        retire_compiler(true);
+                        if(compiler.blocked())throw std::runtime_error(compiler.error());
+                        result=run(*job);
+                    }
+#else
+                    result=run(*job);
+#endif
+                }
+                catch(const std::exception& error) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=job->request.compiler_server?stop_reason(*job).value_or(ordinary):ordinary;result.error=std::string(error.what()).substr(0,4096); }
+                catch(...) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=job->request.compiler_server?stop_reason(*job).value_or(ordinary):ordinary;result.error="Unexpected development worker failure."; }
+            }
             std::string verified;
             bool verify=false;
             {
                 std::lock_guard lock(mutex);
                 verify=result.state==State::succeeded && !job->status.cancellation_requested && bool(job->request.verify_success);
             }
-            // run() has already completed owned-child cleanup. Keep callbacks
-            // outside the owner mutex so polling/cancellation remain responsive.
+            // run() has already completed request-owned cleanup. The callback
+            // remains outside the owner mutex, and cached-server state is owned.
             if(verify) {
                 try {
                     verified=job->request.verify_success();
@@ -350,12 +432,23 @@ struct Jobs::Impl {
                     verified.clear();
                 }
             }
-            {
-                std::lock_guard lock(mutex);
+            if(result.state!=State::succeeded)retire_compiler(result.state==State::failed && compiler_observation && compiler_observation->compiler_server_used==true && !queued_cancelled);
+            for(;;){
+                std::unique_lock lock(mutex);
+#ifdef _WIN32
+                // Final cancellation and terminal publication share this mutex.
+                // If cancellation won while verifying, release it for bounded
+                // retirement, then recheck. cancel after publication returns false.
+                if(job->status.cancellation_requested && !server_retired && compiler.active()){
+                    lock.unlock();retire_compiler(false);continue;
+                }
+#endif
                 job->status.state=job->status.cancellation_requested?State::cancelled:result.state;
                 job->status.exit_code=result.exit_code;job->status.error=std::move(result.error);
                 job->status.result=job->status.state==State::succeeded?std::move(verified):std::string{};
-                job->status.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job->started);
+                job->status.compiler_server=std::move(compiler_observation);
+                if(!queued_cancelled)job->status.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job->started);
+                break;
             }
         }
     }
@@ -397,6 +490,18 @@ void validate_request(const Request& request) {
 #else
         std::sort(names.begin(),names.end());
         require(std::adjacent_find(names.begin(),names.end())==names.end(),"Duplicate environment name.");
+#endif
+    }
+    if(request.compiler_server){
+#ifdef _WIN32
+        require(request.compiler_server->is_absolute() && request.compiler_server->native().size()<=32768 &&
+            request.compiler_server->native().find(wchar_t{})==std::wstring::npos,"Compiler server must be an absolute path without NUL.");
+        require(request.timeout<=std::chrono::minutes(10),"Owned compiler requests must not exceed ten minutes.");
+        auto filename=request.compiler_server->filename().wstring();
+        std::transform(filename.begin(),filename.end(),filename.begin(),[](wchar_t c){return static_cast<wchar_t>(std::towlower(c));});
+        require(filename==L"vbcscompiler.dll","Compiler server expects VBCSCompiler.dll.");
+#else
+        throw std::invalid_argument("Owned compiler servers currently require Windows.");
 #endif
     }
     require(request.timeout>=std::chrono::milliseconds(1) && request.timeout<=std::chrono::hours(24),"Job timeout must be between 1 ms and 24 hours.");

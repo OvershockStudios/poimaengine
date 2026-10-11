@@ -131,6 +131,32 @@ Json status(const Status& value,bool diagnostics) {
         auto verified=Json::parse(value.result,nullptr,false);if(!verified.is_discarded())result["result"]=std::move(verified);
     }
     if(diagnostics) { result["stdout"]=safe_diagnostic(value.standard_output);result["stderr"]=safe_diagnostic(value.standard_error);result["error"]=safe_diagnostic(value.error); }
+    if(value.compiler_server) {
+        const auto& server=*value.compiler_server;
+        Json selected={{"session_reused",server.session_reused},
+            {"compiler_server_used",server.compiler_server_used ? Json(*server.compiler_server_used):Json(nullptr)},
+            {"pipe_name",safe_diagnostic(server.pipe_name)},{"process_id",server.process_id},
+            {"creation_filetime",server.creation_filetime},{"request_id",safe_diagnostic(server.request_id)},
+            {"proof_reason",safe_diagnostic(server.proof_reason)},
+            {"named_environment_entries",server.named_environment_entries},
+            {"excluded_drive_pseudoentries",server.excluded_drive_pseudoentries},
+            {"log_segment_truncated",server.log_segment_truncated},{"retirement",nullptr},
+            {"diagnostics",{{"stdout_bytes",server.diagnostics.output_bytes},{"stderr_bytes",server.diagnostics.error_bytes},
+                {"stdout_truncated",server.diagnostics.output_truncated},{"stderr_truncated",server.diagnostics.error_truncated}}}};
+        if(diagnostics) {
+            selected["log_segment"]=safe_diagnostic(server.log_segment);
+            selected["diagnostics"]["stdout"]=safe_diagnostic(server.diagnostics.standard_output);
+            selected["diagnostics"]["stderr"]=safe_diagnostic(server.diagnostics.standard_error);
+        }
+        if(server.retirement) {
+            const auto& retired=*server.retirement;
+            selected["retirement"]={{"cleanup_verified",retired.cleanup_verified},{"forced",retired.forced},
+                {"server_exit_code",retired.server_exit_code ? Json(*retired.server_exit_code):Json(nullptr)},
+                {"active_processes",retired.active_processes},{"terminated_processes",retired.terminated_processes},
+                {"error",safe_diagnostic(retired.error)}};
+        }
+        result["compiler_server"]=std::move(selected);
+    }
     return result;
 }
 Json object(Json properties,Json required=Json::array()) { return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; }
@@ -174,7 +200,7 @@ Json Service::dispatch(const std::string& method,const Json& p) {
     }
     if(method=="development.compile" || method=="development.publish" || method=="development.export") {
         const bool compile=method=="development.compile",publish=method=="development.publish";
-        if(compile)fields(p,{"request_id","executable","project","output","configuration","restore","timeout_ms"},{"request_id","executable","project","output"});
+        if(compile)fields(p,{"request_id","executable","project","output","configuration","restore","compiler_server","timeout_ms"},{"request_id","executable","project","output"});
         else if(publish)fields(p,{"request_id","profile","project","output","type","timeout_ms"},{"request_id","profile","project","output","type"});
         else fields(p,{"request_id","profile","project","output","timeout_ms"},{"request_id","profile","project","output"});
         const auto id=request_id(p.at("request_id"));Request request;std::optional<fs::path> reservation;
@@ -188,10 +214,31 @@ Json Service::dispatch(const std::string& method,const Json& p) {
             need(extension==".csproj","Compile expects a C# project (.csproj).");
             const auto configuration=p.contains("configuration") ? text(p.at("configuration"),32):std::string("Debug");need(configuration=="Debug" || configuration=="Release","Configuration must be Debug or Release.");
             const auto restore=p.contains("restore") ? p.at("restore"):Json(true);need(restore.is_boolean(),"Restore must be a boolean.");
+            // Only lexical/type admission precedes exact replay. The worker
+            // owns actual file/session checks; retry never probes a tool that
+            // may have been removed after the original accepted request.
+            if(p.contains("compiler_server")) {
+                const auto server=absolute(p.at("compiler_server")).lexically_normal();
+                auto filename=utf8(server.filename());
+                std::transform(filename.begin(),filename.end(),filename.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
+                need(filename=="vbcscompiler.dll","Compiler server expects an absolute VBCSCompiler.dll path.");
+#ifndef _WIN32
+                throw ServiceError(-32602,"Owned compiler servers currently require Windows.");
+#endif
+                request.compiler_server=server;
+                normalized["compiler_server"]=utf8(server);
+            }
             normalized.update({{"executable",utf8(executable)},{"project",utf8(project)},{"output",utf8(output)},{"configuration",configuration},{"restore",restore}});
             request.executable=executable;request.working_directory=project.parent_path();
             request.arguments={"build",utf8(project),"-c",configuration,"--nologo","--disable-build-servers","--artifacts-path",utf8(output/"artifacts"),"-o",utf8(output/"managed")};
             if(!restore.get<bool>())request.arguments.push_back("--no-restore");
+            if(request.compiler_server) {
+                // The actual session pipe is appended on the worker, never
+                // included in request receipts or selected by the caller.
+                const auto disabled=std::find(request.arguments.begin(),request.arguments.end(),"--disable-build-servers");
+                request.arguments.erase(disabled);
+                request.arguments.insert(request.arguments.end(),{"-p:UseSharedCompilation=true","-nodeReuse:false","-m:1","-v:normal"});
+            }
         }else {
             const auto name=text(p.at("profile"),64);const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);profile=&selected->second;
             need(publish ? bool(profile->verify_publish):bool(profile->verify_export),"Development profile does not enable this operation.",-32004);
@@ -284,7 +331,9 @@ Json Service::schemas() {
         {"development.export",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},{"timeout_ms",timeout}},
             {"request_id","profile","project","output"})},
         {"development.compile",object({{"request_id",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},{"executable",path},{"project",path},{"output",path},
-            {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"restore",{{"type","boolean"},{"default",true}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
+            {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"restore",{{"type","boolean"},{"default",true}}},
+            {"compiler_server",{{"type","string"},{"minLength",1},{"maxLength",4096},
+                {"description","Optional absolute VBCSCompiler.dll selector for an engine-owned Windows compiler session. Omit for isolated builds. Startup failures fail the job; ordinary SDK fallback is reported separately. The worker selects the private pipe."}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
         {"development.jobs",object(Json::object())},
         {"development.inspect",object({{"job_id",id}},{"job_id"})},
         {"development.diagnostics",object({{"job_id",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",32}}}},{"job_id"})},

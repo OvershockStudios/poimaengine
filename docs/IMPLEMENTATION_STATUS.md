@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.104**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.105**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.105 adds opt-in `development.compile.compiler_server` for Windows
+x64 .NET SDK 10.0.401. The native worker owns a private compiler between ordinary
+MSBuild jobs, with bounded lifetime, diagnostics and retirement. Isolated builds
+remain the default. Status separates process reuse from correlated original
+process/Csc proof; incomplete evidence stays unproven.
+[Contract](DEVELOPMENT_JOBS.md#optional-owned-windows-compiler).
+
+Ten real SDK jobs pass, including changed-source reuse, syntax failure,
+unresponsive-generator cancellation/timeout, fresh recovery and missing-tool
+rejection. Six successful builds emit distinct DLLs; failed attempts retain the
+prior artifacts. Five Windows native contract groups and separate queued/late
+cancellation and host-destruction checks pass. Every outer process group ends
+empty without forced cleanup; cancelling an unresponsive compiler deliberately
+forces its inner owned group. Healthy destruction proves original-process death
+and unchanged artifacts without a natural-exit receipt. A further idle-expiry
+check observes original-process death at 60.07 seconds and proves fresh compiler
+use and a distinct DLL afterward; it does not attribute the idle exit or prove
+an exact lifetime. Earlier failed cleanup and idle-admission attempts remain
+recorded. These checks qualify compiler correctness and
+lifecycle, not gameplay reload, rendering or the three-second iteration budget.
+[Evidence](evidence/m2-owned-compiler.json).
 
 Version 0.0.104 adds an explicit `development.compile.restore` boolean, defaulting
 to `true`. Setting it to `false` skips implicit dependency restore while keeping

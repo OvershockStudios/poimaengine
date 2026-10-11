@@ -12,10 +12,14 @@ using namespace poima::development;
 std::string utf8(const fs::path& path) { const auto text=path.u8string();return std::string(reinterpret_cast<const char*>(text.data()),text.size()); }
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 int main(int argc,char** argv) {
-    if(argc==5 && std::string(argv[1])=="--sdk") {
+    const bool sdk_isolated=argc==5 && std::string(argv[1])=="--sdk";
+    const bool sdk_server=argc==6 && std::string(argv[1])=="--sdk-server";
+    if(sdk_isolated || sdk_server) {
         try {
-            Service service;const auto accepted=service.dispatch("development.compile",{{"request_id",std::string(31,'0')+"1"},
-                {"executable",argv[2]},{"project",argv[3]},{"output",argv[4]},{"configuration","Release"}});
+            Service service;Json parameters={{"request_id",std::string(31,'0')+"1"},
+                {"executable",argv[2]},{"project",argv[3]},{"output",argv[4]},{"configuration","Release"}};
+            if(sdk_server)parameters["compiler_server"]=argv[5];
+            const auto accepted=service.dispatch("development.compile",parameters);
             const auto begin=std::chrono::steady_clock::now();Json result;
             do {
                 result=service.dispatch("development.inspect",{{"job_id",accepted.at("job_id")}});
@@ -77,11 +81,30 @@ int main(int argc,char** argv) {
             check(service.dispatch("development.jobs",Json::object()).at("jobs").empty(),"Malformed restore launched a job.");
             check(service.dispatch("development.jobs",Json::object()).at("request_budget_remaining")==invalid_budget,"Malformed restore consumed a receipt.");
         }
+        const auto compiler_budget=service.dispatch("development.jobs",Json::object()).at("request_budget_remaining");
+        for(const Json& value:Json::array({nullptr,false,true,0,1,0.0,Json::array(),Json::object(),"",
+                                         "relative/VBCSCompiler.dll",utf8(root/"csc.dll")})) {
+            invalid=params;invalid["compiler_server"]=value;error("development.compile",invalid,-32602);
+            check(service.dispatch("development.jobs",Json::object()).at("jobs").empty(),"Malformed server selector launched a job.");
+            check(service.dispatch("development.jobs",Json::object()).at("request_budget_remaining")==compiler_budget,
+                  "Malformed server selector consumed a receipt.");
+        }
+#ifndef _WIN32
+        invalid=params;invalid["compiler_server"]=utf8(root/"VBCSCompiler.dll");
+        error("development.compile",invalid,-32602);
+        check(service.dispatch("development.jobs",Json::object()).at("jobs").empty(),"Unsupported compiler mode launched a job.");
+#endif
         const auto first=service.dispatch("development.compile",params);check(!first.at("replayed").get<bool>(),"Initial compile replayed.");
         check(service.dispatch("development.compile",params).at("job_id")==first.at("job_id"),"Retry created another job.");
         auto explicit_restore=params;explicit_restore["restore"]=true;
         check(service.dispatch("development.compile",explicit_restore)==Json({{"job_id",first.at("job_id")},{"replayed",true},{"receipt_scope","session"}}),"Omitted and explicit restore:true differ.");
         invalid=params;invalid["restore"]=false;error("development.compile",invalid,-32009);
+#ifdef _WIN32
+        // Changed mode conflicts before tool existence is inspected. This is
+        // an inert receipt test, not a fake successful shared compilation.
+        invalid=params;invalid["compiler_server"]=utf8(root/"VBCSCompiler.dll");
+        error("development.compile",invalid,-32009);
+#endif
         check(service.dispatch("development.jobs",Json::object()).at("jobs").size()==1,"Retry duplicated job.");
         invalid=params;invalid["configuration"]="Release";error("development.compile",invalid,-32009);
         const auto result=wait(first);check(result.at("state")=="succeeded","Generated compiler command failed.");
@@ -147,9 +170,12 @@ int main(int argc,char** argv) {
         const auto schemas=Service::schemas();check(schemas.size()==9 && schemas.contains("development.diagnostics"),"Operation discovery incomplete.");
         const auto& restore_schema=schemas.at("development.compile").at("properties").at("restore");
         check(restore_schema.at("type")=="boolean" && restore_schema.at("default")==true,"Restore discovery differs from admission default.");
+        const auto& server_schema=schemas.at("development.compile").at("properties").at("compiler_server");
+        check(server_schema.at("type")=="string" && !server_schema.contains("default"),"Server discovery implies a default or nonstring selector.");
         const auto& required=schemas.at("development.compile").at("required");
         check(std::find(required.begin(),required.end(),Json("restore"))==required.end(),"Restore became required.");
-        std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","explicit_restore_argv","restore_boolean_admission","restore_retry_normalization","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
+        check(std::find(required.begin(),required.end(),Json("compiler_server"))==required.end(),"Owned compiler selection became required.");
+        std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","explicit_restore_argv","restore_boolean_admission","restore_retry_normalization","compiler_server_selector_admission","compiler_server_receipt_guard","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
             {"diagnostic_checks",{"structured_source_location","summary_deduplication","limited_results_explicit","invalid_limits","invalid_utf8_diagnostic","unrecognized_output_preserves_failure"}},
             {"scope","Development service and real self-child processes; no actual SDK or world-host qualification."}}).dump(2)<<'\n';
         return 0;

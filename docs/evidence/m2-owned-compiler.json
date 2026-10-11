@@ -1,0 +1,910 @@
+{
+  "format": "poima.owned-compiler-evidence.v1",
+  "engine_version": "0.0.105",
+  "schema_revision": 78,
+  "passed": true,
+  "scope": "Opt-in owned Windows compiler correctness, fresh artifacts, receipt guards and lifecycle. No gameplay reload, renderer, full iteration latency or Alpha qualification.",
+  "sdk": {
+    "version": "10.0.401",
+    "rid": "win-x64",
+    "source_commit": "e34a38d2ae1fc26406a317517196e55c68ff83ab",
+    "roslyn_version": "5.9.0-1.26423.113",
+    "tool_pins": {
+      "dotnet.exe": {
+        "bytes": 167208,
+        "sha256": "21a46f1e5235cf4e844b9de5429f0e198b9c97a41f0503a66442f1d639ca3ee6"
+      },
+      ".version": {
+        "bytes": 101,
+        "sha256": "2fb67d624fe41f09794f1ba366d396639b6fc65bd8b5c7d2581a0aecef96517d"
+      },
+      "MSBuild.dll": {
+        "bytes": 681768,
+        "sha256": "22f7b95c5cc1e7287a9d561a0e88719c4d545c5f3892e3e6501051f5abcbe147"
+      },
+      "Roslyn/Microsoft.CSharp.Core.targets": {
+        "bytes": 12872,
+        "sha256": "a1c9c8bc54d3443e3a3a918e7384f2a8d4593534e096c5930d0cf96fb628b8f1"
+      },
+      "Roslyn/Microsoft.Managed.Core.targets": {
+        "bytes": 19687,
+        "sha256": "f3b8ed3e4946037e0daa32f3901ae5bb8fc967e86c45372e7be0f0dda341cfca"
+      },
+      "Roslyn/bincore/VBCSCompiler.dll": {
+        "bytes": 288552,
+        "sha256": "abc5d14c11b36ea02b666a19714c319217cb3fc40913dfc84d45361c12247fd9"
+      },
+      "Roslyn/bincore/VBCSCompiler.deps.json": {
+        "bytes": 8082,
+        "sha256": "805f1de14128a3918548b6a516984ab08953dc57d3ef4e457ad4c37b5a080ce2"
+      },
+      "Roslyn/bincore/VBCSCompiler.runtimeconfig.json": {
+        "bytes": 405,
+        "sha256": "11744d1d8ad57c8906cc665166f240157ca4a62824043e5c8e3c2b48f2176b58"
+      },
+      "Roslyn/bincore/Microsoft.CodeAnalysis.dll": {
+        "bytes": 8292136,
+        "sha256": "03b3ab9d73d477d259fbc0ae167dd8caf4775c3c8688f1fdc5e0d3603255c3f4"
+      },
+      "Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll": {
+        "bytes": 19191592,
+        "sha256": "12b0428203faae6555858d2ff856cef7450d2764cf00c57e7516587a04885870"
+      },
+      "Roslyn/bincore/csc.dll": {
+        "bytes": 145232,
+        "sha256": "89c788f615634094cc441593d167d9fba9a9f049a5d1ddea87d4fde222d6f42c"
+      }
+    }
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "f2ea71eac280a19b28ace9aad3cc7238a2abceeb65e4e49abc16af82bc2aef97",
+    "include/poima/development_jobs.hpp": "bd7d6bcef1e666c778763f9af7c856eed29ad0348051ef24b5ba91629c1f900e",
+    "src/development_jobs.cpp": "f6ad22ca32cfaedae20e4ecfede785e7905334a65cc0931f36ebe8762e221213",
+    "src/development_compiler_owned.hpp": "f849ff2d68eea556081c51075a376aff6324850dd094b81751bb59ed912549ab",
+    "src/development_compiler_owned.cpp": "7c1c32b646264b48a0ff138fec1ee85f2450b18c51ad4d9381e82b1aad711edc",
+    "src/development_compiler_session.hpp": "222965150012813d248ee276286dbe267a672ddeed35725e61de476e93529320",
+    "src/development_service.hpp": "73b5ce0b93561fe16dd023231a623ea1a24be906137b004400dea6d2a3a6c68c",
+    "src/development_service.cpp": "03d66bd0488482a3cf26dfcb8423ba5885a11f276b1c5995be7c0709cf1231c1",
+    "src/development_diagnostics.hpp": "4f52e23d1240b72fa3bc48262690dc9ca71d18de84abf5fcaffeb7182813fa0d",
+    "src/development_diagnostics.cpp": "90554fb764f53eaf8e3f425ec0ec2e96670a088894133c3bd488ea435c9539ee",
+    "src/world_schema.cpp": "48d6532fb822266f25a7f9cbc9eb240f13216e577fc10d4673e5fc26f5affc39",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "include/poima/development_profiles.hpp": "7d778df8fc57ffa179d77d048c427a118d179c3e21725b00b0e572d3bb67966a",
+    "tests/development_jobs.cpp": "f1679a0f1f0d66bd49e1d8d1e0559a6e77ab8ec20dadd43249665016b0e0fc85",
+    "tests/development_service.cpp": "ccead857bba5988ab46bd727c33388b33f98867b1bedc80d0a64e5b603a4e315",
+    "tests/development_diagnostics.cpp": "9a64819f5e24952b2acdde06e4e20f2030659fd6b88522f08be564deff03e868",
+    "tests/world_schema_native.cpp": "c7561d479d8287666da4b87dd80de377653eff46ecca4e598826e3e727bcb99b",
+    "third_party/nlohmann/json.hpp": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63"
+  },
+  "artifacts": {
+    "phonon.dll": {
+      "bytes": 52950168,
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    },
+    "poima-development-diagnostics-test.exe": {
+      "bytes": 1145856,
+      "sha256": "6c4da5b9b499115574142496aff4f2b8617f35b74b85f6a120fcef80ca8e4fb3"
+    },
+    "poima-development-jobs-test.exe": {
+      "bytes": 1647104,
+      "sha256": "6773b419d5953bd5112c4b104219f36e444f57f08a3c570c004aeb7efff65514"
+    },
+    "poima-development-service-test.exe": {
+      "bytes": 1955840,
+      "sha256": "ad2fb0b4f32e401ed799ec977a07caf28fb1c1d3a6b5b3136cb8f880a19275fe"
+    },
+    "poima-world-schema-test.exe": {
+      "bytes": 23133696,
+      "sha256": "6bf017c52ea810bc55993264305f1e965593fbcc6de08da535d5d5a612d339f2"
+    },
+    "poima.exe": {
+      "bytes": 24697344,
+      "sha256": "525ac0234b476f2fbfea9863d4ead55386b29d6607737be45d847ffb1727b1a2"
+    }
+  },
+  "probe_images": {
+    "connected-compiler": {
+      "bytes": 2002432,
+      "sha256": "1599d06f7fa54208a3d1a5597f89cebf8eb640078d3d2acabaa7b8a3b536994c"
+    },
+    "compiler-lifecycle": {
+      "bytes": 2075648,
+      "sha256": "43ee42e9494555c002d52243c6221efb9dea1667e601c2dea0279d9e96e23f7f"
+    }
+  },
+  "receipts": {
+    "native_build": {
+      "sha256": "f938888e203b309c3c0ed487a7cadd05e08b940b29a75f614406f25aaca17a5a",
+      "passed": true
+    },
+    "probes_build": {
+      "sha256": "681ff87c2bfe85d1aaada7da3738159197cf56429308e933e85c2aba7050448c",
+      "passed": true
+    }
+  },
+  "qualification": {
+    "production_sdk": {
+      "owner_sha256": "a86a7561e255f06195d6ebeb7dea1eab40654bddef047c70b112cde898a32863",
+      "report_sha256": "e802ed7e1d34923f214015a2635e62589880ad2876e29c53295464da35b6da31",
+      "outer_owner": {
+        "passed": true,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "cleanup_errors": [],
+        "job_accounting_at_child_exit": {
+          "user_time": 194843750,
+          "kernel_time": 72656250,
+          "period_user_time": 194843750,
+          "period_kernel_time": 72656250,
+          "page_faults": 579178,
+          "total_processes": 33,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 194843750,
+          "kernel_time": 72656250,
+          "period_user_time": 194843750,
+          "period_kernel_time": 72656250,
+          "page_faults": 579178,
+          "total_processes": 33,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "cases": [
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 3511,
+          "cancellation_requested": false,
+          "name": "cold",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 11120,
+            "creation_filetime": 134361787870811452,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "6c5f1f41b1597eb66f7456201f991686a5a348192c4da2336d301eba0dc5382b",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "2ab1379f91163ff1a088d46a517db358e4294e58f1937bebe2c9cef973230df3"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39300,
+              "sha256": "bffb0e504415e9683d8068e474f524eae8818b16ab9ee26ea14b3f2d54b9fcb1"
+            }
+          },
+          "source_sha256": "119fadaa8e686f90cc762e4afecc305b504c923d9efb1ad02d5414a76676b7c4"
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 1388,
+          "cancellation_requested": false,
+          "name": "warm-1",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": true,
+            "process_id": 11120,
+            "creation_filetime": 134361787870811452,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "6a8918cb1653117c8f16b6860a0924496f5cfc4801c142745851ee9fd073f26c",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "345106721c1f0105ed8bd6bcccc01e91fbb6929a33efe1a507296bdb2749c3b4"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "4199108dff7762674eaebe45114d64b44a7efc786ee5719686212735be4edb35"
+            }
+          },
+          "source_sha256": "57740b445a6c2fedd99f014ea12fd2f2ac8dfb8f9ebdf7b559a2492d7aa68431"
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 1276,
+          "cancellation_requested": false,
+          "name": "warm-2",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": true,
+            "process_id": 11120,
+            "creation_filetime": 134361787870811452,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "912b4b9a8bed482a4fd7df5814af915a87b9a7aa198e21d93774be1aaa6dd90b",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "dfaf4306c0803c32894e804339e3cba02008d2e79324a1b17031fd9ed9dea6c6"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "1154ebbe7d0db161fdffc2f889ebdb3ec389eda426a8693afd054d1a9b77e1d6"
+            }
+          },
+          "source_sha256": "02a8479d77a50c847d989ea54ffb7740d1c3069c32ec6ade17e1c0ef8d575858"
+        },
+        {
+          "state": "failed",
+          "exit_code": 1,
+          "elapsed_ms": 1282,
+          "cancellation_requested": false,
+          "name": "syntax-failure",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": true,
+            "process_id": 11120,
+            "creation_filetime": 134361787870811452,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "48a7ddf5095e97b1750dbf00cf826003af1490e5db9fc36edf67e78c9969ea69",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": false,
+              "server_exit_code": 0,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "dfaf4306c0803c32894e804339e3cba02008d2e79324a1b17031fd9ed9dea6c6"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "1154ebbe7d0db161fdffc2f889ebdb3ec389eda426a8693afd054d1a9b77e1d6"
+            }
+          },
+          "source_sha256": "efb06fd85df44b5b263854c16f99ac86e2a9b143f5b56d2b9d11f6ec647543e7"
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2758,
+          "cancellation_requested": false,
+          "name": "repair",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 20636,
+            "creation_filetime": 134361787949851099,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "2318b885792654b80972dd3e16d7da96ce7ded752a6973ab11afac39f85d2830",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "a895fc69c14ae4b7172d7178bc732a36867fd7bc1addba036d6bdd51be6a7fd0"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "5aa916f90c1b0102504cef54fe28ef71984171cf334a26153ecacf104f65792c"
+            }
+          },
+          "source_sha256": "f2bec34fda8e0c37be9767f1e19b241a4523ec95f266818be271beff64b0694b"
+        },
+        {
+          "state": "cancelled",
+          "exit_code": 1,
+          "elapsed_ms": 1133,
+          "cancellation_requested": true,
+          "name": "active-generator-cancel",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": null,
+            "process_id": 20636,
+            "creation_filetime": 134361787949851099,
+            "request_id": "",
+            "log_segment_truncated": false,
+            "request_log_sha256": "69219c476a42858a7f70ccffbce9a18277c73f9e8c09dba1bb8968eaac472a68",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": true,
+              "server_exit_code": 1,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 48640,
+              "sha256": "a895fc69c14ae4b7172d7178bc732a36867fd7bc1addba036d6bdd51be6a7fd0"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "5aa916f90c1b0102504cef54fe28ef71984171cf334a26153ecacf104f65792c"
+            }
+          },
+          "generator_marker": {
+            "bytes": 13,
+            "sha256": "4104fa1f11312b9600761d074bc07065d728c63fe6b7e3b52caa361dec3ded52",
+            "value": {
+              "pid": 20636
+            }
+          }
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2633,
+          "cancellation_requested": false,
+          "name": "after-cancel-repair",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 7612,
+            "creation_filetime": 134361787989943783,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "c261e8d801cdcf73a705c3305761a54eea8c639af5daf3fa150e77637d6a1586",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 49152,
+              "sha256": "91e0f10fff50477d0645b5001f69376102e355ff7d524fa5f9b1659589b65eb4"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "eb6fb74b41051d6209fda6f3d58a3809da418a20b849469d812ce0a45ba81c66"
+            }
+          },
+          "source_sha256": "970d83ccff3c093570b35322d5b90f9b462580b93171bda3426c0884934899ac"
+        },
+        {
+          "state": "timed_out",
+          "exit_code": 1,
+          "elapsed_ms": 8054,
+          "cancellation_requested": false,
+          "name": "active-generator-timeout",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": null,
+            "process_id": 7612,
+            "creation_filetime": 134361787989943783,
+            "request_id": "",
+            "log_segment_truncated": false,
+            "request_log_sha256": "90f5fbed712a8e72e18cf58d62507760a94eaeb859d186c4e25d274928d310fa",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": true,
+              "server_exit_code": 1,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 49152,
+              "sha256": "91e0f10fff50477d0645b5001f69376102e355ff7d524fa5f9b1659589b65eb4"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "eb6fb74b41051d6209fda6f3d58a3809da418a20b849469d812ce0a45ba81c66"
+            }
+          },
+          "source_sha256": "970d83ccff3c093570b35322d5b90f9b462580b93171bda3426c0884934899ac",
+          "generator_marker": {
+            "bytes": 12,
+            "sha256": "be20b150262d1a8b10ace4ecebe27712f920937e3091ac80a6776c7d6ac22559",
+            "value": {
+              "pid": 7612
+            }
+          }
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2810,
+          "cancellation_requested": false,
+          "name": "after-timeout-repair",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 26260,
+            "creation_filetime": 134361788098206960,
+            "request_id": "Iteration (net10.0)",
+            "log_segment_truncated": false,
+            "request_log_sha256": "607622e3adf4374e6ba48832cd747059d8f47a501f424857cfcd2bad93134792",
+            "retirement": null
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 49152,
+              "sha256": "f9c24ad7f579db77fee4f88c65570fae2ac7a97d136cab611262a5671284daf7"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "fbd9754744f00ffdae587b9e59eb59493ac5be622077413772ae5e6b1a14ac9d"
+            }
+          },
+          "source_sha256": "d58f33f2a1e9a714405d3c69053bd6e8266aea90072ff1c3fc47c7820e34fe8c"
+        },
+        {
+          "state": "launch_failed",
+          "exit_code": null,
+          "elapsed_ms": 23,
+          "cancellation_requested": false,
+          "name": "missing-selected-tool",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": null,
+            "process_id": 26260,
+            "creation_filetime": 134361788098206960,
+            "request_id": "",
+            "log_segment_truncated": false,
+            "request_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": true,
+              "server_exit_code": 1,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          },
+          "managed_inventory": {
+            "Poima.Gameplay.dll": {
+              "bytes": 132608,
+              "sha256": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d"
+            },
+            "Poima.Gameplay.pdb": {
+              "bytes": 63184,
+              "sha256": "32b396d32aee38aad42ed0a61e954ab9732fb040f6e3e814d4857222365f22a0"
+            },
+            "Poima.RelayYardGame.deps.json": {
+              "bytes": 854,
+              "sha256": "47869263afa24e6bf1212c5cb1bea18eab3bb9e3c858b12214adf62a6c56c79c"
+            },
+            "Poima.RelayYardGame.dll": {
+              "bytes": 49152,
+              "sha256": "f9c24ad7f579db77fee4f88c65570fae2ac7a97d136cab611262a5671284daf7"
+            },
+            "Poima.RelayYardGame.pdb": {
+              "bytes": 39340,
+              "sha256": "fbd9754744f00ffdae587b9e59eb59493ac5be622077413772ae5e6b1a14ac9d"
+            }
+          },
+          "source_sha256": "d58f33f2a1e9a714405d3c69053bd6e8266aea90072ff1c3fc47c7820e34fe8c"
+        }
+      ],
+      "exact_retry_same_job": true,
+      "changed_selector_conflict": -32009,
+      "failed_outputs_preserved": true,
+      "six_successes_six_distinct_dlls": true,
+      "successful_owned_use_proven": true
+    },
+    "lifecycle": {
+      "owner_sha256": "6442c34b7fa1aa434f4c309cc3335ba2cdeb0df20d7f81e76ea90302c83aa40a",
+      "report_sha256": "cb2be462a1c591883eda04823bc8ce898c4bf7ce6859b804fff3458466c5e900",
+      "outer_owner": {
+        "passed": true,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "cleanup_errors": [],
+        "job_accounting_at_child_exit": {
+          "user_time": 118281250,
+          "kernel_time": 42968750,
+          "period_user_time": 118281250,
+          "period_kernel_time": 42968750,
+          "page_faults": 354385,
+          "total_processes": 23,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 118281250,
+          "kernel_time": 42968750,
+          "period_user_time": 118281250,
+          "period_kernel_time": 42968750,
+          "page_faults": 354385,
+          "total_processes": 23,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "cases": [
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 3610,
+          "cancellation_requested": false,
+          "name": "cold",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 29096,
+            "creation_filetime": 134361788612621212,
+            "request_id": "Iteration (net10.0)"
+          }
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 1659,
+          "cancellation_requested": false,
+          "name": "verification-holder",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": true,
+            "process_id": 29096,
+            "creation_filetime": 134361788612621212,
+            "request_id": "Iteration (net10.0)"
+          }
+        },
+        {
+          "state": "cancelled",
+          "exit_code": null,
+          "elapsed_ms": 0,
+          "cancellation_requested": true,
+          "name": "queued-cancel",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": null,
+            "process_id": 29096,
+            "creation_filetime": 134361788612621212,
+            "request_id": "",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": true,
+              "server_exit_code": 1,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          }
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2941,
+          "cancellation_requested": false,
+          "name": "after-queue-repair",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 18824,
+            "creation_filetime": 134361788666832363,
+            "request_id": "Iteration (net10.0)"
+          }
+        },
+        {
+          "state": "cancelled",
+          "exit_code": 0,
+          "elapsed_ms": 1393,
+          "cancellation_requested": true,
+          "name": "verify-cancel",
+          "compiler": {
+            "session_reused": true,
+            "compiler_server_used": true,
+            "process_id": 18824,
+            "creation_filetime": 134361788666832363,
+            "request_id": "Iteration (net10.0)",
+            "retirement": {
+              "active_processes": 0,
+              "cleanup_verified": true,
+              "forced": true,
+              "server_exit_code": 1,
+              "terminated_processes": 0,
+              "error_empty": true
+            }
+          }
+        },
+        {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2932,
+          "cancellation_requested": false,
+          "name": "healthy-before-destruction",
+          "compiler": {
+            "session_reused": false,
+            "compiler_server_used": true,
+            "process_id": 17856,
+            "creation_filetime": 134361788712796961,
+            "request_id": "Iteration (net10.0)"
+          }
+        }
+      ],
+      "queued_cancel_never_started": true,
+      "late_verifier_cancel_suppresses_result": true,
+      "healthy_destructor_original_dead": true,
+      "healthy_destructor_scope": "Original-process death and unchanged artifacts; no exposed natural-exit retirement receipt"
+    },
+    "idle_recovery": {
+      "owner_sha256": "50ba47772e8af4cd63b24e6116c3d92b0267c857605395e3dc19efbb52bab071",
+      "report_sha256": "55dbc648b2549c8a49c18cb61fa85a90a369fc38ea3ae3269b21d6623dacd4a1",
+      "outer_owner": {
+        "passed": true,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "cleanup_errors": [],
+        "job_accounting_at_child_exit": {
+          "user_time": 70625000,
+          "kernel_time": 33281250,
+          "period_user_time": 70625000,
+          "period_kernel_time": 33281250,
+          "page_faults": 223824,
+          "total_processes": 15,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 70625000,
+          "kernel_time": 33281250,
+          "period_user_time": 70625000,
+          "period_kernel_time": 33281250,
+          "page_faults": 223824,
+          "total_processes": 15,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "policy_seconds": 60,
+      "observation_tolerance_seconds": [
+        55,
+        75
+      ],
+      "first_dead_observation_seconds": 60.0725379,
+      "exact_60_second_lifetime_proven": false,
+      "natural_exit_inferred": false,
+      "fresh_owned_identity_and_image": true,
+      "source_and_artifacts_preserved": true,
+      "healthy_destructor_original_dead": true,
+      "cases": [
+        {
+          "name": "cold-before-idle",
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 3418,
+          "managed_image": {
+            "bytes": 48640,
+            "sha256": "7e5563d636495520a70f914cbdc74ed8279e043d2b868e520c90f918b9a85e34"
+          },
+          "owned_compiler_used": true,
+          "session_reused": false
+        },
+        {
+          "name": "fresh-after-idle",
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 2619,
+          "managed_image": {
+            "bytes": 48640,
+            "sha256": "1f1d62254a4432c670d4d7d6a883783b6492f94e89448da642da608c80f94683"
+          },
+          "owned_compiler_used": true,
+          "session_reused": false
+        }
+      ]
+    },
+    "native_contracts": {
+      "owner_sha256": "a94388557b9f6fb00b165b9a9b83804737c219e1518164e082e7fa9ad745eb2b",
+      "report_sha256": "458d6888ddd4c7e8aa919df715e97f327777f8dad6a6d0672b9847d6b10799dc",
+      "outer_owner": {
+        "passed": true,
+        "job_assigned": true,
+        "forced_cleanup": false,
+        "cleanup_errors": [],
+        "job_accounting_at_child_exit": {
+          "user_time": 83125000,
+          "kernel_time": 31562500,
+          "period_user_time": 83125000,
+          "period_kernel_time": 31562500,
+          "page_faults": 952545,
+          "total_processes": 408,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 83125000,
+          "kernel_time": 31562500,
+          "period_user_time": 83125000,
+          "period_kernel_time": 31562500,
+          "page_faults": 952545,
+          "total_processes": 408,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "cases": [
+        {
+          "name": "jobs",
+          "passed": true,
+          "exit_code": 0
+        },
+        {
+          "name": "capture-reentry",
+          "passed": true,
+          "exit_code": 0
+        },
+        {
+          "name": "service",
+          "passed": true,
+          "exit_code": 0
+        },
+        {
+          "name": "diagnostics",
+          "passed": true,
+          "exit_code": 0
+        },
+        {
+          "name": "world-schema",
+          "passed": true,
+          "exit_code": 0
+        }
+      ],
+      "world_discovery": {
+        "responses": 1183,
+        "owner_scopes": 6,
+        "schema_revision": 78
+      }
+    },
+    "linux_isolated_contracts": {
+      "receipt_sha256": "9ceae77eb089ecaf2d2bd4dc8d429b6c995e457ffbc86373c73b69070e84e1a8",
+      "passed": true,
+      "source_scope": "Worker/service isolated contracts before the final Windows-only grace-fence correction",
+      "groups": [
+        "jobs",
+        "capture-reentry",
+        "service"
+      ]
+    }
+  },
+  "prior_attempts": [
+    {
+      "attempt": "prototype-original-cancel-fence",
+      "sha256": "53333c783231ca39513138e8f971e5645cdc56438ed31183128c21f67d57634e",
+      "passed": false
+    },
+    {
+      "attempt": "prototype-held-process-fix",
+      "sha256": "19b73b09eb28878a3a36c9879d8d88dadef00d9f0223020f7eb626e187fac1ec",
+      "passed": true
+    },
+    {
+      "attempt": "production-original-job-grace",
+      "sha256": "64cb9dc1e1171cbf1a40c9f2a9e7fc0228fc0be8e268d2098b644e83d348ca39",
+      "passed": false
+    },
+    {
+      "attempt": "production-original-idle-admission",
+      "sha256": "bf2be52497e843731b5bc21ff924937c94a045fbf84230999a63964f77b321fe",
+      "passed": false
+    }
+  ],
+  "limits": [
+    "Selected Windows x64 SDK only; isolated mode remains default",
+    "SDK fallback may leave actual server use unproven",
+    "Fixture durations are not full-game edit-to-play performance",
+    "No exact 60-second lifetime or natural idle-exit attribution; longer lifetime/key-change saturation remain unqualified",
+    "Raw private full-cohort recipes are retained locally; documented public smoke reproduces one selected build only"
+  ]
+}

@@ -63,8 +63,10 @@ to that group before reaping the direct child. The leader stays unreaped until
 the group signal, preventing PID-reuse cleanup races. Linux uses the libc
 `addchdir_np` and `addclosefrom_np` spawn extensions. Reaping grandchildren is
 the operating system's responsibility. Programs that escape their process group
-or Windows job are outside this cleanup contract. These are build jobs, not a
-host for persistent services or build-server processes.
+or Windows job are outside this cleanup contract. These are bounded build jobs. The explicit Windows compiler option below is
+an internal worker-owned exception: it retains one private compiler process
+between builds, with separate lifetime and cleanup fences. Generic requests do
+not become persistent services.
 
 The standalone `tests/development_jobs.cpp` contract uses a real tiny child,
 not a simulated process. It covers argument fidelity (including Unicode,
@@ -126,8 +128,9 @@ sorts names and passes a double-NUL-terminated UTF-16 block to `CreateProcessW`;
 Linux supplies owned strings to `posix_spawn`. Both preserve the parent process
 environment and existing process cleanup behavior.
 
-`development.compile` retains its original RPC shape and inherited environment.
-RPC clients cannot supply arbitrary environment values through this change.
+`development.compile` inherits the host environment; RPC clients cannot supply
+arbitrary environment values. The compiler option below captures the effective
+named Windows environment for its server and build child.
 [Host-configured native publishing/export profiles](DEVELOPMENT_PROFILES.md)
 supply separate owner policy and build authorization; the native environment
 member alone does not grant agent execution authority.
@@ -163,8 +166,9 @@ Source integration exposes `development.compile`, `development.jobs`,
 the world service. Packaged read-only worlds hide and reject these operations.
 Compile accepts an explicit absolute SDK executable, `.csproj`, output directory,
 fresh request ID, Debug/Release configuration and optional timeout. It generates
-`dotnet build` arguments with separate artifact/managed output and disabled build
-servers; it does not construct a shell command or reload running gameplay. Project
+`dotnet build` arguments with separate artifact/managed output. Build servers
+remain disabled unless the caller explicitly selects the compiler option below;
+it does not construct a shell command or reload running gameplay. Project
 builds execute trusted MSBuild logic and inherit the host environment.
 
 Exact compile retries return the original job ID. Reusing an ID with different
@@ -188,8 +192,8 @@ recorded separately.
 
 `development.compile` accepts an optional boolean `restore`, defaulting to
 `true`. Set it to `false` to pass `--no-restore` to the selected .NET build.
-Compiler servers remain disabled; job ownership, diagnostics, cancellation and
-timeouts use the same path as ordinary builds. Omission and `true` share a retry
+With `compiler_server` omitted, compiler servers remain disabled. Job ownership,
+diagnostics, cancellation and timeouts retain their existing contracts. Omission and `true` share a retry
 receipt. Changing the flag while reusing a request ID rejects the request.
 
 First complete an ordinary build using the same project, configuration and
@@ -224,6 +228,116 @@ be installed. Its [recorded qualification](evidence/m2-compile-restore.json)
 includes cold failure, a default restore, source-only compilation, syntax failure
 with the prior DLL retained, and repair. Native command and retry contracts also
 pass on Linux. These are correctness checks rather than an iteration benchmark.
+
+## Optional owned Windows compiler
+
+`development.compile` accepts an optional absolute `compiler_server` path naming
+`VBCSCompiler.dll`. Omit it to retain the existing isolated build arguments. The
+initial supported selection is the Windows x64 .NET SDK **10.0.401**: the worker
+checks its exact `.version` contents, including source commit
+`e34a38d2ae1fc26406a317517196e55c68ff83ab`, and requires the SDK's matching
+`dotnet.exe` and `Roslyn/bincore/VBCSCompiler.dll`. Unsupported platforms reject
+the option. Missing tools, unsupported SDK identities and startup failures fail
+the job rather than silently removing the requested mode. Ordinary SDK-internal
+compiler fallback remains possible and is reported as unproven use.
+
+```python
+job = client.call("development.compile", {
+    "request_id": new_id(),
+    "executable": dotnet_path,
+    "compiler_server": vbcscompiler_dll_path,
+    "project": project_path,
+    "output": output_path,
+    "configuration": "Release",
+})
+```
+
+The native equivalent sets `Request.compiler_server`. The worker launches a
+private pipe and owns the original compiler process in a separate Windows Job.
+The pipe is not a request parameter or retry-receipt key; exact retries keep the
+original job ID, and changing the selected DLL under that ID is a conflict.
+MSBuild still evaluates the project and runs its normal generators and tasks;
+this option does not replace it with a manual compilation.
+
+One worker retains at most one compiler session. Reuse matches canonical host,
+server and project paths, project file metadata and the effective environment.
+Inherited Windows environments are captured as complete named entries for both
+server and build; drive pseudoentries such as `=C:` are excluded and counted.
+Tool metadata changes or a different session key require retirement. Idle
+retirement is 60 seconds, the server has a 30-minute lifetime, and a new request
+after 20 minutes starts a replacement. These are finite ownership limits, not
+a guarantee that dependencies or restore outputs remain current. The `restore`
+option keeps its independent contract.
+
+An opt-in job's `compiler_server` observation reports `session_reused`, original
+PID/birth, `compiler_server_used`, `proof_reason`, diagnostics and optional
+`retirement`. `session_reused` means process survival, not proof of compilation.
+`compiler_server_used:true` requires the original process's Received/Completed
+log pair to match the actual MSBuild/Csc request label. `null` means actual use
+is unproven; readiness alone only checks nonconnecting pipe availability and
+held process identity. Neither proves the pipe server's PID. Use the ordinary
+terminal build state and validate its new artifacts even when use is proven.
+
+Opt-in client stdout/stderr tails retain at least 128 KiB each, while the owned
+server's separate stream tails retain 32 KiB each. Byte counts and truncation
+flags remain explicit. Inspection also exposes a bounded 64 KiB request log
+segment; catalog responses omit raw logs. A private diagnostic file is bounded
+to 1 MiB and a session is replaced before another request when it exceeds
+512 KiB.
+
+Failure, cancellation and timeout finish the owned compiler retirement path
+before terminal publication; unverified cleanup is an error. Retirement records
+distinguish verified cleanup, forced cleanup,
+original exit and errors. Cancellation accepted while a success verifier is
+running cannot interrupt that callback: the worker waits for it, retires the
+compiler and suppresses success/result publication. Host destruction joins
+cleanup. Already-written artifacts remain on disk. This option does not reload
+gameplay, prove an iteration speedup or establish the three-second gameplay
+iteration target.
+
+### Compiler qualification and smoke check
+
+The 0.0.105 native development library passes ten real Windows SDK jobs: a
+cold build, two changed-source warm builds, syntax failure, repair, cancellation
+and timeout inside an unresponsive source generator, recovery after each, and
+missing-tool rejection. Six successful builds produce distinct DLLs. Syntax
+failure retires the original compiler naturally with exit zero; cancellation
+and timeout force termination of the exact owned group. Failed attempts preserve
+the prior managed artifacts. Correlated raw server/Csc observations establish
+actual use for each successful build.
+
+A separate lifecycle check covers cancellation before launch, cancellation while
+a success verifier is held, and healthy host destruction. Queued cancellation
+launches no child; accepted late cancellation suppresses the successful result.
+The destructor check proves the original process is dead and artifacts unchanged;
+it does not expose a natural-exit receipt. Five Windows native contract groups
+pass, including 1,183 discovery responses across six owner scopes. All outer
+process owners finish empty without forced cleanup. A further check observes
+idle process death after 60.07 seconds and verifies a fresh owned compiler and
+changed DLL afterward. Its 55–75-second observation bound does not establish an
+exact 60-second lifetime or attribute the idle exit to a particular mechanism.
+An earlier run caught a build-admission race with normal SDK expiry; the worker
+now replaces a fully reaped, unforced, exit-zero cache before starting the build,
+provided its tools still match. Other readiness failures retain their original
+diagnostics and failure behavior. The [evidence](evidence/m2-owned-compiler.json)
+retains earlier failed retirement and idle-recovery attempts separately.
+
+To reproduce a **single-build smoke**, explicitly build
+`poima-development-service-test`, prepare a valid C# project and use a fresh
+output directory. Pin SDK 10.0.401 in the project's `global.json`; its targeting
+packs and dependencies must already be available. On Windows:
+
+```powershell
+& $serviceTest --sdk-server $dotnet $project $output $vbcsCompilerDll
+```
+
+The arguments name the native test executable, SDK host, absolute `.csproj`,
+output directory and matching `Roslyn/bincore/VBCSCompiler.dll`. The test prints
+the actual job status, including nullable owned-use evidence. It does not
+reproduce the complete ten-job/lifecycle cohorts, whose pinned recipes and raw
+receipts are retained locally. Longer lifetime limits, key-change saturation,
+production AOT reuse and full gameplay iteration timing remain separate
+qualification.
 
 ## Structured compiler feedback (development)
 

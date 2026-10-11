@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.105
+
+- Add explicit owned Windows compiler sessions to C# build jobs, preserving isolated defaults and ordinary MSBuild project/generator behavior.
+- Report process reuse separately from correlated owned-compiler/Csc evidence, with bounded diagnostics and worker-owned lifetime.
+- Complete compiler retirement before publishing cancellation, timeout or failed verification; preserve retry identity and already-written artifacts.
+- Recover a naturally expired compiler cache before launching the next build, after verifying cleanup and unchanged tools.
+- Verify ten real SDK jobs, queued and late cancellation, healthy shutdown and five native contract groups. [Compiler contract and evidence](docs/DEVELOPMENT_JOBS.md#optional-owned-windows-compiler).
+
 ## 0.0.104
 
 - Add an explicit dependency-restore option to C# compile jobs, preserving ordinary builds by default and allowing prepared projects to select `--no-restore`.
