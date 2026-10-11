@@ -96,3 +96,43 @@ no validation errors and drained WASAPI audio. The memory sampler retained
 commit of 636,809,216 bytes. These observations do not prove that the engine is
 free of leaks. Two earlier short rehearsals passed their narrower harness
 checks. [Failed attempt and raw observations](evidence/m2-performance-yard-reliability-failure.json).
+
+## Bounded diagnostic run — 0.0.98
+
+The [recorded result](evidence/m2-performance-yard-reliability.json) uses the
+retained 0.0.97 Windows engine and 0.0.94 Native AOT gameplay image on one laptop's
+RTX 4070 Laptop GPU. It passed 40 same-window checkpoint replacements over
+1,801.04675 cumulative seconds of unpaused play, followed by 60.00852 seconds of
+fresh-process continuation. All 161 complete state observations matched;
+40 immediate Save retries and 40 immediate Load retries preserved their
+receipts and committed state. Four native/client owners exited cleanly.
+
+Use the diagnostic wrapper with the same prepared inputs and process-tree owner:
+
+```powershell
+python tests/performance_yard_reliability_diagnostics.py --binary build/windows-runtime/poima.exe --world build/performance-world/world.json --descriptor build/performance-artifact/native-gameplay.json --workload-manifest build/performance-world/manifest.json --output build/reliability-diagnostics --gpu 1
+```
+
+The wrapper preserves the original clock policy, deadline and 512 MiB RPC cap.
+It retains selected paused post-restore and terminal diagnostic rings, including
+their preceding poll, without advancing simulation. This run retained 41 reads
+with no omissions, invalid samples or discarded clock time. Optional reads can
+be omitted explicitly to reserve failure and terminal space. Its bounded setup
+foreground recovery sends no input or unlock commands; that fallback was not
+exercised in the passing run.
+
+Twelve roughly ten-second recorder windows passed their sampled timing budgets;
+the worst eligible present-return p95 was 13.3114 ms. These windows do not cover
+every frame, measure scanout/input latency or qualify other GPUs. Working set
+and private commit passed the workload's 4 GB screens; VRAM and leak freedom
+remain unqualified. [Compressed observations](evidence/performance-yard-reliability-native.json.gz)
+retain the bounded numeric evidence.
+
+An earlier diagnostic rehearsal failed foreground setup before measured play;
+a second passed its shorter checks. Both remain recorded with this cohort.
+The earlier longer attempt above remains a failure with unknown cause; this
+later passing run does not establish a causal fix or diagnostic overhead.
+Compatible development reload and authored changes have a separate
+[Relay Yard iteration check](RELAY_YARD_ITERATION.md). Physical interaction,
+listening, clean-install delivery, production complexity and the full Alpha
+gate remain outside this fixed-image result.

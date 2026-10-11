@@ -1,8 +1,55 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.97**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.98**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Checkpoint 0.0.98 records two separate real-game checks using the retained
+0.0.97 Windows engine. Performance Yard's 0.0.94 Native AOT image passes 40
+checkpoint replacements, 1,801.047 cumulative unpaused seconds and another
+60 seconds of fresh-process continuation. All 161 complete checkpoint
+observations match, including 40 immediate Save and 40 Load retries; current
+preferences stay separate from saved gameplay. Forty-one bounded diagnostic
+reads retain healthy clock/audio observations with no discarded simulation
+time. Four native owners exit normally, with no render validation errors and
+drained audio. This is cumulative play across planned pauses and restores,
+not an uninterrupted interval or a code-reload check.
+[Reliability evidence and raw observations](evidence/m2-performance-yard-reliability.json).
+
+Twelve short frame windows on the RTX 4070 Laptop meet their timing budgets;
+the highest present-return p95 is 13.3114 ms. Those windows do not cover every
+frame of the longer session. Working set and private commit remain below the
+4 GB screens, but private commit's late-minus-early median increases by
+23,474,176 bytes. Sampled process memory is not VRAM or proof of no leaks, and
+growth still requires review. The earlier 0.0.96 clock failure remains retained
+without an established cause. An initial 0.0.97 rehearsal also failed before
+play because foreground activation was denied; neither attempt is erased by
+the later pass.
+
+A separate paused Relay Yard CoreCLR cohort uses the matched 0.0.88 SDK/bridge.
+Twenty genuine warm source edits pass compatible reload, preservation of all
+50 gameplay fields and supported native saved domains, and a first semantic
+Tick proving the changed 3 m/4 m interaction range. Twenty-five real compiler
+jobs include 24 successes and one intentional syntax failure; failure/repair,
+stale and incompatible reloads, immediate reload retry and collectible-module
+cleanup pass. Same-context native captures remain exact across compatible
+reload and a separately authored scene edit. The scene edit stays outside the
+running game until explicit stop/start; an old save restores with its exact
+original image, without implicit conversion.
+
+Edit-to-first-verified-tick p95 is **7.598753 seconds**, missing the **3-second**
+target. The interval includes source write, compilation and polling, retained
+artifact/proof work, full state/checkpoint inspection, reload and verified Tick;
+it is not bare compiler time. Functional success is separate from this timing
+miss. Neither cohort qualifies Native AOT hot reload, general live scene apply,
+physical controls/listening, arbitrary project upgrades or the whole Alpha gate.
+The publication checkpoint is 0.0.98; the measured engine remains 0.0.97.
+[Iteration evidence and raw observations](evidence/m2-relay-yard-iteration.json).
+
+The version-only 0.0.98 Windows rebuild passes 13 selected native/metadata
+contracts and six live-preference groups, with unchanged inputs and empty owned
+process trees. This separate check does not transfer the longer 0.0.97 game
+measurements to the rebuilt binary. [Build and check record](evidence/m2-checkpoint-0.0.98.json).
 
 Version 0.0.97 adds bounded native slow-poll observations through
 `player.diagnostics.inspect`. The owner retains up to 128 events with current
@@ -31,8 +78,8 @@ matching. Cycle 24 caught 0.759537 seconds of discarded native clock time.
 The first failure inspection also reports a viewport change from 1920×1080 to
 1920×1051; neither the stall nor that change has an established cause. Seven
 earlier short frame windows passed their timing budgets. Native owners exited
-cleanly with no render validation errors and drained audio. The 1,800-second
-gate and fresh-process continuation remain open.
+cleanly with no render validation errors and drained audio. That attempt did
+not reach the 1,800-second requirement or fresh-process continuation.
 [Failed attempt, reproduction and limits](PERFORMANCE_YARD_RELIABILITY.md).
 
 Version 0.0.96 avoids rebuilding mesh objects and animation skin palettes when
@@ -117,8 +164,10 @@ These are short, modest-geometry measurements on one laptop. Spectators play
 Idle, can overlap the camera at circuit corners, and do not provide crowd AI;
 dynamic boxes can settle. Skinning includes shadow-only work. Initial power and
 owning-monitor observations are AC and a 144 Hz OS mode, not continuous power,
-scanout or VRR qualification. A 30-minute soak, production FPS complexity,
-physical input/audibility, GPU residency and clean-machine delivery remain open.
+scanout or VRR qualification. The short cohort does not qualify a 30-minute
+soak; the later cumulative-play check is recorded above. Production FPS
+complexity, physical input/audibility, GPU residency and clean-machine delivery
+remain open.
 [Recorded results and compressed raw rows](evidence/m2-performance-yard.json).
 
 Version 0.0.93 adds an independent `performance.*` capture for native player

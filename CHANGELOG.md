@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.98
+
+- Record 1,801 cumulative seconds of native-clock Performance Yard play through 40 exact save/load cycles and a separate fresh-process continuation. Preserve the earlier failed attempt and its unknown cause.
+- Add bounded paused and terminal diagnostics to the reliability verifier, with raw frame/memory evidence and exact retry checks. [Results and reproduction](docs/PERFORMANCE_YARD_RELIABILITY.md).
+- Qualify 20 real compatible C# edits, complete state preservation, rejected-code recovery, explicit scene restart and original-image save restoration. End-to-end p95 is 7.60 seconds, exceeding the three-second target. [Results and reproduction](docs/RELAY_YARD_ITERATION.md).
+- Record exact tested-engine and tooling lineage separately from the source checkpoint; the full Alpha qualification remains open.
+
 ## 0.0.97
 
 - Retain a bounded native slow-poll history with current and preceding CPU stages, clock observations, viewport resize work and separate audio device timings.

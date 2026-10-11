@@ -160,3 +160,20 @@ host waits. Both GPUs show lower mean host gaps. NVIDIA p95 is effectively
 unchanged; AMD p95 improves in the recorded pair but still misses its target.
 GPU durations also vary, so the entire cadence difference is not attributable
 to the CPU query alone. [Raw observations](evidence/m2-camera-observation.json).
+
+The [Performance Yard reliability guide](PERFORMANCE_YARD_RELIABILITY.md)
+reproduces the separate 0.0.98 bounded diagnostic result using the retained
+0.0.97 engine and 0.0.94 Native AOT image. It covers 40 checkpoint cycles,
+1,801.04675 cumulative unpaused seconds and fresh-process continuation. Twelve
+roughly ten-second recorder windows sampled that session; their worst eligible
+present-return p95 was 13.3114 ms. They do not cover every frame or measure
+scanout/latency. Process working set and private commit are separate from VRAM
+and do not prove absence of leaks.
+
+For compile/reload measurements, use the
+[Relay Yard iteration guide](RELAY_YARD_ITERATION.md). Its paused CoreCLR
+functional checks passed, while edit-to-first-verified-Tick p95 of 7.598753
+seconds missed the three-second target. Required preservation/checkpoint reads
+are included. Authored changes use explicit stop/start and saves select their
+exact old image; this is not live scene apply, Native AOT reload or an
+unpaused-play performance measurement.

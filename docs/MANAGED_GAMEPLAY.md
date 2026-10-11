@@ -229,6 +229,22 @@ Each `runtime.step` checkpoints game state together with physics, controller ang
 
 Collectible assembly unload is cooperative. External event handlers, threads or retained objects can keep a retired context alive. Normal test reloads collect completely; a deliberately retained event handler is detected as `retired_alive: 1`. The engine reports this condition rather than claiming it can force arbitrary code to unload. There are guards of 32 simultaneously active modules in the bridge, 1,024 recorded retired contexts before collection, and a 64 MiB main-assembly file limit. Only one module is attached to a runtime.
 
+For a complete paused development workflow, follow the
+[Relay Yard iteration guide](RELAY_YARD_ITERATION.md). Its 0.0.98 record uses the
+0.0.97 Windows engine and matched 0.0.88 managed tooling: 20 actual source edits
+preserved complete supported state and proved the changed behavior on the first
+updated Tick. Functional checks passed; end-to-end p95 was 7.598753 seconds,
+missing the three-second target. The interval includes compile/reload and the
+required state/checkpoint proof, rather than compilation alone.
+
+That guide specifies the Windows SDK, bridge, generator, hostfxr, component
+manifest and licensed character/audio inputs. Compilation is explicit through
+`development.compile`, while the game is paused. Candidate construction and
+initialization still run before migration. Authored changes remain frozen until
+explicit stop/start, and ordinary checkpoint restoration selects the exact
+original managed image. This does not qualify automatic scene apply, arbitrary
+external side effects or Native AOT reload.
+
 ## Verification and limits
 
 Run the actual compiler/reload/rollback fixture on Linux:
