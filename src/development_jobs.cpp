@@ -403,11 +403,14 @@ void validate_request(const Request& request) {
 }
 JobId Jobs::submit(Request request) {
     validate_request(request);
+    // Construct/move user captures before locking. Keep this owner alive until
+    // after unlock, including failed admission and queue-allocation rollback.
+    auto job=std::make_shared<Impl::Job>();job->request=std::move(request);
     auto& impl=*impl_;std::lock_guard lock(impl.mutex);
     if(impl.stopping)throw std::runtime_error("Development jobs are shutting down.");
     if(impl.jobs.size()>=impl.limits.retained_jobs)throw std::runtime_error("Development job capacity reached; forget a terminal job.");
     if(impl.next>9007199254740991ULL)throw std::runtime_error("Development job ID space exhausted.");
-    auto job=std::make_shared<Impl::Job>();job->request=std::move(request);job->status.id=impl.next;
+    job->status.id=impl.next;
     impl.jobs.emplace(job->status.id,job);
     try { impl.queue.push_back(job); }catch(...) { impl.jobs.erase(job->status.id);throw; }
     ++impl.next;impl.wake.notify_one();return job->status.id;
@@ -428,8 +431,15 @@ bool Jobs::cancel(JobId id) {
     found->second->status.cancellation_requested=true;impl.wake.notify_one();return true;
 }
 bool Jobs::forget(JobId id) {
-    auto& impl=*impl_;std::lock_guard lock(impl.mutex);const auto found=impl.jobs.find(id);
-    if(found==impl.jobs.end() || !terminal(found->second->status.state))return false;
-    impl.jobs.erase(found);return true;
+    auto& impl=*impl_;std::shared_ptr<Impl::Job> retired;
+    {
+        std::lock_guard lock(impl.mutex);const auto found=impl.jobs.find(id);
+        if(found==impl.jobs.end() || !terminal(found->second->status.state))return false;
+        retired=std::move(found->second);impl.jobs.erase(found);
+    }
+    // A verifier's captures may call back into the live worker when destroyed.
+    // Release our ownership outside the mutex, whether or not the worker still
+    // owns this terminal job.
+    return true;
 }
 }

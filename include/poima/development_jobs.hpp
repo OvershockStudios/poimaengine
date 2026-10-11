@@ -68,6 +68,9 @@ public:
     std::optional<Status> poll(JobId id) const;
     std::vector<Status> list() const;
     bool cancel(JobId id); // False if absent or already terminal.
-    bool forget(JobId id); // Only terminal jobs; capacity is never silently evicted.
+    // Only terminal jobs; capacity is never silently evicted. Verifier captures
+    // are released outside the mutex and may poll/list/cancel this live Jobs.
+    // This does not permit reentry during Jobs destruction.
+    bool forget(JobId id);
 };
 }

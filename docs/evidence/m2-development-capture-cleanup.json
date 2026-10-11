@@ -1,0 +1,148 @@
+{
+  "format": "poima.development-capture-cleanup.v1",
+  "source_checkpoint": "0.0.100",
+  "date": "2026-10-10",
+  "scope": "Standalone native development worker: capture retirement, cancellation and original process contracts. No renderer or gameplay performance measurement.",
+  "source_sha256": {
+    "src/development_jobs.cpp": "ddcfa07d6d3e167b93d1e2f41c977f667251d4e435066ed05c8945332e565f22",
+    "include/poima/development_jobs.hpp": "8dfbc4952e840e251fcfab73925bbf0b1ab8499d386c220d6e2a8ccef325d4c1",
+    "tests/development_jobs.cpp": "f1679a0f1f0d66bd49e1d8d1e0559a6e77ab8ec20dadd43249665016b0e0fc85"
+  },
+  "baseline": {
+    "commit": "58e9ba8",
+    "source_path": "src/development_jobs.cpp",
+    "source_sha256": "ce543c477d9635a0e9771a40cec0a0c660577012dc435f31767130a46e3c224f",
+    "platform": "Linux",
+    "same_current_test_source": true,
+    "reproduction": {
+      "artifact": "baseline-linux",
+      "arguments": [
+        "--capture-reentry"
+      ],
+      "expected_deadlock_reproduction": true,
+      "forced_cleanup": true,
+      "exit_code": -9,
+      "seconds": 2.0056397989974357,
+      "stdout": "development_jobs: capture retirement gate entered\n",
+      "stderr": "",
+      "artifact_sha256": "a18ced3213ef6b953e2cf99f430259dc37433c2222b11a7b635fb4acf74cc815",
+      "reproduced": true
+    },
+    "qualification_pass": false,
+    "interpretation": "Reached the explicit second-verifier ownership gate, then exceeded the two-second owning process deadline. Only this owned process group was terminated. This is retained negative evidence, not a successful cleanup qualification."
+  },
+  "linux": {
+    "compile_options": [
+      "-std=c++20",
+      "-O0",
+      "-pthread"
+    ],
+    "checks": [
+      {
+        "artifact": "candidate-linux",
+        "arguments": [
+          "--capture-reentry"
+        ],
+        "expected_deadlock_reproduction": false,
+        "forced_cleanup": false,
+        "exit_code": 0,
+        "seconds": 0.07574933698924724,
+        "stdout": "development_jobs: capture retirement gate entered\ndevelopment_jobs: terminal capture destruction reenters poll/list/cancel passed\n",
+        "stderr": "",
+        "artifact_sha256": "dbd7d0620fc91356af3f16cb425d3010a04302a201ff23348e298b0d226788d6",
+        "passed": true
+      },
+      {
+        "artifact": "candidate-linux",
+        "arguments": [],
+        "expected_deadlock_reproduction": false,
+        "forced_cleanup": false,
+        "exit_code": 0,
+        "seconds": 3.2726203999918653,
+        "stdout": "development_jobs: capture retirement gate entered\ndevelopment_jobs: argument/environment fidelity, cwd, diagnostics, verification, failures, limits, cancel, timeout and tree cleanup passed\n",
+        "stderr": "",
+        "artifact_sha256": "dbd7d0620fc91356af3f16cb425d3010a04302a201ff23348e298b0d226788d6",
+        "passed": true
+      }
+    ]
+  },
+  "windows": {
+    "compile_options": [
+      "-std=c++20",
+      "-O0",
+      "-static",
+      "-municode"
+    ],
+    "artifact_sha256": "9e428141742fdd628da082c93f39025a88d2dd90c5c23b4a615b19092414ac45",
+    "checks": [
+      {
+        "arguments": [
+          "--capture-reentry"
+        ],
+        "exit_code": 0,
+        "seconds": 0.189773599995533,
+        "stdout": "development_jobs: capture retirement gate entered\r\ndevelopment_jobs: terminal capture destruction reenters poll/list/cancel passed\r\n",
+        "stderr": ""
+      },
+      {
+        "arguments": [],
+        "exit_code": 0,
+        "seconds": 6.071562700002687,
+        "stdout": "development_jobs: capture retirement gate entered\r\ndevelopment_jobs: argument/environment fidelity, cwd, diagnostics, verification, failures, limits, cancel, timeout and tree cleanup passed\r\n",
+        "stderr": ""
+      }
+    ],
+    "owner": {
+      "passed": true,
+      "forced_cleanup": false,
+      "job_assigned": true,
+      "cleanup_errors": [],
+      "exit_code": 0,
+      "job_accounting_at_child_exit": {
+        "user_time": 4687500,
+        "kernel_time": 6718750,
+        "period_user_time": 4687500,
+        "period_kernel_time": 6718750,
+        "page_faults": 134871,
+        "total_processes": 77,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "job_accounting_after_cleanup": {
+        "user_time": 4687500,
+        "kernel_time": 6718750,
+        "period_user_time": 4687500,
+        "period_kernel_time": 6718750,
+        "page_faults": 134871,
+        "total_processes": 77,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "changed_inputs": []
+    }
+  },
+  "retained_initial_failure": {
+    "platform": "Windows",
+    "cause": "Standalone test build omitted the static-link flag and lacked libc++/libunwind DLLs; process failed before entering the test. Corrected with the engine toolchain static-link setting.",
+    "checks": [
+      {
+        "arguments": [
+          "--capture-reentry"
+        ],
+        "exit_code": 3221225781,
+        "seconds": 3.980355800013058,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "owner_forced_cleanup": false,
+    "owner_active_processes": 0
+  },
+  "qualification_limits": [
+    "No allocation-failure injection for submission rollback. Its ownership/exception ordering received source review.",
+    "Callback reentry during Jobs destruction is outside the contract.",
+    "Direct standalone builds do not qualify the full engine, renderer, managed compilation or iteration timing.",
+    "Durations describe test execution only; they are not compiler or gameplay performance budgets."
+  ],
+  "passed": true
+}

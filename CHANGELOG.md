@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.100
+
+- Fix development-job cleanup deadlocks by releasing verifier captures outside the worker mutex. Keep capture construction and failed-admission cleanup outside the mutex too.
+- Add a bounded regression using real children and a gated verifier, checking reentrant inspection, cancellation and suppression of successful results.
+
 ## 0.0.99
 
 - Add opt-in fractional shadow filtering with observable mode selection across captures and native play. Preserve the default filter, map allocation and receiver bias.

@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.99**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.100**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.100 fixes development-job capture cleanup under the worker mutex.
+Forgetting a completed job can now destroy verifier captures that query or
+cancel jobs on the same live worker. Submission keeps capture construction and
+failed-admission destruction outside the lock. Two real children and a gated
+verifier establish the last-owner boundary; the focused regression and original
+worker suite pass on Linux and Windows. The old Linux implementation reaches
+that gate and deadlocks, retained as a timed-out negative reproduction. The
+first Windows standalone build failed before test entry because it lacked
+runtime DLLs; the corrected static build passes with an empty owning process
+tree. These are standalone worker checks, not new renderer or game-iteration
+measurements. Allocation-failure injection and reentry during worker destruction
+are not qualified. [Contract](DEVELOPMENT_JOBS.md),
+[evidence](evidence/m2-development-capture-cleanup.json).
 
 Version 0.0.99 adds opt-in `pcf3_fractional` shadow filtering, with the existing
 `pcf3_point` default preserved. On the RTX 4070 Laptop, each mode passes 33

@@ -27,6 +27,13 @@ jobs only; reaching capacity rejects new work rather than silently evicting
 history. Destruction requests cancellation and joins worker cleanup, so dispose
 the worker during host shutdown rather than in a frame callback.
 
+Forgetting a terminal job releases its verifier captures outside the state
+mutex. A capture destructor may call `poll`, `list` or `cancel` on the same
+still-live worker. Submission also constructs and moves captures before locking
+and preserves ownership until after unlocking on admission failures. Capture
+cleanup is caller code and can take time; this is not a constant-time cleanup
+guarantee. Reentry while destroying the `Jobs` object is outside this contract.
+
 Status reports `queued`, `running`, `succeeded`, `failed`, `cancelled`,
 `timed_out` or `launch_failed`, with an optional exit code, elapsed time and an
 explicit error message. Cancellation may race completion: a cancellation
@@ -67,6 +74,18 @@ queued/running cancellation, timeout, capacity and terminal forgetting. Child
 markers check cleanup after cancellation, successful leader exit and worker
 destruction. Linux additionally checks unrelated descriptor exclusion and
 redirection when the host's standard descriptors are closed.
+
+The focused `development_capture_reentry` CTest runs two real children. The
+second child's gated verifier proves the worker has released its local owner
+of the first job. Forgetting the first job then destroys its last verifier
+capture, which queries both jobs, lists retained work and cancels the second
+job. The second job must publish cancellation with a zero child exit and no
+successful verifier result. The owning test-process deadline bounds a deadlock;
+a timeout is a failure. [Linux/Windows checks and retained negative reproduction](evidence/m2-development-capture-cleanup.json). Run just this regression with:
+
+```sh
+ctest --test-dir /path/to/build -R '^development_capture_reentry$' --output-on-failure
+```
 
 This foundation does not claim project watching, automatic reload, dependency
 restore, import scheduling or a complete development service. The authoring

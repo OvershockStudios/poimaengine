@@ -108,6 +108,74 @@ struct ReleaseVerification {
     VerificationGate& gate;
     ~ReleaseVerification(){gate.release();}
 };
+struct CaptureReentryState {
+    dev::Jobs* jobs=nullptr;
+    dev::JobId forgotten=0,active=0;
+    std::atomic<unsigned> entered=0,finished=0;
+    std::atomic<bool> armed=false,observed=false,failed=false;
+};
+struct ReentrantVerifierCapture {
+    std::shared_ptr<CaptureReentryState> state;
+    explicit ReentrantVerifierCapture(std::shared_ptr<CaptureReentryState> value):state(std::move(value)) {}
+    ~ReentrantVerifierCapture() noexcept {
+        ++state->entered;
+        if(!state->armed) {++state->finished;return;}
+        try {
+            const auto active=state->jobs->poll(state->active);
+            check(!state->jobs->poll(state->forgotten) && active && active->state==dev::State::running,
+                  "Capture retirement did not detach the forgotten job before reentry.");
+            const auto retained=state->jobs->list();
+            check(retained.size()==1 && retained.front().id==state->active &&
+                  retained.front().state==dev::State::running,"Capture reentry saw unexpected retained jobs.");
+            check(state->jobs->cancel(state->active),"Capture destructor could not cancel its live sibling.");
+            const auto cancelled=state->jobs->poll(state->active);
+            check(cancelled && cancelled->state==dev::State::running && cancelled->cancellation_requested,
+                  "Capture destructor did not observe its accepted cancellation.");
+            state->observed=true;
+        }catch(...) {state->failed=true;}
+        ++state->finished;
+    }
+};
+void capture_reentry_contract(const dev::Request& prototype) {
+    VerificationGate gate;
+    dev::Jobs jobs({4,1024});
+    ReleaseVerification release{gate};
+    auto state=std::make_shared<CaptureReentryState>();state->jobs=&jobs;
+    auto capture=std::make_shared<ReentrantVerifierCapture>(state);
+    auto first=prototype;
+    first.verify_success=[capture] {(void)capture;return std::string("retained verifier capture");};
+    capture.reset();
+    state->forgotten=jobs.submit(std::move(first));
+    // Moving std::function may retain a small target in its source. No caller
+    // closure may retain the shared capture when forget is exercised.
+    first.verify_success=nullptr;
+    const auto completed=await(jobs,state->forgotten);
+    check(completed.state==dev::State::succeeded && completed.exit_code==0,
+          "Capture-owner child did not finish normally.");
+    auto second=prototype;second.verify_success=[&gate] {return gate.verify();};
+    state->active=jobs.submit(std::move(second));
+    gate.await_entry();
+    // The single worker cannot enter B until it has released its local A
+    // shared_ptr. A's retained map entry now owns the last verifier capture.
+    check(state->entered==0,"Verifier capture retired before the terminal forget test.");
+    std::cout<<"development_jobs: capture retirement gate entered\n"<<std::flush;
+    {
+        state->armed=true;
+        struct Disarm {CaptureReentryState& state;~Disarm(){state.armed=false;}} disarm{*state};
+        // A lock reentry regression must be bounded by the owning test process
+        // deadline. There is no detached watchdog thread or cleanup success on
+        // timeout; both real children have already exited at this point.
+        check(jobs.forget(state->forgotten),"Could not forget the terminal capture owner.");
+        check(state->entered==1 && state->finished==1 && state->observed && !state->failed,
+              "Verifier capture destruction could not reenter poll/list/cancel.");
+    }
+    gate.release();
+    const auto cancelled=await(jobs,state->active);
+    check(cancelled.state==dev::State::cancelled && cancelled.exit_code==0 &&
+          cancelled.cancellation_requested && cancelled.result.empty(),
+          "Reentrant cancellation did not suppress the gated verifier result.");
+    check(jobs.forget(state->active) && jobs.list().empty(),"Reentry test retained completed jobs.");
+}
 int peer(int argc,char** argv) {
 #ifdef _WIN32
     _setmode(_fileno(stdout),_O_BINARY);_setmode(_fileno(stderr),_O_BINARY);
@@ -174,6 +242,11 @@ int test_main(int argc,char** argv) {
         std::filesystem::create_directories(root/"cwd space");
         struct Cleanup { std::filesystem::path path;~Cleanup() { std::error_code error;std::filesystem::remove_all(path,error); } } cleanup{root};
         auto request=[&](std::string mode) { return dev::Request{executable,root/"cwd space",{"--peer",std::move(mode)},5s}; };
+        capture_reentry_contract(request("echo"));
+        if(argc==2 && std::string(argv[1])=="--capture-reentry") {
+            std::cout<<"development_jobs: terminal capture destruction reenters poll/list/cancel passed\n";
+            return 0;
+        }
         dev::Jobs jobs({4,1024});
         {
             auto valid=request("echo");valid.executable=root/"not-created-validation-only";
