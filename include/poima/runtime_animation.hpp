@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/runtime.hpp"
 #include "poima/animation.hpp"
+#include "poima/runtime_root_motion.hpp"
 #include <functional>
 #include <map>
 #include <utility>
@@ -26,6 +27,8 @@ class RuntimeAnimations {
         std::vector<NodePose> baseline;
         std::vector<int> model_parents;
         std::vector<RuntimeTwoBoneIk> ik;
+        std::optional<RuntimeRootMotionDefinition> root_motion;
+        poima::root_motion::Planar root_rest;
         std::vector<std::string> nodes;
         std::vector<LayerDefinition> layers;
         std::vector<std::pair<std::string,std::string>> parents;
@@ -67,6 +70,20 @@ public:
         double target_weight=1;
         std::optional<RuntimeAnimationWeightTransition> weight_transition;
     };
+    struct RootFade {
+        AnimationCommand source;
+        std::uint64_t source_anchor_tick=0,start_tick=0;
+        std::uint32_t duration_ticks=0;
+        AnimationTransitionMode mode=AnimationTransitionMode::Crossfade;
+        std::optional<root_motion::Planar> frozen_velocity;
+        root_motion::Planar correction_velocity;
+    };
+    struct RootPlayback {
+        bool enabled=true;
+        RuntimeRootMotionState state;
+        root_motion::Planar last_velocity;
+        std::optional<RootFade> fade;
+    };
     struct Checkpoint {
         std::vector<Clock> bases;
         std::vector<std::vector<LayerPlayback>> layers;
@@ -74,6 +91,7 @@ public:
         std::shared_ptr<const Membership> membership;
         std::vector<std::vector<RuntimeIkCommand>> ik;
         std::vector<std::vector<RuntimeIkState>> ik_states;
+        std::vector<RootPlayback> roots;
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
@@ -85,6 +103,9 @@ private:
     std::vector<std::vector<LayerPlayback>> layers_;
     std::vector<std::vector<RuntimeIkCommand>> ik_;
     std::vector<std::vector<RuntimeIkState>> ik_states_;
+    std::vector<RootPlayback> roots_;
+    root_motion::Planar root_interval(std::size_t,const Clock&,const RootPlayback&,std::uint64_t) const;
+    void strip_root(std::size_t,ModelPose&) const;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
     ModelPose composed(std::size_t index,const Clock& base,const std::vector<LayerPlayback>& layers,std::uint64_t tick) const;
     Clock replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const;
@@ -103,13 +124,19 @@ public:
     bool has_ik() const noexcept;
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
     void apply_ik(const std::vector<RuntimeIkCommand>& commands);
+    bool has_root_motion() const noexcept;
+    std::optional<RuntimeRootMotionState> root_motion_state(const std::string& entity) const;
+    std::optional<RuntimeRootMotionDefinition> root_motion_definition(const std::string& entity) const;
+    void apply_root_motion(const std::vector<RuntimeRootMotionCommand>& commands);
+    std::vector<RuntimeRootMotionState> prepare_root_motion(std::uint64_t tick) const;
+    void commit_root_motion(const std::vector<RuntimeRootMotionState>& states,std::uint64_t tick_after);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick,
         const std::function<const Matrix4&(const std::string&)>& wrapper_world={});
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_}; }
-    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states); }
+    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_}; }
+    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

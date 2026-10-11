@@ -85,6 +85,15 @@ int main(){try{
     for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,280u,287u,289u}){auto wrong=ik;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_ik=ik;duplicate_ik["features"].push_back("animation_ik_v1");rejected(duplicate_ik.dump());
     auto unnamed_ik=ik;unnamed_ik["features"]=Json::array({"baseline_v7"});rejected(unnamed_ik.dump());
+    auto root=baseline;root["services_bytes"]=304;root["features"].push_back("animation_root_motion_v1");
+    parsed=poima::parse_gameplay_service_contract(root.dump());
+    check(parsed.services_bytes==304 && parsed.features.size()==2,"Independent root motion contract rejected.");
+    auto combined_root=combined_ik;combined_root["services_bytes"]=304;combined_root["features"].push_back("animation_root_motion_v1");
+    parsed=poima::parse_gameplay_service_contract(combined_root.dump());
+    check(parsed.features.size()==(poima::runtime_navigation_available()?11u:10u),"Root named-feature combination rejected.");
+    for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,288u,296u,303u,305u}){auto wrong=root;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_root=root;duplicate_root["features"].push_back("animation_root_motion_v1");rejected(duplicate_root.dump());
+    auto unnamed_root=root;unnamed_root["features"]=Json::array({"baseline_v7"});rejected(unnamed_root.dump());
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

@@ -433,6 +433,22 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     }
     std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.slot<b.slot;});return result;
 }
+RuntimeRootMotionDefinition root_motion_value(const Json& value) {
+    fields(value,{"node","mode","actor","enabled","yaw"},{"node"});
+    RuntimeRootMotionDefinition result;const auto node=revision(value.at("node"));
+    require(node<10000,"Root-motion node must be a model index0..9999.");result.node=static_cast<std::uint32_t>(node);
+    if(value.contains("mode")) {
+        require(value.at("mode").is_string() && (value.at("mode")=="extract" || value.at("mode")=="character"),"Root-motion mode must be extract or character.");
+        result.mode=value.at("mode")=="character" ? RootMotionMode::Character : RootMotionMode::Extract;
+    }
+    if(result.mode==RootMotionMode::Character) {
+        require(value.contains("actor"),"Character root motion requires an actor.");result.actor=identifier(value.at("actor"));
+    }else require(!value.contains("actor") || value.at("actor").is_null(),"Extract root motion requires an absent or null actor.");
+    for(const auto* key:{"enabled","yaw"})if(value.contains(key))require(value.at(key).is_boolean(),"Root-motion enabled/yaw must be boolean.");
+    if(value.contains("enabled"))result.enabled=value.at("enabled").get<bool>();
+    if(value.contains("yaw"))result.yaw=value.at("yaw").get<bool>();
+    return result;
+}
 RuntimeHitRegion hit_region_value(const Json& value) {
     require(value.is_object() && value.contains("shape") && value.at("shape").is_string(),"HitRegion requires a shape.");
     const auto shape=value.at("shape").get<std::string>();
@@ -466,9 +482,9 @@ void validate_component(const std::string& type, const Json& value) {
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
             require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
     if(type=="AnimationRig") {
-        fields(value,{"asset","clip","time","speed","loop","playing","layers","ik"},{"asset","clip","time","speed","loop","playing"});
+        fields(value,{"asset","clip","time","speed","loop","playing","layers","ik","root_motion"},{"asset","clip","time","speed","loop","playing"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"AnimationRig requires a model content hash.");
-        (void)animation_value(value);if(value.contains("layers"))(void)animation_layers_value(value.at("layers"));if(value.contains("ik"))(void)animation_ik_value(value.at("ik"));return;
+        (void)animation_value(value);if(value.contains("layers"))(void)animation_layers_value(value.at("layers"));if(value.contains("ik"))(void)animation_ik_value(value.at("ik"));if(value.contains("root_motion"))(void)root_motion_value(value.at("root_motion"));return;
     }
     if(type=="RigNode") {
         fields(value,{"rig","node"},{"rig","node"});identifier(value.at("rig"));require(revision(value.at("node"))<10000,"RigNode index must be 0..9999.");return;
@@ -688,6 +704,8 @@ void validate_template_graph(const Json& document,const Json& recipe,
         };
         if(bag.contains("CharacterController"))local_reference(bag.at("CharacterController").at("camera"),"Camera");
         if(bag.contains("RigNode"))local_reference(bag.at("RigNode").at("rig"),"AnimationRig");
+        if(bag.contains("AnimationRig") && bag.at("AnimationRig").contains("root_motion") && bag.at("AnimationRig").at("root_motion").contains("actor"))
+            local_reference(bag.at("AnimationRig").at("root_motion").at("actor"),"CharacterController");
         if(bag.contains("SkinnedMesh"))local_reference(bag.at("SkinnedMesh").at("rig"),"AnimationRig");
         if(bag.contains("LightingEnvironment") && bag.at("LightingEnvironment").contains("sky"))
             local_reference(bag.at("LightingEnvironment").at("sky").at("sun"),"Light");
@@ -2428,7 +2446,7 @@ public:
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
                 catch(const std::exception& error) { throw Error(-32050,error.what()); }
-                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));if(ref.contains("ik"))rig.ik=animation_ik_value(ref.at("ik"));value.animation_rig=std::move(rig);
+                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));if(ref.contains("ik"))rig.ik=animation_ik_value(ref.at("ik"));if(ref.contains("root_motion"))rig.root_motion=root_motion_value(ref.at("root_motion"));value.animation_rig=std::move(rig);
             }
             if(components.contains("RigNode")) {
                 const auto& ref=components.at("RigNode");value.rig_node=RuntimeRigNode{identifier(ref.at("rig")),static_cast<std::uint32_t>(revision(ref.at("node")))};
@@ -2581,6 +2599,17 @@ public:
             fields(value,{"entity","slot","target","pole","enabled","space","weight"},{"entity","slot","target","pole"});
             auto command=ik_control_value(value);command.entity=identifier(value.at("entity"));
             require(seen.emplace(command.entity,command.slot).second,"Duplicate IK command target.");result.push_back(std::move(command));
+        }
+        return result;
+    }
+    static std::vector<RuntimeRootMotionCommand> parse_root_motion(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Root motion must contain at most64 complete commands.");
+        std::vector<RuntimeRootMotionCommand> result;std::set<std::string> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","enabled"},{"entity"});RuntimeRootMotionCommand command;command.entity=identifier(value.at("entity"));
+            require(seen.insert(command.entity).second,"Duplicate root-motion command target.");
+            if(value.contains("enabled")){require(value.at("enabled").is_boolean(),"Root-motion enabled must be boolean.");command.enabled=value.at("enabled").get<bool>();}
+            result.push_back(std::move(command));
         }
         return result;
     }
@@ -2994,6 +3023,20 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.root_motion") {
+            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));
+            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->root_motion(entity);Json value=nullptr;
+                if(state)value={{"entity",state->entity},{"actor",state->actor.empty()?Json(nullptr):Json(state->actor)},{"node",state->node},
+                    {"mode",state->mode==RootMotionMode::Character?"character":"extract"},{"enabled",state->enabled},{"yaw",state->yaw},
+                    {"from_tick",state->from_tick},{"to_tick",state->to_tick},{"local_delta",state->local_delta},{"yaw_delta",state->yaw_delta},
+                    {"world_requested",state->world_requested},{"world_applied",state->world_applied},{"applied_yaw",state->applied_yaw},{"translation_error",state->translation_error}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.ik") {
             fields(params,{"session_id","tick","entity","slot"},{"session_id","tick","entity","slot"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3017,12 +3060,15 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
             if(!normalized.contains("ik"))normalized["ik"]=Json::array();
             const auto ik=parse_ik(normalized.at("ik"));
+            if(!normalized.contains("root_motion"))normalized["root_motion"]=Json::array();
+            const auto root_motion=parse_root_motion(normalized.at("root_motion"));
+            for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
                 if(!command.contains("enabled"))command["enabled"]=true;
                 if(!command.contains("space"))command["space"]="world";
@@ -3061,7 +3107,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

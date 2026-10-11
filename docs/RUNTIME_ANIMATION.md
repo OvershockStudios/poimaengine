@@ -10,7 +10,7 @@ Poima connects imported glTF rigs to ordinary authored entities, fixed-tick nati
 
 | Component | Complete value | Meaning |
 | --- | --- | --- |
-| `AnimationRig` | `asset`, `clip`, `time`, `speed`, `loop`, `playing`; optional `layers` | Wrapper model reference and initial runtime playback state. |
+| `AnimationRig` | `asset`, `clip`, `time`, `speed`, `loop`, `playing`; optional `layers`, `ik`, `root_motion` | Wrapper model reference, initial playback and frozen optional solver/motion bindings. |
 | `RigNode` | `rig`, `node` | Wrapper entity ID and zero-based source model node index. |
 | `SkinnedMesh` | `asset`, `primitive`, `visible`, `rig`, `node` | Weighted primitive, wrapper binding and source mesh-node index. |
 
@@ -166,7 +166,7 @@ This is an illustrative current-state summary, not the exact transition result o
 
 ## Ownership, validation and rollback
 
-Rig nodes and their descendants own animation-driven transforms. That subtree cannot contain physics bodies, character controllers or a camera controlled by a character controller. Ordinary animated cameras are allowed. A physics-controlled outer wrapper may carry an animated rig; this does not implement extracted root motion or animation-driven colliders.
+Rig nodes and their descendants own animation-driven transforms. That subtree cannot contain physics bodies, character controllers or a camera controlled by a character controller. Ordinary animated cameras are allowed. A physics-controlled outer wrapper may carry an animated rig. A configured root-motion binding can drive an outer CharacterController through the existing physics update; it does not make animated bones into physics colliders.
 
 Skinned mesh acoustics are rejected because the current acoustic geometry path does not follow vertex deformation. Use an explicit separate rigid collision/acoustic proxy. The authoring schema rejects combining `SkinnedMesh` and `AcousticMaterial`.
 
@@ -204,9 +204,58 @@ Layer calls route into the same override/additive composition, unweighted per-cl
 
 The addition changes neither animation math nor nested save versions. Compatible CoreCLR reload preserves native layer state; native libraries remain process-pinned, and saves remain bound to their actual gameplay artifact/content. Supported matched SDK/bridge cohorts negotiate before game construction; arbitrary mixed old bridge/new SDK cohorts and module/loader side effects are outside that guarantee.
 
+## Planar root motion
+
+An optional frozen `AnimationRig.root_motion` selects an original model-node
+index, policy (`extract` by default or `character`), initial `enabled` (true)
+and `yaw` (false). Character policy requires an explicit self/ancestor
+CharacterController actor. Extract accepts no actor and reports the interval
+without moving a body. The selected source ancestry must match the authored
+RigNode parents and retain positive uniform scale. Every model root must be
+directly below the rig wrapper. Character mounting transforms are frozen,
+upright and positive uniform; translation, yaw, scale and pivot are included
+in movement conversion. Only one configured driver may bind an actor, even
+when disabled. Layer masks must exclude the source and all its ancestors,
+including zero-weight layers.
+
+`runtime.step.root_motion` stages at most 64 unique `{entity,enabled}` controls
+on the first tick of a batch; omitted enabled means true. Compiled writes share
+that per-tick budget and same-rig conflicts. `runtime.root_motion` takes only
+`session_id`, current `tick` and rig `entity`, and returns cached committed
+state or null for a live unconfigured entity. Reads and repeated pose samples
+never consume an interval. Source selection and actor/yaw policy remain frozen.
+
+Each successful physics tick consumes one base-clock interval with unwrapped
+planar clip cycles. Character policy supplies XZ velocity while physics retains
+gravity, jump and collision; diagnostics distinguish requested displacement,
+actual XYZ displacement, applied yaw and XZ error. Nonzero movement input
+conflicts with an enabled Character driver; yaw-enabled drivers also reject
+horizontal look, while pitch, jump and named actions remain available.
+Disabled intervals emit neutral diagnostics and permit ordinary input, while
+pose compensation still produces an in-place clip. Extract reports its
+world-projected request with neutral applied movement/error.
+
+Crossfades blend interval velocities at the fixed-tick midpoint; interruption
+retains the last committed blended velocity, and inertial changes use a
+separate decaying velocity correction. Seeking reanchors without teleporting.
+Compensation strips composed planar motion from all model roots before IK.
+Source intervals are bounded to 100 m/s and 20 rad/s. Yaw extraction requires
+pure Y-axis LINEAR ancestry rotation channels, unambiguous shortest segments
+and a summed rate bound evaluated at maximum playback speed 8. It reports
+shortest net heading change, not arbitrary angular winding.
+
+Root-configured worlds use nested animation-state v5 for the frozen binding,
+enable control, fade, velocity and committed interval. Root state joins complete
+batch rollback and template/removal/rebirth ownership. Physical poses restore
+before animation/IK without advancing movement. IK-only worlds retain v4;
+worlds without either feature preserve their earlier formats. These are bounded
+planar policies, without vertical climbing, stride warping, automatic grounding
+or full-body locomotion. [The complete root-motion contract](ROOT_MOTION.md)
+defines authoring, C# controls and supported content.
+
 ## Native interfaces and bounds
 
-`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` carries optional-duration `blend_ticks` with a zero default and `AnimationTransitionMode` (`Crossfade` or `Inertial`), plus optional layer routing and weight-ramp fields. Active `RuntimeAnimationTransition.mode` identifies the native mode. `Runtime::step` takes a trailing `std::vector<AnimationCommand>`, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# retains `GameContext.GetAnimation` and the numeric-time, crossfade-only `SetAnimation` in the 176-byte services-7 baseline. Its marked-game extension adds typed mode selection and `AnimationStateExtended`, whose `State` is the legacy projection and whose active `Mode`/`Progress` are nullable. See [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for negotiation, queued-write timing, conflicts and reload behavior.
+`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` carries optional-duration `blend_ticks` with a zero default and `AnimationTransitionMode` (`Crossfade` or `Inertial`), plus optional layer routing and weight-ramp fields. Active `RuntimeAnimationTransition.mode` identifies the native mode. `Runtime::step` accepts animation commands followed by optional structure, IK and root-motion command vectors, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# retains `GameContext.GetAnimation` and the numeric-time, crossfade-only `SetAnimation` in the 176-byte services-7 baseline. Its marked-game extension adds typed mode selection and `AnimationStateExtended`, whose `State` is the legacy projection and whose active `Mode`/`Progress` are nullable. See [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for negotiation, queued-write timing, conflicts and reload behavior.
 
 `validate_runtime_animation(definition)` is built without Jolt and shared by authoring/runtime validation. `CompiledAnimation` validates and copies source curves once, retains the parent traversal, and supports a supplied authored TRS baseline. Runtime rigs sharing a model share the compiled sampler. CPU sampling does not require a graphics device or scan every source key for validation on every tick. This has not yet established production animation throughput or crowd budgets.
 
@@ -216,7 +265,7 @@ Current per-world limits are 128 rigs, 10,000 mapped nodes, 65,536 channels coun
 
 ## Layer persistence and bounds
 
-Configured layers use nested `poima.animation-state` v3. Every rig records its base clock and its complete ordered layer array, with histories, clip transitions and weight ramps. Each layer also binds the exact canonical mask and reference clip/time. Restoring against a changed slot, mode, mask or reference rejects atomically. Layered definitions reject v1/v2 instead of inventing missing clocks; unlayered definitions reject v3. Unlayered v1/v2 serialization and the outer snapshot/save formats remain unchanged. This does not provide animation-definition migration.
+Configured layers without IK or root motion use nested `poima.animation-state` v3. Every rig records its base clock and its complete ordered layer array, with histories, clip transitions and weight ramps. Each layer also binds the exact canonical mask and reference clip/time. Restoring against a changed slot, mode, mask or reference rejects atomically. These layered definitions reject v1/v2 instead of inventing missing clocks; definitions without configured layers reject v3. Configured IK uses v4 and configured root motion uses v5, with each requiring its exact frozen membership. Unlayered v1/v2 serialization and the outer snapshot/save formats remain unchanged. This does not provide animation-definition migration.
 
 The parser rejects duplicate fields, unexpected shapes, malformed integers and inconsistent effective weights; nesting is limited to 32 and parse events to eight million. Nested legacy state retains its 16 MiB limit; layered v3 has a 64 MiB limit. Outer snapshots and durable saves also remain capped at 64 MiB, so maximum admitted configurations are not guaranteed to fit a save.
 
@@ -261,4 +310,4 @@ python3 tests/runtime_animation_legacy_compatibility.py --binary build/runtime-h
 
 [Two-bone IK](TWO_BONE_IK.md) applies explicit world/rig-space targets after base playback and masked layers, preserving pre-IK animation histories. Its controls, diagnostics, saves and compiled gameplay extension follow the separate solver contract.
 
-Desktop layer/IK widgets, blend spaces/state graphs, events, automatic grounding, full-body IK, anatomical/contact retargeting, root-motion extraction, ragdolls and animation compression/streaming remain unfinished. Single-sample backward UV motion and previous-frame skinning are documented separately in [Scene products](SCENE_PRODUCTS.md). [Direct FBX import](FBX_IMPORT.md) supports its documented bounded profile; [explicit rotation retargeting](ANIMATION_RETARGETING.md) has its own import constraints. Mixamo rigs/animations have not been qualified; separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.
+Desktop layer/IK/root-motion widgets, blend spaces/state graphs, events, automatic grounding, full-body IK, anatomical/contact retargeting, vertical root locomotion, stride warping, ragdolls and animation compression/streaming remain unfinished. Single-sample backward UV motion and previous-frame skinning are documented separately in [Scene products](SCENE_PRODUCTS.md). [Direct FBX import](FBX_IMPORT.md) supports its documented bounded profile; [explicit rotation retargeting](ANIMATION_RETARGETING.md) has its own import constraints. Mixamo rigs/animations have not been qualified; separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.

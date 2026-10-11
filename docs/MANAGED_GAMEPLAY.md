@@ -141,7 +141,7 @@ Invalid commands, failed curve samples and managed exceptions restore animation 
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, and 288 named two-bone IK; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and controller root motion remain unfinished. Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, and 304 named root motion; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
 
 ## Control masked layers from C#
 
@@ -359,3 +359,51 @@ the supported chain geometry; this API does not add automatic grounding,
 full-body solving, joint limits or root motion. The [0.0.118 qualification](evidence/m2-two-bone-ik.json)
 records actual CoreCLR and Native AOT consumers, including complete rollback
 and fresh saved continuation; compatible reload is checked only with CoreCLR.
+
+
+## Control planar root motion from C#
+
+`IRootMotionGame` independently requests `animation_root_motion_v1` and the
+304-byte services-7 prefix before construction. It does not grant IK, hit-region,
+input, layers or other extension rights; declare each marker your game calls.
+The baseline call layout and all earlier services prefixes remain unchanged.
+
+The authored rig freezes its source model node, Extract/Character policy,
+actor and yaw ownership. Tick can stage only its persistent enable control:
+
+```csharp
+// The game class declares IRootMotionGame; state.Rig is a configured live rig.
+RootMotionState? previous = context.GetRootMotion(state.Rig);
+context.SetRootMotion(state.Rig, enabled: true);
+// Issue playback replacement on state changes, not every Tick.
+context.SetAnimation(state.Rig, clip: 1, time: 0, speed: 1,
+    loop: true, playing: true);
+```
+
+`GetRootMotion` returns the last committed interval, with rig/actor identity,
+frozen node/mode/yaw, enabled control, tick bounds, local displacement/yaw,
+world request, actual Character displacement/applied yaw and XZ translation
+error. An existing unconfigured entity returns null; a missing entity rejects.
+The getter does not sample or consume motion. A staged enable setter remains
+invisible to subsequent reads in that callback. Both calls are Tick-only, with
+at most 1,024 admitted reads and 64 writes; caller/game writes share the
+64-command limit and may not target the same rig. A configured pending
+instance accepts a setter before membership publishes; reads remain
+committed-only, and canceled births discard their commands.
+
+Enabled Character policy owns horizontal motion through normal physics.
+Nonzero movement input conflicts; yaw-enabled drivers also reject horizontal
+look. Pitch, jump and named actions remain available. Disabled drivers permit
+ordinary input and emit neutral movement diagnostics; pose compensation still
+produces an in-place clip. Extract never moves physics and reports a projected
+request with neutral applied movement/error. Base-animation and enable writes
+can target the same rig. Failure rolls back the entire native batch, including
+physics, gameplay and save intents.
+
+[Root motion](ROOT_MOTION.md) defines the positive-uniform source/mount metric,
+layer-source exclusion, loop-unwrapped base intervals, transition velocity
+policy and 100 m/s/20 rad/s bounds. Configured state uses nested animation-v5
+saves; compatible reload does not change frozen bindings or authorize a new
+save identity. This extension does not add vertical climbing, automatic foot
+placement, stride warping or a complete animation graph. Qualification remains
+separate from this API contract.

@@ -85,7 +85,9 @@ Use camera ID `000000000000000000000000000000c8` for the independent observer. A
 | `runtime.entity` | Inspect one stable entity ID, its live world matrix, body velocity, motion kind/target/progress and controller contact/look state; optional exact `tick` guard. |
 | `runtime.raycast` | Query the closest live collider with an exact tick guard, world ray and optional ignored IDs. [Query contract](PHYSICS_INTERACTIONS.md). |
 | `runtime.hit_test` | Query the closest collider or enabled frozen hit region at an exact tick, including bone-attached shapes and their damage owners. [Shape, occlusion and compatibility contract](HIT_REGIONS.md). |
-| `runtime.step` | Apply 1–600 fixed ticks with optional inputs for up to 32 distinct controller entities and up to 128 timed kinematic targets. Requires `session_id`, `expected_tick` and `request_id`. |
+| `runtime.ik` | Inspect one configured two-bone chain's cached controls and diagnostics at an exact tick. [Solver contract](TWO_BONE_IK.md). |
+| `runtime.root_motion` | Inspect a rig's cached committed planar interval and requested/actual displacement at an exact tick. [Character and Extract policies](ROOT_MOTION.md). |
+| `runtime.step` | Apply 1–600 fixed ticks with optional inputs for up to 32 distinct controller entities and up to 128 timed kinematic targets. Requires `session_id`, `expected_tick` and `request_id`; optional [IK](TWO_BONE_IK.md) and [root-motion](ROOT_MOTION.md) controls each have a separate 64-write limit. |
 | `runtime.capture` | Render a selected live camera at an exact required `tick`, returning the frozen authored revision, session and tick with the image metadata. |
 | `runtime.stop` | Drop live state and physics resources for the matching session. It does not write back to the authored world. |
 

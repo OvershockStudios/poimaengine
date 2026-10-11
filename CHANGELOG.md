@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.119
+
+- Add frozen planar root-motion bindings with Extract diagnostics or Character locomotion through native collision, gravity and jump handling.
+- Unwrap loop intervals, blend transition velocities and strip composed planar movement before IK; preserve mounted pivots, instance remapping and complete rollback.
+- Expose committed observations and staged C# enable controls through independent `animation_root_motion_v1`, appending the 304-byte epoch-7 services prefix. Root-configured worlds use nested animation-state v5. [Contract](docs/ROOT_MOTION.md).
+- Pass sixteen Windows native suites, ten root-motion groups, three API groups, 80 compiled ABI checks, actual CoreCLR/Native AOT consumers and four exact GPU reference comparisons. Record the durable contact-cache limitation separately from accepted reconstructed-state continuation. [Results](docs/evidence/m2-root-motion.json).
+
 ## 0.0.118
 
 - Add frozen native two-bone IK chains with world/rig targets, pole controls, weights and deterministic reach handling after base animation and masked layers.

@@ -139,7 +139,7 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
     std::map<std::string,const Entity*> entities,rigs;
     std::map<std::string,std::vector<const Entity*>> mappings;
     std::set<const ModelAsset*> validated;
-    std::set<std::string> controlled_cameras;
+    std::set<std::string> controlled_cameras,root_actors;
     std::size_t nodes=0,channels=0,keys=0,joints=0,layer_nodes=0;
     for(const auto& entity:definition.entities) {
         check(entities.emplace(entity.id,&entity).second,"Duplicate runtime entity ID.");
@@ -208,6 +208,40 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
     for(const auto& [id,binding]:mappings) {
         check(std::all_of(binding.begin(),binding.end(),[](const Entity* e) { return e!=nullptr; }),"AnimationRig requires one ordinary RigNode entity for every model node, including unselected nodes.");
         const auto& source=*rigs.at(id)->animation_rig;
+        if(source.root_motion) {
+            const auto& root=*source.root_motion;
+            check(root.node<binding.size(),"Root motion model node is invalid.");
+            check(root.mode==RootMotionMode::Extract||root.mode==RootMotionMode::Character,"Unknown root motion policy.");
+            check(root.mode==RootMotionMode::Character||root.actor.empty(),"Extract root motion cannot bind an actor.");
+            std::vector<int> parents;std::vector<NodePose> rest;
+            for(std::size_t i=0;i<binding.size();++i){parents.push_back(source.model->nodes[i].parent);const auto& t=binding[i]->transform;rest.push_back({t.position,t.scale,t.rotation});}
+            root_motion::validate_path(parents,rest,root.node);
+            if(root.yaw)root_motion::validate_yaw_profiles(*source.model,rest,parents,root.node);
+            std::set<std::uint32_t> ancestry;
+            for(int node=static_cast<int>(root.node);node>=0;node=parents[static_cast<std::size_t>(node)]) {
+                ancestry.insert(static_cast<std::uint32_t>(node));const int p=parents[static_cast<std::size_t>(node)];
+                check(binding[static_cast<std::size_t>(node)]->parent==(p<0?id:binding[static_cast<std::size_t>(p)]->id),"Root motion model and authored ancestor direct parents must correspond exactly.");
+            }
+            for(std::size_t node=0;node<parents.size();++node)if(parents[node]<0)
+                check(binding[node]->parent==id,"Root motion compensation requires every model root directly below its rig wrapper.");
+            for(const auto& layer:source.layers)for(const auto& mask:layer.mask)
+                check(mask.weight==0||!ancestry.contains(mask.node),"Root motion layers must exclude the selected node and its ancestors.");
+            for(auto parent=rigs.at(id)->parent;!parent.empty();parent=entities.at(parent)->parent)
+                check(!entities.at(parent)->rig_node,"A root motion rig cannot be below a RigNode.");
+            const auto sampled=CompiledAnimation(*source.model).sample({},0,false,rest);
+            (void)root_motion::selected(sampled,parents,root.node,root.yaw);
+            if(root.mode==RootMotionMode::Character) {
+                check(!root.actor.empty()&&entities.contains(root.actor)&&entities.at(root.actor)->character.has_value(),"Character root motion requires a live CharacterController actor.");
+                check(root_actors.insert(root.actor).second,"A character can have only one configured root motion driver.");
+                auto current=rigs.at(id);Matrix4 relative=identity_matrix();
+                while(current->id!=root.actor) {
+                    check(!current->rig_node&&!current->collider&&!current->mesh_collider&&!current->character,"Root motion mounting path cannot contain another physics or animation owner.");
+                    const auto& t=current->transform;relative=multiply(local_matrix(t.position,t.rotation,t.scale),relative);
+                    check(!current->parent.empty(),"Root motion actor must be self or an ancestor.");current=entities.at(current->parent);
+                }
+                root_motion::validate_metric(relative,true);
+            }
+        }
         if(!source.ik.empty()) {
             for(auto parent=rigs.at(id)->parent;!parent.empty();parent=entities.at(parent)->parent)
                 check(!entities.at(parent)->rig_node,"An IK rig cannot be below any RigNode.");
@@ -247,7 +281,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
     if(compiled_cache)for(const auto& rig:compiled_cache->rigs)compiled.emplace(rig.model.get(),rig.compiled);
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto& source=*entity.animation_rig;Rig rig;rig.entity=entity.id;rig.model=source.model;
-        rig.ik=source.ik;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
+        rig.ik=source.ik;rig.root_motion=source.root_motion;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
         rig.compiled=compiled.at(rig.model.get());
         rig.parents.emplace_back(entity.id,entity.parent);
@@ -272,8 +306,14 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
     }
     layers_.resize(membership->rigs.size());
     ik_.resize(membership->rigs.size());ik_states_.resize(membership->rigs.size());
+    roots_.resize(membership->rigs.size());
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto index=membership->indices.at(entity.id);auto& rig=membership->rigs[index];auto definitions=entity.animation_rig->layers;
+        if(rig.root_motion) {
+            const auto& root=*rig.root_motion;auto& playback=roots_[index];playback.enabled=root.enabled;
+            playback.state={entity.id,root.actor,root.node,root.mode,root.enabled,root.yaw,tick,tick};
+            rig.root_rest=root_motion::selected(rig.compiled->sample({},0,false,rig.baseline),rig.model_parents,root.node,root.yaw);
+        }
         for(const auto& chain:rig.ik) {
             ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight});
             RuntimeIkState state{entity.id,chain.slot,chain.root,chain.middle,chain.end,chain.enabled,chain.space,chain.target,chain.pole};state.weight=chain.weight;
@@ -323,10 +363,13 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
         const auto& previous=membership_->rigs[old->second];const auto& next=candidate.membership_->rigs[index];
         check(previous.model==next.model && previous.nodes==next.nodes && previous.parents==next.parents &&
             previous.skins==next.skins && previous.skin_geometry==next.skin_geometry && previous.clip_durations==next.clip_durations &&
-            previous.model_parents==next.model_parents && poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers) && ik_equal(previous.ik,next.ik),
+            previous.model_parents==next.model_parents && poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers) && ik_equal(previous.ik,next.ik) &&
+            previous.root_motion.has_value()==next.root_motion.has_value() && (!previous.root_motion ||
+                (previous.root_motion->node==next.root_motion->node&&previous.root_motion->mode==next.root_motion->mode&&previous.root_motion->actor==next.root_motion->actor&&previous.root_motion->enabled==next.root_motion->enabled&&previous.root_motion->yaw==next.root_motion->yaw)),
             "Surviving animation rig bindings cannot change during membership replacement.");
         candidate.clocks_[index]=clocks_[old->second];candidate.layers_[index]=layers_[old->second];
         candidate.ik_[index]=ik_[old->second];candidate.ik_states_[index]=ik_states_[old->second];
+        candidate.roots_[index]=roots_[old->second];
         auto history_at_boundary=[tick](const Clock& clock) {
             check(!clock.current || clock.current->tick<=tick,"Animation membership boundary predates retained output history.");
         };
@@ -337,7 +380,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     // This is read-only: no history or transition buffer is replaced here.
     for(std::size_t index=0;index<candidate.membership_->rigs.size();++index)
         (void)candidate.composed(index,candidate.clocks_[index],candidate.layers_[index],tick);
-    membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);ik_.swap(candidate.ik_);ik_states_.swap(candidate.ik_states_);
+    membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);ik_.swap(candidate.ik_);ik_states_.swap(candidate.ik_states_);roots_.swap(candidate.roots_);
 }
 
 namespace {
@@ -493,12 +536,29 @@ RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const 
 }
 void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick) {
     check(commands.size()<=64,"At most 64 animation commands per batch.");
-    auto candidate=clocks_;auto candidate_layers=layers_;std::set<std::pair<std::string,std::optional<std::uint32_t>>> seen;std::set<std::size_t> changed;
+    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_roots=roots_;std::set<std::pair<std::string,std::optional<std::uint32_t>>> seen;std::set<std::size_t> changed;
     for(const auto& command:commands) {
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Animation command requires an AnimationRig entity.");
         check(seen.emplace(command.entity,command.layer).second,"Duplicate animation command target.");
         const auto index=found->second;changed.insert(index);
-        if(!command.layer)candidate[index]=replacement(index,clocks_[index],command,tick);
+        if(!command.layer) {
+            candidate[index]=replacement(index,clocks_[index],command,tick);
+            if(membership_->rigs[index].root_motion) {
+                auto& root=candidate_roots[index];root.fade.reset();
+                if(command.blend_ticks) {
+                    RootFade fade;fade.start_tick=tick;fade.duration_ticks=command.blend_ticks;fade.mode=command.transition_mode;
+                    const auto velocity=[&]{auto d=root_interval(index,clocks_[index],roots_[index],tick);return root_motion::Planar{d.x/Runtime::fixed_dt,d.z/Runtime::fixed_dt,d.yaw/Runtime::fixed_dt};};
+                    const auto source=roots_[index].state.to_tick>roots_[index].state.from_tick&&roots_[index].state.to_tick==tick ? roots_[index].last_velocity : velocity();
+                    if(command.transition_mode==AnimationTransitionMode::Inertial) {
+                        const auto d=root_interval(index,candidate[index],root,tick);
+                        fade.correction_velocity={source.x-d.x/Runtime::fixed_dt,source.z-d.z/Runtime::fixed_dt,source.yaw-d.yaw/Runtime::fixed_dt};
+                    }else if(roots_[index].fade&&tick-roots_[index].fade->start_tick<roots_[index].fade->duration_ticks)fade.frozen_velocity=source;
+                    else {fade.source=clocks_[index].control;fade.source_anchor_tick=clocks_[index].anchor_tick;}
+                    root.fade=std::move(fade);
+                }
+                (void)root_interval(index,candidate[index],root,tick);
+            }
+        }
         else {
             const auto& frozen=membership_->rigs[index].layers;
             const auto slot=std::find_if(frozen.begin(),frozen.end(),[&](const auto& layer){ return layer.slot==*command.layer; });
@@ -509,7 +569,56 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
         }
     }
     for(const auto index:changed)(void)composed(index,candidate[index],candidate_layers[index],tick);
-    clocks_.swap(candidate);layers_.swap(candidate_layers);
+    clocks_.swap(candidate);layers_.swap(candidate_layers);roots_.swap(candidate_roots);
+}
+root_motion::Planar RuntimeAnimations::root_interval(std::size_t index,const Clock& clock,const RootPlayback& playback,std::uint64_t tick) const {
+    const auto& rig=membership_->rigs[index];check(rig.root_motion.has_value(),"Root motion rig is not configured.");const auto& root=*rig.root_motion;
+    auto raw=[&](const AnimationCommand& command,std::uint64_t anchor){return root_motion::interval(*rig.compiled,rig.baseline,rig.model_parents,root.node,root.yaw,rig.root_rest,
+        command.clip?rig.clip_durations.at(*command.clip):0,command,anchor,tick);};
+    auto destination=raw(clock.control,clock.anchor_tick);
+    if(!playback.fade)return destination;
+    const auto& fade=*playback.fade;check(tick>=fade.start_tick,"Root motion fade predates its command.");
+    if(tick-fade.start_tick>=fade.duration_ticks)return destination;
+    if(fade.mode==AnimationTransitionMode::Inertial) {
+        const double a=double(tick-fade.start_tick)/fade.duration_ticks,b=double(tick+1-fade.start_tick)/fade.duration_ticks;
+        const double weight=root_motion::decay_average(a,b)*Runtime::fixed_dt;
+        destination.x+=fade.correction_velocity.x*weight;destination.z+=fade.correction_velocity.z*weight;destination.yaw+=fade.correction_velocity.yaw*weight;
+    }else {
+        root_motion::Planar source;
+        if(fade.frozen_velocity)source={fade.frozen_velocity->x*Runtime::fixed_dt,fade.frozen_velocity->z*Runtime::fixed_dt,fade.frozen_velocity->yaw*Runtime::fixed_dt};
+        else source=raw(fade.source,fade.source_anchor_tick);
+        destination=root_motion::mix(source,destination,std::clamp((double(tick-fade.start_tick)+.5)/fade.duration_ticks,0.,1.));
+    }
+    root_motion::validate_delta(destination);return destination;
+}
+bool RuntimeAnimations::has_root_motion() const noexcept {return std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig){return rig.root_motion.has_value();});}
+std::optional<RuntimeRootMotionDefinition> RuntimeAnimations::root_motion_definition(const std::string& entity) const {
+    const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return {};return membership_->rigs[found->second].root_motion;
+}
+std::optional<RuntimeRootMotionState> RuntimeAnimations::root_motion_state(const std::string& entity) const {
+    const auto found=membership_->indices.find(entity);if(found==membership_->indices.end()||!membership_->rigs[found->second].root_motion)return {};return roots_[found->second].state;
+}
+void RuntimeAnimations::apply_root_motion(const std::vector<RuntimeRootMotionCommand>& commands) {
+    check(commands.size()<=64,"Root motion write budget is 64 per tick.");auto candidate=roots_;std::set<std::string> seen;
+    for(const auto& command:commands){const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end()&&membership_->rigs[found->second].root_motion.has_value(),"Root motion command requires a configured rig.");check(seen.insert(command.entity).second,"Duplicate root motion command rig.");candidate[found->second].enabled=command.enabled;}roots_.swap(candidate);
+}
+std::vector<RuntimeRootMotionState> RuntimeAnimations::prepare_root_motion(std::uint64_t tick) const {
+    check(tick<9007199254740991ULL,"Root motion tick exceeds exact bounds.");std::vector<RuntimeRootMotionState> result;
+    for(const auto& [entity,index]:membership_->indices)if(membership_->rigs[index].root_motion){const auto& root=*membership_->rigs[index].root_motion;const auto& playback=roots_[index];check(playback.state.to_tick==tick,"Root motion interval is not the next committed tick.");
+        const auto d=root_interval(index,clocks_[index],playback,tick);RuntimeRootMotionState state{entity,root.actor,root.node,root.mode,playback.enabled,root.yaw,tick,tick+1};if(playback.enabled){state.local_delta={d.x,0,d.z};state.yaw_delta=d.yaw;}result.push_back(std::move(state));}
+    return result;
+}
+void RuntimeAnimations::commit_root_motion(const std::vector<RuntimeRootMotionState>& states,std::uint64_t tick_after) {
+    check(tick_after>0,"Root motion commit tick is invalid.");const auto expected=prepare_root_motion(tick_after-1);check(states.size()==expected.size(),"Root motion commit requires every configured rig.");auto candidate=roots_;
+    for(std::size_t i=0;i<states.size();++i){const auto& s=states[i];const auto& e=expected[i];check(s.entity==e.entity&&s.actor==e.actor&&s.node==e.node&&s.mode==e.mode&&s.enabled==e.enabled&&s.yaw==e.yaw&&s.from_tick==e.from_tick&&s.to_tick==e.to_tick&&s.local_delta==e.local_delta&&s.yaw_delta==e.yaw_delta,"Root motion commit differs from prepared interval.");
+        for(const auto& values:{s.world_requested,s.world_applied})for(double v:values)check(std::isfinite(v)&&std::abs(v)<=1e6,"Root motion world diagnostic is invalid.");check(std::isfinite(s.applied_yaw)&&std::abs(s.applied_yaw)<=2*std::acos(-1.)&&std::isfinite(s.translation_error)&&s.translation_error>=0&&s.translation_error<=2e6,"Root motion diagnostic is invalid.");
+        if(s.mode==RootMotionMode::Extract)check(s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Extract root motion cannot publish applied diagnostics.");
+        if(!s.enabled)check(s.world_requested==std::array<double,3>{}&&s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Disabled root motion cannot publish physical diagnostics.");
+        const auto index=membership_->indices.at(s.entity);auto& next=candidate[index];const auto d=root_interval(index,clocks_[index],roots_[index],s.from_tick);next.last_velocity={d.x/Runtime::fixed_dt,d.z/Runtime::fixed_dt,d.yaw/Runtime::fixed_dt};next.state=s;if(next.fade&&tick_after-next.fade->start_tick>=next.fade->duration_ticks)next.fade.reset();
+    }roots_.swap(candidate);
+}
+void RuntimeAnimations::strip_root(std::size_t index,ModelPose& pose) const {
+    const auto& rig=membership_->rigs[index];if(!rig.root_motion)return;const auto& root=*rig.root_motion;root_motion::strip(pose,rig.model_parents,root.node,root.yaw,rig.root_rest);pose=rig.compiled->sample({},0,false,pose.local);
 }
 bool RuntimeAnimations::has_ik() const noexcept {
     return std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig){return !rig.ik.empty();});
@@ -562,6 +671,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
             if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();
         }
         if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
+        strip_root(index,pose);
         for(std::size_t i=0;i<rig.ik.size();++i)candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);
         auto& output=outputs[index];
         for(std::size_t node=0;node<rig.nodes.size();++node) {
@@ -688,11 +798,57 @@ RuntimeAnimations::InertialNode read_inertial(const StateJson& value,double dura
 void equal_parameter(double actual,double expected) {
     check(std::abs(actual-expected)<=1e-10*std::max({1.0,std::abs(actual),std::abs(expected)}),"Inertial animation source offset differs from its boundary poses.");
 }
+StateJson root_binding(const RuntimeRootMotionDefinition& root) {
+    return {{"node",root.node},{"mode",root.mode==RootMotionMode::Character?"character":"extract"},{"actor",root.actor},{"enabled",root.enabled},{"yaw",root.yaw}};
+}
+StateJson root_vector(const root_motion::Planar& p){return StateJson::array({p.x,p.z,p.yaw});}
+root_motion::Planar read_root_vector(const StateJson& value){const auto v=state_vector<3>(value);return {v[0],v[1],v[2]};}
+StateJson root_state(const RuntimeRootMotionState& s) {
+    return {{"entity",s.entity},{"actor",s.actor},{"node",s.node},{"mode",s.mode==RootMotionMode::Character?"character":"extract"},
+        {"enabled",s.enabled},{"yaw",s.yaw},{"from_tick",s.from_tick},{"to_tick",s.to_tick},{"local_delta",s.local_delta},{"yaw_delta",s.yaw_delta},
+        {"world_requested",s.world_requested},{"world_applied",s.world_applied},{"applied_yaw",s.applied_yaw},{"translation_error",s.translation_error}};
+}
+RuntimeRootMotionState read_root_state(const StateJson& value,const std::string& entity,const RuntimeRootMotionDefinition& root,std::uint64_t tick) {
+    state_fields(value,{"entity","actor","node","mode","enabled","yaw","from_tick","to_tick","local_delta","yaw_delta","world_requested","world_applied","applied_yaw","translation_error"});
+    check(value.at("entity")==entity&&value.at("actor")==root.actor&&state_uint(value.at("node"),UINT32_MAX)==root.node&&value.at("mode")== (root.mode==RootMotionMode::Character?"character":"extract")&&state_bool(value.at("yaw"))==root.yaw,"Saved root motion state differs from frozen binding.");
+    RuntimeRootMotionState s{entity,root.actor,root.node,root.mode,state_bool(value.at("enabled")),root.yaw};s.from_tick=state_uint(value.at("from_tick"),tick);s.to_tick=state_uint(value.at("to_tick"),tick);
+    check(s.to_tick==tick&&(s.from_tick==tick||s.from_tick+1==tick),"Saved root motion interval differs from restore boundary.");
+    s.local_delta=state_vector<3>(value.at("local_delta"));s.yaw_delta=state_number(value.at("yaw_delta"));s.world_requested=state_vector<3>(value.at("world_requested"));s.world_applied=state_vector<3>(value.at("world_applied"));s.applied_yaw=state_number(value.at("applied_yaw"));s.translation_error=state_number(value.at("translation_error"));
+    check(s.local_delta[1]==0&&std::abs(s.applied_yaw)<=2*std::acos(-1.)&&s.translation_error>=0&&s.translation_error<=2e6,"Saved root motion diagnostic is invalid.");root_motion::validate_delta({s.local_delta[0],s.local_delta[2],s.yaw_delta});
+    for(const auto& a:{s.world_requested,s.world_applied})for(double x:a)check(std::abs(x)<=1e6,"Saved root motion world diagnostic exceeds its bound.");
+    check(s.enabled||(s.local_delta==std::array<double,3>{}&&s.yaw_delta==0),"Disabled saved root motion emitted an interval.");check(s.yaw||s.yaw_delta==0,"Saved translation-only root motion emitted yaw.");
+    if(root.mode==RootMotionMode::Extract)check(s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Saved Extract motion has applied diagnostics.");
+    if(!s.enabled)check(s.world_requested==std::array<double,3>{}&&s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Saved disabled motion has physical diagnostics.");
+    if(s.from_tick==s.to_tick)check(s.local_delta==std::array<double,3>{}&&s.yaw_delta==0&&s.world_requested==std::array<double,3>{}&&s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Initial root motion state is not neutral.");return s;
+}
+StateJson save_root(const RuntimeAnimations::RootPlayback& playback,const RuntimeRootMotionDefinition& root) {
+    StateJson fade=nullptr;
+    if(playback.fade){const auto& f=*playback.fade;StateJson source=nullptr;if(f.mode==AnimationTransitionMode::Crossfade&&!f.frozen_velocity)source={{"control",state_control(f.source,true)},{"anchor_tick",f.source_anchor_tick}};
+        fade={{"start_tick",f.start_tick},{"duration_ticks",f.duration_ticks},{"mode",state_mode(f.mode)},{"source",source},{"frozen_velocity",f.frozen_velocity?root_vector(*f.frozen_velocity):StateJson(nullptr)},{"correction_velocity",root_vector(f.correction_velocity)}};}
+    return {{"binding",root_binding(root)},{"enabled",playback.enabled},{"state",root_state(playback.state)},{"last_velocity",root_vector(playback.last_velocity)},{"fade",fade}};
+}
+RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::string& entity,const RuntimeRootMotionDefinition& root,std::size_t clips,std::uint64_t tick,const RuntimeAnimations::Clock& clock) {
+    state_fields(value,{"binding","enabled","state","last_velocity","fade"});const auto& binding=value.at("binding");state_fields(binding,{"node","mode","actor","enabled","yaw"});
+    check(state_uint(binding.at("node"),UINT32_MAX)==root.node&&state_bool(binding.at("enabled"))==root.enabled&&state_bool(binding.at("yaw"))==root.yaw&&binding==root_binding(root),"Saved root motion profile differs from frozen definition.");
+    RuntimeAnimations::RootPlayback result;result.enabled=state_bool(value.at("enabled"));result.state=read_root_state(value.at("state"),entity,root,tick);result.last_velocity=read_root_vector(value.at("last_velocity"));
+    root_motion::validate_delta({result.last_velocity.x*Runtime::fixed_dt,result.last_velocity.z*Runtime::fixed_dt,result.last_velocity.yaw*Runtime::fixed_dt});
+    const auto& saved=value.at("fade");if(!saved.is_null()){
+        state_fields(saved,{"start_tick","duration_ticks","mode","source","frozen_velocity","correction_velocity"});RuntimeAnimations::RootFade fade;fade.start_tick=state_uint(saved.at("start_tick"),tick);fade.duration_ticks=static_cast<std::uint32_t>(state_uint(saved.at("duration_ticks"),3600));fade.mode=read_mode(saved.at("mode"));
+        check(fade.duration_ticks>0&&tick-fade.start_tick<fade.duration_ticks&&clock.anchor_tick==fade.start_tick&&clock.control.blend_ticks==fade.duration_ticks&&clock.control.transition_mode==fade.mode,"Saved root fade differs from target clock.");
+        fade.correction_velocity=read_root_vector(saved.at("correction_velocity"));check(std::hypot(fade.correction_velocity.x,fade.correction_velocity.z)<=200+1e-6&&std::abs(fade.correction_velocity.yaw)<=40+1e-6,"Saved root fade correction is invalid.");
+        const auto& source=saved.at("source");const auto& frozen=saved.at("frozen_velocity");
+        if(fade.mode==AnimationTransitionMode::Inertial)check(source.is_null()&&frozen.is_null(),"Inertial root fade cannot contain crossfade sources.");
+        else {check(fade.correction_velocity.x==0&&fade.correction_velocity.z==0&&fade.correction_velocity.yaw==0&&source.is_null()!=frozen.is_null(),"Crossfade root state requires one source and no correction.");
+            if(!source.is_null()){state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,clips,true);fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);}
+            else {fade.frozen_velocity=read_root_vector(frozen);root_motion::validate_delta({fade.frozen_velocity->x*Runtime::fixed_dt,fade.frozen_velocity->z*Runtime::fixed_dt,fade.frozen_velocity->yaw*Runtime::fixed_dt});}}
+        result.fade=std::move(fade);
+    }return result;
+}
 }
 std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
-    const bool configured_ik=has_ik();
-    const bool layered=configured_ik || std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
+    const bool configured_ik=has_ik(),configured_root=has_root_motion();
+    const bool layered=configured_ik || configured_root || std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
     const bool modern=layered || std::any_of(clocks_.begin(),clocks_.end(),[](const Clock& clock) { return clock.inertial_ever_used; });
     auto save_clock=[&](std::size_t index,const Clock& clock,const std::string& entity) {
         check(clock.inertial_ever_used || clock.control.transition_mode==AnimationTransitionMode::Crossfade,"Inertial control requires its history flag.");
@@ -738,7 +894,7 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
             }
             record["layers"]=std::move(saved_layers);
         }
-        if(configured_ik) {
+        if(configured_ik||configured_root) {
             auto saved=StateJson::array();const auto& rig=membership_->rigs[index];
             for(std::size_t i=0;i<rig.ik.size();++i) {
                 const auto& frozen=rig.ik[i];const auto& control=ik_[index][i];validate_ik_command(control);
@@ -748,16 +904,21 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
             }
             record["ik"]=std::move(saved);
         }
+        if(configured_root) {
+            const auto& frozen=membership_->rigs[index].root_motion;
+            if(frozen){check(roots_[index].state.to_tick==tick,"Root motion save requires the committed boundary.");record["root_motion"]=save_root(roots_[index],*frozen);}
+            else record["root_motion"]=nullptr;
+        }
         records.push_back(std::move(record));
     }
-    auto result=StateJson{{"format","poima.animation-state"},{"version",configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
+    auto result=StateJson{{"format","poima.animation-state"},{"version",configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
 void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     check(tick<=animation_state_max_tick,"Animation load tick is out of range.");
     const bool configured=std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
-    const bool configured_ik=has_ik();
-    check(text.size()<=(configured || configured_ik ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
+    const bool configured_ik=has_ik(),configured_root=has_root_motion();
+    check(text.size()<=(configured || configured_ik || configured_root ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
     // Reject duplicate keys and excessive nesting instead of allowing ambiguous
     // records or allocating an unbounded recursive object tree.
     std::vector<std::set<std::string>> keys;
@@ -772,10 +933,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     };
     const auto document=StateJson::parse(text,callback);
     state_fields(document,{"format","version","tick","rigs"});
-    const auto version=state_uint(document.at("version"),4);
-    check(document.at("format")=="poima.animation-state" && version>=1 && version<=4,"Unsupported animation state format/version.");
+    const auto version=state_uint(document.at("version"),5);
+    check(document.at("format")=="poima.animation-state" && version>=1 && version<=5,"Unsupported animation state format/version.");
     const bool modern=version>=2;const bool layered=version>=3;
-    check((version==4)==configured_ik && (version==4 || layered==configured),"Animation state version does not match configured layers/IK.");
+    check((version==5)==configured_root && (version==5 || ((version==4)==configured_ik && (version==4 || layered==configured))),"Animation state version does not match configured layers/IK/root motion.");
     check(layered || text.size()<=animation_state_bytes,"Legacy animation state exceeds 16 MiB.");
     check(state_uint(document.at("tick"),animation_state_max_tick)==tick,"Animation state tick differs from restore boundary.");
     const auto& records=document.at("rigs");check(records.is_array() && records.size()==membership_->rigs.size(),"Animation state must contain every current rig exactly once.");
@@ -836,9 +997,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         }
         (void)evaluate(index,next,tick);return next;
     };
-    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;std::set<std::string> seen;
+    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;auto candidate_roots=roots_;std::set<std::string> seen;
     for(const auto& record:records) {
-        if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
+        if(configured_root)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"});
+        else if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
         else if(layered)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"});
         else if(modern)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history"});
         else state_fields(record,{"entity","control","anchor_tick","transition"});
@@ -878,7 +1040,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             }
             (void)composed(index,candidate[index],candidate_layers[index],tick);
         }
-        if(configured_ik) {
+        if(configured_ik||configured_root) {
             const auto& saved=record.at("ik");const auto& rig=membership_->rigs[index];
             check(saved.is_array()&&saved.size()==rig.ik.size(),"Animation state must contain every configured IK chain exactly once.");
             for(std::size_t i=0;i<saved.size();++i) {
@@ -894,11 +1056,13 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             // Validate the evaluated model metric now; world-space diagnostics
             // are reconstructed only after the owner restores physical poses.
             auto pose=composed(index,candidate[index],candidate_layers[index],tick);
+            strip_root(index,pose);
             for(std::size_t i=0;i<rig.ik.size();++i)(void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
         }
+        if(configured_root){const auto& root=membership_->rigs[index].root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root)candidate_roots[index]=read_root(saved,entity,*root,membership_->rigs[index].clip_durations.size(),tick,candidate[index]);}
     }
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
-    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(candidate_ik);
+    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(candidate_ik);roots_.swap(candidate_roots);
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {
     const auto found=membership_->skins.find(entity);if(found==membership_->skins.end())return {};

@@ -93,6 +93,23 @@ struct RuntimeIkState {
     double weight=1,target_error=0;
     bool clamped=false,pole_fallback=false;
 };
+enum class RootMotionMode : std::uint32_t { Extract=0, Character=1 };
+struct RuntimeRootMotionDefinition {
+    std::uint32_t node=0;
+    RootMotionMode mode=RootMotionMode::Extract;
+    std::string actor;
+    bool enabled=true,yaw=false;
+};
+struct RuntimeRootMotionCommand { std::string entity; bool enabled=true; };
+struct RuntimeRootMotionState {
+    std::string entity,actor;
+    std::uint32_t node=0;
+    RootMotionMode mode=RootMotionMode::Extract;
+    bool enabled=true,yaw=false;
+    std::uint64_t from_tick=0,to_tick=0;
+    std::array<double,3> local_delta{},world_requested{},world_applied{};
+    double yaw_delta=0,applied_yaw=0,translation_error=0;
+};
 struct RuntimeAnimationRig {
     std::shared_ptr<const ModelAsset> model;
     std::optional<std::uint32_t> clip;
@@ -100,6 +117,7 @@ struct RuntimeAnimationRig {
     bool loop=true,playing=false;
     std::vector<RuntimeAnimationLayer> layers;
     std::vector<RuntimeTwoBoneIk> ik;
+    std::optional<RuntimeRootMotionDefinition> root_motion;
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
@@ -414,10 +432,11 @@ public:
     std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
         const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={},
-        const std::vector<RuntimeIkCommand>& ik={});
+        const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
+    std::optional<RuntimeRootMotionState> root_motion(const std::string& id) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;
     std::uint64_t component_revision() const;

@@ -306,6 +306,22 @@ typedef struct PoimaGameTwoBoneIkServicesV1 {
     int32_t (POIMA_CALL *ik_set)(void*,const PoimaGameTwoBoneIkCommandV1*,PoimaGameError*);
 } PoimaGameTwoBoneIkServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
+// Independent animation_root_motion_v1. Reads observe the last committed
+// physical interval; setters stage only persistent enable controls during Tick.
+typedef struct PoimaGameRootMotionCommandV1 {
+    uint32_t version,bytes; PoimaEntityId entity; uint32_t enabled,reserved;
+} PoimaGameRootMotionCommandV1;
+typedef struct PoimaGameRootMotionStateV1 {
+    uint32_t version,bytes,present,reserved; PoimaEntityId entity,actor;
+    uint32_t node,mode,enabled,yaw; uint64_t from_tick,to_tick;
+    double local_delta[3],yaw_delta,world_requested[3],world_applied[3],applied_yaw,translation_error;
+} PoimaGameRootMotionStateV1;
+typedef struct PoimaGameRootMotionServicesV1 {
+    PoimaGameTwoBoneIkServicesV1 ik;
+    int32_t (POIMA_CALL *root_motion_get)(void*,const PoimaEntityId*,PoimaGameRootMotionStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *root_motion_set)(void*,const PoimaGameRootMotionCommandV1*,PoimaGameError*);
+} PoimaGameRootMotionServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -326,6 +342,13 @@ static_assert(offsetof(PoimaGameTwoBoneIkStateV1,present)==8 && offsetof(PoimaGa
 static_assert(offsetof(PoimaGameTwoBoneIkStateV1,enabled)==44 && offsetof(PoimaGameTwoBoneIkStateV1,space)==48 && offsetof(PoimaGameTwoBoneIkStateV1,reserved)==52 && offsetof(PoimaGameTwoBoneIkStateV1,weight)==56 && offsetof(PoimaGameTwoBoneIkStateV1,target)==64 && offsetof(PoimaGameTwoBoneIkStateV1,pole)==88);
 static_assert(offsetof(PoimaGameTwoBoneIkStateV1,end_position)==112 && offsetof(PoimaGameTwoBoneIkStateV1,target_error)==136 && offsetof(PoimaGameTwoBoneIkStateV1,clamped)==144 && offsetof(PoimaGameTwoBoneIkStateV1,pole_fallback)==148 && offsetof(PoimaGameTwoBoneIkStateV1,reserved_tail)==152);
 static_assert(sizeof(PoimaGameTwoBoneIkServicesV1)==288 && offsetof(PoimaGameTwoBoneIkServicesV1,regions)==0 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_get)==272 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_set)==280);
+static_assert(sizeof(PoimaGameRootMotionCommandV1)==32 && offsetof(PoimaGameRootMotionCommandV1,entity)==8 && offsetof(PoimaGameRootMotionCommandV1,enabled)==24 && offsetof(PoimaGameRootMotionCommandV1,reserved)==28);
+static_assert(sizeof(PoimaGameRootMotionStateV1)==176 && alignof(PoimaGameRootMotionStateV1)==8);
+static_assert(offsetof(PoimaGameRootMotionStateV1,present)==8 && offsetof(PoimaGameRootMotionStateV1,reserved)==12 && offsetof(PoimaGameRootMotionStateV1,entity)==16 && offsetof(PoimaGameRootMotionStateV1,actor)==32);
+static_assert(offsetof(PoimaGameRootMotionStateV1,node)==48 && offsetof(PoimaGameRootMotionStateV1,mode)==52 && offsetof(PoimaGameRootMotionStateV1,enabled)==56 && offsetof(PoimaGameRootMotionStateV1,yaw)==60);
+static_assert(offsetof(PoimaGameRootMotionStateV1,from_tick)==64 && offsetof(PoimaGameRootMotionStateV1,to_tick)==72 && offsetof(PoimaGameRootMotionStateV1,local_delta)==80 && offsetof(PoimaGameRootMotionStateV1,yaw_delta)==104);
+static_assert(offsetof(PoimaGameRootMotionStateV1,world_requested)==112 && offsetof(PoimaGameRootMotionStateV1,world_applied)==136 && offsetof(PoimaGameRootMotionStateV1,applied_yaw)==160 && offsetof(PoimaGameRootMotionStateV1,translation_error)==168);
+static_assert(sizeof(PoimaGameRootMotionServicesV1)==304 && offsetof(PoimaGameRootMotionServicesV1,ik)==0 && offsetof(PoimaGameRootMotionServicesV1,root_motion_get)==288 && offsetof(PoimaGameRootMotionServicesV1,root_motion_set)==296);
 static_assert(sizeof(PoimaGamePreferenceValuesV1)==56 && offsetof(PoimaGamePreferenceValuesV1,invert_x)==40 && offsetof(PoimaGamePreferenceValuesV1,frames_in_flight)==52);
 static_assert(sizeof(PoimaGamePreferenceSnapshotV1)==216 && offsetof(PoimaGamePreferenceSnapshotV1,owner)==16 && offsetof(PoimaGamePreferenceSnapshotV1,revision)==32 && offsetof(PoimaGamePreferenceSnapshotV1,values)==48);
 static_assert(offsetof(PoimaGamePreferenceSnapshotV1,sources)==104 && offsetof(PoimaGamePreferenceSnapshotV1,next_samples)==140 && offsetof(PoimaGamePreferenceSnapshotV1,observation_mask)==148 && offsetof(PoimaGamePreferenceSnapshotV1,reserved)==156);

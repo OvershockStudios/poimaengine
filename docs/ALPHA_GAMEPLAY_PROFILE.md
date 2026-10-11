@@ -44,6 +44,7 @@ call ABI 1/80. Named service extensions have these minimum prefixes:
 | `input_actions_v1` | 264 | [Named gameplay actions](INPUT_ACTIONS.md) |
 | `hit_regions_v1` | 272 | [Committed hit regions](HIT_REGIONS.md) |
 | `animation_ik_v1` | 288 | [Two-bone IK](TWO_BONE_IK.md) |
+| `animation_root_motion_v1` | 304 | [Planar root motion](ROOT_MOTION.md) |
 
 `gameplay_persistence_v1` and `component_collections_v1` authorize their metadata
 formats without adding a services tail. Combined consumers declare every feature
@@ -80,7 +81,12 @@ bindings. [Imported characters](IMPORTED_CHARACTER.md) and
 [retargeting](ANIMATION_RETARGETING.md) define their supported rig, frame and
 reference-pose constraints. Unsupported constructs require an actionable report,
 not a silent promise of visual parity. [Two-bone IK](TWO_BONE_IK.md) supports
-explicit configured chains. Broader exporter coverage, automatic contact solving,
+explicit configured chains. [Root motion](ROOT_MOTION.md) supplies bounded
+base-clip planar Character locomotion or Extract diagnostics, with frozen source
+ancestry, layer exclusions and mounting constraints. Its loop/transition state
+and collision-resolved diagnostics participate in exact checkpoints; it does
+not add vertical climbing, stride warping or a general locomotion graph.
+Broader exporter coverage, automatic contact solving,
 character creation and arbitrary material conversion remain separate work.
 
 Preserve the original licensed input and its recorded hashes. Cooked content

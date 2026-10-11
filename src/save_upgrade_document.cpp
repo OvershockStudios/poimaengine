@@ -71,6 +71,31 @@ void hit_region_references(const Json& rows) {
 }
 void graph_references(const Json& rows) {
     hit_region_references(rows);
+    std::set<std::string> root_actors;
+    for(const auto& [rig,entity]:rows.items()) {
+        const auto& bag=entity.at("components");
+        if(!bag.contains("AnimationRig") || !bag.at("AnimationRig").contains("root_motion"))continue;
+        const auto& profile=bag.at("AnimationRig").at("root_motion");
+        check(profile.is_object() && profile.contains("node") && profile.at("node").is_number_integer() && profile.at("node")>=0 && profile.at("node")<10000,"Invalid frozen root-motion source index.");
+        for(const auto& [key,value]:profile.items()) { (void)value;check(key=="node" || key=="mode" || key=="actor" || key=="enabled" || key=="yaw","Unknown frozen root-motion field."); }
+        for(const auto* key:{"enabled","yaw"})if(profile.contains(key))check(profile.at(key).is_boolean(),"Frozen root-motion flags must be boolean.");
+        const auto mode=profile.value("mode",Json("extract"));check(mode=="extract" || mode=="character","Invalid frozen root-motion mode.");
+        if(mode=="extract")check(!profile.contains("actor") || profile.at("actor").is_null(),"Extract root motion has no actor.");
+        else {
+            check(profile.contains("actor") && profile.at("actor").is_string(),"Character root motion requires an actor.");
+            const auto actor=profile.at("actor").get<std::string>();identifier(actor);
+            check(rows.contains(actor) && rows.at(actor).at("components").contains("CharacterController"),"Root-motion actor is absent or has no controller.");
+            check(root_actors.insert(actor).second,"Duplicate root-motion actor driver.");
+            auto ancestor=rig;while(ancestor!=actor && !ancestor.empty()) {const auto& parent=rows.at(ancestor).at("parent");ancestor=parent.is_null()?std::string{}:parent.get<std::string>();}
+            check(ancestor==actor,"Root-motion actor must be self or an ancestor.");
+        }
+        bool source=false;
+        for(const auto& [node,member]:rows.items()) {
+            (void)node;const auto& c=member.at("components");
+            if(c.contains("RigNode") && c.at("RigNode").at("rig")==rig && c.at("RigNode").at("node")==profile.at("node"))source=true;
+        }
+        check(source,"Frozen root-motion source binding is absent.");
+    }
     // IK configuration is frozen built-in content, never an authorized custom
     // schema/default addition. Validate its local graph references as well as
     // retaining the complete component in the later exact document comparison.

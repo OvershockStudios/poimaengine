@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.118**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.119**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.119 adds opt-in planar root motion from frozen original model
+nodes, with Extract diagnostics or collision-resolved Character locomotion.
+Loop-unwrapped intervals and transition velocity history advance once per
+physics tick; composed poses remove planar motion before IK and skinning.
+Mounted rigs account for pivot, yaw and uniform scale. Character movement
+ownership, staged enable controls, instance remapping and complete batch
+rollback share the native owner. Root worlds use nested animation-state v5;
+IK-only and older worlds retain their previous formats. Independent
+`animation_root_motion_v1` appends the 304-byte epoch-7 services prefix.
+Sixteen Windows native suites, ten root-motion groups, three API groups with
+89 calls, 80 compiled ABI checks and 14 publisher tests pass. Actual CoreCLR
+and Native AOT consumers record 156 and 147 lossless calls, with 23 and 21
+complete durable checkpoints, full rejection rollback, save intents and
+three grounded ticks matching independently reconstructed saves. CoreCLR
+also preserves the complete checkpoint across compatible reload. Four GPU
+pairs on AMD/NVIDIA and forward/deferred paths match independent geometry
+exactly in full BMP pixels and HDR/depth/normal probes. A retained earlier
+run found a roughly 3.3e-8-metre Character Y difference between uninterrupted
+warm-contact physics and a fresh restore: typed saves omit Jolt solver/contact
+caches. Immediate restore is exact; bit-exact future warm-contact simulation
+is outside this contract. Accepted Windows Jobs close naturally with unchanged
+admitted inputs. Vertical climbing, stride warping, automatic contact/foot
+planning, desktop root controls and game-scale performance remain separate
+work. These checks do not qualify an unpaused player-service route or close
+Alpha. [Contract](ROOT_MOTION.md), [results](evidence/m2-root-motion.json).
 
 Version 0.0.118 adds explicit native two-bone IK after base animation and
 masked layers, with world/rig targets, pole points, weights, reach clamping and
@@ -1787,7 +1813,7 @@ Planned editor workflow improvements include configurable hierarchy/folder styli
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
-Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers, including opt-in compiled C# controls. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. State machines and transition-history scrubbing, IK, root-motion extraction and automatic anatomical/contact retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
+Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers, including opt-in compiled C# controls. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. [Explicit two-bone IK](TWO_BONE_IK.md) and [planar root motion](ROOT_MOTION.md) share the committed pose, physics, checkpoint and rollback boundary. State machines and transition-history scrubbing, automatic grounding/full-body IK, vertical root locomotion and automatic anatomical/contact retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
 
@@ -1849,7 +1875,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. Action contexts, chords, analog named values, in-game rebinding UI, haptics and general settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
 
-- glTF and bounded FBX skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights, with opt-in compiled C# layer controls. Retargeting, IK and root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md), [FBX profile](FBX_IMPORT.md).
+- glTF and bounded FBX skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights, with opt-in compiled C# layer controls. Explicit import-time retargeting, native two-bone IK and planar root motion have their own bounded contracts; automatic anatomical/contact retargeting and general full-body locomotion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md), [FBX profile](FBX_IMPORT.md).
 
 - Native mono WAV import and content-addressed audio packages, editable acoustic materials/emitters, and optional Steam Audio direct-path/HRTF capture from authored or live poses. Linux/Windows tests measure actual PCM, dynamic-door obstruction, delayed arrival, directional cues and mixing; the C# use action changes the observed acoustic path. Native logical voices, rollback-safe C# play/stop, persistent direct/HRTF streams, temporal replay recording and optional SDL3 player output and a separate bounded [editor DSP worker](EDITOR_AUDIO.md) are now implemented; reflections, production scheduling and the full environmental system remain unfinished. [Event/output contract](AUDIO_EVENTS.md). [Native audio contract and evidence](AUDIO.md).
 
