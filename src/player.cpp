@@ -15,17 +15,26 @@ void validate_player_preferences(const PlayerOptions& options) {
     if(state->values.samples!=options.render.samples || state->values.frames_in_flight!=options.render.frames_in_flight)
         throw std::invalid_argument("Player preferences must match the window's frozen launch sample/frame-slot configuration.");
 }
+double player_effective_vertical_fov(double live,std::optional<double> authored,std::optional<double> preference) {
+    if(!preference)return live;
+    const auto valid=[](double value) {return std::isfinite(value) && value>=5 && value<=150;};
+    if(!valid(*preference))
+        throw std::invalid_argument("Player vertical FOV must be finite and within 5..150 degrees.");
+    if(!authored)return *preference;
+    if(!valid(live) || !valid(*authored))
+        throw std::invalid_argument("Named runtime camera FOV and authored baseline must be finite and within 5..150 degrees.");
+    if(live==*authored)return *preference;
+    constexpr double half_radians=0.0087266462599716478846;
+    constexpr double degrees=57.295779513082320877;
+    return std::clamp(2*std::atan(std::tan(*preference*half_radians)*
+        std::tan(live*half_radians)/std::tan(*authored*half_radians))*degrees,5.,150.);
+}
 SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session) {
     auto result=session.snapshot(options.camera);
     const auto preferences=options.preferences ? options.preferences->snapshot() : nullptr;
     const auto fov=preferences ? preferences->values.vertical_fov : options.vertical_fov;
     const auto scale=preferences ? preferences->values.ui_scale : options.ui_scale;
-    if(fov) {
-        const auto value=*fov;
-        if(!std::isfinite(value) || value<5 || value>150)
-            throw std::invalid_argument("Player vertical FOV must be finite and within 5..150 degrees.");
-        result.vertical_fov=value;
-    }
+    result.vertical_fov=player_effective_vertical_fov(result.vertical_fov,result.authored_vertical_fov,fov);
     if(scale && (!std::isfinite(*scale) || *scale<.25f || *scale>8.f))
         throw std::invalid_argument("Player UI scale must be finite and within 0.25..8.");
     return result;
@@ -33,6 +42,7 @@ SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& 
 RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     RendererSceneResult result{snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
         snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0};
+    result.camera_lens=SceneLens{snapshot.vertical_fov,snapshot.near_plane,snapshot.far_plane};
     RendererCameraDrawResult draw;
     if(snapshot.viewmodel) {
         draw.viewmodel_lens=snapshot.viewmodel->lens;

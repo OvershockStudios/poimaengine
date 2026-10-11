@@ -85,6 +85,11 @@ int main(){try{
     for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,280u,287u,289u}){auto wrong=ik;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_ik=ik;duplicate_ik["features"].push_back("animation_ik_v1");rejected(duplicate_ik.dump());
     auto unnamed_ik=ik;unnamed_ik["features"]=Json::array({"baseline_v7"});rejected(unnamed_ik.dump());
+    auto lens=baseline;lens["services_bytes"]=320;lens["features"].push_back("camera_lens_v1");
+    const auto parsed_lens=poima::parse_gameplay_service_contract(lens.dump());
+    check(parsed_lens.services_bytes==320 && parsed_lens.features.size()==2,"Independent camera lens contract rejected.");
+    for(unsigned bytes:{176u,304u,312u,319u,321u}) {auto wrong=lens;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_lens=lens;duplicate_lens["features"].push_back("camera_lens_v1");rejected(duplicate_lens.dump());
     auto root=baseline;root["services_bytes"]=304;root["features"].push_back("animation_root_motion_v1");
     parsed=poima::parse_gameplay_service_contract(root.dump());
     check(parsed.services_bytes==304 && parsed.features.size()==2,"Independent root motion contract rejected.");

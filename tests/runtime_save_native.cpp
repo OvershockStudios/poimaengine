@@ -64,9 +64,13 @@ void roundtrip_motion() {
     const double q=std::sqrt(.5);const KinematicTarget target{"door",{3,1.5,-3},{0,q,0,q},120};
     source.step(37,{walking},{target});const auto bytes=source.save_snapshot(content);
     const auto payload=Json::parse(bytes);
-    check(payload.at("format")=="poima.runtime-snapshot" && payload.at("version")==1,"Snapshot envelope differs.");
+    check(payload.at("format")=="poima.runtime-snapshot" && payload.at("version")==7,"Snapshot envelope differs.");
     check(payload.at("payload").at("tick")==157 && payload.at("payload").at("authored_revision")==17,"Snapshot clock/revision differs.");
     check(source.entity("falling").velocity[1]<-10 && source.entity("falling").world[13]>1,"Dynamic fixture must still be falling when saved.");
+    auto legacy=payload;legacy["version"]=1;
+    for(const auto* field:{"cameras","components","structure","ui","control_sequence"})legacy["payload"].erase(field);
+    auto legacy_restored=Runtime::from_snapshot(d,content,sealed(legacy));
+    check(legacy_restored->save_snapshot(content)==bytes,"Genuine legacy Camera snapshot did not restore authored lenses and complete state.");
     auto restored=Runtime::from_snapshot(d,content,bytes);
     check(restored->inspect().tick==source.inspect().tick,"Restored clock differs.");
     for(const auto& entity:d.entities)equal_entity(source,*restored,entity.id);
@@ -241,6 +245,12 @@ void fixture_file(const std::string& mode,const std::filesystem::path& path) {
 }
 RuntimeDefinition lifecycle_definition() {
     auto d=definition();
+    // Keep this lifecycle fixture genuinely camera-less: it proves legacy
+    // version1/3 storage, while roundtrip_motion covers Camera-bearing version7.
+    for(auto& entity:d.entities) {
+        entity.camera.reset();
+        if(entity.character)entity.character->camera.clear();
+    }
     RuntimeEntityDefinition reserved;reserved.id=std::string(31,'0')+"1";d.entities.push_back(reserved);
     for(int i=0;i<4;++i) {
         RuntimeSpawnTemplate recipe;recipe.id=std::string(31,'a')+char('1'+i);recipe.name="Save prop";

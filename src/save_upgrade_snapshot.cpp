@@ -71,13 +71,14 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
     check(actual_source.world_id==actual_target.world_id && actual_source.backend==actual_target.backend &&
         actual_source.module_identity==actual_target.module_identity && actual_source.type==actual_target.type,"Snapshot upgrade changes world/backend/module/type.");
     auto envelope=parse(original,limit);fields(envelope,{"format","version","sha256","payload"});
-    const auto version=integer(envelope.at("version"));check(envelope.at("format")=="poima.runtime-snapshot" && version>=1 && version<=6,"Unsupported runtime snapshot format/version.");
+    const auto version=integer(envelope.at("version"));check(envelope.at("format")=="poima.runtime-snapshot" && version>=1 && version<=7,"Unsupported runtime snapshot format/version.");
     auto& data=envelope.at("payload");check(digest(envelope.at("sha256"))==hash(data.dump()),"Original runtime snapshot checksum mismatch.");
     std::vector<std::string> payload_fields{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"};
     if(version>=2)payload_fields.push_back("components");
     if(version>=3)payload_fields.push_back("structure");
     if(version>=4)payload_fields.push_back("ui");
     if(version>=5)payload_fields.push_back("control_sequence");
+    if(version>=7)payload_fields.push_back("cameras");
     fields(data,payload_fields);(void)integer(data.at("authored_revision"));(void)integer(data.at("tick"));check(integer(data.at("gameplay_revision"))>0,"Upgrade requires a saved gameplay module.");
     if(version>=5)(void)integer(data.at("control_sequence"));
     fields(data.at("gameplay"),{"backend","assembly_sha256","type","schema","values"});

@@ -1,0 +1,909 @@
+{
+  "format": "poima.camera-lens-qualification.v1",
+  "publication_version": "0.0.122",
+  "passed": true,
+  "platform": "Windows x86_64",
+  "native": {
+    "producer": {
+      "bytes": 36092,
+      "sha256": "eb5f61bc5f7e85283aa5a503654822ad17b7b6b416e33170ff451d81ee8fe20d"
+    },
+    "source_freeze": {
+      "bytes": 47241,
+      "sha256": "6a42c2b20c51d02f168c07eb3c40349cf1f92cbd783ab81916ae8eb2b0c38a54"
+    },
+    "source_file_count": 311,
+    "cpu_owner": {
+      "bytes": 63819,
+      "sha256": "26b6876e70389d20baff433e2ab4f5df44bcd9a9389dfdc50815c6b4f871602d"
+    },
+    "cpu_worker": {
+      "bytes": 17119,
+      "sha256": "b691288a96f374b277752d1d6652f3b340fb2a7f5962543831cdb93e1c0426c1"
+    },
+    "cpu_suites": [
+      {
+        "name": "camera-lens",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "dc1618fe7c7561451dd005add4446414ce31d84c2fbbb22d8733a38987a097dd"
+        }
+      },
+      {
+        "name": "player-preferences",
+        "stdout": {
+          "bytes": 194,
+          "sha256": "8dd09a6e44f57a66a9459601e684215cb88ef743894c9f6ba035b0fd6c1581b0"
+        }
+      },
+      {
+        "name": "save-upgrade-snapshot",
+        "stdout": {
+          "bytes": 449,
+          "sha256": "01ceb487bfd9f01c961cd4b8496e32f9dcf29229b38c167372e686d0bf7fd6f4"
+        }
+      },
+      {
+        "name": "root-motion",
+        "stdout": {
+          "bytes": 37,
+          "sha256": "1b3966ed402f1fb5fdd7930a14f2b41a2b0c0d2615c2419e8f835e34ca9cb728"
+        }
+      },
+      {
+        "name": "two-bone-ik",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "4403459d8052811da839508f622aa17c715399ee1438e1f280f29fb4144e5d35"
+        }
+      },
+      {
+        "name": "hit-regions",
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        }
+      },
+      {
+        "name": "runtime",
+        "stdout": {
+          "bytes": 192,
+          "sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        }
+      },
+      {
+        "name": "templates",
+        "stdout": {
+          "bytes": 76,
+          "sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        }
+      },
+      {
+        "name": "instances",
+        "stdout": {
+          "bytes": 153,
+          "sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        }
+      },
+      {
+        "name": "runtime-save",
+        "stdout": {
+          "bytes": 324,
+          "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        }
+      },
+      {
+        "name": "world-save",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        }
+      },
+      {
+        "name": "world-schema",
+        "stdout": {
+          "bytes": 110,
+          "sha256": "ccd4133ce68ba9455e3d5e1f84b79374c28f5aada44a4d0a492bd6af221f5a21"
+        }
+      },
+      {
+        "name": "gameplay-compatibility",
+        "stdout": {
+          "bytes": 68,
+          "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        }
+      },
+      {
+        "name": "gameplay-service-contract",
+        "stdout": {
+          "bytes": 88,
+          "sha256": "cd250ba6f6a8c1626222772cf603ac307780df0802a9fa11db3b746fd51a749a"
+        }
+      },
+      {
+        "name": "gameplay-player-preferences",
+        "stdout": {
+          "bytes": 46,
+          "sha256": "84880a29bebbd1802585f150e63fd865807bd49c1c446022469a01de1c53a92d"
+        }
+      },
+      {
+        "name": "animation-membership",
+        "stdout": {
+          "bytes": 47,
+          "sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        }
+      },
+      {
+        "name": "animation",
+        "stdout": {
+          "bytes": 263,
+          "sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        }
+      },
+      {
+        "name": "animation-layers",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        }
+      },
+      {
+        "name": "animation-save",
+        "stdout": {
+          "bytes": 133,
+          "sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        }
+      },
+      {
+        "name": "camera-draw",
+        "stdout": {
+          "bytes": 29,
+          "sha256": "cf30c55c74b68f2ae14770a3a40f4c7f6f37d126d62f00e4f777cbdc7e222138"
+        }
+      },
+      {
+        "name": "player-input",
+        "stdout": {
+          "bytes": 89,
+          "sha256": "2fe4d5484161b1cf013c5d45858c83fd5e88d993fa5e166a2b919f3af89b6095"
+        }
+      },
+      {
+        "name": "render-schedule",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "7160346f88c119b389426d7d5d3dcbf5a69518a2f216bf8825963fc15695aba9"
+        }
+      }
+    ],
+    "native_camera_lens_groups": 6,
+    "protocol": {
+      "evidence": {
+        "bytes": 625863,
+        "sha256": "234e6dd3ce643a1a3f890a99c57406ce5b455f835cd40d600c9425013141c099"
+      },
+      "functional_groups": 4,
+      "rpc_count": 62,
+      "clean_native_owners": 2,
+      "snapshot_version": 7
+    },
+    "schema_revision": 91,
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 53
+    },
+    "library": {
+      "bytes": 219416542,
+      "sha256": "1a5f6fc3b229f9fbea49dddedbd85b322ceef3d60038208f5bfb8061845ace66"
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25524224,
+        "sha256": "704473b874e90bbbef7a61e5831d5f4d6ed6e38c52b77380aade1d777fc9aff4"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-camera-lens-test.exe": {
+        "bytes": 18329088,
+        "sha256": "6bf312a55263dfa9f7b27cf8a266a24f75183a5ee73b2f785decc5b0c4f71541"
+      },
+      "poima-player-preferences-test.exe": {
+        "bytes": 1600000,
+        "sha256": "db3c907543b32231e25b053ecb9feb1d520ba8ef7ccf3ca116a9300ddfe8f51f"
+      },
+      "poima-save-upgrade-snapshot-test.exe": {
+        "bytes": 18896384,
+        "sha256": "6e53e7e1edb0c1047164d7884109034fdc52b679829d01f25c531810e54266ce"
+      },
+      "poima-runtime-root-motion-test.exe": {
+        "bytes": 18371072,
+        "sha256": "991dae0bc63dffda69522c427c776eb6bff793bee63d2a43f1baa9c2f01be492"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18374144,
+        "sha256": "75c9cf1ab61b9b6e359da35a6a54bcc3bfd9dc121af74723dde7b6cb8773c3d7"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18345472,
+        "sha256": "68edc794c1babbd4ec4899bdcb47eac32f0a0220b00f77db6e441489389f9072"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18607616,
+        "sha256": "d0a21c09d3232e4aef1232980c3584f5025b153df826a81a0305bfcde06a8c0e"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2260992,
+        "sha256": "095c94cee6bb1e95f4f66f06d4205f03b8d3256ac7e744e7ac8aa258a414b882"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18383872,
+        "sha256": "efe04289643324fd34c8a79d35730bac5b9f4f58ea0de18a47ba4cfc7e320962"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18542592,
+        "sha256": "1237679801d1e6b0a81c830058f1c894323dd752fe1dbd6f5e8b1c6206ebce23"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 23954432,
+        "sha256": "98b6bfa36d41fe41b54e99cbbacfb39ba034f7bc035abb8687fe2662496451f4"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 23961600,
+        "sha256": "f54dc410add8d4688cfdc5fb3bbc04a1dcba05dca8e28658529a0350da3f420e"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 15082496,
+        "sha256": "95f32fe426bf5c680778af41f24ade77600bb21dfee538068a22846665ad28a3"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14962176,
+        "sha256": "ed782d6114979206389fc0e1a82e81f70e2238450b6e8861688fce14077656da"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14902784,
+        "sha256": "01e5df5d0117fedd67125ddc1ac9f253844b720c945e5aae8bde4c4594fdc8ab"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1984000,
+        "sha256": "cc8e834be1dec9adf0c250596221947bf7942a39cfd03646d40eaeaf513ac1af"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18466816,
+        "sha256": "a7c8f73cf82efcdcfbc6e82ad8aac364f24c40c39ee132a19a4995144750325a"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18387456,
+        "sha256": "e5da4ae4b2ef2363e8194a6a1910e8135ac1bba2c1542d256f36ca98af808ac1"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2120192,
+        "sha256": "4a2fe48e106c08f9787a06fe0b1dee496613a14303f588eed92a7e06f9978a17"
+      },
+      "poima-runtime-camera-draw-test.exe": {
+        "bytes": 18353664,
+        "sha256": "ec982ac753f1e35935b6d4cee1e32e4008538ec52d50489a68c6a15cdd91a27c"
+      },
+      "poima-player-input-test.exe": {
+        "bytes": 1192448,
+        "sha256": "e53d9a0bfd00623e11adb31bb9f9b0d0eeb9e8e543ae770c70ab16fa98722d08"
+      },
+      "poima-render-schedule-test.exe": {
+        "bytes": 1424896,
+        "sha256": "4b2e1a5ec1d746f82473f40d2ee3b6a925be6d9ea466a660ff7c332631b15dac"
+      }
+    },
+    "repository_sources": {
+      "include/poima/runtime.hpp": {
+        "bytes": 24642,
+        "sha256": "c02bd8a17461f8fc84fdb936be95d6e9c5bfd8787f8a76056db1a89f3ab2744b"
+      },
+      "include/poima/gameplay_abi.h": {
+        "bytes": 36370,
+        "sha256": "84d45d1ee73b22bef6e2ce8abdb2125da7558bf98a5a95c4bedabf6348430b4e"
+      },
+      "include/poima/gameplay_compatibility.hpp": {
+        "bytes": 12864,
+        "sha256": "9c6070167b8b52167105fa3d110587f16d538ac87497fb22f1abda428ece9e7b"
+      },
+      "src/runtime.cpp": {
+        "bytes": 134402,
+        "sha256": "360e3c611dd4eff3ff633483ebf3578cc5eeb5bfc21d6d61a7423e1a8dd55052"
+      },
+      "src/runtime_camera_lens_state.inc": {
+        "bytes": 2890,
+        "sha256": "dd51122bf22c4731ea5c3d9f6297e1e567ee4dd6e32c1560315b10ab11b58de6"
+      },
+      "src/runtime_camera_lens.inc": {
+        "bytes": 3688,
+        "sha256": "44a91d2a03095efdcd2ed22815a692255ee273303b1cb6d94257e88eeea0c4ac"
+      },
+      "src/runtime_save.inc": {
+        "bytes": 36096,
+        "sha256": "7e94b18cd42a06afc2f58837e216f486b2d09c516e46834a4c3d4734a328f522"
+      },
+      "src/runtime_ui.inc": {
+        "bytes": 11002,
+        "sha256": "ac7f5f9bc30953ef2c7e5deea380eb237f7428a5da4802b28d15e345f0e841f3"
+      },
+      "src/world.cpp": {
+        "bytes": 312121,
+        "sha256": "8dbda1c828fc1ec5911017af68e13e83df86c2818b5f8894a149b8ce35b56a73"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 100538,
+        "sha256": "f700819d072f9baa706a9a0907850dabc95a06870e2f91617741b203f3b4e79e"
+      },
+      "src/player.cpp": {
+        "bytes": 7774,
+        "sha256": "40f1964bbd011773d54bd047bede9453fbcbeb971b31e55c8ac69c77468d57dd"
+      },
+      "src/render_smoke.cpp": {
+        "bytes": 320066,
+        "sha256": "d7b2fdf001af40f944d852f008038b9c69923076cdd3453245e6e800241b25fa"
+      },
+      "tests/runtime_camera_lens_native.cpp": {
+        "bytes": 10318,
+        "sha256": "16a380376a00a5132e3172308877d547c1347552683426b3b400d22a9f953545"
+      },
+      "tests/runtime_camera_lens.py": {
+        "bytes": 9067,
+        "sha256": "115daa8ba8a7eeec9901b32f0cd0ddce9b91538a4dc0e4a23a65ddab290e927f"
+      }
+    }
+  },
+  "managed": {
+    "owner": {
+      "bytes": 26792,
+      "sha256": "0c98667668ae5b465baeaead3100b66801abaab72d353f4362e1b89403b39beb"
+    },
+    "worker": {
+      "bytes": 11983,
+      "sha256": "b66cb2fc9deb34d33c8f3e3ea9a66003448ac3e3f3b571091bfdb21472cbb42c"
+    },
+    "source_freeze": {
+      "bytes": 10509,
+      "sha256": "9e0b730e2923192299c2e1b0909de9874ce61acecf57960a70b12deb36775d3a"
+    },
+    "source_file_count": 61,
+    "stages": [
+      "bridge-build",
+      "game-build",
+      "abi-build",
+      "abi-test",
+      "publisher-test",
+      "native-publish"
+    ],
+    "abi_checks": 83,
+    "abi_evidence": {
+      "bytes": 8820,
+      "sha256": "448c5a03c310aef3bc13b0d13dbc52a8163447840005afd0f41707c775763659"
+    },
+    "sdk": {
+      "bytes": 171520,
+      "sha256": "87f66273ff98143fbfa7b7bd289e1aa67144c0765efc72eb62812c98f10317c5"
+    },
+    "bridge": {
+      "bytes": 36864,
+      "sha256": "c91fa00512d5995cfce4c774d5d7850f797706edbed46a766422835483308690"
+    },
+    "game": {
+      "bytes": 8704,
+      "sha256": "caefc76d8f09d9e414fe8a04c84d40defc93ca6b55ce36f7b56f3e7ff5fffce2"
+    },
+    "native_descriptor": {
+      "bytes": 3715,
+      "sha256": "5e45e26477a80123181da0dfbe827cde586491d10f1e9a7870ad54896ea3a062"
+    },
+    "services_version": 7,
+    "minimum_services_bytes": 320,
+    "command_bytes": 80,
+    "state_bytes": 104,
+    "required_features": [
+      "baseline_v7",
+      "camera_lens_v1"
+    ],
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 48
+    }
+  },
+  "compiled_consumers": [
+    {
+      "backend": "coreclr",
+      "owner": {
+        "bytes": 78148,
+        "sha256": "57e890f20c9eaa3b030888111ea103793257280c8d8e4774ccdc581bd1c607bd"
+      },
+      "evidence": {
+        "bytes": 2278422,
+        "sha256": "63f0c936c0d46b0d5f8c2657d7366b8f07b9451c1a065afb90f39427b0017918"
+      },
+      "fixture": {
+        "bytes": 18433,
+        "sha256": "c27d14edc960dad679a28318a8d5b2fc20d01d184ccf714cfa902fb5977c83c8"
+      },
+      "rpc_count": 216,
+      "functional_groups": 4,
+      "clean_native_owners": 2,
+      "durable_snapshots": 25,
+      "exact_complete_checkpoint_pairs": 12,
+      "actual_native_rejections": 8,
+      "read_limit_per_tick": 256,
+      "write_limit_per_tick": 64,
+      "snapshot_version": 7,
+      "staged_read_invisibility": true,
+      "caller_entry_reads": true,
+      "pending_birth_camera": true,
+      "removal_conflict_rollback": true,
+      "save_intent": true,
+      "compatible_reload": true,
+      "fresh_reconstructed_continuation_ticks": 3,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    },
+    {
+      "backend": "native_aot",
+      "owner": {
+        "bytes": 77950,
+        "sha256": "a6ef6da2f48100054cd805e3a1a86c965744db01636d865622e0eed78e26c362"
+      },
+      "evidence": {
+        "bytes": 2114447,
+        "sha256": "81d2c9cdc162fd0f188f63dc05444a69fba0db9171f6e1990ab0dfdd17faa8bc"
+      },
+      "fixture": {
+        "bytes": 18433,
+        "sha256": "c27d14edc960dad679a28318a8d5b2fc20d01d184ccf714cfa902fb5977c83c8"
+      },
+      "rpc_count": 205,
+      "functional_groups": 3,
+      "clean_native_owners": 2,
+      "durable_snapshots": 23,
+      "exact_complete_checkpoint_pairs": 12,
+      "actual_native_rejections": 8,
+      "read_limit_per_tick": 256,
+      "write_limit_per_tick": 64,
+      "snapshot_version": 7,
+      "staged_read_invisibility": true,
+      "caller_entry_reads": true,
+      "pending_birth_camera": true,
+      "removal_conflict_rollback": true,
+      "save_intent": true,
+      "compatible_reload": false,
+      "fresh_reconstructed_continuation_ticks": 3,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    }
+  ],
+  "gpu": [
+    {
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "world_samples": 1,
+      "reconstruction": "none",
+      "width": 320,
+      "height": 240,
+      "owner": {
+        "bytes": 78845,
+        "sha256": "d2aa1bcfe4d9574a3a607e3a6ebc90b7ecfb72ad3b170c71a4a1f1eecd84f52e"
+      },
+      "evidence": {
+        "bytes": 208545,
+        "sha256": "b9816156f052848050a4cb80d0474c495acd49bf21acefbd4a295ec3e055acbf"
+      },
+      "fixture": {
+        "bytes": 11270,
+        "sha256": "1df3a044898fded55f28804d71a50b5f758f32196f6e5263a6b593b0fd67b16d"
+      },
+      "capture_count": 4,
+      "clean_native_owners": 4,
+      "rpc_count": 28,
+      "images": [
+        {
+          "label": "live-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "live-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        }
+      ],
+      "comparisons": [
+        {
+          "left": "live-aim",
+          "right": "reference-aim",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-foreground",
+          "right": "reference-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-aim",
+          "right": "live-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "validated_wall_probe_sets": 4,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    },
+    {
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "world_samples": 1,
+      "reconstruction": "none",
+      "width": 320,
+      "height": 240,
+      "owner": {
+        "bytes": 78846,
+        "sha256": "568bf9f03953f2b70c31583c0832dbf34a27396c00af2a753c50d820f37893ba"
+      },
+      "evidence": {
+        "bytes": 208666,
+        "sha256": "206868b28818710f7811de9892a9be0c32ab92cf5dd11ab233f8cccd8c7336a6"
+      },
+      "fixture": {
+        "bytes": 11270,
+        "sha256": "1df3a044898fded55f28804d71a50b5f758f32196f6e5263a6b593b0fd67b16d"
+      },
+      "capture_count": 4,
+      "clean_native_owners": 4,
+      "rpc_count": 28,
+      "images": [
+        {
+          "label": "live-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "live-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        }
+      ],
+      "comparisons": [
+        {
+          "left": "live-aim",
+          "right": "reference-aim",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-foreground",
+          "right": "reference-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-aim",
+          "right": "live-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "validated_wall_probe_sets": 4,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    },
+    {
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "world_samples": 1,
+      "reconstruction": "none",
+      "width": 320,
+      "height": 240,
+      "owner": {
+        "bytes": 78853,
+        "sha256": "75856dce8672b85536b5efeaf71d687b6dd49db0b090c194dab1444708b433fd"
+      },
+      "evidence": {
+        "bytes": 208117,
+        "sha256": "5d6ebe826f3e606823a41497855011b05eea9ad515b28d09ac309b82bd7fb477"
+      },
+      "fixture": {
+        "bytes": 11270,
+        "sha256": "1df3a044898fded55f28804d71a50b5f758f32196f6e5263a6b593b0fd67b16d"
+      },
+      "capture_count": 4,
+      "clean_native_owners": 4,
+      "rpc_count": 28,
+      "images": [
+        {
+          "label": "live-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "live-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        }
+      ],
+      "comparisons": [
+        {
+          "left": "live-aim",
+          "right": "reference-aim",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-foreground",
+          "right": "reference-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-aim",
+          "right": "live-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "validated_wall_probe_sets": 4,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    },
+    {
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "world_samples": 1,
+      "reconstruction": "none",
+      "width": 320,
+      "height": 240,
+      "owner": {
+        "bytes": 78859,
+        "sha256": "3bcea61824df2373cc9248aaf2edf81b0a80ad30c584503c118f2d6e5805496a"
+      },
+      "evidence": {
+        "bytes": 208238,
+        "sha256": "c21489b3e64746663afccebe6cb797d5c168fa7d42b7137d3cf62e5a0951c9c0"
+      },
+      "fixture": {
+        "bytes": 11270,
+        "sha256": "1df3a044898fded55f28804d71a50b5f758f32196f6e5263a6b593b0fd67b16d"
+      },
+      "capture_count": 4,
+      "clean_native_owners": 4,
+      "rpc_count": 28,
+      "images": [
+        {
+          "label": "live-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-aim",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "live-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        },
+        {
+          "label": "reference-foreground",
+          "bytes": 307338,
+          "sha256": "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+        }
+      ],
+      "comparisons": [
+        {
+          "left": "live-aim",
+          "right": "reference-aim",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-foreground",
+          "right": "reference-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "left": "live-aim",
+          "right": "live-foreground",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "validated_wall_probe_sets": 4,
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      }
+    }
+  ],
+  "total_gpu_captures": 16,
+  "total_authored_live_reference_pairs": 8,
+  "total_world_foreground_independence_pairs": 4,
+  "read_limit_per_tick": 256,
+  "combined_write_limit_per_tick": 64,
+  "world_lens_bounds": {
+    "vertical_fov": [
+      5,
+      150
+    ],
+    "near_minimum": 0.001,
+    "far_maximum": 10000000
+  },
+  "excluded_attempts": [
+    {
+      "role": "first_native_producer",
+      "receipt": {
+        "bytes": 17776,
+        "sha256": "062b6d3b27f8131d1f67eeccb0b47422eda937e07d82153e50b3e8c1ae913837"
+      },
+      "source_freeze": {
+        "bytes": 47241,
+        "sha256": "4d1853c768b37d8f61d2301e96e3328633b9d704272c572d0e6f26c7aa907172"
+      },
+      "correction": {
+        "bytes": 1018,
+        "sha256": "037ce597121983a80b74d64b0cf7bcafef55199095eefce9d747813b04d72299"
+      },
+      "qualified": false,
+      "native_tests_executed": false,
+      "forced_linux_group_cleanup": true,
+      "reason": "Frozen native-test namespace and protocol Transform helper mistakes were identified before qualification; first producer was stopped and its inputs and logs retained."
+    },
+    {
+      "role": "second_native_qualification",
+      "producer": {
+        "bytes": 35703,
+        "sha256": "81a09971698d0aa959572f9fdb07a7af88581c2e5e1406912752aaca4642107b"
+      },
+      "source_freeze": {
+        "bytes": 47241,
+        "sha256": "8297af217c1763cb8801ffe2ee8ba3c7e166ca94993c498c32bf837802b32d53"
+      },
+      "receipt": {
+        "bytes": 47925,
+        "sha256": "b3a419a591089964d9387eb031c09ac867a2893846258906afb01302acc4bf87"
+      },
+      "worker": {
+        "bytes": 5745,
+        "sha256": "b253dbb72cbcce9f9f45850126a34be37d8a96322f106ca3cdf14becae7e6f5d"
+      },
+      "correction": {
+        "bytes": 932,
+        "sha256": "d6892b0a3860f413a06096fe1f236afe80a67b04634868fdcd2ae9fedbd9d223"
+      },
+      "qualified": false,
+      "completed_native_suites": 2,
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "reason": "Test-only promotion of a legacy spawned snapshot to version7 omitted its mandatory node map; native validation correctly rejected it. Corrected fixture supplies the complete map and separately tests missing-map rejection."
+    },
+    {
+      "role": "third_native_qualification",
+      "producer": {
+        "bytes": 36093,
+        "sha256": "7d621e927ec4d1c9940c23f9856d27a441b97fb0ffe7e850de83a416a536c85b"
+      },
+      "source_freeze": {
+        "bytes": 47241,
+        "sha256": "926e9d4ff5e3637fb145cd2789880401cd4f41a0ef5d0b81b87d91d7c8fc5d08"
+      },
+      "receipt": {
+        "bytes": 47924,
+        "sha256": "1c0cab997c005a7a47b7a44e5b93ec86d879f289944d5d2ed7e1d4ce3f612de3"
+      },
+      "worker": {
+        "bytes": 9535,
+        "sha256": "c58f82d55572b8d991b3bbdc945489c84ee09fc6d05e239261b49dfe69a4365f"
+      },
+      "correction": {
+        "bytes": 642,
+        "sha256": "2a66bc49bf4daf47ec4ff9d844746b43c12eb8302a75603e98bc0eabb2009e2c"
+      },
+      "qualified": false,
+      "completed_native_suites": 9,
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "reason": "A legacy camera-less lifecycle fixture still included an authored Camera after version7 was introduced. Corrected setup removes that Camera and controller reference while retaining genuine legacy version1/2/3 assertions and the separate camera-bearing version7 roundtrip."
+    }
+  ],
+  "limitations": [
+    "Synthetic compiled controls and analytic opaque foreground geometry only; no continuous player-window ADS, temporal transition, weapon physics, audio or performance qualification.",
+    "GPU coverage is limited to two actual adapters, forward/deferred, single world sample and no reconstruction at320x240. Both references independently author the target lenses while using the same foreground rendering path.",
+    "Exact three-Tick continuation compares independently reconstructed saved state; physics solver caches are not serialized.",
+    "Native AOT is process-pinned; compatible reload is qualified only for CoreCLR."
+  ]
+}

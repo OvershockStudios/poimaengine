@@ -212,12 +212,13 @@ struct RendererSceneResult {
     std::uint64_t authored_revision=0,presentation_generation=0,material_revision=0;
     std::uint64_t frame_sequence=0,submission_id=0;
     std::optional<RendererCameraDrawResult> camera_draw;
+    std::optional<SceneLens> camera_lens;
     friend bool operator==(const RendererSceneResult&,const RendererSceneResult&)=default;
 };
 inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSceneResult& b) noexcept {
     return a.world_id==b.world_id && a.camera_id==b.camera_id && a.presentation_source_id==b.presentation_source_id &&
         a.authored_revision==b.authored_revision && a.presentation_generation==b.presentation_generation &&
-        a.material_revision==b.material_revision && a.camera_draw==b.camera_draw;
+        a.material_revision==b.material_revision && a.camera_draw==b.camera_draw && a.camera_lens==b.camera_lens;
 }
 struct RenderDiagnostics {
     bool deferred=false;

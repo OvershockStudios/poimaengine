@@ -126,7 +126,7 @@ void removal_and_survivors() {
 }
 void saves_and_provenance() {
     const auto d=definition();Runtime runtime(d);const auto root=birth(runtime,d,0);runtime.step(23,{});
-    const auto bytes=runtime.save_snapshot(hash);check(Json::parse(bytes).at("version")==6,"Hierarchical snapshot lacks version6 provenance.");
+    const auto bytes=runtime.save_snapshot(hash);check(Json::parse(bytes).at("version")==7,"Hierarchical Camera snapshot lacks version7 lens/provenance state.");
     auto restored=Runtime::from_snapshot(d,hash,bytes);check(restored->save_snapshot(hash)==bytes && restored->instance(root).nodes==runtime.instance(root).nodes,"Complete hierarchy did not round-trip canonically.");
     RuntimeInput move;move.entity=root;move.move={.25f,.5f};runtime.step(31,{move});restored->step(31,{move});
     check(restored->save_snapshot(hash)==runtime.save_snapshot(hash),"Fresh owner continuation differs in physics/animation/provenance.");
@@ -142,8 +142,11 @@ void saves_and_provenance() {
     }
     auto legacy=d;legacy.templates.clear();RuntimeSpawnTemplate prop;prop.id=std::string(32,'c');prop.name="Legacy single prop";prop.collider=BoxCollider{};
     legacy.templates={prop};Runtime old(legacy);const auto oldroot=birth(old,legacy,0);const auto oldbytes=old.save_snapshot(hash);
-    check(Json::parse(oldbytes).at("version")==3,"Legacy root-only writer changed snapshot format.");
-    auto oldrestore=Runtime::from_snapshot(legacy,hash,oldbytes);check(oldrestore->save_snapshot(hash)==oldbytes && oldrestore->instance_node(oldroot,prop.id)==oldroot,"Legacy root-only save or resolver changed.");
+    auto historical=Json::parse(oldbytes);check(historical.at("version")==7,"Camera-bearing legacy recipe must use complete lens state.");
+    historical["version"]=3;for(const auto* field:{"cameras","ui","control_sequence"})historical["payload"].erase(field);
+    for(auto& instance:historical["payload"]["structure"]["spawned"])instance.erase("nodes");
+    const auto historical_payload=historical.at("payload").dump();historical["sha256"]=sha256(std::as_bytes(std::span(historical_payload.data(),historical_payload.size())));
+    auto oldrestore=Runtime::from_snapshot(legacy,hash,historical.dump());check(oldrestore->save_snapshot(hash)==oldbytes && oldrestore->instance_node(oldroot,prop.id)==oldroot,"Legacy root-only save or resolver changed.");
 }
 }
 int main() {

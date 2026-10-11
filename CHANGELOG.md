@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.122
+
+- Add persistent world/viewmodel lens controls for gameplay zoom, with atomic tick staging, rollback and camera-instance lifecycle handling. [Contract](docs/CAMERA_LENSES.md).
+- Expose guarded agent reads and independent C# `camera_lens_v1` through schema revision 91 and the append-only 320-byte epoch-7 services prefix.
+- Compose player FOV preferences with gameplay magnification; identify effective lenses in renderer receipts and preserve them through version-7 camera snapshots and explicit save upgrades.
+- Pass 22 Windows native suites, 83 compiled ABI checks, CoreCLR/Native AOT gameplay and 16 exact AMD/NVIDIA reference captures. [Results](docs/evidence/m2-camera-lenses.json).
+
 ## 0.0.121
 
 - Add independent foreground MSAA with explicit arithmetic HDR/coverage resolve before tone mapping, preserving default one-sample output.

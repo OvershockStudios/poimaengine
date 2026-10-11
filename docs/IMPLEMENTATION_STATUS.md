@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.121**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.122**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.122 adds fixed-tick world and first-person lens controls for
+ADS and zoom through schema revision 91 and the independent C#
+`camera_lens_v1` extension. Complete FOV/clipping channels persist through
+rollback, camera births, compatible CoreCLR reload and fresh saves. Camera
+presence on each entity and first-person lens presence remain frozen; configured
+instance births and retirements can change live camera membership. The 320-byte epoch-7
+prefix preserves earlier profiles and their permissions; reads are bounded
+at 256 per callback and writes at 64 unique combined targets per tick.
+Player FOV preferences remain the neutral baseline, composed with gameplay
+zoom by perspective magnification; first-person projection stays independent.
+Camera-bearing snapshots use version 7, while camera-free worlds retain their
+previous formats. Earlier Camera snapshots restore authored lenses.
+Twenty-two Windows native suites, four API groups with 62 lossless calls,
+83 compiled ABI checks and 15 publisher tests pass. Actual CoreCLR and Native
+AOT consumers pass 216 and 205 native calls respectively, including complete
+batch rollback and fresh-process reconstructed-state continuation. Sixteen
+320x240 captures on AMD/NVIDIA forward/deferred paths match the independent
+authored target lenses exactly, including eight live/reference pairs and four
+world/foreground independence pairs. Renderer receipts identify the effective
+world and foreground lenses. All accepted Windows Jobs close naturally.
+Retained test-fixture corrections preserve strict version-7 validation and
+genuine older-format coverage; failed attempts are excluded from qualification.
+These checks do not qualify continuous-window ADS, presentation interpolation,
+temporal reconstruction, a weapon framework or game-scale performance.
+[Contract](CAMERA_LENSES.md), [results](evidence/m2-camera-lenses.json).
 
 Version 0.0.121 adds independent foreground MSAA at one, two, four or eight
 samples. An explicit shader averages HDR color and coverage before foreground

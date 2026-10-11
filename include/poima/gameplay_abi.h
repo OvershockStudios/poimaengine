@@ -322,6 +322,23 @@ typedef struct PoimaGameRootMotionServicesV1 {
     int32_t (POIMA_CALL *root_motion_set)(void*,const PoimaGameRootMotionCommandV1*,PoimaGameError*);
 } PoimaGameRootMotionServicesV1;
 
+/* Independent camera_lens_v1 tail. Channels bit0=world, bit1=viewmodel. */
+typedef struct PoimaGameCameraLensV1 { double vertical_fov,near_plane,far_plane; } PoimaGameCameraLensV1;
+typedef struct PoimaGameCameraLensCommandV1 {
+    uint32_t version,bytes;PoimaEntityId entity;uint32_t channels,reserved;
+    PoimaGameCameraLensV1 world,viewmodel;
+} PoimaGameCameraLensCommandV1;
+typedef struct PoimaGameCameraLensStateV1 {
+    uint32_t version,bytes,present,flags;PoimaEntityId entity;
+    PoimaGameCameraLensV1 world,viewmodel,authored_world;
+} PoimaGameCameraLensStateV1;
+typedef struct PoimaGameCameraLensServicesV1 {
+    PoimaGameRootMotionServicesV1 root_motion;
+    int32_t (POIMA_CALL *camera_lens_get)(void*,const PoimaEntityId*,PoimaGameCameraLensStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *camera_lens_set)(void*,const PoimaGameCameraLensCommandV1*,PoimaGameError*);
+} PoimaGameCameraLensServicesV1;
+
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -342,6 +359,10 @@ static_assert(offsetof(PoimaGameTwoBoneIkStateV1,present)==8 && offsetof(PoimaGa
 static_assert(offsetof(PoimaGameTwoBoneIkStateV1,enabled)==44 && offsetof(PoimaGameTwoBoneIkStateV1,space)==48 && offsetof(PoimaGameTwoBoneIkStateV1,reserved)==52 && offsetof(PoimaGameTwoBoneIkStateV1,weight)==56 && offsetof(PoimaGameTwoBoneIkStateV1,target)==64 && offsetof(PoimaGameTwoBoneIkStateV1,pole)==88);
 static_assert(offsetof(PoimaGameTwoBoneIkStateV1,end_position)==112 && offsetof(PoimaGameTwoBoneIkStateV1,target_error)==136 && offsetof(PoimaGameTwoBoneIkStateV1,clamped)==144 && offsetof(PoimaGameTwoBoneIkStateV1,pole_fallback)==148 && offsetof(PoimaGameTwoBoneIkStateV1,reserved_tail)==152);
 static_assert(sizeof(PoimaGameTwoBoneIkServicesV1)==288 && offsetof(PoimaGameTwoBoneIkServicesV1,regions)==0 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_get)==272 && offsetof(PoimaGameTwoBoneIkServicesV1,ik_set)==280);
+static_assert(sizeof(PoimaGameCameraLensV1)==24 && alignof(PoimaGameCameraLensV1)==8);
+static_assert(sizeof(PoimaGameCameraLensCommandV1)==80 && offsetof(PoimaGameCameraLensCommandV1,entity)==8 && offsetof(PoimaGameCameraLensCommandV1,channels)==24 && offsetof(PoimaGameCameraLensCommandV1,reserved)==28 && offsetof(PoimaGameCameraLensCommandV1,world)==32 && offsetof(PoimaGameCameraLensCommandV1,viewmodel)==56);
+static_assert(sizeof(PoimaGameCameraLensStateV1)==104 && offsetof(PoimaGameCameraLensStateV1,present)==8 && offsetof(PoimaGameCameraLensStateV1,flags)==12 && offsetof(PoimaGameCameraLensStateV1,entity)==16 && offsetof(PoimaGameCameraLensStateV1,world)==32 && offsetof(PoimaGameCameraLensStateV1,viewmodel)==56 && offsetof(PoimaGameCameraLensStateV1,authored_world)==80);
+static_assert(sizeof(PoimaGameCameraLensServicesV1)==320 && offsetof(PoimaGameCameraLensServicesV1,root_motion)==0 && offsetof(PoimaGameCameraLensServicesV1,camera_lens_get)==304 && offsetof(PoimaGameCameraLensServicesV1,camera_lens_set)==312);
 static_assert(sizeof(PoimaGameRootMotionCommandV1)==32 && offsetof(PoimaGameRootMotionCommandV1,entity)==8 && offsetof(PoimaGameRootMotionCommandV1,enabled)==24 && offsetof(PoimaGameRootMotionCommandV1,reserved)==28);
 static_assert(sizeof(PoimaGameRootMotionStateV1)==176 && alignof(PoimaGameRootMotionStateV1)==8);
 static_assert(offsetof(PoimaGameRootMotionStateV1,present)==8 && offsetof(PoimaGameRootMotionStateV1,reserved)==12 && offsetof(PoimaGameRootMotionStateV1,entity)==16 && offsetof(PoimaGameRootMotionStateV1,actor)==32);

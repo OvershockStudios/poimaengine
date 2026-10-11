@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Pure owner-snapshot projection tests; no renderer, SDL window or GPU claims.
 #include "poima/player.hpp"
+#include "poima/player_preferences.hpp"
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -35,7 +36,8 @@ void retained(const SceneSnapshot& result,const SceneSnapshot& source) {
     check(result.world_id==source.world_id && result.revision==source.revision && result.camera_id==source.camera_id &&
         result.camera_world==source.camera_world && result.near_plane==source.near_plane && result.far_plane==source.far_plane &&
         result.presentation_source_id==source.presentation_source_id && result.presentation_generation==source.presentation_generation &&
-        result.view_cut_generation==source.view_cut_generation && result.ui==source.ui && result.logical_ui==source.logical_ui,
+        result.view_cut_generation==source.view_cut_generation && result.authored_vertical_fov==source.authored_vertical_fov &&
+        result.ui==source.ui && result.logical_ui==source.logical_ui,
         "Player preference projection altered camera pose, scene identity or ownership metadata.");
     check(result.objects.size()==source.objects.size() && result.objects[0].entity_id==source.objects[0].entity_id &&
         result.objects[0].world==source.objects[0].world && result.objects[0].albedo==source.objects[0].albedo,
@@ -46,7 +48,8 @@ void invalid(const PlayerOptions& options,const Owner& owner) {
     bool rejected=false;
     try { (void)player_snapshot(options,owner); }catch(const std::invalid_argument&) { rejected=true; }
     check(rejected,"Invalid player preference was admitted.");
-    check(owner.source.vertical_fov==fov && owner.source.revision==revision,"Rejected preference mutated the owner snapshot.");
+    check((owner.source.vertical_fov==fov || (std::isnan(owner.source.vertical_fov) && std::isnan(fov))) &&
+          owner.source.revision==revision,"Rejected preference mutated the owner snapshot.");
 }
 }
 int main() {
@@ -94,6 +97,45 @@ int main() {
         }
         options.ui_scale.reset();
         check(player_snapshot(options,owner).vertical_fov==85 && owner.source.vertical_fov==48,"Unsetting UI scale altered player/source camera.");
-        std::cout<<"Player preferences: inherited/explicit FOV, immutable source projection, fresh replacement and finite inclusive FOV/UI-scale validation passed (4 groups; no GPU qualification).\n";
+
+        // Native camera controls express gameplay zoom relative to a frozen
+        // authored baseline. Preference intent remains the neutral angle.
+        owner.replace(60,"ads-owner");owner.source.authored_vertical_fov=90;
+        owner.source.viewmodel=SceneViewmodel{SceneLens{75,.01,10},{}};
+        options.vertical_fov=120;
+        const auto zoomed=player_snapshot(options,owner);retained(zoomed,owner.source);
+        check(std::abs(zoomed.vertical_fov-90)<1e-12 && zoomed.authored_vertical_fov==90 &&
+              zoomed.viewmodel->lens==SceneLens{75,.01,10} && owner.source.vertical_fov==60 && *options.vertical_fov==120,
+              "ADS failed tangent-half-angle composition or changed baseline/foreground/intent.");
+        const auto ads_projection=perspective(zoomed.vertical_fov,16./9.,zoomed.near_plane,zoomed.far_plane);
+        check(std::abs(ads_projection[5]-1)<1e-12,"Independent composed ADS projection is wrong.");
+        options.vertical_fov.reset();
+        check(player_snapshot(options,owner).vertical_fov==60,"Inherited ADS changed the exact native lens.");
+        options.vertical_fov=97;owner.source.vertical_fov=90;
+        check(player_snapshot(options,owner).vertical_fov==97,"Neutral gameplay lens did not restore the exact preference.");
+        owner.source.authored_vertical_fov.reset();owner.source.vertical_fov=60;
+        check(player_snapshot(options,owner).vertical_fov==97,"External camera lost its legacy absolute override.");
+        owner.source.authored_vertical_fov=150;owner.source.vertical_fov=5;options.vertical_fov=5;
+        check(player_snapshot(options,owner).vertical_fov==5,"Composed narrow FOV did not clamp to the inclusive minimum.");
+        owner.source.authored_vertical_fov=5;owner.source.vertical_fov=150;options.vertical_fov=150;
+        check(player_snapshot(options,owner).vertical_fov==150,"Composed wide FOV did not clamp to the inclusive maximum.");
+        for(double bad:{0.,151.,std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::infinity()}) {
+            owner.source.authored_vertical_fov=bad;invalid(options,owner);
+            owner.source.authored_vertical_fov=90;owner.source.vertical_fov=bad;invalid(options,owner);
+        }
+        owner.replace(60,"shared-ads-owner");owner.source.authored_vertical_fov=90;
+        options.preferences=std::make_shared<PlayerPreferences>(PlayerPreferences::Values{},R"({"camera.vertical_fov":120})");
+        check(std::abs(player_snapshot(options,owner).vertical_fov-90)<1e-12,"Shared preferences lost ADS composition.");
+        const auto retained_preference=options.preferences->snapshot();
+        options.preferences->publish(options.preferences->prepare(R"({"expected_revision":0,"set":{"camera.vertical_fov":90}})"));
+        check(std::abs(player_snapshot(options,owner).vertical_fov-60)<1e-12 && retained_preference->values.vertical_fov==120,
+              "Preference update while aiming used stale intent or mutated the retained preference.");
+        options.preferences->publish(options.preferences->prepare(R"({"expected_revision":1,"reset":["camera.vertical_fov"]})"));
+        check(player_snapshot(options,owner).vertical_fov==60,"Preference reset lost inherited live gameplay lens.");
+        options.preferences.reset();options.vertical_fov=120;
+        owner.replace(60,"restored-ads-owner");owner.source.authored_vertical_fov=60;
+        check(player_snapshot(options,owner).vertical_fov==120 && zoomed.authored_vertical_fov==90,
+              "Replacement used an old authored zoom baseline or mutated an earlier snapshot.");
+        std::cout<<"Player preferences: inherited/explicit FOV, immutable source projection, fresh replacement, finite inclusive FOV/UI-scale validation and composable ADS passed (5 groups; no GPU qualification).\n";
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

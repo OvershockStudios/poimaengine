@@ -101,9 +101,10 @@ hit reactions and recovery with explicit animation/physics ownership.
 Harden movement for slopes, steps, crouching, moving platforms and swimming;
 extend navigation with dynamic obstacles, traversal links and avoidance.
 Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
-[First-person viewmodels](VIEWMODELS.md) provide a separate frozen FOV and
-foreground self-depth. Complete collision-aware weapon lowering/retraction,
-live ADS lens controls and wall-clearance behavior, with animation and
+[First-person viewmodels](VIEWMODELS.md) provide a separate FOV and
+foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
+fixed-tick ADS and zoom. Complete collision-aware weapon lowering/retraction,
+presentation interpolation and wall-clearance behavior, with animation and
 rendering policies independent of the world camera.
 
 Add hierarchical spawning, prefab composition, variants and inspectable

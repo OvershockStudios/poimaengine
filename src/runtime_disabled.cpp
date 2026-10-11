@@ -39,7 +39,7 @@ std::string Runtime::save_snapshot(const std::string&) const { throw std::runtim
 void Runtime::validate_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
 std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,const std::optional<GameplayConfig>&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
 std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition&,const std::string&,const std::string&,std::unique_ptr<Gameplay>,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&,const std::vector<SoundCommand>&,const std::vector<AnimationCommand>&,const std::vector<RuntimeStructureTick>&,const std::vector<RuntimeIkCommand>&,const std::vector<RuntimeRootMotionCommand>&) { throw std::runtime_error("Simulation is not built."); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&,const std::vector<SoundCommand>&,const std::vector<AnimationCommand>&,const std::vector<RuntimeStructureTick>&,const std::vector<RuntimeIkCommand>&,const std::vector<RuntimeRootMotionCommand>&,const std::vector<RuntimeCameraLensCommand>&) { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
@@ -68,6 +68,7 @@ void Runtime::component_edit(const std::string&,const std::string&,const compone
 const SoundState& Runtime::sound_state() const { throw std::runtime_error("Simulation is not built."); }
 AudioSnapshot Runtime::audio_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneLighting Runtime::lighting() const { throw std::runtime_error("Simulation is not built."); }
+std::optional<RuntimeCameraLensState> Runtime::camera_lens(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeCameraState Runtime::camera_state(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot() const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }

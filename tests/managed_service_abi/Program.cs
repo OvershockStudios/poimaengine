@@ -511,6 +511,7 @@ static unsafe partial class Program
             HitRegionsContract(output,state,good,checks);
             TwoBoneIkContract(output,state,good,checks);
             RootMotionContract(output,state,good,checks);
+            CameraLensContract(output,state,good,checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

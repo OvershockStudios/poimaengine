@@ -123,11 +123,19 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     SaveJson payload={{"content_sha256",content_sha256},{"world_id",s.world_id},{"authored_revision",s.revision},{"tick",s.tick},
         {"gameplay_revision",s.game_revision},{"entities",entities},{"animation",SaveJson::parse(s.animations->save_state(s.tick))},
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
+    SaveJson cameras=SaveJson::array();
+    for(const auto e:s.topology->order)if(const auto* camera=s.registry.try_get<RuntimeCamera>(e)) {
+        const SceneLens world{camera->vertical_fov,camera->near_plane,camera->far_plane};Impl::validate_camera_lens(world);
+        const auto lens_json=[](const SceneLens& lens) { return SaveJson{{"vertical_fov",lens.vertical_fov},{"near",lens.near_plane},{"far",lens.far_plane}}; };
+        SaveJson foreground=nullptr;if(camera->viewmodel) {Impl::validate_camera_lens(*camera->viewmodel);foreground=lens_json(*camera->viewmodel);}
+        cameras.push_back({{"entity",s.registry.get<Node>(e).id},{"world",lens_json(world)},{"viewmodel",std::move(foreground)}});
+    }
+    const bool camera_state=!cameras.empty();
     const bool custom=!s.components->schemas().empty();
     const bool structural=s.structure_revision!=0;
     const bool logical_ui=!s.ui_model->definition().empty();
     const bool hierarchical=structural && std::any_of(s.templates.begin(),s.templates.end(),[](const auto& recipe){return !recipe.entities.empty();});
-    if(custom || structural || logical_ui)payload["components"]=SaveJson::parse(s.components->save());
+    if(custom || structural || logical_ui || camera_state)payload["components"]=SaveJson::parse(s.components->save());
     if(logical_ui) {
         payload["ui"]=SaveJson::parse(s.ui_model->save());
         payload["control_sequence"]=s.control_sequence;
@@ -137,7 +145,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         SaveJson spawned=SaveJson::array();
         for(const auto& [id,origin]:s.topology->spawned) {
             SaveJson row={{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}};
-            if(hierarchical)row["nodes"]=origin.nodes;
+            if(hierarchical || camera_state)row["nodes"]=origin.nodes;
             spawned.push_back(std::move(row));
         }
         const auto cursor=s.entity_ids->cursor();
@@ -145,7 +153,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
     if(hierarchical && !logical_ui) {payload["ui"]=nullptr;payload["control_sequence"]=s.control_sequence;}
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    if(camera_state) {
+        if(!payload.contains("structure"))payload["structure"]=nullptr;
+        if(!payload.contains("ui"))payload["ui"]=nullptr;
+        payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
+    }
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -158,16 +171,17 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     const bool logical_ui=!definition.ui.empty();
     const auto version=save_integer(envelope.at("version"));
     require(envelope.at("format")=="poima.runtime-snapshot" &&
-        (version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
+        (version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
+    if(version==7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
+    else if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
     else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
     else if(version==3)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
-    const bool structural=version==6 || version==3 || (logical_ui && !data.at("structure").is_null());
-    if(version==6)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
+    const bool structural=version==6 || version==3 || ((version==7 || logical_ui) && !data.at("structure").is_null());
+    if(version==6 || version==7)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
@@ -205,7 +219,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         for(const auto& entity:definition.entities)account_components(entity.components);
         expanded=definition;std::string previous_birth;std::set<std::string> live_ids=authored;
         for(const auto& birth:births) {
-            if(version==6)save_fields(birth,{"id","template_id","initial_transform","nodes"});
+            if(version>=6)save_fields(birth,{"id","template_id","initial_transform","nodes"});
             else save_fields(birth,{"id","template_id","initial_transform"});
             const auto id=save_text(birth.at("id"),32);
             require(id.size()==32 && id.find_first_not_of("0123456789abcdef")==std::string::npos && (previous_birth.empty() || previous_birth<id),
@@ -213,12 +227,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             const auto template_id=save_text(birth.at("template_id"),32);
             const auto found=std::find_if(definition.templates.begin(),definition.templates.end(),[&](const auto& recipe){return recipe.id==template_id;});
             require(found!=definition.templates.end(),"Saved spawn template does not exist in frozen content.");
-            require(version==6 || found->entities.empty(),"Legacy snapshot cannot reconstruct a hierarchical recipe.");
+            require(version>=6 || found->entities.empty(),"Legacy snapshot cannot reconstruct a hierarchical recipe.");
             const auto initial=save_transform(birth.at("initial_transform"));
             validate_runtime_spawn_transform(*found,initial);
             RuntimeSpawnInstance origin;origin.root=id;origin.template_id=template_id;origin.initial=initial;
             const auto members=runtime_template_members(*found);
-            if(version==6) {
+            if(version>=6) {
                 const auto& nodes=birth.at("nodes");require(nodes.is_object() && nodes.size()==members.size(),"Saved instance node membership differs from frozen recipe.");
                 for(const auto& local:members) {
                     require(nodes.contains(local),"Saved instance is missing a frozen local node.");
@@ -280,9 +294,29 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         s.entity_ids=std::move(restored_ids);s.structure_revision=structure_revision;
         auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
     }
-    if(custom || structural || logical_ui)s.components->load(data.at("components").dump());
+    if(custom || structural || logical_ui || version==7)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
-    if(version==6 || version==5)s.control_sequence=save_integer(data.at("control_sequence"));
+    if(version>=5)s.control_sequence=save_integer(data.at("control_sequence"));
+    if(version==7) {
+        const auto& cameras=data.at("cameras");std::size_t count=0;
+        for(const auto e:s.topology->order)count+=s.registry.all_of<RuntimeCamera>(e);
+        require(count>0 && cameras.is_array() && cameras.size()==count,"Snapshot Camera membership differs from frozen content.");
+        const auto lens_read=[](const SaveJson& value) {
+            save_fields(value,{"vertical_fov","near","far"});
+            SceneLens result{save_number(value.at("vertical_fov"),150),save_number(value.at("near"),1e7),save_number(value.at("far"),1e7)};
+            Impl::validate_camera_lens(result);return result;
+        };
+        std::string previous_camera;
+        for(const auto& row:cameras) {
+            save_fields(row,{"entity","world","viewmodel"});const auto id=save_text(row.at("entity"));
+            require(previous_camera.empty() || previous_camera<id,"Snapshot Camera IDs must be unique and sorted.");previous_camera=id;
+            const auto e=s.find(id);auto* camera=s.registry.try_get<RuntimeCamera>(e);
+            require(camera,"Saved lens entity is not a frozen Camera.");
+            require(row.at("viewmodel").is_null()==!camera->viewmodel,"Saved foreground lens presence differs from frozen Camera.");
+            const auto world=lens_read(row.at("world"));camera->vertical_fov=world.vertical_fov;camera->near_plane=world.near_plane;camera->far_plane=world.far_plane;
+            if(camera->viewmodel)camera->viewmodel=lens_read(row.at("viewmodel"));
+        }
+    }
     if(!data.at("gameplay").is_null()) {
         const auto& source_game=data.at("gameplay");save_game_values(source_game,s.topology->identities);
         const auto& schema=source_game.at("schema");

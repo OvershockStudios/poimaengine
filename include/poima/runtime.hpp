@@ -41,12 +41,25 @@ struct RuntimeCamera {
     double vertical_fov=60, near_plane=0.1, far_plane=1000;
     std::optional<SceneLens> viewmodel;
 };
+// Complete lenses for selected channels; omitted channels retain committed values.
+// Foreground availability is frozen by the authored Camera definition.
+struct RuntimeCameraLensCommand {
+    std::string entity;
+    std::optional<SceneLens> world,viewmodel;
+};
+struct RuntimeCameraLensState {
+    std::string entity;
+    SceneLens world;
+    std::optional<SceneLens> viewmodel;
+    SceneLens authored_world;
+};
 // Owned live camera and lighting values, without geometry, skin palettes or UI.
 struct RuntimeCameraState {
     Matrix4 camera_world=identity_matrix();
     double vertical_fov=60,near_plane=0.1,far_plane=1000;
     SceneLighting lighting;
     std::optional<SceneLens> viewmodel;
+    double authored_vertical_fov=60;
 };
 struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;
@@ -442,11 +455,13 @@ public:
     std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
         const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={},
-        const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={});
+        const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={},
+        const std::vector<RuntimeCameraLensCommand>& camera_lenses={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeRootMotionState> root_motion(const std::string& id) const;
+    std::optional<RuntimeCameraLensState> camera_lens(const std::string& id) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;
     std::uint64_t component_revision() const;

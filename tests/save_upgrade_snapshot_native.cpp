@@ -100,6 +100,30 @@ void run(){
         // A missing executable cannot be bypassed by transformed metadata.
         rejects([&]{(void)Runtime::from_snapshot(target_definition,target_hash,result.snapshot);});
     }
+    // Lens state is native gameplay state, preserved verbatim by a schema upgrade.
+    auto camera_source=original;camera_source["version"]=7;
+    // Version7 always stores the complete instance map, including a one-node
+    // legacy recipe. Preserve the already committed live root and allocator.
+    for(auto& birth:camera_source["payload"]["structure"]["spawned"])
+        birth["nodes"]=Json{{recipe.id,birth.at("id")}};
+    const Json camera_lens={{"vertical_fov",35},{"near",.025},{"far",250}};
+    camera_source["payload"]["cameras"]=Json::array({{{"entity",id('1')},{"world",camera_lens},{"viewmodel",nullptr}}});
+    const auto camera_bytes=seal(camera_source);
+    const auto camera_mapping=transform(camera_bytes,plan,target_game,before,after);
+    const auto camera_mapped=Json::parse(camera_mapping.snapshot);
+    check(camera_mapped.at("version")==7 && camera_mapped["payload"]["cameras"]==camera_source["payload"]["cameras"],"Upgrade changed saved camera lenses");
+    if(Runtime::available()) {
+        auto camera_definition=definition;camera_definition.entities[0].camera=RuntimeCamera{};
+        Runtime::validate_snapshot(camera_definition,source_hash,camera_bytes);
+        auto missing_nodes=camera_source;missing_nodes["payload"]["structure"]["spawned"][0].erase("nodes");
+        rejects([&]{Runtime::validate_snapshot(camera_definition,source_hash,seal(missing_nodes));});
+        camera_definition.authored_revision=8;camera_definition.component_schemas=after;
+        const auto converted=map_component_scalars(components::schema_json(a),components::schema_json(b),components::values_json(a,source_values),cm.dump()).target_payload;
+        camera_definition.entities[0].components[a.id]=converted;camera_definition.templates[0].components[a.id]=converted;
+        Runtime::validate_snapshot(camera_definition,target_hash,camera_mapping.snapshot);
+    }
+    auto missing_camera=camera_source;missing_camera["payload"].erase("cameras");
+    rejects([&]{transform(seal(missing_camera),plan,target_game,before,after);});
     // New defaulted cells on an existing authored entity; live spawned and
     // retired IDs never become eligible through checkpoint membership alone.
     const auto added=components::parse_schema(Json{{"id",id('5')},{"name","Progression"},{"version",2},{"fields",Json::array({

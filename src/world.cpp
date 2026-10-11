@@ -1265,7 +1265,7 @@ public:
         if(live) {
             require(bool(runtime_),"No runtime is active for camera enumeration.",-32030);
             for(const auto& entity:runtime_->live_definition().entities)if(entity.camera) {
-                const auto& lens=*entity.camera;
+                const auto lens=runtime_->camera_lens(entity.id)->world;
                 result.push_back({entity.id,lens.vertical_fov,lens.near_plane,lens.far_plane});
             }
         } else {
@@ -1523,6 +1523,8 @@ public:
         Json result={{"world_id",scene.world_id},{"camera_id",scene.camera_id},{"presentation_source_id",scene.presentation_source_id},
             {"authored_revision",scene.authored_revision},{"presentation_generation",scene.presentation_generation},
             {"material_revision",scene.material_revision},{"frame_sequence",scene.frame_sequence},{"submission_id",scene.submission_id}};
+        if(scene.camera_lens)result["camera_lens"]={{"vertical_fov",scene.camera_lens->vertical_fov},
+            {"near",scene.camera_lens->near_plane},{"far",scene.camera_lens->far_plane}};
         if(scene.camera_draw) {
             const auto& draw=*scene.camera_draw;Json foreground=Json::array(),hidden=Json::array();
             for(const auto& object:draw.viewmodels)foreground.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
@@ -2686,6 +2688,20 @@ public:
         }
         return result;
     }
+    static std::vector<RuntimeCameraLensCommand> parse_camera_lenses(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Camera lenses must contain at most 64 commands.");
+        std::vector<RuntimeCameraLensCommand> result;std::set<std::string> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","world","viewmodel"},{"entity"});
+            RuntimeCameraLensCommand command;command.entity=identifier(value.at("entity"));
+            require(seen.insert(command.entity).second,"Duplicate camera lens command target.");
+            require(value.contains("world") || value.contains("viewmodel"),"Camera lens command needs world or viewmodel.");
+            if(value.contains("world"))command.world=scene_lens_value(value.at("world"));
+            if(value.contains("viewmodel"))command.viewmodel=scene_lens_value(value.at("viewmodel"));
+            result.push_back(std::move(command));
+        }
+        return result;
+    }
     static std::array<double,3> query_vector(const Json& v) {
         require(v.is_array() && v.size()==3,"Expected a three-element query vector.");
         for(const auto& x:v)require(x.is_number() && std::isfinite(x.get<double>()) && std::abs(x.get<double>())<=1e6,"Query vector must be finite and within 1e6.");
@@ -3096,6 +3112,20 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.camera_lens") {
+            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));
+            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->camera_lens(entity);Json value=nullptr;
+                const auto lens=[](const SceneLens& v) -> Json {return {{"vertical_fov",v.vertical_fov},{"near",v.near_plane},{"far",v.far_plane}};};
+                if(state)value={{"entity",state->entity},{"world",lens(state->world)},
+                    {"viewmodel",state->viewmodel ? lens(*state->viewmodel) : Json(nullptr)},
+                    {"authored_world",lens(state->authored_world)}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.root_motion") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3133,7 +3163,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -3141,6 +3171,8 @@ public:
             const auto ik=parse_ik(normalized.at("ik"));
             if(!normalized.contains("root_motion"))normalized["root_motion"]=Json::array();
             const auto root_motion=parse_root_motion(normalized.at("root_motion"));
+            if(!normalized.contains("camera_lenses"))normalized["camera_lenses"]=Json::array();
+            const auto camera_lenses=parse_camera_lenses(normalized.at("camera_lenses"));
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
                 if(!command.contains("enabled"))command["enabled"]=true;
@@ -3180,7 +3212,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

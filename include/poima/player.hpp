@@ -97,8 +97,13 @@ struct PlayerOptions {
     std::uint64_t player_generation=0;
 };
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
-// apply its camera override to the returned copy. No borrowed runtime survives.
+// compose neutral FOV with gameplay zoom on the copy. No borrowed runtime survives.
 SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session);
+// The preference is a neutral world FOV; gameplay lens changes retain their
+// tangent-half-angle zoom relative to the frozen authored baseline. Missing
+// baseline preserves the external-camera absolute-override contract.
+double player_effective_vertical_fov(double live,std::optional<double> authored,
+    std::optional<double> preference);
 // A shared preference owner's frozen launch graphics must describe this actual
 // window. Throws before device/owner work on disagreement; no effect without
 // shared preferences. Later graphics patches remain next-launch intent.

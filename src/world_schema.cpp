@@ -164,7 +164,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 90}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 91}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -214,6 +214,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
     result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
+    result["gameplay_camera_lenses"]={{"feature","camera_lens_v1"},{"services_abi",7},{"services_bytes",320},
+        {"command_bytes",80},{"state_bytes",104},{"reads_per_tick",256},{"combined_writes_per_tick",64},
+        {"snapshot_version",7},{"viewmodel_presence","frozen"},{"player_fov","Perspective ratio against authored baseline, saturated to5..150 degrees."}};
     result["gameplay_player_preferences"]={{"feature","player_preferences_v1"},{"services_abi",7},{"services_bytes",256},
         {"wire_version",1},{"snapshot_bytes",216},{"patch_bytes",104},{"enqueue_bytes",40},{"result_bytes",56},
         {"authority","The live native PlayerPreferences owner, outside authored worlds and gameplay saves."},
@@ -289,6 +292,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}}, {"session_id","tick","origin","direction","distance"});
     methods["runtime.hit_test"]=methods.at("runtime.raycast");
     methods["runtime.hit_test"]["description"]="Read-only closest committed-pose collider/HitRegion query. Enabled region owners suppress only their own physics proxy; ignored owners suppress their regions, ignored attachments suppress that region. Exact ties prefer world geometry then region owner/name/attachment. Hit includes nullable region_entity and region; entity is damage owner for regions. Exact session/tick required, no tick advance.";
+    methods["runtime.camera_lens"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
+    methods["runtime.camera_lens"]["description"]="Read committed world and optional first-person lenses plus immutable authored_world with exact session/tick. Existing noncamera returns state=null; missing entity rejects. No tick advancement, rendering or acknowledgement.";
     methods["runtime.root_motion"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.root_motion"]["description"]="Read cached committed planar root-motion controls and requested/actual interval diagnostics with exact session/tick. Existing nonrig or unconfigured rigs return state=null; missing entities reject. Inspection never samples, consumes or advances.";
     methods["runtime.ik"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},{"slot",ik_slot}}, {"session_id","tick","entity","slot"});
@@ -315,6 +320,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},{"items",animation_item}};
     auto ik_command=ik_fields;ik_command["entity"]=id;
     methods["runtime.step"]["properties"]["ik"]={{"type","array"},{"maxItems",64},{"items",object_schema(ik_command,{"entity","slot","target","pole"})}};
+    auto lens_command=object_schema({{"entity",id},{"world",lens},{"viewmodel",lens}},{"entity"});
+    lens_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});
+    methods["runtime.step"]["properties"]["camera_lenses"]={{"type","array"},{"maxItems",64},{"items",lens_command}};
+    result["invariants"].push_back("Camera lens commands replace complete world and/or configured viewmodel lenses, at most64 unique camera targets combined with gameplay per tick. Caller commands apply on the first tick; gameplay writes stage until callback completion. Viewmodel presence and CameraDraw membership stay frozen. All native camera changes roll back with a failed batch and persist in snapshotv7; old snapshots use authored lenses. Player FOV preferences form the neutral baseline: effective FOV composes the runtime/authored tan-half-angle ratio and saturates to5..150; viewmodel lens is independent.");
     methods["runtime.step"]["properties"]["root_motion"]={{"type","array"},{"maxItems",64},{"items",object_schema({{"entity",id},{"enabled",{{"type","boolean"},{"default",true}}}},{"entity"})}};
     result["invariants"].push_back("AnimationRig optionally freezes an explicit model-node root_motion profile. Extract observes planar intervals without moving physics; Character drives one self/ancestor capsule through the normal physics update, preserving gravity/jump and collision-resolved displacement. Configured pose stripping remains active when disabled. Positive-uniform upright bindings, exact source ancestry and layer-source exclusion are required. Enabled Character forbids move input, and yaw-enabled drivers forbid horizontal look. Complete first-Tick enable commands share rollback/retry; no blocked-motion debt, vertical root locomotion or motion warping is implied. Root-configured animation saves use nested statev5; absent profiles retain previous serialization.");
     result["invariants"].push_back("AnimationRig optionally freezes up to eight IK chains with unique slots1..8 and distinct direct-parent model indices root/middle/end, exact matching RigNode graph and no overlapping solved branches. IK wrappers cannot be below RigNode. Active chains require positive uniform evaluated model-ancestor/root/middle scales; wrapper affine transforms must be invertible. Rotation-only post-layer corrections preserve local translation/scale/end rotation and pre-IK animation histories. World goals stay fixed as the wrapper moves; rig goals follow it. Weight0/disabled preserve incoming locals exactly; reach clamping uses rig metric and pole fallback is deterministic.");
@@ -545,7 +554,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"guards","Configuration generation, slot generation, runtime session/tick/gameplay revision. Restore always uses a fresh session ID and preserves authoring. Pause desktop playback before configure/write/load."},
         {"retry","Write receipts persist per slot; configure/load retain the latest32 session-local receipts. Exact retries do not repeat mutations. Forgotten IDs beyond retention are new requests subject to guards."},
         {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
-        {"upgrades",{{"plan_versions",{1,2,3}},{"snapshot_versions",{1,2,3,4,5,6}},
+        {"upgrades",{{"plan_versions",{1,2,3}},{"snapshot_versions",{1,2,3,4,5,6,7}},
             {"globals","Explicit stable scalar IDs or complete legacy-name mapping."},
             {"components","Stable type/field IDs; scalar and bounded array values. Retained kinds, element kinds and units stay exact."},
             {"array_capacity","Plan v2 explicitly authorizes changed capacities with overflow=reject. Never truncate; all authored, recipe and saved instances must fit."},

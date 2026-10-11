@@ -842,6 +842,9 @@ struct Context {
         std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
         pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
         pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
+        // Foreground lens changes do not alter world products or reconstruction.
+        // Keep binding membership in the history key, including empty domains.
+        if(pending_history.camera_draw)pending_history.camera_draw->viewmodel_lens.reset();
         pending_history_reset.clear();
         if(!scene_motion)pending_history_reset="products_unavailable";
         else if(pending_history.source.empty())pending_history_reset="source_unavailable";

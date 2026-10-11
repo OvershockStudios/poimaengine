@@ -32,6 +32,8 @@ inline constexpr const char* input_actions_feature="input_actions_v1";
 inline constexpr std::uint32_t input_actions_services_bytes=264;
 inline constexpr const char* hit_regions_feature="hit_regions_v1";
 inline constexpr std::uint32_t hit_regions_services_bytes=272;
+inline constexpr const char* camera_lens_feature="camera_lens_v1";
+inline constexpr std::uint32_t camera_lens_services_bytes=320;
 inline constexpr const char* root_motion_feature="animation_root_motion_v1";
 inline constexpr std::uint32_t root_motion_services_bytes=304;
 inline constexpr const char* two_bone_ik_feature="animation_ik_v1";
@@ -58,6 +60,7 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=hit_regions_services_bytes;result.features.push_back(hit_regions_feature);
     result.services_bytes=two_bone_ik_services_bytes;result.features.push_back(two_bone_ik_feature);
     result.services_bytes=root_motion_services_bytes;result.features.push_back(root_motion_feature);
+    result.services_bytes=camera_lens_services_bytes;result.features.push_back(camera_lens_feature);
     return result;
 }
 
@@ -100,11 +103,12 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     const bool preferences_required=std::find(required.features.begin(),required.features.end(),player_preferences_feature)!=required.features.end();
     const bool actions_required=std::find(required.features.begin(),required.features.end(),input_actions_feature)!=required.features.end();
     const bool regions_required=std::find(required.features.begin(),required.features.end(),hit_regions_feature)!=required.features.end();
+    const bool lens_required=std::find(required.features.begin(),required.features.end(),camera_lens_feature)!=required.features.end();
     const bool root_required=std::find(required.features.begin(),required.features.end(),root_motion_feature)!=required.features.end();
     const bool ik_required=std::find(required.features.begin(),required.features.end(),two_bone_ik_feature)!=required.features.end();
     if(layers_required && !animation_required)return "Gameplay animation_layers_v1 also requires animation_inertial_v1.";
-    if(required.services_bytes!=(root_required ? root_motion_services_bytes : ik_required ? two_bone_ik_services_bytes : regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
-        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272/288/304-byte extensions.";
+    if(required.services_bytes!=(lens_required ? camera_lens_services_bytes : root_required ? root_motion_services_bytes : ik_required ? two_bone_ik_services_bytes : regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
+        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272/288/304/320-byte extensions.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -125,13 +129,15 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         return "Runtime input_actions_v1 requires a 264-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),hit_regions_feature)!=available.features.end() && available.services_bytes<hit_regions_services_bytes)
         return "Runtime hit_regions_v1 requires a 272-byte service allocation.";
+    if(std::find(available.features.begin(),available.features.end(),camera_lens_feature)!=available.features.end() && available.services_bytes<camera_lens_services_bytes)
+        return "Runtime camera_lens_v1 requires a 320-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),root_motion_feature)!=available.features.end() && available.services_bytes<root_motion_services_bytes)
         return "Runtime animation_root_motion_v1 requires a 304-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),two_bone_ik_feature)!=available.features.end() && available.services_bytes<two_bone_ik_services_bytes)
         return "Runtime animation_ik_v1 requires a 288-byte service allocation.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

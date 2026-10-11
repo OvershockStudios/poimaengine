@@ -65,7 +65,7 @@
         catch(const PlayerPreferences::Error& error) { throw Error(error.code,error.what()); }
         if(!requested)return nullptr;
         const auto camera=runtime_->snapshot(options.camera);
-        Json effective={{"camera.vertical_fov",options.vertical_fov.value_or(camera.vertical_fov)},
+        Json effective={{"camera.vertical_fov",player_effective_vertical_fov(camera.vertical_fov,camera.authored_vertical_fov,options.vertical_fov)},
             {"input.sensitivity_x",options.input_profile->sensitivity_x},{"input.sensitivity_y",options.input_profile->sensitivity_y},
             {"input.invert_x",options.input_profile->invert_x},{"input.invert_y",options.input_profile->invert_y},
             {"ui.scale",options.ui_scale ? Json(*options.ui_scale) : Json(nullptr)},
@@ -87,8 +87,9 @@
         const auto state=options.preferences->snapshot();
         const auto& observed=report.preferences;
         auto optional=[](const auto& value) -> Json { return value ? Json(*value) : Json(nullptr); };
-        result["fields"]["camera.vertical_fov"]["effective"]=state->values.vertical_fov ? Json(*state->values.vertical_fov) :
-            final_camera ? Json(final_camera->vertical_fov) : Json(nullptr);
+        result["fields"]["camera.vertical_fov"]["effective"]=final_camera ?
+            Json(player_effective_vertical_fov(final_camera->vertical_fov,final_camera->authored_vertical_fov,state->values.vertical_fov)) :
+            state->values.vertical_fov ? Json(*state->values.vertical_fov) : Json(nullptr);
         result["fields"]["ui.scale"]["effective"]=state->values.ui_scale ? Json(*state->values.ui_scale) :
             observed.applied_revision ? Json(report.effective_ui_scale) : Json(nullptr);
         result["application"]={{"observed_revision",optional(observed.observed_revision)},
@@ -125,7 +126,9 @@
         }
         // Report final configured owner state; an error may have prevented its
         // last presentation. Never retain a replaced camera's initial lens.
-        application["fields"]["camera.vertical_fov"]["effective"]=options.vertical_fov ? Json(*options.vertical_fov) : final_camera ? Json(final_camera->vertical_fov) : Json(nullptr);
+        application["fields"]["camera.vertical_fov"]["effective"]=final_camera ?
+            Json(player_effective_vertical_fov(final_camera->vertical_fov,final_camera->authored_vertical_fov,options.vertical_fov)) :
+            options.vertical_fov ? Json(*options.vertical_fov) : Json(nullptr);
         application["fields"]["ui.scale"]["effective"]=report.effective_ui_scale;
         for(auto it=application["fields"].begin();it!=application["fields"].end();++it)
             it.value()["outcome"]=(options.replay && it.key().starts_with("input.")) ? "validated_only" : report.render.frames_presented>0 ? "applied" : "not_presented";

@@ -66,6 +66,8 @@ int main() {
         SceneSnapshot scene;scene.world_id="world";scene.camera_id="camera";scene.presentation_source_id="source-a";
         scene.revision=6;scene.presentation_generation=4;scene.material_revision=4;
         PlayerMaterialReport materials;materials.observe(scene,"session-a",17,9);
+        check(materials.observed->scene.camera_lens==SceneLens{60,.1,1000},
+              "Snapshot receipt omitted its exact effective world lens.");
         check(materials.observed && !materials.submitted && !materials.presented,"Observation forged a GPU receipt.");
         auto no_submission=*materials.observed;
         check(!materials.submit(std::move(no_submission)),"Observation IDs forged submitted work.");
@@ -119,6 +121,14 @@ int main() {
               selected.camera_draw->hidden==std::vector<SceneDrawableIdentity>{{"body",8}},
               "Frame selection metadata lost lens, sorted identity or shadow-only body.");
         materials.observe(scene,"session-b",2,9);
+        for(unsigned mismatch=0;mismatch<4;++mismatch) {
+            auto wrong_lens=*materials.observed;wrong_lens.scene.frame_sequence=4;wrong_lens.scene.submission_id=45;
+            if(mismatch==0)wrong_lens.scene.camera_lens->vertical_fov=61;
+            if(mismatch==1)wrong_lens.scene.camera_lens->near_plane=.2;
+            if(mismatch==2)wrong_lens.scene.camera_lens->far_plane=999;
+            if(mismatch==3)wrong_lens.scene.camera_lens.reset();
+            check(!materials.submit(std::move(wrong_lens)),"Frame receipt accepted a mismatched world lens at the same tick.");
+        }
         for(unsigned mismatch=0;mismatch<5;++mismatch) {
             auto wrong_view=*materials.observed;wrong_view.scene.frame_sequence=4;wrong_view.scene.submission_id=45;
             auto& draw=*wrong_view.scene.camera_draw;
@@ -131,7 +141,12 @@ int main() {
         }
         auto foreground_frame=*materials.observed;foreground_frame.scene.frame_sequence=4;foreground_frame.scene.submission_id=45;
         auto foreground_shown=foreground_frame;
-        check(materials.submit(std::move(foreground_frame)) && materials.present(std::move(foreground_shown)),
+        check(materials.submit(std::move(foreground_frame)),"Exact foreground frame submission failed.");
+        auto wrong_presented=foreground_shown;wrong_presented.scene.camera_lens->near_plane=.02;
+        check(!materials.present(std::move(wrong_presented)),"Presentation accepted a lens different from the submitted slot.");
+        auto wrong_foreground_presented=foreground_shown;wrong_foreground_presented.scene.camera_draw->viewmodel_lens->far_plane=9;
+        check(!materials.present(std::move(wrong_foreground_presented)),"Presentation accepted an unrelated foreground lens.");
+        check(materials.present(std::move(foreground_shown)),
               "Exact foreground frame receipt failed submission/presentation.");
         scene.viewmodel->objects.clear();scene.objects.clear();
         const auto empty=renderer_scene_result(scene);

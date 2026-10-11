@@ -64,9 +64,10 @@ atlas where it covers them. A wider foreground lens does not expand world
 cascades. This provides neither foreground-specific cascades nor viewmodel
 self-shadowing; its independent depth provides self-occlusion.
 
-Player FOV preferences affect the world lens only. Lens and binding changes
-are frozen when the runtime starts; live ADS lens interpolation is not part of
-this interface. Existing animation playback, layers, IK and C# controls operate
+Player FOV preferences affect the world lens only. Lens presence and bindings
+are frozen when the runtime starts. [Gameplay camera controls](CAMERA_LENSES.md)
+can change complete world/foreground lenses on fixed ticks; presentation
+interpolation remains separate work. Existing animation playback, layers, IK and C# controls operate
 on the same rigs. There is one runtime and one committed pose.
 
 Hierarchical template bindings reference local cameras and remap on birth.
