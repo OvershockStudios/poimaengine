@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.105**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.106**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.106 increases structured diagnostic parser capacity to 128 KiB per
+stream and 64 KiB per line. Ordinary verbose MSBuild invocation/response lines
+can now fit without an incomplete report. Genuine clipping, oversized input,
+malformed diagnostic-looking lines and result overflow remain explicit.
+Parser regressions pass on Windows and Linux; three Windows native groups and
+fresh owned-compiler success, real syntax failure and repair pass. Each SDK
+check encounters a 23,802-byte command line and returns complete diagnostics;
+failed compilation preserves the previous DLL. The outer process group closes
+empty without forced cleanup. [Evidence](evidence/m2-diagnostics-budget.json).
+
+An earlier 0.0.105 full-game isolated run passes twenty warm edits and 25 compile
+jobs, with p95 6.913 seconds, missing the three-second target. Its owned-compiler
+arm stops before gameplay: compilation succeeds, but the old parser's 16 KiB
+line limit makes diagnostics incomplete. The failed receipt remains retained.
+The parser checks above resolve that capacity mismatch; a fresh full-game
+comparison is still required before claiming faster iteration.
 
 Version 0.0.105 adds opt-in `development.compile.compiler_server` for Windows
 x64 .NET SDK 10.0.401. The native worker owns a private compiler between ordinary

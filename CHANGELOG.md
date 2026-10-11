@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.106
+
+- Handle ordinary verbose compiler invocation and response-file lines in structured diagnostics, with finite 128 KiB stream and 64 KiB line limits.
+- Preserve explicit incomplete reports for truncated, malformed or over-limit input; check boundaries and errors following verbose output.
+- Verify Windows/Linux parser regressions and fresh owned-compiler success, syntax failure and repair. [Qualification](docs/evidence/m2-diagnostics-budget.json).
+
 ## 0.0.105
 
 - Add explicit owned Windows compiler sessions to C# build jobs, preserving isolated defaults and ordinary MSBuild project/generator behavior.

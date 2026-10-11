@@ -365,10 +365,18 @@ revision-bound pagination cursor.
 The parser recognizes a conservative subset of
 [Microsoft's diagnostic format](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-diagnostic-format-for-tasks?view=visualstudio):
 error/warning categories with codes, optional origins and common source-coordinate
-forms. It caps each input stream at 64 KiB and each line at 16 KiB. `incomplete`
+forms. It caps each input stream at 128 KiB and each line at 64 KiB. The finite
+budget includes verbose compiler invocation and response-file lines; it does not
+change the job output-tail or result-count limits. `incomplete`
 marks skipped truncated prefixes, unfinished running-job lines, oversized lines
 or malformed diagnostic-looking input. Other formats may remain unrecognized;
 an empty list never proves that compilation succeeded or that no errors occurred.
+
+The 0.0.106 parser checks cover verbose invocation/response lines and exact/over
+limits on Windows and Linux. Fresh owned-compiler builds verify complete
+diagnostics through a real syntax failure and repair, preserving the prior DLL.
+These are parser/build checks, separate from full-game iteration timing.
+[Qualification](evidence/m2-diagnostics-budget.json).
 Use the job's terminal state and exit status, and inspect raw logs when needed.
 
 The standalone parser and adapter contracts pass on Linux and native Windows.

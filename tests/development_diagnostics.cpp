@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "development_diagnostics.hpp"
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -57,9 +58,9 @@ void omission_and_limits() {
     check(duplicates.recognized_count==2 && duplicates.diagnostics.size()==1 && !duplicates.more,"Duplicate filled result limit was called overflow.");
     const auto overflow=parse(one+"\nother.cs(1,2): error CS1002: Missing semicolon\nother.cs(1,2): error CS1002: Missing semicolon\n",true,1);
     check(overflow.recognized_count==3 && overflow.diagnostics.size()==1 && overflow.more,"Distinct result overflow was not explicit.");
-    const auto oversized=parse(std::string(16385,'x')+"\n"+one+"\n");
+    const auto oversized=parse(std::string(65537,'x')+"\n"+one+"\n");
     check(oversized.incomplete && oversized.diagnostics.size()==1,"Oversized line was parsed or poisoned following line.");
-    const auto input=parse(std::string(70000,'x')+"\n"+one+"\n");
+    const auto input=parse(std::string(140000,'x')+"\n"+one+"\n");
     check(input.incomplete && input.diagnostics.size()==1,"Input cap failed to retain bounded tail diagnostics.");
     for(const auto limit:{std::size_t(0),std::size_t(129)}) {
         bool rejected=false;try { parse(one,true,limit); }catch(const std::invalid_argument&) { rejected=true; }
@@ -68,6 +69,40 @@ void omission_and_limits() {
     // Message/project/location remain part of the key, never code alone.
     const auto separate=parse("a.cs(1,1): error CS1: First [A.csproj]\na.cs(1,1): error CS1: First [B.csproj]\na.cs(2,1): error CS1: First [A.csproj]\na.cs(1,1): error CS1: Second [A.csproj]\n");
     check(separate.diagnostics.size()==4,"Distinct same-code diagnostics collapsed.");
+}
+void verbose_lines_and_budget_boundaries() {
+    const std::string error="file.cs(2,7): error CS1002: Missing semicolon [Game.csproj]";
+    // Normal MSBuild prints both the invocation and server response-file arguments.
+    // Large reference lists are ordinary log lines, not missing diagnostics.
+    const std::string invocation="  C:\\Program Files\\dotnet\\sdk\\10.0.401\\Roslyn\\bincore\\csc.exe /noconfig /errorreport:prompt /warn:10 /reference:"+std::string(23500,'x');
+    const std::string response="  BuildResponseFile = '/errorreport:prompt /warn:10 /reference:"+std::string(23500,'x')+"'";
+    check(invocation.size()>23000 && invocation.size()<24500 && response.size()>23000 && response.size()<24500,
+          "Verbose regression lines no longer represent the observed normal log sizes.");
+    const auto verbose=dev::parse_diagnostics(invocation+"\n"+response+"\n"+error+"\n",false,error+"\n",false,true);
+    check(!verbose.incomplete && !verbose.more && verbose.recognized_count==2 && verbose.diagnostics.size()==1 &&
+          verbose.diagnostics[0].code=="CS1002" && verbose.diagnostics[0].origin=="file.cs" &&
+          verbose.diagnostics[0].location->line==2u && verbose.diagnostics[0].location->column==7u,
+          "Complete verbose invocation/response lines obscured actual deduplicated errors.");
+    const auto exact_line=parse(std::string(65536,'x')+"\n"+error+"\n");
+    check(!exact_line.incomplete && exact_line.diagnostics.size()==1,"Exact 64 KiB line was omitted.");
+    const auto over_line=parse(std::string(65537,'x')+"\n"+error+"\n");
+    check(over_line.incomplete && over_line.diagnostics.size()==1,"Over-64 KiB line lost explicit omission or following error.");
+    auto bounded_prefix=[](std::size_t bytes) {
+        std::string result;
+        while(bytes) {
+            const auto count=std::min<std::size_t>(bytes,32768);
+            result+=std::string(count-1,'x');result+='\n';bytes-=count;
+        }
+        return result;
+    };
+    const auto exact_input=bounded_prefix(131072-error.size()-1)+error+"\n";
+    check(exact_input.size()==131072,"Input boundary fixture size changed.");
+    const auto at_cap=parse(exact_input);
+    check(!at_cap.incomplete && at_cap.diagnostics.size()==1,"Exact 128 KiB stream was omitted.");
+    const auto over_cap=parse("x"+exact_input);
+    check(over_cap.incomplete && over_cap.diagnostics.size()==1,"Over-128 KiB stream lost omission or bounded tail error.");
+    const auto truncated=dev::parse_diagnostics(exact_input,true,{},false,true);
+    check(truncated.incomplete && truncated.diagnostics.size()==1,"Complete-size truncated stream was called complete.");
 }
 void malformed_and_plain_logs() {
     for(const auto* output:{"file.cs(0,2): error CS1: Bad\n","file.cs(1,x): error CS1: Bad\n","file.cs(1,2,3): error CS1: Bad\n",
@@ -97,7 +132,7 @@ void sdk_log(const char* path) {
 }
 int main(int argc,char** argv) {
     try {
-        fields_and_summary();omission_and_limits();malformed_and_plain_logs();
+        fields_and_summary();omission_and_limits();verbose_lines_and_budget_boundaries();malformed_and_plain_logs();
         if(argc==3 && std::string(argv[1])=="--verify-sdk")sdk_log(argv[2]);
         else check(argc==1,"Use no arguments or --verify-sdk <private stdout log>.");
         std::cout<<"MSBuild/C# diagnostic subset: fields, spans, literal paths, UTF-8 bytes, duplicates, omissions, caps and malformed lines passed.\n";

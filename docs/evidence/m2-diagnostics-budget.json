@@ -1,0 +1,262 @@
+{
+  "format": "poima.diagnostics-budget-evidence.v1",
+  "engine_version": "0.0.106",
+  "schema_revision": 78,
+  "passed": true,
+  "scope": "Bounded diagnostic parser and fresh Windows owned-compiler success, syntax failure and repair. No full game iteration, compiler reuse latency or Alpha qualification.",
+  "parser_limits": {
+    "stream_bytes": 131072,
+    "line_bytes": 65536,
+    "maximum_results": 128
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "b8996dd8c305a29f265a296144ed239b891ef58bc7135fbd3d7dd044c703efc4",
+    "include/poima/development_jobs.hpp": "bd7d6bcef1e666c778763f9af7c856eed29ad0348051ef24b5ba91629c1f900e",
+    "src/development_jobs.cpp": "f6ad22ca32cfaedae20e4ecfede785e7905334a65cc0931f36ebe8762e221213",
+    "src/development_compiler_owned.hpp": "f849ff2d68eea556081c51075a376aff6324850dd094b81751bb59ed912549ab",
+    "src/development_compiler_owned.cpp": "7c1c32b646264b48a0ff138fec1ee85f2450b18c51ad4d9381e82b1aad711edc",
+    "src/development_compiler_session.hpp": "222965150012813d248ee276286dbe267a672ddeed35725e61de476e93529320",
+    "src/development_service.hpp": "73b5ce0b93561fe16dd023231a623ea1a24be906137b004400dea6d2a3a6c68c",
+    "src/development_service.cpp": "03d66bd0488482a3cf26dfcb8423ba5885a11f276b1c5995be7c0709cf1231c1",
+    "src/development_diagnostics.hpp": "26b2b0f92941f8ff14972b902dc1c7cdfc2589dab5cf8ec0464b699846d9fa6a",
+    "src/development_diagnostics.cpp": "51af2a549b1542898b5b503ccc918fc6f35f2340fe05488913cc4705910f2e92",
+    "src/world_schema.cpp": "48d6532fb822266f25a7f9cbc9eb240f13216e577fc10d4673e5fc26f5affc39",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "include/poima/development_profiles.hpp": "7d778df8fc57ffa179d77d048c427a118d179c3e21725b00b0e572d3bb67966a",
+    "tests/development_jobs.cpp": "f1679a0f1f0d66bd49e1d8d1e0559a6e77ab8ec20dadd43249665016b0e0fc85",
+    "tests/development_service.cpp": "ccead857bba5988ab46bd727c33388b33f98867b1bedc80d0a64e5b603a4e315",
+    "tests/development_diagnostics.cpp": "c13c18ec56b55fd12ba224dbbd59da95d4893bfa02de57864ead369a4cacccf6",
+    "tests/world_schema_native.cpp": "c7561d479d8287666da4b87dd80de377653eff46ecca4e598826e3e727bcb99b",
+    "third_party/nlohmann/json.hpp": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63"
+  },
+  "artifacts": {
+    "poima.exe": {
+      "bytes": 24697344,
+      "sha256": "d615dce617f78f2958b8f3d3e593e7536355c3c38a6c33bf1e5e49259a085b6b"
+    },
+    "phonon.dll": {
+      "bytes": 52950168,
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    },
+    "poima-development-jobs-test.exe": {
+      "bytes": 1647104,
+      "sha256": "6fdfe2a7f626f0764375cf5f4fb3a1b9550051deb2f1867ba7fdac47cc05dd9e"
+    },
+    "poima-development-service-test.exe": {
+      "bytes": 1955840,
+      "sha256": "85dbadfe2b15531a0240731e7815a6bfe5680dd2c2ac7503190f7fd2ff11f29a"
+    },
+    "poima-development-diagnostics-test.exe": {
+      "bytes": 1153536,
+      "sha256": "b2134e9c03127b2cba62cf05613aa3c388f0a77d951ffe4edd183faf111824f5"
+    }
+  },
+  "native_build": {
+    "passed": true,
+    "native_execution": false,
+    "seconds": 92.42071299300005,
+    "receipt_sha256": "66d103fc4ccb34cc9dc1a26ad25706695658105567b867c297cb20ab5cc35698",
+    "source_freeze_sha256": "df6cd05374763cfa109417d15d8a07ed516d91861e355d5f0dadf5a5cb6034cd"
+  },
+  "windows": {
+    "passed": true,
+    "owner_sha256": "a56f4c59281853b8286511027e413bfc43cb86fa3ee88ad6ba96334955cb7db6",
+    "worker_report_sha256": "53bec30060b1dacab08746b2b611f27b7d41e59fa8721e409073463b2b89b583",
+    "seconds": 20.76373330000206,
+    "cases": [
+      {
+        "name": "jobs",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 5.941599099998712,
+        "stdout": {
+          "bytes": 191,
+          "sha256": "5f74f8cca3d1d599690a4d0f968f499a5541d1e6f0ec75b642ba79550e71b822"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "service",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 5.287086999989697,
+        "stdout": {
+          "bytes": 948,
+          "sha256": "e99190cfb465260dc7abee8f316fe12c43e94e20cc2462f8a7f8237d105261b2"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "diagnostics",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 0.05350350000662729,
+        "stdout": {
+          "bytes": 130,
+          "sha256": "3cb65731c5b9e41ac847784a7201ef46642cd793c4687308e105d66797d95f69"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "sdk-success",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 3.7134957000089344,
+        "stdout": {
+          "bytes": 62931,
+          "sha256": "cea20f56d64da2ab40d94be20cc9485f3f90fc7cf090e4a4875f6faf221562f1"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 0,
+        "recognized_lines": 0,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "a69900d3b340035587c24e46459f15c304c7216a1fb83593c17e6d15804dd608"
+        }
+      },
+      {
+        "name": "sdk-syntax-failure",
+        "passed": true,
+        "expected_exit_code": 1,
+        "exit_code": 1,
+        "seconds": 2.058604200006812,
+        "stdout": {
+          "bytes": 61131,
+          "sha256": "408af0103d0bf109e1f8b6d5bb1b2d823b338987d5dfdb02246109d31647fd79"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 1,
+        "recognized_lines": 2,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "a69900d3b340035587c24e46459f15c304c7216a1fb83593c17e6d15804dd608"
+        }
+      },
+      {
+        "name": "sdk-repair",
+        "passed": true,
+        "expected_exit_code": 0,
+        "exit_code": 0,
+        "seconds": 3.26860619999934,
+        "stdout": {
+          "bytes": 60286,
+          "sha256": "bd8ae9709c3743c3f4e1588a8c79bbea27ecf91803d3e44e276b5213c20bf010"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "diagnostic_count": 0,
+        "recognized_lines": 0,
+        "incomplete": false,
+        "max_stdout_line_bytes": 23802,
+        "compiler_server_used": true,
+        "managed_image": {
+          "bytes": 48640,
+          "sha256": "a69900d3b340035587c24e46459f15c304c7216a1fb83593c17e6d15804dd608"
+        }
+      }
+    ],
+    "outer_owner": {
+      "passed": true,
+      "job_assigned": true,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "job_accounting_at_child_exit": {
+        "user_time": 107500000,
+        "kernel_time": 59375000,
+        "period_user_time": 107500000,
+        "period_kernel_time": 59375000,
+        "page_faults": 1106680,
+        "total_processes": 426,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "job_accounting_after_cleanup": {
+        "user_time": 107500000,
+        "kernel_time": 59375000,
+        "period_user_time": 107500000,
+        "period_kernel_time": 59375000,
+        "page_faults": 1106680,
+        "total_processes": 426,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    }
+  },
+  "linux_parser": {
+    "passed": true,
+    "scope": "Native Linux parser regression only; no engine/rendering/SDK qualification",
+    "exit_code": 0,
+    "seconds": 0.024495700999978,
+    "source_sha256": {
+      "src/development_diagnostics.cpp": "51af2a549b1542898b5b503ccc918fc6f35f2340fe05488913cc4705910f2e92",
+      "src/development_diagnostics.hpp": "26b2b0f92941f8ff14972b902dc1c7cdfc2589dab5cf8ec0464b699846d9fa6a",
+      "tests/development_diagnostics.cpp": "c13c18ec56b55fd12ba224dbbd59da95d4893bfa02de57864ead369a4cacccf6"
+    },
+    "image_sha256": "1076f676ed6dc4f35ee1ade1e2e7abba0754a7eda7f196988313aa13ac1b7386",
+    "stdout_sha256": "0e5b1f74cbddb259caa9f93a3a9f21a94800e74a8edbfcac3af8e9af22bbbe1b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "prior_full_workflow": {
+    "engine_version": "0.0.105",
+    "isolated": {
+      "functional_passed": true,
+      "warm_samples": 20,
+      "jobs": 25,
+      "p95_seconds": 6.91330939999898,
+      "p95_budget_seconds": 3,
+      "p95_budget_passed": false,
+      "owner_sha256": "e1620ef58d45f8eddfb1fe6d5594ee8513c9975557fee13479e4d6783a14e90b",
+      "evidence_sha256": "436e30414e6ffa7292359afffb8084288ada6e02f348638920fc50d986a827cd",
+      "phase_sha256": "45c11983ce11f76e11ee0a462f56f0409b27e1d52923f4850cd26d592e27c2cf"
+    },
+    "owned": {
+      "functional_passed": false,
+      "warm_samples": 0,
+      "first_compile_succeeded": true,
+      "compiler_server_used": true,
+      "stdout_bytes": 53098,
+      "stdout_truncated": false,
+      "stderr_truncated": false,
+      "max_stdout_line_bytes": 23602,
+      "diagnostics_incomplete": true,
+      "owner_sha256": "441319da7305db75f99fd903185aea118d5bc191d84e09273b6d3b057f5cda7c",
+      "evidence_sha256": "f3255025ecd32eeb867b27f17ee3cf65ee4a6fd393138653a5b66bb6913aacd3",
+      "phase_sha256": "ec876393bee98380764d95cf9e9a4efce2e2aafe45784637e357cae73684bc24"
+    },
+    "paired_latency_comparison_qualified": false
+  },
+  "limits": [
+    "Parser still marks genuine clipping, oversized lines and malformed diagnostic-like data incomplete.",
+    "Raw fixture recipes and complete cohort records are retained locally; public tests cover parser behavior.",
+    "Fresh SDK checks use the selected Windows x64 .NET10.0.401 SDK with retained managed tooling.",
+    "Compiler retirement/session reuse and full game reload are not requalified by this parser checkpoint."
+  ]
+}

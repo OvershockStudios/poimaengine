@@ -8,7 +8,7 @@
 
 namespace poima::development {
 namespace {
-constexpr std::size_t input_limit=65536,line_limit=16384;
+constexpr std::size_t input_limit=131072,line_limit=65536;
 bool space(char c) { return c==' ' || c=='\t' || c=='\r'; }
 std::string_view trim(std::string_view text) {
     while(!text.empty() && space(text.front()))text.remove_prefix(1);

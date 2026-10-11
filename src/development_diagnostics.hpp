@@ -31,7 +31,7 @@ struct Report {
 // recognized project-file extensions, optionally with ::TargetFramework=...
 // Other bracketed message content is preserved.
 // Exact normalized records are deduplicated in stdout-then-stderr order.
-// Input is capped at 64 KiB per stream and lines at 16 KiB. Truncated leading
+// Input is capped at 128 KiB per stream and lines at 64 KiB. Truncated leading
 // fragments and running unterminated final lines are withheld. Terminal final
 // lines may omit a newline. These omissions and malformed diagnostic-looking
 // lines set incomplete; additional distinct records beyond limit set more.
