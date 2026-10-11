@@ -7,8 +7,12 @@
             options.render.scene_debug_view==SceneDebugView::color,options.render.reconstruction!=ReconstructionMode::none};
     }
     static void validate_player_parameters(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation"},
             {"session_id","request_id","expected_tick","camera","mode"});
+        require(!params.contains("lens_interpolation") || params.at("lens_interpolation").is_boolean(),
+            "lens_interpolation must be Boolean.");
+        require(!params.value("lens_interpolation",false) || params.at("mode")!="replay",
+            "Lens interpolation is interactive only; replay requires exact committed lenses.");
     }
     PreparedPlayer prepare_player(const Json& params) {
         runtime_guard(params);
@@ -17,6 +21,7 @@
         require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
         require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
         PlayerOptions options;options.audio=params.value("audio",false);
+        options.lens_interpolation=params.value("lens_interpolation",false);
         if(params.contains("controller"))options.controller=identifier(params.at("controller"));
         options.camera=identifier(params.at("camera"));
         require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
@@ -94,6 +99,16 @@
                 return owner.runtime_->is_player_controller(id);
             }
             SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
+            std::optional<PlayerLensSample> lens_sample(const std::string& camera) const override {
+                const auto lens=owner.runtime_->camera_lens(camera);
+                if(!lens)return std::nullopt;
+                PlayerLensSample sample;
+                sample.session_id=owner.runtime_id_;sample.source_id=owner.runtime_->presentation_source_id();
+                sample.camera_id=camera;sample.tick=owner.runtime_->inspect().tick;
+                sample.material_revision=owner.runtime_->material_revision();sample.world=lens->world;
+                sample.viewmodel=lens->viewmodel;sample.authored_fov=lens->authored_world.vertical_fov;
+                return sample;
+            }
             PlayerAudioState audio_state(const std::string& listener) const override {
                 return {tick(),owner.runtime_->audio_snapshot(listener),owner.runtime_->sound_state().voices()};
             }
@@ -110,6 +125,25 @@
                 return owner.advance_runtime(1,inputs,motions,sounds).save_serviced;
             }
     };
+
+    static Json player_lens_presentation_json(const PlayerLensPresentation& presentation) {
+        const auto lens=[](const SceneLens& value)->Json {
+            return {{"vertical_fov",value.vertical_fov},{"near",value.near_plane},{"far",value.far_plane}};
+        };
+        const auto optional_lens=[&](const std::optional<SceneLens>& value)->Json {
+            return value ? lens(*value) : Json(nullptr);
+        };
+        return {{"enabled",presentation.enabled},{"interpolating",presentation.interpolating},
+            {"previous_tick",presentation.previous_tick},{"target_tick",presentation.target_tick},
+            {"alpha",presentation.alpha},{"reset_reason",presentation.reset_reason},
+            {"previous_world",lens(presentation.previous_world)},{"target_world",lens(presentation.target_world)},
+            {"rendered_world",lens(presentation.rendered_world)},
+            {"previous_viewmodel",optional_lens(presentation.previous_viewmodel)},
+            {"target_viewmodel",optional_lens(presentation.target_viewmodel)},
+            {"rendered_viewmodel",optional_lens(presentation.rendered_viewmodel)},
+            {"authored_fov",presentation.authored_fov ? Json(*presentation.authored_fov) : Json(nullptr)},
+            {"preference_fov",presentation.preference_fov ? Json(*presentation.preference_fov) : Json(nullptr)}};
+    }
 
     Json player_report_json(const PlayerOptions& options,Json input_info,Json settings_application,
         const PlayerReport& report,const std::string& mode) const {
@@ -563,33 +597,66 @@
             }catch(...) {receipt.failure=std::current_exception();}
             freeze_player_control(receipt);return player_receipt_json(receipt,false);
         }
-        require(method=="player.capture","Unknown player service method.",-32601);
-        fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
-            {"player_id","request_id","expected_control_revision","session_id","tick","path"});
+        const bool capture_current=method=="player.capture_current";
+        require(method=="player.capture" || capture_current,"Unknown player service method.",-32601);
+        if(capture_current)
+            fields(params,{"player_id","request_id","expected_control_revision","session_id","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
+                {"player_id","request_id","expected_control_revision","session_id","path"});
+        else
+            fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
+                {"player_id","request_id","expected_control_revision","session_id","tick","path"});
         identifier(params.at("player_id"));identifier(params.at("request_id"));revision(params.at("expected_control_revision"));
-        identifier(params.at("session_id"));revision(params.at("tick"));
+        identifier(params.at("session_id"));if(!capture_current)revision(params.at("tick"));
         if(params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
         if(params.contains("expected_ui_revision"))revision(params.at("expected_ui_revision"));
         if(params.contains("expected_material_revision"))revision(params.at("expected_material_revision"));
         auto normalized=params;normalized["method"]=method;
         if(auto replay=player_retry(normalized))return *replay;
         player_control_guard(params);runtime_guard(params);
-        require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto captured_tick=runtime_->inspect().tick;
+        if(!capture_current)require(revision(params.at("tick"))==captured_tick,"Runtime tick conflict.",-32009);
         structure_mutation_guard(params);
         material_guard(params,"expected_material_revision");
         if(params.contains("expected_ui_revision"))require(revision(params.at("expected_ui_revision"))==runtime_->ui_model().revision(),"Runtime UI revision conflict.",-32009);
         require(player_owner_->window->ready(),"Player has no successful presentation yet.",-32003);
         const auto output=render_options(Json{{"path",params.at("path")}}).capture;
-        const auto snapshot=player_snapshot(player_owner_->prepared.options,*player_owner_->session);
+        const auto frozen=player_owner_->window->capture_snapshot();
+        const auto& snapshot=frozen.snapshot();
+        require(runtime_->inspect().tick==captured_tick,"Player capture preparation advanced its native Tick.",-32020);
+        std::optional<RuntimeCameraLensState> committed_camera_lens;
+        if(capture_current) {
+            committed_camera_lens=runtime_->camera_lens(player_owner_->prepared.options.camera);
+            require(committed_camera_lens.has_value(),"Current player capture requires its committed native Camera.",-32020);
+        }
+        if(frozen.lens_presentation() && frozen.lens_presentation()->enabled) {
+            const auto& presentation=*frozen.lens_presentation();
+            const auto accepted=committed_camera_lens ? committed_camera_lens : runtime_->camera_lens(player_owner_->prepared.options.camera);
+            require(presentation.target_tick==captured_tick &&
+                presentation.target_tick==runtime_->inspect().tick && accepted &&
+                presentation.target_world==accepted->world && presentation.target_viewmodel==accepted->viewmodel,
+                "Frozen player lens target differs from its guarded committed native camera.",-32020);
+        }
         auto prepared=reserve_player_receipt(normalized);prepared->result=player_info(false);
+        if(capture_current) {
+            const auto lens=[](const SceneLens& value)->Json {
+                return {{"vertical_fov",value.vertical_fov},{"near",value.near_plane},{"far",value.far_plane}};
+            };
+            prepared->result["captured_tick"]=captured_tick;
+            const auto& committed=*committed_camera_lens;
+            prepared->result["committed_camera_lens"]={{"entity",committed.entity},{"world",lens(committed.world)},
+                {"viewmodel",committed.viewmodel ? lens(*committed.viewmodel) : Json(nullptr)},
+                {"authored_world",lens(committed.authored_world)}};
+        }
         prepared->result["capture"]={{"path",output},{"format","BMP"},{"camera",player_owner_->prepared.options.camera},
             {"camera_world",snapshot.camera_world},
             {"lens",{{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}}},
             {"object_count",snapshot.objects.size()},{"ui_revision",runtime_->ui_model().revision()},
             {"lighting",lighting_json(snapshot.lighting)},{"build_version",build_metadata().version}};
+        if(frozen.lens_presentation() && frozen.lens_presentation()->enabled)prepared->result["capture"]["lens_presentation"]=
+            player_lens_presentation_json(*frozen.lens_presentation());
         auto& receipt=publish_player_receipt(std::move(prepared));
         try {
-            auto capture=player_owner_->window->capture(output);
+            auto capture=player_owner_->window->capture(output,frozen);
             require(capture.available,capture.detail,-32003);
             require(capture.success && capture.capture_written,capture.detail,-32020);
             require(capture.diagnostics.scene_presented && same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Player capture receipt differs from its immutable snapshot.",-32020);

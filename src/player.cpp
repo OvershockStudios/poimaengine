@@ -63,21 +63,21 @@ RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     if(draw.viewmodel_lens || !draw.hidden.empty())result.camera_draw=std::move(draw);
     return result;
 }
-void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation) {
-    PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation};
+void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation,std::optional<PlayerLensPresentation> lenses) {
+    PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation,std::move(lenses)};
     observed=std::move(receipt);
 }
 bool PlayerMaterialReport::submit(PlayerMaterialReceipt&& frame) noexcept {
     if(!observed || !frame.scene.frame_sequence || !frame.scene.submission_id ||
        frame.session_id!=observed->session_id || frame.tick!=observed->tick ||
-       frame.player_generation!=observed->player_generation || !same_renderer_snapshot(frame.scene,observed->scene) ||
+       frame.player_generation!=observed->player_generation || frame.lens_presentation!=observed->lens_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
        (submitted && frame.scene.frame_sequence<=submitted->scene.frame_sequence))return false;
     submitted=std::move(frame);return true;
 }
 bool PlayerMaterialReport::present(PlayerMaterialReceipt&& frame) noexcept {
     if(!observed || !submitted || frame!=*submitted || frame.session_id!=observed->session_id ||
        frame.tick!=observed->tick || frame.player_generation!=observed->player_generation ||
-       !same_renderer_snapshot(frame.scene,observed->scene) ||
+       frame.lens_presentation!=observed->lens_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
        (presented && frame.scene.frame_sequence<=presented->scene.frame_sequence))return false;
     presented=std::move(frame);return true;
 }

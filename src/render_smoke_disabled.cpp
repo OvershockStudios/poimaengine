@@ -52,6 +52,7 @@ struct PlayerWindow::Impl {
 };
 PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool paused) {
     validate_player_preferences(options);
+    if(options.lens_interpolation && options.replay)throw std::invalid_argument("Lens interpolation is interactive only.");
     impl_=std::make_unique<Impl>(options,session,paused);
 }
 PlayerWindow::~PlayerWindow()=default;
@@ -72,6 +73,10 @@ PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->r
 player_diagnostics::Snapshot PlayerWindow::diagnostics() const {impl_->check_thread();return {};}
 void PlayerWindow::drain_performance() { impl_->check_thread(); }
 void PlayerWindow::note_performance_intervention(std::uint32_t) { impl_->check_thread(); }
+PlayerCaptureSnapshot PlayerWindow::capture_snapshot() {
+    impl_->check_thread();throw std::runtime_error("Native player graphics are not built.");
+}
+RenderReport PlayerWindow::capture(const std::string& path,const PlayerCaptureSnapshot&) { return capture(path); }
 RenderReport PlayerWindow::capture(const std::string&) {
     impl_->check_thread();throw std::runtime_error("This build has no native player rendering.");
 }

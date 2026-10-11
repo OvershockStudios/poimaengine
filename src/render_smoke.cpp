@@ -3393,6 +3393,12 @@ struct PlayerWindow::Impl {
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
+    PlayerLensHistory lens_history;
+    std::uint64_t snapshot_token=0;
+    const std::shared_ptr<const void> capture_owner=std::make_shared<const int>(0);
+    bool lens_preference_cut=false;
+    std::optional<std::uint64_t> lens_view_cut,lens_generation;
+    std::string lens_world;
     player_diagnostics::Recorder diagnostics;
     player_diagnostics::AudioWork audio_work{},previous_audio_work{};
     player_diagnostics::Sample* diagnostic_sample=nullptr;
@@ -3442,6 +3448,7 @@ struct PlayerWindow::Impl {
         result.preferences.observed_revision=latest->revision;
         if(configuration==latest)return;
         const auto& values=latest->values;
+        if(configuration && configuration->values.vertical_fov!=values.vertical_fov)lens_preference_cut=true;
         // GamepadHost borrows this exact object. Tuning affects future mouse
         // events only; held controls, edges, semantic look and pad state survive.
         input.tune(values.sensitivity_x,values.sensitivity_y,values.invert_x,values.invert_y);
@@ -3465,12 +3472,50 @@ struct PlayerWindow::Impl {
         }
         configuration=latest;
     }
+    PlayerLensSample current_lenses() const {
+        const auto sample=session.lens_sample(options.camera);
+        require(sample.has_value(),"Lens interpolation requires a lightweight committed camera provider.");
+        require(sample->session_id==session.identity() && sample->tick==session.tick() && sample->camera_id==options.camera,
+            "Player lens sample changed its owner boundary.");
+        return *sample;
+    }
+    void invalidate_capture() {
+        require(snapshot_token<std::numeric_limits<std::uint64_t>::max(),"Player capture preparation sequence exhausted.");
+        ++snapshot_token;
+    }
+    void reset_lenses(const char* reason) {
+        if(options.lens_interpolation && initialized)lens_history.reset(current_lenses(),reason);
+    }
     void fresh_snapshot() {
+        require(snapshot_token<std::numeric_limits<std::uint64_t>::max(),"Player capture preparation sequence exhausted.");
         const auto identity=session.identity();const auto tick=session.tick();
         auto fresh=player_snapshot(options,session);
+        std::optional<PlayerLensPresentation> lenses;
+        if(options.lens_interpolation) {
+            const auto sample=current_lenses();
+            require(sample.source_id==fresh.presentation_source_id && sample.material_revision==fresh.material_revision &&
+                sample.authored_fov==fresh.authored_vertical_fov,
+                "Player lens sample differs from its owned scene snapshot.");
+            const auto preference=configuration ? configuration->values.vertical_fov : options.vertical_fov;
+            require(player_effective_vertical_fov(sample.world.vertical_fov,sample.authored_fov,preference)==fresh.vertical_fov &&
+                sample.world.near_plane==fresh.near_plane && sample.world.far_plane==fresh.far_plane &&
+                sample.viewmodel==(fresh.viewmodel ? std::optional<SceneLens>(fresh.viewmodel->lens) : std::nullopt),
+                "Player committed lens sample differs from its owned scene projection.");
+            if(initialized && (owner_paused || !focused || !active))lens_history.reset(sample,"paused");
+            else if(lens_preference_cut)lens_history.reset(sample,"preference_changed");
+            else if(lens_view_cut && (*lens_view_cut!=fresh.view_cut_generation ||
+                *lens_generation!=fresh.presentation_generation || lens_world!=fresh.world_id))lens_history.reset(sample,"presentation_changed");
+            else lens_history.reconcile(sample);
+            lens_view_cut=fresh.view_cut_generation;lens_generation=fresh.presentation_generation;lens_world=fresh.world_id;
+            lens_preference_cut=false;
+            const auto phase=std::clamp(clock.last_sample().accumulator_seconds/Runtime::fixed_dt,0.,1.);
+            lenses=lens_history.presentation(phase,true,preference);
+            fresh.vertical_fov=lenses->rendered_world.vertical_fov;
+            if(fresh.viewmodel)fresh.viewmodel->lens=*lenses->rendered_viewmodel;
+        }
         require(session.identity()==identity && session.tick()==tick,"Player snapshot changed its owner boundary.");
-        result.materials.observe(fresh,identity,tick,options.player_generation);
-        snapshot=std::move(fresh);
+        result.materials.observe(fresh,identity,tick,options.player_generation,std::move(lenses));
+        snapshot=std::move(fresh);invalidate_capture();
         if(initialized && configuration)result.preferences.applied_revision=configuration->revision;
     }
     bool draw_frame(bool capture) {
@@ -3597,8 +3642,9 @@ struct PlayerWindow::Impl {
         return response.consumed;
     }
     void pause(bool value) {
+        invalidate_capture();
         if(value!=owner_paused)intervention(fp::Flag::paused);
-        owner_paused=value;captured=false;input.clear();clock.advance(0,false);
+        owner_paused=value;captured=false;input.clear();clock.advance(0,false);reset_lenses(value ? "paused" : "resumed");
         active=!value && initialized && !options.replay && focused;
         if(initialized) {
             previous=SDL_GetTicksNS();
@@ -3730,13 +3776,13 @@ struct PlayerWindow::Impl {
         const auto now=SDL_GetTicksNS();
         const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
         const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
-        if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(10);return;}
+        if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);reset_lenses("not_drawable");PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(10);return;}
         require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
         if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
             intervention(fp::Flag::resize);auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
             const auto rebuilt=[&] {PerformanceWallScope resize_wall(diagnostic_sample?&diagnostic_sample->resize_ns:nullptr);return context.rebuild(resized);}();
-            if(!rebuilt) { clock.advance(0,false); SDL_Delay(10); return; }
-            ++result.swapchain_rebuilds;
+            if(!rebuilt) { clock.advance(0,false);reset_lenses("not_drawable");SDL_Delay(10);return; }
+            ++result.swapchain_rebuilds;reset_lenses("resized");
         }
         {
         PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.simulation_owner_ns:nullptr);
@@ -3755,6 +3801,7 @@ struct PlayerWindow::Impl {
                 if(!options.controller.empty())input.commit_tick();
                 if(diagnostic_sample)++diagnostic_sample->clock.committed_ticks;
                 if(after_advance(save_serviced))break;
+                if(options.lens_interpolation)lens_history.commit(current_lenses());
                 // A gameplay tick can open a modal during catch-up. Clear
                 // held input before the next tick, not after all eight.
                 snapshot.logical_ui=session.ui_presentation();
@@ -3823,12 +3870,14 @@ struct PlayerWindow::Impl {
 };
 PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused) {
     validate_player_preferences(options);
+    require(!options.lens_interpolation || !options.replay,"Lens interpolation is available only for interactive players.");
     impl_=std::make_unique<Impl>(options,session,initially_paused);
 }
 PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
     auto& state=*impl_;state.check_thread();
     if(state.done) {state.session.owner_poll();return false;}
+    state.invalidate_capture();
     profiling::SourceScope source(profiling::Source::player);
     auto* recorder=state.session.frame_recorder();fp::FrameToken token;fp::CpuSample sample;
     if(recorder && recorder->status().admitting) {
@@ -3910,17 +3959,45 @@ void PlayerWindow::drain_performance() {
     require(!state.context.renderer_fault,"Performance drain cannot claim completion after a renderer fault.");
     if(state.context.checked)state.context.retire_frames(true);
 }
+PlayerCaptureSnapshot PlayerWindow::capture_snapshot() {
+    auto& state=*impl_;state.check_thread();
+    require(ready(),"Player capture requires a live initialized and presented window.");
+    state.synchronize();require(ready(),"Player changed before capture; present the new owner first.");
+    state.fresh_snapshot();
+    PlayerCaptureSnapshot frozen;frozen.snapshot_=state.snapshot;
+    frozen.lens_presentation_=state.result.materials.observed->lens_presentation;
+    frozen.owner_=state.capture_owner;frozen.token_=state.snapshot_token;
+    return frozen;
+}
 RenderReport PlayerWindow::capture(const std::string& path) {
+    impl_->check_thread();
+    require(!path.empty() && path.size()<=4096 && path.find('\0')==std::string::npos,"Player capture requires a bounded, nonempty, NUL-free output path.");
+    const auto frozen=capture_snapshot();return capture(path,frozen);
+}
+RenderReport PlayerWindow::capture(const std::string& path,const PlayerCaptureSnapshot& frozen) {
     auto& state=*impl_;state.check_thread();
     require(!path.empty() && path.size()<=4096 && path.find('\0')==std::string::npos,"Player capture requires a bounded, nonempty, NUL-free output path.");
     require(ready(),"Player capture requires a live initialized and presented window.");
+    require(frozen.owner_==state.capture_owner && frozen.token_==state.snapshot_token &&
+        state.result.materials.observed && state.session.identity()==state.result.materials.observed->session_id &&
+        state.session.tick()==state.result.materials.observed->tick &&
+        frozen.lens_presentation_==state.result.materials.observed->lens_presentation &&
+        same_renderer_snapshot(renderer_scene_result(frozen.snapshot_),renderer_scene_result(state.snapshot)),
+        "Player capture preparation is stale or belongs to another window.");
+    require(!state.options.preferences || state.options.preferences->snapshot()==state.configuration,"Player preferences changed after capture preparation.");
+    if(frozen.lens_presentation_) {
+        const auto target=state.current_lenses();const auto& shown=*frozen.lens_presentation_;
+        require(target.tick==shown.target_tick && target.world==shown.target_world && target.viewmodel==shown.target_viewmodel &&
+            target.source_id==frozen.snapshot_.presentation_source_id && target.material_revision==frozen.snapshot_.material_revision &&
+            target.authored_fov==shown.authored_fov,
+            "Player committed lenses changed after capture preparation.");
+    }
     state.intervention(fp::Flag::capture);
     profiling::SourceScope source(profiling::Source::player);
     profiling::SessionScope session(state.result.final_session);
     profiling::Scope scope("player.capture",static_cast<std::int64_t>(state.session.tick()));
     try {
-        state.synchronize();require(ready(),"Player changed before capture; present the new owner first.");
-        state.fresh_snapshot();state.context.update_scene();
+        state.context.update_scene();
         bool drawn=state.draw_frame(true);
         if(!drawn) {
             require(state.context.rebuild(state.options.render),"Window is minimized; player capture unavailable.");

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/player.hpp"
 #include "poima/player_preferences.hpp"
+#include <algorithm>
 #include <charconv>
 #include <chrono>
 #include <filesystem>
@@ -34,8 +35,13 @@ class Owner final:public PlayerSession {
 public:
     std::string session="original";
     std::uint64_t current_tick=7,material_revision=0;
-    mutable unsigned snapshots=0;
+    mutable unsigned snapshots=0,lens_samples=0;
+    mutable std::vector<std::uint64_t> sampled_ticks;
     unsigned advances=0,owner_polls=0;
+    SceneLens world_lens;
+    std::optional<SceneLens> viewmodel_lens;
+    std::optional<double> authored_fov;
+    bool animate_lenses=false;
     void owner_poll() noexcept override {++owner_polls;}
     std::string identity() const override {return session;}
     std::uint64_t tick() const override {return current_tick;}
@@ -47,7 +53,14 @@ public:
         // SceneSnapshot's Matrix4 has no default initializer.
         result.camera_world=identity_matrix();
         result.presentation_source_id=session;result.presentation_generation=material_revision;result.material_revision=material_revision;
+        result.vertical_fov=world_lens.vertical_fov;result.near_plane=world_lens.near_plane;result.far_plane=world_lens.far_plane;
+        result.authored_vertical_fov=authored_fov;
+        if(viewmodel_lens)result.viewmodel=SceneViewmodel{*viewmodel_lens,{}};
         return result;
+    }
+    std::optional<PlayerLensSample> lens_sample(const std::string& camera) const override {
+        check(camera=="camera","Unexpected lightweight lens camera");++lens_samples;sampled_ticks.push_back(current_tick);
+        return PlayerLensSample{session,session,camera,current_tick,material_revision,world_lens,viewmodel_lens,authored_fov};
     }
     PlayerAudioState audio_state(const std::string&) const override {
         AudioSnapshot snapshot;snapshot.listener=identity_matrix();return {current_tick,std::move(snapshot),{}};
@@ -55,7 +68,12 @@ public:
     bool advance(const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>&,
                  const std::vector<SoundCommand>&) override {
         check(inputs.empty() || (inputs.size()==1 && inputs[0].entity=="controller"),"Unexpected resolved input");
-        ++current_tick;++advances;return false;
+        ++current_tick;++advances;
+        if(animate_lenses) {
+            world_lens.vertical_fov=70-double(advances%12);
+            if(viewmodel_lens)viewmodel_lens->vertical_fov=75-double(advances%12)*.5;
+        }
+        return false;
     }
 };
 PlayerOptions options() {
@@ -78,6 +96,7 @@ void basic() {
     check(!window.ready() && !window.finished() && window.paused(),"Deferred native window state changed");
     check(owner.snapshots==0 && owner.advances==0 && owner.owner_polls==0,"Construction touched graphics/simulation snapshot or maintenance");
     rejects([&]{window.capture("never-before-ready.bmp");},"Unready capture was accepted");
+    rejects([&]{window.capture_snapshot();},"Unready capture preparation was accepted");
     check(owner.snapshots==0 && owner.advances==0,"Unready capture called owner");
     bool rejected=false;
     std::thread other([&]{try {(void)window.ready();}catch(const std::exception&) {rejected=true;}});
@@ -105,6 +124,21 @@ void basic() {
     check(rejected && owner.owner_polls==2,"Foreign terminal poll entered owner maintenance");
     rejects([&]{window.pause(false);},"Finished window accepted pause");
     rejects([&]{window.capture("never-after-stop.bmp");},"Finished window accepted capture");
+}
+void lens_admission_without_window() {
+    Owner owner;auto launch=options();launch.replay=true;launch.lens_interpolation=true;
+    rejects([&]{PlayerWindow denied(launch,owner,true);},"Opt-in replay was accepted before graphics initialization");
+    check(owner.snapshots==0 && owner.lens_samples==0 && owner.advances==0 && owner.owner_polls==0,
+        "Rejected replay queried or advanced the owner");
+    launch.replay=false;
+    PlayerWindow deferred(launch,owner,true);
+    check(owner.snapshots==0 && owner.lens_samples==0 && !deferred.report().materials.observed,
+        "Deferred opt-in construction took samples or fabricated metadata");
+    PlayerCaptureSnapshot forged;
+    rejects([&]{deferred.capture("never-forged.bmp",forged);},"Default token bypassed capture readiness");
+    deferred.request_stop();check(!deferred.poll(),"Deferred opt-in owner failed to stop");
+    check(owner.snapshots==0 && owner.lens_samples==0 && owner.advances==0,
+        "Deferred stop created interpolation state without a frame");
 }
 void preferences_without_window() {
     Owner owner;auto launch=options();launch.vertical_fov=37;
@@ -147,6 +181,112 @@ void preferences_without_window() {
           !window.report().preferences.presented_revision && !window.report().preferences.sink_gain,
           "Zero-frame stop claimed preferences were presented or audible");
 }
+void lens_capture_graphics(int gpu,const std::filesystem::path& output) {
+    auto launch=options();launch.render.gpu=gpu;launch.lens_interpolation=true;launch.player_generation=31;
+    Owner owner;owner.world_lens={70,.1,100};owner.viewmodel_lens=SceneLens{75,.01,10};owner.authored_fov=70;
+    PlayerPreferences::Values values;values.vertical_fov=90;values.samples=launch.render.samples;
+    values.frames_in_flight=launch.render.frames_in_flight;
+    launch.preferences=std::make_shared<PlayerPreferences>(values);
+    std::optional<PlayerCaptureSnapshot> old_lifetime;
+    {
+        PlayerWindow window(launch,owner,true);
+        check_player(window.poll() && window.ready(),window,"Opt-in paused window initialization failed");
+        const auto shown=window.report().materials.presented;
+        check(shown && shown->lens_presentation && shown->lens_presentation->enabled &&
+            !shown->lens_presentation->interpolating && shown->lens_presentation->alpha==1 &&
+            shown->lens_presentation->target_world==owner.world_lens &&
+            shown->lens_presentation->rendered_world.vertical_fov==90,
+            "Paused opt-in metadata lost configuration, raw target or composed exact endpoint");
+        auto obsolete=window.capture_snapshot();auto frozen=window.capture_snapshot();
+        const auto untouched=output/"token-obsolete.bmp";
+        rejects([&]{window.capture(utf8(untouched),obsolete);},"A newer preparation retained an earlier capture lease");
+        check(!std::filesystem::exists(untouched),"Stale token created an output artifact");
+        check(frozen.lens_presentation() && frozen.lens_presentation()->enabled &&
+            frozen.snapshot().vertical_fov==90 && frozen.snapshot().viewmodel->lens==*owner.viewmodel_lens,
+            "Frozen preparation lost its exact scene or optional lens metadata");
+        const auto snapshots=owner.snapshots;const auto tick=owner.current_tick;
+        const auto capture=window.capture(utf8(output/"token-current.bmp"),frozen);
+        check(capture.success && capture.hardware && capture.capture_written && capture.validation_errors==0 &&
+            capture.diagnostics.scene_presented && capture.diagnostics.scene_submitted &&
+            *capture.diagnostics.scene_presented==*capture.diagnostics.scene_submitted &&
+            same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(frozen.snapshot())) &&
+            window.report().materials.presented->lens_presentation==frozen.lens_presentation() &&
+            owner.snapshots==snapshots && owner.current_tick==tick && owner.advances==0,
+            "Frozen capture resampled the scene, advanced authority or acknowledged another projection");
+
+        auto inactive_poll=window.capture_snapshot();check_player(window.poll() && window.ready(),window,"Paused lease-boundary poll failed");
+        rejects([&]{window.capture(utf8(output/"token-poll.bmp"),inactive_poll);},"Inactive poll retained a capture lease");
+        auto paused=window.capture_snapshot();window.pause(true);
+        rejects([&]{window.capture(utf8(output/"token-pause.bmp"),paused);},"Repeated pause retained a capture lease");
+        auto preference=window.capture_snapshot();
+        launch.preferences->publish(launch.preferences->prepare(R"({"expected_revision":0,"set":{"camera.vertical_fov":100}})"));
+        rejects([&]{window.capture(utf8(output/"token-preference.bmp"),preference);},"Unobserved preference update retained a capture lease");
+        window.synchronize();
+        auto authority=window.capture_snapshot();owner.world_lens.vertical_fov=60;
+        rejects([&]{window.capture(utf8(output/"token-authority.bmp"),authority);},"Unobserved same-Tick native lens edit retained a capture lease");
+        check(authority.snapshot().vertical_fov==100 && authority.lens_presentation()->target_world.vertical_fov==70,
+            "Old immutable capture preparation aliased the changed native lens");
+        window.synchronize();
+        auto baseline=window.capture_snapshot();owner.authored_fov=75;
+        rejects([&]{window.capture(utf8(output/"token-baseline.bmp"),baseline);},"Unobserved authored zoom baseline change retained a capture lease");
+        owner.authored_fov=70;window.synchronize();
+        auto ownership=window.capture_snapshot();owner.session="new-opt-in-owner";
+        rejects([&]{window.capture(utf8(output/"token-owner.bmp"),ownership);},"Changed owner identity retained a capture lease");
+        window.synchronize();check_player(window.poll() && window.ready(),window,"Opt-in owner replacement did not present");
+        auto foreign=window.capture_snapshot();
+        {
+            Owner other;other.world_lens=owner.world_lens;other.viewmodel_lens=owner.viewmodel_lens;other.authored_fov=owner.authored_fov;
+            other.session=owner.session;
+            PlayerWindow different(launch,other,true);
+            check_player(different.poll() && different.ready(),different,"Foreign token test window failed to initialize");
+            rejects([&]{different.capture(utf8(output/"token-foreign.bmp"),foreign);},"Another window accepted the prepared lease");
+            different.request_stop();check(!different.poll() && different.report().render.success,"Foreign window did not stop cleanly");
+        }
+        // Real interactive polls without physical input. The fake owner proves
+        // routing and snapshot cost, not compiled gameplay or physics behavior.
+        owner.animate_lenses=true;window.pause(false);
+        const auto until=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+        const auto original_advances=owner.advances;
+        while(owner.advances==original_advances && std::chrono::steady_clock::now()<until) {
+            // Closing the foreign window can queue focus events. Resume only
+            // after those events have made this existing window inactive.
+            if(window.paused())window.pause(false);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            check_player(window.poll() && window.ready(),window,"Interactive lens owner failed to poll");
+        }
+        check(owner.advances>original_advances && !window.paused(),"Actual interactive window never acquired an active owner Tick");
+        const auto before_advances=owner.advances,before_snapshots=owner.snapshots,before_samples=owner.lens_samples;
+        const auto before_tick=owner.current_tick;
+        std::this_thread::sleep_for(std::chrono::milliseconds(160));
+        check_player(window.poll() && window.ready(),window,"Eight-Tick catch-up poll failed");
+        check(owner.advances-before_advances==8 && owner.snapshots-before_snapshots<=3 &&
+            owner.lens_samples-before_samples>=8,"Catch-up took full scene snapshots per Tick or omitted lightweight committed samples");
+        for(std::uint64_t committed=before_tick+1;committed<=owner.current_tick;++committed)
+            check(std::find(owner.sampled_ticks.begin()+before_samples,owner.sampled_ticks.end(),committed)!=owner.sampled_ticks.end(),
+                "Catch-up omitted a committed lightweight sample");
+        const auto pair=window.report().materials.observed->lens_presentation;
+        check(pair && pair->enabled && pair->previous_tick+1==pair->target_tick && pair->target_tick==owner.current_tick,
+            "Actual catch-up did not retain its final committed lens pair");
+        window.pause(true);window.synchronize();old_lifetime=window.capture_snapshot();
+        const auto no_output=output/"token-default.bmp";PlayerCaptureSnapshot forged;
+        rejects([&]{window.capture(utf8(no_output),forged);},"Default-constructed capture token was accepted");
+        check(!std::filesystem::exists(no_output),"Forged token created an artifact");
+        for(const auto* name:{"token-poll.bmp","token-pause.bmp","token-preference.bmp","token-authority.bmp","token-baseline.bmp","token-owner.bmp","token-foreign.bmp"})
+            check(!std::filesystem::exists(output/name),"Rejected lease published a capture artifact");
+        window.request_stop();check(!window.poll() && window.report().render.success,"Opt-in capture owner did not close naturally");
+    }
+    {
+        // Keep the same logical owner alive; only the graphics-window lifetime
+        // changes. A retained token must not be accepted if heap addresses recur.
+        PlayerWindow successor(launch,owner,true);
+        check_player(successor.poll() && successor.ready(),successor,"Successor graphics window failed to initialize");
+        auto current=successor.capture_snapshot();
+        rejects([&]{successor.capture(utf8(output/"token-old-lifetime.bmp"),*old_lifetime);},"A successor window accepted a destroyed window's lease");
+        check(!std::filesystem::exists(output/"token-old-lifetime.bmp"),"Expired window lease created an artifact");
+        check(current.snapshot().camera_id=="camera","Successor preparation lost current owner camera");
+        successor.request_stop();check(!successor.poll() && successor.report().render.success,"Successor window did not close naturally");
+    }
+}
 void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
     auto settings=options();settings.render.gpu=gpu;settings.player_generation=12;
     {
@@ -183,6 +323,9 @@ void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
               settled.materials.presented->scene.material_revision==0 && settled.materials.presented->session_id==owner.session &&
               settled.materials.presented->tick==7 && settled.materials.presented->player_generation==12,
               "Native presentation lost its exact material/session/tick/generation receipt");
+        check(!settled.materials.observed->lens_presentation && !settled.materials.submitted->lens_presentation &&
+            !settled.materials.presented->lens_presentation && owner.lens_samples==0,
+            "Default-off player emitted interpolation metadata or queried lightweight samples");
         const auto old_presented=*settled.materials.presented;
         owner.material_revision=1;
         check(window.report().materials.observed->scene.material_revision==0,
@@ -310,13 +453,16 @@ int main(int argc,char** argv) {
         }
         check((gpu<0)==output.empty(),"GPU check requires both --gpu and new --output");
         check(!check_audio || gpu>=0,"Audio check requires an actual graphics owner");
-        basic();preferences_without_window();
+        basic();preferences_without_window();lens_admission_without_window();
         if(gpu>=0) {
             check(!std::filesystem::exists(output),"Output directory must be new");
             check(std::filesystem::create_directories(output),"Cannot create owned output directory");
             graphics(gpu,output,check_audio);
+            lens_capture_graphics(gpu,output);
         }
-        std::cout<<"{\"passed\":true,\"basic_groups\":4,\"graphics_groups\":"<<(gpu>=0 ? 4 : 0)
+        std::cout<<"{\"passed\":true,\"basic_groups\":5,\"graphics_groups\":"<<(gpu>=0 ? 4 : 0)
+                 <<",\"lens_admission_groups\":1,\"lens_capture_token_groups\":"<<(gpu>=0 ? 1 : 0)
+                 <<",\"lens_catchup_groups\":"<<(gpu>=0 ? 1 : 0)
                  <<",\"sdl_gain_groups\":"<<(check_audio ? 1 : 0)
                  <<",\"audible_qualification\":false,\"physical_input\":false,\"physics_oracle\":false}\n";
         return 0;

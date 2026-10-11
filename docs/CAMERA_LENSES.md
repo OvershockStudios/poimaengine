@@ -179,8 +179,8 @@ not scan-out or click-to-photon latency.
 
 World FOV/clipping changes retain the renderer's current temporal-history reset
 policy. Foreground-only lens changes no longer reset world reconstruction
-history. Continuous temporal ADS quality, a live-window lens qualification and
-presentation interpolation remain separate work.
+history. Interactive players can opt into [between-tick FOV presentation](PLAYER_LENS_PRESENTATION.md).
+Continuous temporal ADS quality and physical weapon input remain separate work.
 
 Qualification results are recorded in
 [the camera-lens evidence](evidence/m2-camera-lenses.json).

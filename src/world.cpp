@@ -1539,8 +1539,11 @@ public:
     }
     static Json player_material_receipt_json(const std::optional<PlayerMaterialReceipt>& receipt) {
         if(!receipt)return nullptr;
-        return {{"session_id",receipt->session_id},{"tick",receipt->tick},{"player_generation",receipt->player_generation},
+        Json result={{"session_id",receipt->session_id},{"tick",receipt->tick},{"player_generation",receipt->player_generation},
             {"scene",renderer_scene_result_json(receipt->scene)}};
+        if(receipt->lens_presentation && receipt->lens_presentation->enabled)
+            result["lens_presentation"]=player_lens_presentation_json(*receipt->lens_presentation);
+        return result;
     }
     static Json player_materials_json(const PlayerMaterialReport& material) {
         return {{"observed",player_material_receipt_json(material.observed)},{"submitted",player_material_receipt_json(material.submitted)},
@@ -3576,7 +3579,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
                     "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
         if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
-        if(method=="player.start" || method=="player.control" || method=="player.capture" || method=="player.settings.transact")
+        if(method=="player.start" || method=="player.control" || method=="player.capture" || method=="player.capture_current" || method=="player.settings.transact")
             require(scope==WorldRequestScope::shared_headless,"Player service mutations require a pumped shared headless owner.",-32080);
         impl_->world.guard_player_request(method);
         const bool trace=!method.starts_with("profiler.");
@@ -3598,7 +3601,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             }
         }
         if(method=="world.describe" && scope!=WorldRequestScope::shared_headless)
-            for(const auto* name:{"player.start","player.control","player.capture","player.settings.transact"})result["methods"].erase(name);
+            for(const auto* name:{"player.start","player.control","player.capture","player.capture_current","player.settings.transact"})result["methods"].erase(name);
         // Project only after scope restrictions, so focused discovery cannot
         // advertise an operation hidden from the full session descriptor.
         if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()),

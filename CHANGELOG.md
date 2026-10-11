@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.124
+
+- Add opt-in native FOV presentation between committed ticks, with independent world/viewmodel lenses, precise reset boundaries and exact frozen rendering receipts. [Contract](docs/PLAYER_LENS_PRESENTATION.md).
+- Add atomic `player.capture_current` for unpaused observation, preserving ownership/revision guards, immutable results and retries; retain required exact-tick `player.capture`.
+- Pass 24 native CPU suites and qualify 48 AMD/NVIDIA forward/deferred images with 24 exact reference pairs, including eight unpaused fractional captures. [Results](docs/evidence/m2-player-lens-presentation.json).
+
 ## 0.0.123
 
 - Add stateless C# `CameraFovTransition` for saved, fixed-tick ADS easing, exact endpoints and position-continuous interrupted transitions. [Contract](docs/CAMERA_LENSES.md#fixed-tick-ads-easing).

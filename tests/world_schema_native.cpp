@@ -11,6 +11,8 @@
 #include <vector>
 #include <set>
 #include <stdexcept>
+#include <string_view>
+#include <utility>
 using Json=nlohmann::json;
 namespace fs=std::filesystem;
 void need(bool value,const char* message) {if(!value)throw std::runtime_error(message);}
@@ -56,6 +58,66 @@ int main(int argc,char** argv) {
                 };
                 const auto full=capture(Json::object()).at("result");
                 need(full.at("schema_revision").get<unsigned>()>=78,"Expected compiler session discovery revision.");
+                need(full.at("schema_revision").get<unsigned>()>=92,"Expected opt-in player lens interpolation discovery.");
+                for(const auto* method:{"runtime.play","player.start"})if(full.at("methods").contains(method)) {
+                    const auto& launch=full.at("methods").at(method);
+                    const auto& interpolation=launch.at("properties").at("lens_interpolation");
+                    need(interpolation.at("type")=="boolean" && interpolation.at("default")==false &&
+                        std::find(launch.at("required").begin(),launch.at("required").end(),Json("lens_interpolation"))==launch.at("required").end(),
+                        "Lens interpolation must remain optional strict Boolean, default false.");
+                    bool replay_rejects_true=false;
+                    for(const auto& condition:launch.at("allOf"))if(condition.contains("then") &&
+                        condition.at("then").contains("properties") && condition.at("then").at("properties").contains("lens_interpolation")) {
+                        need(condition.at("if").at("properties").at("mode").at("const")=="replay" &&
+                            condition.at("then").at("properties").at("lens_interpolation").at("const")==false,
+                            "Replay lens interpolation schema constraint differs from admission.");
+                        replay_rejects_true=true;
+                    }
+                    need(replay_rejects_true,"Replay discovery must reject true lens interpolation.");
+                    const auto reject=[&](Json value,const char* launch_mode,const char* message) {
+                        Json params={{"session_id",std::string(32,'a')},{"request_id",std::string(32,'b')},
+                            {"expected_tick",0},{"camera",std::string(32,'c')},{"mode",launch_mode},{"lens_interpolation",std::move(value)}};
+                        if(std::string_view(method)=="player.start")params["expected_generation"]=0;
+                        const auto reply=invoke(owner,method,params,scope);
+                        need(reply.contains("error") && reply.at("error").at("code")==-32602 &&
+                            reply.at("error").at("message").get<std::string>().find(message)!=std::string::npos,
+                            "Malformed or replay interpolation did not reject before runtime/device admission.");
+                    };
+                    for(const auto& value:Json::array({0,1,0.0,1.0,nullptr,"true",Json::array(),Json::object()}))
+                        reject(value,"interactive","lens_interpolation must be Boolean");
+                    reject(true,"replay","Lens interpolation is interactive only");
+                }
+                if(full.at("methods").contains("player.capture_current")) {
+                    const auto& current=full.at("methods").at("player.capture_current");
+                    const auto& exact=full.at("methods").at("player.capture");
+                    need(current.at("additionalProperties")==false && !current.at("properties").contains("tick") &&
+                        current.at("required")==Json::array({"player_id","request_id","expected_control_revision","session_id","path"}) &&
+                        current.at("properties").contains("expected_material_revision") &&
+                        current.at("properties").contains("expected_structure_revision") && current.at("properties").contains("expected_ui_revision"),
+                        "Atomic current capture discovery lost its strict fields or ownership/revision guards.");
+                    need(exact.at("properties").contains("tick") &&
+                        std::find(exact.at("required").begin(),exact.at("required").end(),Json("tick"))!=exact.at("required").end(),
+                        "Existing player.capture lost its required exact Tick.");
+                    const Json base={{"player_id",std::string(32,'a')},{"request_id",std::string(32,'b')},
+                        {"expected_control_revision",0},{"session_id",std::string(32,'c')},{"path",(root/"never.bmp").string()}};
+                    const auto reject_current=[&](const Json& params,int code,const char* message) {
+                        const auto reply=invoke(owner,"player.capture_current",params,scope);
+                        need(reply.contains("error") && reply.at("error").at("code")==code &&
+                            reply.at("error").at("message").get<std::string>().find(message)!=std::string::npos,
+                            "Atomic current capture accepted malformed fields or an absent owner.");
+                    };
+                    for(const auto& value:Json::array({0,0.0,nullptr,"0"})) {
+                        auto malformed=base;malformed["tick"]=value;reject_current(malformed,-32602,"Unknown field");
+                    }
+                    auto malformed=base;malformed.erase("path");reject_current(malformed,-32602,"Missing field");
+                    malformed=base;malformed["expected_control_revision"]=0.0;reject_current(malformed,-32602,"integer");
+                    malformed=base;malformed["expected_material_revision"]=true;reject_current(malformed,-32602,"integer");
+                    reject_current(base,-32004,"Player identity is not the retained owner");
+                    const auto old_missing_tick=invoke(owner,"player.capture",base,scope);
+                    need(old_missing_tick.contains("error") && old_missing_tick.at("error").at("code")==-32602 &&
+                        old_missing_tick.at("error").at("message").get<std::string>().find("Missing field")!=std::string::npos,
+                        "Existing exact capture silently accepted Tick omission.");
+                }else need(scope!=poima::WorldRequestScope::shared_headless,"Shared headless discovery omitted atomic current capture.");
                 if(mode==poima::WorldOpenMode::authoring) {
                     const auto& compile=full.at("methods").at("development.compile");
                     need(compile.at("properties").at("restore")==Json({{"type","boolean"},{"default",true}}),

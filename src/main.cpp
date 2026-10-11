@@ -97,9 +97,13 @@ poima::Reply run(int argc, char** argv) {
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation"))return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
+            if(key=="--lens-interpolation") {
+                if(value!="true" && value!="false")return poima::usage_error("Lens interpolation expects true or false.");
+                options.lens_interpolation=value=="true";continue;
+            }
             if(key=="--save-write-mode") {
                 if(value!="synchronous" && value!="background")return poima::usage_error("Save write mode must be synchronous or background.");
                 options.save_write_mode=value;continue;
@@ -123,6 +127,7 @@ poima::Reply run(int argc, char** argv) {
             else { if(n<128 || n>4096)return poima::usage_error("Game dimensions must be 128..4096.");if(key=="--width")options.render.width=n;else options.render.height=n; }
         }
         if(options.save_write_mode && options.save_root.empty())return poima::usage_error("Save write mode requires --save-root.");
+        if(!options.replay.empty() && options.lens_interpolation)return poima::usage_error("Lens interpolation is interactive only.");
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
         return poima::run_game(options);
     }

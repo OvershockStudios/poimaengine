@@ -10,6 +10,7 @@ struct GameLaunchOptions {
     std::string settings_profile,settings_overrides;
     std::optional<std::uint64_t> settings_revision;
     bool samples_explicit=false,frames_in_flight_explicit=false;
+    bool lens_interpolation=false;
     std::uint32_t max_frames=0;
     std::optional<std::string> save_write_mode={};
 };

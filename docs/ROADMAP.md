@@ -104,9 +104,10 @@ Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
 [First-person viewmodels](VIEWMODELS.md) provide a separate FOV and
 foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
 fixed-tick ADS and zoom, with saved game-owned easing through
-`CameraFovTransition`. Rendering between simulation ticks remains separate.
+`CameraFovTransition`. Opt-in [lens presentation](PLAYER_LENS_PRESENTATION.md)
+interpolates FOV between committed ticks; camera-pose interpolation remains open.
 Complete collision-aware weapon lowering/retraction,
-presentation interpolation and wall-clearance behavior, with animation and
+pose presentation interpolation and wall-clearance behavior, with animation and
 rendering policies independent of the world camera.
 
 Add hierarchical spawning, prefab composition, variants and inspectable

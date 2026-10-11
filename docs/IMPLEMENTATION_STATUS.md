@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.123**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.124**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.124 adds opt-in `lens_interpolation` for interactive native players.
+World and first-person FOV interpolate in logarithmic perspective scale between
+the final two consecutive committed ticks; gameplay easing and saved lenses
+remain authoritative. Camera pose, input and simulation are not interpolated.
+This presentation policy adds up to one fixed tick of FOV lag. Ownership,
+clipping, preference and discontinuity boundaries reset the pair. Default-off
+output retains its existing metadata shape, and replay rejects interpolation.
+Schema revision 92 also exposes `player.capture_current`: the native owner
+atomically selects and returns a captured tick and full committed camera lenses,
+then renders the exact immutable snapshot. The existing exact-tick capture API
+retains its required tick guard. Both operations preserve identity, control,
+session and applicable material/structure/UI guards and their original retries.
+Twenty-four Windows native CPU suites pass, including six interpolation groups,
+capture lifetime/ownership and strict discovery/admission checks. Four live
+Native AOT cohorts exercise AMD/NVIDIA forward/deferred rendering at 320x240;
+48 player/reference images form 24 exact reference pairs, including eight
+unpaused fractional zoom/release captures. Each cohort checks seven rejected
+current-capture guards without output or runtime changes. The unchanged,
+qualified 0.0.123 gameplay artifact is consumed without a new SDK compilation;
+the epoch-7 services prefix remains unchanged. Earlier failed observation
+recipes are retained and excluded from these results. Physical ADS input,
+camera-pose interpolation, continuous reconstruction history and game-scale
+performance remain separate qualification.
+[Contract](PLAYER_LENS_PRESENTATION.md),
+[results](evidence/m2-player-lens-presentation.json).
 
 Version 0.0.123 adds `CameraFovTransition.Evaluate` for authoritative fixed-tick
 ADS easing. The stateless C# helper interpolates logarithmic perspective

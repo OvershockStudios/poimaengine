@@ -39,13 +39,15 @@ For a scene with a known controller and camera, author the
 standalone writer, then serve that world. Do not open a second writer for it.
 
 Read `world.inspect`, `runtime.status` and focused `world.describe` entries for
-`player.start`, `player.inspect`, `player.control` and `player.capture` before
+`player.start`, `player.inspect`, `player.control`, `player.capture` and
+`player.capture_current` before
 issuing commands. Read the invariants section as well. These APIs are outside
 [authoring-core v1](AUTHORING_API_COMPATIBILITY.md).
 
-`player.start`, `player.control` and `player.capture` require a shared headless
+`player.start`, `player.control`, `player.capture` and `player.capture_current`
+require a shared headless
 host. A standalone `world` command has no automatic frame driver, and a desktop
-session already owns its viewports. Their discovery omits these three methods;
+session already owns its viewports. Their discovery omits these player commands;
 calling them directly rejects with `-32080`. Inspection does not create a player.
 A build without rendering rejects start without changing its player generation.
 
@@ -239,6 +241,11 @@ and transport errors. If it fails, disconnecting the client leaves the host and
 its latest player alive; retain the original request and reconcile its outcome
 before cleanup or retry. Never interpret a client timeout as an engine stop.
 
+For an unpaused observation, use `player.capture_current` rather than guessing
+a future tick. It selects and reports one native tick within the capture request,
+without pausing playback or advancing simulation. Retried requests return the
+original frozen sample. [Lens and capture contract](PLAYER_LENS_PRESENTATION.md).
+
 ## Lifecycle and guards
 
 | Operation | Required parameters | Meaning |
@@ -247,6 +254,7 @@ before cleanup or retry. Never interpret a client timeout as an engine stop.
 | `player.start` | `session_id`, `request_id`, `expected_tick`, `camera`, `mode`, `expected_generation` | Acknowledge a new deferred graphics lifetime. Optional `initially_paused` defaults false. At most one player is active per host. |
 | `player.control` | `player_id`, `request_id`, `expected_control_revision`, `action` | `pause`, `resume` or `stop`. Resume releases old pending input and respects actual window focus; it does not fabricate focus or mouse capture. |
 | `player.capture` | `player_id`, `request_id`, `expected_control_revision`, `session_id`, `tick`, `path` | Observe the ready live graphics owner. Optional `expected_structure_revision` and `expected_ui_revision` guard the requested content. Output is exclusive and may not overwrite an existing file. |
+| `player.capture_current` | `player_id`, `request_id`, `expected_control_revision`, `session_id`, `path` | Atomically freeze the current committed tick and rendered lens sample. `tick` is forbidden. Returns `captured_tick` and raw `committed_camera_lens`; the same material/structure/UI guards and exclusive output rules apply. |
 
 Lifecycle state distinguishes initialization, running/paused playback and
 completion. The runtime session, tick and revisions identify semantic state;

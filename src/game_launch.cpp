@@ -111,6 +111,7 @@ Reply serve_game(const GameServeOptions& options) {
 Reply run_game(const GameLaunchOptions& options) {
     Json result=nullptr,diagnostics=Json::array();bool success=false;
     try {
+        require(options.replay.empty() || !options.lens_interpolation,"Lens interpolation is interactive only.");
         validate_save_launch(options.save_root,options.save_write_mode);
         const auto game=load_game(options.manifest);
         validate_game_host(game);
@@ -126,6 +127,7 @@ Reply run_game(const GameLaunchOptions& options) {
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};
         if(options.render.viewmodel_samples!=1)params["viewmodel_samples"]=options.render.viewmodel_samples;
+        if(options.lens_interpolation)params["lens_interpolation"]=true;
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
         if(has_settings && !options.samples_explicit)params.erase("samples");
         if(options.frames_in_flight_explicit)params["frames_in_flight"]=options.render.frames_in_flight;

@@ -4,6 +4,7 @@
 #include "poima/runtime.hpp"
 #include "poima/gamepad.hpp"
 #include "poima/player_diagnostics.hpp"
+#include "poima/player_lens.hpp"
 #include <memory>
 
 namespace poima::frame_performance { class Recorder; }
@@ -62,6 +63,9 @@ public:
     virtual std::uint64_t tick() const=0;
     virtual bool controller_valid(const std::string& entity) const=0;
     virtual SceneSnapshot snapshot(const std::string& camera) const=0;
+    // Owned committed lens values only; no mesh extraction or simulation work.
+    // Optional presentation interpolation requires this lightweight provider.
+    virtual std::optional<PlayerLensSample> lens_sample(const std::string&) const { return {}; }
     virtual PlayerAudioState audio_state(const std::string& listener) const=0;
     // Cheap logical projection for per-tick ownership changes; no scene/mesh
     // extraction is needed when a gameplay tick opens a modal.
@@ -90,6 +94,9 @@ struct PlayerOptions {
     std::optional<double> vertical_fov;
     std::optional<float> ui_scale;
     bool replay=false,audio=false;
+    // Interactive FOV-only presentation between committed ticks. Authoritative
+    // simulation and camera pose remain current; adds at most one tick of FOV lag.
+    bool lens_interpolation=false;
     std::uint32_t max_frames=0; // Interactive: zero runs until window close/Escape.
     std::vector<PlayerSegment> sequence;
     // Shared service sets the next admitted player generation before creation.
@@ -133,6 +140,7 @@ struct PlayerMaterialReceipt {
     RendererSceneResult scene;
     std::string session_id;
     std::uint64_t tick=0,player_generation=0;
+    std::optional<PlayerLensPresentation> lens_presentation;
     friend bool operator==(const PlayerMaterialReceipt&,const PlayerMaterialReceipt&)=default;
 };
 struct PlayerMaterialReport {
@@ -140,7 +148,8 @@ struct PlayerMaterialReport {
     // Old submitted/presented receipts survive skips, errors and replacement;
     // their own session/source/generation tags expose that they are stale.
     std::optional<PlayerMaterialReceipt> observed,submitted,presented;
-    void observe(const SceneSnapshot&,std::string session,std::uint64_t tick,std::uint64_t player_generation);
+    void observe(const SceneSnapshot&,std::string session,std::uint64_t tick,std::uint64_t player_generation,
+        std::optional<PlayerLensPresentation> lens_presentation={});
     bool submit(PlayerMaterialReceipt&& frame) noexcept;
     bool present(PlayerMaterialReceipt&& frame) noexcept;
 };
@@ -157,6 +166,18 @@ struct PlayerReport {
     PlayerPreferenceReport preferences;
     std::string stop_reason;
     PlayerMaterialReport materials;
+};
+// Immutable owner-created capture preparation. It cannot be submitted after a
+// subsequent window preparation/poll, or to another window. No clock/Tick work.
+class PlayerCaptureSnapshot {
+    friend class PlayerWindow;
+    SceneSnapshot snapshot_;
+    std::optional<PlayerLensPresentation> lens_presentation_;
+    std::shared_ptr<const void> owner_;
+    std::uint64_t token_=0;
+public:
+    const SceneSnapshot& snapshot() const { return snapshot_; }
+    const std::optional<PlayerLensPresentation>& lens_presentation() const { return lens_presentation_; }
 };
 // One frame-driven native graphics lifetime. Every call and destruction belongs
 // to the creating thread; session must outlive the window. Initialization is
@@ -185,6 +206,8 @@ public:
     // Observe a fresh owner snapshot through this live context, without stepping.
     // The caller validates the output path; capture_exclusive is honored.
     RenderReport capture(const std::string& path);
+    PlayerCaptureSnapshot capture_snapshot();
+    RenderReport capture(const std::string& path,const PlayerCaptureSnapshot& frozen);
     // Close capture admission before calling. Retires GPU work without a tick or
     // presentation; failure is explicit and never fabricates completed timings.
     void drain_performance();

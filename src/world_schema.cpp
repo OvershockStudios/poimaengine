@@ -164,7 +164,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 91}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 92}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -346,6 +346,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
     for(const auto* key:{"path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
+    play["properties"]["lens_interpolation"]={{"type","boolean"},{"default",false},
+        {"description","Opt-in lens-only presentation interpolation between the final two consecutive committed Ticks. Interactive only; replay rejects true. Does not change native camera state or authored cameras. Outside authoring-core v1."}};
+    play["allOf"].push_back({{"if",{{"properties",{{"mode",{{"const","replay"}}}}}}},
+        {"then",{{"properties",{{"lens_interpolation",{{"const",false}}}}}}}});
     play["properties"]["input_profile"]=input_path;
     play["properties"]["input_revision"]=rev;
     play["properties"]["settings_profile"]=input_path;
@@ -368,7 +372,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"session_id",id},{"tick",rev},{"expected_structure_revision",rev},{"expected_ui_revision",rev},
         {"path",{{"type","string"},{"minLength",1},{"description","New BMP output in an existing directory; captures the live player's graphics context without advancing simulation."}}}},
         {"player_id","request_id","expected_control_revision","session_id","tick","path"});
+    methods["player.capture_current"]=methods["player.capture"];
+    methods["player.capture_current"]["properties"].erase("tick");
+    methods["player.capture_current"]["required"]={"player_id","request_id","expected_control_revision","session_id","path"};
+    methods["player.capture_current"]["description"]="Atomically choose the current committed Tick and freeze one owned live-window presentation before capturing it. Tick is forbidden; player/control/session and applicable material/structure/UI guards remain exact. Returns captured_tick and full raw committed_camera_lens {entity,world,viewmodel,authored_world}, separate from rendered lens/presentation metadata. Retried request IDs return the original captured sample even after later Ticks. Does not step simulation, advance the interpolation clock or pause playback. Outside authoring-core v1.";
     result["invariants"].push_back("player.start/control/capture require the shared headless owner pump. Start acknowledges deferred initialization; player.inspect reports current readiness and the latest owned partial/final report. Generation, player identity and control revisions guard lifecycle commands; 32 process-local receipts replay acknowledged commands without reapplying them. Stop closes presentation and retains runtime state. Running players reject external simulation mutations; paused interactive players accept guarded edits. Replay rejects intervening runtime edits. Replacement invalidates input and pauses interactive playback. Captures use the same live graphics context and current committed tick with exclusive new output; they do not simulate.");
+    result["invariants"].push_back("Optional strict Boolean lens_interpolation defaults false on runtime.play/player.start and rejects true for replay before device initialization. Opt-in interpolation changes only the presented world/foreground lens; committed native camera values and saved state remain exact. Player observed/submitted/presented receipts and captures add lens_presentation with previous_tick/target_tick, alpha, reset_reason, committed world/foreground endpoints, rendered lenses and authored/preference FOV baselines. Captures freeze one owned presentation sample without advancing a Tick or clock, and require an exact rendered scene match to that sample. Omitted/default-false receipts retain their existing fields. This evolving player option is outside authoring-core v1.");
+    result["invariants"].push_back("player.capture retains its required exact Tick guard. The separate player.capture_current operation forbids tick and chooses captured_tick atomically inside the shared headless owner dispatch, preserving player/control/session and material/structure/UI guards. Its raw committed_camera_lens is the complete native lens state at that Tick, independent of whether interpolation is enabled. Both methods render the exact frozen owned sample, preserve their original retry outcome and never advance simulation or the interpolation clock.");
     methods["settings.describe"]=object_schema({});
     methods["settings.inspect"]=object_schema({{"path",input_path}},{"path"});
     const auto settings_properties=player_settings::values_schema().at("properties");
@@ -619,6 +629,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"limitations","No geometry, rig, PbrMaterial scalar, template, double_sided or general scene changes. Every selected component must change. Synchronous asset validation and texture upload are not a latency guarantee."}};
     methods["runtime.capture"]["properties"]["material_revision"]=rev;
     methods["player.capture"]["properties"]["expected_material_revision"]=rev;
+    methods["player.capture_current"]["properties"]["expected_material_revision"]=rev;
     methods["save.write"]["properties"]["expected_material_revision"]=rev;
     methods["save.load"]["properties"]["expected_material_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     result["live_materials"]={{"maximum_entities",32},{"fields",{"base_color","emissive","metallic","roughness"}},
