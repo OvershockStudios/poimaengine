@@ -103,7 +103,9 @@ extend navigation with dynamic obstacles, traversal links and avoidance.
 Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
 [First-person viewmodels](VIEWMODELS.md) provide a separate FOV and
 foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
-fixed-tick ADS and zoom. Complete collision-aware weapon lowering/retraction,
+fixed-tick ADS and zoom, with saved game-owned easing through
+`CameraFovTransition`. Rendering between simulation ticks remains separate.
+Complete collision-aware weapon lowering/retraction,
 presentation interpolation and wall-clearance behavior, with animation and
 rendering policies independent of the world camera.
 

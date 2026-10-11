@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.123
+
+- Add stateless C# `CameraFovTransition` for saved, fixed-tick ADS easing, exact endpoints and position-continuous interrupted transitions. [Contract](docs/CAMERA_LENSES.md#fixed-tick-ads-easing).
+- Allow guarded camera-lens reads while the interactive player runs; retain pause requirements for direct runtime mutation.
+- Pass 22 native suites and 88 compiled SDK/ABI checks; qualify rollback, mid-transition reload, fresh saved continuation and 32 exact AMD/NVIDIA interactive/reference captures. [Results](docs/evidence/m2-camera-zoom.json).
+
 ## 0.0.122
 
 - Add persistent world/viewmodel lens controls for gameplay zoom, with atomic tick staging, rollback and camera-instance lifecycle handling. [Contract](docs/CAMERA_LENSES.md).

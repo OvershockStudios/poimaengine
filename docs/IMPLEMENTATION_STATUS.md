@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.122**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.123**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.123 adds `CameraFovTransition.Evaluate` for authoritative fixed-tick
+ADS easing. The stateless C# helper interpolates logarithmic perspective
+magnification with smoothstep; endpoints and zero-duration snaps remain exact.
+Caller-owned primitive phase fields survive saves and compatible reload.
+Interrupted transitions start from the current committed lens, preserving
+position continuity, with no velocity-continuity claim. The existing
+`camera_lens_v1` marker, epoch-7 services prefix and schema revision 91 are
+unchanged. Guarded lens getters are now available while the interactive player
+runs; direct runtime mutation still requires pausing.
+Twenty-two Windows native suites, 88 compiled SDK/ABI checks and 15 publisher
+tests pass. CoreCLR and Native AOT consumers pass 176 and 165 native calls,
+including independent curve samples, complete later-tick rollback, inert
+mid-transition inspection and exact cold-restored continuation. CoreCLR also
+preserves mid-transition phase through compatible reload. Actual interactive
+windows on AMD and NVIDIA exercise running getters and blocked direct mutations;
+32 forward/deferred captures match 16 independently authored reference pairs
+exactly. The running transitions use scripted compiled gameplay; image captures
+are paused checkpoints. Physical ADS input, rendering between ticks,
+velocity-continuous reversals, continuous FSR history and game-scale performance
+remain separate qualification.
+[Contract](CAMERA_LENSES.md#fixed-tick-ads-easing),
+[results](evidence/m2-camera-zoom.json).
 
 Version 0.0.122 adds fixed-tick world and first-person lens controls for
 ADS and zoom through schema revision 91 and the independent C#

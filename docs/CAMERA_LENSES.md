@@ -18,6 +18,10 @@ nullable `viewmodel`, and immutable `authored_world`. Each lens contains
 `vertical_fov`, `near` and `far`. A living entity without Camera returns
 `state: null`; a missing entity rejects. The exact session and tick are required.
 Reading does not advance simulation or acknowledge a rendered frame.
+The getter is available while an interactive player is running. Its tick guard
+can conflict if another player poll commits a tick between inspection and the
+query; inspect again and retry. Direct `runtime.step` mutations still require
+pausing that player.
 
 Write through the existing guarded, retryable `runtime.step` operation:
 
@@ -55,6 +59,51 @@ Declare `ICameraLensGame` to negotiate the independent `camera_lens_v1`
 extension. It appends two callbacks to the existing epoch-7 service table,
 requiring a 320-byte prefix. Older consumers retain their declared prefixes
 and permissions.
+
+### Fixed-tick ADS easing
+
+`CameraFovTransition.Evaluate(startFov, targetFov, elapsedTicks, durationTicks)`
+evaluates a smoothstep curve in logarithmic perspective magnification. FOV is
+vertical degrees within 5–150; both counters must be within 0–3,600 ticks.
+At 60 ticks per second, a 12-tick transition takes 0.2 simulation seconds.
+Zero duration selects the exact target. A completed transition, its start and
+an unchanged FOV return exact endpoint values.
+
+Keep the transition recipe and phase in primitive `Game<TState>` fields:
+
+```csharp
+// Fields in your TState: EntityId Camera; double From, To;
+// int Elapsed, Duration, Zooming; // Zooming is 0 or 1.
+var camera = context.GetCameraLens(state.Camera)
+    ?? throw new InvalidOperationException("Camera is missing.");
+if (state.Zooming != 0)
+{
+    state.Elapsed = Math.Min(state.Elapsed + 1, state.Duration);
+    double fov = CameraFovTransition.Evaluate(
+        state.From, state.To, (uint)state.Elapsed, (uint)state.Duration);
+    context.SetCameraLens(state.Camera,
+        world: new CameraLens(fov, camera.World.Near, camera.World.Far));
+    state.Zooming = state.Elapsed < state.Duration ? 1 : 0;
+}
+```
+
+When starting or reversing a transition, seed `From` from the currently
+committed FOV, set `To`, validate `Duration` within 0–3,600 and reset `Elapsed`.
+Set `Zooming` to 1 even for zero duration so the next callback publishes its target.
+This preserves position continuity when interrupted; velocity continuity is
+not promised. World and viewmodel targets can use the same elapsed counter
+with separate start/target fields. Preserve their near/far planes unless a
+clipping change is intended.
+
+The helper retains no hidden state and requires no service marker to evaluate;
+publishing lenses still requires `ICameraLensGame`. Saves, compatible reload
+and failed-tick rollback preserve the game-owned phase together with committed
+lenses. Paused rendering, queries and captures do not advance it. A new camera
+or an externally changed lens needs an explicit new transition recipe.
+
+This is authoritative fixed-tick easing. Rendering between simulation ticks,
+inertialized reversals and continuous FSR history are separate contracts.
+The current world lens changes retain the renderer's history-reset policy.
 
 For a world whose Camera ID is `00000000000000000000000000000001`:
 

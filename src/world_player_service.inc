@@ -605,7 +605,7 @@
         if(!method.starts_with("runtime."))return false;
         // Runtime collector performs managed GC/unloading; it is not a pure read.
         constexpr std::array reads{"runtime.status","runtime.inspect","runtime.observe","runtime.entity","runtime.lighting",
-            "runtime.raycast","runtime.hit_test","runtime.ik","runtime.root_motion","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.texture.inspect","runtime.gameplay.inspect",
+            "runtime.raycast","runtime.hit_test","runtime.ik","runtime.root_motion","runtime.camera_lens","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.texture.inspect","runtime.gameplay.inspect",
             "runtime.template.get","runtime.template.query","runtime.instance","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
             "runtime.save.status","runtime.save.result"};
         return std::find(reads.begin(),reads.end(),method)==reads.end();
