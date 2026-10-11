@@ -339,6 +339,34 @@ receipts are retained locally. Longer lifetime limits, key-change saturation,
 production AOT reuse and full gameplay iteration timing remain separate
 qualification.
 
+## Compact single-job inspection
+
+In schema revision 79, `development.inspect` accepts optional boolean
+`include_output`, defaulting to `true`. For progress polling on one accepted job:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"development.inspect","params":{"job_id":1,"include_output":false}}
+```
+
+Compact inspection keeps lifecycle, exit, elapsed, error, verified result,
+byte/truncation counters and compiler identity/use/retirement metadata. It omits
+client `stdout`/`stderr`, compiler `log_segment` and compiler diagnostic
+`stdout`/`stderr`. The native `Jobs::poll_summary` constructs this projection
+under the state mutex without copying those raw tails. Error, result and short
+ownership strings still copy; this is not a lock-free or zero-allocation call.
+
+Omission or `true` retains full inspection. Catalog, cancellation, forgetting,
+retry identity and worker lifetime keep their existing behavior. Invalid flag
+types reject before looking up the job; unknown and forgotten IDs remain errors.
+Discover the current host's method schema before using the option with an older
+build. Compact inspection is an observation of one job, not pagination or a new
+execution permission.
+
+After terminal status, retrieve full inspection and bounded structured diagnostics
+when verifying a compilation or debugging a failure. Compact metadata alone does
+not provide the raw correlated compiler-use or complete diagnostic evidence.
+Reduced response content does not establish a measured latency improvement.
+
 ## Structured compiler feedback (development)
 
 Agents can request recognized compiler errors and warnings without retrieving

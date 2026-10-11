@@ -79,6 +79,34 @@ function does not reinterpret them as a stopped job. A transport deadline can
 disconnect the client even though the host's job continues. Follow the
 [failure and recovery contract](PYTHON_CLIENT.md#failure-and-deliberate-recovery).
 
+## Inspect one job without repeated logs
+
+For a host advertising `development.inspect.include_output` (schema revision 79),
+use compact single-job reads under the same finite budget and lifecycle checks:
+
+```python
+progress = client.call("development.inspect", {
+    "job_id": accepted_job_id, "include_output": False
+}, timeout=5)
+```
+
+This keeps the worker error and verified result as well as state, elapsed,
+byte/truncation counters and compiler-use metadata. It avoids cataloging other
+jobs and retrieving raw logs on each poll. At terminal, obtain the evidence needed
+for the operation deliberately:
+
+```python
+full_status = client.call("development.inspect", {"job_id": accepted_job_id}, timeout=5)
+diagnostics = client.call("development.diagnostics", {
+    "job_id": accepted_job_id, "limit": 16
+}, timeout=5)
+```
+
+Preserve the same host identity and transport-error behavior described above.
+The new flag is strictly boolean and defaults to full inspection; unsupported
+older hosts require their discovered operations. Raw tails remain bounded, and
+`more`/`incomplete` diagnostics still limit the conclusion you can draw.
+
 ## Cancel deliberately, then observe again
 
 Only cancel work you own or have explicit permission to stop. A local polling

@@ -103,6 +103,9 @@ public:
     Jobs& operator=(const Jobs&)=delete;
     JobId submit(Request request);
     std::optional<Status> poll(JobId id) const;
+    // Same state/metadata snapshot, without copying output tails, compiler log
+    // segments or compiler diagnostic tails. Error/result/proof text remains.
+    std::optional<Status> poll_summary(JobId id) const;
     std::vector<Status> list() const;
     bool cancel(JobId id); // False if absent or already terminal.
     // Only terminal jobs; capacity is never silently evicted. Verifier captures

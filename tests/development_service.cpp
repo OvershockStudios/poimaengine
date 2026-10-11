@@ -24,6 +24,17 @@ int main(int argc,char** argv) {
             do {
                 result=service.dispatch("development.inspect",{{"job_id",accepted.at("job_id")}});
                 if(result.at("terminal")==true) {
+                    // Optional real SDK invocation also checks compact ownership
+                    // metadata against the exact terminal full projection.
+                    const auto explicit_full=service.dispatch("development.inspect",{{"job_id",accepted.at("job_id")},{"include_output",true}});
+                    check(explicit_full.dump()==result.dump(),"Explicit full inspect changed default output.");
+                    auto projected=result;projected.erase("stdout");projected.erase("stderr");
+                    if(projected.contains("compiler_server")) {
+                        auto& server=projected["compiler_server"];server.erase("log_segment");
+                        server["diagnostics"].erase("stdout");server["diagnostics"].erase("stderr");
+                    }
+                    const auto compact=service.dispatch("development.inspect",{{"job_id",accepted.at("job_id")},{"include_output",false}});
+                    check(compact.dump()==projected.dump(),"Compact terminal SDK identity/proof/counters/result/error differ.");
                     result["diagnostic_report"]=service.dispatch("development.diagnostics",{{"job_id",accepted.at("job_id")}});
                     std::cout<<result.dump(2)<<'\n';return result.at("state")=="succeeded" ? 0:1;
                 }

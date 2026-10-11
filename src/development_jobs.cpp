@@ -172,6 +172,35 @@ struct Jobs::Impl {
         if(result.state==State::running)result.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job.started);
         return result;
     }
+    Status snapshot_summary(const Job& job) const {
+        // Construct the projection directly: do not copy large diagnostic
+        // strings under the scheduler mutex only to clear them afterwards.
+        const auto& source=job.status;Status result;
+        result.id=source.id;result.state=source.state;result.exit_code=source.exit_code;
+        result.error=source.error;result.result=source.result;result.elapsed=source.elapsed;
+        result.output_bytes=source.output_bytes;result.error_bytes=source.error_bytes;
+        result.output_truncated=source.output_truncated;result.error_truncated=source.error_truncated;
+        result.cancellation_requested=source.cancellation_requested;
+        if(source.compiler_server) {
+            const auto& source_server=*source.compiler_server;
+            result.compiler_server.emplace();auto& server=*result.compiler_server;
+            server.session_reused=source_server.session_reused;
+            server.compiler_server_used=source_server.compiler_server_used;
+            server.pipe_name=source_server.pipe_name;server.request_id=source_server.request_id;
+            server.proof_reason=source_server.proof_reason;
+            server.process_id=source_server.process_id;server.creation_filetime=source_server.creation_filetime;
+            server.named_environment_entries=source_server.named_environment_entries;
+            server.excluded_drive_pseudoentries=source_server.excluded_drive_pseudoentries;
+            server.log_segment_truncated=source_server.log_segment_truncated;
+            server.retirement=source_server.retirement;
+            server.diagnostics.output_bytes=source_server.diagnostics.output_bytes;
+            server.diagnostics.error_bytes=source_server.diagnostics.error_bytes;
+            server.diagnostics.output_truncated=source_server.diagnostics.output_truncated;
+            server.diagnostics.error_truncated=source_server.diagnostics.error_truncated;
+        }
+        if(result.state==State::running)result.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job.started);
+        return result;
+    }
     struct Result { State state;std::optional<int> exit_code;std::string error; };
     Result run(Job& job,const std::function<void()>& server_pump={}) {
 #ifndef _WIN32
@@ -524,6 +553,11 @@ std::optional<Status> Jobs::poll(JobId id) const {
     auto& impl=*impl_;std::lock_guard lock(impl.mutex);const auto found=impl.jobs.find(id);
     if(found==impl.jobs.end())return {};
     return impl.snapshot(*found->second);
+}
+std::optional<Status> Jobs::poll_summary(JobId id) const {
+    auto& impl=*impl_;std::lock_guard lock(impl.mutex);const auto found=impl.jobs.find(id);
+    if(found==impl.jobs.end())return {};
+    return impl.snapshot_summary(*found->second);
 }
 std::vector<Status> Jobs::list() const {
     auto& impl=*impl_;std::lock_guard lock(impl.mutex);std::vector<Status> result;result.reserve(impl.jobs.size());

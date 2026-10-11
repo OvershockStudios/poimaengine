@@ -1,0 +1,1829 @@
+{
+  "format": "poima.iteration-comparison-evidence.v1",
+  "engine_version": "0.0.106",
+  "passed": true,
+  "scope": "Paused CoreCLR edited-code verification, full original timer and durable/native state oracles. Functional qualification is separate from the three-second budget.",
+  "compiled_tooling_checkpoint": "0.0.88",
+  "source_sha256": {
+    "CMakeLists.txt": "b8996dd8c305a29f265a296144ed239b891ef58bc7135fbd3d7dd044c703efc4",
+    "cmake/audio.cmake": "9115c80f7e41d96e44b5e9cf2f40b71e8cd4c2fb7bb03503caf2ed7f2632bea5",
+    "cmake/build_info.hpp.in": "18349e62eb1241b1f4d9cffa6d7e5778f21f3a6b35d1008ca48ae777e113f438",
+    "cmake/desktop_bridge.cmake": "e3520e5bb9daf7535b0a6cc4abcbed34eb226afa6eae7858f78ba447e39cad9d",
+    "cmake/editor.cmake": "8404d25df52655bf3e6c66145c7362733c79a6b1fd5594a010ccbce330ab9d1b",
+    "cmake/embed_ui_font.cmake": "df9726cb63ab3eaa402c901d8370a0e5a76abcdf3d22823feaff5457a38687c9",
+    "cmake/fsr3.cmake": "1ed8ab6a2655ae02c107bafe3b9058f798b9e8995ce16790510ec36a52c19609",
+    "cmake/fsr3_compat.hpp": "4a827479d2c4f7c43ff329e7d05366fe133e789ca8c291db1921565783d21e62",
+    "cmake/game_ui.cmake": "f56cf903b917f118c7cbe2c577ceb1fbad21c219e26d4fb61acba2d44583a55e",
+    "cmake/jolt_character_ids.cmake": "984af312e512a43656168ed9686eca5921832820db2bf58bfabd6ab3f6866efa",
+    "cmake/navigation.cmake": "d6dc97efde40fa70d29dff1d0d58318866e48d9c32415b7d7d15d809deea4793",
+    "cmake/render_smoke.cmake": "8eb2e7d5340a366291a61ad4185d394aa36fa625b3c7e440848fc44994148e31",
+    "cmake/runtime.json.in": "09b4c01fb4d7d4bdf9b775732cfc36b1c1d46d5673a1fde1666b8265e4a476b4",
+    "cmake/simulation.cmake": "9d2317f474c3c3b31f6529545820ed69cf0907c7a387ab7b6d37ae5ee2dc6e74",
+    "cmake/windows-llvm-mingw.cmake": "8416d2f836578692c765abc7fd857ca390d8ea4833a57e97adf0590d76b102d2",
+    "desktop/Poima.Editor/packages.lock.json": "60dfb98b6e0f3def887ea4b27b075c845f9955ea14b95ee7f59c305c697a2028",
+    "include/poima/animation.hpp": "b3f236e61130ba95e8508139e6209234ac2be4c5c86207e7c28e7b57a00db68a",
+    "include/poima/animation_layers.hpp": "b8045f047ec5ad20f48df054112e15edc947039395bf15c0f58985c3c33e1fd9",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "include/poima/audio.hpp": "3612080f5134dfb2ae6c69453eb3e182f9a75c53eae8c8ca77e0b65db15558d4",
+    "include/poima/build_metadata.hpp": "dab99eefdc6be9ebe100055306bbb30e120520597ed03093d55bbdf0bf6a6851",
+    "include/poima/capture_image.hpp": "12ddc48d422c303b558be696b11d8a10ac2d1cdc1ee9d82ef4d9eed2cdded6b5",
+    "include/poima/components.hpp": "5494fa87959c2ed03ae82317fee9b4e7a8132cc0f4510da9dba11828a6b3b95b",
+    "include/poima/core.hpp": "9891d449458ab68f21ca6911021365b82bb89b8da1c9e21096e3bb52102f50f0",
+    "include/poima/desktop_bridge.h": "6171d1557cd9bbd125f715dd86ff7ff995e0b553283d51d68b674d436b49dacb",
+    "include/poima/development_jobs.hpp": "bd7d6bcef1e666c778763f9af7c856eed29ad0348051ef24b5ba91629c1f900e",
+    "include/poima/development_profiles.hpp": "7d778df8fc57ffa179d77d048c427a118d179c3e21725b00b0e572d3bb67966a",
+    "include/poima/editor.hpp": "8f67e83bab27b57d6b9fda9680eef357a442fa3a2e542f47e97d0900519e5c3a",
+    "include/poima/editor_gizmo.hpp": "35072f6a2e68f73abd0c96bba96bebd8a077157d4d12878929485cfb151e116b",
+    "include/poima/editor_overlay.hpp": "af1e4e71f9d38235f9a3d6f24e0a65070385134d085a3fe3153780316c887cb6",
+    "include/poima/editor_style.hpp": "c0c1e31a66401217b736603ef52fa33dd48309555e37686e4c005ff4df049c8e",
+    "include/poima/editor_viewport.hpp": "176eede8c2088c0f4ad3f19ee4a57d01c5bc2837f34b0e301c1ed60adde0a563",
+    "include/poima/experimental/module_abi.h": "81cf9f6b284cd8d92bb2ee57d24d89d07932d463c7be5ffed882657fad6da9d9",
+    "include/poima/frame_performance.hpp": "714e379b04bcd1c888b3adbc5f779a663b54707e7477488e0d34e5c29974bbc9",
+    "include/poima/fsr3.hpp": "f71d56e9783081005f6cc57262d5ea8390dd935b4017d3288ff65a061c280c92",
+    "include/poima/game_launch.hpp": "e1821034be4e29ded03d2b0f78e088c256fa3d5a21623e8530ad489bc6002a1e",
+    "include/poima/gamepad.hpp": "031d9c4456346e1993d5e26022224ebf05565f4c69adad142c5ecb6643f5d059",
+    "include/poima/gameplay.hpp": "ea17e3fd5a70fca9481ec9e4e6200b6044d1e7e04b4cd8e58ad33b6ae3b94d2f",
+    "include/poima/gameplay_abi.h": "04fc3fa24ef92a9b04a1e7c933880deddec496a4e499dd324db729f147a2c220",
+    "include/poima/gameplay_compatibility.hpp": "4bcaa6ed79d1965f607f5324d57a748d8a01e9c4dbe434a8038abd650c562f22",
+    "include/poima/gameplay_player_preferences.hpp": "f772a3583f2d9641926b0cc10eb624f8cf5a770867cd73d36af7667790baf164",
+    "include/poima/gameplay_save.hpp": "f3339e797214e39025f8c6ca83afaa9aefd1c89176130dcc315de38d78b89ac9",
+    "include/poima/gameplay_save_writer.hpp": "b158425c0077b9d6ce09f90e67e3f60e4d391d4f32be8619052e479366386966",
+    "include/poima/hosted_viewport.hpp": "1141108e50c7978263eaa368f4f00b3fe8eeb5203dccd0da79b4086cfb2b388b",
+    "include/poima/input_profile.hpp": "d5a1164370b5fc7d0e1c6dcc370a0b8875705a1ccde5ccd691a5e8d6eacb39d8",
+    "include/poima/jobs.hpp": "777ff1a8e7c02f139d44d74403989d55176759dedbb7a1b3586d81c8007d8375",
+    "include/poima/local_session.hpp": "ba039d97f9ba78e6b6c4bf2963c5782a22df080cf08e9653a5b0332cf501e51f",
+    "include/poima/material_recipe.hpp": "86283610224dcd3f19e970dded0151f5a318c44afc265ce3aa91420f8fc42a24",
+    "include/poima/mcp.hpp": "eef8510be5e1129506a1b0e35b9ca7631ecc7ed81937fff6662ab270cc335caf",
+    "include/poima/native_gameplay_artifact.hpp": "e45c855c234e2e15f3cf0312ec7f378c33abf847842b22779d1bc84a2a3d2d27",
+    "include/poima/navigation.hpp": "09d96cbcaf61ab3f8a70a0a816cfe616b5f4f587b3134fdca7862bea2434f861",
+    "include/poima/player.hpp": "3ed76e20f1c4c4f113345bfeae5278508091f0d9708573782784e27ad6b93f98",
+    "include/poima/player_diagnostics.hpp": "247cbf584e72555f850cee5c592fb649b68491ec1d52f91503495c64ea5a2786",
+    "include/poima/player_preferences.hpp": "238df5fcdc2457e232b847f4fba27e8e93d691e9ba9ffdd4dd138d54c65b3bd0",
+    "include/poima/profiler.hpp": "f364780aca15c609cecb797d6767e0d13d7e741bdb876fe74a0979218b9cfd56",
+    "include/poima/project.hpp": "29bb4ffbc18c71d71004a1fb5192a38e5975f0f17d17f6fe23fd50fcad158372",
+    "include/poima/render_schedule.hpp": "b43e83a28c2b232cc526910f7fff4fb75b98a1a9dd96c1a57ad3c56ce3e157e9",
+    "include/poima/runtime.hpp": "15f2f70ea5524e51978c4d89eb92d0b9cf6d0ebb4863fa80d2e14b488450add3",
+    "include/poima/runtime_animation.hpp": "d7a9c1e5f555381563f020809f9c70a7750d0e711269615229c1515551cfc718",
+    "include/poima/save_store.hpp": "1389b077a887175f3b50467a76306805b8d3b7864fbac556c9c514f4b78adb75",
+    "include/poima/save_upgrade.hpp": "d84dd33ee52c3cbb7c7c5b96a1c7d4ffa5f78f8af37699ac13c9b298e6107539",
+    "include/poima/save_upgrade_document.hpp": "18ae156243c4064dda6b9fead3848f74d0a170971d74f63ebb8268990eaead82",
+    "include/poima/save_upgrade_plan.hpp": "f9b1b94ee447686c738d0180b1d0d44b989eed0fea4b4f99e93e773c8d623031",
+    "include/poima/save_upgrade_snapshot.hpp": "ce3b6ce1eac0820148f739ee8ff622e376235f65a8536b7eea38960cd4fccd35",
+    "include/poima/scene.hpp": "0f2f01b3215e93157ebaf30516401e2806707c1687af5341002f59dda7b27bdc",
+    "include/poima/shared_session.hpp": "6ce2e0772b516453bff8ea24ff18740fcf5fd7c24e0e2ed1f3c5cf7e9aacaf2e",
+    "include/poima/temporal_clock.hpp": "6fad32b563b573997135d02abaa9caa2ea0ff69f3f12811c41502addba00ff6e",
+    "include/poima/ui.hpp": "d23ef452818236c6330bf04b53459a78509feb09bc75a3557eed9c50df8621a9",
+    "include/poima/ui_document.hpp": "b9c8107c38beb5bcf1d2183ae064f0a2802360eb3344c7d7ba7b43a9f1c3db4f",
+    "include/poima/ui_input.hpp": "14e14c4a7bdbf1922354865289ac721c6006d37b52292ec4d02f832c9d8cdf73",
+    "include/poima/ui_model.hpp": "35bdba2764ae9592c1461d407ce33dfc848653a689d21810791046680e6aef2b",
+    "include/poima/ui_presenter.hpp": "1e5287d5786f8c63cedeabf774a060a541e8f81afebee66a8671442b15d6a5d8",
+    "include/poima/world.hpp": "97be2d54f33c9505406ac4ec63b4801a3ae18fde41d54f965a3248e96354bb81",
+    "shaders/ambient_occlusion.hlsl": "6bc94d6019855bc345bf4909e6d8bd9705713ed22529bf722e4038e9ec3584fa",
+    "shaders/ambient_occlusion_filter.hlsl": "ba6681a39e2d5bc1c3ded5e6cf00ddeb1e4cbb9ec24f6fdeaee65996ce6a9eed",
+    "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+    "shaders/deferred_lighting.hlsl": "e54c373ce1024bdd7b1d75d113203f8d67a72889d03662ffab5489aff69c1bcd",
+    "shaders/editor_overlay.hlsl": "ca1103d90acc3c91967d7b2dea47b1cd04c1e0e19899e27b8a63299ebd128940",
+    "shaders/editor_ui.hlsl": "077ac437d811aa3c9451afd35d0e9da35ca30fa123846a1a87f9b64f51d7f804",
+    "shaders/game_ui.hlsl": "dce1cf05d7612a4f642946094c5fbcd6a8512add68d87f4434545f3f2206b1c0",
+    "shaders/scene.hlsl": "9390cf957c244577719f6d20a0d8472ffda6ef304dbfef5931fcb35396b2910e",
+    "shaders/scene_frame.hlsli": "66c7c860b628c6febe1dc8aeb9a9e655f3e78b9ba2e7952fd7c089fe389dd7b8",
+    "shaders/scene_lighting.hlsli": "f4fd3e0c6f9d314e663d96e49bfd0f375e2a0949076cca2f4785f7add2811490",
+    "shaders/scene_output.hlsl": "ef311bc843f42903f4495e8a4dfe70af31c738d4c1eaae3e0d1ffbb67ea26959",
+    "shaders/scene_surface.hlsli": "b488aab18ef82175cebb03e273dd1c64c54a14851d2b423f4ad6586e859b70fb",
+    "shaders/shadow.hlsl": "f285ba3d3fc4b4107f6dce2e972371c557cf458e3ac0d05e1bf1c9dbb4a39066",
+    "shaders/skinning.hlsl": "7805eeb3fe6d3509193e9c38b119e5ecc20c48a094394879a8da6ba29ecf095a",
+    "shaders/sky.hlsl": "bcb51e5d66d9385f7328c337213f11184d55551e0265054a07c7d1f813c71286",
+    "shaders/smoke.hlsl": "5ac41014221c4b7ac34c9895d75aada0f4c80ac97a6e5a35588a8ef682b776de",
+    "shaders/temporal_inputs.hlsl": "21818455c86d9be0d8d0a39f144bce49f0d80920d5001ab304f1268bd515a9b6",
+    "src/animation.cpp": "b55cf2048505c6dbcc2c845b8b87b37033cd7d989212bfec46c33ac8944fc481",
+    "src/animation_layers.cpp": "358b994db25edb8d6acb894411d785326d458d94327d7bc1f72f3c8d18b98d29",
+    "src/asset_provenance.hpp": "980f16265362692beb25858c97736f18d41587454d5d0fc29af5fbf79559e6a6",
+    "src/asset_references.cpp": "750cb5b018951c228cd3b71ef9f2a0d281a8ba91726249494431dc5704ebfca0",
+    "src/asset_references.hpp": "7e7bd10378a8264aa6c0cb97f436f4c5beac9cf34bf5608a1d6d8d9dee3baf75",
+    "src/asset_store.hpp": "7566fbb3b0af03cab3f7783baa47fe077719e1da3b48061ffc03d4c5d03383a0",
+    "src/audio.cpp": "3857db59020cd11533b7201322ac298934e3044c803ee0fd9ce978b5cc251578",
+    "src/audio_clip.cpp": "824ce921d19bf23f398a7c6796c3203035ccf4b61dbbe49b7b11e69f4d23b91b",
+    "src/audio_events.cpp": "9e7d4b273063e7e89bf59d900215923417bb7fc95f716a5be76240a5319e46a2",
+    "src/audio_hrtf.hpp": "4f48b3aa91910bf8299681687a08509cbbb7e6582f974fc3e6e1a0165d0314b3",
+    "src/audio_stream.cpp": "905f82822fba025592e33ca5507c9db1c61d51fa3a19893b23503576b9b608f1",
+    "src/capture_image.cpp": "b4328ac307d5863c30749eecebfb2065d1c37d9909b0e23e4323176fbcd5aac6",
+    "src/components.cpp": "6033b59d8905ff2202a87fc13d1258b728b018bd8fdaa0b63a1be03c9d0865f2",
+    "src/core.cpp": "8163c0b98b0f7fd049c81d83f110ff0d6d7dcfd1625a2fd0b6fa1cf08103bc38",
+    "src/desktop_bridge.cpp": "a440b798b50226783129326526431aadb48e8405957e917b5c722cde27a1943c",
+    "src/development_compiler_owned.cpp": "7c1c32b646264b48a0ff138fec1ee85f2450b18c51ad4d9381e82b1aad711edc",
+    "src/development_compiler_owned.hpp": "f849ff2d68eea556081c51075a376aff6324850dd094b81751bb59ed912549ab",
+    "src/development_compiler_session.hpp": "222965150012813d248ee276286dbe267a672ddeed35725e61de476e93529320",
+    "src/development_diagnostics.cpp": "51af2a549b1542898b5b503ccc918fc6f35f2340fe05488913cc4705910f2e92",
+    "src/development_diagnostics.hpp": "26b2b0f92941f8ff14972b902dc1c7cdfc2589dab5cf8ec0464b699846d9fa6a",
+    "src/development_jobs.cpp": "f6ad22ca32cfaedae20e4ecfede785e7905334a65cc0931f36ebe8762e221213",
+    "src/development_profiles.cpp": "19a047c29e28ab0277f328b5837352bee41623af7ac84f27c94e6d52fb7e5f7e",
+    "src/development_service.cpp": "03d66bd0488482a3cf26dfcb8423ba5885a11f276b1c5995be7c0709cf1231c1",
+    "src/development_service.hpp": "73b5ce0b93561fe16dd023231a623ea1a24be906137b004400dea6d2a3a6c68c",
+    "src/editor.cpp": "6d6c9cf6c8098884dc15ac059a672cdd253f27a2b2ec713b3f25578fe137a1f6",
+    "src/editor_audio.cpp": "fbd93e16dd20f65e41289a26611d029a45e5b4eced43e4aada88c2a538836e57",
+    "src/editor_audio.hpp": "cbf139111a7a592a8c2b9e684ca136247a776a97634f83744d929135e13a1a62",
+    "src/editor_disabled.cpp": "75af1098caf35845a70189e6f6d331a549387413be7b798ed83639b0ff682b47",
+    "src/editor_gizmo.cpp": "b63e5e0f94aeaf7a00242f3fbd84489619765438e9fad2253484e51894f70a59",
+    "src/editor_style.cpp": "542a6c1518d4a340bd2d6a400ed0e95f4a3db7eee8b7dffd0f417950fc6c21f2",
+    "src/editor_viewport_disabled.cpp": "cefb416ab2534a6aa2a899dad9eea0eb8ce6358b371505115b80baa5648c9b63",
+    "src/fbx.cpp": "6b35a1125733f1166ddca13865e36d4464f9e54cd128a266453cfe70d1b84336",
+    "src/fbx.hpp": "e2f299f3316412cc0bfeed239aa6cd444e61db397a6f1dfc14c2d01545c82b1a",
+    "src/frame_performance.cpp": "3ec91e3ae7ea6a948b36e3a8eb55ef9851c170c16b4b6d34cc98ab245941cc87",
+    "src/frame_performance_service.cpp": "471b63d8caa64071acecb5335ec7573f1254dcc18cca96a59123c2df240c834a",
+    "src/frame_performance_service.hpp": "f2ed2c55faf0476fc95a786f1bb157e110b33eb24c601b665953ea919229659d",
+    "src/fsr3.cpp": "2b22fd2a438ace95918af5e841926cd3af2bac0f802aa29e7afbd0118c31d858",
+    "src/fsr3_disabled.cpp": "32f071a3e96003c1cc67066b5679d49883c1fb44570e3ee5a3344afc24228322",
+    "src/fsr3_no_frame_generation.cpp": "b93ec259cdb3f5acf66b8919812f305bd4a3717697831513545eaa8ce8a07b4e",
+    "src/game_launch.cpp": "bfb4e2436f935f7b1b50d6a1ec0eba4ffcf65ccbd234f1d95c07d719261deef7",
+    "src/gamepad_disabled.cpp": "a85bacc2ceadce4ac9e4afca4f49e5be82c30a7222b51b0bf949e249cadaf38d",
+    "src/gamepad_sdl.cpp": "567c32ab8d97a0d896a66ffb5db2ca9e212de3b03c504e444756ed1c33728c28",
+    "src/gameplay.cpp": "55a90cc175027fb8361163e5b458bb8c57f8fe4db9ebaecaff85f056b7d3626b",
+    "src/gameplay_player_preferences.cpp": "221a3f6c618c7fad6c099a29e6f6aa3e00600f92356c21ef96616726569a5e49",
+    "src/gameplay_save.cpp": "9cc7ec3d78e2671a7ba407c733a457fbdc041b3ed1d3b191d279e413d1aa831c",
+    "src/gameplay_save_writer.cpp": "c52b969ea8fe0970c762de5569342bf23c871da41996d9bb2b6e7266263405cc",
+    "src/gltf.cpp": "569dcf19a160063cde6696db57ae0f9eaebb3c6e78c81d95070198b0fecc464b",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "src/host.cpp": "5db026cacb021855c75cfa5bde1cc68fe239276b1e4fc5175635446b62fca179",
+    "src/hosted_viewport_disabled.cpp": "acadaa81d5797d8f0ef286ebd1c57ed154ff844978cc545cf49288878e62f0b0",
+    "src/input_profile.cpp": "5c739b5dcee63d4c1877ae106b208333da6cf5ae037812fc7bf2e5510afcf5ba",
+    "src/input_profile_store.cpp": "4093d28a73991a752dbfc96190eb841ce9f2b9ff0eec864c868971fc43cb35e2",
+    "src/input_profile_store.hpp": "5bb63face39a4df04eef2b7f59b716640b75a9edb6b06f59db86186ea7e34f61",
+    "src/jobs.cpp": "6eb8b6e14dd81a3ea0efbb29c6aa97f9cf2c0fa115f814ad1e367ccb0c584c27",
+    "src/lighting.cpp": "0941862f2c2cf29af3085b37f174e7b6ef800b59240c87173e2e7403bca93ac5",
+    "src/local_session.cpp": "30aea121181a7afb8cc27f39bfc3a5226e2bea4db8864e68c8eb55d9798c36e2",
+    "src/main.cpp": "caeaebe2554455fb841cf3d8c51151bb17ada12b5b39a20d8382985dfd1c1ed8",
+    "src/material_recipe.cpp": "94740453e1a276248adb97b8decf8bec832e4503e177202317b8dbe87a428389",
+    "src/material_service.cpp": "0755cf6d290bced79a45bb9872189ecc3652fb9c08a0b12dfacd79d2fe641856",
+    "src/material_service.hpp": "e12939b5ecac58ee70b76d3c44bbb858407ccc246c6566e2132dd6676f0f76e4",
+    "src/mcp.cpp": "7896d13a0184901cd24f94fdca77848e717b0b77e3cdfa03d214eba4194c329f",
+    "src/mcp_stdio.cpp": "88bd2ca12c88a81c27b4347c9917f9126af695f2c3ed02f9c42cae4d7e3eaf57",
+    "src/model_codec.cpp": "952f08574007227a5b8e21848f879ec5937155ea8e6ea74599ffd64d1bb55f3d",
+    "src/model_import.cpp": "6ed277d83202edf4cf829e25dbc3be63e980b7255e8ac94aa82244693308ad36",
+    "src/model_import.hpp": "37ddff868c526a615a5ace5b19f8f195c3134ffacd02c10029dedeafda72cfb9",
+    "src/mutation_discovery.hpp": "b270359e15d5c9882b26fbcf50b7612d28967eabd6381fba9f5b2da60cd0b455",
+    "src/native_gameplay_artifact.cpp": "f3c590a58289425acea7d0cc530118f569124c0a136adc022be9749c0763133c",
+    "src/navigation.cpp": "5aa148e7096e6a4a89ec426e42b1a36ac12fc41edba737558a5882258064bc21",
+    "src/navigation_disabled.cpp": "a13939876a82507d5a7e11763427c02bd7db6a7d6b7619f2e976c2fe2e9bf0bf",
+    "src/navigation_geometry.cpp": "2affa0a1dfc17f7ca44bf6e187a817a44ea0078227ff7fea7304acf59cd8299f",
+    "src/navigation_geometry.hpp": "c12c8b7755e7f0fffe3acd94170be33766c87659afba5c4bc2fa158c5698399f",
+    "src/navigation_memory.hpp": "7a54aaff9224ce0be650b122d77b02b4519791edec8fce94aab3c365f5ec66a7",
+    "src/navigation_schema.hpp": "6dc2781f3f6650016ca145d5d42d22969619a36be196ebe452ef3817d3360264",
+    "src/player.cpp": "19fae996e95ecb64870df29e7684f6ba06c9e31fa832b461af282d8ec4b8128c",
+    "src/player_audio.hpp": "c03b8fb0fa99dfbc0f87c28cae2183309532edba2f851784751b8593e9c31de3",
+    "src/player_diagnostics.cpp": "68ee914428d8713810fb5ac3d2861d1a7c5a3d15c716260604f1078220b283f6",
+    "src/player_preferences.cpp": "27534b3d88062726400e9cf8ccb98ea5b3f9ec7b77ec3d60456808c330af89ef",
+    "src/player_settings_store.cpp": "61e6db711c43664f0e9ef12903759a1b67fb52db6a4dbac2abf91cb6c2b265ac",
+    "src/player_settings_store.hpp": "e42cd571ed9b2f6da453297ebf21ca8e2d4e5bca6dca3a6b5d823c7623b646a8",
+    "src/profiler.cpp": "3fc59009e8a49d4daf0a1691253da149e3e7660182ed574daa1a0609570bf289",
+    "src/profiler_service.cpp": "edb190b443ba679b8277cb140137b18e5901aa1f45c6dbc04c32046990c698ea",
+    "src/profiler_service.hpp": "21ac363f9935b3fdb0c350dec5f19b5f1a4eabb64d77b42f68558715ef2c9917",
+    "src/project.cpp": "b8215b18fb68028a9481db5eff92bd3128a12dd77c8ffee41105b818463afa92",
+    "src/render_smoke.cpp": "f251f935b08c183c3091a050cdf0f84074dea570a1b94188dcc1e9e013413530",
+    "src/render_smoke_disabled.cpp": "c4ca5ef03d0e8ac224bc92eb681042111775da766871874424cdce17e13d46dd",
+    "src/runtime.cpp": "76f7fd59254be42186899f1b27ea235927784680ecc3fcb3ec7f7324ebdbd07c",
+    "src/runtime_animation.cpp": "96462d482306c3be712be9204aa76a8db332ff4bddc2dc795cd1440ee6763488",
+    "src/runtime_body_ids.hpp": "46c84801b20fcba146255775993ad46477f6a65a8a4d3ea5dae58f0ea83a9b80",
+    "src/runtime_components.cpp": "b6154273ee277ac8098eb77f616a3f1416639e335d053c13167cc8bd3e888404",
+    "src/runtime_components.hpp": "6e548040172c6b29cd4c5ddc800160388e0abc12452491825deba53edcf50741",
+    "src/runtime_disabled.cpp": "05172991d95708d54495fae735b31697bee6d021932d0cccca6ef9afa48a38b6",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "src/runtime_geometry.cpp": "4f759aad183444c1d8f27b453dfa8380d7c87cc87d86a9ff9b24761a85d80d13",
+    "src/runtime_navigation.inc": "156a0bf8a3ef7210e31372dc596ee1b52c6d3d881a7ea3dbf49284f2fd5b27e3",
+    "src/runtime_player_preferences.inc": "5798d8efd78d8c5da0bcd347b4689827f9016ae26d3d7f98968be511defdccd1",
+    "src/runtime_save.inc": "2dfb4930dcf82873c1d4d73118077345699b5fe200980f832231fa43e8d9bc88",
+    "src/runtime_templates.cpp": "a4411c054c996b95d763758832c40368fa1b4e1cfcba6d18af356bb81c869cdd",
+    "src/runtime_ui.inc": "ce8faae4cc73e436d860e2fd34ff3c9cc8ea20da7190d5c79d0e6f195fc1fe93",
+    "src/save_store.cpp": "b921507f9da872d2d432292ba8add8074c66c04c833bf16c49b3dcd78e9e50ee",
+    "src/save_upgrade.cpp": "5ea88fc5f9f125e0b1cab238941ed9ff44facc0e880d97fb40f2ea71ba43bde4",
+    "src/save_upgrade_document.cpp": "f83740f87aa13b9b47c62d49a6b2692f3da40d6832fb4fd10a3598d30a331d85",
+    "src/save_upgrade_plan.cpp": "4ee3e5b2589efd2f6aeab91923fa817347e7f87dae04d46174df89c0b434282b",
+    "src/save_upgrade_snapshot.cpp": "af0a822f2364c64584ce52c0b71999150ac0c6f93a2958c8f6f0a0c8f85effdf",
+    "src/scene.cpp": "adc020695b8ce72b959624ded070a1aae1fb47e302681c0941d357196ab8890f",
+    "src/shadows.cpp": "0eb39a93d5359317535a288a3f39403e12c65cd1e8ada0f6ebf9de4fce64ecdb",
+    "src/shared_session.cpp": "7a590e207bfff270ec6bcba8d441e0d84aed188b22e38cc1697b1f5ef192a737",
+    "src/tangents.cpp": "a79998e3917ad0c779423eeac08eb52295275c352770e78093315147bedc2d95",
+    "src/texture.cpp": "3d2942782212887c6abb848fdb6bf6c5a1b4fc51d1204fdc44518ecf1ae0541b",
+    "src/ui_authoring_schema.hpp": "baa1d70ab544d8336134535b8ce2038f76ad204fdde90180a88d46d688ff19c0",
+    "src/ui_document.cpp": "a9b345e0de2696299987fdd0fb87df6f9c90ae9cb69110cf67a36087807de5c2",
+    "src/ui_frame.cpp": "ef217be90009a03fcfa997c5240fcac3b42ceb98d40821c32b304f5c4b28b5d8",
+    "src/ui_model.cpp": "61a15caa8cf70048479c07ab92d04d5f675acbe2625520d1028e890680a8d8c7",
+    "src/ui_presenter.cpp": "7e2874f178e043482dfbada26d245f73ce7ecc0ad64f6e399ead47e1c1763e3b",
+    "src/visibility.cpp": "69bd7374e82e7a407937e3cc675dca8fd488fac81adc39515dadeb504982481a",
+    "src/vulkan_probe.cpp": "0177c7893541c538fb961fd88e85524471319835b91de27e72c2f46dcbad6c76",
+    "src/vulkan_probe_disabled.cpp": "c252c4203683795ac15569ba2bb4a5256f7ba9b194895bd04d697d536aaa47db",
+    "src/world.cpp": "9b07aae6c651b024af35fa2d66a30270e41c2d568b20e5573f5eb4c492a546e8",
+    "src/world_control.inc": "65ea355a9611c862faba5629a5a2b1954fa8231758888b0c77e8bbbb4ffdd234",
+    "src/world_gameplay_save.inc": "10fd559418ded533c2ffcde414eaee0b931d621d8853b4bdd14fd93401ebad48",
+    "src/world_navigation.inc": "538eee70e46ddcb8e9c816e68568434be559e142ae663540be610517db0ef7ad",
+    "src/world_observe.inc": "3cb074960872dee891eddff4a5f162c40dec23a009766f7cc91e08054bebe31f",
+    "src/world_player_service.inc": "9cefabc0946bff968df60245e479ed180e4e83381198d5690b2c10d259615e1a",
+    "src/world_player_settings.inc": "afc3cd3b27303f53e5c48fe1f2672e483919e3bdf306774c93849ab52fae85b7",
+    "src/world_provenance.inc": "1f4f0d3664cc8cb07820ba2632ba98931831cc9b9ba8da2705b4119a06fb7c08",
+    "src/world_save.inc": "8a4378f5a2f5f1fe24a03bae6d3698fdb99ee29d62fc1c8e2bf9d7cdfbaf3a82",
+    "src/world_save_upgrade.inc": "5cc2d35ccc9130621d5d217c141ee8698b652054ec985ecf6df7919f2d8669d3",
+    "src/world_schema.cpp": "48d6532fb822266f25a7f9cbc9eb240f13216e577fc10d4673e5fc26f5affc39",
+    "src/world_schema.hpp": "4a944758d3ec4749ad9d4775377fd948ebdeb421225eed53dbce67216f435064",
+    "src/world_storage.hpp": "a2286e75b264f45956ec67b2a689a44ae6d69947a096a879d40b2e03026db080",
+    "src/world_ui.inc": "dea0baa761ab7ae7f6982a5ec910213385e0530a4f9538df0afb874382fe9176",
+    "tests/development_diagnostics.cpp": "c13c18ec56b55fd12ba224dbbd59da95d4893bfa02de57864ead369a4cacccf6",
+    "tests/development_jobs.cpp": "f1679a0f1f0d66bd49e1d8d1e0559a6e77ab8ec20dadd43249665016b0e0fc85",
+    "tests/development_service.cpp": "ccead857bba5988ab46bd727c33388b33f98867b1bedc80d0a64e5b603a4e315",
+    "tests/world_schema_native.cpp": "c7561d479d8287666da4b87dd80de377653eff46ecca4e598826e3e727bcb99b",
+    "third_party/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+    "third_party/cgltf/PROVENANCE.json": "c0c29596524b2574b975f92a0e0ba0f767f569b5d22168ffe7959e6cf714dae3",
+    "third_party/cgltf/cgltf.h": "e378a21c084bf1f288bb799de827bb26906efb024255f1ecf1705ea13f11c6ec",
+    "third_party/desktop_notices/Avalonia.BuildServices/LICENSE": "94162c40c663bd96ec1b870e6aba6ef0a43f44c9eb500807e7965e7078f6dc47",
+    "third_party/desktop_notices/Avalonia/licence.md": "213814d306090074d234d760239ff0f67eb9b8d20eefb4d5631bb39dbe0b769b",
+    "third_party/desktop_notices/Dock/LICENSE.TXT": "2b3a10daf2350f7b900bd7b989cdff149b6b4bd07358db9e5c112bd9560b6b46",
+    "third_party/desktop_notices/MicroCom/LICENSE": "6ee769c9ac4dac9abb16b98b1341e9528ff9f4ab685481410d3376d14148f3a9",
+    "third_party/desktop_notices/README.md": "784cd356af46d9af68b87618c96ef61120dacab0979e8e1fe9d7aa1f08a0fdd1",
+    "third_party/desktop_notices/Tmds.DBus/COPYING": "aca3b49277abcc7886ccb2f115603a9f5b15fc3f96019a10c00f2974098b210c",
+    "third_party/desktop_notices/provenance.json": "9b69f7438b4ae031884e22fda37cc7ae91315d60d51fcb4ba8d39f2c622ed349",
+    "third_party/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+    "third_party/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+    "third_party/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+    "third_party/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+    "third_party/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+    "third_party/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+    "third_party/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+    "third_party/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+    "third_party/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+    "third_party/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+    "third_party/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+    "third_party/inter/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+    "third_party/inter/Inter-SemiBold.ttf": "78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3",
+    "third_party/inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+    "third_party/inter/README.md": "0695904f6b0327be638cfd51fbc1174c9d19f44d2f4927ab79c2bf4ca303097d",
+    "third_party/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+    "third_party/lodepng/PROVENANCE.json": "0a40f41f2ef34b086f34fbe18912be54b27e0b00835c27beccbb883b6ad1d5f9",
+    "third_party/lodepng/lodepng.cpp": "c55a19ba0f80ff68c5a4ac36138194c851cc2b1a9a0fbcd0be9ece02f1097e5d",
+    "third_party/lodepng/lodepng.h": "e7846c83e253008484153dcc4274222398d36b81aa3b0c6d266bbe0eac62bead",
+    "third_party/mikktspace/PROVENANCE.json": "b2c7d33a3b9888d3a522878c03351ad3af150edd18791e904e0807d2ab4c6dcc",
+    "third_party/mikktspace/mikktspace.c": "de87e74107df766ce68108801262bd8d53899414236b59810509a8fc2a51e288",
+    "third_party/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+    "third_party/nlohmann/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+    "third_party/nlohmann/json.hpp": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63",
+    "third_party/source_sans/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+    "third_party/source_sans/README.md": "751996082b44b70d6a75faf58d430b56e66b53d965979472a08b9e467443bcf5",
+    "third_party/source_sans/SourceSans3-Regular.ttf": "4644c81b86ec9caaa76b634889968ed3c4f4f52f054855933acc7c2b21e53b0f",
+    "third_party/source_sans/SourceSans3-Semibold.ttf": "a3f4f8dcf343a8f24dc61951de93f3ba1558b15cd250ba24af8a40e957081b7d",
+    "third_party/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+    "third_party/stb/PROVENANCE.json": "273dc600961eaa93709a6a19e2ce5b8cd1ec6f2f082c9c062361df39422c6de1",
+    "third_party/stb/stb_image.h": "594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3",
+    "third_party/steam_audio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "third_party/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+    "third_party/ufbx/PROVENANCE.json": "c59f5909f34dd7ff4dda7f6223e94c6eb23556447772d18ba698af641d66a1da",
+    "third_party/ufbx/ufbx.c": "4a956c26a708e40d82ecb0aeaee54da709d5ba7c144c9642174970059bda7e1d",
+    "third_party/ufbx/ufbx.h": "f787be529af577efc04f3e3e735844a08556718dbb613d1211c2b313d72895dc"
+  },
+  "selected_native_admission_sha256": "c9be26e291fffc37b1a658ecfd502debb86cc297c58061f77943e5a0dd63e444",
+  "native_source_scope": "Fresh at-run drift closure, separate from nineteen incremental-qualified inputs and historical unchanged-worker evidence.",
+  "artifacts": {
+    "poima.exe": {
+      "bytes": 24697344,
+      "sha256": "d615dce617f78f2958b8f3d3e593e7536355c3c38a6c33bf1e5e49259a085b6b"
+    },
+    "phonon.dll": {
+      "bytes": 52950168,
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    }
+  },
+  "tool_versions": {
+    "dotnet_sdk": "10.0.401",
+    "hostfxr": "10.0.12"
+  },
+  "tool_sha256": {
+    "selected_dotnet_host": "21a46f1e5235cf4e844b9de5429f0e198b9c97a41f0503a66442f1d639ca3ee6",
+    "selected_hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+    "selected_msbuild": "22f7b95c5cc1e7287a9d561a0e88719c4d545c5f3892e3e6501051f5abcbe147",
+    "selected_csc": "89c788f615634094cc441593d167d9fba9a9f049a5d1ddea87d4fde222d6f42c",
+    "selected_compiler_server": "abc5d14c11b36ea02b666a19714c319217cb3fc40913dfc84d45361c12247fd9"
+  },
+  "sdk_selection": {
+    "version": "10.0.401",
+    "rollForward": "disable",
+    "allowPrerelease": false,
+    "bytes": 79,
+    "sha256": "289e45aafd6eb59adcc4b7dda4d6fe5f1924065345aa8ab75be4a0c2b9cb00db"
+  },
+  "retained_managed_tool_sha256": {
+    "managed_bridge": "6f0eacd440ca2a5676b0eca39f9db96b52be626b2a8d956c993ba6315c97a5fc",
+    "gameplay_sdk": "dc6178a5f4df710baa33d96b8e6eb1527dbd9bfcb5c1691068df70585e53168d",
+    "component_generator": "c383bfa4b1129f10ab302e52f8a5af215d45c74ee5f4890c4dec5d235416a447"
+  },
+  "compiler_comparison": {
+    "baseline_compiler": "isolated",
+    "candidate_compiler": "owned",
+    "samples_per_arm": 20,
+    "mean_delta_seconds": -0.801955474999704,
+    "p95_delta_seconds": 0.7598518000013428,
+    "causal_claim": false
+  },
+  "reader_comparison": {
+    "baseline_reader": "original",
+    "candidate_reader": "batched",
+    "samples_per_arm": 20,
+    "mean_delta_seconds": -2.531066354999348,
+    "p95_delta_seconds": -3.9730906000040704,
+    "causal_claim": false,
+    "parity_is_performance_baseline": false
+  },
+  "verified_workflow": [
+    "Twenty genuine source edits and native compiled reloads per cohort",
+    "Exact supported durable state/schema and original-image save restoration",
+    "Native controller Tick demonstrates changed compiled behavior",
+    "Syntax failure preserves the prior DLL; repair rebuilds",
+    "Retry/stale/type-incompatible rejection and explicit restart after frozen authored-scene edits"
+  ],
+  "compiler_lineage": {
+    "current_engine_version": "0.0.106",
+    "current_metadata_sha256": "c9be26e291fffc37b1a658ecfd502debb86cc297c58061f77943e5a0dd63e444",
+    "current_owner_sha256": "a56f4c59281853b8286511027e413bfc43cb86fa3ee88ad6ba96334955cb7db6",
+    "current_native_case_names": [
+      "jobs",
+      "service",
+      "diagnostics",
+      "sdk-success",
+      "sdk-syntax-failure",
+      "sdk-repair"
+    ],
+    "historical_engine_version": "0.0.105",
+    "historical_metadata_sha256": "f637cb781ed098d881bce4f979b7b0d98dedd0fbc0f4ecac2c2d623292d458d8",
+    "historical_source_delta": [
+      "CMakeLists.txt",
+      "src/development_diagnostics.cpp",
+      "src/development_diagnostics.hpp",
+      "tests/development_diagnostics.cpp"
+    ],
+    "historical_unchanged_source_count": 15,
+    "historical_owner_sha256": {
+      "production_sdk": "a86a7561e255f06195d6ebeb7dea1eab40654bddef047c70b112cde898a32863",
+      "lifecycle": "6442c34b7fa1aa434f4c309cc3335ba2cdeb0df20d7f81e76ea90302c83aa40a",
+      "idle_recovery": "50ba47772e8af4cd63b24e6116c3d92b0267c857605395e3dc19efbb52bab071"
+    },
+    "historical_library_sha256": "fab49363dd3e4e4cf9448de410cd3d5a9fb2ee988109f9bbd5a3aed2d2fd1e70",
+    "historical_library_retention_sha256": "69c3ec8813bbd157b7eb891b861b3f38a75b719f2a7a76b9e2919c5cb929246d"
+  },
+  "compiler_analysis": {
+    "sha256": "2445d6aff43c650c10cebb7330432c0e3c66923d5ce3635f7f28696cf6ad80ac",
+    "reducer_sha256": "a67dbd82b461690fbed1c28f634334fbdae57bdd85cf7e5494aa3c531c5a63c8"
+  },
+  "reader_analysis": {
+    "analysis_sha256": "7ee87bd8ea443379e8b8437ea69601bb2246da78345b8ab694db60aa0cb8cc26",
+    "reducer_sha256": "8236fca86824377b4825268a23dfee7df64ff968aabfac8712db0b689832492c"
+  },
+  "cohorts": [
+    {
+      "reader": "original",
+      "compiler_mode": "isolated",
+      "functional_passed": true,
+      "warm_samples": 20,
+      "compile_jobs": 25,
+      "intentional_syntax_failures": 1,
+      "warm_restore_policy": "prepared",
+      "evidence_encoding": "lossless-compact-json-v1",
+      "original_end_to_end": {
+        "samples": 20,
+        "unit": "seconds",
+        "min": 6.50778509999509,
+        "max": 7.2213372999976855,
+        "mean": 6.736945994998678,
+        "p50": 6.714254099992104,
+        "p95": 6.971756300001289,
+        "p99": 7.2213372999976855,
+        "percentile_method": "nearest rank on this exact population"
+      },
+      "p95_budget_seconds": 3,
+      "p95_budget_passed": false,
+      "actual_owned_warm_builds": 0,
+      "owned_request_proofs": [],
+      "phase_distributions": {
+        "source_write_and_hash": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0157332,
+          "max": 0.0240192,
+          "mean": 0.01824485,
+          "p50": 0.0177819,
+          "p95": 0.020489,
+          "p99": 0.0240192,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "compile_variant_total": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 3.2418475,
+          "max": 3.8730315,
+          "mean": 3.51426207,
+          "p50": 3.5031036,
+          "p95": 3.7642421,
+          "p99": 3.8730315,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_compile_source_snapshot_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.3682167,
+          "max": 1.4030832,
+          "mean": 1.388419215,
+          "p50": 1.3888704,
+          "p95": 1.4011122,
+          "p99": 1.4030832,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "reload_guard_reads": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0346523,
+          "max": 0.0375671,
+          "mean": 0.03563905,
+          "p50": 0.0355063,
+          "p95": 0.0362784,
+          "p99": 0.0375671,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "rpc:runtime.gameplay.load": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0256049,
+          "max": 0.0971635,
+          "mean": 0.034480405000000006,
+          "p50": 0.0289352,
+          "p95": 0.0836475,
+          "p99": 0.0971635,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_snapshot_image_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.3843538,
+          "max": 1.4406416,
+          "mean": 1.39619566,
+          "p50": 1.3940656,
+          "p95": 1.4001978,
+          "p99": 1.4406416,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_durable_save": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1063205,
+          "max": 0.1302996,
+          "mean": 0.11700929,
+          "p50": 0.1173132,
+          "p95": 0.1252578,
+          "p99": 0.1302996,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "complete_payload_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0020921,
+          "max": 0.1294146,
+          "mean": 0.008745825,
+          "p50": 0.0023312,
+          "p95": 0.0031662,
+          "p99": 0.1294146,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "prior_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0049353,
+          "max": 0.0157921,
+          "mean": 0.01259391,
+          "p50": 0.0135719,
+          "p95": 0.015376,
+          "p99": 0.0157921,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_step": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1868185,
+          "max": 0.1972092,
+          "mean": 0.190432005,
+          "p50": 0.1899894,
+          "p95": 0.196728,
+          "p99": 0.1972092,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "updated_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0177907,
+          "max": 0.019947,
+          "mean": 0.018693715,
+          "p50": 0.0184853,
+          "p95": 0.0196588,
+          "p99": 0.019947,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.19e-05,
+          "max": 0.0005123,
+          "mean": 5.5410000000000007e-05,
+          "p50": 3.12e-05,
+          "p95": 4.13e-05,
+          "p99": 0.0005123,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "driver_full_snapshot_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.5846355,
+          "max": 2.6550787,
+          "mean": 2.6049530499999998,
+          "p50": 2.6023705,
+          "p95": 2.619909,
+          "p99": 2.6550787,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_save_total_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1004942,
+          "max": 0.1210222,
+          "mean": 0.113021925,
+          "p50": 0.1141776,
+          "p95": 0.1193702,
+          "p99": 0.1210222,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "durable_manifest_hash_readback_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0022458,
+          "max": 0.0091772,
+          "mean": 0.0038950449999999998,
+          "p50": 0.0025742,
+          "p95": 0.0078651,
+          "p99": 0.0091772,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_worker_elapsed_separate": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.616,
+          "max": 2.793,
+          "mean": 2.6740500000000003,
+          "p50": 2.662,
+          "p95": 2.723,
+          "p99": 2.793,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_inside_compile": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1662485,
+          "max": 0.6696827,
+          "mean": 0.425151595,
+          "p50": 0.4368899,
+          "p95": 0.6509046,
+          "p99": 0.6696827,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_outside_original_timer": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1864794,
+          "max": 0.6569021,
+          "mean": 0.42918514500000005,
+          "p50": 0.4131885,
+          "p95": 0.6532986,
+          "p99": 0.6569021,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "original_timer_residual": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0017587999950894329,
+          "max": 0.0030296000012883795,
+          "mean": 0.0021745899986777228,
+          "p50": 0.0020825999954912078,
+          "p95": 0.0028199999902369655,
+          "p99": 0.0030296000012883795,
+          "percentile_method": "nearest rank on this exact population"
+        }
+      },
+      "admitted_phase_spans": 4692,
+      "receipts": {
+        "owner_sha256": "08b9170cb83818a3d0a8f5470f87a3cecb318dfcec3289155066fe8ba716c479",
+        "main_evidence_sha256": "0b090a82507780f9a5b6dd4318541b10510200cac223dc0240f3a24f29ac210b",
+        "phase_sidecar_sha256": "2e647a2bd23d82070d0e3c83443ee5550b1bcb2c40c6fd891583a156a18dac20",
+        "fixture_sha256": "5fd85b12ad3b61e1076289afe0a4e5dca30ef38d6fe43cca162ea49a0f3b0051"
+      },
+      "outer_owner": {
+        "passed": true,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 107
+      }
+    },
+    {
+      "reader": "original",
+      "compiler_mode": "owned",
+      "functional_passed": true,
+      "warm_samples": 20,
+      "compile_jobs": 25,
+      "intentional_syntax_failures": 1,
+      "warm_restore_policy": "prepared",
+      "evidence_encoding": "lossless-compact-json-v1",
+      "original_end_to_end": {
+        "samples": 20,
+        "unit": "seconds",
+        "min": 5.237691599992104,
+        "max": 7.836346099997172,
+        "mean": 5.934990519998974,
+        "p50": 5.504364299995359,
+        "p95": 7.7316081000026315,
+        "p99": 7.836346099997172,
+        "percentile_method": "nearest rank on this exact population"
+      },
+      "p95_budget_seconds": 3,
+      "p95_budget_passed": false,
+      "actual_owned_warm_builds": 20,
+      "owned_request_proofs": [
+        {
+          "sample": 1,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "b856d442b78d4d02ecac4133bd24f53f8c8c53b65b8f31fe83da3c21fb2a30dd",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 2,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "a117d14236979097a2209711060359988f712812d5010512b200d3f4d2f1557f",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 3,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "83c4f28429085c941c79834d28fe53ac1d9923b24749e94610f42a96821e88c6",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 4,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "1f3f5a2fd1d393bb5643b19d8fbdc0e044687ea5d2138905a8bed16323ea6815",
+          "request_log_bytes": 1544
+        },
+        {
+          "sample": 5,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "48f7da3fff76a771411e98f6a8db3e1db578f282e65778ed4e8fffca80baa30d",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 6,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "a53a466e40d3c4731dddf35a149f6417a881de1881d0039e8f2eaa55c8078211",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 7,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "d897bd085435b6c9dbcb8f88f377b16834191be9470541d2a71380bc095892f1",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 8,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "40e6bb8df10c5de3b999fcd4d2e70c0f9be9e9510274cae5c3af7a50e1538330",
+          "request_log_bytes": 1544
+        },
+        {
+          "sample": 9,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "f22e58af9fa162dff9b8f644221d9e1bfbf1403f3ac01fc180d9a17968618754",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 10,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "ab49be2a98dea10d708f51e74d098cb6d44041ad367723d2c5732feb9e092142",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 11,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "de32654a610d8f5b2fab60bb900f50a7498aa6b42dc5ed7b1885ef9783fb4f55",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 12,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "51ee1138ec36601a10629c24546733ba3cb09f1e75b1a70217e69665f427b432",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 13,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "fedccd19b7f24ed38b86632e11ed2d815d0d3627ea539b55f033241ebcc6330e",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 14,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "14452b96a98873793a932ead047758946b9ddc7f14ef8278546ce6b73294e53d",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 15,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "3c23db03afb71df4d1ecc2f8dda1a9e2263689303eb4492fbdbfb58f02940501",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 16,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "3efee8792bc7adeed86fcd3f83998c3a7ca9fd4f90ebfe7a9405110d1d66fd42",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 17,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "fa912ab05704addaf55be0829cae795f591f4ad6f30dcb31db1852c4ee4135f6",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 18,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "000611925ed906c06b7e198a5b8bd3f1144e314353acade2220a1497be7e680b",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 19,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "b79df6af7b99b611c4feecfaae9a9534d4d9400084b4fff073669e7000bb7c03",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 20,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "1998bc448b62786bae451482ad522b95e5a48c92e5fb3665b49813e64e866586",
+          "request_log_bytes": 1545
+        }
+      ],
+      "phase_distributions": {
+        "source_write_and_hash": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.014497,
+          "max": 0.0199167,
+          "mean": 0.0171307,
+          "p50": 0.0167485,
+          "p95": 0.0194117,
+          "p99": 0.0199167,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "compile_variant_total": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.0139272,
+          "max": 4.6123674,
+          "mean": 2.7011114800000002,
+          "p50": 2.2594523,
+          "p95": 4.5030225,
+          "p99": 4.6123674,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_compile_source_snapshot_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.3762146,
+          "max": 1.4252071,
+          "mean": 1.39924703,
+          "p50": 1.3989179,
+          "p95": 1.4174099,
+          "p99": 1.4252071,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "reload_guard_reads": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0281893,
+          "max": 0.0369389,
+          "mean": 0.035303175,
+          "p50": 0.0356933,
+          "p95": 0.0368641,
+          "p99": 0.0369389,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "rpc:runtime.gameplay.load": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0256027,
+          "max": 0.0962337,
+          "mean": 0.0348225,
+          "p50": 0.028182,
+          "p95": 0.0868688,
+          "p99": 0.0962337,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_snapshot_image_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.3856203,
+          "max": 1.4276446,
+          "mean": 1.3975819250000001,
+          "p50": 1.3947014,
+          "p95": 1.4209572,
+          "p99": 1.4276446,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_durable_save": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1082075,
+          "max": 0.1622154,
+          "mean": 0.120579925,
+          "p50": 0.1181108,
+          "p95": 0.1323469,
+          "p99": 0.1622154,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "complete_payload_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0020574,
+          "max": 0.0095148,
+          "mean": 0.00292292,
+          "p50": 0.0021994,
+          "p95": 0.0056163,
+          "p99": 0.0095148,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "prior_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0059642,
+          "max": 0.0159645,
+          "mean": 0.013578855,
+          "p50": 0.0139615,
+          "p95": 0.0158675,
+          "p99": 0.0159645,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_step": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1873736,
+          "max": 0.2031358,
+          "mean": 0.191520425,
+          "p50": 0.1900828,
+          "p95": 0.1962511,
+          "p99": 0.2031358,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "updated_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0179872,
+          "max": 0.0197253,
+          "mean": 0.018927985,
+          "p50": 0.0189006,
+          "p95": 0.0195507,
+          "p99": 0.0197253,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.41e-05,
+          "max": 4.02e-05,
+          "mean": 3.0535000000000005e-05,
+          "p50": 2.95e-05,
+          "p95": 3.67e-05,
+          "p99": 4.02e-05,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "driver_full_snapshot_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.5861812,
+          "max": 2.6625696,
+          "mean": 2.6158155350000003,
+          "p50": 2.6102643,
+          "p95": 2.6577519,
+          "p99": 2.6625696,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_save_total_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1049176,
+          "max": 0.155216,
+          "mean": 0.11750008,
+          "p50": 0.1151169,
+          "p95": 0.1287414,
+          "p99": 0.155216,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "durable_manifest_hash_readback_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0019702,
+          "max": 0.0069193,
+          "mean": 0.00298673,
+          "p50": 0.0024479,
+          "p95": 0.0048579,
+          "p99": 0.0069193,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_worker_elapsed_separate": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.143,
+          "max": 1.347,
+          "mean": 1.20425,
+          "p50": 1.192,
+          "p95": 1.267,
+          "p99": 1.347,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_inside_compile": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.360181,
+          "max": 3.0408536,
+          "mean": 1.08140701,
+          "p50": 0.6296669,
+          "p95": 2.9127685,
+          "p99": 3.0408536,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_outside_original_timer": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3684346,
+          "max": 3.2041414,
+          "mean": 1.07429681,
+          "p50": 0.606458,
+          "p95": 3.073537,
+          "p99": 3.2041414,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "original_timer_residual": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0017289000048732461,
+          "max": 0.0030052000026312697,
+          "mean": 0.0022330649989734663,
+          "p50": 0.0020247000015025662,
+          "p95": 0.0029999999979573033,
+          "p99": 0.0030052000026312697,
+          "percentile_method": "nearest rank on this exact population"
+        }
+      },
+      "admitted_phase_spans": 3198,
+      "receipts": {
+        "owner_sha256": "c4572a1c2ce3b11cb40501497285fb09040709921b9c421ed4f6e1c5df317faa",
+        "main_evidence_sha256": "b500a0d3720daffd92c798055be5f35b57a88829c175d5d8cfbe1dd067463ac7",
+        "phase_sidecar_sha256": "572f359c820dd2589fb66827dfec96423b0812a817939de87f8c090fb3993b4c",
+        "fixture_sha256": "5fd85b12ad3b61e1076289afe0a4e5dca30ef38d6fe43cca162ea49a0f3b0051"
+      },
+      "outer_owner": {
+        "passed": true,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 75
+      }
+    },
+    {
+      "reader": "parity",
+      "compiler_mode": "owned",
+      "functional_passed": true,
+      "warm_samples": 20,
+      "compile_jobs": 25,
+      "intentional_syntax_failures": 1,
+      "warm_restore_policy": "prepared",
+      "evidence_encoding": "lossless-compact-json-v1",
+      "original_end_to_end": {
+        "samples": 20,
+        "unit": "seconds",
+        "min": 5.340547700005118,
+        "max": 8.310583099999349,
+        "mean": 5.9610518299989055,
+        "p50": 5.592449000003398,
+        "p95": 7.913805699994555,
+        "p99": 8.310583099999349,
+        "percentile_method": "nearest rank on this exact population"
+      },
+      "p95_budget_seconds": 3,
+      "p95_budget_passed": false,
+      "actual_owned_warm_builds": 20,
+      "owned_request_proofs": [
+        {
+          "sample": 1,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "6ae6038c4a2bd3eac524e7a289d8442c22bfe8700f859d856c9570abc5110d93",
+          "request_log_bytes": 1540
+        },
+        {
+          "sample": 2,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "e910a647ce7ad1d497495a58c1998c196a0fcb83917a39ea3c45527073be8281",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 3,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "e760315f6462a67ed1d538b8b10d804f90736149dce54782feeedf3746ebc85a",
+          "request_log_bytes": 1540
+        },
+        {
+          "sample": 4,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "ca4788e0bfe6510566e12a8786e1e6934d3b6efea24a514c9cc4d706124fd25d",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 5,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "c2e4db22c5595c56b6fde737cda424c582bdce91170348e16eb85034c86d0e73",
+          "request_log_bytes": 1540
+        },
+        {
+          "sample": 6,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "dc5230fa439384fe926c044a358dbe66df9a5c6587ace929446ddd00abe75fba",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 7,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "fe9be5ce2a627bf3135e16a77e7d7eb1aa8bf43b615dcd10ec60b3d8b31adf9f",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 8,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "9d314e36490bbb286c516622428b4c80b9336c57e792f340ba5bd6cd6937f4f7",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 9,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "13ae6197b1c33a4c4d5f29fd38fe3136cf7fe21d9ed409456828b0ab898e060f",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 10,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "eb89a8c6a7c47d257d76cf394e593c4c356d86d7e52a68730683920ae68b8291",
+          "request_log_bytes": 1540
+        },
+        {
+          "sample": 11,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "45dbb514780ce4797958b6edf06e46ebb3271a98d9a804701a239b0b98e15e2f",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 12,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "74b8fa0b164c41d76da05d82259ece46dd4901f79ab8ce96c4d341529426f91f",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 13,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "7f43f34e83414870297412df56f05dfdcfd64a98739a56e2ba1344bff1898b12",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 14,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "47880de2c46017c77113377dd4fcf8faa6970f0f09b4eeca1858d1a5c9432b3d",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 15,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "d50d7a160d405a952b17156e89a3288c8db19b4844f29e8a066f13ff85ffadce",
+          "request_log_bytes": 1540
+        },
+        {
+          "sample": 16,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "fbcd8c1b94e4a6872f2a546d7b0312abf5e0ccbf0cd7cdeb239a27107d5b906b",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 17,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "8d5f750ef0af6ad9dc5351abff6df2f42a73acaab9336cac93d2bd42e96df4fc",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 18,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "031887627983f0236573c3761e84b08e3aca4eeeded02b80bb1813adf831d3fa",
+          "request_log_bytes": 1537
+        },
+        {
+          "sample": 19,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "20cf8c29d488e1082d4333e96c2aa6dd07632d95bce7c51b56b7662fa7bfaf63",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 20,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "0d73c54198a870e2f2011a7fe9d74828017e20e0520042d7035f02430c2666b1",
+          "request_log_bytes": 1543
+        }
+      ],
+      "phase_distributions": {
+        "source_write_and_hash": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0148834,
+          "max": 0.019855,
+          "mean": 0.016985955,
+          "p50": 0.0165088,
+          "p95": 0.0194593,
+          "p99": 0.019855,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "compile_variant_total": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.0363655,
+          "max": 5.0067837,
+          "mean": 2.645703905,
+          "p50": 2.2189883,
+          "p95": 4.6064144,
+          "p99": 5.0067837,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_compile_source_snapshot_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.4114553,
+          "max": 1.5741219,
+          "mean": 1.44434963,
+          "p50": 1.4348759,
+          "p95": 1.4689111,
+          "p99": 1.5741219,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "reload_guard_reads": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0346235,
+          "max": 0.0372085,
+          "mean": 0.035686705,
+          "p50": 0.0356785,
+          "p95": 0.0365718,
+          "p99": 0.0372085,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "rpc:runtime.gameplay.load": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0258726,
+          "max": 0.0972114,
+          "mean": 0.035149355,
+          "p50": 0.0289887,
+          "p95": 0.0923878,
+          "p99": 0.0972114,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_snapshot_image_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.4243803,
+          "max": 1.4680996,
+          "mean": 1.437061705,
+          "p50": 1.433581,
+          "p95": 1.4662444,
+          "p99": 1.4680996,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_durable_save": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1059401,
+          "max": 0.1332832,
+          "mean": 0.117885715,
+          "p50": 0.1167081,
+          "p95": 0.1309315,
+          "p99": 0.1332832,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "complete_payload_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.00204,
+          "max": 0.0070073,
+          "mean": 0.0030913349999999997,
+          "p50": 0.0023368,
+          "p95": 0.0059214,
+          "p99": 0.0070073,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "prior_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0100906,
+          "max": 0.0167607,
+          "mean": 0.01361154,
+          "p50": 0.0138517,
+          "p95": 0.016456,
+          "p99": 0.0167607,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_step": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1868261,
+          "max": 0.196769,
+          "mean": 0.19056551500000002,
+          "p50": 0.1901239,
+          "p95": 0.1940848,
+          "p99": 0.196769,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "updated_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0179333,
+          "max": 0.0200237,
+          "mean": 0.018739185,
+          "p50": 0.0184667,
+          "p95": 0.0198532,
+          "p99": 0.0200237,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.13e-05,
+          "max": 4.09e-05,
+          "mean": 2.9985e-05,
+          "p50": 2.87e-05,
+          "p95": 3.95e-05,
+          "p99": 4.09e-05,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "driver_full_snapshot_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.6625328,
+          "max": 2.831057,
+          "mean": 2.7010547899999997,
+          "p50": 2.6886419,
+          "p95": 2.750216,
+          "p99": 2.831057,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_save_total_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1032427,
+          "max": 0.1308454,
+          "mean": 0.11524142500000001,
+          "p50": 0.1141375,
+          "p95": 0.1287656,
+          "p99": 0.1308454,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "durable_manifest_hash_readback_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0020805,
+          "max": 0.0032751,
+          "mean": 0.00255327,
+          "p50": 0.0026216,
+          "p95": 0.0028842,
+          "p99": 0.0032751,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_worker_elapsed_separate": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.118,
+          "max": 1.426,
+          "mean": 1.2113,
+          "p50": 1.197,
+          "p95": 1.296,
+          "p99": 1.426,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_inside_compile": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3535552,
+          "max": 3.411661,
+          "mean": 1.012380355,
+          "p50": 0.6092222,
+          "p95": 3.0289074,
+          "p99": 3.411661,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_outside_original_timer": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3693736,
+          "max": 3.4279601,
+          "mean": 1.07555809,
+          "p50": 0.6168778,
+          "p95": 3.2261579,
+          "p99": 3.4279601,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "original_timer_residual": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0018369000014990533,
+          "max": 0.003120899993111159,
+          "mean": 0.0021912999989053715,
+          "p50": 0.002027500000603588,
+          "p95": 0.0030666999954487295,
+          "p99": 0.003120899993111159,
+          "percentile_method": "nearest rank on this exact population"
+        }
+      },
+      "admitted_phase_spans": 3267,
+      "receipts": {
+        "owner_sha256": "f0506d96bc5acdd78ff36b434836dd6565bbe64473a115d7060164d900045072",
+        "main_evidence_sha256": "316c4731d462a04bc0924066ffad8da318ee9b79a180958a2f97b9a77bb72750",
+        "phase_sidecar_sha256": "5b0160e1f2543045d3f8b1ee17100ffbed54980320ab8d40014dc0c12d2855ee",
+        "fixture_sha256": "8fa236b19f0870f8403570d402ef17f4d448c6153ee2f424c9f8886c5504469b"
+      },
+      "outer_owner": {
+        "passed": true,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 75
+      },
+      "parity": {
+        "batch_parity_qualified": true,
+        "qualified_guards": [
+          "component_revision",
+          "control_sequence",
+          "gameplay_revision",
+          "session_id",
+          "structure_revision",
+          "tick",
+          "ui_revision"
+        ],
+        "removed_pickup_qualified": true,
+        "raw_calls": 1579,
+        "interpreted_calls": 1562,
+        "native_rejections": 12,
+        "sidecar_sha256": "aab4f4fef2d15e04ff62489d7cb4b2030d474efb8f8431407a7d613b6f7fde68"
+      }
+    },
+    {
+      "reader": "batched",
+      "compiler_mode": "owned",
+      "functional_passed": true,
+      "warm_samples": 20,
+      "compile_jobs": 25,
+      "intentional_syntax_failures": 1,
+      "warm_restore_policy": "prepared",
+      "evidence_encoding": "lossless-compact-json-v1",
+      "original_end_to_end": {
+        "samples": 20,
+        "unit": "seconds",
+        "min": 3.1065690999967046,
+        "max": 3.7983187999925576,
+        "mean": 3.4039241649996255,
+        "p50": 3.357538199998089,
+        "p95": 3.758517499998561,
+        "p99": 3.7983187999925576,
+        "percentile_method": "nearest rank on this exact population"
+      },
+      "p95_budget_seconds": 3,
+      "p95_budget_passed": false,
+      "actual_owned_warm_builds": 20,
+      "owned_request_proofs": [
+        {
+          "sample": 1,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "e7c58769b2ca2db5ce45001e59ea37233a4062ea1d0be84fa6ea4bb436b968e0",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 2,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "a1be1e79b62828cfc88d5ff8516cecc85acd07163dc287c116c6e73901081f21",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 3,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "0f00ff0bce6fe0f4349061f9173d0b0443108aee537ec9829cd4e33b4f3229cc",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 4,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "33f8c3e9e2ed22abf2a9a8cc0146fe9e01921c6df629e1a92e868da23ba01e31",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 5,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "850fe94b25dd7cbbc7d01dcc01ab466c31953fd401259c268aedafe396c66509",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 6,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "ea141afa653444bbfaaad9d907aaefb87ad2c5a9d7c2c5eea66b4021abb15bd4",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 7,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "1b0b6bbb9f14525278e7befce66e303adb8f2cea343a8b9a1d8b84eafb8321d0",
+          "request_log_bytes": 1544
+        },
+        {
+          "sample": 8,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "7e0bcfe0f185e90dbc8d8dc85cbe2bada18f99181c1f091ca5744149ce8899ec",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 9,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "3cc9c989474d40557d62933ea2a9755254e4f98c6140bd3d7c4f230950efdcbd",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 10,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "1ba85996cb0af724470fff192181a1af66486e80b0ad7c16971d4f972a6b4f71",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 11,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "072ca47f2c2bf965fcca62b47332527083933fd72db2739bfab13f1309c9f5ba",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 12,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "b6339efb7632f5fc46269e598aeb33e469cc4d46de22a24e0021c000f2f77bb9",
+          "request_log_bytes": 1542
+        },
+        {
+          "sample": 13,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "1fc290de54a9c838d12fb74882b4b946548242582e6ebe31e66d0722b458501a",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 14,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "052f45dc779b66b67151f9310569b25038620f0a7ff54b889840bfa87c54c7b1",
+          "request_log_bytes": 1543
+        },
+        {
+          "sample": 15,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "893bb85122c2249f51ad33fabadc5127d747c9f8a5e9d923f108a7a3fbdf3c78",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 16,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "eecbdc9b3721b0bba18c56caa9aca1fc8eb4aa354bc4da14f1273985728406e3",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 17,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "273485c6a491137db2957f21e0b117ba9eb99fda4454abfe3239e1f007c8c694",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 18,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "3f9e2b1d5b9ee1642aeb3a4c3d8f33ff4d8ff4506bae2aba590f9c9d313053af",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 19,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "2e755cf41f950767b123e4124e5d1be3f35e913855911321212edfd72e1ea21c",
+          "request_log_bytes": 1545
+        },
+        {
+          "sample": 20,
+          "owned_use_proven": true,
+          "original_identity_unchanged": true,
+          "request_log_sha256": "a62d72a4ea36eba7818bc8c06084a33735ecae11f0cbe1dea3041af63f3ee78d",
+          "request_log_bytes": 1545
+        }
+      ],
+      "phase_distributions": {
+        "source_write_and_hash": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0156224,
+          "max": 0.0270347,
+          "mean": 0.018690635,
+          "p50": 0.0182631,
+          "p95": 0.0232389,
+          "p99": 0.0270347,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "compile_variant_total": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.9905509,
+          "max": 2.6885976,
+          "mean": 2.271610015,
+          "p50": 2.2190876,
+          "p95": 2.5830918,
+          "p99": 2.6885976,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_compile_source_snapshot_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3296594,
+          "max": 0.3581636,
+          "mean": 0.34558871,
+          "p50": 0.3464019,
+          "p95": 0.3535111,
+          "p99": 0.3581636,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "reload_guard_reads": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0335549,
+          "max": 0.0377448,
+          "mean": 0.035635139999999996,
+          "p50": 0.0355671,
+          "p95": 0.0374469,
+          "p99": 0.0377448,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "rpc:runtime.gameplay.load": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0250497,
+          "max": 0.1069391,
+          "mean": 0.035946870000000006,
+          "p50": 0.0287289,
+          "p95": 0.0983986,
+          "p99": 0.1069391,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_snapshot_image_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3406759,
+          "max": 0.3557801,
+          "mean": 0.346259735,
+          "p50": 0.3458007,
+          "p95": 0.3483724,
+          "p99": 0.3557801,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "post_reload_durable_save": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.105533,
+          "max": 0.1808802,
+          "mean": 0.12148594500000001,
+          "p50": 0.1177364,
+          "p95": 0.1392746,
+          "p99": 0.1808802,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "complete_payload_preservation_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.002112,
+          "max": 0.0098161,
+          "mean": 0.003022815,
+          "p50": 0.0022492,
+          "p95": 0.0050338,
+          "p99": 0.0098161,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "prior_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0058484,
+          "max": 0.0161373,
+          "mean": 0.01321397,
+          "p50": 0.0141724,
+          "p95": 0.0156126,
+          "p99": 0.0161373,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_step": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.187689,
+          "max": 0.1989655,
+          "mean": 0.19149066,
+          "p50": 0.1910439,
+          "p95": 0.1959297,
+          "p99": 0.1989655,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "updated_values": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0179299,
+          "max": 0.0202573,
+          "mean": 0.01870355,
+          "p50": 0.0185667,
+          "p95": 0.0200102,
+          "p99": 0.0202573,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "first_behavior_assert": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 2.46e-05,
+          "max": 4.19e-05,
+          "mean": 3.075e-05,
+          "p50": 3.08e-05,
+          "p95": 3.62e-05,
+          "p99": 4.19e-05,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "driver_full_snapshot_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.4931623,
+          "max": 0.5228828,
+          "mean": 0.5093762350000001,
+          "p50": 0.5097815,
+          "p95": 0.5177174,
+          "p99": 0.5228828,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_save_total_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.1029986,
+          "max": 0.1367517,
+          "mean": 0.115293665,
+          "p50": 0.1144079,
+          "p95": 0.1248619,
+          "p99": 0.1367517,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "durable_manifest_hash_readback_per_sample_nested_sum": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0021643,
+          "max": 0.069661,
+          "mean": 0.006101225,
+          "p50": 0.0025112,
+          "p95": 0.0049854,
+          "p99": 0.069661,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "native_worker_elapsed_separate": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 1.118,
+          "max": 1.344,
+          "mean": 1.20625,
+          "p50": 1.188,
+          "p95": 1.306,
+          "p99": 1.344,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_inside_compile": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3531786,
+          "max": 1.010728,
+          "mean": 0.6417400449999999,
+          "p50": 0.6028201,
+          "p95": 0.9179408,
+          "p99": 1.010728,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "evidence_persist_outside_original_timer": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.3371928,
+          "max": 1.3571313,
+          "mean": 0.7048967700000001,
+          "p50": 0.6767187,
+          "p95": 0.9426664,
+          "p99": 1.3571313,
+          "percentile_method": "nearest rank on this exact population"
+        },
+        "original_timer_residual": {
+          "samples": 20,
+          "unit": "seconds",
+          "min": 0.0016477000086441151,
+          "max": 0.003643299999989136,
+          "mean": 0.002245369999625679,
+          "p50": 0.0019904999989122096,
+          "p95": 0.0031789999941631564,
+          "p99": 0.003643299999989136,
+          "percentile_method": "nearest rank on this exact population"
+        }
+      },
+      "admitted_phase_spans": 3238,
+      "receipts": {
+        "owner_sha256": "67b7be5859a8dd414ec310ebea41bac42ccdb85c4ff7273fb3db5394278c5998",
+        "main_evidence_sha256": "fdeda4e09ddc56ff9f20a363c475bc41abf4de8d057f66bdd1cc331cfd8e0699",
+        "phase_sidecar_sha256": "7491a32063042125ba60dc4f4c4c1653968d4ad23e5bc33f474df75264565199",
+        "fixture_sha256": "8fa236b19f0870f8403570d402ef17f4d448c6153ee2f424c9f8886c5504469b"
+      },
+      "outer_owner": {
+        "passed": true,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 75
+      }
+    }
+  ],
+  "interpretation": [
+    "Full timers include required proof I/O, observation, archive and evidence persistence.",
+    "Nested caller-wall phases overlap their parents; native worker wall includes process launch, execution and cleanup, and is not compiler CPU.",
+    "Fixed sequential order, distinct output/cache seeds and host conditions prevent causal or general performance claims.",
+    "Parity is additional validation, never a performance baseline. Original versus batched is a separate reader factor.",
+    "No native rendering, NativeAOT reload, physical input, external-agent or Alpha qualification follows from these paused CoreCLR cohorts."
+  ],
+  "raw_numeric": {
+    "sha256": "7db645de094935b1053e6c42912f27b5b3558ee58306e1d6ad20cc40dd154f8a",
+    "bytes": 18542,
+    "format": "poima.iteration-comparison-numeric.v1"
+  }
+}

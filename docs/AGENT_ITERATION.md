@@ -8,9 +8,12 @@ install a toolchain or supply missing engine capabilities.
 
 For a complete runnable example, choose a [task playbook](PLAYBOOKS.md).
 [Relay Yard iteration](RELAY_YARD_ITERATION.md) covers real C# edits and retained
-game state. Its recorded 20-edit functional check passed; its end-to-end p95 was
-**7.598753 seconds**, missing the three-second target. That result is scoped to
-the recorded native engine, managed tooling and workload.
+game state. The later [0.0.106 comparison](evidence/m2-iteration-comparison.json)
+passes twenty edits per cohort; qualified batched reads with an owned compiler
+reach end-to-end p95 **3.758518 seconds**, still above the three-second target.
+These are bounded paused-CoreCLR workflow measurements, including verification
+and evidence I/O, rather than compiler-only times. The original 0.0.97 result
+remains in its own record.
 
 ## Define a small, verifiable change
 

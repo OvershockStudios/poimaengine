@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.106.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.107.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -38,7 +38,7 @@ Three recorded exercises put this workflow into practice: [Codex builds an escap
 
 The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits, with separate request and response compatibility gates and native behavioral checks. The [Python automation client](docs/PYTHON_CLIENT.md) adds guarded editing and revision-pinned queries over the native service. The [gameplay, content and save profile](docs/ALPHA_GAMEPLAY_PROFILE.md) defines the wider compatibility boundary; broader API stability remains unfinished.
 
-A [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation. A separate [C# development check](docs/evidence/m2-relay-yard-iteration.json) verifies 20 compatible edits with preserved game state and changed behavior. Its edit-to-first-verified-tick p95 is 7.599 seconds, missing the 3-second target. Both use the retained 0.0.97 engine; their bounded workload results leave the full Alpha gate open.
+A [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation on the retained 0.0.97 engine. A separate [0.0.106 development comparison](docs/evidence/m2-iteration-comparison.json) verifies twenty compatible edits per cohort with preserved game state and changed behavior. With the owned compiler, batching state reads lowers measured edit-to-first-verified-tick p95 from 7.732 to 3.759 seconds. Compiler reuse alone improves the mean while worsening p95 against isolated builds. The three-second target and broader Alpha gate remain open.
 
 Joined [runtime observations](docs/RUNTIME_OBSERVATION.md) let tools inspect live poses and selected component fields together. A provider-free Workshop replay comparison uses 49% fewer native RPCs with identical checked gameplay and checkpoint state. [Reproduction and results](docs/RUNTIME_OBSERVATION.md#reproduce-the-replay-comparison).
 

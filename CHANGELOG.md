@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.107
+
+- Add compact single-job inspection with strict optional `include_output`, preserving full responses by default and keeping errors, verified results and compiler ownership metadata.
+- Avoid copying raw diagnostic tails during native summary polling; keep worker lifecycle, cancellation and retry behavior intact.
+- Verify seven Windows contract/SDK cases and focused discovery guards, including exact full-to-compact projections. [Qualification](docs/evidence/m2-compact-development-poll.json).
+- Record complete 0.0.106 iteration comparisons: batched observation reaches p95 3.759 seconds while preserving the checked state; the three-second target remains open. [Results](docs/evidence/m2-iteration-comparison.json).
+
 ## 0.0.106
 
 - Handle ordinary verbose compiler invocation and response-file lines in structured diagnostics, with finite 128 KiB stream and 64 KiB line limits.

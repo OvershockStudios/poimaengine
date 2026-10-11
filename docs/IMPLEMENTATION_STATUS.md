@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.106**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.107**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.107 adds optional `development.inspect.include_output` in schema
+revision 79. Omitted/true preserve the full response; false keeps authoritative
+state, elapsed, errors, verified results, byte/truncation counters and compiler
+ownership/use/retirement metadata while omitting raw client and compiler tails.
+Native summary polling constructs that projection without copying the omitted
+strings. Seven Windows cases pass, including real owned-SDK success, syntax
+failure and repair with exact full-to-compact comparison. Five native discovery
+requests verify the schema, strict flag typing, unknown-job rejection and
+unchanged job catalog. No compact-polling latency improvement follows from these
+correctness checks. [Qualification](evidence/m2-compact-development-poll.json).
+
+A separate full-state 0.0.106 comparison passes twenty actual compatible edits,
+25 build jobs and complete supported checkpoint/first-Tick checks per cohort.
+Original reads with isolated compilation reach p95 6.972 seconds; owned
+compilation reaches 7.732 seconds despite a better mean and native worker time.
+With the same owned compiler and qualified batched rig reads, p95 reaches
+3.759 seconds. All remain above the three-second target. Fresh parity matches
+61 native entity envelopes across 91 snapshots and independently joins twelve
+real stale-boundary/removed-member rejections; the batched arm retains 74 complete
+two-page observations. All owned warm builds have correlated Received/Completed/Csc
+proof and clean outer process trees. Fixed sequential order and distinct output
+caches limit causal interpretation. These paused CoreCLR results do not qualify
+Native AOT reload, physical input or the broader Alpha gate.
+[Comparison](evidence/m2-iteration-comparison.json),
+[all numeric samples](evidence/m2-iteration-comparison.numeric.json.gz).
 
 Version 0.0.106 increases structured diagnostic parser capacity to 128 KiB per
 stream and 64 KiB per line. Ordinary verbose MSBuild invocation/response lines
@@ -18,8 +44,8 @@ An earlier 0.0.105 full-game isolated run passes twenty warm edits and 25 compil
 jobs, with p95 6.913 seconds, missing the three-second target. Its owned-compiler
 arm stops before gameplay: compilation succeeds, but the old parser's 16 KiB
 line limit makes diagnostics incomplete. The failed receipt remains retained.
-The parser checks above resolve that capacity mismatch; a fresh full-game
-comparison is still required before claiming faster iteration.
+The parser checks above resolve that capacity mismatch. The later 0.0.106
+comparison is recorded above; the earlier failed receipt remains separate.
 
 Version 0.0.105 adds opt-in `development.compile.compiler_server` for Windows
 x64 .NET SDK 10.0.401. The native worker owns a private compiler between ordinary

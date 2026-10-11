@@ -121,7 +121,7 @@ Json safe_diagnostic(const std::string& value) {
     // inside a multibyte character; replacement keeps status JSON deliverable.
     return Json::parse(Json(value).dump(-1,' ',false,Json::error_handler_t::replace));
 }
-Json status(const Status& value,bool diagnostics) {
+Json status(const Status& value,bool diagnostics,bool include_error=false) {
     Json result={{"job_id",value.id},{"state",state_name(value.state)},{"terminal",terminal(value.state)},
         {"exit_code",value.exit_code ? Json(*value.exit_code):Json(nullptr)},{"elapsed_ms",value.elapsed.count()},
         {"cancellation_requested",value.cancellation_requested},{"stdout_bytes",value.output_bytes},{"stderr_bytes",value.error_bytes},
@@ -130,7 +130,8 @@ Json status(const Status& value,bool diagnostics) {
     if(value.state==State::succeeded && !value.result.empty()) {
         auto verified=Json::parse(value.result,nullptr,false);if(!verified.is_discarded())result["result"]=std::move(verified);
     }
-    if(diagnostics) { result["stdout"]=safe_diagnostic(value.standard_output);result["stderr"]=safe_diagnostic(value.standard_error);result["error"]=safe_diagnostic(value.error); }
+    if(diagnostics) { result["stdout"]=safe_diagnostic(value.standard_output);result["stderr"]=safe_diagnostic(value.standard_error); }
+    if(diagnostics || include_error)result["error"]=safe_diagnostic(value.error);
     if(value.compiler_server) {
         const auto& server=*value.compiler_server;
         Json selected={{"session_reused",server.session_reused},
@@ -289,11 +290,15 @@ Json Service::dispatch(const std::string& method,const Json& p) {
     }
     const bool inspect=method=="development.inspect",diagnostics=method=="development.diagnostics",cancel=method=="development.cancel",forget=method=="development.forget";
     need(inspect || diagnostics || cancel || forget,"Unknown development operation.",-32601);
-    if(diagnostics)fields(p,{"job_id","limit"},{"job_id"});else fields(p,{"job_id"},{"job_id"});
+    if(diagnostics)fields(p,{"job_id","limit"},{"job_id"});
+    else if(inspect)fields(p,{"job_id","include_output"},{"job_id"});
+    else fields(p,{"job_id"},{"job_id"});
+    if(inspect && p.contains("include_output"))need(p.at("include_output").is_boolean(),"Include output must be boolean.");
+    const bool include_output=!inspect || p.value("include_output",true);
     const auto limit=p.value("limit",Json(32));
     if(diagnostics)need(limit.is_number_integer() && limit>=1 && limit<=128,"Diagnostic limit must be 1..128.");
     const auto id=job_id(p.at("job_id"));
-    const auto prior=jobs_ ? jobs_->poll(id):std::optional<Status>{};need(prior.has_value(),"Development job is unknown or forgotten.",-32004);
+    const auto prior=jobs_ ? (inspect && !include_output ? jobs_->poll_summary(id):jobs_->poll(id)):std::optional<Status>{};need(prior.has_value(),"Development job is unknown or forgotten.",-32004);
     if(forget) { need(terminal(prior->state),"Only terminal jobs can be forgotten.",-32090);need(jobs_->forget(id),"Job could not be forgotten.",-32090);return {{"job_id",id},{"forgotten",true}}; }
     if(cancel) { const bool requested=jobs_->cancel(id);auto result=status(*jobs_->poll(id),false);result["requested"]=requested;return result; }
     if(diagnostics) {
@@ -314,7 +319,7 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         result["recognized_lines"]=report.recognized_count;result["more"]=report.more;result["incomplete"]=report.incomplete;
         result["limit"]=limit;result["parser"]="msbuild-csharp-subset-v1";return result;
     }
-    return status(*prior,true);
+    return status(*prior,include_output,!include_output);
 }
 Json Service::schemas() {
     const Json path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Absolute UTF-8 path."}},
@@ -335,7 +340,7 @@ Json Service::schemas() {
             {"compiler_server",{{"type","string"},{"minLength",1},{"maxLength",4096},
                 {"description","Optional absolute VBCSCompiler.dll selector for an engine-owned Windows compiler session. Omit for isolated builds. Startup failures fail the job; ordinary SDK fallback is reported separately. The worker selects the private pipe."}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
         {"development.jobs",object(Json::object())},
-        {"development.inspect",object({{"job_id",id}},{"job_id"})},
+        {"development.inspect",object({{"job_id",id},{"include_output",{{"type","boolean"},{"default",true}}}},{"job_id"})},
         {"development.diagnostics",object({{"job_id",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",32}}}},{"job_id"})},
         {"development.cancel",object({{"job_id",id}},{"job_id"})},
         {"development.forget",object({{"job_id",id}},{"job_id"})}};
