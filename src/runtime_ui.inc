@@ -91,7 +91,7 @@
         auto candidate=std::make_shared<ui::Model>(*ui_model);candidate->edit(ui_model->revision(),edits,ui_modal);return candidate;
     }
     RuntimeControlResult control(std::uint64_t expected_ui,std::uint64_t expected_sequence,const std::string& id) {
-        require(game_phase==GamePhase::idle && !save_queue.pending(),"Resolve pending work before Control.");
+        require(game_phase==GamePhase::idle && (!save_queue.pending() || save_queue.dispatched()),"Resolve pending work before Control.");
         require(!player_preferences_prepared,"Flush pending player preferences before another Control boundary.");
         require(game && expected_ui==ui_model->revision() && expected_sequence==control_sequence,"Control requires a loaded game and current UI/control revisions.");
         require(control_sequence<9007199254740991ULL,"Control sequence exhausted.");

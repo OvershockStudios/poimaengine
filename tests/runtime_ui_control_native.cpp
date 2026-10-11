@@ -93,6 +93,46 @@ void tick_ui_and_restore(const GameplayConfig& config) {
     check(failed.save_snapshot(content)==before && !failed.gameplay_saves().pending(),"Explicit failed Tick batch retained earlier UI/global/save changes.");
     failed.gameplay_edit("{\"Mode\":1}");failed.step(1,{});check(item(failed,2).text=="Tick 1" && failed.ui_model().revision()==1,"Failed Tick queue contaminated next success.");
 }
+void dispatched_save_continuation(const GameplayConfig& config) {
+    const auto d=definition();GameplaySaveLedger ledger;Runtime r(d);load(r,config,1);r.step(3,{});
+    r.gameplay_save_host({40,1},&ledger);check(r.gameplay_saves().configure(true,1),"Cannot enable background Control fixture.");
+    activate(r,4);const auto request=*r.gameplay_saves().pending();const auto captured=r.save_snapshot(content);
+    check(r.gameplay_saves().mark_dispatched(request.ticket),"Committed Control Save could not be dispatched.");
+    auto restored=Runtime::from_snapshot(d,content,captured,config);
+    check(!restored->gameplay_saves().pending() && !restored->gameplay_saves().dispatched(),"Portable restore resurrected owner dispatch work.");
+    const auto resumed=activate(r,5);r.step(2,{});
+    check(resumed.control_sequence==2 && static_cast<unsigned>(resumed.intent)==1 && r.inspect().tick==5 &&
+        values(r).at("Ticks")==5 && item(r,2).text=="Tick 5" && r.gameplay_saves().dispatched() &&
+        *r.gameplay_saves().pending()==request && request.committed_tick==3,
+        "Real Control/Tick continuation rebased or lost the captured Save.");
+    const auto before=r.save_snapshot(content);
+    check(rejects([&]{activate(r,11);}).find("Unknown UI element.")!=std::string::npos,
+        "Dispatched Control did not reach the real absent-element callback failure.");
+    check(r.save_snapshot(content)==before && r.gameplay_saves().dispatched() && *r.gameplay_saves().pending()==request,
+        "Failed ordinary Control lost the dispatched queue or committed state.");
+    check(rejects([&]{r.gameplay_load(config);}).find("pending gameplay save")!=std::string::npos &&
+        rejects([&]{r.gameplay_edit("{\"Mode\":0}");}).find("pending gameplay save")!=std::string::npos &&
+        rejects([&]{r.ui_edit(r.ui_model().revision(),{});}).find("pending gameplay save")!=std::string::npos &&
+        rejects([&]{r.change_structure(0,{},{});}).find("pending gameplay save")!=std::string::npos,
+        "Dispatched edit rejection did not preserve the specific pending-save barrier.");
+    check(r.save_snapshot(content)==before && *r.gameplay_saves().pending()==request,
+        "Dispatched Save weakened code, field, UI or structural edit barriers.");
+    GameplaySaveCompletion completed;completed.succeeded=true;completed.generation=1;
+    check(ledger.complete(request,completed)==GameplaySavePublication::recorded && r.gameplay_saves().clear(request.ticket),
+        "Dispatched completion could not clear the exact request.");
+    check(!r.gameplay_saves().dispatched() && r.gameplay_saves().query(request.ticket,&ledger).request.committed_tick==3,
+        "Completion lost the original checkpoint tick or retained dispatch.");
+
+    Runtime failed(d);load(failed,config,2);failed.gameplay_save_host({41,1},&ledger);
+    check(failed.gameplay_saves().configure(true,1),"Cannot enable dispatched Tick rollback fixture.");
+    const auto ticket=failed.gameplay_saves().enqueue(GameplaySaveKind::save,"existing",0,false,0).ticket;
+    check(failed.gameplay_saves().commit(0) && failed.gameplay_saves().mark_dispatched(ticket),"Cannot dispatch Tick rollback fixture.");
+    const auto pending=*failed.gameplay_saves().pending();const auto untouched=failed.save_snapshot(content);
+    check(rejects([&]{failed.step(2,{});}).find("Gameplay save request rejected: Busy.")!=std::string::npos,
+        "Dispatched Tick did not execute the real Busy-request failure after staging UI/state.");
+    check(failed.save_snapshot(content)==untouched && failed.gameplay_saves().dispatched() && *failed.gameplay_saves().pending()==pending,
+        "Failed actual Tick lost immutable request, dispatched state, UI or globals.");
+}
 void optional_handler(const GameplayConfig& config) {
     Runtime absent(definition());const auto before=absent.save_snapshot(content);rejects([&]{activate(absent,5);});check(absent.save_snapshot(content)==before,"Missing gameplay changed controls.");
     if(config.native_aot)return;
@@ -109,7 +149,7 @@ int main(int argc,char** argv) {
         if(native) {const auto artifact=load_native_gameplay_artifact(argv[2]);config.native_aot=true;config.native_library=artifact.library;config.native_sha256=artifact.library_sha256;config.native_schema=artifact.schema;config.type=artifact.type;}
         else {config.hostfxr=argv[1];config.bridge=argv[2];config.assembly=argv[3];config.type="Poima.Tests.ManagedUiGame";}
         check(config.type=="Poima.Tests.ManagedUiGame","Wrong native UI fixture type.");
-        ordered_controls(config);rollback_and_save(config);tick_ui_and_restore(config);optional_handler(config);
-        std::cout<<"Compiled "<<(native?"NativeAOT":"CoreCLR")<<" UI: four groups passed (ordered same-tick controls, committed reads, merged writes/modal/intents, failure/save rollback, Tick atomicity, snapshots and optional handler).\n";return 0;
+        ordered_controls(config);rollback_and_save(config);tick_ui_and_restore(config);dispatched_save_continuation(config);optional_handler(config);
+        std::cout<<"Compiled "<<(native?"NativeAOT":"CoreCLR")<<" UI: five groups passed (ordered same-tick controls, committed reads, merged writes/modal/intents, failure/save rollback, dispatched Save continuation, Tick atomicity, snapshots and optional handler).\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

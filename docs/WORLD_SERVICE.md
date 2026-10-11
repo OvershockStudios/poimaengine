@@ -205,6 +205,13 @@ Schema revision 26 adds `runtime.gameplay.load_native` for an inventoried Native
 
 Schema revision 27 adds `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. Saves use an explicit external root, persisted write receipts and guarded staged replacement without changing the authored document. See the [save-slot contract](RUNTIME.md#durable-save-slots) for examples, frozen content binding, recovery and current limits.
 
+Schema revision 75 adds optional `save.configure.write_mode` and reports the
+selected mode in `save.status`. The default is synchronous; background mode
+dispatches immutable gameplay checkpoints through the native job executor.
+See [gameplay saves](GAMEPLAY_SAVES.md#configure-storage) for continuation,
+completion and pending-write guards. Protocol version 1 and authoring-core v1
+are unchanged.
+
 ## Logical UI definitions and state
 
 Authored `ui.element.set/remove` transactions and `world.ui.get/list` use format 4

@@ -89,12 +89,16 @@ GameplaySaveEnqueue GameplaySaveQueue::enqueue(GameplaySaveKind kind,std::string
     std::copy(slot.begin(),slot.end(),request.slot.begin());
     request.configuration_generation=configuration_generation_;request.requested_tick=tick;
     request.has_expected_generation=expected.has_value();request.expected_generation=expected.value_or(0);request.allow_recovery=allow_recovery;
-    pending_=request;++next_sequence_;resolving_=false;resolving_code_=0;resolving_diagnostic_.fill(0);
+    pending_=request;++next_sequence_;resolving_=false;dispatched_=false;resolving_code_=0;resolving_diagnostic_.fill(0);
     return {GameplaySaveRejection::none,request.ticket};
+}
+bool GameplaySaveQueue::mark_dispatched(GameplaySaveTicket ticket) noexcept {
+    if(!pending_ || !pending_->committed || pending_->kind!=GameplaySaveKind::save || pending_->ticket!=ticket)return false;
+    dispatched_=true;return true;
 }
 bool GameplaySaveQueue::commit(std::uint64_t tick) noexcept {
     if(!pending_ || !bounded(tick) || tick<pending_->requested_tick)return false;
-    if(pending_->committed)return tick==pending_->committed_tick;
+    if(pending_->committed)return dispatched_ ? tick>=pending_->committed_tick : tick==pending_->committed_tick;
     pending_->committed=true;pending_->committed_tick=tick;return true;
 }
 bool GameplaySaveQueue::mark_resolving(std::int32_t code,std::string_view diagnostic) noexcept {
@@ -103,7 +107,7 @@ bool GameplaySaveQueue::mark_resolving(std::int32_t code,std::string_view diagno
 }
 bool GameplaySaveQueue::clear(GameplaySaveTicket ticket) noexcept {
     if(!pending_ || !pending_->committed || pending_->ticket!=ticket)return false;
-    pending_.reset();resolving_=false;resolving_code_=0;resolving_diagnostic_.fill(0);return true;
+    pending_.reset();resolving_=false;dispatched_=false;resolving_code_=0;resolving_diagnostic_.fill(0);return true;
 }
 GameplaySaveResult GameplaySaveQueue::query(GameplaySaveTicket ticket,const GameplaySaveLedger* ledger) const noexcept {
     if(ledger)if(auto terminal=ledger->find(ticket))return *terminal;

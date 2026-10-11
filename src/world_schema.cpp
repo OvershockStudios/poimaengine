@@ -133,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 74}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 75}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -466,7 +466,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json save_path_schema={{"type","string"},{"minLength",1},{"maxLength",4096}};
     const Json nullable_revision={{"anyOf",{rev,Json{{"type","null"}}}}};
     methods["save.status"]=object_schema(Json::object());
-    methods["save.configure"]=object_schema({{"request_id",id},{"expected_generation",rev},{"root",{{"anyOf",{save_path_schema,Json{{"type","null"}}}}}}},{"request_id","expected_generation","root"});
+    methods["save.configure"]=object_schema({{"request_id",id},{"expected_generation",rev},{"root",{{"anyOf",{save_path_schema,Json{{"type","null"}}}}}},{"write_mode",{{"type","string"},{"enum",{"synchronous","background"}},{"default","synchronous"}}}},{"request_id","expected_generation","root"});
     methods["save.inspect"]=object_schema({{"slot",save_slot_schema}},{"slot"});
     methods["save.write"]=object_schema({{"request_id",id},{"configuration_generation",rev},{"slot",save_slot_schema},{"expected_generation",rev},
         {"session_id",id},{"expected_tick",rev},{"expected_gameplay_revision",rev},{"acknowledge_recovery",{{"type","boolean"},{"default",false}}}},

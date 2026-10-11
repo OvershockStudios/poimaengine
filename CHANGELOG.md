@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.102
+
+- Add opt-in background gameplay save writes, capturing one immutable checkpoint and publishing storage results on the owning engine thread.
+- Continue fixed ticks and ordinary UI callbacks while the write is pending; retain the original save boundary, Busy admission, mutation guards and receipt recovery.
+- Keep synchronous writes as the default and reject background mode in zero-worker reference configurations.
+
 ## 0.0.101
 
 - Add Python SDK pagination for registered runtime components, preserving all runtime guards, source boundaries, native membership and selected fields across pages.

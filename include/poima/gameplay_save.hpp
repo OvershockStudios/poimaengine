@@ -91,7 +91,7 @@ class GameplaySaveQueue {
     std::uint64_t next_sequence_=1,configuration_generation_=0;
     bool enabled_=false;
     std::optional<GameplaySaveRequest> pending_;
-    bool resolving_=false;
+    bool resolving_=false,dispatched_=false;
     std::int32_t resolving_code_=0;
     std::array<char,256> resolving_diagnostic_{};
 public:
@@ -106,10 +106,17 @@ public:
         std::optional<std::uint64_t> expected_generation,bool allow_recovery,
         std::uint64_t requested_tick) noexcept;
     const GameplaySaveRequest* pending() const noexcept { return pending_ ? &*pending_ : nullptr; }
+    // Owner-only acknowledgement that this exact committed Save has an owned
+    // immutable checkpoint. Ephemeral: never included in portable saves. The
+    // intent remains pending, so another Save/Load and routing changes stay busy.
+    bool mark_dispatched(GameplaySaveTicket) noexcept;
+    bool dispatched() const noexcept { return dispatched_; }
     // Called only after the complete atomic batch commits. Same tick is an
-    // idempotent repeat; another tick is rejected once committed.
+    // idempotent repeat. Dispatched Save permits later ticks without rebasing
+    // its original committed tick; other committed work rejects another tick.
     bool commit(std::uint64_t committed_tick) noexcept;
-    // Unknown durable outcome stays pending and blocks another enqueue/batch.
+    // Unknown durable outcome stays pending and blocks another enqueue. Only
+    // owner-dispatched Save permits another ordinary simulation/control batch.
     // The owner must resolve using the same operation identity, never publish
     // a false terminal failure. Memory queries report resolving plus diagnosis.
     bool mark_resolving(std::int32_t error_code,std::string_view diagnostic) noexcept;

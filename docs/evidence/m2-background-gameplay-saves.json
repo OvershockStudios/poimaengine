@@ -1,0 +1,587 @@
+{
+  "format": "poima.background-gameplay-saves-evidence.v1",
+  "source_checkpoint": "0.0.102",
+  "date": "2026-10-11",
+  "passed": true,
+  "source_pin_count": 26,
+  "sources": [
+    {
+      "path": "include/poima/gameplay_save_writer.hpp",
+      "bytes": 2403,
+      "sha256": "b158425c0077b9d6ce09f90e67e3f60e4d391d4f32be8619052e479366386966"
+    },
+    {
+      "path": "include/poima/gameplay_save.hpp",
+      "bytes": 6261,
+      "sha256": "f3339e797214e39025f8c6ca83afaa9aefd1c89176130dcc315de38d78b89ac9"
+    },
+    {
+      "path": "include/poima/jobs.hpp",
+      "bytes": 5983,
+      "sha256": "777ff1a8e7c02f139d44d74403989d55176759dedbb7a1b3586d81c8007d8375"
+    },
+    {
+      "path": "include/poima/save_store.hpp",
+      "bytes": 3598,
+      "sha256": "1389b077a887175f3b50467a76306805b8d3b7864fbac556c9c514f4b78adb75"
+    },
+    {
+      "path": "src/gameplay_save_writer.cpp",
+      "bytes": 8491,
+      "sha256": "c52b969ea8fe0970c762de5569342bf23c871da41996d9bb2b6e7266263405cc"
+    },
+    {
+      "path": "src/gameplay_save.cpp",
+      "bytes": 7748,
+      "sha256": "9cc7ec3d78e2671a7ba407c733a457fbdc041b3ed1d3b191d279e413d1aa831c"
+    },
+    {
+      "path": "src/jobs.cpp",
+      "bytes": 28651,
+      "sha256": "6eb8b6e14dd81a3ea0efbb29c6aa97f9cf2c0fa115f814ad1e367ccb0c584c27"
+    },
+    {
+      "path": "src/save_store.cpp",
+      "bytes": 29715,
+      "sha256": "b921507f9da872d2d432292ba8add8074c66c04c833bf16c49b3dcd78e9e50ee"
+    },
+    {
+      "path": "src/hash.cpp",
+      "bytes": 2672,
+      "sha256": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5"
+    },
+    {
+      "path": "tests/gameplay_save_writer.cpp",
+      "bytes": 20395,
+      "sha256": "6610823a2c3114de3180696a90a9b971b471bb7439a6457091749aa1a11540d3"
+    },
+    {
+      "path": "src/world.cpp",
+      "bytes": 283076,
+      "sha256": "16af837c4d6cb44df05b3fedbf487409d3477750f63c0422eabecf15d03a0376"
+    },
+    {
+      "path": "src/world_gameplay_save.inc",
+      "bytes": 13553,
+      "sha256": "10fd559418ded533c2ffcde414eaee0b931d621d8853b4bdd14fd93401ebad48"
+    },
+    {
+      "path": "src/world_control.inc",
+      "bytes": 6664,
+      "sha256": "65ea355a9611c862faba5629a5a2b1954fa8231758888b0c77e8bbbb4ffdd234"
+    },
+    {
+      "path": "src/world_save.inc",
+      "bytes": 25737,
+      "sha256": "8a4378f5a2f5f1fe24a03bae6d3698fdb99ee29d62fc1c8e2bf9d7cdfbaf3a82"
+    },
+    {
+      "path": "src/world_player_service.inc",
+      "bytes": 49574,
+      "sha256": "18a397c5cd13d2b548d77dcb66a6dafa17240cb3a5ad26a73f62ed91b1054061"
+    },
+    {
+      "path": "src/world_schema.cpp",
+      "bytes": 82890,
+      "sha256": "5193371fcf08cf549b98a56488238e20996d727963b50bffb9cf6391e86f0a3f"
+    },
+    {
+      "path": "src/runtime.cpp",
+      "bytes": 105169,
+      "sha256": "76f7fd59254be42186899f1b27ea235927784680ecc3fcb3ec7f7324ebdbd07c"
+    },
+    {
+      "path": "src/runtime_ui.inc",
+      "bytes": 10350,
+      "sha256": "ce8faae4cc73e436d860e2fd34ff3c9cc8ea20da7190d5c79d0e6f195fc1fe93"
+    },
+    {
+      "path": "tests/gameplay_save.cpp",
+      "bytes": 14457,
+      "sha256": "fbc057cfa572c601a9821d7d604ade9738295eb1c44bc15712247ac74ae82f90"
+    },
+    {
+      "path": "tests/runtime_ui_control_native.cpp",
+      "bytes": 15113,
+      "sha256": "231bba55d77e9620d76cb2e988afc482fbe2b70c10e08409b45decd240e7698c"
+    },
+    {
+      "path": "tests/world_gameplay_save_background.cpp",
+      "bytes": 19739,
+      "sha256": "cedeb60213c2a02934925eaf643276876a0ddbb946f183daed770e522e0ebd6f"
+    },
+    {
+      "path": "tests/gameplay-save/SaveRequests.cs",
+      "bytes": 3284,
+      "sha256": "b7b8e17d7efc7a7c4ddf3363c1ba54852b1123a6e5e120eef25d67b196e6834b"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 74615,
+      "sha256": "2220dbde55af05ee81d2b48b1ef070cca6cf7392b4fe8793e7cabf7f59240d3a"
+    },
+    {
+      "path": "tests/game_service_contract.py",
+      "bytes": 34860,
+      "sha256": "e8fa867aeeb380540bc9900c36dfbdaaeb975795419369a47cc2ebb442b463da"
+    },
+    {
+      "path": "tests/world_schema_native.cpp",
+      "bytes": 9567,
+      "sha256": "681d58d32f3656d0d987fba838e8e6bad24cd28a34e0651c6651ed6bee22e790"
+    },
+    {
+      "path": "tests/runtime_native.cpp",
+      "bytes": 32330,
+      "sha256": "535721b1965e9ff68fecbd9339250f750f35503e47b91a3cb7a16de7e6bab077"
+    }
+  ],
+  "freeze_sha256": "cbe5297d13945a271804a10e051846762c4665b35c6dd293151060479c1d5a7d",
+  "connected_record_sha256": "7c34242b32d1d04a9b6448180c042f2861e3c1062bf2c7d3faa2cc20a789e891",
+  "native_checks": [
+    {
+      "case": "world_schema",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-world-schema-test.exe",
+        "bytes": 270264320,
+        "sha256": "08abd7d36a4ba8bcbd6ba4f21a706724824e435e77da8a5946d6dd66ac3efbe6"
+      },
+      "retained_worker_sha256": "9039f6e3ea757882e8551a4c2e58731c32ccc636aafdb42f708bf3024a7e0556",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 15.4447358000034,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 110,
+            "sha256": "35b5a21edf3ac8cb5d231ea81cebbcd86b6361759ee1372972f0ec93c113bbe8"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "080f91d254ad67454f96f56dcb526b389e1202bfb4494bbaf7df6c9d1c38e3b0"
+      }
+    },
+    {
+      "case": "runtime",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-runtime-test.exe",
+        "bytes": 187505664,
+        "sha256": "18be905e87f765595523a3b23d26a12e2fdb4c990e8afbe2f148b478600a4dba"
+      },
+      "retained_worker_sha256": "b2948df8164964cea99cff5297d1f40379cb1ac02a074a9eb277ba210faba9c2",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 0.5838908000005176,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 192,
+            "sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "05bd1c9fec4792940c1b4cdd750746d3f8d65a6bcf14b0235a850b7ca0faf88c"
+      }
+    },
+    {
+      "case": "queue",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-gameplay-save-test.exe",
+        "bytes": 1719808,
+        "sha256": "6e5aee25a5178426e129dc1fbce9e98fe1d5a1f8e63a5e2ed46cc19d8f1d1cc6"
+      },
+      "retained_worker_sha256": "92f5f1cfe35e618c08ff0fa2e3fb1ab22d8ca32c1dd7d07236d04c066de1c66f",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 0.27423420001287013,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 200,
+            "sha256": "cbcecef22c7b6102e2660dc814e63eab4c762f9cdcdd646157413379dbe47a29"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "200d7f65be81974dcd6a171cd2ecb8d35f6368c7e2e3e9200102b93239e4b61f"
+      }
+    },
+    {
+      "case": "writer",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-gameplay-save-writer-test.exe",
+        "bytes": 8262656,
+        "sha256": "02a4200dcd35186689e2fd51096aee5fef6e994aec0bcda7586b718c31faabeb"
+      },
+      "retained_worker_sha256": "8957f0f6931be9259bc8d48f48a1258e9ffeda4e031f81f126056eb93d5309d1",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 1.003838899996481,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 100,
+            "sha256": "4a44351b6eb60b2e01710caa40e092e2818b574c0c586cb77984200d9d74049d"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "149dcde5b1f1a00098401161ae7a20127a6613dceacf499a7b3cb8febdec27a9"
+      }
+    },
+    {
+      "case": "world_save",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-world-save-test.exe",
+        "bytes": 270228480,
+        "sha256": "cd1f605030267b686be8a443a5fe0cce1655e0e20da336603b188402334065ee"
+      },
+      "retained_worker_sha256": "1d067caffb19b77ced524484e243b173330e8c3fbfd6e6521462fd4048874220",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 0.7201855000021169,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 82,
+            "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "21b812ac96970dd55cb16c69b440ae4e06fef6952eb2a2e6fdb9c57d690772a7"
+      }
+    },
+    {
+      "case": "store",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-save-store-test.exe",
+        "bytes": 6944768,
+        "sha256": "2aa9d8900a9c82b211ac9512bf4f4b4f549aebac7647284051a414f63cb6bb57"
+      },
+      "retained_worker_sha256": "ddc405d9cad16a0a8a936b2efdcf0527661ed931532c175a79ae4f401511ff3a",
+      "inputs": [],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 11,
+        "owner_seconds": 7.1860040000028675,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 339,
+            "sha256": "45c24aed0308d69fa62191c54896f86621310764a1fcf58fdd74ec5aed264c78"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "10fc8738ab4848b490371164c087f8291d9f7373bdbf5fede9b2784efbcb24ef"
+      }
+    },
+    {
+      "case": "ui_control",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-runtime-ui-control-test.exe",
+        "bytes": 190332928,
+        "sha256": "2766ddb20755a2a2d0023153590be521dde74643f95313c821a9bd8e3b9812a7"
+      },
+      "retained_worker_sha256": "b6c6d052fd92cd2a880f0342756058a82be1d821801ce5c8a00021587432bf2f",
+      "inputs": [
+        {
+          "path": "build/managed-ui-native-windows/native-gameplay.json",
+          "bytes": 3439,
+          "sha256": "f4ef1ff96bb2208568a27359a7e7e450374bfbaa7277a82eb5fdd6e044dd8ee3"
+        },
+        {
+          "path": "build/managed-ui-native-windows/Poima.NativeGame.dll",
+          "bytes": 1311232,
+          "sha256": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b"
+        }
+      ],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 0.8585508000105619,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 220,
+            "sha256": "afc1d1c37435bd7a7209a10a78a7f33f4433f650350dce02a4e6549d74ef06af"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "0beb36420efe09db8a0047ee416aa9b20cf43b52ae055139ec8b60a62e3c668f"
+      }
+    },
+    {
+      "case": "world_background",
+      "native_binary": {
+        "path": "build/windows-runtime/poima-world-gameplay-save-background-test.exe",
+        "bytes": 270620672,
+        "sha256": "9de9778f78129415af4fc0b5aa113161ad1d99b8d771447173ae444a0a684756"
+      },
+      "retained_worker_sha256": "a91c65d3b838a9d920063b28b993e70cc4681681d94c78cc36793d3d6ce3b334",
+      "inputs": [
+        {
+          "path": "hostfxr.dll",
+          "bytes": 379688,
+          "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.dll",
+          "bytes": 36352,
+          "sha256": "e2335d279f9423f29e0f03ce22e427bb3e60e54e57f0351b17099b4ed41ae93d"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.GameplaySaveProbe.dll",
+          "bytes": 7168,
+          "sha256": "7b2d16cecc58806f6c47b1d6dc58bd08902909e86ef0e7bf0bf4329685298096"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.Gameplay.deps.json",
+          "bytes": 414,
+          "sha256": "35e491806515d1b4f7b32e3c1403432b1df051e7deb058d54e7f254c2da70e8b"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.Gameplay.dll",
+          "bytes": 133120,
+          "sha256": "bc5b351537088eb1a0ea9eb7b5e6c9bff74c22af6969055a77ccdf2ad69572a4"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.deps.json",
+          "bytes": 808,
+          "sha256": "b879f4fcc050493e4be039ca78a3f9765d1ab334915d066f42d9e4972ade4290"
+        },
+        {
+          "path": "build/background-saves-0.0.102/managed-bridge/Poima.ManagedBridge.runtimeconfig.json",
+          "bytes": 364,
+          "sha256": "29ad26ea2193b41244bb055eb0fb499a4b878854601f33bf46869377a674eeab"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.Gameplay.deps.json",
+          "bytes": 414,
+          "sha256": "35e491806515d1b4f7b32e3c1403432b1df051e7deb058d54e7f254c2da70e8b"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.Gameplay.dll",
+          "bytes": 133120,
+          "sha256": "bc5b351537088eb1a0ea9eb7b5e6c9bff74c22af6969055a77ccdf2ad69572a4"
+        },
+        {
+          "path": "build/background-saves-0.0.102/gameplay/Poima.GameplaySaveProbe.deps.json",
+          "bytes": 820,
+          "sha256": "122842cae81eac0bad12f0aac3f8ed42094d26aa4952550471c5e5cfaaeb4136"
+        }
+      ],
+      "owner": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 2.1574527000047965,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 191,
+            "sha256": "f34c19eb570886560e31f79ad5e2266da5f456197aaf6017cefc0392821ec827"
+          },
+          "stderr.txt": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "935fbf11aa1d2d6844495e058fdf6aa6cae5d9ffd147bc019f547684194edb16"
+      }
+    }
+  ],
+  "connected_native_check_count": 8,
+  "worker_hash_scope": "Current retained scripts; the original runner did not record at-run worker-script pins.",
+  "standalone_writer": {
+    "binary_sha256": "b3cc47a9bc69ca5ba91de7c5abf64d5d7acefa7672f55d4420879596e7d964df",
+    "owner": {
+      "passed": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "total_processes": 2,
+      "owner_seconds": 1.2610825000010664,
+      "outputs": {
+        "stdout.txt": {
+          "bytes": 100,
+          "sha256": "4a44351b6eb60b2e01710caa40e092e2818b574c0c586cb77984200d9d74049d"
+        },
+        "stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "gated.py": {
+          "bytes": 346,
+          "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+        }
+      },
+      "receipt_sha256": "ed32ae41531ab6b27e28ddddc0fb5c75c92003a90ccbb47cf5b3a22692dc17b2"
+    }
+  },
+  "scopes": {
+    "native_writer": "Real Store faults, durable receipt recovery, cancellation, owned cleanup and captured worker attribution.",
+    "connected_coreclr": "Held background worker; immutable tick1 save while tick2 continues; failed Tick rollback, pending guards, retries, idle owner pump and a fresh World owner restored inside the SAME process.",
+    "legacy_native_aot_ui": "Separate retained v0.0.39 module; manually dispatched native queue permits compiled Control/Tick continuation, rollback and edit/reload barriers. It is not a worker-backed NativeAOT World save test."
+  },
+  "nonclaims": [
+    "GPU or native-window playback",
+    "save latency or capture hitch budget",
+    "power-loss durability",
+    "fresh-process restoration",
+    "paused-window completion",
+    "general engine or Alpha qualification",
+    "Linux connected background-save qualification"
+  ],
+  "retained_attempts": [
+    {
+      "classification": "Initial writer wrapper rejected Windows CRLF after native check success; corrected wrapper is a separate attempt.",
+      "record_sha256": "0c9372d81b05e33dde4d35b0aee08a8862aecc179d35ec79a4601b4fcf1f0045",
+      "owner": {
+        "passed": false,
+        "exit_code": 1,
+        "forced_cleanup": false,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "total_processes": 2,
+        "owner_seconds": 1.0806783000007272,
+        "outputs": {
+          "stdout.txt": {
+            "bytes": 100,
+            "sha256": "4a44351b6eb60b2e01710caa40e092e2818b574c0c586cb77984200d9d74049d"
+          },
+          "stderr.txt": {
+            "bytes": 903,
+            "sha256": "879092ebf63c23fa657cf337d9e4fdbd4c9c3734d9611ae550768f16ccc9611a"
+          },
+          "gated.py": {
+            "bytes": 346,
+            "sha256": "07cdb1ebdba159b8a611e4701c44e4053a48facf9b5ba740b68a1d43abb112c5"
+          }
+        },
+        "receipt_sha256": "bfcb3c9fafd76a1360985778d49bf7551de7e1e7b890dc7f7ad0c861764d36a2"
+      }
+    },
+    {
+      "classification": "Interrupted Linux debug build; no connected test executed and no qualification.",
+      "record_sha256": "c1820ce73010a00546e6b8487d764938423a98634389ef07252bb56eba479157"
+    }
+  ],
+  "linux_standalone_writer": {
+    "passed": true,
+    "exit_code": 0,
+    "scope": "Standalone native Linux writer correctness; no connected World or performance claim.",
+    "binary": {
+      "path": "build/background-saves-0.0.102/writer-linux-v3",
+      "sha256": "1f7bc45ba4e3926abb1ab80ae2ce89da26e708c4aac26b1ef8414eefe3cc8cd2",
+      "bytes": 1592816
+    },
+    "check_seconds": 0.34445539000444114,
+    "outputs": {
+      "writer-linux-stdout-v3.txt": {
+        "bytes": 99,
+        "sha256": "8c331e4dfd4f8474e4d96c3a8f9f2c9ffdcd9c2738e32ff993f54c0f3e18d840"
+      },
+      "writer-linux-stderr-v3.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "receipt_sha256": "e195d7524e17c751b2dc9c829f3d014ef2bf4ee234fe2b360ddacd487d2c9b91"
+  },
+  "skipped_fixtures": [
+    {
+      "case": "store",
+      "platform": "Windows",
+      "fixture": "symbolic-link rejection",
+      "reason": "Host lacks symbolic-link creation privilege."
+    }
+  ],
+  "test_execution_limits": [
+    "tests/game_service_contract.py was updated for the additive status field and syntax-checked; that whole service fixture was not executed in this cohort."
+  ]
+}

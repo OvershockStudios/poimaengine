@@ -1,17 +1,18 @@
 # Native job execution
 
-Poima's native animation sampler and procedural material baker use a shared
+Poima's native animation sampler, procedural material baker and background
+gameplay save writer use a shared
 executor for owned, independent CPU work. The authoritative registry, physics,
 C# callbacks and result publication stay on their creating owner thread. Jobs
 are a core service; they do not depend on the desktop editor or a hosted service.
 
 ## Worker policy
 
-Constructing the first runtime, or submitting the first material bake, obtains
-the owner thread's pool.
+Constructing the first runtime, submitting the first material bake, or configuring
+[background gameplay saves](GAMEPLAY_SAVES.md) obtains the owner thread's pool.
 Subsequent consumers on that owner share it while at least one retains it.
 Opening an authored world or inspecting `jobs.status` does not create worker
-threads; starting its runtime does.
+threads; starting its runtime or selecting background saves does.
 The default is two workers, excluding the owner. Set `POIMA_JOB_WORKERS` to one
 ASCII digit from `0` through `8` before first use to choose another count.
 Zero selects synchronous reference execution, including material CPU work.

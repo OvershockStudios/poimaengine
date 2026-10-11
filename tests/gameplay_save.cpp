@@ -79,6 +79,50 @@ int main() {
         check(restarted.set_restore({{},replacement,0,4,1,false}) && restarted.last_restore(replacement)->initiating_ticket==GameplaySaveTicket{},"External restore metadata rejected.");
         check(!restarted.set_restore({{epoch,0},replacement,0,4,1,false}),"Malformed initiating ticket accepted.");
 
+        GameplaySaveQueue background({11,12});GameplaySaveLedger background_ledger;
+        check(background.configure(true,8) && !background.dispatched(),"Background fixture did not start undispatched.");
+        const auto background_ticket=background.enqueue(GameplaySaveKind::save,"autosave",0,false,90).ticket;
+        const auto background_allocations=allocations;
+        check(!background.mark_dispatched(background_ticket) && !background.dispatched(),"Tentative save was dispatched before batch commit.");
+        check(background.commit(100),"Background fixture commit failed.");
+        const auto captured_request=*background.pending();const auto undispatched_checkpoint=background;
+        check(!background.mark_dispatched({replacement,background_ticket.sequence}) &&
+            !background.mark_dispatched({background_ticket.epoch,background_ticket.sequence+1}) &&
+            !background.dispatched(),"A mismatched epoch or sequence dispatched the pending save.");
+        check(background.mark_dispatched(background_ticket) && background.mark_dispatched(background_ticket),"Exact dispatch was not idempotent.");
+        const auto dispatched_checkpoint=background;
+        check(background.commit(101) && background.commit(400) && background.commit(400),"Dispatched save blocked ongoing committed batches.");
+        check(!background.commit(99) && !background.commit(gameplay_save_max_revision+1),"Dispatched save accepted a backwards or out-of-range boundary.");
+        check(*background.pending()==captured_request && background.query(background_ticket).state==GameplaySaveState::queued,
+            "Continuation rebased the checkpoint or falsely published completion.");
+        check(background.enqueue(GameplaySaveKind::save,"second",{},false,401).rejection==GameplaySaveRejection::busy &&
+            background.enqueue(GameplaySaveKind::load,"autosave",{},false,401).rejection==GameplaySaveRejection::busy,
+            "Dispatched work allowed another save or load.");
+        check(!background.configure(false,8) && !background.configure(true,9) && background.configure(true,8),
+            "Dispatched work changed its storage routing.");
+        check(!background.clear({background_ticket.epoch,background_ticket.sequence+1}) && background.dispatched(),
+            "Wrong clear discarded dispatched work.");
+        background=undispatched_checkpoint;
+        check(!background.dispatched() && !background.commit(101),"Checkpoint restored a dispatch which was not present.");
+        background=dispatched_checkpoint;
+        check(background.dispatched() && background.commit(402) && *background.pending()==captured_request,
+            "Batch rollback lost dispatch or changed the captured request.");
+        check(background.mark_resolving(-32070,"Receipt verification unavailable") && background.dispatched() &&
+            background.commit(403) && background.query(background_ticket).state==GameplaySaveState::resolving,
+            "Dispatched uncertainty lost its original request or continuation.");
+        check(background_ledger.complete(*background.pending(),success(1))==GameplaySavePublication::recorded &&
+            background.query(background_ticket,&background_ledger).request.committed_tick==100,
+            "Later completion lost the original checkpoint boundary.");
+        check(background.clear(background_ticket) && !background.dispatched() && !background.pending() &&
+            !background.mark_dispatched(background_ticket),"Completed dispatch was not cleared exactly.");
+        const auto background_load=background.enqueue(GameplaySaveKind::load,"autosave",1,false,404).ticket;
+        check(background.commit(405) && !background.mark_dispatched(background_load) && !background.dispatched() &&
+            !background.commit(406),"A committed Load acquired background Save continuation.");
+        check(background.clear(background_load),"Background Load fixture clear failed.");
+        const auto next_background=background.enqueue(GameplaySaveKind::save,"autosave",1,false,407).ticket;
+        check(!background.dispatched() && !background.mark_dispatched(next_background),"A new Save inherited the previous dispatch.");
+        check(allocations==background_allocations,"Dispatch, continuation, rollback or completion allocated memory.");
+
         GameplaySaveQueue failures({3,4});check(failures.configure(true,0),"Failure fixture configuration failed.");
         auto failureTicket=failures.enqueue(GameplaySaveKind::save,"slot",{},false,0).ticket;check(failures.commit(1),"Failure commit failed.");
         GameplaySaveCompletion failure;failure.error_code=-32009;gameplay_save_diagnostic(failure.diagnostic,"Generation conflict");
@@ -103,6 +147,6 @@ int main() {
         std::array<char,256> diagnostic;
         check(!gameplay_save_diagnostic(diagnostic,std::string(254,'a')+"\xe2\x82\xac") && diagnostic[254]==0 && diagnostic.back()==0,"UTF-8 diagnostic truncated inside a character.");
         check(gameplay_save_diagnostic(diagnostic,"short") && diagnostic[5]==0 && diagnostic[254]==0,"Diagnostic retained stale bytes.");
-        std::cout<<"Gameplay save queue: validation, atomic checkpoint rollback, bounded tickets/results, uncertain publication, replacement metadata and allocation-free completion passed.\n";
+        std::cout<<"Gameplay save queue: validation, atomic checkpoint rollback, dispatched Save continuation, bounded tickets/results, uncertain publication, replacement metadata and allocation-free completion passed.\n";
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

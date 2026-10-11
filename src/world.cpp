@@ -18,6 +18,8 @@
 #include "poima/build_metadata.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/save_store.hpp"
+#include "poima/gameplay_save_writer.hpp"
+#include <chrono>
 #include "poima/save_upgrade_document.hpp"
 #include "poima/save_upgrade_snapshot.hpp"
 #include "world_storage.hpp"
@@ -783,6 +785,9 @@ class World {
         fs::path path;std::string operation,hash;std::uint64_t expected_generation=0;std::int32_t error_code=-32070;std::array<char,256> diagnostic{};
     };
     std::optional<PendingGameplayWrite> pending_gameplay_write_;
+    bool background_gameplay_saves_=false;
+    std::unique_ptr<GameplaySaveWriter> gameplay_save_writer_;
+    std::chrono::steady_clock::time_point save_resolution_after_{};
     struct RuntimeAdvance {
         GameplaySaveEpoch source,current;
         std::uint64_t previous_tick=0,committed_tick=0,current_tick=0,first_voice=0,next_voice=0;
@@ -1183,6 +1188,7 @@ public:
         require(result.dump().size()<=asset_references::max_result_bytes,"Asset-reference result exceeds 1 MiB.");return result;
     }
     Json dispatch(const std::string& method, const Json& params) {
+        pump_gameplay_save_writer();
         if(auto executor=jobs::peek_owner_executor())profiling::collect_jobs(*executor);
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
         if(method=="jobs.status") {

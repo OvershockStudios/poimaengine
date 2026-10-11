@@ -230,6 +230,7 @@
         }
     }
     bool poll_player() {
+        pump_gameplay_save_writer();
         if(!player_active())return false;
         player_owner_->window->poll();reconcile_player();return player_active();
     }

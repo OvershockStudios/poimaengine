@@ -384,7 +384,7 @@ class Exercise:
         client = self.connect(self.executable, endpoint)
         restarted = self.call(client, 'runtime.status')
         need(restarted['active'] and restarted['tick'] == 0 and restarted['session_id'] not in (session, fresh), restarted)
-        need(self.call(client, 'save.status') == {'generation': 0, 'root': None}, 'Save routing leaked into fresh owner')
+        need(self.call(client, 'save.status') == {'generation': 0, 'root': None, 'write_mode': 'synchronous'}, 'Save routing leaked into fresh owner')
         need(self.call(client, 'host.shutdown')['closed'], 'Restarted host did not shut down')
         self.close_client(client); self.stop_host(again)
         self.record['checks'].append('Clean shutdown releases the endpoint; restart creates a fresh tick0 native session without inherited save configuration.')

@@ -71,8 +71,7 @@
         // Remember acceptance before irreversible storage and response building.
         // A Load may replace runtime_, but cannot replace this owner's receipt.
         if(const auto* queued=runtime_->gameplay_saves().pending()) {
-            const auto ticket=queued->ticket;retained.save_serviced=true;
-            service_gameplay_save();
+            const auto ticket=queued->ticket;retained.save_serviced=service_gameplay_save();
             retained.operation=runtime_->gameplay_saves().query(ticket,&gameplay_save_ledger_);
         }
         const auto current=gameplay_id(runtime_id_);retained.current={current.high,current.low};

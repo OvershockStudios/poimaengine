@@ -1075,7 +1075,7 @@ struct Runtime::Impl {
         for(auto e:topology->characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({e,c.yaw,c.pitch}); }
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
-        require(!save_queue.pending() || !save_queue.pending()->committed,"Resolve the pending save operation before another simulation batch.");
+        require(!save_queue.pending() || !save_queue.pending()->committed || save_queue.dispatched(),"Resolve the pending save operation before another simulation batch.");
         const auto save_checkpoint=save_queue;const auto ui_checkpoint=ui_model;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;

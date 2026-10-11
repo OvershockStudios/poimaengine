@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.101**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.102**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.102 adds opt-in background gameplay save writes through
+`save.configure.write_mode`. The owner captures one immutable checkpoint after
+the accepted batch; background jobs inspect storage, select the generation,
+write it and resolve uncertain receipts. Later ordinary ticks and non-saving
+controls retain the original save boundary. New save/load requests remain busy,
+and pending writes preserve replacement, reconfiguration and external-edit
+guards. Results and worker traces publish on the owner, including idle owners.
+Synchronous writing remains the default; zero-worker configurations reject
+background mode. Capture still runs on the owner and its hitch budget remains
+unmeasured. Eight Windows native checks cover writer faults/cancellation and
+compiled CoreCLR dispatch, continued ticks, rollback, guards, retries and a
+fresh-owner restore in the same process. The separate retained Native AOT UI
+check uses a manually dispatched queue. No player window or save-performance
+measurement is included. Blocking `runtime.play` still needs an idle-completion
+hook, and standalone game launches keep synchronous writing.
+[Contract](GAMEPLAY_SAVES.md#commit-and-rollback) and
+[evidence](evidence/m2-background-gameplay-saves.json).
 
 Version 0.0.101 adds bounded Python SDK query pagination for registered runtime
 components. The first read supplies omitted guards; every continuation pins all
@@ -1474,7 +1492,7 @@ The latest development [C# lifecycle checkpoint](GAMEPLAY_LIFECYCLE.md) passes f
 
 The development [standalone template catalog](RUNTIME.md#standalone-template-catalog-development) adds transactional root-prop recipes without requiring live prototype objects. Runtime catalog inspection uses a frozen authored revision, and template-only models/textures participate in content dependencies. A guarded world-service transaction can create and remove spawned root props at paused boundaries, with session-scoped retry receipts. Version 3 snapshots preserve those spawned objects and generated-ID history. Native hosts can schedule guarded structural edits within an atomic multi-tick batch. The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) reserves IDs, initializes registered components, starts kinematic movement and removes spawned props within Tick. It uses the services ABI 7 baseline (176 bytes); earlier service epochs require coordinated rebuilding. RPC tick scheduling, arbitrary authored-entity removal, desktop template authoring and a dedicated generated-prop hierarchy/Inspector remain unfinished. [Service and desktop lifecycle evidence](evidence/m2-runtime-lifecycle-service.json). Tick-guarded RPC mutations also require the observed structure revision after membership changes; editor component, gameplay and animation drafts retain it. Linux and Windows pass the focused guards and save regressions, and Windows passes five native desktop checks. This checkpoint does not qualify the full GUI or activate a new desktop package. [Structure-guard evidence](evidence/m2-runtime-structure-guards.json).
 
-[Keyboard/mouse profiles](INPUT_PROFILES.md), [gamepad profiles](GAMEPADS.md), configurable bindings, device discovery and hosted editor assignment are implemented. Physical gamepad qualification remains outstanding. General settings remain unfinished. The experimental [save-slot service](RUNTIME.md#durable-save-slots) adds durable generations, explicit recovery and guarded runtime replacement to the native snapshot foundation. The [editor Save/Load window](EDITOR_SAVES.md) now uses that service. [Typed gameplay requests](GAMEPLAY_SAVES.md) use a post-batch native owner. General migrations and asynchronous save scheduling remain unfinished. Authored document recovery and internal runtime rollback are separate contracts.
+[Keyboard/mouse profiles](INPUT_PROFILES.md), [gamepad profiles](GAMEPADS.md), configurable bindings, device discovery and hosted editor assignment are implemented. Physical gamepad qualification remains outstanding. General settings remain unfinished. The experimental [save-slot service](RUNTIME.md#durable-save-slots) adds durable generations, explicit recovery and guarded runtime replacement to the native snapshot foundation. The [editor Save/Load window](EDITOR_SAVES.md) now uses that service. [Typed gameplay requests](GAMEPLAY_SAVES.md) use a post-batch native owner. General migrations, autosave policy and asynchronous snapshot capture remain unfinished. Opt-in background gameplay writes have their own [qualification](GAMEPLAY_SAVES.md#background-write-implementation). Authored document recovery and internal runtime rollback are separate contracts.
 
 Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md), reference-frame conversion and [explicit rotation retargeting](ANIMATION_RETARGETING.md) are supported; general Mixamo/exporter compatibility and automatic anatomical/contact retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
 

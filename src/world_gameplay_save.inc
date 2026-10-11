@@ -42,15 +42,53 @@
         }catch(const std::exception& error) { runtime_->gameplay_saves().mark_resolving(-32070,error.what()); }
         catch(...) { runtime_->gameplay_saves().mark_resolving(-32070,"Save receipt verification failed; operation retained."); }
     }
-    void service_gameplay_save() noexcept {
+    // Complete on the owner, even while paused. Workers own storage inputs;
+    // polling never inspects manifests or borrows a Runtime on the worker.
+    void pump_gameplay_save_writer() noexcept {
+        if(!gameplay_save_writer_ || !runtime_)return;
+        try {
+            if(!gameplay_save_writer_->busy())return;
+            const auto* result=gameplay_save_writer_->poll();if(!result)return;
+            const auto* pending=runtime_->gameplay_saves().pending();
+            if(!pending || pending->ticket!=result->request.ticket)return;
+            if(result->state==GameplaySaveState::succeeded || result->state==GameplaySaveState::failed) {
+                finish_gameplay_save(result->request,result->completion);
+                if(!runtime_->gameplay_saves().pending())gameplay_save_writer_->clear();
+            } else if(result->state==GameplaySaveState::resolving) {
+                runtime_->gameplay_saves().mark_resolving(result->completion.error_code,result->completion.diagnostic.data());
+                const auto now=std::chrono::steady_clock::now();
+                if(now>=save_resolution_after_) {
+                    save_resolution_after_=now+std::chrono::milliseconds(100);
+                    gameplay_save_writer_->submit_resolution();
+                }
+            }
+        }catch(const std::exception& error) {
+            if(runtime_->gameplay_saves().pending())runtime_->gameplay_saves().mark_resolving(-32070,error.what());
+        }catch(...) {
+            if(runtime_->gameplay_saves().pending())runtime_->gameplay_saves().mark_resolving(-32070,"Background save completion is retained.");
+        }
+    }
+    bool service_gameplay_save() noexcept {
         profiling::Scope trace("save.service");
-        const auto* pending=runtime_->gameplay_saves().pending();if(!pending || !pending->committed)return;
+        const auto* pending=runtime_->gameplay_saves().pending();if(!pending || !pending->committed)return false;
         const auto request=*pending;
-        if(pending_gameplay_write_) { resolve_gameplay_write(request);return; }
+        if(pending_gameplay_write_) { resolve_gameplay_write(request);return true; }
+        if(gameplay_save_writer_ && gameplay_save_writer_->busy()) { pump_gameplay_save_writer();return false; }
         GameplaySaveCompletion completion;
         try {
             require(request.configuration_generation==save_configuration_generation_,"Gameplay save storage configuration changed.",-32009);
-            const std::string slot(request.slot.data());const auto location=save_store_path(slot);saves::Store store(location);
+            const std::string slot(request.slot.data());const auto location=save_store_path(slot);
+            if(background_gameplay_saves_ && request.kind==GameplaySaveKind::save) {
+                // Capture exactly once on the owner, after the atomic batch.
+                // Inspect/generation selection, hashing and durability run on
+                // the background lane against these immutable copied inputs.
+                auto attribution=profiling::job_attribution();attribution.tick=static_cast<std::int64_t>(request.committed_tick);
+                gameplay_save_writer_->submit({location,request,runtime_content_hash_,runtime_save_bytes(),attribution});
+                if(!runtime_->gameplay_saves().mark_dispatched(request.ticket))
+                    runtime_->gameplay_saves().mark_resolving(-32070,"Accepted background save could not mark its dispatch boundary.");
+                return true;
+            }
+            saves::Store store(location);
             const auto observed=store.inspect();
             const auto generation=request.has_expected_generation ? request.expected_generation : observed.generation;
             if(request.kind==GameplaySaveKind::save) {
@@ -71,7 +109,7 @@
                     const auto* storage=dynamic_cast<const saves::Error*>(&error);
                     pending_gameplay_write_->error_code=storage && storage->kind==saves::ErrorKind::conflict ? -32009 : -32070;
                     gameplay_save_diagnostic(pending_gameplay_write_->diagnostic,error.what());
-                    resolve_gameplay_write(request);return;
+                    resolve_gameplay_write(request);return true;
                 }
             } else {
                 auto load=prepare_runtime_load(slot,generation,request.allow_recovery,new_id(),runtime_gameplay_config_);
@@ -81,7 +119,7 @@
                 // immediately before the no-throw owner swap, on this one thread.
                 const auto published=gameplay_save_ledger_.complete(request,completion);
                 if(published!=GameplaySavePublication::recorded)throw Error(-32070,"Cannot publish gameplay load completion.");
-                activate_runtime_load(load);return;
+                activate_runtime_load(load);return true;
             }
         }catch(const std::exception& error) {
             completion={};const auto* typed=dynamic_cast<const Error*>(&error);const auto* storage=dynamic_cast<const saves::Error*>(&error);
@@ -90,8 +128,8 @@
         }catch(...) { completion={};completion.error_code=-32070;gameplay_save_diagnostic(completion.diagnostic,"Gameplay save operation failed."); }
         // If an unexpected exception escaped after write entry, its publication
         // status still must be resolved before any terminal result is recorded.
-        if(pending_gameplay_write_ && !completion.succeeded) { resolve_gameplay_write(request);return; }
-        finish_gameplay_save(request,completion);
+        if(pending_gameplay_write_ && !completion.succeeded) { resolve_gameplay_write(request);return true; }
+        finish_gameplay_save(request,completion);return true;
     }
     RuntimeAdvance advance_runtime(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={}) {
@@ -99,13 +137,14 @@
         profiling::SessionScope trace_session(runtime_id_);
         profiling::Scope trace_advance("owner.advance",static_cast<std::int64_t>(runtime_->inspect().tick));
         const bool previously_pending=runtime_->gameplay_saves().pending()!=nullptr;
+        bool owner_save_work=false;
         std::optional<GameplaySaveResult> previous_operation;
         if(previously_pending) {
             const auto previous_ticket=runtime_->gameplay_saves().pending()->ticket;
-            service_gameplay_save();
-            previous_operation=runtime_->gameplay_saves().query(previous_ticket,&gameplay_save_ledger_);require(!runtime_->gameplay_saves().pending(),"Save publication is unresolved; no simulation tick advanced.",-32070);
+            owner_save_work=service_gameplay_save();
+            previous_operation=runtime_->gameplay_saves().query(previous_ticket,&gameplay_save_ledger_);require(!runtime_->gameplay_saves().pending() || runtime_->gameplay_saves().dispatched(),"Save publication is unresolved; no simulation tick advanced.",-32070);
         }
-        RuntimeAdvance result;result.save_serviced=previously_pending;result.operation=previous_operation;result.source=save_epoch(runtime_id_);result.current=result.source;
+        RuntimeAdvance result;result.save_serviced=owner_save_work;result.operation=previous_operation;result.source=save_epoch(runtime_id_);result.current=result.source;
         result.previous_tick=runtime_->inspect().tick;result.committed_tick=result.previous_tick+ticks;result.current_tick=result.committed_tick;result.stepped=ticks;
         result.first_voice=runtime_->sound_state().next_id();
         prepare_gameplay_player_preferences_boundary();
@@ -116,7 +155,7 @@
         flush_gameplay_player_preferences();
         result.next_voice=runtime_->sound_state().next_id();
         if(const auto* queued=runtime_->gameplay_saves().pending()) {
-            const auto ticket=queued->ticket;result.save_serviced=true;service_gameplay_save();
+            const auto ticket=queued->ticket;result.save_serviced=service_gameplay_save() || result.save_serviced;
             result.operation=runtime_->gameplay_saves().query(ticket,&gameplay_save_ledger_);
         }
         // Existing session strings are validated UUIDs, so this conversion does

@@ -183,7 +183,7 @@ Native tests cover motion/character continuation, interrupted animation, sound, 
 
 ## Durable save slots
 
-The native world service exposes `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. These operate through `poima world`, shared sessions and the editor's native service. Discover their complete parameter schemas with `world.describe`. The [human Save/Load window](EDITOR_SAVES.md) uses these operations. [Typed gameplay save/load requests](GAMEPLAY_SAVES.md) use a post-batch owner boundary.
+The native world service exposes `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. These operate through `poima world`, shared sessions and the editor's native service. Discover their complete parameter schemas with `world.describe`. The [human Save/Load window](EDITOR_SAVES.md) uses these operations. [Typed gameplay save/load requests](GAMEPLAY_SAVES.md) use a post-batch owner boundary; `save.configure.write_mode` can opt gameplay writes into background storage. External `save.write` and loads remain synchronous.
 
 Create an ordinary directory outside the asset store, then configure its path. Relative paths resolve beside the world document. Configuration is session-local; reopening requires configuration again. Packaged games additionally reject roots and derived slot paths inside their immutable bundle. Hosts constructing a read-only `WorldSession` pass the full bundle root as the third constructor argument; without it, protection covers only the world file's parent directory.
 

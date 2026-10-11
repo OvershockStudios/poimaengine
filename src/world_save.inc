@@ -171,10 +171,13 @@
         if(params.contains("expected_component_revision"))require(revision(params.at("expected_component_revision"))==runtime_->component_revision(),"Component revision conflict.",-32009);
     }
     Json save_operation(const std::string& method,const Json& params) {
-        if(method=="save.status") { fields(params,{});return {{"generation",save_configuration_generation_},{"root",save_root_.empty() ? Json(nullptr) : Json(path_text(save_root_))}}; }
+        if(method=="save.status") { fields(params,{});return {{"generation",save_configuration_generation_},{"root",save_root_.empty() ? Json(nullptr) : Json(path_text(save_root_))},{"write_mode",background_gameplay_saves_ ? "background" : "synchronous"}}; }
         if(method=="save.configure") {
-            fields(params,{"request_id","expected_generation","root"},{"request_id","expected_generation","root"});identifier(params.at("request_id"));revision(params.at("expected_generation"));
-            auto normalized=params;normalized["method"]=method;if(auto replay=save_retry(normalized))return *replay;
+            fields(params,{"request_id","expected_generation","root","write_mode"},{"request_id","expected_generation","root"});identifier(params.at("request_id"));revision(params.at("expected_generation"));
+            require(!params.contains("write_mode") || params.at("write_mode").is_string(),"Save write_mode must be text.");
+            const auto mode=params.value("write_mode",std::string("synchronous"));
+            require(mode=="synchronous" || mode=="background","Save write_mode must be synchronous or background.");
+            auto normalized=params;normalized["write_mode"]=mode;normalized["method"]=method;if(auto replay=save_retry(normalized))return *replay;
             require(!runtime_ || !runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before reconfiguring storage.",-32070);
             require(params.at("expected_generation")==save_configuration_generation_,"Save configuration generation conflict.",-32009);
             require(save_configuration_generation_<max_revision,"Save configuration generation limit reached.");fs::path root;
@@ -186,8 +189,16 @@
                 require(!save_inside(root,fs::weakly_canonical(asset_directory())),"Save root cannot be inside the immutable asset store.",-32070);
                 require(!read_only_ || !save_inside(root,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
             }
-            Json result={{"generation",save_configuration_generation_+1},{"root",root.empty() ? Json(nullptr) : Json(path_text(root))},{"replayed",false}};
+            std::unique_ptr<GameplaySaveWriter> writer;
+            if(mode=="background") {
+                auto executor=jobs::owner_executor();
+                require(executor->config().workers>0,"Background gameplay saves require at least one job worker.",-32070);
+                writer=std::make_unique<GameplaySaveWriter>(std::move(executor));
+            }
+            Json result={{"generation",save_configuration_generation_+1},{"root",root.empty() ? Json(nullptr) : Json(path_text(root))},
+                {"write_mode",mode},{"replayed",false}};
             auto receipts=prepare_save_receipt(normalized,result);save_root_.swap(root);++save_configuration_generation_;save_receipts_.swap(receipts);
+            background_gameplay_saves_=mode=="background";gameplay_save_writer_.swap(writer);
             if(runtime_)runtime_->gameplay_saves().configure(!save_root_.empty(),save_configuration_generation_);
             return result;
         }
