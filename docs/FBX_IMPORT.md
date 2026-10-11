@@ -69,8 +69,11 @@ For differing proportions or reference stances, [explicit rotation
 retargeting](ANIMATION_RETARGETING.md) uses chosen reference poses, inspected
 original-model fingerprints and declared target-position/scale policies.
 It preserves target geometry and binds but does not solve contacts or infer
-anatomical bone correspondence. Inspect original takes and nodes through
-`asset.source.inspect` before selecting an animation-only donor.
+anatomical bone correspondence. Differently named nodes can use a complete
+[explicit node map](ANIMATION_RETARGETING.md#map-differently-named-nodes) with
+bijective direct-parent/root correspondence; missing or extra helper segments
+still reject. Inspect original takes and nodes through `asset.source.inspect`
+before selecting an animation-only donor.
 
 ## Inspect a composition failure
 

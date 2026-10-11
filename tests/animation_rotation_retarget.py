@@ -106,7 +106,10 @@ def worlds(rows):
 
 class RotationRetargetContract(unittest.TestCase):
     def setUp(self):
-        self.directory=ARGS.output/self._testMethodName;self.directory.mkdir()
+        # Stable short directories avoid Windows MAX_PATH failures in the
+        # asset store's exclusive staging files; evidence keeps full test IDs.
+        ordinal=unittest.defaultTestLoader.getTestCaseNames(type(self)).index(self._testMethodName)
+        self.directory=ARGS.output/f't{ordinal:02d}';self.directory.mkdir()
         self.sources=write_fixtures(self.directory/'sources');self.world=self.directory/'world.json';self.client=None
         self.addCleanup(self.close);self.open()
         self.call('world.transact',dict(request_id=uuid.uuid4().hex,base_revision=0,
@@ -276,6 +279,78 @@ class RotationRetargetContract(unittest.TestCase):
         self.assertIs(schema['additionalProperties'],False);self.assertEqual(schema['properties']['policy']['const'],POLICY)
         self.assertEqual(set(schema['required']),{'policy','source_pose','target_pose','expected_source_model_sha256','expected_target_model_sha256','positions','scales'})
         self.sample_motion(self.imported('skin','gauge_rest',valid)['asset'],times=(.375,))
+
+    def renamed_source_map(self):
+        original=(self.sources/'gauge_rest.fbx').read_text(encoding='utf-8')
+        for old,new in (('Root','DonorRoot'),('Child','DonorChild')):
+            token='"Model::'+old+'"';self.assertEqual(original.count(token),1)
+            original=original.replace(token,'"Model::'+new+'"')
+        (self.sources/'renamed.fbx').write_text(original,encoding='utf-8',newline='\n')
+        source_rows=self.source_nodes('renamed');target_rows=self.source_nodes('skin')
+        source={row['name']:row for row in source_rows};target={row['name']:row for row in target_rows}
+        pairs=[dict(source_node=source['Donor'+name]['index'],target_node=target[name]['index']) for name in ('Root','Child')]
+        # FBX import inserts a scene root. It is part of the REQUIRED skin
+        # and channel ancestry, even though it is not an authored bone.
+        source_parent=source['DonorRoot']['parent'];target_parent=target['Root']['parent']
+        self.assertGreaterEqual(source_parent,0);self.assertGreaterEqual(target_parent,0)
+        source_ancestor=next(row for row in source_rows if row['index']==source_parent)
+        target_ancestor=next(row for row in target_rows if row['index']==target_parent)
+        self.assertEqual((source_ancestor['name'],target_ancestor['name']),('FBX Scene','FBX Scene'))
+        self.assertEqual((source_ancestor['parent'],target_ancestor['parent']),(-1,-1))
+        self.assertEqual(source['DonorChild']['parent'],pairs[0]['source_node'])
+        self.assertEqual(target['Child']['parent'],pairs[0]['target_node'])
+        pairs.append(dict(source_node=source_parent,target_node=target_parent))
+        return pairs
+
+    def test_explicit_node_map_renamed_donor_preserves_motion_and_cooked_reopen(self):
+        pairs=self.renamed_source_map();policy=self.policy(donor='renamed')
+        self.rejected('skin','renamed',policy)
+        policy['node_map']=pairs
+        mapped=self.imported('skin','renamed',policy);poses=self.sample_motion(mapped['asset'])
+        self.assertIn('mapping_policy=explicit-node-map mapped_pairs=3','\n'.join(mapped['diagnostics']))
+        reordered=self.imported('skin','renamed',dict(policy,node_map=list(reversed(pairs))))
+        self.assertEqual(reordered['asset'],mapped['asset'],'Pair ordering changed cooked identity')
+        baseline=self.imported('skin','gauge_rest',self.policy())
+        self.assertEqual(self.sample_motion(baseline['asset']),poses,'Map changed independently verified target motion/skin')
+        # Explicit source-local translation selection remains in original donor IDs.
+        positions=dict(kind='reference_delta',nodes=[pairs[1]['source_node']],scale=1.5)
+        translated=self.imported('skin','renamed',dict(policy,positions=positions))
+        self.sample_motion(translated['asset'],delta_scale=1.5,times=(.137,.375,.813))
+        committed=self.state();self.close();self.open()
+        self.assertEqual(self.sample_motion(mapped['asset']),poses)
+        reopened=self.state();self.assertEqual((reopened[0],reopened[2],reopened[3]),(committed[0],committed[2],committed[3]))
+        scoped=self.call('world.describe',dict(view='method',name='asset.import'))
+        objects=scoped['methods']['asset.import']['properties']['animations']['items']['anyOf']
+        schema=next(x for x in objects if x.get('type')=='object')['properties']['retarget']
+        node_map=schema['properties']['node_map'];self.assertEqual((node_map['minItems'],node_map['maxItems']),(1,1024))
+        self.assertNotIn('node_map',schema['required']);self.assertIs(node_map['items']['additionalProperties'],False)
+
+    def test_explicit_node_map_strict_wire_and_native_topology_failures_are_atomic(self):
+        pairs=self.renamed_source_map();policy=dict(self.policy(donor='renamed'),node_map=pairs)
+        malformed=[None,True,{},[],[pairs[0],pairs[0]],[dict(pairs[0],extra=0)],
+            [dict(source_node=pairs[0]['source_node'])],pairs*513]
+        for key in ('source_node','target_node'):
+            for bad in (True,-1,1.0,10000,'0',None):
+                malformed.append([dict(pairs[0],**{key:bad}),pairs[1]])
+        malformed.append([pairs[0],dict(pairs[1],target_node=pairs[0]['target_node'])])
+        malformed.append([pairs[0],dict(pairs[1],source_node=pairs[0]['source_node'])])
+        for value in malformed:
+            with self.subTest(node_map=value):self.rejected('skin','renamed',dict(policy,node_map=value),error=-32602)
+        swapped=[dict(source_node=pairs[0]['source_node'],target_node=pairs[1]['target_node']),
+                 dict(source_node=pairs[1]['source_node'],target_node=pairs[0]['target_node']),*pairs[2:]]
+        for value in ([pairs[0]],[dict(pairs[0],source_node=9999),*pairs[1:]],
+                      [dict(pairs[0],target_node=9999),*pairs[1:]],swapped):
+            with self.subTest(node_map=value):self.rejected('skin','renamed',dict(policy,node_map=value))
+        for key in ('expected_source_model_sha256','expected_target_model_sha256'):
+            self.rejected('skin','renamed',dict(policy,**{key:'f'*64}))
+        # Source fingerprint guards ORIGINAL nodes before selected take filtering.
+        stale=copy.deepcopy(policy);path=self.sources/'renamed.fbx';old=sha(path)
+        text=path.read_text(encoding='utf-8');self.assertIn('"Model::DonorRoot"',text)
+        path.write_text(text.replace('"Model::DonorRoot"','"Model::RenamedAgain"',1),encoding='utf-8',newline='\n')
+        RECORD['source_replacements'].append(dict(path=str(path.resolve()),previous_sha256=old,replaced_sha256=sha(path),owned_analytic_only=True))
+        self.rejected('skin','renamed',stale)
+        repaired=dict(self.policy(donor='renamed'),node_map=pairs)
+        self.sample_motion(self.imported('skin','renamed',repaired)['asset'],times=(.375,))
 
     def test_source_inspection_is_guarded_paginated_unpublished_and_cook_reopens_without_sources(self):
         before=self.state();summary=self.inspected('gauge_sample');self.assertEqual(summary['primitives'],0)

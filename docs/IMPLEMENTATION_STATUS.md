@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.115**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.116**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.116 adds an optional explicit node map to
+`reference-rotation-v1` for differently named imported character and animation
+nodes. The 1–1,024 pairs use guarded original-model indices, cover target skin
+and selected donor-channel ancestry, and preserve bijective direct-parent/root
+correspondence. Omission retains named matching. Explicit output uses target
+topology while preserving target geometry, defaults and inverse binds; selected
+position deltas still use donor IDs. Five Windows native CPU suites, eleven
+retarget groups and all eight protocol tests pass, including the original
+licensed character case with no skips. The protocol records 1,017 calls and
+ten clean owners; schema-85 discovery exposes the exact bounds. The accepted
+Windows Job closes naturally with unchanged source and asset inputs.
+This does not infer anatomy, collapse
+helper bones, solve contacts or extract controller root motion. Broader
+character intake and Alpha qualification remain open.
+[Contract](ANIMATION_RETARGETING.md#map-differently-named-nodes),
+[results](evidence/m2-animation-node-map.json).
 
 Version 0.0.115 adds opt-in named digital actions for independent fire, aim,
 reload and game-specific controls. Explicit v3 profiles hold up to 32 named

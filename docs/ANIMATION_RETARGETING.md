@@ -1,7 +1,8 @@
 # Retarget separate animation clips
 
 `reference-rotation-v1` transfers animation orientations between rigs with
-matching named ancestry while using the target's chosen positions and scales.
+matching named ancestry or an explicit node map while using the target's
+chosen positions and scales.
 It supports differing proportions, reference poses and positive nonuniform
 scale. The target model's imported defaults, geometry and inverse binds remain
 unchanged; the resulting clips express the declared retarget policy.
@@ -12,11 +13,12 @@ Choose the operation that fits the source:
 | --- | --- | --- |
 | [Exact composition](FBX_IMPORT.md#compose-separate-clips) | Matching named ancestry and local imported rest frames. | Append the original curves. |
 | [Reference-frame conversion](ANIMATION_FRAME_TRANSFER.md) | Matching named ancestry, coincident reference joint origins and uniform mapped scales. | Re-express supported motion in different bone frames. |
-| `reference-rotation-v1` | Matching named ancestry and explicit reference poses. | Transfer quaternion-chain orientations; keep target-reference positions/scales or explicitly transfer selected position deltas. |
+| `reference-rotation-v1` | Explicit reference poses and either matching named ancestry or a complete direct-parent node map. | Transfer quaternion-chain orientations; keep target-reference positions/scales or explicitly transfer selected position deltas. |
 
 Each donor may use `frame_transfer` or `retarget`, never both. None of these
 operations automatically maps anatomical bone names or repairs a mismatched
-hierarchy. Retargeting here does not promise identical source affine motion,
+hierarchy. An explicit map declares correspondence; it does not collapse helper
+bones or resample different parent chains. Retargeting here does not promise identical source affine motion,
 ground contact, foot placement or body shape.
 
 ![Original Kenney character playing its separately imported run animation](evidence/retargeted-character.png)
@@ -129,6 +131,56 @@ differ from the base's imported defaults or skin bind pose. The policy does
 not rewrite those defaults or inverse binds. Output clip names must remain
 distinct, following the [separate-clip composition rules](FBX_IMPORT.md#compose-separate-clips).
 
+## Map differently named nodes
+
+Omit `retarget.node_map` to retain the named-hierarchy policy. For different
+names, inspect both original models' complete `nodes` pages with their
+`expected_model_sha256` guards. Choose correspondence deliberately from those
+original indices and parents; names alone do not establish anatomical meaning.
+
+For example, if the original donor root is index 2 with child 0, and the target
+root is index 0 with child 1, their complete two-node map is:
+
+```json
+"node_map": [
+  {"source_node": 2, "target_node": 0},
+  {"source_node": 0, "target_node": 1}
+]
+```
+
+Place this member inside the existing `retarget` object. Replace the indices
+with actual inspected correspondence and include the entire required closure:
+
+- Every target skin joint and all its ancestors must have a pair.
+- Every selected original donor channel and all its ancestors must have a
+  pair, including translation or scale channels the policy later discards.
+- Each source and target index occurs once. Roots map to roots, and each
+  nonroot's direct parent must map to its target's direct parent.
+- Each pair must belong to at least one of those required closures; unrelated
+  extra pairs reject. The complete map must fit 1–1,024 pairs.
+
+Include importer-created scene/root ancestors shown by `asset.source.inspect`,
+even when they are not bone joints. For example, an FBX scene parent above
+the authored skeleton root needs its own source-to-target pair.
+
+Indices are integers 0–9,999 and must exist in the corresponding original
+model. Pair order does not change the result; the wire parser sorts by source
+index. Explicit null, an empty array, repeated indices or unknown pair fields
+reject. Existing model validity and unambiguous-path limits remain in force;
+an explicit map does not repair an otherwise invalid model.
+
+Both original-model fingerprints remain mandatory and are checked before take
+filtering or renaming. `positions.nodes` still selects **original donor IDs**,
+not target IDs or runtime entity IDs. Reinspect and review correspondence after
+any original-model fingerprint change.
+
+Converted clips use target node IDs. Target geometry, textures, skins, imported
+transforms and inverse binds remain unchanged. Subsequent exact composition
+keeps its existing checks. Omitting a map preserves named-hierarchy matching. Mapping
+diagnostics retain original donor/target indices and names, up to 64 mapping
+records plus an omission count; explicit maps also report
+`mapping_policy=explicit-node-map`.
+
 ## Choose positions and scales
 
 `scales` must explicitly be `"target_reference"`. All mapped node scales stay
@@ -232,8 +284,8 @@ separate game authoring.
 
 ## Run the contract checks
 
-These checks are qualified for 0.0.74 on Linux runtime, native Windows runtime
-and simulation-disabled Linux authoring. Run from the repository root with
+The original contract checks were qualified for 0.0.74 on Linux runtime,
+native Windows runtime and simulation-disabled Linux authoring. Run from the repository root with
 Python 3.10+ and a native authoring build.
 The native target and protocol verifier use original analytic fixtures and
 do not download character assets or require a renderer or .NET installation.
@@ -246,11 +298,16 @@ python3 tests/animation_rotation_retarget.py \
   --binary build/headless/poima --output build/rotation-retarget-example
 ```
 
-The output directory must be new. The native executable reports eight passed
-check groups. The protocol report is `evidence.json`; check its `passed` result,
-source-hash preservation and owned-process exits. With the original source
-directory supplied, all six tests run; the recorded results are in the
-[qualification evidence](evidence/m2-animation-rotation-retarget.json).
+The output directory must be new. The retained
+[0.0.74 qualification evidence](evidence/m2-animation-rotation-retarget.json)
+covers the original eight native groups and six protocol tests. The
+[0.0.116 node-map results](evidence/m2-animation-node-map.json) cover all eleven
+native retarget groups and eight protocol tests on Windows, including the
+original-character case with no skips. Five native regression suites pass; the
+protocol records 1,017 calls and ten clean owners. The protocol report is
+`evidence.json`; check its `passed` result, source-hash preservation and
+owned-process exits. Supply the original source directory to include the
+original-character test.
 Without `--source-directory`, the original-character case records one explicit
 skip. To include it, supply an unchanged [Kenney Animated Characters
 Protagonists](https://kenney.nl/assets/animated-characters-protagonists) 1.1

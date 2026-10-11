@@ -1,0 +1,185 @@
+{
+  "passed": true,
+  "format": "poima.animation-node-map-qualification",
+  "version": 1,
+  "publication_version": "0.0.116",
+  "scope": "Windows x86_64 native import-time quaternion-chain retargeting with explicit original node maps; no renderer or managed compiler execution.",
+  "native": {
+    "producer_sha256": "1fcdfa4ab6606a5d8960ca9531c7f6dcdd393747fd58f29f0770bd1759379c92",
+    "source_freeze_sha256": "17fd7213d418cb093587ff2fc7fa449c773a4bcd0c3da8391550499d9197b1c7",
+    "source_file_count": 279,
+    "selected_repository_sources": {
+      "CMakeLists.txt": {
+        "bytes": 77751,
+        "sha256": "f7d66e9d835655fe17e626ecce27f07d74ab801126d1286b538f64985a6a3978"
+      },
+      "src/model_import.hpp": {
+        "bytes": 5360,
+        "sha256": "007dd519f14df366b5ec50bb3f62de53d6888b8dc9b85c36b6706bd3ea068d34"
+      },
+      "src/model_import.cpp": {
+        "bytes": 55943,
+        "sha256": "4d075bb393c905fc678d79ff9316ff212e1fb415a72ab9df1e1d675921a38462"
+      },
+      "src/world.cpp": {
+        "bytes": 289474,
+        "sha256": "f2959dcd1d5e1ab8a31eabaf56173f313f1a061c9ac9ed9ed71bc98ffd78894f"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 90778,
+        "sha256": "ebaab9956a02530d697160c667e2794744a6515469823104922e90611e4d958a"
+      },
+      "tests/animation_rotation_retarget.cpp": {
+        "bytes": 31509,
+        "sha256": "9258287550697a88cd8bfc46b53098a95a6bf30b4211af7a48fef0cfd03a577d"
+      },
+      "tests/animation_rotation_retarget.py": {
+        "bytes": 41426,
+        "sha256": "70dd5c01a3a423c652188d959d4e6cb6fd6f9ec99b293dd2b43f4ca0aa57bb31"
+      },
+      "tests/animation_native.cpp": {
+        "bytes": 26233,
+        "sha256": "327edc299214021332e071fa366e371e575c80c5f0c49b5d1b0aab1909c42546"
+      },
+      "tests/animation_composition_diagnostics.cpp": {
+        "bytes": 16143,
+        "sha256": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39"
+      },
+      "tests/animation_frame_transfer.cpp": {
+        "bytes": 26957,
+        "sha256": "7c0b11e139a351ee94d71f79f60cdfb33d3c388ba3b06cac68f388a49d53c61f"
+      },
+      "tests/world_schema_native.cpp": {
+        "bytes": 10765,
+        "sha256": "c7561d479d8287666da4b87dd80de377653eff46ecca4e598826e3e727bcb99b"
+      }
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 24985088,
+        "sha256": "4bf17534e8982a79d3d913681d6b2d792c43fc4718b4ad4f58fad700668957ff"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-animation-test.exe": {
+        "bytes": 1616384,
+        "sha256": "26721b5d889f339ccb2e99402333a6d5ed2f99181fcbcc7195cd22e5701dd72f"
+      },
+      "poima-animation-composition-diagnostics-test.exe": {
+        "bytes": 2416128,
+        "sha256": "fb47e8254bb9b37a52bfe7a414576fb6ecfb36ccca8ac27f1fe25f1f34874e86"
+      },
+      "poima-animation-frame-transfer-test.exe": {
+        "bytes": 2476544,
+        "sha256": "af7d2448ec3bce75f9b07ace8c6e3aed3bfa6108f182f4aa2b73d7f86dca5927"
+      },
+      "poima-animation-rotation-retarget-test.exe": {
+        "bytes": 2490368,
+        "sha256": "bf21e6f6addd725e204a3a92d2091b0b0675599939ac553846e5e6bdb4a29c7f"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 23422976,
+        "sha256": "ccf238f459ab4847b01a2b38d79206f4115599bd887b8b563fdc40a01e69c374"
+      }
+    },
+    "qualification_owner_sha256": "8ac5d0f04c9b6ea02e8e315045b68b5cd099dbdd37663b3dc9b65013ab0d6cab",
+    "helper_sha256": "27a539a639784f3a8bbee4100a2c65578c0627aa9f214c0addc96d91626a3cc3",
+    "suites": [
+      "animation",
+      "composition-diagnostics",
+      "frame-transfer",
+      "rotation-retarget",
+      "world-schema"
+    ],
+    "rotation_retarget_groups": 11,
+    "schema_revision": 85,
+    "node_map_pairs": {
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "ownership": {
+      "total_processes": 27,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    }
+  },
+  "protocol": {
+    "evidence": {
+      "bytes": 21394862,
+      "sha256": "d3dc21e0a787f48d44719b1f85fca7a6a787900fe50e88ba1696029390624d0d"
+    },
+    "tests": 8,
+    "skipped": 0,
+    "rpc_count": 1017,
+    "clean_native_owners": 10,
+    "fixture_sha256": "70dd5c01a3a423c652188d959d4e6cb6fd6f9ec99b293dd2b43f4ca0aa57bb31",
+    "dependency_sha256": {
+      "rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+      "frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+      "fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+      "texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0"
+    },
+    "original_source_pack": {
+      "files": 13,
+      "bytes": 2200008,
+      "inventory_sha256": "730f842f17a5d9a50bd90f8924da9df0f7caa03c344caec69ecfbcaf8020a9db",
+      "selected": {
+        "base": {
+          "bytes": 167212,
+          "sha256": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8"
+        },
+        "idle": {
+          "bytes": 608188,
+          "sha256": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74"
+        },
+        "run": {
+          "bytes": 572732,
+          "sha256": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8"
+        },
+        "jump": {
+          "bytes": 562796,
+          "sha256": "b88429077a7a1af5d3f55f43cfd8ce0f7441b4f6f7bb15a8070d7ed15d275f74"
+        }
+      }
+    },
+    "original_profiles": [
+      "idle",
+      "run",
+      "jump"
+    ],
+    "original_samples": 15,
+    "target_required_nodes": 47,
+    "weighted_target_vertices": 1029,
+    "oracle_maxima": {
+      "rotation_chain_one_minus_abs_dot": 3.1086244689504383e-15,
+      "target_global_matrix_max_error": 1.3916740261521454e-05,
+      "target_local_position_max_error_m": 1.7625662301207212e-10,
+      "target_local_scale_max_error": 0,
+      "weighted_vertex_max_error_m": 3.5726161762283937e-07
+    },
+    "oracle_limits": {
+      "rotation_chain_one_minus_abs_dot": 1e-08,
+      "target_global_matrix_max_error": 5e-05,
+      "target_local_position_max_error_m": 3e-06,
+      "target_local_scale_max_error": 1e-09,
+      "weighted_vertex_max_error_m": 8e-05
+    }
+  },
+  "excluded_attempts": [
+    {
+      "role": "initial_protocol_fixture_setup_failure",
+      "owner_sha256": "b7563590a5829c3493f0a419befbed4089d4b203c858f467fdc5b68e24786520",
+      "passed": false,
+      "included_in_accepted_results": false
+    }
+  ],
+  "curator_sha256": "c54d27275acc953a4e3350af95c9537cc057616238af5971ffb81efe60941167",
+  "limitations": [
+    "The original-source oracle uses native normalized FBX data plus independent quaternion/FK/skin math, not an independent FBX parser.",
+    "No automatic correspondence, source affine equivalence, contact fit, planted feet, seamless loops, root-motion extraction, compiled locomotion, GPU or performance qualification.",
+    "Native build scope is incremental affected-input rebuilding over the existing dependency cache; this is not a full third-party rebuild."
+  ]
+}

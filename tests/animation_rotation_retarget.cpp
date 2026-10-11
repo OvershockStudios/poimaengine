@@ -250,6 +250,69 @@ void invalid_policy_and_topology() {
     rejected([](auto& f){f.source.nodes[f.ids[3]].parent=int(f.ids[0]);f.source_ref=reference(f.source,f.source_ref.local);});
     rejected([](auto& f){ModelNode duplicate;duplicate.name="pivot";duplicate.parent=int(f.ids[0]);f.source.nodes.push_back(duplicate);f.source_ref.local.push_back({});f.source_ref=reference(f.source,f.source_ref.local);});
 }
+void explicit_node_mapping() {
+    auto f=fixture();const auto legacy=converted(f);auto implicit=f;
+    implicit.policy.node_map.reset();check(encode_model(*converted(implicit))==encode_model(*legacy),"Omitted map changed legacy cooked bytes.");
+    const auto expected=compose_model_animations(f.base,{legacy});
+    for(unsigned i=0;i<4;++i)f.source.nodes[f.ids[i]].name="donor_"+std::to_string(i);
+    const auto base_before=encode_model(f.base),source_before=encode_model(f.source);
+    bool missing=false;try{static_cast<void>(converted(f));}catch(const std::exception&){missing=true;}
+    check(missing,"Renamed source unexpectedly matched omitted-map hierarchy.");
+    f.policy.node_map.emplace();for(unsigned i=0;i<4;++i)f.policy.node_map->push_back({f.ids[i],i});
+    const auto mapped=converted(f),combined=compose_model_animations(f.base,{mapped});
+    check(mapped->nodes.size()==f.base.nodes.size() && mapped->primitives==f.base.primitives &&
+        mapped->skins[0].inverse_bind==f.base.skins[0].inverse_bind,"Explicit map did not preserve target topology/resources/binds.");
+    for(unsigned clip=0;clip<4;++clip)for(double t:{0.,.137,.5,.813,1.,2.}) {
+        verify_pose(f,*combined,clip,t);
+        const auto actual=sample_model(*combined,clip,t,false),wanted=sample_model(*expected,clip,t,false);
+        check(actual.local.size()==wanted.local.size(),"Mapped output size differs.");
+        for(unsigned i=0;i<actual.world.size();++i)for(unsigned k=0;k<16;++k)near(actual.world[i][k],wanted.world[i][k]);
+    }
+    std::reverse(f.policy.node_map->begin(),f.policy.node_map->end());
+    check(encode_model(*converted(f))==encode_model(*mapped),"Node map pair order changed cooked bytes.");
+    check(encode_model(f.base)==base_before && encode_model(f.source)==source_before,"Node map modified inputs.");
+    f.policy.position_mode=AnimationRetargetPositionMode::reference_delta;f.policy.translation_nodes={f.ids[0],f.ids[2]};f.policy.translation_scale=.75;
+    const auto translated=compose_model_animations(f.base,{converted(f)});verify_pose(f,*translated,0,.375);
+    const auto decoded=decode_model(encode_model(*translated));verify_pose(f,*decoded,0,.813);
+}
+void invalid_node_mapping() {
+    auto mapped=[](auto& f){f.policy.node_map.emplace();for(unsigned i=0;i<4;++i)f.policy.node_map->push_back({f.ids[i],i});};
+    rejected([](auto& f){f.policy.node_map.emplace();});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->pop_back();});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->push_back(f.policy.node_map->front());});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->at(1).target_node=0;});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->at(0).source_node=9999;});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->at(0).target_node=9999;});
+    rejected([&](auto& f){mapped(f);std::swap(f.policy.node_map->at(1).target_node,f.policy.node_map->at(2).target_node);});
+    rejected([&](auto& f){mapped(f);f.source.nodes[f.ids[3]].parent=int(f.ids[0]);f.source_ref=reference(f.source,f.source_ref.local);});
+    rejected([&](auto& f){mapped(f);std::swap(f.policy.node_map->at(0).target_node,f.policy.node_map->at(3).target_node);});
+    rejected([&](auto& f){mapped(f);f.policy.node_map->resize(animation_retarget_node_map_limit+1);});
+    rejected([&](auto& f){mapped(f);ModelNode extra;extra.name="unrelated";f.source.nodes.push_back(extra);f.source.roots.push_back(4);
+        f.source_ref.local.push_back({});f.source_ref=reference(f.source,f.source_ref.local);f.policy.node_map->push_back({4,4});});
+    // A dropped-only scale track on an extra source root still requires coverage.
+    rejected([&](auto& f){mapped(f);ModelNode extra;extra.name="dropped";f.source.nodes.push_back(extra);f.source.roots.push_back(4);
+        f.source_ref.local.push_back({});f.source_ref=reference(f.source,f.source_ref.local);
+        f.source.animations[0].channels.push_back({4,AnimationPath::scale,AnimationInterpolation::linear,{0,2},{{1,1,1,0},{1,1,1,0}}});});
+}
+void explicit_node_mapping_limit() {
+    ModelAsset base;base.package_version=4;base.nodes.resize(animation_retarget_node_map_limit);base.nodes[0].name="root";base.roots={0};
+    for(unsigned i=1;i<base.nodes.size();++i) {
+        base.nodes[i].name="joint"+std::to_string(i);base.nodes[i].parent=0;
+        if((i-1)%256==0)base.skins.push_back({"skin"+std::to_string(base.skins.size()),0,{},{}});
+        base.skins.back().joints.push_back(i);base.skins.back().inverse_bind.push_back(api(affine({0,0,0},{0,0,0,1})));
+    }
+    auto source=base;source.skins.clear();for(auto& node:source.nodes)node.name="donor_"+node.name;
+    source.animations={{"boundary",1,{{0,AnimationPath::rotation,AnimationInterpolation::linear,{0,1},{{0,0,0,1},{0,0,0,1}}}}}};
+    AnimationRotationRetarget policy;policy.node_map.emplace();
+    for(unsigned i=0;i<base.nodes.size();++i)policy.node_map->push_back({i,i});
+    const auto result=transfer_animation_rotations(base,source,reference(source,defaults(source)),reference(base,defaults(base)),policy);
+    const auto combined=compose_model_animations(base,{result});
+    check(combined->nodes.size()==animation_retarget_node_map_limit && combined->animations.size()==1,"Exact node map bound was rejected.");
+    const auto pose=sample_model(*combined,0,.5,false);for(const auto& local:pose.local)
+        check(local.rotation==Q{0,0,0,1},"Boundary mapping changed identity motion.");
+    check(std::any_of(result->diagnostics.begin(),result->diagnostics.end(),[](const auto& text){return text=="reference-rotation-v1 omitted_mapping_records=960";}),
+        "Large map diagnostics did not retain bounded omission count.");
+}
 void invalid_reference_poses() {
     rejected([](auto& f){f.source_ref.local.pop_back();});rejected([](auto& f){f.target_ref.world.pop_back();});
     rejected([](auto& f){f.source_ref.time=std::numeric_limits<double>::quiet_NaN();});
@@ -274,7 +337,7 @@ void synthesized_budget() {
 }
 int main() {
     try{orientation_and_anisotropic_target();reference_delta_positions();near_unit_cubic_covariance();duration_sparse_and_determinism();
-        identity_policy();invalid_policy_and_topology();invalid_reference_poses();synthesized_budget();
-        std::cout<<"8 independent animation rotation-retarget check groups passed.\n";return 0;
+        identity_policy();invalid_policy_and_topology();explicit_node_mapping();invalid_node_mapping();explicit_node_mapping_limit();invalid_reference_poses();synthesized_budget();
+        std::cout<<"11 independent animation rotation-retarget check groups passed.\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

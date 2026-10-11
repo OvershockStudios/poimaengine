@@ -135,7 +135,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 84}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 85}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -407,9 +407,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"source_pose",reference_pose},{"target_pose",reference_pose},
         {"alignment_rotation",vector(Json{{"type","number"},{"minimum",-1},{"maximum",1}},4)},
         {"positions",retarget_positions},{"scales",{{"const","target_reference"}}},
-        {"expected_source_model_sha256",asset_id},{"expected_target_model_sha256",asset_id}},
+        {"expected_source_model_sha256",asset_id},{"expected_target_model_sha256",asset_id},
+        {"node_map",{{"type","array"},{"minItems",1},{"maxItems",1024},{"items",object_schema({
+            {"source_node",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
+            {"target_node",{{"type","integer"},{"minimum",0},{"maximum",9999}}}}, {"source_node","target_node"})}}}},
         {"policy","source_pose","target_pose","positions","scales","expected_source_model_sha256","expected_target_model_sha256"});
-    rotation_retarget["description"]="Explicit quaternion-chain retargeting with target-reference positions/scales and optional selected source-local position deltas. Original source/base fingerprints from asset.source.inspect are required. Preserves target geometry/defaults/binds, not source affine matrices, contacts or planted feet. Alignment is normalized XYZW; no automatic proportions, root-motion extraction or controller movement.";
+    rotation_retarget["description"]="Explicit quaternion-chain retargeting with target-reference positions/scales and optional selected source-local position deltas. Original source/base fingerprints from asset.source.inspect are required. Preserves target geometry/defaults/binds, not source affine matrices, contacts or planted feet. Alignment is normalized XYZW; no automatic proportions, root-motion extraction or controller movement. Optional node_map uses 1..1024 original source/target index pairs, one-to-one direct-parent/root correspondence, complete target skin and selected source channel ancestry, and no unrelated pairs; omission retains exact named hierarchy matching.";
     auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
         {"frame_transfer",frame_transfer},{"retarget",rotation_retarget}},{"source"});

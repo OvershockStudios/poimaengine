@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.116
+
+- Add optional explicit `node_map` correspondence to `reference-rotation-v1` for differently named imported character and animation nodes.
+- Require 1–1,024 bijective original-index pairs covering skin and selected-channel ancestry with exact direct-parent/root correspondence; preserve omitted-map behavior and original-model fingerprint guards.
+- Preserve target geometry, defaults and inverse binds through target-shaped conversion; selected position deltas continue to use donor IDs. [Contract](docs/ANIMATION_RETARGETING.md#map-differently-named-nodes).
+
+- Pass five Windows native suites, eleven retarget groups and eight import tests with no skips, including original licensed character regressions. [Results](docs/evidence/m2-animation-node-map.json).
+
 ## 0.0.115
 
 - Add optional named digital actions to v3 input profiles, scripted input and replay, preserving legacy bindings and defaults.

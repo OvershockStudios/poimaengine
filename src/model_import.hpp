@@ -23,6 +23,10 @@ struct AnimationFrameTransfer {
     std::array<double,4> alignment_rotation{0,0,0,1};
 };
 enum class AnimationRetargetPositionMode { target_reference, reference_delta };
+inline constexpr std::size_t animation_retarget_node_map_limit=1024;
+struct AnimationRetargetNodePair {
+    std::uint32_t source_node=0,target_node=0;
+};
 struct AnimationRotationRetarget {
     AnimationReferencePose source_reference,target_reference;
     std::array<double,4> alignment_rotation{0,0,0,1};
@@ -33,6 +37,9 @@ struct AnimationRotationRetarget {
     // Optional internal file-layer guards; the authoring wire requires both.
     // Supplied-pose native helpers do not compare these to a filtered donor.
     std::string expected_source_model_sha256,expected_target_model_sha256;
+    // Absent preserves exact named-hierarchy behavior. Explicit maps cover
+    // the skin/selected-channel ancestry, with bijective direct parents.
+    std::optional<std::vector<AnimationRetargetNodePair>> node_map;
 };
 struct ModelAnimationSource {
     std::filesystem::path source;

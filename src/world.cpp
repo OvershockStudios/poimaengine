@@ -201,7 +201,7 @@ AnimationFrameTransfer animation_frame_transfer(const Json& value) {
 }
 AnimationRotationRetarget animation_rotation_retarget(const Json& value) {
     fields(value,{"policy","source_pose","target_pose","alignment_rotation","positions","scales",
-        "expected_source_model_sha256","expected_target_model_sha256"},
+        "expected_source_model_sha256","expected_target_model_sha256","node_map"},
         {"policy","source_pose","target_pose","positions","scales","expected_source_model_sha256","expected_target_model_sha256"});
     require(value.at("policy")=="reference-rotation-v1","Unknown animation retarget policy.");
     require(value.at("scales")=="target_reference","Retarget scales must explicitly use the target reference.");
@@ -215,6 +215,22 @@ AnimationRotationRetarget animation_rotation_retarget(const Json& value) {
     };
     result.expected_source_model_sha256=model_hash("expected_source_model_sha256");
     result.expected_target_model_sha256=model_hash("expected_target_model_sha256");
+    if(value.contains("node_map")) {
+        const auto& pairs=value.at("node_map");
+        require(pairs.is_array() && !pairs.empty() && pairs.size()<=animation_retarget_node_map_limit,
+            "Retarget node map requires 1..1024 pairs.");
+        result.node_map.emplace();result.node_map->reserve(pairs.size());
+        std::set<std::uint32_t> sources,targets;
+        for(const auto& pair:pairs) {
+            fields(pair,{"source_node","target_node"},{"source_node","target_node"});
+            const auto source=revision(pair.at("source_node")),target=revision(pair.at("target_node"));
+            require(source<10000 && target<10000,"Retarget node map index exceeds the model limit.");
+            require(sources.insert(static_cast<std::uint32_t>(source)).second && targets.insert(static_cast<std::uint32_t>(target)).second,
+                "Retarget node map must be bijective.");
+            result.node_map->push_back({static_cast<std::uint32_t>(source),static_cast<std::uint32_t>(target)});
+        }
+        std::sort(result.node_map->begin(),result.node_map->end(),[](const auto& a,const auto& b){return a.source_node<b.source_node;});
+    }
     if(value.contains("alignment_rotation")) {
         const auto& rotation=value.at("alignment_rotation");
         require(rotation.is_array() && rotation.size()==4,"Retarget alignment requires a XYZW quaternion.");

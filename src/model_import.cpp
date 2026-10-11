@@ -466,20 +466,53 @@ std::shared_ptr<const ModelAsset> transfer_rotations(const ModelAsset& base,cons
     for(const auto& skin:base.skins)for(const auto joint:skin.joints)
         for(int node=static_cast<int>(joint);node>=0;node=base.nodes[static_cast<std::size_t>(node)].parent)
             required.insert(static_cast<std::uint32_t>(node));
-    for(const auto target:required) {
-        const auto found=source_hierarchy.indices.find(target_hierarchy.paths[target]);
-        if(found==source_hierarchy.indices.end())throw std::runtime_error("Reference-rotation retarget is missing base joint/ancestor node "+std::to_string(target)+" '"+base.nodes[target].name+"'.");
-        mapping.emplace(found->second,target);
-    }
-    // Check ALL original selected channel ancestry before dropping translation
-    // or scale tracks. A dropped track must not disguise a topology mismatch.
-    for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
-        for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent) {
-            const auto source=static_cast<std::uint32_t>(node);
-            const auto found=target_hierarchy.indices.find(source_hierarchy.paths[source]);
-            if(found==target_hierarchy.indices.end())throw std::runtime_error("Reference-rotation retarget has no target for source node "+std::to_string(source)+" '"+donor.nodes[source].name+"'.");
-            mapping.emplace(source,found->second);
+    if(policy.node_map) {
+        const auto& pairs=*policy.node_map;
+        require(!pairs.empty() && pairs.size()<=animation_retarget_node_map_limit,
+            "Reference-rotation node map requires 1..1024 pairs.");
+        std::set<std::uint32_t> targets,animated_sources;
+        // Dropped translation/scale channels also require original ancestry.
+        for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
+            for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent)
+                animated_sources.insert(static_cast<std::uint32_t>(node));
+        for(const auto& pair:pairs) {
+            require(pair.source_node<donor.nodes.size() && pair.target_node<base.nodes.size(),
+                "Reference-rotation node map index is outside the original model.");
+            require(mapping.emplace(pair.source_node,pair.target_node).second && targets.insert(pair.target_node).second,
+                "Reference-rotation node map must be bijective.");
         }
+        for(const auto target:required)require(targets.contains(target),
+            "Reference-rotation node map is missing a target skin joint/ancestor.");
+        for(const auto source:animated_sources)require(mapping.contains(source),
+            "Reference-rotation node map is missing a selected source channel/ancestor.");
+        for(const auto& [source,target]:mapping) {
+            require(animated_sources.contains(source) || required.contains(target),
+                "Reference-rotation node map contains an unrelated pair.");
+            const auto source_parent=donor.nodes[source].parent,target_parent=base.nodes[target].parent;
+            require((source_parent<0)==(target_parent<0),
+                "Reference-rotation node map root correspondence differs.");
+            if(source_parent>=0) {
+                const auto found=mapping.find(static_cast<std::uint32_t>(source_parent));
+                require(found!=mapping.end() && found->second==static_cast<std::uint32_t>(target_parent),
+                    "Reference-rotation node map direct-parent correspondence differs.");
+            }
+        }
+    }else {
+        for(const auto target:required) {
+            const auto found=source_hierarchy.indices.find(target_hierarchy.paths[target]);
+            if(found==source_hierarchy.indices.end())throw std::runtime_error("Reference-rotation retarget is missing base joint/ancestor node "+std::to_string(target)+" '"+base.nodes[target].name+"'.");
+            mapping.emplace(found->second,target);
+        }
+        // Check ALL original selected channel ancestry before dropping translation
+        // or scale tracks. A dropped track must not disguise a topology mismatch.
+        for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
+            for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent) {
+                const auto source=static_cast<std::uint32_t>(node);
+                const auto found=target_hierarchy.indices.find(source_hierarchy.paths[source]);
+                if(found==target_hierarchy.indices.end())throw std::runtime_error("Reference-rotation retarget has no target for source node "+std::to_string(source)+" '"+donor.nodes[source].name+"'.");
+                mapping.emplace(source,found->second);
+            }
+    }
     for(const auto node:position_nodes)require(mapping.contains(node),"Reference-rotation translation source node is outside the mapped skeleton/animated ancestry.");
     auto failure=[&](std::uint32_t source,const char* message) {
         const auto target=mapping.at(source);
@@ -598,6 +631,17 @@ std::shared_ptr<const ModelAsset> transfer_rotations(const ModelAsset& base,cons
             "' correction_xyzw="+decimal(correction[0])+","+decimal(correction[1])+","+decimal(correction[2])+","+decimal(correction[3]));
     }
     if(mapping.size()>64)diagnostic("reference-rotation-v1 omitted_mapping_records="+std::to_string(mapping.size()-64));
+    if(policy.node_map) {
+        diagnostic("reference-rotation-v1 mapping_policy=explicit-node-map mapped_pairs="+std::to_string(mapping.size()));
+        // Converted curves still use original donor IDs until here. Publish
+        // target topology so the following exact composition remains strict;
+        // keep original target geometry, textures, skins and inverse binds.
+        auto target=std::make_shared<ModelAsset>(base);
+        target->animations=std::move(out->animations);
+        target->diagnostics=std::move(out->diagnostics);
+        for(auto& clip:target->animations)for(auto& channel:clip.channels)channel.node=mapping.at(channel.node);
+        out=std::move(target);
+    }
     validate_animation_data(*out);retained_model_import_bytes(*out);return out;
 }
 }

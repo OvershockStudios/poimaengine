@@ -105,9 +105,12 @@ world and deliberately reconciling your edit; preserve the original receipt
 when an interrupted mutation has an unknown outcome.
 
 Separately exported clips require the [exact-skeleton composition contract](FBX_IMPORT.md).
-Different rest frames need a defined retargeting workflow. Matching bone names
-alone are insufficient, and this example does not establish compatibility with
-other character exporters or animation libraries.
+Different rest frames can use [explicit rotation retargeting](ANIMATION_RETARGETING.md);
+differently named nodes need a reviewed, complete
+[node map](ANIMATION_RETARGETING.md#map-differently-named-nodes) with matching
+direct-parent topology. Matching names alone are insufficient. These policies
+do not infer anatomy or collapse helper bones, and this example does not
+establish compatibility with other character exporters or animation libraries.
 
 This small stylized character establishes a bounded asset path. It is not
 evidence of realistic character shading, a locomotion system, game-scale crowds,
