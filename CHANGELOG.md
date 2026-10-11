@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.111
+
+- Add independent cast/receive shadow controls to primitive, static and skinned drawables, preserving default behavior and frozen runtime values.
+- Exclude cast-disabled objects from shadow candidates while retaining camera visibility; expose strict optional Boolean fields through schema revision 80.
+- Pass four native suites and 108 GPU captures across both render paths and filters; preserve 32 prior default images and 12 explicit-default controls exactly. [Results](docs/evidence/m2-renderer-shadow-controls.json).
+
 ## 0.0.110
 
 - Use the normal-biased receiver position consistently when selecting point-light shadow-map faces, preventing light leaks at cube-face boundaries.

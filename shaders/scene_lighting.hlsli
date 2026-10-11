@@ -96,7 +96,7 @@ float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float r
     return ((1-F)*(1-metallic)*base/3.14159265359+D*visibility*F)*nl;
 }
 void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 pixel_position,
-    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness) {
+    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness,bool receive_shadows) {
         uint cell=0,count=light_count.x;bool clustered=false;
         if(cluster_grid.w!=0) {
             const float depth=dot(view_projection[3],float4(world_position,1));
@@ -127,6 +127,8 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
                     attenuation*=cone*cone;
                 }
             }
-            color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*light_visibility(source,world_position,geometric_normal,l));
+            float visibility=1;
+            [branch] if(receive_shadows)visibility=light_visibility(source,world_position,geometric_normal,l);
+            color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
         }
 }

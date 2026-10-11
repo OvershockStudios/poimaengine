@@ -210,7 +210,7 @@ struct DrawConstants {
 };
 static_assert(sizeof(DrawConstants)==128);
 struct DrawIndices {std::uint32_t object=0,shadow=0,reserved[2]{};};
-struct ObjectData {DrawConstants current{};float previous_model[3][4]{};std::uint32_t history[4]{};};
+struct ObjectData {DrawConstants current{};float previous_model[3][4]{};std::uint32_t history[4]{}; /* [0] motion correspondence, [1] receive-shadows disabled; [2..3] reserved. */};
 static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==192);
 struct SkyConstants {
     float right_tan[4],up_tan[4],forward_srgb[4],zenith_exposure[4];
@@ -242,7 +242,7 @@ struct SkinInstance {
     std::vector<GpuJoint> joints;
     std::size_t bytes=0;
 };
-struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true;std::uint32_t shadow_mask=0; };
+struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true,receive_shadows=true;std::uint32_t shadow_mask=0; };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
 struct PerformanceWallScope {
@@ -833,6 +833,7 @@ struct Context {
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
             gpu_object.history[0]=valid ? 1u : 0u;
+            gpu_object.history[1]=item.receive_shadows ? 0u : 1u;
             item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
             object_data.push_back(gpu_object);
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
@@ -1609,10 +1610,10 @@ struct Context {
         if(reconstruction_mode!=ReconstructionMode::none)for(std::size_t k=0;k<4;++k) {culling_projection[k*4]/=1+2.0f/static_cast<float>(render_extent.width);culling_projection[k*4+1]/=1+2.0f/static_cast<float>(render_extent.height);}
         const auto camera_frustum=frustum(culling_projection.data());
         std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
-        pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=scene->objects.size()*shadow_plan.size();
+        pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
         std::set<std::string> active_skins;
         for(const auto& object:scene->objects) {
-            DrawItem item;item.object_index=static_cast<std::uint32_t>(draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
+            DrawItem item;item.object_index=static_cast<std::uint32_t>(draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
             for(std::size_t row=0;row<3;++row) {
                 for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);
                 for(std::size_t col=0;col<3;++col)draw.normal[row][col]=number(inverse[row*4+col]);
@@ -1640,7 +1641,8 @@ struct Context {
             const auto bounds=transform_bounds(local_bounds,object.world);
             item.camera_visible=!diagnostics.culling || intersects(bounds,camera_frustum);
             if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }else ++pending_draws.camera_culled;
-            for(std::size_t layer=0;layer<shadow_frusta.size();++layer) {
+            for(std::size_t layer=0;object.cast_shadows && layer<shadow_frusta.size();++layer) {
+                ++pending_draws.shadow_candidates;
                 if(!diagnostics.culling || intersects(bounds,shadow_frusta[layer])) { item.shadow_mask|=1u<<layer;++pending_draws.shadow_draws;pending_draws.shadow_triangles+=item.geometry.count/3; }
                 else ++pending_draws.shadow_culled;
             }

@@ -9,7 +9,7 @@ struct ObjectData {
     float4 base_metallic; // negative metallic selects the legacy preview material
     float4 emissive_roughness;
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
-    uint4 history;
+    uint4 history; // x: motion correspondence; y: receive-shadows disabled; zw: reserved
 };
 struct DrawIndices {uint object_index;uint shadow_layer;uint2 reserved;};
 [[vk::push_constant]] ConstantBuffer<DrawIndices> draw_indices;
@@ -80,7 +80,7 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     SceneSurface material;
     material.normal=n;material.geometric_normal=geometric_normal;
     material.base=draw.base_metallic.rgb;material.metallic=0;material.roughness=1;material.emission=0;material.occlusion=1;
-    material.legacy=draw.base_metallic.w<0;
+    material.legacy=draw.base_metallic.w<0;material.receive_shadows=draw.history.y==0;
     if(draw.base_metallic.w<0) {
         // Legacy preview deliberately keeps its original unflipped vertex normal.
     } else {
@@ -137,7 +137,7 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     ScenePixel result;
     result.base_metallic=float4(material.base,material.metallic);
     // Presence and valid shading normal are distinct: bad geometry must not become sky.
-    const uint flags=1u | (material.legacy ? 2u : 0u) | (motion_valid>.5 ? 4u : 0u) | (normal_valid ? 8u : 0u);
+    const uint flags=1u | (material.legacy ? 2u : 0u) | (motion_valid>.5 ? 4u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
     result.surface=float4(encode_normal(n),material.occlusion,float(flags));
     result.emission_roughness=float4(material.emission,material.roughness);
     result.correspondence=float4(motion,encode_normal(material.geometric_normal));

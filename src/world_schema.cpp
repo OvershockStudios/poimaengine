@@ -34,7 +34,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
-        {"visible", {{"type", "boolean"}}}}, {"primitive", "albedo", "visible"});
+        {"visible", {{"type", "boolean"}}},
+        {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
     const Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
         {"motion",{{"enum",{"static","dynamic","kinematic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}}}, {"half_extents","motion","mass","friction","restitution"});
@@ -43,7 +44,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",parent}}, {"radius","height","speed","jump_speed","camera"});
     const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
-    const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}}}, {"asset","primitive","visible"});
+    const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
+        {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"asset","primitive","visible"});
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit}}, {"asset","primitive","friction","restitution"});
     const Json model_node={{"type","integer"},{"minimum",0},{"maximum",9999}};
@@ -133,7 +135,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 79}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 80}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -271,6 +273,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         object_schema(animation_command,{"entity","clip","time","speed","loop","playing"}),
         object_schema(layer_command,{"entity","layer","clip","time","speed","loop","playing","weight"})});
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},{"items",animation_item}};
+    result["invariants"].push_back("MeshRenderer, StaticMesh and SkinnedMesh optionally define strict boolean cast_shadows and receive_shadows, each defaulting to true when omitted. visible=false suppresses the drawable entirely. These controls do not change colliders, acoustics, material ambient/AO or AnimationRig playback; AnimationRig and RigNode are not drawables and do not inherit controls to their children.");
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");
     result["invariants"].push_back("Optional animation transition_mode defaults to crossfade. Inertial mode applies finite-duration translation, shortest-arc rotation and positive log-scale corrections to the destination, initialized from the last two distinct output ticks and analytic incoming clip derivatives. Missing output history uses zero outgoing velocity; STEP keys, loop seams and endpoints may still be discontinuous. Same-tick samples do not advance velocity history. Native checkpoints and version-2 animation saves retain history and corrections. Active inertial transitions report mode=inertial; weight reports elapsed progress, not a two-clip pose weight. The legacy C# setter selects crossfades; opt-in animation_inertial_v1 supports both transition modes.");

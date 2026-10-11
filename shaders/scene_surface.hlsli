@@ -3,7 +3,7 @@
 struct SceneSurface {
     float3 normal,geometric_normal,base,emission;
     float metallic,roughness,occlusion;
-    bool legacy;
+    bool legacy,receive_shadows;
 };
 float2 normal_sign(float2 value) {return float2(value.x>=0 ? 1 : -1,value.y>=0 ? 1 : -1);}
 float2 encode_normal(float3 n) {
@@ -26,7 +26,7 @@ float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambie
     } else {
         const float3 v=normalize(camera.xyz-world);
         color=material.base*(1-material.metallic)*ambient_exposure.rgb*material.occlusion*ambient_visibility+material.emission;
-        accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness);
+        accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness,material.receive_shadows);
     }
     // Bound final linear radiance before half-float storage, as in forward.
     return select(isnan(color),0,clamp(color,0,65504));

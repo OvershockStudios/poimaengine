@@ -38,7 +38,141 @@ The initial renderer permits **16 views** and **128 MiB of depth texels**. Both 
 
 `world.describe` schema revision 13 includes these fields and limits. `world.lighting`, `runtime.lighting`, captures and player results expose effective per-light shadow settings plus `shadow_resolution`, `shadow_views` and `shadow_bytes`. The view count represents the allocation for enabled shadowed lights. A directional camera whose near plane is already beyond the configured distance has no active cascades, although its reserved views still count toward allocation. Authoring inspection requires no GPU.
 
-All currently visible opaque MeshRenderer/StaticMesh geometry, including GPU-skinned AnimationRig instances, casts and receives shadows. Hidden geometry does neither. Collision-only objects do not cast. There are no per-object cast/receive masks, alpha-cutout casters or transparent transmission yet. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
+Visible opaque geometry casts and receives direct-light shadows by default. Each drawable can opt out independently through the controls below. Hidden geometry does neither; collision-only objects do not cast. Alpha-cutout casters and transparent transmission remain unimplemented. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
+
+## Per-drawable controls
+
+`MeshRenderer`, `StaticMesh` and `SkinnedMesh` accept optional `cast_shadows`
+and `receive_shadows` Boolean fields. Each defaults to `true` when omitted;
+reading or rendering an old component does not insert these defaults into its
+stored JSON. Numbers, strings, null, arrays and objects are rejected. Invalid
+component edits reject the complete transaction without changing the prior world.
+`world.describe` schema revision 80 exposes the optional fields and defaults.
+
+| Field | Effect when false |
+| --- | --- |
+| `cast_shadows` | Exclude this drawable from every shadow view. Camera visibility and receiving are unchanged. |
+| `receive_shadows` | Use unoccluded direct-light visibility on this PBR surface. Casting and direct-light intensity/attenuation are unchanged. |
+| `visible` | Exclude the drawable from camera and shadow submissions entirely, as before. |
+
+For example, this guarded transaction creates a visible PBR box that can receive
+shadows without casting them. Use the current `world.inspect` revision as
+`base_revision`, an unused entity ID, and a fresh request ID. Receiving is visible
+when an enabled shadowed light and another caster occlude the box; see
+[authored lighting](LIGHTING.md).
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "world.transact",
+  "params": {
+    "request_id": "00000000000000000000000000000005",
+    "base_revision": 1,
+    "ops": [
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000004",
+        "name": "Receiving box"
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "albedo": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "visible": true,
+          "cast_shadows": false,
+          "receive_shadows": true
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "PbrMaterial",
+        "value": {
+          "base_color": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "emissive": [
+            0,
+            0,
+            0
+          ],
+          "metallic": 0,
+          "roughness": 0.7,
+          "double_sided": false
+        }
+      }
+    ]
+  }
+}
+```
+
+`PbrMaterial` selects the shadow-aware lighting path even in a scene that would
+otherwise use the legacy preview. `component.set` replaces the complete
+component value; for imported primitives, first read
+`entity.get` and retain the asset, primitive and any rig/node fields when editing.
+The flags belong to each primitive drawable, rather than the imported asset or
+its wrapper. `AnimationRig`, `RigNode` and parent entities do not inherit these
+controls to children; apply them to each desired `StaticMesh` or `SkinnedMesh`.
+
+Both forward and deferred PBR lighting honor receiving. The legacy Lambert
+preview does not evaluate shadow visibility, so its receiving flag has no image
+effect. Casting remains independent of the material path. These controls do not
+alter material AO, screen-space AO, ambient fill, emission, colliders, acoustic
+occlusion or animation playback. They neither allocate fewer light shadow views
+nor change map resolution, bias, filtering or coverage.
+
+Authoring captures and previews use current authored values. A runtime session
+freezes its drawable settings at start; changing the authored component does not
+change that running session. Start a fresh runtime to use the new values. Frozen
+spawn templates and restored runtime definitions retain their drawable controls.
+This is not an API for patching a live renderer component or reconciling arbitrary
+scene edits into a running game.
+
+### Qualification
+
+The [0.0.111 checks](evidence/m2-renderer-shadow-controls.json) retain 32 prior
+reference captures and 108 new captures across forward/deferred rendering and
+both shadow filters on one Windows GPU. All 32 default comparisons and 12
+explicit-true comparisons are byte-identical. Independent cast/receive controls
+cover directional, point and spot lights, static and posed skinned geometry,
+off-camera casters, hidden objects and casting disabled with culling off.
+A skinned surface with receiving disabled still shadows a separate visible
+receiver. Four native suites also check strict field validation, atomic failure,
+undo/redo, frozen runtime definitions, spawn templates and save restoration.
+The controlled captures use AO disabled; they do not measure game performance.
 
 ## Projection and filtering
 
@@ -94,8 +228,8 @@ not a production character-shadow quality target. Performance Yard deliberately
 uses 512-pixel maps over 30 metres; higher resolution, receiver bias and contact
 filtering need controlled comparisons with the actual imported character.
 Skinned instances already cast their posed meshes with separate per-view bounds.
-Per-renderer cast/receive controls and hardware-instanced shadow submission remain
-separate planned work.
+Per-drawable cast/receive controls are available as described above;
+hardware-instanced shadow submission remains planned.
 
 The [rendering roadmap](ROADMAP.md#4-scalable-rendering-and-atmosphere) includes
 soft shadows and cacheable static/dynamic casters. A correct cache lowers redraw

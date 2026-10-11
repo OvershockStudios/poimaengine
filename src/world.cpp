@@ -386,6 +386,9 @@ std::vector<RuntimeAnimationLayer> animation_layers_value(const Json& values) {
     std::sort(result.begin(),result.end(),[](const auto& left,const auto& right) { return left.slot<right.slot; });return result;
 }
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
+        for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
+            require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
     if(type=="AnimationRig") {
         fields(value,{"asset","clip","time","speed","loop","playing","layers"},{"asset","clip","time","speed","loop","playing"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"AnimationRig requires a model content hash.");
@@ -395,7 +398,7 @@ void validate_component(const std::string& type, const Json& value) {
         fields(value,{"rig","node"},{"rig","node"});identifier(value.at("rig"));require(revision(value.at("node"))<10000,"RigNode index must be 0..9999.");return;
     }
     if(type=="SkinnedMesh") {
-        fields(value,{"asset","primitive","visible","rig","node"},{"asset","primitive","visible","rig","node"});
+        fields(value,{"asset","primitive","visible","rig","node","cast_shadows","receive_shadows"},{"asset","primitive","visible","rig","node"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"SkinnedMesh requires a model content hash.");
         identifier(value.at("rig"));require(revision(value.at("node"))<10000 && revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid skinned mesh node/primitive/visibility.");return;
     }
@@ -413,7 +416,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if (type == "MeshRenderer") {
-        fields(value, {"primitive", "albedo", "visible"}, {"primitive", "albedo", "visible"});
+        fields(value, {"primitive", "albedo", "visible", "cast_shadows", "receive_shadows"}, {"primitive", "albedo", "visible"});
         require(value.at("primitive") == "box" && value.at("visible").is_boolean(), "MeshRenderer currently supports box primitives and boolean visibility.");
         const auto& color = value.at("albedo");
         require(color.is_array() && color.size() == 3, "Albedo needs three linear RGB values.");
@@ -421,7 +424,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="StaticMesh") {
-        fields(value,{"asset","primitive","visible"},{"asset","primitive","visible"});
+        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows"},{"asset","primitive","visible"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");return;
     }
@@ -1084,7 +1087,7 @@ public:
                     for(std::size_t i=0;i<binding.joints.size();++i)pose->palette.push_back(multiply(multiply(inverse,matrices.at(nodes.at(ref.rig).at(binding.joints[i]))),binding.inverse_bind[i]));
                     skin=std::move(pose);
                 }
-                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
+                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,mesh->cast_shadows,mesh->receive_shadows});
             }
             if(!preview)authored_cache_=result;
         }
@@ -1450,8 +1453,10 @@ public:
             mesh.mesh=model->primitives[primitive];
             require(skinned ? !mesh.mesh->influences.empty() : mesh.mesh->influences.empty(),"Weighted primitives require SkinnedMesh; unweighted primitives require StaticMesh.",-32050);
             mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
+            mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);
         } else if(components.contains("MeshRenderer")) {
             const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
+            mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);
         } else return std::nullopt;
         if(geometry_only)return mesh;
         if(components.contains("PbrMaterial")) {
@@ -2128,7 +2133,7 @@ public:
                             pose->palette.push_back(multiply(multiply(inverse_mesh,matrices.at(nodes.at(ref.rig).at(binding.joints[joint]))),binding.inverse_bind[joint]));
                         skin=std::move(pose);
                     }
-                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
+                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,mesh->cast_shadows,mesh->receive_shadows});
                 }
             }
             }

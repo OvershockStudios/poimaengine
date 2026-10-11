@@ -32,7 +32,7 @@ Bounds are derived from all stored mesh vertex positions, or the unit box for bu
 
 The six planes use the actual float-rounded GPU view-projection matrix and Vulkan's `[0,w]` clip-depth convention. The camera and each directional cascade, point face or spotlight test their own frustum. Camera rejection therefore does not remove a potentially visible shadow caster. Light/caster movement and viewport resize rebuild the relevant decisions.
 
-This is object-level frustum culling, not occlusion culling. Bounds can produce false positives. There is no hierarchical scene index, meshlet/triangle culling, GPU-driven submission or instancing yet. CPU work is linear in objects times views. All renderables still resolve/upload geometry and material resources; this change does not implement asset streaming or defer invalid-content errors until an object appears. Hidden render components are excluded by snapshot construction and are not counted as frustum rejects.
+This is object-level frustum culling, not occlusion culling. Bounds can produce false positives. There is no hierarchical scene index, meshlet/triangle culling, GPU-driven submission or instancing yet. CPU work is linear in objects times views. All renderables still resolve/upload geometry and material resources; this change does not implement asset streaming or defer invalid-content errors until an object appears. Hidden render components are excluded by snapshot construction and are not counted as frustum rejects. A drawable with `cast_shadows:false` remains a camera candidate but is excluded before shadow-frustum tests. `culling:false` disables frustum rejection; it does not override drawable eligibility. `receive_shadows` does not change draw membership. See [per-drawable controls](SHADOWS.md#per-drawable-controls).
 
 ## Response
 
@@ -54,8 +54,8 @@ Successful capture and all returned player reports include `render_diagnostics`:
 | `camera_draws`, `camera_culled` | Submitted camera draws and rejected object bounds; their sum equals `objects`. |
 | `camera_triangles` | Triangles submitted to the camera. Back-face/depth rejection can reduce rasterized work further. |
 | `shadow_views` | Active depth views for this camera/light configuration. |
-| `shadow_candidates` | `objects * shadow_views`. |
-| `shadow_draws`, `shadow_culled` | Submitted and rejected object/view pairs; their sum equals `shadow_candidates`. |
+| `shadow_candidates` | Eligible visible cast-enabled drawable/view pairs before shadow-frustum rejection: cast-enabled snapshot objects × active `shadow_views`. Equals `objects * shadow_views` when all snapshot objects cast. |
+| `shadow_draws`, `shadow_culled` | Submitted and frustum-rejected eligible object/view pairs; their sum equals `shadow_candidates`. Cast-disabled drawables are neither submitted nor counted as rejects. |
 | `shadow_triangles` | Triangles submitted across all active shadow views. |
 
 Draw counters describe scene objects; the optional fullscreen sky triangle is excluded. Its GPU work is included in `opaque`.

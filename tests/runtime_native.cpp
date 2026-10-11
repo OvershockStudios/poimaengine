@@ -16,6 +16,57 @@ RuntimeDefinition fixture() {
     RuntimeEntityDefinition camera; camera.id="camera"; camera.parent="player"; camera.transform.position={0,1.6,0}; camera.camera=RuntimeCamera{};
     d.entities={player,box,camera,wall,floor}; return d;
 }
+void renderer_shadow_controls() {
+    // Defaults preserve existing aggregate users and ordinary visible geometry.
+    const SceneObject legacy{"legacy",identity_matrix(),{1,1,1},{},{},{}};
+    require(legacy.cast_shadows && legacy.receive_shadows,"Legacy SceneObject defaults changed.");
+    RuntimeDefinition definition;definition.world_id="shadow-controls";
+    RuntimeEntityDefinition camera;camera.id="camera";camera.camera=RuntimeCamera{};
+    RuntimeEntityDefinition ordinary;ordinary.id="ordinary";ordinary.mesh=RuntimeMesh{};
+    RuntimeEntityDefinition no_cast=ordinary;no_cast.id="no-cast";no_cast.mesh->cast_shadows=false;
+    RuntimeEntityDefinition no_receive=ordinary;no_receive.id="no-receive";no_receive.mesh->receive_shadows=false;
+    RuntimeEntityDefinition hidden=ordinary;hidden.id="hidden";hidden.mesh->visible=false;
+    hidden.mesh->cast_shadows=false;hidden.mesh->receive_shadows=false;
+    definition.entities={camera,ordinary,no_cast,no_receive,hidden};
+    RuntimeSpawnTemplate prop;prop.id=std::string(32,'1');prop.name="No-cast prop";
+    prop.mesh=RuntimeMesh{};prop.mesh->cast_shadows=false;definition.templates.push_back(prop);
+    RuntimeSpawnTemplate hierarchy;hierarchy.id=std::string(32,'2');hierarchy.name="No-receive hierarchy";
+    RuntimeEntityDefinition local;local.id=std::string(32,'3');local.mesh=RuntimeMesh{};local.mesh->receive_shadows=false;
+    hierarchy.root=local.id;hierarchy.entities={local};definition.templates.push_back(hierarchy);
+    const auto frozen_definition=definition;Runtime runtime(definition);
+    definition.entities[2].mesh->cast_shadows=true;definition.templates[0].mesh->cast_shadows=true;
+    definition.templates[1].entities[0].mesh->receive_shadows=true;
+    const auto object=[](const SceneSnapshot& scene,const std::string& id)->const SceneObject& {
+        for(const auto& item:scene.objects)if(item.entity_id==id)return item;
+        throw std::runtime_error("Shadow-control snapshot object missing.");
+    };
+    const auto check=[&](const SceneSnapshot& scene) {
+        require(object(scene,"ordinary").cast_shadows && object(scene,"ordinary").receive_shadows,
+            "Default runtime shadow controls changed.");
+        require(!object(scene,"no-cast").cast_shadows && object(scene,"no-cast").receive_shadows,
+            "Runtime cast-only control lost or coupled to receive.");
+        require(object(scene,"no-receive").cast_shadows && !object(scene,"no-receive").receive_shadows,
+            "Runtime receive-only control lost or coupled to cast.");
+        for(const auto& item:scene.objects)require(item.entity_id!="hidden","Invisible mesh entered render snapshot.");
+    };
+    const auto before=runtime.snapshot("camera");require(before.objects.size()==3,"Shadow flags suppressed visible geometry.");check(before);
+    const auto legacy_id=runtime.change_structure(0,{{prop.id,{}}},{}).spawned.front();
+    const auto hierarchy_id=runtime.change_structure(1,{{hierarchy.id,{}}},{}).spawned.front();
+    auto live=runtime.snapshot();check(live);
+    require(!object(live,legacy_id).cast_shadows && object(live,legacy_id).receive_shadows,
+        "Legacy frozen spawn template lost independent shadow controls.");
+    require(object(live,hierarchy_id).cast_shadows && !object(live,hierarchy_id).receive_shadows,
+        "Hierarchical frozen spawn template lost independent shadow controls.");
+    runtime.step(1,{});const std::string hash(64,'d');const auto saved=runtime.save_snapshot(hash);
+    auto restored=Runtime::from_snapshot(frozen_definition,hash,saved);const auto after=restored->snapshot("camera");check(after);
+    require(!object(after,legacy_id).cast_shadows && !object(after,hierarchy_id).receive_shadows,
+        "Restore did not recover frozen renderer controls for both template forms.");
+    require(saved==restored->save_snapshot(hash),"Shadow-control restore changed logical save payload.");
+    runtime.change_structure(2,{}, {legacy_id,hierarchy_id});
+    require(runtime.snapshot().objects.size()==3 && before.objects.size()==3 && live.objects.size()==5,
+        "Shadow controls or lifecycle changed immutable snapshot membership.");
+    check(before);check(live);
+}
 void lifecycle() {
     const std::string tid(32,'a'),refid(32,'b'),field(32,'c');
     auto d=fixture();
@@ -315,7 +366,7 @@ void camera_state() {
 }
 int main() {
     try {
-        lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
+        renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

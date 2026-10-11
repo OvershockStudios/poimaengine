@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.110**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.111**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.111 adds independent `cast_shadows` and `receive_shadows` controls
+for primitive, static and GPU-skinned drawables. Optional Boolean fields default
+to true without rewriting old components; runtime definitions freeze the values.
+Four native suites pass, including invalid-edit atomicity, authored undo/redo,
+frozen templates and save restoration. Schema revision 80 exposes the controls.
+Across forward/deferred paths and both shadow filters on one GPU, 108 candidate
+captures pass; 32 images match the prior default captures exactly, and 12 explicit
+true controls match omission. Visible/off-camera animated casters, disabled
+casting with culling off, and independent receiving are covered. These fixtures
+use AO disabled and do not qualify frame times, GI, caching or physical penumbras.
+[Qualification](evidence/m2-renderer-shadow-controls.json),
+[contract and usage](SHADOWS.md#per-drawable-controls),
+[eligible draw counters](RENDER_DIAGNOSTICS.md#response).
 
 Version 0.0.110 fixes a normal-bias point-shadow seam: cube-face selection and
 projection now use the same receiver position. Both filters pass mirrored
@@ -1713,7 +1727,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Conservative object frustum culling for the camera and each shadow view, draw counters and optional CPU/64-bit GPU timestamps on capture/play. Exact pixel comparisons retain offscreen casters and moving runtime shadows on both laptop GPUs. Timings describe these small fixtures, not qualified game performance. [Visibility and render diagnostics](RENDER_DIAGNOSTICS.md).
 
-- Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. Rendering selects the default nine-tap reference or opt-in fractional comparison filter; the latter has bounded directional-character checks on one GPU. GPU occlusion and continuous shadowed replay are checked against independent observations. Caching, per-object controls, physical penumbras, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
+- Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. Rendering selects the default nine-tap reference or opt-in fractional comparison filter; the latter has bounded directional-character checks on one GPU. GPU occlusion and continuous shadowed replay are checked against independent observations. Per-drawable casting and PBR receiving are independently selectable, with default-true omission. Caching, physical penumbras, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
 
 - Default procedural sky in new projects: editable linear colors, horizon falloff and directional Sun disk, shared by captures, player and desktop. Inspector settings use the native schema and guarded transactions; existing worlds retain their background. This is an artistic background, without atmospheric scattering, IBL, clouds or day/night simulation. [Sky contract](LIGHTING.md#procedural-sky) and [0.0.30 evidence](evidence/m2-procedural-sky.json): 44 captures and 59 GUI actions per laptop GPU.
 

@@ -32,7 +32,7 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     const bool normal_is_valid=(flags&8u)!=0;
     material.normal=normal_is_valid ? decode_normal(surface.xy) : float3(0,0,0);material.occlusion=surface.z;
     material.geometric_normal=normal_is_valid ? decode_normal(correspondence.zw) : float3(0,0,0);
-    material.emission=emission.rgb;material.roughness=emission.a;material.legacy=(flags&2u)!=0;
+    material.emission=emission.rgb;material.roughness=emission.a;material.legacy=(flags&2u)!=0;material.receive_shadows=(flags&16u)==0;
     const float depth=scene_depth.Load(int3(id.xy,0));
     const float near_plane=cluster_depth.z,far_plane=cluster_depth.w;
     const float view_z=near_plane/((1-depth)+depth*(near_plane/far_plane));

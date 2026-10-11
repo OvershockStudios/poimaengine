@@ -48,6 +48,7 @@ struct RuntimeMesh {
     std::shared_ptr<const MeshAsset> mesh;
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
+    bool cast_shadows=true,receive_shadows=true;
 };
 struct RuntimeAnimationLayer {
     std::uint32_t slot=1;

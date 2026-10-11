@@ -280,6 +280,148 @@ void runtime_observation_scope_regression(const fs::path& directory) {
         check(tree(directory)==files,"Observation host teardown changed authored files.");
     }
 }
+void renderer_shadow_controls_regression(const fs::path& directory) {
+    const auto path=directory/"renderer-shadow-controls.json",assets=fs::path(path).concat(".assets");fs::create_directory(assets);
+    // One weighted primitive and one ordinary primitive in the same real cooked
+    // instance establish that flags belong to drawables, not the rig wrapper.
+    auto weighted=std::make_shared<poima::MeshAsset>();weighted->vertices.resize(3);weighted->indices={0,1,2};
+    weighted->vertices[1].position={1,0,0};weighted->vertices[2].position={0,1,0};
+    for(auto& vertex:weighted->vertices) {vertex.normal={0,0,1};vertex.tangent={1,0,0,0};}
+    weighted->influences.assign(3,poima::SkinWeight{{0,0,0,0},{1,0,0,0}});
+    auto plain=std::make_shared<poima::MeshAsset>(*weighted);plain->influences.clear();
+    poima::ModelAsset model;model.primitives={weighted,plain};model.nodes.resize(3);model.roots={0,1,2};
+    model.nodes[0].name="Skinned triangle";model.nodes[0].primitives={0};model.nodes[0].skin=0;
+    model.nodes[1].name="Joint";model.nodes[2].name="Static triangle";model.nodes[2].primitives={1};
+    model.skins.push_back({"One joint",1,{1},{poima::identity_matrix()}});
+    const auto encoded=poima::encode_model(model),asset=hash(encoded);write(assets/(asset+".pmodel"),encoded);
+    const auto primitive=hash("shadow primitive").substr(0,32),rig=hash("shadow rig").substr(0,32);
+    const auto skinned=hash("poima.instance.v1/"+rig+"/node/0/primitive/0").substr(0,32);
+    const auto ordinary=hash("poima.instance.v1/"+rig+"/node/2/primitive/0").substr(0,32);
+    const std::array<std::pair<std::string,std::string>,3> drawables{{{primitive,"MeshRenderer"},{ordinary,"StaticMesh"},{skinned,"SkinnedMesh"}}};
+    {
+    unsigned request_number=0;poima::WorldSession session(path.string());poima::EditorCamera camera;camera.world[14]=5;
+    const auto transact=[&](const Json& ops) {
+        return call(session,"world.transact",{{"request_id",hash("shadow-control-request/"+std::to_string(++request_number)).substr(0,32)},
+            {"base_revision",call(session,"world.inspect").at("revision")},{"ops",ops}});
+    };
+    transact(Json::array({{{"op","entity.create"},{"id",primitive},{"name","Primitive control"}},
+        {{"op","component.set"},{"id",primitive},{"type","MeshRenderer"},{"value",{{"primitive","box"},{"albedo",{.5,.5,.5}},{"visible",true}}}},
+        {{"op","asset.instantiate"},{"id",rig},{"name","Renderer control instance"},{"asset",asset}}}));
+    const auto component=[&](const std::string& id,const std::string& type) {
+        return call(session,"entity.get",{{"id",id},{"component",type}}).at("value");
+    };
+    const auto object=[](const poima::SceneSnapshot& scene,const std::string& id)->const poima::SceneObject& {
+        for(const auto& value:scene.objects)if(value.entity_id==id)return value;
+        throw std::runtime_error("World shadow-control drawable missing.");
+    };
+    const auto defaults=session.authored_snapshot(camera);check(defaults.objects.size()==3,"Asset instance drawable membership changed.");
+    const auto initial_bytes=read(path);
+    for(const auto& [id,type]:drawables) {
+        const auto value=component(id,type);check(!value.contains("cast_shadows") && !value.contains("receive_shadows"),
+            "Authored or instantiated omission was replaced by explicit defaults.");
+        check(object(defaults,id).cast_shadows && object(defaults,id).receive_shadows,"Omitted renderer controls did not default true.");
+        const auto schema=call(session,"world.describe",{{"view","component"},{"name",type}}).at("components").at(type);
+        for(const auto* key:{"cast_shadows","receive_shadows"}) {
+            check(schema.at("properties").at(key).at("type")=="boolean" && schema.at("properties").at(key).at("default")==true,
+                "Renderer shadow schema lost strict boolean default.");
+            check(std::find(schema.at("required").begin(),schema.at("required").end(),Json(key))==schema.at("required").end(),
+                "Renderer shadow flag became required for old components.");
+        }
+    }
+    const auto rig_schema=call(session,"world.describe",{{"view","component"},{"name","AnimationRig"}}).at("components").at("AnimationRig");
+    check(!rig_schema.at("properties").contains("cast_shadows") && !rig_schema.at("properties").contains("receive_shadows"),
+        "Non-drawable rig acquired renderer controls.");
+    (void)session.authored_snapshot(camera);check(read(path)==initial_bytes,"Default snapshot rewrote old authored JSON.");
+    Json ops=Json::array();
+    for(const auto& [id,type]:drawables) {
+        auto value=component(id,type);
+        if(type!="StaticMesh")value["cast_shadows"]=false;
+        if(type!="MeshRenderer")value["receive_shadows"]=false;
+        ops.push_back({{"op","component.set"},{"id",id},{"type",type},{"value",value}});
+    }
+    transact(ops);
+    const auto assert_controls=[&](const poima::SceneSnapshot& snapshot) {
+        check(snapshot.objects.size()==3,"Disabling shadows hid visible geometry.");
+        for(const auto& [id,type]:drawables) {
+            const auto& value=object(snapshot,id);
+            check(value.cast_shadows==(type=="StaticMesh") && value.receive_shadows==(type=="MeshRenderer"),
+                "Independent drawable shadow controls did not reach scene snapshot.");
+        }
+        check(bool(object(snapshot,skinned).skin),"Renderer controls lost real skin palette.");
+    };
+    const auto edited=session.authored_snapshot(camera);assert_controls(edited);assert_controls(session.authored_snapshot(camera));
+    call(session,"world.undo",{{"request_id",hash("shadow-control-undo").substr(0,32)},{"base_revision",2}});
+    const auto undone=session.authored_snapshot(camera);
+    for(const auto& [id,type]:drawables) {
+        const auto value=component(id,type);
+        check(!value.contains("cast_shadows") && !value.contains("receive_shadows") &&
+              object(undone,id).cast_shadows && object(undone,id).receive_shadows,
+            "Undo changed original shadow omissions or defaults.");
+    }
+    call(session,"world.redo",{{"request_id",hash("shadow-control-redo").substr(0,32)},{"base_revision",3}});
+    assert_controls(session.authored_snapshot(camera));
+    assert_controls(session.authored_preview(camera,primitive,{1,2,3},{0,0,0,1},{1,1,1}));
+    for(const auto& [id,type]:drawables)check(object(defaults,id).cast_shadows && object(defaults,id).receive_shadows,
+        "Shadow edit mutated earlier immutable snapshot.");
+    const auto packaged=Json::parse(session.package_content().document);
+    for(const auto& [id,type]:drawables)check(packaged.at("entities").at(id).at("components").at(type)==component(id,type),
+        "Package content changed renderer shadow values or omissions.");
+    if(poima::Runtime::available()) {
+        const auto runtime_id=hash("shadow-control-runtime").substr(0,32);
+        call(session,"runtime.start",{{"session_id",runtime_id},{"revision",4}});assert_controls(session.runtime_snapshot(camera));
+        auto hidden=component(skinned,"SkinnedMesh");hidden["visible"]=false;hidden["cast_shadows"]=true;hidden["receive_shadows"]=true;
+        transact(Json::array({{{"op","component.set"},{"id",skinned},{"type","SkinnedMesh"},{"value",hidden}}}));
+        assert_controls(session.runtime_snapshot(camera));
+        check(session.authored_snapshot(camera).objects.size()==2,"Invisible authored mesh still rendered.");
+        call(session,"runtime.stop",{{"session_id",runtime_id}});
+        const auto fresh_id=hash("shadow-control-runtime-fresh").substr(0,32);
+        call(session,"runtime.start",{{"session_id",fresh_id},{"revision",5}});
+        check(session.runtime_snapshot(camera).objects.size()==2,"Fresh runtime ignored authored visibility.");
+        call(session,"runtime.stop",{{"session_id",fresh_id}});
+    }
+    // A valid staged rename followed by an invalid flag must reject atomically.
+    const auto state=call(session,"world.inspect"),history=call(session,"world.history");const auto bytes=read(path);
+    for(const auto& [id,type]:drawables)for(const auto* key:{"cast_shadows","receive_shadows"})
+        for(const Json invalid:{Json(nullptr),Json(0),Json(1),Json("false"),Json::array(),Json::object()}) {
+            auto value=component(id,type);value[key]=invalid;
+            const auto reply=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","world.transact"},
+                {"params",{{"request_id",hash("shadow-control-invalid/"+std::to_string(++request_number)).substr(0,32)},
+                    {"base_revision",state.at("revision")},{"ops",Json::array({
+                        {{"op","entity.rename"},{"id",primitive},{"name","Must not commit"}},
+                        {{"op","component.set"},{"id",id},{"type",type},{"value",value}}})}}}}.dump()));
+            check(reply.at("error").at("code")==-32602,"Invalid renderer flag did not reject as an invalid parameter.");
+        }
+    check(call(session,"world.inspect")==state && call(session,"world.history")==history && read(path)==bytes,
+        "Invalid renderer flags partially committed state/history/storage.");
+    auto explicit_true=component(primitive,"MeshRenderer");explicit_true["cast_shadows"]=true;explicit_true["receive_shadows"]=true;
+    transact(Json::array({{{"op","component.set"},{"id",primitive},{"type","MeshRenderer"},{"value",explicit_true}}}));
+    const auto explicit_scene=session.authored_snapshot(camera);
+    check(object(explicit_scene,primitive).cast_shadows && object(explicit_scene,primitive).receive_shadows,
+        "Explicit true did not restore both independent renderer controls.");
+    }
+    const auto stored_bytes=read(path);const auto stored=Json::parse(stored_bytes);
+    {
+        poima::WorldSession reopened(path.string());poima::EditorCamera camera;camera.world[14]=5;
+        const auto snapshot=reopened.authored_snapshot(camera);
+        for(const auto& [id,type]:drawables) {
+            const auto expected=stored.at("entities").at(id).at("components").at(type);
+            check(call(reopened,"entity.get",{{"id",id},{"component",type}}).at("value")==expected,
+                "World reopen changed persisted renderer controls or omissions.");
+            const auto found=std::find_if(snapshot.objects.begin(),snapshot.objects.end(),[&](const auto& item){return item.entity_id==id;});
+            check((found!=snapshot.objects.end())==expected.at("visible").get<bool>(),"Reopen changed renderer visibility.");
+            if(found!=snapshot.objects.end())check(found->cast_shadows==expected.value("cast_shadows",true) &&
+                found->receive_shadows==expected.value("receive_shadows",true),"Reopen snapshot lost persisted renderer controls.");
+        }
+    }
+    check(read(path)==stored_bytes,"Reopening valid renderer controls rewrote authored JSON.");
+    const auto malformed_path=directory/"renderer-shadow-controls-malformed.json";
+    auto malformed=stored;malformed["entities"][primitive]["components"]["MeshRenderer"]["cast_shadows"]=1;
+    const auto malformed_bytes=malformed.dump(2);write(malformed_path,malformed_bytes);bool rejected=false;
+    try {poima::WorldSession bad(malformed_path.string());}catch(const std::exception& error) {
+        rejected=std::string(error.what())=="Mesh shadow controls must be boolean.";
+    }
+    check(rejected && read(malformed_path)==malformed_bytes,"Persisted numeric shadow flag did not reject for its strict boolean validation or was silently repaired.");
+}
 void authored_preview_regression(const fs::path& directory) {
     const auto path=directory/"preview.json",assets=fs::path(path).concat(".assets");fs::create_directory(assets);
     // An analytic one-joint skin proves a bone preview rebuilds palettes, rather
@@ -713,6 +855,7 @@ int main() {
         custom_read_only_regression(directory);
         settings_read_only_regression(directory,path);
         runtime_observation_scope_regression(directory);
+        renderer_shadow_controls_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);
         camera_free_controller_regression(directory);

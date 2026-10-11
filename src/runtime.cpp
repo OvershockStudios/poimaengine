@@ -1439,7 +1439,7 @@ SceneSnapshot Runtime::snapshot() const {
     SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;
     for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
         const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
-            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1});
+            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1,mesh->cast_shadows,mesh->receive_shadows});
     }
     return result;
 }

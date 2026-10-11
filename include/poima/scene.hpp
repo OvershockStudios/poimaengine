@@ -82,6 +82,8 @@ struct SceneObject {
     std::shared_ptr<const SkinPose> skin{};
     // Zero opts out of temporal correspondence; authority changes this on replacement.
     std::uint64_t incarnation=0;
+    // Per drawable; independent of visibility, materials and rig playback.
+    bool cast_shadows=true,receive_shadows=true;
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
