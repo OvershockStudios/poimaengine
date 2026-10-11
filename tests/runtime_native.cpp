@@ -174,6 +174,207 @@ void material_adoption() {
         rollback.snapshot().revision==2 && material(rollback.snapshot(),"body-0").material->base_color==changed.base_color,
         "Failed Tick restored pre-adoption material/topology.");
 }
+void texture_adoption() {
+    const auto id=[](const std::string& name) {
+        const std::vector<std::string> names={"box","camera","floor","hidden","legacy","player","wall","missing","rig","joint","skin"};
+        const auto found=std::find(names.begin(),names.end(),name);require(found!=names.end(),"Unknown texture identity.");
+        return std::string(31,'d')+"123456789ab"[std::distance(names.begin(),found)];
+    };
+    auto definition=fixture();
+    for(auto& entity:definition.entities) {
+        entity.id=id(entity.id);if(!entity.parent.empty())entity.parent=id(entity.parent);
+        if(entity.character)entity.character->camera=id(entity.character->camera);
+    }
+    const auto image=[](bool srgb,std::uint8_t value) {
+        auto result=std::make_shared<TextureImage>();result->srgb=srgb;
+        result->mips={{2,2,std::vector<std::uint8_t>(16,value)},{1,1,std::vector<std::uint8_t>(4,value)}};return result;
+    };
+    auto mesh=std::make_shared<MeshAsset>();mesh->has_uv=true;
+    for(const auto position:{std::array<float,3>{-1,0,0},std::array<float,3>{1,0,0},std::array<float,3>{0,1,0}}) {
+        MeshVertex vertex;vertex.position=position;vertex.normal={0,0,1};vertex.tangent={1,0,0,1};mesh->vertices.push_back(vertex);
+    }
+    mesh->indices={0,1,2};mesh->textures[0].image=image(true,10);mesh->normal_scale=.75f;mesh->occlusion_strength=.8f;
+    mesh->material.metallic=.2f;mesh->material.roughness=.4f;
+    auto original_textures=std::make_shared<MaterialTextures>();original_textures->maps[0].image=image(true,20);
+    for(auto& entity:definition.entities)if(entity.id==id("floor") || entity.id==id("box")) {
+        entity.mesh=RuntimeMesh{};entity.mesh->material=PbrMaterial{};entity.mesh->mesh=mesh;entity.mesh->textures=original_textures;
+        // Imported drawables may carry PBR factors inherited from MeshAsset.
+        if(entity.id==id("floor"))entity.mesh->material=mesh->material;
+    }
+    RuntimeEntityDefinition hidden;hidden.id=id("hidden");hidden.mesh=RuntimeMesh{};hidden.mesh->material=PbrMaterial{};
+    hidden.mesh->visible=false;definition.entities.push_back(hidden);
+    RuntimeEntityDefinition legacy;legacy.id=id("legacy");legacy.mesh=RuntimeMesh{};definition.entities.push_back(legacy);
+    // A real positive-weight rig binding exercises geometry/model/palette ownership.
+    auto weighted=std::make_shared<MeshAsset>(*mesh);weighted->influences.assign(3,SkinWeight{{0,0,0,0},{1,0,0,0}});
+    auto model=std::make_shared<ModelAsset>();model->nodes.resize(1);model->nodes[0].skin=0;model->nodes[0].primitives={0};
+    model->roots={0};model->primitives={weighted};model->skins.push_back({"skin",0,{0},{identity_matrix()}});
+    RuntimeEntityDefinition rig;rig.id=id("rig");rig.animation_rig=RuntimeAnimationRig{model};definition.entities.push_back(rig);
+    RuntimeEntityDefinition joint;joint.id=id("joint");joint.parent=rig.id;joint.rig_node=RuntimeRigNode{rig.id,0};definition.entities.push_back(joint);
+    RuntimeEntityDefinition skin;skin.id=id("skin");skin.parent=joint.id;skin.mesh=RuntimeMesh{};skin.mesh->material=PbrMaterial{};
+    skin.mesh->mesh=weighted;skin.mesh->textures=original_textures;skin.skinned_mesh=RuntimeSkinnedMesh{rig.id,0};definition.entities.push_back(skin);
+    const auto schema=components::parse_schema("{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"name\":\"Counter\",\"version\":1,\"fields\":[{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"name\":\"Count\",\"kind\":\"int32\",\"default\":0}]}");
+    definition.component_schemas={schema};definition.entities[0].components[schema.id]=components::defaults(schema);
+    RuntimeSpawnTemplate prop;prop.id=std::string(32,'c');prop.name="Texture spawn";prop.mesh=RuntimeMesh{};
+    prop.mesh->material=PbrMaterial{};definition.templates={prop};
+    Runtime runtime(definition);runtime.step(2,{});const std::string hash(64,'a');
+    const auto original=runtime.save_snapshot(hash),source=runtime.presentation_source_id();const auto old=runtime.snapshot(id("camera"));
+    const auto object=[](const SceneSnapshot& snapshot,const std::string& entity)->const SceneObject& {
+        for(const auto& value:snapshot.objects)if(value.entity_id==entity)return value;
+        throw std::runtime_error("Texture snapshot omitted drawable.");
+    };
+    auto changed=std::make_shared<MaterialTextures>();changed->occlusion_strength=.3f;changed->normal_scale=2;
+    for(std::size_t slot=0;slot<5;++slot) {
+        auto& map=changed->maps[slot];map.image=image(slot==0 || slot==2,std::uint8_t(40+slot));
+        map.wrap_s=33071;map.wrap_t=33648;map.min_filter=9984;map.mag_filter=9728;
+    }
+    const auto expected=*changed;
+    const std::vector<RuntimeTextureEdit> edits={{id("box"),changed},{id("floor"),changed},{id("hidden"),changed},{id("skin"),changed}};
+    auto prepared=runtime.prepare_textures(0,8,edits);
+    changed->maps[0].image.reset();changed->maps[1].wrap_s=10497;changed->normal_scale=0;
+    require(runtime.save_snapshot(hash)==original && runtime.material_revision()==0,"Texture preparation changed live state.");
+    auto moved=std::move(prepared);require(!runtime.commit_textures(std::move(prepared)),"Moved-from texture stage committed.");
+    require(runtime.commit_textures(std::move(moved)),"Valid texture stage did not commit.");
+    const auto now=runtime.snapshot(id("camera"));
+    require(now.revision==8 && now.material_revision==1 && now.presentation_generation==1 && now.presentation_source_id==source &&
+        runtime.inspect().tick==2 && runtime.structure_revision()==0 && runtime.component_revision()==0 &&
+        runtime.gameplay_revision()==0 && runtime.control_sequence()==0,"Texture adoption changed unrelated identity/revisions.");
+    for(const auto entity:{id("box"),id("floor"),id("skin")}) {
+        const auto& current=object(now,entity);const auto& previous=object(old,entity);
+        require(current.textures && current.textures!=changed && current.textures->normal_scale==2 &&
+            current.textures->occlusion_strength==.3f,"Texture metadata alias was published.");
+        for(std::size_t slot=0;slot<5;++slot) {
+            const auto& map=current.textures->maps[slot];const auto& wanted=expected.maps[slot];
+            require(map.image==wanted.image && map.wrap_s==wanted.wrap_s && map.wrap_t==wanted.wrap_t &&
+                map.min_filter==wanted.min_filter && map.mag_filter==wanted.mag_filter,"Texture publication lost slot/sampler ownership.");
+        }
+        require(previous.textures==original_textures && previous.textures->maps[0].image->mips[0].rgba[0]==20 &&
+            old.revision==7 && old.material_revision==0,"Adoption mutated earlier texture snapshot.");
+        require(current.mesh==previous.mesh && current.world==previous.world && current.albedo==previous.albedo &&
+            current.material->base_color==previous.material->base_color && current.material->roughness==previous.material->roughness &&
+            current.material->double_sided==previous.material->double_sided && current.incarnation==previous.incarnation &&
+            current.cast_shadows==previous.cast_shadows && current.receive_shadows==previous.receive_shadows,
+            "Texture adoption replaced geometry/scalars/unrelated drawable state.");
+    }
+    require(object(now,id("skin")).mesh==weighted && object(now,id("skin")).skin && object(old,id("skin")).skin &&
+        object(now,id("skin")).skin->palette==object(old,id("skin")).skin->palette,"Texture adoption changed skin palette/geometry.");
+    const auto live=[&](const std::string& entity)->const RuntimeEntityDefinition& {
+        for(const auto& value:runtime.live_definition().entities)if(value.id==entity)return value;
+        throw std::runtime_error("Texture live definition omitted entity.");
+    };
+    require(live(id("rig")).animation_rig->model==model && !live(id("hidden")).mesh->visible &&
+        live(id("hidden")).mesh->textures->maps[4].image==expected.maps[4].image && now.objects.size()==old.objects.size(),
+        "Texture adoption changed rig ownership/hidden visibility.");
+    const auto payload=[](const std::string& bytes) {
+        const auto begin=bytes.find("\"payload\":")+10;const auto end=bytes.find(",\"sha256\":",begin);
+        require(begin>=10 && end!=std::string::npos,"Unexpected texture save envelope.");return bytes.substr(begin,end-begin);
+    };
+    const auto adopted=runtime.save_snapshot(hash);auto normalized=payload(adopted);
+    const auto revision=normalized.find("\"authored_revision\":8");require(revision!=std::string::npos,"Texture save baseline missing.");
+    normalized.replace(revision,std::string("\"authored_revision\":8").size(),"\"authored_revision\":7");
+    require(normalized==payload(original),"Texture adoption changed complete logical native/game checkpoint.");
+    const auto target=runtime.live_definition();auto restored=Runtime::from_snapshot(target,hash,adopted);
+    require(restored->save_snapshot(hash)==adopted && restored->material_revision()==0 &&
+        object(restored->snapshot(),id("box")).textures->maps[4].image==expected.maps[4].image,
+        "Fresh restore lost texture baseline or persisted ephemeral epoch.");
+    // Empty effective wrapper disables every slot; null restores original imported maps.
+    auto disabled=std::make_shared<MaterialTextures>();
+    auto disable=runtime.prepare_textures(1,9,{{id("box"),disabled},{id("floor"),nullptr}});
+    require(runtime.commit_textures(std::move(disable)),"Disable/inherit texture stage failed.");
+    const auto inherited=runtime.snapshot();
+    require(object(inherited,id("box")).textures && !object(inherited,id("box")).textures->maps[0].image &&
+        !object(inherited,id("floor")).textures && object(inherited,id("floor")).mesh==mesh &&
+        mesh->textures[0].image->mips[0].rgba[0]==10 && mesh->normal_scale==.75f && mesh->occlusion_strength==.8f &&
+        object(now,id("floor")).textures->maps[0].image==expected.maps[0].image,"Disable confused original inheritance or old snapshot.");
+    const auto authored_target=runtime.live_definition();
+    auto valid=std::make_shared<MaterialTextures>(expected);
+    const std::vector<RuntimeTextureEdit> again={{id("box"),valid}};
+    const auto reject=[&](std::uint64_t epoch,std::uint64_t authored,const std::vector<RuntimeTextureEdit>& bad) {
+        const auto before=runtime.save_snapshot(hash);const auto current=runtime.material_revision();bool failed=false;
+        try {auto stage=runtime.prepare_textures(epoch,authored,bad);(void)stage;}catch(const std::exception&) {failed=true;}
+        require(failed && runtime.save_snapshot(hash)==before && runtime.material_revision()==current,"Rejected texture stage mutated state.");
+    };
+    reject(1,10,again);reject(2,9,again);reject(2,9007199254740992ULL,again);reject(2,10,{});
+    reject(2,10,{{id("missing"),valid}});reject(2,10,{{id("camera"),valid}});reject(2,10,{{id("legacy"),valid}});
+    reject(2,10,{{id("floor"),valid},{id("box"),valid}});reject(2,10,{{id("box"),valid},{id("box"),valid}});
+    reject(2,10,std::vector<RuntimeTextureEdit>(33,{id("box"),valid}));
+    for(const float bad:{-.01f,16.01f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        auto invalid=std::make_shared<MaterialTextures>(expected);invalid->normal_scale=bad;reject(2,10,{{id("box"),invalid}});
+    }
+    for(const float bad:{-.01f,1.01f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        auto invalid=std::make_shared<MaterialTextures>(expected);invalid->occlusion_strength=bad;reject(2,10,{{id("box"),invalid}});
+    }
+    for(int field=0;field<4;++field) {
+        auto invalid=std::make_shared<MaterialTextures>(expected);auto& map=invalid->maps[2];
+        if(field==0)map.wrap_s=0;if(field==1)map.wrap_t=0;if(field==2)map.min_filter=0;if(field==3)map.mag_filter=0;
+        reject(2,10,{{id("box"),invalid}});
+    }
+    for(std::size_t slot=0;slot<5;++slot) {
+        auto invalid=std::make_shared<MaterialTextures>(expected);invalid->maps[slot].image=image(!(slot==0 || slot==2),25);
+        reject(2,10,{{id("box"),invalid}});
+    }
+    for(int kind=0;kind<5;++kind) {
+        auto invalid=std::make_shared<MaterialTextures>(expected);auto broken=std::make_shared<TextureImage>(*expected.maps[0].image);
+        if(kind==0)broken->mips.clear();if(kind==1)broken->mips[0].rgba.pop_back();
+        if(kind==2)broken->mips.pop_back();if(kind==3)broken->mips[1].width=2;
+        if(kind==4)broken->mips.push_back(broken->mips.back());invalid->maps[0].image=broken;
+        reject(2,10,{{id("box"),invalid}});
+    }
+    for(bool bad_tangent:{false,true}) {
+        auto incompatible=definition;auto geometry=std::make_shared<MeshAsset>(*mesh);
+        if(bad_tangent)geometry->vertices[0].tangent={0,0,0,0};else geometry->has_uv=false;
+        for(auto& entity:incompatible.entities)if(entity.id==id("box")) {entity.mesh->mesh=geometry;entity.mesh->textures.reset();}
+        Runtime checked(incompatible);bool failed=false;
+        try {auto stage=checked.prepare_textures(0,8,again);(void)stage;}catch(const std::exception&) {failed=true;}
+        require(failed && checked.material_revision()==0,"Invalid imported UV/tangent accepted texture adoption.");
+        // Without a normal slot, missing tangent frames do not reject base color.
+        if(bad_tangent) {auto color=std::make_shared<MaterialTextures>();color->maps[0]=expected.maps[0];
+            auto stage=checked.prepare_textures(0,8,{{id("box"),color}});require(checked.commit_textures(std::move(stage)),"Color map unnecessarily required tangents.");}
+    }
+    Runtime other(target);auto foreign=runtime.prepare_textures(2,10,again);
+    require(!other.commit_textures(std::move(foreign)) && other.material_revision()==0,"Foreign texture stage committed.");
+    auto stale_tick=runtime.prepare_textures(2,10,again);runtime.step(1,{});
+    require(!runtime.commit_textures(std::move(stale_tick)),"Stale tick accepted texture stage.");
+    auto stale_component=runtime.prepare_textures(2,10,again);
+    runtime.component_edit(schema.id,id("player"),components::parse_values(schema,"{\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\":5}"));
+    require(!runtime.commit_textures(std::move(stale_component)),"Stale component accepted texture stage.");
+    auto stale_structure=runtime.prepare_textures(2,10,again);const auto spawned=runtime.change_structure(0,{{prop.id,{}}},{}).spawned.front();
+    require(!runtime.commit_textures(std::move(stale_structure)),"Stale structure accepted texture stage.");reject(2,10,{{spawned,valid}});
+    auto expanded=Runtime::from_snapshot(authored_target,hash,runtime.save_snapshot(hash));bool rejected_spawn=false;
+    try {auto stage=expanded->prepare_textures(0,10,{{spawned,valid}});(void)stage;}catch(const std::exception&) {rejected_spawn=true;}
+    require(rejected_spawn,"Restored spawn misclassified as authored texture drawable.");
+    runtime.change_structure(1,{}, {spawned});reject(2,10,{{spawned,valid}});
+    GameplaySaveLedger ledger;runtime.gameplay_save_host({1,2},&ledger);require(runtime.gameplay_saves().configure(true,1),"Cannot configure texture save guard.");
+    auto pending=runtime.prepare_textures(2,10,again);
+    const auto queued=runtime.gameplay_saves().enqueue(GameplaySaveKind::save,"texture",std::nullopt,false,runtime.inspect().tick);
+    require(queued.rejection==GameplaySaveRejection::none && runtime.gameplay_saves().commit(runtime.inspect().tick) &&
+        runtime.gameplay_saves().mark_dispatched(queued.ticket),"Cannot dispatch texture Save guard.");
+    require(!runtime.commit_textures(std::move(pending)),"Pending dispatched Save accepted texture stage.");reject(2,10,again);
+    require(runtime.gameplay_saves().clear(queued.ticket),"Cannot clear texture Save intent.");
+    auto texture_stage=runtime.prepare_textures(2,10,again);
+    auto scalar_stage=runtime.prepare_materials(2,10,{{id("box"),PbrMaterial{}}});
+    require(runtime.commit_materials(std::move(scalar_stage)) && !runtime.commit_textures(std::move(texture_stage)) &&
+        runtime.material_revision()==3,"Scalar publication did not invalidate texture stage.");
+    auto scalar_stale=runtime.prepare_materials(3,11,{{id("box"),PbrMaterial{}}});
+    auto one=runtime.prepare_textures(3,11,again),two=runtime.prepare_textures(3,11,again);
+    require(runtime.commit_textures(std::move(one)) && !runtime.commit_textures(std::move(two)) &&
+        !runtime.commit_materials(std::move(scalar_stale)) && runtime.material_revision()==4,"Texture/scalar stages did not share one epoch.");
+    RuntimeDefinition bounded;bounded.world_id="texture-boundary";bounded.authored_revision=1;std::vector<RuntimeTextureEdit> boundary;
+    for(unsigned i=0;i<32;++i) {RuntimeEntityDefinition entity;entity.id="drawable-"+std::to_string(100+i);entity.mesh=RuntimeMesh{};
+        entity.mesh->material=PbrMaterial{};bounded.entities.push_back(entity);boundary.push_back({entity.id,valid});}
+    Runtime maximum(bounded);auto maximum_stage=maximum.prepare_textures(0,2,boundary);
+    require(maximum.commit_textures(std::move(maximum_stage)) && maximum.snapshot().objects.size()==32 && maximum.material_revision()==1,
+        "The 32-drawable texture boundary did not commit.");
+    RuntimeDefinition crowded;crowded.world_id="texture-rollback";crowded.authored_revision=1;
+    for(int i=0;i<150;++i) {RuntimeEntityDefinition e;e.id="body-"+std::to_string(i);e.collider=BoxCollider{};e.collider->motion=BodyMotion::Dynamic;
+        if(i==0) {e.mesh=RuntimeMesh{};e.mesh->material=PbrMaterial{};}crowded.entities.push_back(e);}
+    Runtime rollback(crowded);auto stage=rollback.prepare_textures(0,2,{{"body-0",valid}});
+    require(rollback.commit_textures(std::move(stage)),"Cannot adopt rollback textures.");const auto before_failure=rollback.save_snapshot(hash);
+    const auto adopted_textures=object(rollback.snapshot(),"body-0").textures;bool failed=false;
+    try {rollback.step(2,{});}catch(const std::exception&) {failed=true;}
+    require(failed && rollback.save_snapshot(hash)==before_failure && rollback.material_revision()==1 &&
+        rollback.snapshot().revision==2 && object(rollback.snapshot(),"body-0").textures==adopted_textures,
+        "Failed Tick restored pre-adoption texture/topology.");
+}
 void renderer_shadow_controls() {
     // Defaults preserve existing aggregate users and ordinary visible geometry.
     const SceneObject legacy{"legacy",identity_matrix(),{1,1,1},{},{},{}};
@@ -524,7 +725,7 @@ void camera_state() {
 }
 int main() {
     try {
-        material_adoption();renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
+        material_adoption();texture_adoption();renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

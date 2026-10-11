@@ -135,3 +135,7 @@ failed tests cannot leave native descendants running. The
 requires the recorded original checkpoint, its cooked assets, compiled game and
 CoreCLR bridge; it is a historical continuation check rather than a standalone
 sample download.
+
+Use the separate [texture API](LIVE_TEXTURES.md) for map, sampler and strength
+changes. Both operations share the same material revision and observation/save
+guards; scalar apply remains scalar-only.

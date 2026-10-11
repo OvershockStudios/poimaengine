@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.113.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.114.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -24,7 +24,7 @@ Poima makes engine operations directly available to tools. External agents such 
 
 The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows. Optional [owned Windows compiler sessions](docs/DEVELOPMENT_JOBS.md#optional-owned-windows-compiler) reuse a private compiler across MSBuild jobs and expose actual-use evidence.
 
-Explicit [live material editing](docs/LIVE_MATERIALS.md) applies authored color, emission, metallic and roughness changes while the game continues. Separate acceptance, submission and presentation receipts let tools check which snapshot reached rendering.
+Explicit [live material editing](docs/LIVE_MATERIALS.md) applies authored color, emission, metallic and roughness changes while the game continues. [Live texture editing](docs/LIVE_TEXTURES.md) also adopts all five PBR maps, sampler settings and map strengths while preserving gameplay and save state. Separate acceptance, submission and presentation receipts let tools check which snapshot reached rendering.
 
 Three recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md), and [Codex builds Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) with a native inventory, recipes and styled UI. They compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
 

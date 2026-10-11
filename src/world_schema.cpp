@@ -135,7 +135,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 82}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 83}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -543,6 +543,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"expected_material_revision",rev},{"revision",rev},{"expected_authored_revision",rev},{"expected_content_sha256",asset_id},{"ids",material_ids}},
         {"session_id","request_id","expected_tick","expected_structure_revision","expected_material_revision","revision","expected_authored_revision","expected_content_sha256","ids"});
     methods["runtime.material.apply"]["description"]="Explicitly adopt authored base_color/emissive/metallic/roughness changes on existing explicit PbrMaterial drawables without restarting gameplay. Full content and asset closure guards reject unrelated edits. Accepted state is distinct from renderer submission/presentation. Outside authoring-core v1.";
+    methods["runtime.texture.inspect"]=methods.at("runtime.material.inspect");
+    methods["runtime.texture.inspect"]["description"]="Read the frozen authored PbrTextures component and effective immutable five-slot map identities, samplers and strengths without resolving storage or advancing gameplay. image_sha256 identifies canonical cooked image bytes, including images inherited from model containers.";
+    methods["runtime.texture.apply"]=methods.at("runtime.material.apply");
+    methods["runtime.texture.apply"]["description"]="Explicitly adopt selected authored PbrTextures insertion, removal or edits on existing authored PBR drawables, including imported inherited PBR and explicit-PBR primitives. Omitted maps/strengths inherit the original mesh; null maps clear. Five slots, samplers, normal_scale and occlusion_strength are supported. Complete guarded content must differ only in these components and provenance bindings precisely tied to newly introduced or fully retired selected texture dependencies. Original mesh/rig owners and all gameplay state stay owned by the same runtime. Shared material_revision advances once; acceptance is distinct from submission/presentation. Outside authoring-core v1.";
+    result["live_textures"]={{"maximum_entities",32},{"slots",{"base_color","metallic_roughness","emissive","occlusion","normal"}},
+        {"fields",{"occlusion_strength","normal_scale"}},{"epoch","Shares material_revision, capture/save guards and exact renderer snapshot acknowledgements with scalar material adoption."},
+        {"inheritance","Absent PbrTextures restores the original mesh maps and strengths; omitted members inherit original mesh values; null map members clear that slot."},
+        {"dependencies","The original frozen asset/provenance closure must still validate unchanged. Only dependencies directly selected by changed PbrTextures may be introduced or fully retired. New provenance bindings require newly introduced selected dependencies; existing bindings cannot be rewritten."},
+        {"limitations","No geometry, rig, PbrMaterial scalar, template, double_sided or general scene changes. Every selected component must change. Synchronous asset validation and texture upload are not a latency guarantee."}};
     methods["runtime.capture"]["properties"]["material_revision"]=rev;
     methods["player.capture"]["properties"]["expected_material_revision"]=rev;
     methods["save.write"]["properties"]["expected_material_revision"]=rev;
@@ -550,7 +559,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["live_materials"]={{"maximum_entities",32},{"fields",{"base_color","emissive","metallic","roughness"}},
         {"baseline","Explicit apply adopts the exact guarded authored material/save baseline; immutable native assets and gameplay state remain owned by the same runtime."},
         {"guards","After material_revision becomes nonzero, save.write/load and exact runtime/player captures require its guard. Retained retries resolve first. Session replacement resets this observation epoch; values persist in the frozen saved document."},
-        {"limitations","No texture, geometry, double_sided or general live scene adoption. Every selected ID must have an actual scalar change. Preparation validates complete assets synchronously; no hitch-free latency guarantee."}};
+        {"limitations","Scalar apply does not adopt textures, geometry, double_sided or general live scene changes; texture adoption is a separate explicit operation. Every selected ID must have an actual scalar change. Preparation validates complete assets synchronously; no hitch-free latency guarantee."}};
     methods["save.write"]["properties"]["expected_component_revision"]=rev;
     methods["save.load"]["properties"]["expected_component_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",7},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},

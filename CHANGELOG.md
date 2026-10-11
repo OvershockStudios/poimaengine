@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.114
+
+- Add guarded live adoption of all five PBR texture maps, samplers and normal/occlusion strengths on existing authored drawables, preserving gameplay and original geometry/rig owners.
+- Preserve imported-map inheritance, explicit null clears and component removal; admit only selected texture dependencies and precisely associated provenance changes.
+- Share scalar material epochs, exact retry receipts, save baselines and renderer acknowledgements through schema revision 83.
+- Pass nine Windows native checks, 106 forward/deferred hardware captures, continuous-player replacements and retained C# game completion with exact fresh restore. [Results](docs/evidence/m2-live-textures.json).
+
 ## 0.0.113
 
 - Add explicit guarded adoption of authored PBR scalar changes on selected existing drawables, preserving the running owner, supported live state and immutable asset owners.

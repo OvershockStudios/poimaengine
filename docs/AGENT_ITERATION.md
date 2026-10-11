@@ -201,3 +201,10 @@ Report the observed behavior, retained-state checks, artifact identities,
 presentation and cleanup separately. Mark timing misses and incomplete checks
 explicitly. A completed compile, loaded artifact or recovered receipt is one
 step in this loop, not proof that the whole task succeeded.
+
+For an existing drawable, authoring and live surface editing are separate steps.
+Use [scalar adoption](LIVE_MATERIALS.md) or [texture adoption](LIVE_TEXTURES.md)
+with exact runtime and authored guards, then wait for the matching presented
+receipt before claiming a visible update. A successful apply preserves the
+current game and adopts its save baseline; ordinary `world.transact` alone does
+not update a frozen runtime. General scene changes still need a new runtime.

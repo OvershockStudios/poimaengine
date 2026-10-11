@@ -1459,6 +1459,33 @@ public:
     static Json material_json(const PbrMaterial& m) {
         return {{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
     }
+    // Resolve overrides against the original immutable mesh, including omitted
+    // inherited maps, explicit null clears and inherited strengths.
+    std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
+        const std::shared_ptr<const MeshAsset>& inherited_mesh,ModelCache& cache) const {
+        if(!components.contains("PbrTextures"))return {};
+        const auto& value=components.at("PbrTextures");auto resolved=std::make_shared<MaterialTextures>();
+        if(inherited_mesh) { resolved->maps=inherited_mesh->textures;resolved->occlusion_strength=inherited_mesh->occlusion_strength;resolved->normal_scale=inherited_mesh->normal_scale; }
+        const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
+        try {
+            for(std::size_t slot=0;slot<5;++slot)if(value.contains(names[slot])) {
+                const auto& ref=value.at(names[slot]);auto& map=resolved->maps[slot];map={};if(ref.is_null())continue;
+                if(ref.contains("image")) {
+                    const auto model=cache.get(asset_directory(),ref.at("asset"));const auto index=revision(ref.at("image"));
+                    require(index<model->images.size(),"Texture image index does not exist.",-32050);map.image=model->images[index];
+                } else map.image=cache.image(asset_directory(),ref.at("asset"));
+                require(map.image->srgb==(slot==0 || slot==2),"Texture color space does not match its material slot.",-32050);
+                map.wrap_s=ref.value("wrap_s",10497);map.wrap_t=ref.value("wrap_t",10497);map.min_filter=ref.value("min_filter",9987);map.mag_filter=ref.value("mag_filter",9729);
+            }
+            if(value.contains("occlusion_strength"))resolved->occlusion_strength=value.at("occlusion_strength");
+            if(value.contains("normal_scale"))resolved->normal_scale=value.at("normal_scale");
+            if(inherited_mesh) {
+                for(const auto& map:resolved->maps)require(!map.image || inherited_mesh->has_uv,"Material maps require mesh UV0.",-32050);
+                if(resolved->maps[4].image)for(const auto& vertex:inherited_mesh->vertices)require(valid_tangent(vertex),"Normal mapping requires tangent frames; reimport this model with UV0.",-32050);
+            }
+        } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+        return resolved;
+    }
     std::optional<RuntimeMesh> mesh_component(const Json& components,ModelCache& cache,bool geometry_only=false) const {
         RuntimeMesh mesh;
         if(components.contains("StaticMesh") || components.contains("SkinnedMesh")) {
@@ -1483,27 +1510,7 @@ public:
             m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");mesh.material=m;
         }
         if(components.contains("PbrTextures")) {
-            const auto& value=components.at("PbrTextures");auto resolved=std::make_shared<MaterialTextures>();
-            if(mesh.mesh) { resolved->maps=mesh.mesh->textures;resolved->occlusion_strength=mesh.mesh->occlusion_strength;resolved->normal_scale=mesh.mesh->normal_scale; }
-            const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
-            try {
-                for(std::size_t slot=0;slot<5;++slot)if(value.contains(names[slot])) {
-                    const auto& ref=value.at(names[slot]);auto& map=resolved->maps[slot];map={};if(ref.is_null())continue;
-                    if(ref.contains("image")) {
-                        const auto model=cache.get(asset_directory(),ref.at("asset"));const auto index=revision(ref.at("image"));
-                        require(index<model->images.size(),"Texture image index does not exist.",-32050);map.image=model->images[index];
-                    } else map.image=cache.image(asset_directory(),ref.at("asset"));
-                    require(map.image->srgb==(slot==0 || slot==2),"Texture color space does not match its material slot.",-32050);
-                    map.wrap_s=ref.value("wrap_s",10497);map.wrap_t=ref.value("wrap_t",10497);map.min_filter=ref.value("min_filter",9987);map.mag_filter=ref.value("mag_filter",9729);
-                }
-                if(value.contains("occlusion_strength"))resolved->occlusion_strength=value.at("occlusion_strength");
-                if(value.contains("normal_scale"))resolved->normal_scale=value.at("normal_scale");
-                if(mesh.mesh) {
-                    for(const auto& map:resolved->maps)require(!map.image || mesh.mesh->has_uv,"Material maps require mesh UV0.",-32050);
-                    if(resolved->maps[4].image)for(const auto& vertex:mesh.mesh->vertices)require(valid_tangent(vertex),"Normal mapping requires tangent frames; reimport this model with UV0.",-32050);
-                }
-            } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
-            mesh.textures=resolved;
+            mesh.textures=resolve_textures(components,mesh.mesh,cache);
             if(!mesh.material) { PbrMaterial material;material.base_color=mesh.albedo;material.metallic=0;mesh.material=material; }
         }
         return mesh;
@@ -2388,6 +2395,7 @@ public:
 #include "world_save.inc"
 #include "world_gameplay_save.inc"
 #include "world_material.inc"
+#include "world_texture.inc"
     Json runtime_summary() const {
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
@@ -2780,6 +2788,7 @@ public:
         }
         if(method.starts_with("runtime.ui."))return ui_dispatch(method,params);
         if(method.starts_with("runtime.material."))return material_dispatch(method,params);
+        if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();

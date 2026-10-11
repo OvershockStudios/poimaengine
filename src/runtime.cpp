@@ -1314,6 +1314,106 @@ bool Runtime::commit_materials(PreparedMaterialUpdate&& prepared) noexcept {
     impl_->topology.swap(data->candidate);impl_->revision=impl_->topology->live.authored_revision;
     ++impl_->material_revision;return true;
 }
+struct Runtime::PreparedTextureUpdate::Data {
+    const Impl* owner=nullptr;
+    std::shared_ptr<const Impl::Topology> original,candidate;
+    std::vector<std::pair<entt::entity,std::shared_ptr<const MaterialTextures>>> edits;
+    std::uint64_t tick=0,authored_revision=0,material_revision=0;
+    std::uint64_t component_revision=0,gameplay_revision=0,ui_revision=0,control_sequence=0;
+};
+Runtime::PreparedTextureUpdate::PreparedTextureUpdate() noexcept=default;
+Runtime::PreparedTextureUpdate::PreparedTextureUpdate(std::unique_ptr<Data> data) noexcept:data_(std::move(data)) {}
+Runtime::PreparedTextureUpdate::~PreparedTextureUpdate()=default;
+Runtime::PreparedTextureUpdate::PreparedTextureUpdate(PreparedTextureUpdate&&) noexcept=default;
+Runtime::PreparedTextureUpdate& Runtime::PreparedTextureUpdate::operator=(PreparedTextureUpdate&&) noexcept=default;
+Runtime::PreparedTextureUpdate Runtime::prepare_textures(std::uint64_t expected,
+    std::uint64_t authored_revision,const std::vector<RuntimeTextureEdit>& edits) const {
+    require(impl_->game_phase==Impl::GamePhase::idle,"Texture adoption requires an idle owner boundary.");
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before texture adoption.");
+    require(expected==impl_->material_revision,"Stale runtime material revision.");
+    require(expected<9007199254740991ULL,"Runtime material revision exhausted.");
+    require(authored_revision<=9007199254740991ULL && authored_revision!=impl_->revision,
+        "Texture adoption needs a different bounded authored revision.");
+    require(!edits.empty() && edits.size()<=32,"Texture adoption needs one to 32 drawables.");
+    auto data=std::make_unique<PreparedTextureUpdate::Data>();
+    data->owner=impl_.get();data->original=impl_->topology;
+    data->tick=impl_->tick;data->authored_revision=impl_->revision;data->material_revision=expected;
+    data->component_revision=component_revision();data->gameplay_revision=gameplay_revision();
+    data->ui_revision=impl_->ui_model->revision();data->control_sequence=impl_->control_sequence;
+    auto candidate=std::make_shared<Impl::Topology>(*impl_->topology);data->edits.reserve(edits.size());
+    std::string previous;
+    for(const auto& edit:edits) {
+        require(!edit.id.empty() && (previous.empty() || previous<edit.id),"Texture IDs must be sorted and unique.");previous=edit.id;
+        const auto found=candidate->identities.find(edit.id);
+        require(found!=candidate->identities.end(),"Texture adoption needs a live authored drawable.");
+        for(const auto& [root,instance]:candidate->spawned) {
+            (void)root;
+            for(const auto& [local,id]:instance.nodes) {
+                (void)local;require(id!=edit.id,"Texture adoption cannot edit spawned members.");
+            }
+        }
+        const auto* mesh=impl_->registry.try_get<RuntimeMesh>(found->second);
+        require(mesh && mesh->material.has_value(),"Texture adoption needs an existing PBR drawable.");
+        std::shared_ptr<const MaterialTextures> textures;
+        if(edit.textures) {
+            // Copy mutable caller metadata; decoded images keep their immutable
+            // asset owners. World has already resolved all inheritance/nulls.
+            auto copy=std::make_shared<MaterialTextures>(*edit.textures);
+            require(std::isfinite(copy->occlusion_strength) && copy->occlusion_strength>=0 && copy->occlusion_strength<=1,
+                "Invalid texture occlusion strength.");
+            require(std::isfinite(copy->normal_scale) && copy->normal_scale>=0 && copy->normal_scale<=16,
+                "Invalid texture normal scale.");
+            for(std::size_t slot=0;slot<copy->maps.size();++slot) {
+                const auto& map=copy->maps[slot];require(valid_texture_sampler(map),"Unsupported texture sampler enum.");
+                if(!map.image)continue;
+                require(map.image->srgb==(slot==0 || slot==2),"Texture image color space does not match slot.");
+                require(!map.image->mips.empty() && map.image->mips.size()<=13,"Invalid texture mip count.");
+                std::uint64_t bytes=0;std::uint32_t width=0,height=0;
+                for(std::size_t mip=0;mip<map.image->mips.size();++mip) {
+                    const auto& level=map.image->mips[mip];
+                    require(level.width>0 && level.height>0 && level.width<=4096 && level.height<=4096,
+                        "Invalid texture mip dimensions.");
+                    const auto pixels=std::uint64_t(level.width)*level.height;
+                    require(pixels<=4*1024*1024 && level.rgba.size()==pixels*4,"Invalid texture mip bytes.");
+                    bytes+=level.rgba.size();require(bytes<=32*1024*1024,"Texture image exceeds decoded byte budget.");
+                    if(mip)require((width!=1 || height!=1) && level.width==std::max(1u,width/2) &&
+                        level.height==std::max(1u,height/2),"Invalid texture mip chain.");
+                    width=level.width;height=level.height;
+                }
+                require(width==1 && height==1,"Texture mip chain must end at one pixel.");
+                if(mesh->mesh) {
+                    require(mesh->mesh->has_uv,"Texture adoption requires imported UV0.");
+                    if(slot==4)for(const auto& vertex:mesh->mesh->vertices)
+                        require(valid_tangent(vertex),"Normal mapping requires tangent frames.");
+                }
+            }
+            textures=std::move(copy);
+        }
+        auto& definition=candidate->definitions.at(edit.id);
+        require(definition.mesh && definition.mesh->material.has_value(),"Texture definition is not a PBR drawable.");
+        definition.mesh->textures=textures;data->edits.emplace_back(found->second,std::move(textures));
+    }
+    candidate->live.authored_revision=authored_revision;
+    candidate->live=impl_->live_definition(*candidate);data->candidate=std::move(candidate);
+    return PreparedTextureUpdate(std::move(data));
+}
+bool Runtime::commit_textures(PreparedTextureUpdate&& prepared) noexcept {
+    auto data=std::move(prepared.data_);
+    if(!data || data->owner!=impl_.get() || data->original!=impl_->topology ||
+        data->tick!=impl_->tick || data->authored_revision!=impl_->revision ||
+        data->material_revision!=impl_->material_revision ||
+        data->component_revision!=component_revision() || data->gameplay_revision!=gameplay_revision() ||
+        data->ui_revision!=impl_->ui_model->revision() || data->control_sequence!=impl_->control_sequence ||
+        impl_->game_phase!=Impl::GamePhase::idle || impl_->save_queue.pending())return false;
+    for(const auto& [entity,textures]:data->edits) {
+        (void)textures;const auto* mesh=impl_->registry.try_get<RuntimeMesh>(entity);
+        if(!mesh || !mesh->material)return false;
+    }
+    static_assert(std::is_nothrow_copy_assignable_v<std::shared_ptr<const MaterialTextures>>);
+    for(const auto& [entity,textures]:data->edits)impl_->registry.get<RuntimeMesh>(entity).textures=textures;
+    impl_->topology.swap(data->candidate);impl_->revision=impl_->topology->live.authored_revision;
+    ++impl_->material_revision;return true;
+}
 Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor) {
     static Library library;
     impl_=std::make_unique<Impl>();impl_->owner=this;

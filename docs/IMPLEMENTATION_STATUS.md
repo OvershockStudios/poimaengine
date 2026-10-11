@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.113**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.114**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.114 adds guarded live texture adoption on existing authored PBR
+primitives, static meshes and skinned meshes. Five maps, sampler settings and
+normal/occlusion strengths share the scalar material epoch; omitted maps inherit
+the original model, explicit null disables them, and removal restores inheritance.
+Only selected texture intent and precisely associated dependency/provenance
+changes are admitted. Nine Windows native checks and schema-83 discovery pass.
+On one AMD GPU, 72 standalone forward/deferred captures verify 28 adoptions,
+paired authored/live pixels, HDR probes and independent channel controls. Two
+continuous players add 34 captures and 24 replacement cycles, preserving their
+runtime owners through paused and running edits. A retained CoreCLR game adopts
+a newly imported texture at tick 140 with its full saved gameplay payload intact
+except the authored/content baseline, completes at tick 777, and exact-restores
+in a fresh process before five callbacks. Its 4,181 settled native rows remain
+retained. Disabled-backend Linux syntax checks pass. The corrected initial
+fixture-lock failure remains separate from successful qualification. Import,
+closure validation and upload are synchronous; these checks do not qualify
+iteration latency, peak VRAM, physical scanout, general live scene changes or
+Alpha completion. [Contract](LIVE_TEXTURES.md),
+[results](evidence/m2-live-textures.json).
 
 Version 0.0.113 adds explicit guarded scalar material adoption on existing
 authored drawables with `PbrMaterial`. Base color, emission, metallic and roughness

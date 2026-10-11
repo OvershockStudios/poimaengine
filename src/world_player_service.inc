@@ -605,7 +605,7 @@
         if(!method.starts_with("runtime."))return false;
         // Runtime collector performs managed GC/unloading; it is not a pure read.
         constexpr std::array reads{"runtime.status","runtime.inspect","runtime.observe","runtime.entity","runtime.lighting",
-            "runtime.raycast","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.gameplay.inspect",
+            "runtime.raycast","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.texture.inspect","runtime.gameplay.inspect",
             "runtime.template.get","runtime.template.query","runtime.instance","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
             "runtime.save.status","runtime.save.result"};
         return std::find(reads.begin(),reads.end(),method)==reads.end();
@@ -616,7 +616,7 @@
             "Stop the native player before changing its owner lifetime.",-32080);
         require(method!="runtime.play" && method!="runtime.audio.replay" && !method.ends_with(".capture"),
             "An attached player owns graphics/audio presentation; capture through player.capture.",-32080);
-        if(player_runtime_mutation(method))require(!player_owner_->prepared.options.replay && (method=="runtime.material.apply" || player_owner_->window->paused()),
+        if(player_runtime_mutation(method))require(!player_owner_->prepared.options.replay && (method=="runtime.material.apply" || method=="runtime.texture.apply" || player_owner_->window->paused()),
             "Pause an interactive player before runtime mutation; recorded replay forbids intervening mutations.",-32080);
     }
     void synchronize_player_request(const std::string& method,const Json& result) noexcept {

@@ -53,6 +53,10 @@ struct RuntimeMesh {
 // Trusted owner proves the complete authored delta and explicit PbrMaterial provenance.
 // Native staging changes scalar factors only; mesh/texture owners stay immutable.
 struct RuntimeMaterialEdit { std::string id; PbrMaterial material; };
+// World resolves full texture intent and proves the authored/asset delta.
+// Null restores original MeshAsset inheritance. Images are trusted immutable
+// asset owners; preparation copies the small maps/strengths wrapper.
+struct RuntimeTextureEdit { std::string id; std::shared_ptr<const MaterialTextures> textures; };
 struct RuntimeAnimationLayer {
     std::uint32_t slot=1;
     AnimationLayerMode mode=AnimationLayerMode::Override;
@@ -292,6 +296,24 @@ public:
     PreparedMaterialUpdate prepare_materials(std::uint64_t expected_material_revision,
         std::uint64_t authored_revision,const std::vector<RuntimeMaterialEdit>& edits) const;
     bool commit_materials(PreparedMaterialUpdate&& prepared) noexcept;
+    class PreparedTextureUpdate {
+        struct Data;
+        std::unique_ptr<Data> data_;
+        explicit PreparedTextureUpdate(std::unique_ptr<Data>) noexcept;
+        friend class Runtime;
+    public:
+        PreparedTextureUpdate() noexcept;
+        ~PreparedTextureUpdate();
+        PreparedTextureUpdate(PreparedTextureUpdate&&) noexcept;
+        PreparedTextureUpdate& operator=(PreparedTextureUpdate&&) noexcept;
+        PreparedTextureUpdate(const PreparedTextureUpdate&)=delete;
+        PreparedTextureUpdate& operator=(const PreparedTextureUpdate&)=delete;
+    };
+    // Same owner/publication contract and material epoch as scalar adoption.
+    // Original geometry/rig owners remain intact; old snapshots keep old maps.
+    PreparedTextureUpdate prepare_textures(std::uint64_t expected_material_revision,
+        std::uint64_t authored_revision,const std::vector<RuntimeTextureEdit>& edits) const;
+    bool commit_textures(PreparedTextureUpdate&& prepared) noexcept;
     std::uint64_t material_revision() const;
     static constexpr double fixed_dt=1.0/60.0;
     static bool available();
