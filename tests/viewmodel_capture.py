@@ -19,7 +19,7 @@ def case(args,label,world_fov,foreground_fov,reference,deadline,world_only=False
  record=dict(passed=False,label=label,calls=[],transport=[],captures=[],native_owner=None,recipe=dict(world_fov=world_fov,foreground_fov=foreground_fov,reference=reference,world_only=world_only));owner=None;failure=None
  try:
   source=output/'analytic.glb';source.write_bytes(glb(*quad([],MATERIAL)));record['source_sha256']=sha(source)
-  owner=Owner(local,record,deadline);discovery=owner.rpc('world.describe',dict(view='component',name='CameraDraw'));need(discovery['schema_revision']==89,'CameraDraw discovery revision differs')
+  owner=Owner(local,record,deadline);discovery=owner.rpc('world.describe',dict(view='component',name='CameraDraw'));need(discovery['schema_revision']==90,'CameraDraw discovery revision differs')
   asset=owner.rpc('asset.import',dict(source=str(source)))['asset'];ops=[]
   entities=[(CAM,None),(WALL,None),(ENV,None)]
   if not world_only:entities.extend([(RED,None if reference else CAM),(BLUE,None if reference else CAM)])
@@ -39,7 +39,7 @@ def case(args,label,world_fov,foreground_fov,reference,deadline,world_only=False
   owner.edit(ops);record['world_sha256']=sha(output/'world.json');owner.session=uuid.uuid4().hex
   start=owner.rpc('runtime.start',dict(session_id=owner.session,revision=owner.revision));need(start['started'] is True and start['tick']==0,'Actual owner did not start')
   path=output/'captures/c.bmp';params=dict(session_id=owner.session,tick=0,material_revision=0,camera=CAM,path=str(path),gpu=args.gpu,width=W,height=H,samples=1,lighting_path=args.lighting_path,frames_in_flight=2,capture_frames=2,ambient_occlusion=dict(mode='none'),reconstruction='none',scene_product_probes=[dict(x=x,y=y) for y in (H//2-16,H//2,H//2+16) for x in (W//2-24,W//2,W//2+24)])
-  result=owner.rpc('runtime.capture',params);need(result['build_version']=='0.0.120' and result['hardware'] is True and result['capture_written'] is True and result['nvrhi_errors']==0,'Hardware capture missing')
+  result=owner.rpc('runtime.capture',params);need(result['build_version']=='0.0.121' and result['hardware'] is True and result['capture_written'] is True and result['nvrhi_errors']==0,'Hardware capture missing')
   need(result['width']==W and result['height']==H and result['samples']==1 and result['session_id']==owner.session and result['tick']==0 and result['material_revision']==0,'Capture owner/extent differs')
   diagnostics=result['render_diagnostics'];need(diagnostics['lighting_path']==args.lighting_path,'Rendering path differs')
   receipts=diagnostics['scene_receipts'];need(same(receipts['submitted'],receipts['presented']),'Submitted/presented frame differs')

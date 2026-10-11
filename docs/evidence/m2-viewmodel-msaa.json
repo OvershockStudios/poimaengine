@@ -1,0 +1,1378 @@
+{
+  "format": "poima.evidence.viewmodel-msaa.v1",
+  "passed": true,
+  "publication_version": "0.0.121",
+  "native": {
+    "producer": {
+      "bytes": 35488,
+      "sha256": "60c99666ece5b11d6c0a95065bb5eb78fd9e22782d4d38c72c4bedbbc6c479a7"
+    },
+    "builder": {
+      "bytes": 7477,
+      "sha256": "ba2c2beccb65bb7f4c0937d5b510ccf7b96336fa6251a2c5a1c4f844441dffa7"
+    },
+    "source_freeze": {
+      "bytes": 46201,
+      "sha256": "622b4889a2ce6aa6acfc1cdd55878a2782f6d89899b753fa8eaf010715413da3"
+    },
+    "source_file_count": 305,
+    "repository_files": {
+      "CMakeLists.txt": {
+        "bytes": 80367,
+        "sha256": "025a0f997902996728a13d9801fb8b28503ebcd6b835cdd7f14b91932595f997"
+      },
+      "cmake/render_smoke.cmake": {
+        "bytes": 7319,
+        "sha256": "1712b3d7e77313a96f74a3bf0ed95070d2c08907b5fa5f84be3fa32ccd77776f"
+      },
+      "include/poima/core.hpp": {
+        "bytes": 11368,
+        "sha256": "c3052bc124ae9ab23f0b06f73fd32844eadbdceba0632a2aa96c3082e65cdf5d"
+      },
+      "include/poima/render_schedule.hpp": {
+        "bytes": 48456,
+        "sha256": "87cd5493f4ae9b7430b2ede36f58b83edb6d561920c49aacc68004cba6c419b8"
+      },
+      "src/render_smoke.cpp": {
+        "bytes": 319812,
+        "sha256": "41ea1c8636a7d0d059d3008d9b791ccf61aa2dfdbcb4a7574d9c02be8484c02e"
+      },
+      "src/world.cpp": {
+        "bytes": 309547,
+        "sha256": "59b267311ebdbfd0460d9767ac58e43d000265661d1a315e7df238a074a7773d"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 98820,
+        "sha256": "74e355603fda4e84e06a9993c31fe3d8c9bbe283a1c810f55662283a76093117"
+      },
+      "src/world_player_service.inc": {
+        "bytes": 50796,
+        "sha256": "5c672b51cdf285b9bc73f17f999432c304b22eafb08005b3048e0301c45d0424"
+      },
+      "src/main.cpp": {
+        "bytes": 19662,
+        "sha256": "81935239d6c0c94e9ce77b1196622dc531e8e46cbb968c310b9ce762cb8daad3"
+      },
+      "src/game_launch.cpp": {
+        "bytes": 12115,
+        "sha256": "5a37a0399da0a6b93588057a2cbd48f5581a6ebc5332364a6f9bdb60d5293171"
+      },
+      "shaders/viewmodel_resolve.hlsl": {
+        "bytes": 864,
+        "sha256": "27a45dba46c8ba4ad2a2e8551b05c5e1bd1c1f72988878c3b9c16a64b6cde355"
+      },
+      "shaders/viewmodel_composite.hlsl": {
+        "bytes": 1254,
+        "sha256": "577c6e923bc288c4b604962b4e29b5eaf83f10ff00fae39001a66ba8ee40c18a"
+      },
+      "tests/render_schedule.cpp": {
+        "bytes": 50344,
+        "sha256": "b753f6e4e17c1ac9984ce2419b0797e26cd1d5270d11f396932dbdd123b1232f"
+      }
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25478656,
+        "sha256": "08a17d1111c89484b0747ccdc8a751fc34ab0604f2b246c56f1eed58959fb416"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-root-motion-test.exe": {
+        "bytes": 18347008,
+        "sha256": "d022e2d15960d0997abc1b7adb2ab8d49b01551ed3ddf57bd025ffe6fe3affd4"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18350592,
+        "sha256": "8ec5aa5c6c0876e795dceb869098f8be15889812793b19d42912c8dcfc31d1c1"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18322432,
+        "sha256": "d6b6dba10b243136a2d68f65fc60f7f8abdc1acd39634590796a8c57560852c1"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18575872,
+        "sha256": "19cf0e06c1410983fb45bd9e6c8395f58a7c1e0af29d1e7d197784baf630b211"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2260992,
+        "sha256": "e11018819447f592f93d6bdb300e6ef278ee4eea1b87b6d995103ad61cf12d3c"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18356224,
+        "sha256": "3cf1d915ce8fc3d998bbc0c11c6b06790923bf152d0b5c569b27fb4cdc898b84"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18511360,
+        "sha256": "3e317177adc31ab5d325a9e29cbae2d93fbc0a8c38597fbcfb6a19440358f6c5"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 23908864,
+        "sha256": "e1f33369877d32219f0e69165a5f515221734658fe484e7cbb7e4a4f545035b6"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 23917568,
+        "sha256": "230faf64c7af3ad09732d8c4e018d2ab8de1adf219ca4c0d123bd9e84d3ceadc"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 15076864,
+        "sha256": "79356564856512f60dc984fdaeaa070aa49376a7fb360faedee8282c1e277a18"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14960128,
+        "sha256": "a2f5fed9ebcf4c83d4b40e5f66c0b136936fbc0eabf658655189207730f21b11"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14900736,
+        "sha256": "9876f17fbfa60d9ef4ac8d8716eb34400e022f1431a01f0c9b5bebfbc24c0b58"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1984000,
+        "sha256": "84ab57f1413eb48ff91639cf76f61976534471e9b5d664f1e2343ff7d59e725e"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18436096,
+        "sha256": "0af4ad276d9550e38bc4f270b01213c7265fc369e590dd67fcc938ff0dd871fb"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18361856,
+        "sha256": "6fa870716c8fc6da4e70cb6776cfdff1d558e739725e313bec12c9a59043ac28"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2120192,
+        "sha256": "fcd6557f3728e4fe55fc6b9c18cc69ed682555cbda2be5b80bcf0437926741a7"
+      },
+      "poima-runtime-camera-draw-test.exe": {
+        "bytes": 18331648,
+        "sha256": "705617dad3405d804d945b879383b4492e3ba204a85a43149abe0fb7fb7fc5f5"
+      },
+      "poima-player-input-test.exe": {
+        "bytes": 1188864,
+        "sha256": "0056ab875ef70976d0d0730474ee4bd1e8bda5c7a4d65a368c26a76fc410d0ee"
+      },
+      "poima-render-schedule-test.exe": {
+        "bytes": 1424896,
+        "sha256": "0de25b8cae7046025904c983c304b9215d2b6f312a9fdbcab75fca7cae3362ff"
+      }
+    },
+    "library": {
+      "bytes": 218835794,
+      "sha256": "49337ffeaae0c2ef833342c94db5e5690831b0640dd6e13c8e227abc7b0294da"
+    },
+    "qualification_owner": {
+      "bytes": 60224,
+      "sha256": "7fbe3efc11f74abf817b4d86e90fc84a5e08eead39dcf23e04f213313c3cb70b"
+    },
+    "worker": {
+      "bytes": 15386,
+      "sha256": "8137629e08ae76bb9ea154e8bb921dcf1714217cf49e6d8df4ea5e61ae62efd2"
+    },
+    "cpu_suites": [
+      {
+        "name": "root-motion",
+        "stdout": {
+          "bytes": 37,
+          "sha256": "1b3966ed402f1fb5fdd7930a14f2b41a2b0c0d2615c2419e8f835e34ca9cb728"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "declared_groups": 10
+      },
+      {
+        "name": "two-bone-ik",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "4403459d8052811da839508f622aa17c715399ee1438e1f280f29fb4144e5d35"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "declared_groups": 9
+      },
+      {
+        "name": "hit-regions",
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "declared_groups": 7
+      },
+      {
+        "name": "runtime",
+        "stdout": {
+          "bytes": 192,
+          "sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "templates",
+        "stdout": {
+          "bytes": 76,
+          "sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "instances",
+        "stdout": {
+          "bytes": 153,
+          "sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "runtime-save",
+        "stdout": {
+          "bytes": 324,
+          "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "world-save",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "world-schema",
+        "stdout": {
+          "bytes": 110,
+          "sha256": "f8a164ebe0f3ea7ac2b41315cb726afabe8fc69e2d06aa1142a89cb7f93d245f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "gameplay-compatibility",
+        "stdout": {
+          "bytes": 68,
+          "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "gameplay-service-contract",
+        "stdout": {
+          "bytes": 88,
+          "sha256": "cd250ba6f6a8c1626222772cf603ac307780df0802a9fa11db3b746fd51a749a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "gameplay-player-preferences",
+        "stdout": {
+          "bytes": 46,
+          "sha256": "84880a29bebbd1802585f150e63fd865807bd49c1c446022469a01de1c53a92d"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "animation-membership",
+        "stdout": {
+          "bytes": 47,
+          "sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "animation",
+        "stdout": {
+          "bytes": 263,
+          "sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "animation-layers",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "animation-save",
+        "stdout": {
+          "bytes": 133,
+          "sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "camera-draw",
+        "stdout": {
+          "bytes": 29,
+          "sha256": "cf30c55c74b68f2ae14770a3a40f4c7f6f37d126d62f00e4f777cbdc7e222138"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "declared_groups": 9
+      },
+      {
+        "name": "player-input",
+        "stdout": {
+          "bytes": 89,
+          "sha256": "2fe4d5484161b1cf013c5d45858c83fd5e88d993fa5e166a2b919f3af89b6095"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "render-schedule",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "7160346f88c119b389426d7d5d3dcbf5a69518a2f216bf8825963fc15695aba9"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "accepted_variants": 349,
+        "rejected_mutations": 632
+      }
+    ],
+    "schema_revision": 90,
+    "protocol": {
+      "evidence": {
+        "bytes": 2258457,
+        "sha256": "cab62bdad3a9d05386a29723bd7e4d7cb92dcdf4ca3c312c2533c29a4796ab02"
+      },
+      "groups": 4,
+      "clean_native_owners": 2,
+      "rpc_count": 48
+    },
+    "natural_empty_job": true
+  },
+  "cohorts": [
+    {
+      "kind": "foreground",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 65211,
+        "sha256": "9cc98e54c33645dc798273b4d611720356f3f4c850eb103eccf652ec41490040"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 56,
+          "sha256": "e02058370ff58e21180142321ba2f9dc88bf1071f552c24dc2328c776728de43"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 276590,
+        "sha256": "3b50adf555b6113c671f90ad501c9141a10265ade14142dcf5d324fa68a28902"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_capture.py",
+        "bytes": 10445,
+        "sha256": "3e954c58c0a4e737f8b47a8645fcece287fbea326ecfdc75d875a4cbd275bbb4"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "exact_prior_full_bmps": 6,
+        "exact_prior_world_probe_sets": 6,
+        "independent_projection_pairs": 3,
+        "exact_isolated_world_probes": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976,
+        "prior_owner": {
+          "bytes": 64692,
+          "sha256": "9e68585a69c643df1db1e6363fb1f2900f863804843f7f8c87ee99b1ee8e4871"
+        },
+        "prior_evidence": {
+          "bytes": 276272,
+          "sha256": "072fcf8c53b45b6110b5643a2bc85f972151c39f34c3d5c166aab4520e2f08ac"
+        }
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 65222,
+        "sha256": "371d61ace6ba7bc16371ae2890afb4f3e9d5513042a48c5c30b8522fae3b6b3e"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 57,
+          "sha256": "e4fa9ad97b91a86c23335336e204f7b84c9aa48ca3dd0de73af58fecd66f52b9"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 276771,
+        "sha256": "2173a9b14eb783e42d33f9f938a95c7e17307f9797e9f5bf56bf01240db0d61a"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_capture.py",
+        "bytes": 10445,
+        "sha256": "3e954c58c0a4e737f8b47a8645fcece287fbea326ecfdc75d875a4cbd275bbb4"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "exact_prior_full_bmps": 6,
+        "exact_prior_world_probe_sets": 6,
+        "independent_projection_pairs": 3,
+        "exact_isolated_world_probes": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976,
+        "prior_owner": {
+          "bytes": 64693,
+          "sha256": "fb0ff78b0fa66d1722584c3165c36d7b0bb996fc98c7451dbe7cb290f242daff"
+        },
+        "prior_evidence": {
+          "bytes": 276453,
+          "sha256": "5ef689954f438ddf97593733bcee2a835a394641fb0b058ebfd434c7bdc25965"
+        }
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 65222,
+        "sha256": "458826b27b46b66f4e91d5285ce9d54804d432d72f3c204b013cf36577c01d82"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 56,
+          "sha256": "8a3fd4cda676abb3e95d96b42651c4f892bf62b79e2805f394661ef323f901a9"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 276484,
+        "sha256": "fe2c1972bbb974b15dcb1bfff318ea050344dea930db81cce4a1e95d425d4348"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_capture.py",
+        "bytes": 10445,
+        "sha256": "3e954c58c0a4e737f8b47a8645fcece287fbea326ecfdc75d875a4cbd275bbb4"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "exact_prior_full_bmps": 6,
+        "exact_prior_world_probe_sets": 6,
+        "independent_projection_pairs": 3,
+        "exact_isolated_world_probes": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976,
+        "prior_owner": {
+          "bytes": 64703,
+          "sha256": "8bf672a8d7c6d58de30ed003b00d98c9fa4863de2887075a83c3b496f9336376"
+        },
+        "prior_evidence": {
+          "bytes": 276165,
+          "sha256": "4de4d830c95117979569d0f4c4598ec89c7dcf9f4d82788a0d9f70f91b98a663"
+        }
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "foreground",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 65231,
+        "sha256": "3e279cd7ec668e01eeadac099acd6a5684233bec9590256bf784d0649d20fe0a"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 57,
+          "sha256": "8e1d479f2d7319d7bb6fe8ead5cab0cc5b58bc2788067aa0454cf7d3def9a5e6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 276665,
+        "sha256": "6872b9b5ea673bbac889f46ea79f74892ff29d3478f2155992b88ceed977c4f1"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_capture.py",
+        "bytes": 10445,
+        "sha256": "3e954c58c0a4e737f8b47a8645fcece287fbea326ecfdc75d875a4cbd275bbb4"
+      },
+      "captures": 6,
+      "native_owners": 6,
+      "rpc_count": 36,
+      "image_sha256": [
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "510247b1a42066c56f2f77d6bdd115436c3f75134c13667d05d5bd4b2bec8628",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998",
+        "c55b531dfa9f0d467e735fa4335a2113a2f8a0bb33419b6ef1478174b270f998"
+      ],
+      "assertions": {
+        "exact_prior_full_bmps": 6,
+        "exact_prior_world_probe_sets": 6,
+        "independent_projection_pairs": 3,
+        "exact_isolated_world_probes": 9,
+        "red_pixels": 7426,
+        "blue_pixels": 6976,
+        "prior_owner": {
+          "bytes": 64706,
+          "sha256": "16e3cb631f0de9b7e1bda324a4c359f760f9434de3765da13c4a58071fb93851"
+        },
+        "prior_evidence": {
+          "bytes": 276347,
+          "sha256": "07a10f712cbe456625654be8ff3e3159d89802907379ec66855865b51acb78e8"
+        }
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 63993,
+        "sha256": "afc2ffea55069acacc6478f4e7e512e6161c43258d9ec8ab9d64e5f955bcb8d2"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 58,
+          "sha256": "82b413bc5ca79cfcdcf348873bb097fe7b28ffc34bc1823c063c2bfa356e932e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 251801,
+        "sha256": "2b377480084d400d820e631217c8f5acb51cdb53bc119e4abe42d67d0690f590"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 18712,
+        "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "7d0e86d143aafe2c2b4f57c5e64fd99cf9aebe7615d31030eb0491c0f6c8e584",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 1,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 0.0,
+        "resolved_reference_policy": "original strict1e-6"
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 64005,
+        "sha256": "99fd5015e7ac13b4fd1d6c5934f8af56e64e1cb83cbe8f7ca663aecfeca5b21d"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 57,
+          "sha256": "15adb63e87895836d23378152fc843651d8d83faf1ade79196e1b25e1911bb8e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 256075,
+        "sha256": "a3b0366c4dd873efa42e36f030af57f43335f189f07149034c9d19f579d80a20"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 18712,
+        "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "d91f0e95e5b656ac6d17d668f2d5393f79ac7b20bc43c51d741e58bdc645f29d",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 1,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 0.0,
+        "resolved_reference_policy": "original strict1e-6"
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 63997,
+        "sha256": "4b3da5856f659977a92b668aba0a3b9696056d3eb654093197a8aeb3365b3f8e"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 58,
+          "sha256": "8dc113b3b18fc4d528b6bac6df5bee705b603450fe301c92ac02774b2402ae58"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 251978,
+        "sha256": "873ce4458450a98521490dd9b1e0192f77f5a52839536c10413ec255e1b4bdd4"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 18712,
+        "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "7d0e86d143aafe2c2b4f57c5e64fd99cf9aebe7615d31030eb0491c0f6c8e584",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 1,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 0.0,
+        "resolved_reference_policy": "original strict1e-6"
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "reconstruction": "none",
+      "owner": {
+        "bytes": 64005,
+        "sha256": "18d9a6e675b94bc07725aaf3585807d607ba4f14c486a945f3d0e7aa5fab3204"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 59,
+          "sha256": "2c74dd442dffd80fb36db08fe8a6ab14f23be4031fe62f90cbeb6990e3dab054"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 256254,
+        "sha256": "cad058005a1bfc420a2e5adc784a729661c06299307afb31e10c17f677733c6a"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 18712,
+        "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "d91f0e95e5b656ac6d17d668f2d5393f79ac7b20bc43c51d741e58bdc645f29d",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 1,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 0.0,
+        "resolved_reference_policy": "original strict1e-6"
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "reconstruction": "fsr3_quality",
+      "owner": {
+        "bytes": 64017,
+        "sha256": "a1b895205cffdd6d823887f246ba9540c02bcd33ec8e9ab170800ae666475a58"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 58,
+          "sha256": "ccec37f310b0dfb61233c95431ed8bd0424b0143186d4ff5d8918df4d3d0b2a4"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 252986,
+        "sha256": "1fcd35c724aa29d970dcf3c86decdaf27bdabb025d30a561501b9518bf057755"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 18712,
+        "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "c969733e66d8e1ecc9d372f332cedee17c9e0db5925f30ea24876e8f1e5a2289",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 1,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 0.0,
+        "resolved_reference_policy": "original strict1e-6"
+      },
+      "natural_empty_job": true
+    },
+    {
+      "kind": "msaa",
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "reconstruction": "fsr3_quality",
+      "owner": {
+        "bytes": 64029,
+        "sha256": "6339f51cc3dee49e02d98a55f14944dee7239848c0a7db366ca0001dfdc24a0e"
+      },
+      "worker_logs": {
+        "stdout": {
+          "bytes": 58,
+          "sha256": "7f4e87cda6596fd818b8f3451ba9426de8d52befcb01f529d52025aa53425f30"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "evidence": {
+        "bytes": 263191,
+        "sha256": "bd40a64880a385db458c132e0406839737ae46dccb9f2dd1b9f1336056c11203"
+      },
+      "fixture": {
+        "path": "tests/viewmodel_msaa_capture.py",
+        "bytes": 19087,
+        "sha256": "69004ea80326ddabf56e46781f8988a4563b59c9d99d2ee7aa388fd8a45a8645"
+      },
+      "captures": 5,
+      "native_owners": 5,
+      "rpc_count": 41,
+      "image_sha256": [
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "e6242c118c9a1d478f1e9a481aeaeef364af89d8f046c64e9e8c462e91a950dc",
+        "49931a063d382e7796a33fd1bb0bd6dbf6aea3531746668104cb378d944bbdfc",
+        "736b8531f4898684d173e8ee0eb5a3b84e5497d39ed85ad7dc7b757fa0678c91"
+      ],
+      "assertions": {
+        "coverage": {
+          "rgb_error_limit": 2,
+          "maximum_rgb_error": 0,
+          "expected_display_rgb": [
+            [
+              49,
+              49,
+              49
+            ],
+            [
+              101,
+              42,
+              42
+            ],
+            [
+              126,
+              33,
+              33
+            ],
+            [
+              144,
+              21,
+              21
+            ],
+            [
+              156,
+              0,
+              0
+            ]
+          ],
+          "quarter_coverage_pixels": [
+            58174,
+            165,
+            150,
+            150,
+            18161
+          ],
+          "partial_pixels": 465,
+          "minimum_partial_pixels": 100,
+          "minimum_each_partial_class": 10,
+          "analytic_interior_pixels": 17471,
+          "analytic_exterior_pixels": 57466,
+          "maximum_edge_distance_pixels": 1.5,
+          "single_sample_binary_pixels": [
+            58414,
+            18386
+          ],
+          "screen_vertices": [
+            [
+              47.5,
+              30.0
+            ],
+            [
+              265.0,
+              75.0
+            ],
+            [
+              100.0,
+              210.0
+            ]
+          ],
+          "tone_transform": "Reinhard then sRGB; coverage composed in scene-linear HDR"
+        },
+        "exact_explicit_omitted_bmp_pairs": 1,
+        "exact_empty_foreground_bmp_pairs": 1,
+        "world_product_probe_pairs": 36,
+        "configured_empty_samples": 4,
+        "configured_empty_draws": 0,
+        "strict_native_option_rejections": 4,
+        "independently_checked_raw_background_hdr_probes": 45,
+        "maximum_raw_background_hdr_error": 0.0,
+        "observed_resolved_background_hdr_probes": 45,
+        "maximum_resolved_background_deviation": 1.52587890625e-05,
+        "resolved_reference_policy": "observational deviation; exact cross-case products"
+      },
+      "natural_empty_job": true
+    }
+  ],
+  "excluded_attempt": {
+    "role": "excluded_original_resolved_hdr_reference",
+    "qualified": false,
+    "owner": {
+      "bytes": 63071,
+      "sha256": "7f664f51e3956334cb43c5e18401ced68a489f81c32154b7a2abf24e8870c226"
+    },
+    "evidence": {
+      "bytes": 40055,
+      "sha256": "d63325a0aa3ed2e9d54cabac8798f05c95e9dc85fc48949dc2066ecdcfd9f96a"
+    },
+    "worker_logs": {
+      "stdout": {
+        "bytes": 625,
+        "sha256": "4f72377ed91af21a697547543db48560dcc660b3e7a396a8d4413cf46c125e22"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "fixture": {
+      "sha256": "edae1e9a4836d697b0624a7c8adae97942b03e1c02d154bf5ac8d2173f95738b",
+      "bytes": 18712
+    },
+    "test_exit_code": 1,
+    "natural_empty_job": true,
+    "maximum_raw_error": 0.0,
+    "maximum_resolved_deviation": 1.52587890625e-05,
+    "reason": "Original uniform resolved-HDR reference failed; raw analytic radiance passed. No accepted capture totals include this attempt."
+  },
+  "total_gpu_captures": 54,
+  "exact_default_full_bmp_pairs_against_120": 24,
+  "exact_default_world_probe_sets_against_120": 24,
+  "limits": [
+    "Opaque foreground only; arithmetic-average RGBA coverage before tone mapping. No transparent, temporal foreground AA or sample-position-pattern claim.",
+    "GPU coverage qualification selects foreground4/world1 in the explicit forward, deferred and forward FSR quality recipes;2/8 remain native/API/schedule scope.",
+    "No new shared-player, resize, device-loss, allocation-failure, gameplay, managed ABI, SDK or performance qualification.",
+    "384MiB foreground and aggregate logical resource budgets are source-enforced, not measured Vulkan heap use.",
+    "Raw background radiance has an analytic1e-6 bound; reconstructed HDR deviation is observational in the corrected NVIDIA FSR cohort. Complete raw/resolved world products remain exact across its five cases.",
+    "Retained incremental native cache; not a complete third-party rebuild."
+  ]
+}

@@ -1,8 +1,35 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.120**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-11 for **0.0.121**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.121 adds independent foreground MSAA at one, two, four or eight
+samples. An explicit shader averages HDR color and coverage before foreground
+composition, sharing the ordinary tone map while keeping world products
+separate. Schema revision 90 exposes the option through capture/player routes;
+native player/editor CLI launches accept `--viewmodel-samples`. Default one
+sample aliases resolved color and omits the new pass. Exact image-format/sample
+support and existing resident/staging budgets reject unsupported requests.
+Nineteen Windows native suites, four API groups with 48 lossless calls and a
+render-graph matrix of 349 valid variants/632 rejected mutations pass.
+Ten accepted hardware cohorts record 54 actual 320x240 synthetic captures on
+AMD and NVIDIA. Four-sample foreground works with forward, deferred and FSR
+Quality world rendering: each case has 465 partial edge pixels across all three
+quarter-coverage classes, within one display RGB level of the independent
+linear-HDR reference. Raw world radiance stays analytic; complete world products
+match across foreground/empty/reference cases. Twenty-four default full BMPs
+and their world probes match retained 0.0.120 results exactly. Malformed counts
+reject without changing runtime state, and empty foregrounds preserve pixels.
+All accepted Windows Jobs close naturally with unchanged admitted inputs.
+A retained initial NVIDIA FSR fixture run rejected an overly strict assumption
+that reconstructed radiance must equal authored raw radiance: its output differs
+by one half-float step. The fixture successor records that value separately;
+raw-radiance, edge tolerances and exact world-product equality remain enforced.
+Hardware image qualification covers foreground counts one and four; two/eight
+have graph-contract coverage and require device checks when requested. These bounded captures do not
+establish game-scale performance, temporal AA or physical input latency.
+[Contract](VIEWMODELS.md), [results](evidence/m2-viewmodel-msaa.json).
 
 Version 0.0.120 adds a separate frozen Camera viewmodel lens and explicit
 CameraDraw bindings. Named Game cameras render bound opaque arms/weapons with

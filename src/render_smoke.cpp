@@ -44,6 +44,8 @@
 #include "poima/scene_output_products_ps.hpp"
 #include "poima/viewmodel_composite_vs.hpp"
 #include "poima/viewmodel_composite_ps.hpp"
+#include "poima/viewmodel_resolve_vs.hpp"
+#include "poima/viewmodel_resolve_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
 #include "poima/cluster_lights_cs.hpp"
@@ -296,17 +298,17 @@ struct Context {
     // One serial-queue scratch bundle; accepted slots retain its exact handles.
     // Replacement stages a complete bundle and counts old+new logical payload.
     struct ViewmodelResources {
-        std::uint32_t width=0,height=0;
+        std::uint32_t width=0,height=0,samples=1;
         std::uint64_t bytes=0;
-        nvrhi::TextureHandle color,depth,composite;
+        nvrhi::TextureHandle color,depth,resolved,composite;
         nvrhi::BufferHandle frame,objects,counts,indices;
         std::array<nvrhi::BufferHandle,2> readbacks;
-        nvrhi::ShaderHandle vertex,pixel,compose_vertex,compose_pixel;
+        nvrhi::ShaderHandle vertex,pixel,compose_vertex,compose_pixel,resolve_vertex,resolve_pixel;
         nvrhi::InputLayoutHandle input;
-        nvrhi::BindingLayoutHandle compose_layout;
-        nvrhi::BindingSetHandle cluster_bindings,compose_bindings;
-        nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline,compose_pipeline;
-        nvrhi::FramebufferHandle framebuffer,compose_framebuffer;
+        nvrhi::BindingLayoutHandle compose_layout,resolve_layout;
+        nvrhi::BindingSetHandle cluster_bindings,compose_bindings,resolve_bindings;
+        nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline,compose_pipeline,resolve_pipeline;
+        nvrhi::FramebufferHandle framebuffer,compose_framebuffer,resolve_framebuffer;
         std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> materials;
     };
     std::shared_ptr<ViewmodelResources> viewmodel;
@@ -361,6 +363,7 @@ struct Context {
     // Set only by run_player; captures and editor contexts inherit window DPI.
     std::optional<float> player_ui_scale;
     std::uint32_t samples = 1;
+    std::uint32_t viewmodel_samples = 1;
     nvrhi::TextureHandle depth;
     nvrhi::TextureHandle multisample_color;
     nvrhi::TextureHandle scene_hdr,scene_normal,scene_motion,scene_motion_valid;
@@ -625,6 +628,8 @@ struct Context {
         require(reconstruction_mode==ReconstructionMode::none || (scene && options.samples==1 && scene_debug_view==SceneDebugView::color),"FSR reconstruction requires a single-sample color scene.");
         samples = scene ? options.samples : 1;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
+        viewmodel_samples=options.viewmodel_samples;
+        require(viewmodel_samples==1 || viewmodel_samples==2 || viewmodel_samples==4 || viewmodel_samples==8,"Foreground samples must be 1, 2, 4 or 8.");
         SDL_SetMainReady();
         const bool initialized_video = SDL_Init(SDL_INIT_VIDEO);
         require(initialized_video, std::string("SDL video initialization: ") + SDL_GetError());
@@ -1562,22 +1567,39 @@ struct Context {
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
-    std::shared_ptr<ViewmodelResources> stage_viewmodel(std::uint32_t width,std::uint32_t height) {
-        auto bundle=std::make_shared<ViewmodelResources>();bundle->width=width;bundle->height=height;
-        bundle->bytes=std::uint64_t(width)*height*20+sizeof(FrameConstants)+32*sizeof(ObjectData)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
+    std::shared_ptr<ViewmodelResources> stage_viewmodel(std::uint32_t width,std::uint32_t height,std::uint32_t sample_count) {
+        auto bundle=std::make_shared<ViewmodelResources>();bundle->width=width;bundle->height=height;bundle->samples=sample_count;
+        // One-sample resolved/color aliases count once. Multisample bundles
+        // own color(8*N), depth(4*N), resolved(8) and composite(8) per pixel.
+        bundle->bytes=std::uint64_t(width)*height*(sample_count==1 ? 20u : 12u*sample_count+16u)+sizeof(FrameConstants)+32*sizeof(ObjectData)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
         validate_viewmodel_budget(viewmodel_resident_bytes(bundle));
-        auto image=[&](nvrhi::Format format,vk::Format vk_format,const char* name) {
+        auto support=[&](nvrhi::Format format,vk::Format vk_format,std::uint32_t count) {
             const auto supported=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
             const auto attachment=format==nvrhi::Format::D32 ? vk::FormatFeatureFlagBits::eDepthStencilAttachment : vk::FormatFeatureFlagBits::eColorAttachment;
             const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|attachment;
             require((supported&needed)==needed,"Foreground image format is unsupported.");
-            nvrhi::TextureDesc desc;desc.width=width;desc.height=height;desc.format=format;desc.sampleCount=1;desc.isRenderTarget=true;desc.isShaderResource=true;
+            const auto usage=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferSrc|vk::ImageUsageFlagBits::eTransferDst|
+                (format==nvrhi::Format::D32 ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+            const auto properties=physical.getImageFormatProperties(vk_format,vk::ImageType::e2D,vk::ImageTiling::eOptimal,usage,{},dispatch);
+            require(bool(properties.sampleCounts&static_cast<vk::SampleCountFlagBits>(count)) && width<=properties.maxExtent.width &&
+                height<=properties.maxExtent.height && properties.maxExtent.depth>=1 && properties.maxMipLevels>=1 && properties.maxArrayLayers>=1,
+                "Selected GPU lacks requested foreground format/extent/sample support.");
+        };
+        // Validate every distinct format/sample usage before the first image
+        // allocation; a global framebuffer sample mask does not prove these.
+        support(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,sample_count);
+        support(nvrhi::Format::D32,vk::Format::eD32Sfloat,sample_count);
+        if(sample_count>1)support(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,1);
+        auto image=[&](nvrhi::Format format,std::uint32_t count,const char* name) {
+            nvrhi::TextureDesc desc;desc.width=width;desc.height=height;desc.format=format;desc.sampleCount=count;desc.isRenderTarget=true;desc.isShaderResource=true;
+            desc.dimension=count>1 ? nvrhi::TextureDimension::Texture2DMS : nvrhi::TextureDimension::Texture2D;
             desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
             auto result=checked->createTexture(desc);require(bool(result),std::string("Foreground allocation failed: ")+name);return result;
         };
-        bundle->color=image(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Foreground output-local HDR coverage");
-        bundle->depth=image(nvrhi::Format::D32,vk::Format::eD32Sfloat,"Foreground independent self depth");
-        bundle->composite=image(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"World plus foreground linear HDR");
+        bundle->color=image(nvrhi::Format::RGBA16_FLOAT,sample_count,"Foreground output-local HDR coverage");
+        bundle->depth=image(nvrhi::Format::D32,sample_count,"Foreground independent self depth");
+        bundle->resolved=sample_count==1 ? bundle->color : image(nvrhi::Format::RGBA16_FLOAT,1,"Foreground arithmetic-average HDR coverage");
+        bundle->composite=image(nvrhi::Format::RGBA16_FLOAT,1,"World plus foreground linear HDR");
         nvrhi::BufferDesc frame;frame.byteSize=sizeof(FrameConstants);frame.isConstantBuffer=true;frame.initialState=nvrhi::ResourceStates::ConstantBuffer;frame.keepInitialState=true;frame.debugName="Foreground frame constants";
         bundle->frame=checked->createBuffer(frame);
         nvrhi::BufferDesc objects;objects.byteSize=32*sizeof(ObjectData);objects.structStride=sizeof(ObjectData);objects.initialState=nvrhi::ResourceStates::ShaderResource;objects.keepInitialState=true;objects.debugName="Foreground immutable submission objects";
@@ -1612,12 +1634,24 @@ struct Context {
         composite.renderState.depthStencilState.depthTestEnable=false;composite.renderState.depthStencilState.depthWriteEnable=false;composite.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
         bundle->compose_pipeline=checked->createGraphicsPipeline(composite,bundle->compose_framebuffer->getFramebufferInfo());
         require(bundle->pipeline && bundle->culled_pipeline && bundle->compose_vertex && bundle->compose_pixel && bundle->compose_layout && bundle->compose_pipeline,"Foreground pipeline allocation failed.");
-        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->color)),bundle->compose_layout);
+        if(sample_count>1) {
+            bundle->resolve_vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_viewmodel_resolve_vs);
+            bundle->resolve_pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_viewmodel_resolve_ps);
+            bundle->resolve_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Pixel).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)));
+            bundle->resolve_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::Texture_SRV(0,bundle->color)),bundle->resolve_layout);
+            bundle->resolve_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->resolved));
+            require(bundle->resolve_vertex && bundle->resolve_pixel && bundle->resolve_layout && bundle->resolve_bindings && bundle->resolve_framebuffer,"Foreground resolve resources unavailable.");
+            nvrhi::GraphicsPipelineDesc resolve;resolve.VS=bundle->resolve_vertex;resolve.PS=bundle->resolve_pixel;resolve.bindingLayouts.push_back(bundle->resolve_layout);
+            resolve.renderState.depthStencilState.depthTestEnable=false;resolve.renderState.depthStencilState.depthWriteEnable=false;resolve.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+            bundle->resolve_pipeline=checked->createGraphicsPipeline(resolve,bundle->resolve_framebuffer->getFramebufferInfo());
+            require(bool(bundle->resolve_pipeline),"Foreground resolve pipeline allocation failed.");
+        }
+        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->resolved)),bundle->compose_layout);
         require(bool(bundle->compose_bindings),"Foreground staged composition bindings unavailable.");
         return bundle;
     }
     void prepare_viewmodel(std::set<std::string>& active_skins) {
-        viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();if(scene->viewmodel)pending_viewmodel.emplace();viewmodel_enabled=scene_visible && scene->viewmodel.has_value() && scene_debug_view==SceneDebugView::color;
+        viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();if(scene->viewmodel) {pending_viewmodel.emplace();pending_viewmodel->samples=viewmodel_samples;}viewmodel_enabled=scene_visible && scene->viewmodel.has_value() && scene_debug_view==SceneDebugView::color;
         if(!viewmodel_enabled) {
             if(viewmodel) {retire_frames(true);viewmodel.reset();output_bindings=nullptr;}
             viewmodel_lights={};return;
@@ -1626,8 +1660,8 @@ struct Context {
             const auto& foreground=*scene->viewmodel;require(foreground.objects.size()<=32,"Foreground exceeds 32 drawables.");
             const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
             const auto width=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxX-display.minX))),height=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxY-display.minY)));
-            if(!viewmodel || viewmodel->width!=width || viewmodel->height!=height) {
-                retire_frames(true);auto staged=stage_viewmodel(width,height);viewmodel.swap(staged);output_bindings=nullptr;
+            if(!viewmodel || viewmodel->width!=width || viewmodel->height!=height || viewmodel->samples!=viewmodel_samples) {
+                retire_frames(true);auto staged=stage_viewmodel(width,height,viewmodel_samples);viewmodel.swap(staged);output_bindings=nullptr;
             }
             validate_viewmodel_budget(viewmodel_resident_bytes());
             viewmodel->materials.clear();viewmodel_frame=frame_constants;
@@ -1660,7 +1694,7 @@ struct Context {
                 if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
                 viewmodel_draws.push_back(std::move(item));
             }
-            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->color)),viewmodel->compose_layout);
+            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->resolved)),viewmodel->compose_layout);
             require(bool(composition),"Foreground composition bindings unavailable.");viewmodel->compose_bindings=std::move(composition);
         } catch(...) {renderer_fault=true;throw;}
     }
@@ -1679,6 +1713,12 @@ struct Context {
             reconstruction ? float(output_extent.width) : display.maxX-display.minX,reconstruction ? float(output_extent.height) : display.maxY-display.minY,float(viewmodel->width),float(viewmodel->height),0,0};
         nvrhi::GraphicsState state;state.pipeline=viewmodel->compose_pipeline;state.framebuffer=viewmodel->compose_framebuffer;state.bindings.push_back(viewmodel->compose_bindings);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
         commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
+    void resolve_viewmodel() {
+        require(viewmodel->samples>1 && viewmodel->resolved.Get()!=viewmodel->color.Get(),"Foreground resolve requires distinct multisample and single-sample images.");
+        nvrhi::GraphicsState state;state.pipeline=viewmodel->resolve_pipeline;state.framebuffer=viewmodel->resolve_framebuffer;
+        state.bindings.push_back(viewmodel->resolve_bindings);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
+        commands->setGraphicsState(state);commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
 
     void prepare_scene_output() {
@@ -2620,7 +2660,7 @@ struct Context {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
-        settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;
+        settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
@@ -2716,7 +2756,7 @@ struct Context {
         }
         if(settings.viewmodel) {
             f.viewmodel_frame=buffer(viewmodel->frame,rs::Lifetime::shared,false);f.viewmodel_objects=buffer(viewmodel->objects,rs::Lifetime::shared,false,viewmodel_objects.size()*sizeof(ObjectData));
-            f.viewmodel_color=texture(viewmodel->color,rs::Lifetime::shared,false);f.viewmodel_depth=texture(viewmodel->depth,rs::Lifetime::shared,false);f.composite=texture(viewmodel->composite,rs::Lifetime::shared,false);
+            f.viewmodel_color=texture(viewmodel->color,rs::Lifetime::shared,false);f.viewmodel_depth=texture(viewmodel->depth,rs::Lifetime::shared,false);f.viewmodel_resolved=texture(viewmodel->resolved,rs::Lifetime::shared,false);f.composite=texture(viewmodel->composite,rs::Lifetime::shared,false);
             if(settings.viewmodel_clustered) {f.viewmodel_counts=buffer(viewmodel->counts,rs::Lifetime::shared,false);f.viewmodel_indices=buffer(viewmodel->indices,rs::Lifetime::shared,false);f.resources[f.viewmodel_indices].region=rs::Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;f.viewmodel_readback=buffer(viewmodel->readbacks.at(settings.slot),rs::Lifetime::slot,false);}
             for(const auto& draw:viewmodel_draws)if(draw.camera_visible) {
                 rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
@@ -2837,6 +2877,11 @@ struct Context {
             }
             if(plan.settings.viewmodel) {
                 identity(f.viewmodel_frame,viewmodel->frame.Get());identity(f.viewmodel_objects,viewmodel->objects.Get());framebuffer(viewmodel->framebuffer,f.viewmodel_color,f.viewmodel_depth);framebuffer(viewmodel->compose_framebuffer,f.composite,rs::none);
+                identity(f.viewmodel_resolved,viewmodel->resolved.Get());
+                if(viewmodel->samples>1) {
+                    framebuffer(viewmodel->resolve_framebuffer,f.viewmodel_resolved,rs::none);
+                    for(const auto& binding:viewmodel->resolve_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(f.viewmodel_color,binding.resourceHandle);
+                }
                 if(plan.settings.viewmodel_clustered) {identity(f.viewmodel_counts,viewmodel->counts.Get());identity(f.viewmodel_indices,viewmodel->indices.Get());identity(f.viewmodel_readback,viewmodel->readbacks.at(plan.settings.slot).Get());}
                 std::size_t foreground_index=0;
                 for(const auto& draw:viewmodel_draws) {
@@ -2855,7 +2900,7 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
                     }
                 }
-                for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : f.viewmodel_color,binding.resourceHandle);
+                for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : f.viewmodel_resolved,binding.resourceHandle);
                 if(plan.settings.viewmodel_clustered)for(const auto& binding:viewmodel->cluster_bindings->getDesc()->bindings) {
                     if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
                     if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(f.lights,binding.resourceHandle);
@@ -3033,6 +3078,7 @@ struct Context {
             case render_schedule::PassId::viewmodel_clear:
                 commands->clearTextureFloat(planned_texture(resources.viewmodel_color),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));commands->clearDepthStencilTexture(planned_texture(resources.viewmodel_depth),nvrhi::AllSubresources,true,1.0f,false,0);break;
             case render_schedule::PassId::viewmodel_opaque:render_viewmodel();break;
+            case render_schedule::PassId::viewmodel_resolve:resolve_viewmodel();break;
             case render_schedule::PassId::viewmodel_composite:composite_viewmodel();break;
             case render_schedule::PassId::output:render_scene_output(index);break;
             case render_schedule::PassId::game_ui:render_game_ui(index);break;

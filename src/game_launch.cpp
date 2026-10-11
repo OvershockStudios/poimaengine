@@ -125,6 +125,7 @@ Reply run_game(const GameLaunchOptions& options) {
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};
+        if(options.render.viewmodel_samples!=1)params["viewmodel_samples"]=options.render.viewmodel_samples;
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
         if(has_settings && !options.samples_explicit)params.erase("samples");
         if(options.frames_in_flight_explicit)params["frames_in_flight"]=options.render.frames_in_flight;

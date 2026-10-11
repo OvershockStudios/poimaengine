@@ -40,7 +40,7 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
-foreach(shader smoke scene scene_products scene_deferred deferred_lighting deferred_lighting_ao ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products viewmodel_composite sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui)
+foreach(shader smoke scene scene_products scene_deferred deferred_lighting deferred_lighting_ao ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui)
 foreach(stage vs ps cs)
     if(((shader STREQUAL "skinning" OR shader STREQUAL "cluster_lights" OR shader STREQUAL "temporal_inputs" OR shader STREQUAL "deferred_lighting" OR shader STREQUAL "deferred_lighting_ao" OR shader STREQUAL "ambient_occlusion" OR shader STREQUAL "ambient_occlusion_filter") AND NOT stage STREQUAL "cs") OR (NOT (shader STREQUAL "skinning" OR shader STREQUAL "cluster_lights" OR shader STREQUAL "temporal_inputs" OR shader STREQUAL "deferred_lighting" OR shader STREQUAL "deferred_lighting_ao" OR shader STREQUAL "ambient_occlusion" OR shader STREQUAL "ambient_occlusion_filter") AND stage STREQUAL "cs"))
         continue()

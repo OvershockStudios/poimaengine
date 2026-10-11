@@ -1591,7 +1591,7 @@ public:
                 {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
         if(d.viewmodel) {
             const auto& v=*d.viewmodel;
-            result["viewmodel"]={{"rendered",v.rendered},{"output_width",v.output_width},{"output_height",v.output_height},
+            result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
                 {"logical_bytes",v.logical_bytes},{"draws",draw_counts_json(v.draws)},{"light_assignment",light_assignment_json(v.light_assignment)}};
         }
         return result;
@@ -2156,6 +2156,8 @@ public:
         options.width = integer("width", 960, 128, 4096); options.height = integer("height", 540, 128, 4096);
         if (params.contains("gpu")) options.gpu = static_cast<int>(integer("gpu", 0, 0, 4095));
         options.samples = integer("samples", 4, 1, 4);
+        options.viewmodel_samples = integer("viewmodel_samples", 1, 1, 8);
+        require(options.viewmodel_samples==1 || options.viewmodel_samples==2 || options.viewmodel_samples==4 || options.viewmodel_samples==8,"Viewmodel samples must be 1, 2, 4 or 8.");
         options.frames_in_flight = integer("frames_in_flight", 2, 1, 2);
         options.frames = integer("capture_frames", 2, 1, 128);
         if(params.contains("shadow_filter")) {
@@ -2243,7 +2245,7 @@ public:
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             material_guard(params,"material_revision");
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
@@ -2255,8 +2257,8 @@ public:
                 ui_scale=static_cast<float>(density);
             }
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "shadow_filter", "capture_frames", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "viewmodel_samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "shadow_filter", "capture_frames", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));

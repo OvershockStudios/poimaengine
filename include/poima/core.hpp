@@ -140,6 +140,7 @@ struct RenderOptions {
     bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
     bool fsr3_history_probes = false; // Native SDK qualification only; requires enabled reconstruction and capture probes.
     ShadowFilter shadow_filter = ShadowFilter::pcf3_point; // Retained nine-tap reference is the default.
+    std::uint32_t viewmodel_samples = 1; // Independent foreground samples: 1, 2, 4 or 8.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
@@ -165,6 +166,7 @@ struct ViewmodelDiagnostics {
     std::uint64_t logical_bytes=0;
     DrawCounts draws;
     LightAssignmentDiagnostics light_assignment;
+    std::uint32_t samples=1; // Selected foreground count, including configured empty views.
 };
 struct FrameExecutionDiagnostics {
     std::uint32_t limit=2;

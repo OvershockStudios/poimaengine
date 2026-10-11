@@ -90,25 +90,52 @@ empty foreground differs from an absent lens. Selected membership is not a
 claim that every drawable survived camera culling or depth tests.
 
 Rendering diagnostics separately report `viewmodel.rendered`, output extent,
-actual draw counts, logical payload bytes and its own light-assignment grid.
+sample count, actual draw counts, logical payload bytes and its own light-assignment
+grid. `viewmodel.samples` is the selected count when `rendered:true`; when
+`rendered:false` it records intent without asserting an allocated framebuffer.
 Foreground uses a separate cluster grid for its lens, sharing immutable world
 lights and the existing overflow fallback. Frame receipts describe accepted
 queue submission/presentation, not physical display scan-out or input latency.
+
+## Foreground anti-aliasing
+
+Set `viewmodel_samples` to `1`, `2`, `4` or `8` on `world.capture`,
+`runtime.capture`, `runtime.play` or `runtime.player.start`. Native player/editor launches accept
+`--viewmodel-samples`. The default is `1`; the setting is independent of world
+`samples`, lighting path and FSR reconstruction. It does not change the authored
+camera, save schema or gameplay service ABI, and is not a saved preference.
+
+For multiple samples, foreground color and self-depth use matching multisample
+attachments. An explicit shader averages every HDR color/coverage sample into a
+single-sample image. Cleared samples are zero; opaque covered samples have alpha
+one. This preserves premultiplied coverage for composition:
+`foreground.rgb + world.rgb * (1 - foreground.a)`. Exposure/tone mapping still
+runs once after composition. At one sample, color and resolved color share one
+allocation and the resolve pass is omitted.
+
+The renderer checks the selected device's actual image-format/sample support
+before allocating foreground attachments. Unsupported counts or exceeded
+budgets reject; quality is never silently reduced. MSAA improves geometric
+silhouette coverage, not temporal stability or texture/specular aliasing.
+Hardware multisample behavior is specified by the [Vulkan rasterization
+specification](https://docs.vulkan.org/spec/latest/chapters/primsrast.html#primsrast-multisampling).
 
 ## Bounds and current limits
 
 - Lens FOV: 5–150 degrees; `0.001 <= near < far <= 10,000,000`.
 - At most 32 configured drawables of each mode per camera, invisible included.
-- Opaque, single-sample foreground with independent self-depth. Foreground
-  temporal AA, MSAA, transparency and reconstruction are not provided.
+- Opaque foreground with independent self-depth and optional MSAA. Foreground
+  temporal AA, transparency and reconstruction are not provided.
 - Logical foreground resident-plus-staging payload is capped at 384 MiB,
   including retained generations, attachments, buffers and readbacks. Existing
   aggregate renderer/reconstruction budgets also apply. Resizing can reject a
   staging pair that exceeds the aggregate budget even when its foreground
   portion fits. Allocation failure never falls back to world FOV or depth.
-- Color/depth/composite attachments use 20 logical bytes per output pixel:
-  approximately 39.6 MiB at 1080p or 158.2 MiB at 4K, before buffers. Logical
-  payload is not measured Vulkan allocator heap usage or a performance estimate.
+- At one sample, attachments use 20 logical bytes per output pixel; at `N > 1`,
+  they use `12*N + 16` bytes. At 1080p that is about 39.6 MiB at one sample,
+  126.6 MiB at four and 221.5 MiB at eight, before buffers. Four-sample 4K
+  exceeds the foreground budget. Logical payload is not measured Vulkan
+  allocator heap usage or a performance estimate.
 
 Qualification results belong in the implementation status and evidence record;
 this contract does not establish a complete FPS weapon framework or Alpha readiness.

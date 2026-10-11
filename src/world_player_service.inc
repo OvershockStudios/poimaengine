@@ -7,7 +7,7 @@
             options.render.scene_debug_view==SceneDebugView::color,options.render.reconstruction!=ReconstructionMode::none};
     }
     static void validate_player_parameters(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
             {"session_id","request_id","expected_tick","camera","mode"});
     }
     PreparedPlayer prepare_player(const Json& params) {
@@ -507,7 +507,7 @@
             if(launch.contains("controller"))identifier(launch.at("controller"));
             // JSON numeric equality must not admit a malformed floating retry
             // where the wire requires an integer. This validation performs no I/O.
-            for(const auto* key:{"expected_structure_revision","input_revision","settings_revision","max_frames","width","height","gpu","samples","frames_in_flight"})
+            for(const auto* key:{"expected_structure_revision","input_revision","settings_revision","max_frames","width","height","gpu","samples","viewmodel_samples","frames_in_flight"})
                 if(launch.contains(key))revision(launch.at(key));
             if(launch.contains("gamepad") && launch.at("gamepad").is_object() && launch.at("gamepad").contains("id"))revision(launch.at("gamepad").at("id"));
             if(launch.contains("sequence") && launch.at("sequence").is_array())for(const auto& segment:launch.at("sequence")) {

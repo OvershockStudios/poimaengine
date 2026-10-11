@@ -167,7 +167,7 @@ def main():
     try:
         client = open_client()
         description = call('world.describe')
-        need(description['schema_revision'] == 89 and 'CameraDraw' in description['components'], 'Discovery absent')
+        need(description['schema_revision'] == 90 and 'CameraDraw' in description['components'], 'Discovery absent')
         ops = entity(100)+[component(100, 'Camera', camera())]
         ops += entity(101, uid(100))+[component(101, 'MeshRenderer', mesh()), component(101, 'CameraDraw', draw()), component(101, 'PbrMaterial', material())]
         ops += entity(102)+[component(102, 'MeshRenderer', mesh()), component(102, 'CameraDraw', draw(mode='hidden'))]

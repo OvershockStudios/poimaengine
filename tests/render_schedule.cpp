@@ -263,8 +263,9 @@ void viewmodel_contracts(){
     auto foreground=[](Fixture& fixture) {
         auto& f=fixture.f;fixture.settings.viewmodel=true;
         f.viewmodel_frame=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_objects=fixture.add(Kind::buffer,Lifetime::shared);
-        auto image=[&](Format format) {auto id=fixture.add(Kind::texture,Lifetime::shared);f.resources[id].format=format;return id;};
-        f.viewmodel_color=image(Format::rgba16_float);f.viewmodel_depth=image(Format::depth32);f.composite=image(Format::rgba16_float);
+        auto image=[&](Format format,unsigned samples=1) {auto id=fixture.add(Kind::texture,Lifetime::shared,false,samples);f.resources[id].format=format;return id;};
+        f.viewmodel_color=image(Format::rgba16_float,fixture.settings.viewmodel_samples);f.viewmodel_depth=image(Format::depth32,fixture.settings.viewmodel_samples);f.composite=image(Format::rgba16_float);
+        f.viewmodel_resolved=fixture.settings.viewmodel_samples==1 ? f.viewmodel_color : image(Format::rgba16_float);
         f.viewmodel_draws.push_back({f.camera_draws.front().vertices,f.camera_draws.front().indices,f.camera_draws.front().textures});
         if(fixture.settings.viewmodel_clustered) {
             f.viewmodel_counts=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_indices=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_readback=fixture.add(Kind::buffer,Lifetime::slot);
@@ -274,15 +275,22 @@ void viewmodel_contracts(){
             f.resources[f.viewmodel_indices].region=Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;
         }
     };
-    // Foreground stays one-sample even when world color/depth are four-sample;
+    // Foreground samples are independent of the world path and its samples;
     // its opaque pass consumes current skin output, never previous world input.
-    for(bool deferred:{false,true})for(bool clustered:{false,true})for(bool skin:{false,true})for(unsigned samples:{1u,4u}) {
+    for(bool deferred:{false,true})for(bool clustered:{false,true})for(bool skin:{false,true})for(unsigned samples:{1u,2u,4u,8u})for(unsigned foreground_samples:{1u,2u,4u,8u}) {
         if(deferred && samples!=1)continue;
-        auto settings=rich();settings.deferred=deferred;settings.products=deferred || samples==1;settings.viewmodel_clustered=clustered;
+        auto settings=rich();settings.deferred=deferred;settings.products=deferred || samples==1;settings.viewmodel_clustered=clustered;settings.viewmodel_samples=foreground_samples;
         Fixture fixture(settings,samples,skin);foreground(fixture);auto plan=fixture.plan();plan.validate();++accepted;
-        check(plan.frame.resources[plan.frame.viewmodel_color].samples==1,"Foreground inherited world MSAA");
-        unsigned draws=0,composites=0;plan.execute([&](const Pass& pass,const Schedule&){draws+=pass.id==PassId::viewmodel_opaque;composites+=pass.id==PassId::viewmodel_composite;});
-        check(draws==1 && composites==1,"Foreground draw/composite population differs");
+        check(plan.frame.resources[plan.frame.viewmodel_color].samples==foreground_samples && plan.frame.resources[plan.frame.color].samples==samples,"Foreground changed world MSAA");
+        check((plan.frame.viewmodel_resolved==plan.frame.viewmodel_color)==(foreground_samples==1),"Foreground resolve alias policy differs");
+        unsigned draws=0,resolves=0,composites=0;plan.execute([&](const Pass& pass,const Schedule&){draws+=pass.id==PassId::viewmodel_opaque;resolves+=pass.id==PassId::viewmodel_resolve;composites+=pass.id==PassId::viewmodel_composite;});
+        check(draws==1 && composites==1 && resolves==(foreground_samples!=1),"Foreground draw/resolve/composite population differs");
+        check(pass(plan,PassId::viewmodel_composite).accesses[1].resource==plan.frame.viewmodel_resolved,"Composite bypassed premultiplied resolved foreground");
+        if(foreground_samples!=1) {
+            const auto& work=pass(plan,PassId::viewmodel_resolve);
+            check(work.accesses.size()==2 && work.accesses[0].resource==plan.frame.viewmodel_color && work.accesses[0].use==Use::sampled && work.accesses[1].resource==plan.frame.viewmodel_resolved && work.accesses[1].use==Use::color_overwrite && work.accesses[1].initialize,"Foreground shader resolve access contract differs");
+            check(std::string(pass_name(work.id))=="render.pass.viewmodel_resolve","Foreground resolve trace label differs");
+        }
     }
     auto settings=rich();settings.products=settings.viewmodel_clustered=true;
     Fixture fixture(settings,1,true);foreground(fixture);const auto original=fixture.plan();original.validate();
@@ -292,7 +300,10 @@ void viewmodel_contracts(){
     bad("foreground frame aliases world",[](auto& p){p.frame.viewmodel_frame=p.frame.frame;});
     bad("foreground cluster aliases world",[](auto& p){p.frame.viewmodel_counts=p.frame.counts;});
     bad("foreground attachment extent",[](auto& p){++p.frame.resources[p.frame.viewmodel_depth].width;});
-    bad("foreground inherited MSAA",[](auto& p){p.frame.resources[p.frame.viewmodel_color].samples=4;});
+    bad("foreground samples mismatch option",[](auto& p){p.frame.resources[p.frame.viewmodel_color].samples=4;});
+    bad("single-sample foreground resolve missing",[](auto& p){p.frame.viewmodel_resolved=none;});
+    bad("single-sample foreground resolve is separate",[](auto& p){p.frame.viewmodel_resolved=p.frame.composite;});
+    bad("single-sample foreground has resolve pass",[](auto& p){auto& work=pass(p,PassId::viewmodel_composite);work.id=PassId::viewmodel_resolve;});
     bad("foreground oversized attachment",[](auto& p){for(auto id:{p.frame.viewmodel_color,p.frame.viewmodel_depth,p.frame.composite})p.frame.resources[id].width=p.frame.resources[id].height=8192;});
     bad("foreground missing clear",[](auto& p){std::erase_if(p.passes,[](const Pass& work){return work.id==PassId::viewmodel_clear;});});
     bad("foreground missing depth clear",[](auto& p){erase_access(p,PassId::viewmodel_clear,p.frame.viewmodel_depth,Use::clear_depth);});
@@ -309,15 +320,50 @@ void viewmodel_contracts(){
     bad("foreground before completed world",[](auto& p){auto& work=pass(p,PassId::viewmodel_clear);work.id=PassId::scene_clear;});
     bad("world diagnostic includes foreground",[](auto& p){p.settings.products_debug=true;});
     bad("foreground disabled but retains resources",[](auto& p){p.settings.viewmodel=false;});
+    // Multisample foreground resolves exactly once by sampling its own color,
+    // without fixed-function copy/resolve or accesses to world products/depth.
+    auto ms_settings=settings;ms_settings.viewmodel_samples=8;Fixture ms(ms_settings,1,true);foreground(ms);const auto ms_original=ms.plan();ms_original.validate();
+    auto ms_bad=[&](const char* label,const auto& edit){auto p=ms_original;edit(p);rejects(label,[&]{p.validate();});};
+    for(unsigned samples:{0u,3u,16u})ms_bad("unsupported foreground samples",[&](auto& p){p.settings.viewmodel_samples=samples;});
+    ms_bad("foreground depth sample mismatch",[](auto& p){p.frame.resources[p.frame.viewmodel_depth].samples=4;});
+    ms_bad("foreground composite multisampled",[](auto& p){p.frame.resources[p.frame.composite].samples=8;});
+    ms_bad("foreground resolved multisampled",[](auto& p){p.frame.resources[p.frame.viewmodel_resolved].samples=8;});
+    for(auto alias:{ms.f.viewmodel_color,ms.f.viewmodel_depth,ms.f.composite,ms.f.hdr,ms.f.normal,ms.f.shadow,ms.f.viewmodel_frame})
+        ms_bad("foreground resolved role aliases existing resource",[&](auto& p){p.frame.viewmodel_resolved=alias;});
+    ms_bad("foreground resolved physical alias",[](auto& p){p.frame.resources[p.frame.viewmodel_resolved].identity=p.frame.resources[p.frame.viewmodel_color].identity;});
+    ms_bad("foreground resolved format",[](auto& p){p.frame.resources[p.frame.viewmodel_resolved].format=Format::rgba32_float;});
+    ms_bad("foreground resolved extent",[](auto& p){++p.frame.resources[p.frame.viewmodel_resolved].height;});
+    ms_bad("foreground resolved partial region",[](auto& p){p.frame.resources[p.frame.viewmodel_resolved].region=Region::probe_pixels;});
+    ms_bad("foreground resolve omitted",[](auto& p){std::erase_if(p.passes,[](const Pass& work){return work.id==PassId::viewmodel_resolve;});});
+    ms_bad("foreground resolve before opaque",[](auto& p){std::swap(pass(p,PassId::viewmodel_opaque),pass(p,PassId::viewmodel_resolve));});
+    ms_bad("foreground composite before resolve",[](auto& p){std::swap(pass(p,PassId::viewmodel_composite),pass(p,PassId::viewmodel_resolve));});
+    ms_bad("foreground resolve samples world",[](auto& p){pass(p,PassId::viewmodel_resolve).accesses[0].resource=p.frame.hdr;});
+    ms_bad("foreground resolve touches depth",[](auto& p){pass(p,PassId::viewmodel_resolve).accesses.push_back({p.frame.viewmodel_depth,Use::depth,false});});
+    ms_bad("foreground hardware resolve substituted",[](auto& p){auto& work=pass(p,PassId::viewmodel_resolve);work.accesses[0].use=Use::resolve_source;work.accesses[1].use=Use::resolve_destination;});
+    ms_bad("foreground resolve output not initialized",[](auto& p){pass(p,PassId::viewmodel_resolve).accesses[1].initialize=false;});
+    ms_bad("foreground composite bypasses resolve",[](auto& p){pass(p,PassId::viewmodel_composite).accesses[1].resource=p.frame.viewmodel_color;});
+    for(auto use:{Use::sampled,Use::color_overwrite}) {
+        const auto id=use==Use::sampled ? ms.f.viewmodel_color : ms.f.viewmodel_resolved;
+        ms_bad("foreground shader resolve usage unsupported",[&](auto& p){p.frame.resources[id].supported &= ~use_bit(use);});
+    }
+    ms_bad("foreground composite cannot sample resolved",[](auto& p){p.frame.resources[p.frame.viewmodel_resolved].supported &= ~use_bit(Use::sampled);});
+    // One-sample alias is charged once (320 MiB). Eight-sample attachments
+    // at the smaller 2048-square extent already exceed the same 384 MiB cap.
+    auto alias_budget=original;for(auto id:{alias_budget.frame.viewmodel_color,alias_budget.frame.viewmodel_depth,alias_budget.frame.composite})alias_budget.frame.resources[id].width=alias_budget.frame.resources[id].height=4096;
+    alias_budget.validate();++accepted;
+    ms_bad("multisample foreground logical payload exceeds limit",[](auto& p){for(auto id:{p.frame.viewmodel_color,p.frame.viewmodel_depth,p.frame.viewmodel_resolved,p.frame.composite})p.frame.resources[id].width=p.frame.resources[id].height=2048;});
     // A compact world reconstructs before the output-resolution foreground.
-    auto reconstructed=settings;reconstructed.reconstruction=true;Fixture fsr(reconstructed,1,true);foreground(fsr);
-    auto image=[&](Format format){auto id=fsr.add(Kind::texture,Lifetime::shared);fsr.f.resources[id].format=format;return id;};auto& f=fsr.f;f.resources[f.hdr].format=Format::rgba16_float;
-    f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
-    for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}) {f.resources[id].width=192;f.resources[id].height=108;}
-    auto plan=fsr.plan();plan.validate();++accepted;
-    check(pass(plan,PassId::viewmodel_composite).accesses.front().resource==f.reconstructed,"Foreground composition samples compact world instead of completed output");
-    auto broken=plan;std::erase_if(broken.passes,[](const Pass& work){return work.id==PassId::reconstruction;});rejects("foreground before reconstruction",[&]{broken.validate();});
-    broken=plan;++broken.frame.resources[f.viewmodel_color].width;rejects("foreground FSR output extent mismatch",[&]{broken.validate();});
+    for(bool deferred:{false,true})for(unsigned foreground_samples:{1u,2u,4u,8u}) {
+        auto reconstructed=settings;reconstructed.reconstruction=true;reconstructed.deferred=deferred;reconstructed.viewmodel_samples=foreground_samples;Fixture fsr(reconstructed,1,true);foreground(fsr);
+        auto image=[&](Format format){auto id=fsr.add(Kind::texture,Lifetime::shared);fsr.f.resources[id].format=format;return id;};auto& f=fsr.f;f.resources[f.hdr].format=Format::rgba16_float;
+        f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
+        for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}) {f.resources[id].width=192;f.resources[id].height=108;}
+        if(deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence}) {f.resources[id].width=192;f.resources[id].height=108;}
+        auto plan=fsr.plan();plan.validate();++accepted;
+        check(pass(plan,PassId::viewmodel_composite).accesses.front().resource==f.reconstructed,"Foreground composition samples compact world instead of completed output");
+        auto broken=plan;std::erase_if(broken.passes,[](const Pass& work){return work.id==PassId::reconstruction;});rejects("foreground before reconstruction",[&]{broken.validate();});
+        broken=plan;++broken.frame.resources[f.viewmodel_color].width;rejects("foreground FSR output extent mismatch",[&]{broken.validate();});
+    }
     // Default omission retains the old graph with no new pass/resources.
     auto ordinary=Fixture(rich(),4,true).plan();ordinary.validate();check(std::none_of(ordinary.passes.begin(),ordinary.passes.end(),[](const Pass& work){return work.id>=PassId::viewmodel_lights && work.id<=PassId::viewmodel_composite;}),"Default graph acquired foreground passes");
 }

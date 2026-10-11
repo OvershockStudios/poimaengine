@@ -97,7 +97,7 @@ poima::Reply run(int argc, char** argv) {
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides"))return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
             if(key=="--save-write-mode") {
@@ -118,6 +118,7 @@ poima::Reply run(int argc, char** argv) {
             if(key=="--gpu") { if(n>4095)return poima::usage_error("GPU must be 0..4095.");options.render.gpu=static_cast<int>(n); }
             else if(key=="--frames") { if(n<1 || n>36000)return poima::usage_error("Frames must be 1..36000; omit for interactive play.");options.max_frames=n; }
             else if(key=="--samples") { if(n!=1 && n!=4)return poima::usage_error("Samples must be 1 or 4.");options.render.samples=n;options.samples_explicit=true; }
+            else if(key=="--viewmodel-samples") { if(n!=1 && n!=2 && n!=4 && n!=8)return poima::usage_error("Viewmodel samples must be 1, 2, 4 or 8.");options.render.viewmodel_samples=n; }
             else if(key=="--frames-in-flight") { if(n!=1 && n!=2)return poima::usage_error("Frames in flight must be 1 or 2.");options.render.frames_in_flight=n;options.frames_in_flight_explicit=true; }
             else { if(n<128 || n>4096)return poima::usage_error("Game dimensions must be 128..4096.");if(key=="--width")options.render.width=n;else options.render.height=n; }
         }
@@ -156,14 +157,14 @@ poima::Reply run(int argc, char** argv) {
     }
     if(command=="editor") {
         if(argc<3 || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--"))
-            return poima::usage_error("Use: editor <world.json> [--endpoint name] [--layout path.ini | --no-layout] [--gpu N] [--samples 1|4] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]");
+            return poima::usage_error("Use: editor <world.json> [--endpoint name] [--layout path.ini | --no-layout] [--gpu N] [--samples 1|4] [--viewmodel-samples 1|2|4|8] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]");
         poima::EditorOptions options;options.world=argv[2];options.render.width=1440;options.render.height=900;
         std::set<std::string_view> seen;
         for(int index=3;index<argc;++index) {
             const std::string_view argument=argv[index];
             if(!seen.insert(argument).second)return poima::usage_error("Repeated editor argument.");
             if(argument=="--no-layout") { options.no_layout=true;continue; }
-            if(argument!="--samples" && argument!="--gpu" && argument!="--frames" && argument!="--width" && argument!="--height" && argument!="--capture" && argument!="--script" && argument!="--report" && argument!="--endpoint" && argument!="--layout")
+            if(argument!="--samples" && argument!="--viewmodel-samples" && argument!="--gpu" && argument!="--frames" && argument!="--width" && argument!="--height" && argument!="--capture" && argument!="--script" && argument!="--report" && argument!="--endpoint" && argument!="--layout")
                 return poima::usage_error("Unknown editor argument. Use: schema editor");
             if(++index>=argc)return poima::usage_error("Missing editor argument value.");
             const std::string_view value=argv[index];
@@ -183,6 +184,7 @@ poima::Reply run(int argc, char** argv) {
             if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size())return poima::usage_error("Editor numeric arguments require an unsigned decimal integer.");
             if(argument=="--gpu") { if(number>4095)return poima::usage_error("GPU index must be 0..4095.");options.render.gpu=static_cast<int>(number); }
             else if(argument=="--samples") { if(number!=1 && number!=4)return poima::usage_error("Editor samples must be 1 or 4.");options.render.samples=number; }
+            else if(argument=="--viewmodel-samples") { if(number!=1 && number!=2 && number!=4 && number!=8)return poima::usage_error("Viewmodel samples must be 1, 2, 4 or 8.");options.render.viewmodel_samples=number; }
             else if(argument=="--frames") { if(number<1 || number>36000)return poima::usage_error("Editor frame limit must be 1..36000; omit for interactive use.");options.max_frames=number; }
             else { if(number<640 || number>4096)return poima::usage_error("Editor dimensions must be 640..4096.");if(argument=="--width")options.render.width=number;else options.render.height=number; }
         }

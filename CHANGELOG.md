@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.121
+
+- Add independent foreground MSAA with explicit arithmetic HDR/coverage resolve before tone mapping, preserving default one-sample output.
+- Expose strict `viewmodel_samples` capture/player options and native CLI controls through schema revision 90; validate device support, resource ownership and budgets. [Contract](docs/VIEWMODELS.md).
+- Pass nineteen Windows native suites, four API groups, 349 valid render graphs and 632 rejected mutations.
+- Qualify 54 AMD/NVIDIA captures across forward, deferred and FSR Quality, including quarter-coverage edges, empty foregrounds and 24 byte-identical previous-version images. [Results](docs/evidence/m2-viewmodel-msaa.json).
+
 ## 0.0.120
 
 - Add optional Camera viewmodel lenses and explicit CameraDraw bindings for first-person arms/weapons and camera-hidden bodies, with atomic graph validation and instance remapping.
