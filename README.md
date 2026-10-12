@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.126.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.127.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -101,6 +101,8 @@ Follow the [Windows editor build and launch guide](docs/DESKTOP_EDITOR.md#build-
 [Patrol Room](examples/managed/PatrolGame) demonstrates compiled NPC decisions: a guard patrols, investigates noise, pursues a visible player and loses sight behind solid cover. Native-input checks exercise escape, capture, reload and checkpoint continuation. It uses an authored route and direct steering; arbitrary obstacle pathfinding remains separate work.
 
 [Locomotion Yard](examples/locomotion-yard) connects an original licensed FBX character and separate idle/run clips to native capsule movement, compiled navigation and checkpoints. Playback rate follows committed controller movement. Its tested playbook includes Windows Native AOT export and relocated playback.
+
+[Traversal Yard](examples/traversal-yard) brings steps, crouch clearance, a moving lift, three objectives, camera zoom and saves together in one first-person C# game. CoreCLR and Native AOT checks complete the course through movement and interaction inputs. Its relocated Windows export passes rendered playback and fresh-process save continuation using the cooked content.
 
 [Relay Yard](examples/relay-yard) combines native first-person pickups, an imported animated courier, navigation, menus, live settings, licensed sound cues and checkpoints into a complete small game. Its playbook covers removing the owned source copy, restoring progress in a fresh exported-game process and completing the objective. [Game evidence](docs/evidence/m2-relay-yard.json), [audio evidence](docs/evidence/m2-relay-yard-audio.json). A [retained-game upgrade](examples/relay-yard/UPGRADING.md) preserves progress across an explicitly approved C# state change and verifies completion before writing and reopening the target save.
 

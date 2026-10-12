@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.127
+
+- Add [Traversal Yard](examples/traversal-yard): a first-person C# game combining steps, crouch clearance, a moving lift, three beacon objectives, camera zoom, an imported animated courier and checkpoints.
+- Complete the course through semantic inputs on CoreCLR and Native AOT, preserve full save continuation and compatible development reload, and verify a relocated Windows export with rendered playback and cooked-world Save/Load. [Results](docs/evidence/m2-traversal-yard.json).
+- Correct installed runtime declarations to the current 336-byte services prefix and available gameplay features; reject stale metadata with fifteen file-only regressions. Document building the desktop bridge and stripping shipping symbols without changing executable code or loaded data.
+
 ## 0.0.126
 
 - Add opt-in native character locomotion for steps, walkable slopes, floor following and supported kinematic platforms. Preserve the existing controller backend when the profile is omitted. [Contract](docs/CHARACTER_LOCOMOTION.md).

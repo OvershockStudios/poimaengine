@@ -1,8 +1,42 @@
 # Implementation status
 
-Updated 2026-10-12 for **0.0.126**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-12 for **0.0.127**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.127 adds [Traversal Yard](../examples/traversal-yard), a complete
+small first-person C# course combining native steps, crouch clearance, a moving
+lift, three beacon objectives, camera zoom, an imported animated courier and
+durable checkpoints. CoreCLR and Native AOT each pass five groups through public
+semantic inputs, with 702 and 708 RPCs respectively, two native owners and nine
+selected version-9 snapshots. Four complete snapshot pairs match on each
+backend; Native AOT also preserves exact state after denied module replacement.
+CoreCLR compatible reload preserves state apart from the gameplay revision and
+its digest. Continuation compares independently cold-restored owners.
+
+Three AMD Vulkan captures use the authored sky, directional shadows, 4× MSAA
+and fractional nine-tap PCF at 960×540. These checks qualify the sample's
+scripted course and rendered checkpoints, rather than physical-input comfort,
+AA/AAA visual quality or game-scale performance. The existing locomotion and
+query profiles remain unchanged; there is no new gameplay ABI.
+
+The installed runtime declaration now reports the current 336-byte epoch-7
+services prefix and its available gameplay features. A configuration-only
+correction leaves compiled native and managed artifacts unchanged. Fifteen
+descriptor regressions reject stale declarations and check enabled-feature
+membership against the native contract. Shipping symbol removal preserves
+loadable section bytes and loader semantics, including retained crash IDs.
+
+The relocated Windows Native AOT bundle passes six commands and 564 RPCs
+across authoring and cooked-world checks. With original owned source paths
+absent, it presents 1,401 frames over 1,400 replay ticks on NVIDIA, then completes
+the course through semantic inputs in a separate cooked-world run. Nine saves
+and five complete snapshot pairs verify UI Save/Load and cold continuation.
+Four 960×540, 4× MSAA captures have no reported NVRHI errors. The 62-file,
+98,568,923-byte closure remains unchanged and meets existing export limits.
+All owned processes exit naturally. These are scripted single-machine checks;
+physical devices, clean-machine installation and Alpha acceptance remain open.
+[Results](evidence/m2-traversal-yard.json).
 
 Version 0.0.126 adds optional [native character locomotion](CHARACTER_LOCOMOTION.md)
 for steps, walkable slopes, floor following and supported kinematic platforms.

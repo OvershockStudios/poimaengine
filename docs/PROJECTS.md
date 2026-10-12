@@ -48,13 +48,15 @@ Edit the source world using the [world service](WORLD_SERVICE.md), [shared sessi
 Export takes an installed runtime tree, not a raw build directory. Build a renderer-and-simulation configuration and install it into a dedicated prefix. For the existing Windows cross-build route:
 
 ```sh
-cmake --build build/windows-runtime --target poima
+cmake --build build/windows-runtime --target poima poima_desktop
 cmake --install build/windows-runtime --strip --prefix build/runtime-windows
 
 ./build/headless/poima project build build/MyRoom/project.json \
   --output build/MyRoom-game --runtime build/runtime-windows
 ./build/headless/poima game inspect build/MyRoom-game/game.json
 ```
+
+The Windows preset enables the desktop bridge; build both targets before installing. If your configuration disables the bridge, build `poima` alone.
 
 Use the configured toolchain to strip runtime debug symbols during shipping
 installation. Keep the development build for debugging. Debug-symbol executables
@@ -63,13 +65,24 @@ verify the resulting player rather than expanding the budget to ship symbols.
 
 The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. The default install includes only runtime files, including when the desktop bridge is enabled. Its C ABI development header is opt-in: `cmake --install build/windows-runtime --component Development --prefix build/desktop-sdk`. Keep that SDK prefix separate from the runtime. Use a fresh runtime prefix if an older installation left development headers in it; CMake does not remove obsolete installed files.
 
-The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`:
+The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`. The current services extent is 336 bytes; the generated feature list includes the input, animation, camera and stance extensions, with navigation conditional on its build configuration. Check it against the native contract with `python3 tests/runtime_descriptor_contract.py --runtime build/runtime-windows/runtime.json`.
 
 ```json
 {
   "format": "poima.runtime",
   "version": 1,
-  "engine_version": "0.0.35",
+  "engine_version": "0.0.127",
+  "gameplay_services_version": 7,
+  "gameplay_call_version": 1,
+  "gameplay_call_bytes": 80,
+  "gameplay_services_bytes": 336,
+  "gameplay_features": [
+    "baseline_v7", "gameplay_persistence_v1", "component_collections_v1",
+    "animation_inertial_v1", "animation_layers_v1", "character_input_v1",
+    "hierarchical_instances_v1", "player_preferences_v1", "input_actions_v1",
+    "hit_regions_v1", "animation_ik_v1", "animation_root_motion_v1",
+    "camera_lens_v1", "character_stance_v1"
+  ],
   "target_os": "Windows",
   "target_arch": "x86_64",
   "executable": "bin/poima.exe",
@@ -79,6 +92,8 @@ The exporting headless executable and installed runtime must have the same exact
     "audio": false,
     "managed": false,
     "native_gameplay": true,
+    "game_ui": true,
+    "navigation": false,
     "editor": false
   }
 }
