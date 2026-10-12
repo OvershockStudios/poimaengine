@@ -11,6 +11,49 @@ namespace fs=std::filesystem;
 using namespace poima::development;
 std::string utf8(const fs::path& path) { const auto text=path.u8string();return std::string(reinterpret_cast<const char*>(text.data()),text.size()); }
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
+void project_operations(const fs::path& root) {
+    const auto projects=root/"project-routing",outputs=root/"artifact-routing";
+    fs::create_directory(projects);fs::create_directory(outputs);std::ofstream(projects/"project.json")<<"{}";
+    Profile profile;profile.name="projects";profile.fingerprint=std::string(64,'a');profile.target_rid="win-x64";
+    profile.project_root=fs::canonical(projects);profile.output_root=fs::canonical(outputs);
+    unsigned inspections=0,adoptions=0;Json forwarded;
+    profile.inspect_project=[&](const fs::path& manifest) {check(manifest==projects/"project.json","Inspection path escaped profile root.");++inspections;return Json{{"manifest_sha256",std::string(64,'b')}}.dump();};
+    profile.adopt_gameplay=[&](const fs::path& manifest,const fs::path& artifact,const std::string& request) {
+        check(manifest==projects/"project.json" && artifact==outputs/"retained/native-gameplay.json","Adoption selectors escaped configured roots.");
+        forwarded=Json::parse(request);++adoptions;
+        if(forwarded.value("values",Json::object()).contains("reject"))throw ServiceError(-32009,"Native journal conflict");
+        if(forwarded.value("values",Json::object()).contains("io"))throw std::runtime_error("Native retained artifact failed");
+        return Json{{"receipt_scope","project"},{"replayed",adoptions>1}}.dump();
+    };
+    Service service;service.configure({profile});
+    const auto capabilities=service.dispatch("development.profiles",Json::object()).at("profiles").at(0);
+    check(capabilities.at("project_inspect")==true && capabilities.at("gameplay_adopt")==true && capabilities.at("publish")==false && capabilities.at("export")==false,"Project-only profile capabilities differ.");
+    const Json inspect={{"profile","projects"},{"project","project.json"}};
+    check(service.dispatch("project.inspect",inspect).at("manifest_sha256")==std::string(64,'b') && inspections==1,"Project callback result changed.");
+    Json adopt={{"profile","projects"},{"project","project.json"},{"artifact","retained/native-gameplay.json"},{"request_id",std::string(32,'1')},
+        {"expected_project_sha256",std::string(64,'b')},{"expected_artifact_sha256",std::string(64,'c')}};
+    check(service.dispatch("project.gameplay.adopt",adopt).at("receipt_scope")=="project","Adoption did not return synchronous project receipt.");
+    auto expected=adopt;for(const auto* key:{"profile","project","artifact"})expected.erase(key);
+    check(forwarded==expected && !forwarded.contains("values"),"Service altered omitted values or forwarded profile selectors.");
+    check(service.dispatch("project.gameplay.adopt",adopt).at("replayed")==true && adoptions==2,"Service intercepted durable core replay.");
+    auto reject=[&](const std::string& method,const Json& params,int code) {
+        try{service.dispatch(method,params);}catch(const ServiceError& failure){check(failure.code==code,"Project routing error code differs.");return;}
+        throw std::runtime_error("Expected project routing rejection.");
+    };
+    auto malformed=inspect;malformed["profile"]="missing";reject("project.inspect",malformed,-32004);
+    malformed=inspect;malformed["project"]="../project.json";reject("project.inspect",malformed,-32602);
+    malformed=inspect;malformed["request_id"]=std::string(32,'1');reject("project.inspect",malformed,-32602);
+    for(const Json& bad:Json::array({nullptr,true,1,Json::array(),"values"})) {malformed=adopt;malformed["values"]=bad;reject("project.gameplay.adopt",malformed,-32602);}
+    malformed=adopt;malformed["expected_project_sha256"]=std::string(64,'A');reject("project.gameplay.adopt",malformed,-32602);
+    malformed=adopt;malformed["artifact"]="../escape.json";reject("project.gameplay.adopt",malformed,-32602);
+    malformed=adopt;malformed["values"]={{"reject",1}};reject("project.gameplay.adopt",malformed,-32009);
+    malformed=adopt;malformed["values"]={{"io",1}};reject("project.gameplay.adopt",malformed,-32091);
+    Service limited;profile.adopt_gameplay={};limited.configure({profile});
+    try{limited.dispatch("project.gameplay.adopt",adopt);throw std::runtime_error("Inspection-only profile granted adoption.");}
+    catch(const ServiceError& failure){check(failure.code==-32004,"Disabled adoption error differs.");}
+    const auto jobs=service.dispatch("development.jobs",Json::object());
+    check(jobs.at("jobs").empty() && jobs.at("request_budget_remaining")==4096,"Synchronous project calls consumed compile jobs/receipts.");
+}
 int main(int argc,char** argv) {
     const bool sdk_isolated=argc==5 && std::string(argv[1])=="--sdk";
     const bool sdk_server=argc==6 && std::string(argv[1])=="--sdk-server";
@@ -61,6 +104,7 @@ int main(int argc,char** argv) {
         const auto root=fs::temp_directory_path()/("poima-development-service-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
         fs::create_directories(root);
         struct Cleanup { fs::path path;~Cleanup(){std::error_code e;fs::remove_all(path,e);} } cleanup{root};
+        project_operations(root);
         const auto executable=fs::absolute(argv[0]);
         fs::create_directory(root/"subdir");
         const auto project=root/"subdir"/".."/"P $(literal) 'quotes'.csproj";std::ofstream(project)<<"<Project/>";
@@ -178,7 +222,7 @@ int main(int argc,char** argv) {
         for(const auto& job:catalog) {wait(job);service.dispatch("development.forget",{{"job_id",job.at("job_id")}});}
         for(int i=0;i<129;++i) {auto accepted=service.dispatch("development.compile",stress(sequence++));wait(accepted);service.dispatch("development.forget",{{"job_id",accepted.at("job_id")}});}
         error("development.compile",params,-32009); // Tombstone protects an expired receipt.
-        const auto schemas=Service::schemas();check(schemas.size()==9 && schemas.contains("development.diagnostics"),"Operation discovery incomplete.");
+        const auto schemas=Service::schemas();check(schemas.size()==11 && schemas.contains("development.diagnostics") && schemas.contains("project.inspect") && schemas.contains("project.gameplay.adopt"),"Operation discovery incomplete.");
         const auto& restore_schema=schemas.at("development.compile").at("properties").at("restore");
         check(restore_schema.at("type")=="boolean" && restore_schema.at("default")==true,"Restore discovery differs from admission default.");
         const auto& server_schema=schemas.at("development.compile").at("properties").at("compiler_server");
@@ -188,7 +232,8 @@ int main(int argc,char** argv) {
         check(std::find(required.begin(),required.end(),Json("compiler_server"))==required.end(),"Owned compiler selection became required.");
         std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","explicit_restore_argv","restore_boolean_admission","restore_retry_normalization","compiler_server_selector_admission","compiler_server_receipt_guard","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
             {"diagnostic_checks",{"structured_source_location","summary_deduplication","limited_results_explicit","invalid_limits","invalid_utf8_diagnostic","unrecognized_output_preserves_failure"}},
-            {"scope","Development service and real self-child processes; no actual SDK or world-host qualification."}}).dump(2)<<'\n';
+            {"project_checks",{"host_profile_callbacks","synchronous_no_jobs","native_request_forwarding","missing_artifact_replay_delegation","path_and_type_rejection","native_error_codes","disabled_adoption"}},
+            {"scope","Development service and real self-child processes; project routing callbacks are fixture-only, no actual SDK or native artifact/world-host qualification."}}).dump(2)<<'\n';
         return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

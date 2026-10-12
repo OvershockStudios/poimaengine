@@ -6,6 +6,7 @@
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
 #include "input_profile_store.hpp"
+#include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -14,10 +15,12 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <random>
 #include <set>
 #include <stdexcept>
+#include <tuple>
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -38,6 +41,22 @@ constexpr std::uint64_t file_limit=256ULL*1024*1024,total_limit=1024ULL*1024*102
 constexpr std::size_t count_limit=4096;
 void require(bool condition,const std::string& detail) { if(!condition)throw std::runtime_error(detail); }
 fs::path path_of(const std::string& value) { require(!value.empty() && value.find('\0')==std::string::npos,"Path must be nonempty and NUL-free.");return fs::path(std::u8string(value.begin(),value.end())); }
+// Only native filesystem calls receive this spelling. Logical paths, journal
+// selectors and returned identities retain their ordinary absolute spelling.
+fs::path project_io_path(const fs::path& path) {
+#ifdef _WIN32
+    // Filesystem iterators can already return an extended IO spelling. Do not
+    // apply ordinary-path normalization to that namespace a second time.
+    if(path.native().starts_with(L"\\\\?\\"))return path;
+    auto native=fs::absolute(path).lexically_normal().make_preferred().native();
+    require(!native.starts_with(L"\\\\.\\"),"Device namespace paths are not project files.");
+    if(native.starts_with(L"\\\\"))return fs::path(L"\\\\?\\UNC\\"+native.substr(2));
+    require(native.size()>=3 && native[1]==L':' && native[2]==L'\\',"Expected a fully qualified Windows filesystem path.");
+    return fs::path(L"\\\\?\\"+native);
+#else
+    return path;
+#endif
+}
 std::string text(const fs::path& path) { const auto value=path.generic_u8string();return {reinterpret_cast<const char*>(value.data()),value.size()}; }
 std::string hash(const std::string& value) { return sha256(std::as_bytes(std::span(value.data(),value.size()))); }
 std::string folded(std::string value) { for(auto& c:value)if(c>='A' && c<='Z')c=static_cast<char>(c-'A'+'a');return value; }
@@ -85,22 +104,22 @@ std::string relative_path(const Json& value) {
     }
     return path;
 }
-void regular(const fs::path& path) { require(fs::is_regular_file(fs::symlink_status(path)),"Expected an existing regular file without symlink: "+text(path)); }
+void regular(const fs::path& path) { require(fs::is_regular_file(fs::symlink_status(project_io_path(path))),"Expected an existing regular file without symlink: "+text(path)); }
 fs::path contained(const fs::path& root,const std::string& relative) {
     relative_path(relative);auto path=root;const fs::path suffix(relative);
     for(auto it=suffix.begin();it!=suffix.end();++it) {
-        path/=*it;const auto status=fs::symlink_status(path);require(!fs::is_symlink(status),"Symlinks are not accepted in project or bundle payloads.");
+        path/=*it;const auto status=fs::symlink_status(project_io_path(path));require(!fs::is_symlink(status),"Symlinks are not accepted in project or bundle payloads.");
         if(std::next(it)!=suffix.end())require(fs::is_directory(status),"Missing or invalid content directory.");
     }
     regular(path);
 #ifdef _WIN32
     // Junctions are reparse points rather than std::filesystem symlinks.
-    auto cursor=root;for(const auto& part:suffix) { cursor/=part;const auto attributes=GetFileAttributesW(cursor.c_str());require(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Reparse points are not accepted in content paths."); }
+    auto cursor=root;for(const auto& part:suffix) { cursor/=part;const auto attributes=GetFileAttributesW(project_io_path(cursor).c_str());require(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Reparse points are not accepted in content paths."); }
 #endif
     return path;
 }
 std::string read(const fs::path& path,std::uint64_t maximum=file_limit) {
-    regular(path);std::ifstream file(path,std::ios::binary|std::ios::ate);require(bool(file),"Cannot read file: "+text(path));const auto end=file.tellg();
+    regular(path);std::ifstream file(project_io_path(path),std::ios::binary|std::ios::ate);require(bool(file),"Cannot read file: "+text(path));const auto end=file.tellg();
     require(end>=0 && static_cast<std::uint64_t>(end)<=maximum,"File exceeds its size budget: "+text(path));std::string bytes(static_cast<std::size_t>(end),'\0');file.seekg(0);
     if(!bytes.empty())require(bool(file.read(bytes.data(),static_cast<std::streamsize>(bytes.size()))),"File changed or failed during read.");
     require(file.peek()==std::char_traits<char>::eof(),"File grew during read.");return bytes;
@@ -116,7 +135,7 @@ bool within(const fs::path& child,const fs::path& parent) {
 }
 void exclusive_write(const fs::path& path,const std::string& bytes) {
 #ifdef _WIN32
-    const auto handle=CreateFileW(path.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);require(handle!=INVALID_HANDLE_VALUE,"Cannot exclusively create output file.");
+    const auto handle=CreateFileW(project_io_path(path).c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);require(handle!=INVALID_HANDLE_VALUE,"Cannot exclusively create output file.");
     std::size_t offset=0;bool success=true;while(offset<bytes.size()) { DWORD used=0;const auto count=static_cast<DWORD>(std::min<std::size_t>(bytes.size()-offset,1048576));if(!WriteFile(handle,bytes.data()+offset,count,&used,nullptr) || used==0) { success=false;break; }offset+=used; }
     success=success && FlushFileBuffers(handle);const bool closed=CloseHandle(handle)!=0;require(success && closed,"Cannot flush output file.");
 #else
@@ -131,8 +150,45 @@ fs::path destination_path(const std::string& output) {
     const auto destination=fs::canonical(requested.parent_path())/requested.filename();
     require(fs::symlink_status(destination).type()==fs::file_type::not_found,"Output already exists; export never overwrites it.");return destination;
 }
+#ifdef _WIN32
+struct PublicationFingerprint {
+    DWORD volume=0,index_high=0,index_low=0;
+    std::map<std::string,std::tuple<bool,std::uint64_t,std::string>> members;
+    bool operator==(const PublicationFingerprint&) const=default;
+};
+PublicationFingerprint publication_fingerprint(const fs::path& root,std::optional<ULONGLONG> deadline={}) {
+    auto in_time=[&] {require(!deadline || GetTickCount64()<*deadline,"Directory publication retry deadline reached during stage verification.");};
+    in_time();const auto io_root=project_io_path(root);PublicationFingerprint result;
+    const auto handle=CreateFileW(io_root.c_str(),FILE_READ_ATTRIBUTES,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+        nullptr,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
+    require(handle!=INVALID_HANDLE_VALUE,"Cannot verify owned publication directory identity.");
+    BY_HANDLE_FILE_INFORMATION info{};const bool inspected=GetFileInformationByHandle(handle,&info)!=0;const bool closed=CloseHandle(handle)!=0;
+    require(inspected && closed && (info.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) && !(info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT),"Publication source is not the owned regular directory.");
+    result.volume=info.dwVolumeSerialNumber;result.index_high=info.nFileIndexHigh;result.index_low=info.nFileIndexLow;
+    std::set<std::string> names;std::size_t entries=0,files=0;std::uint64_t total=0;
+    for(const auto& item:fs::recursive_directory_iterator(io_root)) {
+        in_time();require(++entries<=8192,"Publication staging exceeds its directory entry budget.");
+        const auto status=item.symlink_status();const auto attributes=GetFileAttributesW(item.path().c_str());
+        require(!fs::is_symlink(status) && attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Publication staging contains a linked or unavailable entry.");
+        const auto name=relative_path(text(item.path().lexically_relative(io_root)));
+        require(names.insert(folded(name)).second,"Case-insensitive publication staging collision.");
+        if(fs::is_directory(status))result.members.emplace(name,std::make_tuple(true,0,std::string{}));
+        else {
+            const auto logical_path=root/fs::path(name),io_path=project_io_path(logical_path);
+            require(fs::is_regular_file(status) && fs::hard_link_count(io_path)==1 && ++files<=count_limit+1,"Publication staging contains nonregular/linked or excessive files.");
+            // Export permits 1 GiB of inventory plus its bounded game manifest.
+            const auto size=fs::file_size(io_path);require(size<=file_limit && size<=total_limit+4ULL*1024*1024-total,"Publication staging exceeds its byte budget.");total+=size;
+            const auto bytes=read(logical_path);require(bytes.size()==size,"Publication staging changed while verifying.");
+            result.members.emplace(name,std::make_tuple(false,size,hash(bytes)));
+        }
+        in_time();
+    }
+    in_time();return result;
+}
+#endif
 struct Stage {
     fs::path destination,path;bool owned=false;std::string publication;
+    unsigned publication_attempts=1;std::uint64_t publication_wait_ms=0;
     explicit Stage(const std::string& output) {
         destination=destination_path(output);
         for(int attempt=0;attempt<16;++attempt) { path=destination.parent_path()/(".poima-stage-"+new_id());if(fs::create_directory(path)) { owned=true;break; } }
@@ -141,7 +197,43 @@ struct Stage {
     ~Stage() { if(owned) { std::error_code error;fs::remove_all(path,error); } }
     void publish() {
 #ifdef _WIN32
-        require(MoveFileExW(path.c_str(),destination.c_str(),MOVEFILE_WRITE_THROUGH)!=0,"Cannot publish output without replacing an existing directory.");
+        require(owned,"Directory publication has no owned staging directory.");
+        const auto fingerprint=publication_fingerprint(path);ULONGLONG started=0,deadline=0;
+        DWORD move_error=ERROR_SUCCESS,source_attributes=INVALID_FILE_ATTRIBUTES,source_error=ERROR_SUCCESS,
+            destination_attributes=INVALID_FILE_ATTRIBUTES,destination_error=ERROR_SUCCESS;unsigned attempts=0;
+        auto inspect=[&] {
+            source_attributes=GetFileAttributesW(project_io_path(path).c_str());source_error=source_attributes==INVALID_FILE_ATTRIBUTES ? GetLastError():ERROR_SUCCESS;
+            destination_attributes=GetFileAttributesW(project_io_path(destination).c_str());destination_error=destination_attributes==INVALID_FILE_ATTRIBUTES ? GetLastError():ERROR_SUCCESS;
+        };
+        auto failure=[&](const std::string& reason) {
+            return std::runtime_error("Cannot publish output without replacing an existing directory. "+reason+" MoveFileExW win32_error="+
+                std::to_string(move_error)+" attempts="+std::to_string(attempts)+" elapsed_ms="+std::to_string(started ? GetTickCount64()-started:0)+" source_utf16="+std::to_string(path.native().size())+
+                " destination_utf16="+std::to_string(destination.native().size())+
+                " source_attributes="+std::to_string(source_attributes)+" source_attribute_error="+std::to_string(source_error)+
+                " destination_attributes="+std::to_string(destination_attributes)+" destination_attribute_error="+std::to_string(destination_error));
+        };
+        for(;;) {
+            inspect();const auto parent_attributes=GetFileAttributesW(project_io_path(destination.parent_path()).c_str());
+            if(source_attributes==INVALID_FILE_ATTRIBUTES || !(source_attributes&FILE_ATTRIBUTE_DIRECTORY) || (source_attributes&FILE_ATTRIBUTE_REPARSE_POINT) ||
+                destination_attributes!=INVALID_FILE_ATTRIBUTES || destination_error!=ERROR_FILE_NOT_FOUND || parent_attributes==INVALID_FILE_ATTRIBUTES ||
+                !(parent_attributes&FILE_ATTRIBUTE_DIRECTORY) || (parent_attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw failure("Publication ownership/absent-destination guard failed.");
+            if(attempts) {
+                bool unchanged=false;
+                try {unchanged=publication_fingerprint(path,deadline)==fingerprint;}
+                catch(const std::exception& error) {throw failure(error.what());}
+                if(!unchanged)throw failure("Owned staging inventory changed; publication refused.");
+            }
+            if(started && GetTickCount64()>=deadline)throw failure("Publication retry deadline reached.");
+            ++attempts;
+            if(MoveFileExW(path.c_str(),destination.c_str(),MOVEFILE_WRITE_THROUGH)!=0)break;
+            move_error=GetLastError(); // Capture before any further OS call.
+            if(!started) {started=GetTickCount64();deadline=started+500;}
+            inspect();
+            const bool compatible=move_error==ERROR_ACCESS_DENIED || move_error==ERROR_SHARING_VIOLATION || move_error==ERROR_LOCK_VIOLATION;
+            if(!compatible || attempts>=10 || GetTickCount64()+25>=deadline)throw failure("Publication did not succeed within its bounded retry policy.");
+            const auto waiting=GetTickCount64();Sleep(25);publication_wait_ms+=GetTickCount64()-waiting;
+        }
+        publication_attempts=attempts;
         owned=false;publication="atomic_directory";
 #else
         if(syscall(SYS_renameat2,AT_FDCWD,path.c_str(),AT_FDCWD,destination.c_str(),RENAME_NOREPLACE)==0) {
@@ -218,9 +310,9 @@ struct Project {
     std::string gameplay_bytes;
     Json gameplay_values=Json::object();
 };
-Project project(const std::string& filename) {
+Project project(const std::string& filename,const std::optional<Json>& prospective=std::nullopt) {
     Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=fs::canonical(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(p.root/".poima-incomplete").type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
-    p.manifest_bytes=read(p.manifest,65536);p.spec=parse(p.manifest_bytes);
+    p.manifest_bytes=read(p.manifest,65536);p.spec=prospective ? *prospective : parse(p.manifest_bytes);
     fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay"},{"format","version","project_id","name","entry"});
     const auto version=integer(p.spec.at("version"));
     require(p.spec.at("format")=="poima.project" && (version==1 || version==2),"Unsupported project format/version.");
@@ -250,7 +342,7 @@ Project project(const std::string& filename) {
 }
 Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
-    Json result={{"manifest",text(p.manifest)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
+    Json result={{"manifest",text(p.manifest)},{"manifest_sha256",hash(p.manifest_bytes)},{"world_sha256",hash(p.world_bytes)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
     if(p.content.needs_navigation)result["needs_navigation"]=true;
     if(!p.content.provenance_records.empty()) {
         Json records=Json::array();for(const auto& record:p.content.provenance_records)records.push_back({{"filename",record.filename},{"sha256",record.sha256},{"bytes",record.bytes}});
@@ -324,13 +416,14 @@ Json runtime_spec(const std::string& bytes) {
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
-    require(fs::is_directory(fs::symlink_status(root)),"Expected a regular root directory.");std::vector<std::string> result;std::set<std::string> names;std::size_t entries=0;
-    for(const auto& item:fs::recursive_directory_iterator(root)) {
+    const auto io_root=project_io_path(root);
+    require(fs::is_directory(fs::symlink_status(io_root)),"Expected a regular root directory.");std::vector<std::string> result;std::set<std::string> names;std::size_t entries=0;
+    for(const auto& item:fs::recursive_directory_iterator(io_root)) {
         require(++entries<=8192,"Directory entry count exceeds export budget.");const auto status=item.symlink_status();require(!fs::is_symlink(status),"Symlinks are not accepted in exported or bundled trees.");
 #ifdef _WIN32
         const auto attributes=GetFileAttributesW(item.path().c_str());require(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Reparse points are not accepted in exported trees.");
 #endif
-        const auto path=relative_path(text(item.path().lexically_relative(root)));require(names.insert(folded(path)).second,"Case-insensitive content path collision.");
+        const auto path=relative_path(text(item.path().lexically_relative(io_root)));require(names.insert(folded(path)).second,"Case-insensitive content path collision.");
         if(fs::is_directory(status))continue;
         require(fs::is_regular_file(status),"Only regular payload files are accepted.");result.push_back(path);require(result.size()<=count_limit+1,"Bundle exceeds 4096 payload files plus its manifest.");
     }
@@ -421,6 +514,7 @@ VerifiedGame verify_game(const std::string& filename) {
     require(file_tree(root)==actual,"Bundle file set changed during validation.");
     auto& game=result.definition;game.root=text(root);game.world=text(world);game.camera=spec.at("entry").at("camera");game.controller=spec.at("entry").at("controller");game.name=spec.at("name");game.target_os=engine.at("target_os");game.target_arch=engine.at("target_arch");game.revision=revision;game.audio=spec.at("audio");return result;
 }
+#include "project_gameplay_adoption.inc"
 } // namespace
 
 Reply create_project(const std::string& directory,const std::string& name) {
@@ -446,10 +540,19 @@ Reply create_project(const std::string& directory,const std::string& name) {
         fs::remove(stage.path/"world.json.lock");fs::create_directory(stage.path/"settings");const auto profile=stage.path/"settings/default.poima-input.json";
         input_profiles::transact(profile,{{"request_id",new_id()},{"expected_revision",0},{"profile",input_profiles::profile_json(default_gamepad_input_profile())},{"preview",false}});fs::remove(fs::path(profile).concat(".lock"));
         Json spec={{"format","poima.project"},{"version",1},{"project_id",project_id},{"name",name},{"entry",{{"world","world.json"},{"camera",camera},{"controller",controller}}},{"input_profile","settings/default.poima-input.json"},{"audio",false}};
-        exclusive_write(stage.path/"project.json",spec.dump(2)+"\n");project(text(stage.path/"project.json"));stage.publish();return Json{{"manifest",text(stage.destination/"project.json")},{"directory",text(stage.destination)},{"publication",stage.publication},{"name",name},{"project_id",project_id}};
+        exclusive_write(stage.path/"project.json",spec.dump(2)+"\n");project(text(stage.path/"project.json"));stage.publish();return Json{{"manifest",text(stage.destination/"project.json")},{"directory",text(stage.destination)},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"name",name},{"project_id",project_id}};
     });
 }
 Reply inspect_project(const std::string& manifest) { return operation("project.inspect",[&]{return project_summary(project(manifest));}); }
+Reply adopt_project_gameplay(const std::string& manifest,const std::string& artifact_descriptor,const std::string& request_json) {
+    try {return {0,result_reply("project.gameplay.adopt",adoption_apply(manifest,artifact_descriptor,request_json)).dump()};}
+    catch(const std::exception& error) {
+        const auto* classified=dynamic_cast<const AdoptionError*>(&error);
+        auto reply=result_reply("project.gameplay.adopt",Json::object(),false,error.what());
+        reply["diagnostics"][0]["error_code"]=classified ? classified->code : -32091;
+        return {4,reply.dump()};
+    }
+}
 Reply build_project(const std::string& manifest,const std::string& output,const std::string& runtime_root) {
     return operation("project.build",[&] {
         const auto p=project(manifest);require(fs::is_directory(fs::symlink_status(path_of(runtime_root))),"Runtime root must be a directory without symlink.");const auto runtime_path=fs::canonical(path_of(runtime_root));const auto descriptor=read(contained(runtime_path,"runtime.json"),65536);const auto runtime=runtime_spec(descriptor);
@@ -517,7 +620,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
             const auto current=load_native_gameplay_artifact(text(source));
             require(current.library_sha256==p.gameplay->library_sha256,"Gameplay artifact changed during export.");
         }
-        stage.publish();return Json{{"output",text(stage.destination)},{"game_manifest",text(stage.destination/"game.json")},{"publication",stage.publication},{"file_count",inventory.files.size()},{"bytes",inventory.total},{"revision",p.content.revision},{"project_id",p.spec.at("project_id")}};
+        stage.publish();return Json{{"output",text(stage.destination)},{"game_manifest",text(stage.destination/"game.json")},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"file_count",inventory.files.size()},{"bytes",inventory.total},{"revision",p.content.revision},{"project_id",p.spec.at("project_id")}};
     });
 }
 GameDefinition load_game(const std::string& manifest) { return verify_game(manifest).definition; }

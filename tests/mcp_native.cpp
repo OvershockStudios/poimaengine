@@ -135,7 +135,7 @@ try {
     const Json parameters={{"request_id",std::string(32,'1')},{"base_revision",11}};
     auto result=tool(session,{{"method","world.transact"},{"params",parameters}});
     check(seen.at("params")==parameters&&result.at("structuredContent").at("result")==receipt,"Native parameters or receipt changed");
-    for(const char* method:{"development.compile","development.publish","development.export"}) {
+    for(const char* method:{"development.compile","development.publish","development.export","project.gameplay.adopt"}) {
         const auto before_build=calls;
         auto rejected_build=tool(session,{{"method",method},{"params",Json::object()}});
         check(rejected_build.at("isError")==true && calls==before_build,"World edit tool silently granted build authority");
@@ -148,6 +148,13 @@ try {
         auto built=tool(session,{{"method",method},{"params",{{"profile","selected"}}}},"poima_build");
         check(!built.at("isError").get<bool>() && calls==before_build+1 && seen.at("method")==method
             && seen.at("params")==Json{{"profile","selected"}},"Build tool changed parameters or repeated backend call");
+    }
+    {
+        const auto before=calls;const Json project_params={{"profile","selected"},{"project","MyGame/project.json"}};
+        auto inspected=tool(session,{{"method","project.inspect"},{"params",project_params}});
+        check(calls==before+1 && inspected.at("isError")==false && seen.at("method")=="project.inspect" && seen.at("params")==project_params,"Project inspection was not forwarded through the ordinary tool");
+        auto rejected=tool(session,{{"method","project.inspect"},{"params",project_params}},"poima_build");
+        check(calls==before+1 && rejected.at("isError")==true,"Build tool accepted project inspection");
     }
     const auto before_invalid=calls;
     for(const Json arguments:{Json{{"method",1}},Json{{"method",""}},Json{{"method","world.inspect"},{"params",false}},Json{{"method","world.inspect"},{"extra",1}}}) {

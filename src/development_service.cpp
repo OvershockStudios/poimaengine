@@ -94,8 +94,8 @@ bool game_type(const std::string& value) {
     }
     return !first;
 }
-std::string verified_result(const std::string& value) {
-    need(!value.empty() && value.size()<=65536,"Development verifier must return 1..65536 bytes of JSON.");
+std::string verified_result(const std::string& value,std::size_t limit=65536) {
+    need(!value.empty() && value.size()<=limit,limit==65536 ? "Development verifier must return 1..65536 bytes of JSON.":"Project operation must return 1..4194304 bytes of JSON.");
     std::vector<std::set<std::string>> keys;
     Json parsed;
     try {
@@ -112,6 +112,9 @@ std::string verified_result(const std::string& value) {
 }
 std::string request_id(const Json& value) {
     auto result=text(value,32);need(result.size()==32 && std::all_of(result.begin(),result.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');}),"Request ID needs 32 lowercase hex characters.");return result;
+}
+std::string digest(const Json& value) {
+    auto result=text(value,64);need(result.size()==64 && std::all_of(result.begin(),result.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');}),"Expected SHA-256 needs 64 lowercase hex characters.");return result;
 }
 JobId job_id(const Json& value) {
     need(value.is_number_integer() && value>0 && value<=9007199254740991LL,"Invalid development job ID.");return value.get<JobId>();
@@ -171,7 +174,7 @@ void Service::configure(std::vector<Profile> profiles) {
         need(profile.fingerprint.size()==64 && std::all_of(profile.fingerprint.begin(),profile.fingerprint.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');}),"Profile fingerprint requires 64 lowercase hex characters.");
         need(profile.target_rid=="win-x64" || profile.target_rid=="linux-x64","Unsupported profile target RID.");
         const bool publish=bool(profile.verify_publish),export_game=bool(profile.verify_export);
-        need(publish || export_game,"Profile needs an enabled operation and its native verifier.");
+        need(publish || export_game || profile.inspect_project || profile.adopt_gameplay,"Profile needs an enabled operation and its native verifier.");
         need(!publish || (!profile.python.empty() && !profile.publisher.empty() && !profile.dotnet.empty()),"Publish profile requires Python, publisher and .NET tools.");
         need(!export_game || (!profile.exporter.empty() && !profile.runtime_root.empty()),"Export profile requires exporter and runtime roots.");
         configured_path(profile.project_root,true);configured_path(profile.output_root,true);
@@ -180,8 +183,10 @@ void Service::configure(std::vector<Profile> profiles) {
         need(!overlap(profile.output_root,profile.project_root) && (profile.runtime_root.empty() || !overlap(profile.output_root,profile.runtime_root)),"Profile output root overlaps its inputs.");
         for(const auto* path:{&profile.python,&profile.publisher,&profile.dotnet,&profile.exporter})
             if(!path->empty())need(!overlap(profile.output_root,path->parent_path()),"Profile output root overlaps tools or publisher resources.");
-        Request validation;validation.executable=publish ? profile.python:profile.exporter;validation.working_directory=profile.project_root;validation.environment=profile.environment;
-        try {validate_request(validation);}catch(const std::exception& error) {throw ServiceError(-32602,error.what());}
+        if(publish || export_game) {
+            Request validation;validation.executable=publish ? profile.python:profile.exporter;validation.working_directory=profile.project_root;validation.environment=profile.environment;
+            try {validate_request(validation);}catch(const std::exception& error) {throw ServiceError(-32602,error.what());}
+        }
         need(!selected.contains(profile.name),"Duplicate development profile name.");selected.emplace(profile.name,std::move(profile));
     }
     // An output root cannot write into another configured profile's authority.
@@ -196,8 +201,41 @@ void Service::configure(std::vector<Profile> profiles) {
 Json Service::dispatch(const std::string& method,const Json& p) {
     if(method=="development.profiles") {
         fields(p,{});Json result=Json::array();
-        for(const auto& [name,profile]:profiles_)result.push_back({{"name",name},{"fingerprint",profile.fingerprint},{"target_rid",profile.target_rid},{"publish",bool(profile.verify_publish)},{"export",bool(profile.verify_export)}});
+        for(const auto& [name,profile]:profiles_) {
+            Json item={{"name",name},{"fingerprint",profile.fingerprint},{"target_rid",profile.target_rid},{"publish",bool(profile.verify_publish)},{"export",bool(profile.verify_export)}};
+            if(profile.inspect_project || profile.adopt_gameplay)item.update({{"project_inspect",bool(profile.inspect_project)},{"gameplay_adopt",bool(profile.adopt_gameplay)}});
+            result.push_back(std::move(item));
+        }
         return {{"profiles",result}};
+    }
+    if(method=="project.inspect" || method=="project.gameplay.adopt") {
+        const bool adopt=method=="project.gameplay.adopt";
+        if(adopt)fields(p,{"profile","project","artifact","request_id","expected_project_sha256","expected_artifact_sha256","values"},
+                         {"profile","project","artifact","request_id","expected_project_sha256","expected_artifact_sha256"});
+        else fields(p,{"profile","project"},{"profile","project"});
+        const auto name=text(p.at("profile"),64);need(ascii_name(name),"Invalid development profile name.");
+        const auto project_name=relative(p.at("project"));Json request;
+        std::string artifact_name;
+        if(adopt) {
+            artifact_name=relative(p.at("artifact"));request={{"request_id",request_id(p.at("request_id"))},
+                {"expected_project_sha256",digest(p.at("expected_project_sha256"))},{"expected_artifact_sha256",digest(p.at("expected_artifact_sha256"))}};
+            if(p.contains("values")) {need(p.at("values").is_object(),"Gameplay values must be an object.");request["values"]=p.at("values");}
+            need(request.dump().size()<=65536,"Project adoption request exceeds 65536 bytes.");
+        }
+        const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);const auto& profile=selected->second;
+        need(adopt ? bool(profile.adopt_gameplay):bool(profile.inspect_project),"Development profile does not enable this project operation.",-32004);
+        const auto project=contained(profile.project_root,project_name,true);need(project.extension()==".json","Project inspection/adoption expects a JSON manifest.");
+        std::string result;
+        try {
+            if(adopt) {
+                // Completed core-journal retries may outlive the source artifact.
+                // Confine its selector without requiring the file to still exist.
+                const auto artifact=contained(profile.output_root,artifact_name,false);need(artifact.extension()==".json","Gameplay adoption expects a JSON descriptor.");
+                result=profile.adopt_gameplay(project,artifact,request.dump());
+            } else result=profile.inspect_project(project);
+        } catch(const ServiceError&) {throw;}
+        catch(const std::exception& error) {throw ServiceError(-32091,safe_diagnostic(std::string(error.what()).substr(0,4096)).get<std::string>());}
+        return Json::parse(verified_result(result,4ULL*1024*1024));
     }
     if(method=="development.compile" || method=="development.publish" || method=="development.export") {
         const bool compile=method=="development.compile",publish=method=="development.publish";
@@ -330,6 +368,12 @@ Json Service::schemas() {
         timeout={{"type","integer"},{"minimum",100},{"maximum",900000},{"default",900000}};
     return {
         {"development.profiles",object(Json::object())},
+        {"project.inspect",object({{"profile",profile},{"project",portable}},{"profile","project"})},
+        {"project.gameplay.adopt",object({{"profile",profile},{"project",portable},{"artifact",portable},{"request_id",receipt},
+            {"expected_project_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
+            {"expected_artifact_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
+            {"values",{{"type","object"},{"description","Optional native-validated initial primitive gameplay values; no runtime activation."}}}},
+            {"profile","project","artifact","request_id","expected_project_sha256","expected_artifact_sha256"})},
         {"development.publish",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},
             {"type",{{"type","string"},{"minLength",1},{"maxLength",512},{"pattern","^[A-Za-z_][A-Za-z0-9_]*([.+][A-Za-z_][A-Za-z0-9_]*)*$"}}},{"timeout_ms",timeout}},
             {"request_id","profile","project","output","type"})},

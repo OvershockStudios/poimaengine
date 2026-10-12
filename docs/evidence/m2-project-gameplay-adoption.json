@@ -1,0 +1,686 @@
+{
+  "format": "poima.project-gameplay-adoption-qualification.v1",
+  "engine_version": "0.0.128",
+  "schema_revision": 95,
+  "passed": true,
+  "platform": "Windows x86_64",
+  "scope": "Guarded native project gameplay adoption, restart recovery, existing compiled game continuation, relocated bundle inspection and controlled starter-project publication.",
+  "native": {
+    "producer": {
+      "bytes": 54307,
+      "sha256": "38cdf2f84abd7ace1d6f49666feee36d82436d44c938e5463496dd445a829149"
+    },
+    "source_freeze": {
+      "bytes": 44588,
+      "sha256": "a5bed209d91b7eacbddbf0183634ba4790db85f2f7dbc2bc48066eddaa984884"
+    },
+    "source_file_count": 298,
+    "selected_targets": [
+      "poima",
+      "poima-world-schema-test",
+      "poima-mcp-test",
+      "poima-development-service-test",
+      "poima-development-profiles-test",
+      "poima_desktop"
+    ],
+    "sealed_manifest": {
+      "bytes": 1626,
+      "sha256": "5cd39a4daeed671d57e7d158db93c9b6d874a909654a876221e18ea90367b96d"
+    },
+    "artifacts": {
+      "bin/poima.exe": {
+        "bytes": 25943040,
+        "sha256": "bc261bf62c5f9b76501d7533e0077b6630d19db364dcfdc7ee22f3780bf471ad"
+      },
+      "bin/poima-world-schema-test.exe": {
+        "bytes": 24395776,
+        "sha256": "d15324210e33337ec4be2a342e08cce8332d10f58a9e15de4e2edc7a49a402c7"
+      },
+      "bin/poima-mcp-test.exe": {
+        "bytes": 15144448,
+        "sha256": "39526e36ca6f84c7c144582f2a58c8a37adea579f841e3e06216cddaa50b3448"
+      },
+      "bin/poima-development-service-test.exe": {
+        "bytes": 2034176,
+        "sha256": "9f9dae927cd8e09b9e295e9e345b5140570f37f314a2a6cf4cf2c0bfef3b284f"
+      },
+      "bin/poima-development-profiles-test.exe": {
+        "bytes": 2055168,
+        "sha256": "24d9c9373fe20ed912df8bb087412d431801fea84edddac04c7bffac186feab1"
+      },
+      "bin/poima_desktop.dll": {
+        "bytes": 296465408,
+        "sha256": "11bd3ccfc7f64d4a72e59e7040f192e5aaa810ca2089cbd75403b15c3323fdb4"
+      },
+      "bin/phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "library/libpoima_core.a": {
+        "bytes": 223504612,
+        "sha256": "bcf3f35235a21a786cd2c210dfe3c5bf1fa90109a43da2f9c9f2c0dd3464ee14"
+      },
+      "library/libpoima_desktop.dll.a": {
+        "bytes": 3876,
+        "sha256": "df4b5bac6f0aee22da2376eb1e9543a5eacc147dc4a84e2a0f3d88e72ecd24bb"
+      }
+    },
+    "source_scope": "Selected incremental native targets and recorded tool/configuration identities; no complete vendor rebuild claim."
+  },
+  "sources": {
+    "CMakeLists.txt": {
+      "bytes": 82466,
+      "sha256": "13f2f79004a005107e6e7632997dc94182953e7b8372156f68dc8f27d93ae12e"
+    },
+    "include/poima/project.hpp": {
+      "bytes": 1167,
+      "sha256": "7f11fdcf64809cec90fd83aa922c5419b54d81b55322f5a160ef3a89f060d684"
+    },
+    "include/poima/development_profiles.hpp": {
+      "bytes": 1170,
+      "sha256": "6896418c7ed7649ab580145117b88fb5da1d9c601a3a277e4f8606fd48c059c7"
+    },
+    "src/project.cpp": {
+      "bytes": 62257,
+      "sha256": "f24bcb108159b1eef7b62b24e2e20e04397f8342fe29532d558bd5c740bc884f"
+    },
+    "src/project_gameplay_adoption.inc": {
+      "bytes": 33359,
+      "sha256": "db14a88c4ba2f89b6ffadd78db08530b07afb4ea30ab5ec3084ce7f8bdcb1146"
+    },
+    "src/core.cpp": {
+      "bytes": 19214,
+      "sha256": "a8537e3524ec974d987dc989d72225b770591fda90b39746b146fcda2df5018f"
+    },
+    "src/main.cpp": {
+      "bytes": 21996,
+      "sha256": "28295867a0eb11de9a633d5165978e8158f313d46cd86385df83be23f2104a6b"
+    },
+    "src/development_profiles.cpp": {
+      "bytes": 11053,
+      "sha256": "0f851a3d8cfb84ab5ae31819d41c50669fd7ef3b1d26035d1dd7262c71f0fb51"
+    },
+    "src/development_service.cpp": {
+      "bytes": 31506,
+      "sha256": "f5b43778ec56bca5039e9fa1157941d95f48d60a0db712f13bd0bd7f2e3229a3"
+    },
+    "src/world.cpp": {
+      "bytes": 318755,
+      "sha256": "3430eebfc520b186ef252399f6acdb9cb851d11c8c86d728b9c59aae72cec911"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 106639,
+      "sha256": "3089ad3aed33e534ef277e1e735c1cf419b361007e5e85fe8258e5eb25e76c54"
+    },
+    "src/mcp.cpp": {
+      "bytes": 18282,
+      "sha256": "7347eea482d29f9081b830b2f4dbc80b309efdd155637639717619f88693bff8"
+    },
+    "tests/development_service.cpp": {
+      "bytes": 22605,
+      "sha256": "4f465575b20d57c0d265d4048bea2f207f2a1f37f3cb16ac13a8d646279d1830"
+    },
+    "tests/mcp_native.cpp": {
+      "bytes": 16275,
+      "sha256": "ae83b4a5e9e1706a9d33bdc471048d639c06b6ba82489651c234bb978e8e5144"
+    },
+    "tests/project_gameplay_adoption_contract.py": {
+      "bytes": 63599,
+      "sha256": "bad750da608c4a2cf3f9d8d7ec225a4af10a6c4f3412b84c7b0e1e979738a3a8"
+    }
+  },
+  "fixture_lineage": {
+    "producer_recorded_python_fixture": {
+      "bytes": 62186,
+      "sha256": "a31d44b82b0a75b5a82f5579b47a3565d5a2e02e2cc9083b9b6ce8b47e8bdef2"
+    },
+    "executed_python_fixture": {
+      "bytes": 63599,
+      "sha256": "bad750da608c4a2cf3f9d8d7ec225a4af10a6c4f3412b84c7b0e1e979738a3a8"
+    },
+    "scope": "Separately frozen Python-only correction for one recorded SDK error projection; all native source remains exact to the producer."
+  },
+  "native_units": [
+    {
+      "name": "world-schema",
+      "stdout": {
+        "bytes": 110,
+        "sha256": "fb3df7beaca61518383f5b99ceae320967316470906e01925d60fe487f35be42"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "passed": true
+    },
+    {
+      "name": "mcp",
+      "stdout": {
+        "bytes": 148,
+        "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+      },
+      "stderr": {
+        "bytes": 684,
+        "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+      },
+      "passed": true
+    },
+    {
+      "name": "development-service",
+      "stdout": {
+        "bytes": 1257,
+        "sha256": "f7a26b13bd1ba63868b95d3b7bda63c30e364973551f9c28ec4a813a00b1a176"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "passed": true
+    },
+    {
+      "name": "development-profiles",
+      "stdout": {
+        "bytes": 234,
+        "sha256": "bb5a8c1a92d0bb35881a52b55607b5498c031671880e3bf641ba624ce1617ce5"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "passed": true
+    }
+  ],
+  "discovery": {
+    "responses": 1305,
+    "owner_scopes": 6,
+    "schema_revision": 95,
+    "evidence": {
+      "bytes": 18456104,
+      "sha256": "faa1132c1c47b1015eb8a2beec81c48dec69948806017896b09e2fceb34b0d52"
+    }
+  },
+  "project_regression": {
+    "cases": 13,
+    "skipped": 0,
+    "evidence": {
+      "bytes": 89061,
+      "sha256": "7e54f3e8b5ebb386518204826775e9874073d80f551232405ff571583d78e8b1"
+    }
+  },
+  "profile_adapter": {
+    "skipped_symlink_checks": 3,
+    "scope": "Fixture callbacks; actual native project/profile integration is tested separately below."
+  },
+  "adoption": {
+    "evidence": {
+      "bytes": 539484,
+      "sha256": "bc4846e11890d434a4e3f129adb958f3133c12f0310cbf763d9ec30eec945800"
+    },
+    "groups": 5,
+    "rpc_count": 41,
+    "native_owners": 7,
+    "recovery_boundaries": 6,
+    "checks": [
+      "CLI v1-to-v2 adoption, exact/historical/older receipts, source-absent fresh-process retry and copied-payload tamper rejection preserve complete inventories.",
+      "Stale hashes, typed/schema/unknown-field/source payload corruption and linked artifact paths reject without changing either complete input inventory.",
+      "Profile-scoped synchronous Service and MCP adoption preserves guards/path confinement, separate build consent, no jobs and durable host-restart replay.",
+      "Three independently authored durable prepared-file boundaries recover exact manifest/payloads; old prepared/new-manifest and source-absent missing-copy conflicts reject. No crash injection claim.",
+      "Valid independently authored prepared authority recovers torn payload/manifest/terminal stages while retaining exact diagnostic bytes; unauthorised first prepare rejects. No killed-process crash claim."
+    ],
+    "complete_input_inventories_unchanged": true
+  },
+  "compiled_consumer": {
+    "identity": "poima.examples.traversal-yard",
+    "artifact_engine_version": "0.0.127",
+    "backend": "native_aot",
+    "new_managed_build": false,
+    "evidence": {
+      "bytes": 5695205,
+      "sha256": "291ab4ec5c9c984e9e67322f2a6f21795d8138e3c825215eeaae402b263a93dc"
+    },
+    "rpc_count": 519,
+    "native_owners": 2,
+    "snapshots": 9,
+    "snapshot_version": 9,
+    "complete_snapshot_pairs": 5,
+    "objective_completed": true,
+    "ui_save_load": true,
+    "sdk_error_projection": {
+      "count": 1,
+      "method": "runtime.gameplay.load_native",
+      "code": -32060,
+      "scope": "Raw error omits optional data; the existing SDK records data:null. Code/message and all other replies remain exact."
+    }
+  },
+  "recovery_edges": {
+    "evidence": {
+      "bytes": 112918,
+      "sha256": "8dfcb1767d3b730b8145c86fd437c4a2a0cc4f9d0b32ee06258a11f0b5168a6d"
+    },
+    "rpc_count": 8,
+    "native_owners": 4,
+    "checks": [
+      "terminal-after-world-edit",
+      "duplicate-prepared-stage",
+      "changed-project-id"
+    ]
+  },
+  "export": {
+    "relocated": true,
+    "inspected": true,
+    "rendered": false,
+    "independent_exported_gameplay": false,
+    "files": 62,
+    "directories": 29,
+    "bytes": 98938204,
+    "complete_inventory_unchanged": true
+  },
+  "publication": {
+    "evidence": {
+      "bytes": 79266,
+      "sha256": "5206e56230009c740aae96bb23081989079735e280e2a6d8b427ac43f231cb3f"
+    },
+    "scope": "Actual starter project.create publications exercise the shared Windows directory publication code; runtime export is the separate check above.",
+    "attempts": 3,
+    "cases": [
+      {
+        "case": "transient",
+        "passed": true,
+        "destination_absent": false,
+        "publication_attempts": 6,
+        "publication_wait_ms": 172
+      },
+      {
+        "case": "permanent",
+        "passed": true,
+        "held_through_child_exit": true,
+        "destination_absent": true,
+        "win32_error": 32,
+        "publication_attempts": 10,
+        "publication_elapsed_ms": 297
+      },
+      {
+        "case": "mutated-stage",
+        "passed": true,
+        "destination_absent": true,
+        "win32_error": 32,
+        "publication_attempts": 5,
+        "publication_elapsed_ms": 156
+      }
+    ],
+    "source_and_runtime_unchanged": true,
+    "scope_limit": "Controlled denial is ERROR_SHARING_VIOLATION (32); errors 5 and 33 are accepted by implementation policy but not independently induced here."
+  },
+  "phase_composition": {
+    "owner": {
+      "bytes": 258025,
+      "sha256": "829ef67dfb18aa8461dc127a468310725fc71432d80f99489f82c0545be15181"
+    },
+    "worker": {
+      "bytes": 129791,
+      "sha256": "9c291cb1f79f34077f216a38faf186e3a4af088b940ea4990007b8cf89504ef4"
+    },
+    "retained_phase_owner": {
+      "bytes": 124046,
+      "sha256": "a6c593b4a96da8d74bc82d722766f76862fba50a6dc87a4ab168956eb997ab48"
+    },
+    "retained_phase_worker": {
+      "bytes": 42611,
+      "sha256": "9f44c9bc679fdbf027174c31cc55db7866b0b2861482541b0dc7699a28733313"
+    },
+    "retained_owner_overall_passed": false,
+    "retained_selected_phases_passed": true,
+    "excluded_export_timing_misses": 3,
+    "scope": "Closed passed native/project/adoption/game/recovery phases were revalidated without rerunning them. Their earlier owner stays failed because its export-based retry fixture released the handle before any retry. A separate owner executes the three accepted starter-project cases."
+  },
+  "ownership": {
+    "job_assigned": true,
+    "forced_cleanup": false,
+    "active_after_exit": 0,
+    "active_after_cleanup": 0,
+    "terminated_after_cleanup": 0,
+    "retained_job_active": 0,
+    "retained_job_terminated": 0,
+    "source_inputs_unchanged": true,
+    "scope": "Outer owners close naturally; unit cancellation cases deliberately terminate their own test children."
+  },
+  "runtime_install": {
+    "receipt": {
+      "bytes": 16670,
+      "sha256": "ece48f6e02c7c6cece1c6577ff71f4e15fcf326e3fe1fa549e9a6e16f41e596f"
+    },
+    "pe_equivalence": {
+      "poima.exe": {
+        "passed": true,
+        "source": {
+          "bytes": 25943040,
+          "sha256": "bc261bf62c5f9b76501d7533e0077b6630d19db364dcfdc7ee22f3780bf471ad"
+        },
+        "shipping": {
+          "bytes": 22193152,
+          "sha256": "9d2a1b8c68ac24ba6f16c2df136aa5c98991641d9b6e318e2f88b4fb25cb76bb"
+        },
+        "retained_sections": {
+          ".text": {
+            "rva": 4096,
+            "virtual_bytes": 13859190,
+            "raw_bytes": 13859328,
+            "characteristics": 1610612768,
+            "sha256": "a47648908f20e426a33066e06a1cd07725d54d57123aca603090c3d040cbde0f"
+          },
+          ".rdata": {
+            "rva": 13864960,
+            "virtual_bytes": 7989676,
+            "raw_bytes": 7989760,
+            "characteristics": 1073741888,
+            "sha256": "4706c00391a0b32b5962f4f5477c328845a6c49c1621e9a412087462f28a423a"
+          },
+          ".data": {
+            "rva": 21856256,
+            "virtual_bytes": 146632,
+            "raw_bytes": 50688,
+            "characteristics": 3221225536,
+            "sha256": "4167007e33fcc4c3a01927767c9f76be7e19855b4540d3a701dd1f9ba4269ab7"
+          },
+          ".pdata": {
+            "rva": 22003712,
+            "virtual_bytes": 238920,
+            "raw_bytes": 239104,
+            "characteristics": 1073741888,
+            "sha256": "bec087bff1de03299a09369641de4359b2c13c6c614af573c4eff7b13c1a64fd"
+          },
+          ".tls": {
+            "rva": 22245376,
+            "virtual_bytes": 280,
+            "raw_bytes": 512,
+            "characteristics": 3221225536,
+            "sha256": "89641e0d370a07060a7b8c0528250d6d60b078efa11c2da351f468f13c5e2ac4"
+          },
+          ".reloc": {
+            "rva": 22249472,
+            "virtual_bytes": 52488,
+            "raw_bytes": 52736,
+            "characteristics": 1107296320,
+            "sha256": "bb5ca1640d62453cd812834e70dddca598d885e540e3d51f730fa7f7fedaf031"
+          }
+        },
+        "loader_semantics": {
+          "machine": 34404,
+          "entry_rva": 5024,
+          "base_code": 4096,
+          "image_base": 5368709120,
+          "section_alignment": 4096,
+          "file_alignment": 512,
+          "subsystem": 3,
+          "dll_characteristics": 33120,
+          "stack_heap": [
+            1048576,
+            4096,
+            1048576,
+            4096
+          ],
+          "loader_flags": 0,
+          "coff_characteristics": 34,
+          "os_image_subsystem_versions": [
+            6,
+            0,
+            0,
+            0,
+            6,
+            0
+          ],
+          "directories": {
+            "0": [
+              0,
+              0
+            ],
+            "1": [
+              20412888,
+              540
+            ],
+            "2": [
+              0,
+              0
+            ],
+            "3": [
+              22003712,
+              238920
+            ],
+            "5": [
+              22249472,
+              52488
+            ],
+            "7": [
+              0,
+              0
+            ],
+            "8": [
+              0,
+              0
+            ],
+            "9": [
+              20412688,
+              40
+            ],
+            "10": [
+              20412304,
+              312
+            ],
+            "11": [
+              0,
+              0
+            ],
+            "12": [
+              20418760,
+              5328
+            ],
+            "13": [
+              0,
+              0
+            ],
+            "14": [
+              0,
+              0
+            ],
+            "15": [
+              0,
+              0
+            ]
+          }
+        },
+        "removed_debug_sections": [],
+        "source_coff_symbols": 52860,
+        "shipping_coff_symbols": 0,
+        "shipping_debug_directory": [
+          0,
+          0
+        ],
+        "codeview_crash_identifiers": [],
+        "method": "Exact non-debug section bytes, RVA/length/flags and PE64 entry/imagebase/loader/import-export/unwind-relocation data directories; removed COFF/DWARF symbols; unchanged bounded CodeView GUID/age/PDB reference may remain for crash correlation, unsigned x64 images."
+      },
+      "poima_desktop.dll": {
+        "passed": true,
+        "source": {
+          "bytes": 296465408,
+          "sha256": "11bd3ccfc7f64d4a72e59e7040f192e5aaa810ca2089cbd75403b15c3323fdb4"
+        },
+        "shipping": {
+          "bytes": 21221376,
+          "sha256": "3b92ee92a09d133130f6f91567f51a6d869d4bd0cefd663dc075647d4affc7d5"
+        },
+        "retained_sections": {
+          ".text": {
+            "rva": 4096,
+            "virtual_bytes": 13799318,
+            "raw_bytes": 13799424,
+            "characteristics": 1610612768,
+            "sha256": "0adb57cc7d4afcd1da366655e42e4b68e42d132ed76e61906da8a67670839e07"
+          },
+          ".rdata": {
+            "rva": 13803520,
+            "virtual_bytes": 7078828,
+            "raw_bytes": 7078912,
+            "characteristics": 1073741888,
+            "sha256": "164074687e60ea26770b61c26f2ea9031642ee11f478ed00565d9ab3f9ce6387"
+          },
+          ".buildid": {
+            "rva": 20885504,
+            "virtual_bytes": 53,
+            "raw_bytes": 512,
+            "characteristics": 1073741888,
+            "sha256": "caa1a2fc531b53b60433c0b8dfa875a6d13834e257f4382492da6a512eebeae3"
+          },
+          ".data": {
+            "rva": 20889600,
+            "virtual_bytes": 146584,
+            "raw_bytes": 50688,
+            "characteristics": 3221225536,
+            "sha256": "bd18c09d5263eaaefa3a6eedd10e539cb6b28ba501e80b85f172afc0fba35174"
+          },
+          ".pdata": {
+            "rva": 21037056,
+            "virtual_bytes": 237660,
+            "raw_bytes": 238080,
+            "characteristics": 1073741888,
+            "sha256": "f891517f0540bf529a558b2173c15729873b777b6fbaf643c72be9a3901da6a9"
+          },
+          ".tls": {
+            "rva": 21278720,
+            "virtual_bytes": 312,
+            "raw_bytes": 512,
+            "characteristics": 3221225536,
+            "sha256": "2900522bde170b4e1f7cc9983dc5a0737a9d524ba8fe2f4327a782b26719d2c8"
+          },
+          ".reloc": {
+            "rva": 21282816,
+            "virtual_bytes": 52084,
+            "raw_bytes": 52224,
+            "characteristics": 1107296320,
+            "sha256": "1710bc3b5b45f8601c7ae1c42f5aa6d7e3a5ca27150e064aaf06e6b0a30d24a0"
+          }
+        },
+        "loader_semantics": {
+          "machine": 34404,
+          "entry_rva": 4832,
+          "base_code": 4096,
+          "image_base": 6442450944,
+          "section_alignment": 4096,
+          "file_alignment": 512,
+          "subsystem": 2,
+          "dll_characteristics": 352,
+          "stack_heap": [
+            1048576,
+            4096,
+            1048576,
+            4096
+          ],
+          "loader_flags": 0,
+          "coff_characteristics": 8226,
+          "os_image_subsystem_versions": [
+            6,
+            0,
+            0,
+            0,
+            6,
+            0
+          ],
+          "directories": {
+            "0": [
+              19467496,
+              406
+            ],
+            "1": [
+              19467904,
+              540
+            ],
+            "2": [
+              0,
+              0
+            ],
+            "3": [
+              21037056,
+              237660
+            ],
+            "5": [
+              21282816,
+              52084
+            ],
+            "7": [
+              0,
+              0
+            ],
+            "8": [
+              0,
+              0
+            ],
+            "9": [
+              19467304,
+              40
+            ],
+            "10": [
+              19466928,
+              312
+            ],
+            "11": [
+              0,
+              0
+            ],
+            "12": [
+              19473632,
+              5184
+            ],
+            "13": [
+              0,
+              0
+            ],
+            "14": [
+              0,
+              0
+            ],
+            "15": [
+              0,
+              0
+            ]
+          }
+        },
+        "removed_debug_sections": [
+          ".debug_abbrev",
+          ".debug_aranges",
+          ".debug_info",
+          ".debug_line",
+          ".debug_loc",
+          ".debug_ranges",
+          ".debug_str"
+        ],
+        "source_coff_symbols": 52239,
+        "shipping_coff_symbols": 0,
+        "shipping_debug_directory": [
+          20885504,
+          28
+        ],
+        "codeview_crash_identifiers": [
+          {
+            "record_sha256": "ff294cc8c6282d89cb6b04be0a28de8dcca5fa925c5f2e87f2097e9589f0ae02",
+            "guid": "05422a0e220029dd4c4c44205044422e",
+            "age": 1,
+            "pdb_reference_sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+            "bytes": 25
+          }
+        ],
+        "method": "Exact non-debug section bytes, RVA/length/flags and PE64 entry/imagebase/loader/import-export/unwind-relocation data directories; removed COFF/DWARF symbols; unchanged bounded CodeView GUID/age/PDB reference may remain for crash correlation, unsigned x64 images."
+      }
+    },
+    "natural_group_closure": true
+  },
+  "limits": {
+    "whole_owner_seconds": 900,
+    "worker_seconds": 820,
+    "owner_output_bytes": 805306368
+  },
+  "limitations": [
+    "Prepared and torn-file recovery boundaries are independently authored filesystem states, not killed-process or power-loss experiments.",
+    "Adoption copies and updates a project manifest; it does not activate live gameplay, import component declarations or migrate saves.",
+    "The existing native game artifact is consumed on the new engine; no new managed compiler, publisher or agent-provider run is included.",
+    "Relocated export is inspected; new rendering, physical input, clean-machine deployment, performance and Alpha acceptance are separate qualification."
+  ]
+}

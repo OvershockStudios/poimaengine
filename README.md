@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.127.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.128.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -18,7 +18,7 @@ Poima makes engine operations directly available to tools. External agents such 
 
 - **Discover and inspect.** Fetch available operations or a focused mutation schema, and inspect the current world before making changes. Find the entity/template fields using an asset through [reference queries](docs/ASSET_REFERENCES.md).
 - **Edit together.** Humans and agents use shared sessions. Atomic transactions apply related edits together; revision guards reject stale changes, and retry receipts prevent duplicate application.
-- **Build deliberately.** Submit [native publish/export jobs](docs/DEVELOPMENT_PROFILES.md) using host-selected toolchains, inspect verified artifact identities and recover exact submission receipts. Build submission has separate MCP consent.
+- **Build deliberately.** Submit [native publish/export jobs](docs/DEVELOPMENT_PROFILES.md) using host-selected toolchains, inspect verified artifact identities, [adopt compiled gameplay into a project](docs/PROJECT_GAMEPLAY_ADOPTION.md) with hash guards and durable retries, then export. Build submission has separate MCP consent.
 - **Run and observe.** Exercise gameplay with scripted input, [pause and capture a live native game](docs/LIVE_PLAYER.md) through a shared headless host, and inspect simulation state and profiling data.
 - **Recover and repeat.** Bounded authoring undo/redo, runtime rollback and input replay support reproducible checks within their documented contracts.
 

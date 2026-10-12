@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.128
+
+- Add [native project gameplay adoption](docs/PROJECT_GAMEPLAY_ADOPTION.md): verify and copy compiled artifacts, update manifests with exact hash guards, and retain durable receipts for restart recovery and safe historical retries.
+- Expose profile-scoped project inspection and adoption through the world service and separate MCP build consent. Preserve the existing gameplay ABI and keep running-module activation separate.
+- Support long Windows adoption paths and bounded directory-publication retries with ownership/content checks and no replacement. Verify compiled game/save continuation, relocated export inspection and actual sharing-denial recovery. [Results](docs/evidence/m2-project-gameplay-adoption.json).
+
 ## 0.0.127
 
 - Add [Traversal Yard](examples/traversal-yard): a first-person C# game combining steps, crouch clearance, a moving lift, three beacon objectives, camera zoom, an imported animated courier and checkpoints.

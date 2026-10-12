@@ -1,8 +1,44 @@
 # Implementation status
 
-Updated 2026-10-12 for **0.0.127**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-12 for **0.0.128**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.128 adds [guarded project gameplay adoption](PROJECT_GAMEPLAY_ADOPTION.md).
+The CLI and profile-scoped agent service verify and copy a published Native AOT
+artifact, then update the manifest using exact project/artifact hashes and a
+durable request receipt. Historical retries preserve later project edits and
+can outlive the original artifact. Prepared recovery requires the recorded
+manifest, world and input boundaries; torn request-owned staging is retained
+before reconstruction. Adoption neither executes gameplay nor changes the
+world or existing saves. MCP keeps it behind separate build consent. Schema
+revision 95 exposes the project operations without changing the gameplay ABI.
+
+Four selected Windows native suites and thirteen project regressions pass.
+Five adoption groups cover 41 RPCs and seven native owners, including six
+independently authored prepared/torn-file boundaries. Three supplemental
+recovery cases pass eight RPCs. The retained Traversal Yard Native AOT artifact
+runs on the new engine, completes its objective and verifies nine version-9
+snapshots with five complete state pairs across two native owners and 519 RPCs.
+One existing SDK error projection is recorded explicitly: absent optional
+error data becomes null, with unchanged native code/message. The 62-file,
+98,938,204-byte relocated export passes inspection with unchanged contents.
+
+Windows adoption supports long staging paths. Directory publication now retries
+selected Windows errors while preserving ownership, complete content checks and
+no replacement. Controlled starter-project tests verify transient sharing
+recovery, a held-handle ten-attempt failure and rejection of mutated staging.
+Their observed error is Windows sharing violation 32; other admitted errors
+were not independently induced. Completed native/adoption/game/recovery results
+are revalidated from a closed earlier owner; its three export retry timing
+misses remain excluded. A separate successful owner executes the publication
+cases. Both qualification Jobs close naturally with no active or terminated descendants.
+[Results](evidence/m2-project-gameplay-adoption.json).
+
+These are bounded Windows handoff and continuation checks. Synthetic recovery
+states do not qualify power-loss recovery, and relocated inspection does not
+add rendered playback, physical-input or clean-machine coverage. Fresh agent
+workflows, broader compatibility and Alpha acceptance remain open.
 
 Version 0.0.127 adds [Traversal Yard](../examples/traversal-yard), a complete
 small first-person C# course combining native steps, crouch clearance, a moving

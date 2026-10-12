@@ -43,6 +43,15 @@ The entry IDs must identify a `CharacterController` and `Camera`. The controller
 
 Edit the source world using the [world service](WORLD_SERVICE.md), [shared sessions](SHARED_SESSIONS.md), or the existing native authoring API. Project inspection reads the committed source files; it does not publish unapplied Inspector drafts.
 
+## Attach compiled gameplay
+
+[Native gameplay adoption](PROJECT_GAMEPLAY_ADOPTION.md) verifies and copies a
+published artifact into a new project-owned directory, then updates the manifest
+with exact hash guards and a durable retry receipt. It preserves older artifacts
+and later project edits. `project inspect` reports `manifest_sha256` and
+`world_sha256` for these checks. Adoption is also available through configured
+world-service profiles and the separately authorized MCP build tool.
+
 ## Install a runtime and export
 
 Export takes an installed runtime tree, not a raw build directory. Build a renderer-and-simulation configuration and install it into a dedicated prefix. For the existing Windows cross-build route:
@@ -71,7 +80,7 @@ The exporting headless executable and installed runtime must have the same exact
 {
   "format": "poima.runtime",
   "version": 1,
-  "engine_version": "0.0.127",
+  "engine_version": "0.0.128",
   "gameplay_services_version": 7,
   "gameplay_call_version": 1,
   "gameplay_call_bytes": 80,
@@ -136,6 +145,19 @@ Budgets are 4,096 payload files, 256 MiB per file and 1 GiB total payload, along
 ## Publication and immutability
 
 Existing output directories are never replaced. Successful creation/export reports `publication`:
+
+Windows retries directory publication only for errors 5, 32 and 33, at most ten
+attempts within a 500 ms window after the first failed move. Each retry checks
+that the destination remains absent and that the owned staging directory, its
+identity and its complete contents remain unchanged. Permanent errors still
+fail; retries change no permissions or file attributes. These errors alone do
+not identify which process or policy caused the failure.
+The deadline guards retry admission; it is not an operating-system I/O timeout.
+
+The CLI also reports `publication_attempts` and `publication_wait_ms`. The latter
+measures time spent in retry sleeps, excluding verification and copying. Linux
+reports one attempt and zero retry wait. Failed Windows publication includes
+the native error code, attempt count and path/attribute diagnostics.
 
 - `atomic_directory`: the platform publishes the prepared directory with no-replace rename semantics.
 - `manifest_last`: used on Linux filesystems such as WSL DrvFS that reject `renameat2(RENAME_NOREPLACE)`. Poima reserves a new destination with `mkdir`, creates payloads exclusively, writes the manifest last, and removes an incomplete marker only after completion.

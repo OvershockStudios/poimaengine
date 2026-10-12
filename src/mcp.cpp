@@ -84,8 +84,8 @@ Json tools(){
         {{"name","poima_call"},{"description","Call one native world operation using discovered parameters. Preserve native request_id and base_revision for edits. Calls are synchronous and never retried; transport failure may leave the outcome unknown."},
          {"inputSchema",schema({{"method",{{"type","string"},{"minLength",1}}},{"params",{{"type","object"}}},{"image",schema({{"max_edge",{{"type","integer"},{"minimum",128},{"maximum",2048},{"default",1280}}}})}},{"method"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}},
-        {{"name","poima_build"},{"description","Submit trusted compile, native publish or export jobs. Publishing/export use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Select development.compile, development.publish or development.export; inspect development.profiles first, then poll development.inspect. No automatic gameplay activation, retry or undo of emitted files."},
-         {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export"}}}},{"params",{{"type","object"}}}},{"method","params"})},
+        {{"name","poima_build"},{"description","Submit trusted compile, native publish or export jobs, or synchronously adopt verified native gameplay into a project. Publishing/export/adoption use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Inspect development.profiles first. Compile/publish/export return jobs polled through development.inspect; project.gameplay.adopt returns a durable project receipt and launches no compiler. No automatic gameplay activation or undo of emitted files."},
+         {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export","project.gameplay.adopt"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}}
     });
 }
@@ -112,10 +112,10 @@ struct McpSession::Impl {
                 return tool_result({{"error",error(-32602,"A nonempty native method is required.")}},true);
             method=arguments["method"].get<std::string>();params=arguments.value("params",Json::object());
             if(!params.is_object())return tool_result({{"error",error(-32602,"Native params must be an object.")}},true);
-            const bool build=method=="development.compile" || method=="development.publish" || method=="development.export";
+            const bool build=method=="development.compile" || method=="development.publish" || method=="development.export" || method=="project.gameplay.adopt";
             if(name=="poima_build") {
-                if(!build || !arguments.contains("params") || arguments.contains("image"))return tool_result({{"error",error(-32602,"poima_build requires compile/publish/export parameters and accepts no image option.")}},true);
-            } else if(build) return tool_result({{"error",error(-32602,"Use the separately authorized poima_build tool for compilation, native publishing and export.")}},true);
+                if(!build || !arguments.contains("params") || arguments.contains("image"))return tool_result({{"error",error(-32602,"poima_build requires compile/publish/export/adopt parameters and accepts no image option.")}},true);
+            } else if(build) return tool_result({{"error",error(-32602,"Use the separately authorized poima_build tool for compilation, native publishing, export and project gameplay adoption.")}},true);
             if(arguments.contains("image")) {
                 const auto& image=arguments["image"];
                 if(!image.is_object())return tool_result({{"error",error(-32602,"image must be an object.")}},true);

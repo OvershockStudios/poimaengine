@@ -5,6 +5,7 @@
 #include "poima/build_metadata.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/project.hpp"
+#include "development_service.hpp"
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -72,6 +73,30 @@ using Pins=std::vector<std::pair<fs::path,std::string>>;
 void unchanged(const Pins& pins) {
     for(const auto& [file,digest]:pins)need(hash(read(file,256ULL*1024*1024))==digest,"Selected development tool changed during the job.");
 }
+std::string project_result(const Reply& reply) {
+    need(reply.json.size()<=4ULL*1024*1024,"Project operation result exceeds its byte limit.");
+    const auto value=parse(reply.json);
+    if(reply.exit_code!=0) {
+        std::string message="Native project operation failed.";
+        int code=-32091;
+        if(value.contains("diagnostics") && value.at("diagnostics").is_array())
+            for(const auto& diagnostic:value.at("diagnostics"))if(diagnostic.is_object() && diagnostic.contains("message") && diagnostic.at("message").is_string()) {
+                message=diagnostic.at("message").get<std::string>().substr(0,4096);
+                if(diagnostic.contains("error_code") && diagnostic.at("error_code").is_number_integer()) {
+                    const auto proposed=diagnostic.at("error_code");
+                    if(proposed==-32602 || proposed==-32009 || proposed==-32091)code=proposed.get<int>();
+                }
+                break;
+            }
+        if(value.contains("result") && value.at("result").is_object() && value.at("result").contains("error_code")) {
+            const auto proposed=value.at("result").at("error_code");
+            if(proposed.is_number_integer() && (proposed==-32602 || proposed==-32009 || proposed==-32091))code=proposed.get<int>();
+        }
+        throw ServiceError(code,message);
+    }
+    need(value.contains("result") && value.at("result").is_object() && !value.at("result").empty(),"Native project operation returned no result.");
+    return value.at("result").dump();
+}
 }
 std::vector<Profile> load_profiles(const std::string& filename) {
     const fs::path file(std::u8string(filename.begin(),filename.end()));
@@ -125,6 +150,10 @@ std::vector<Profile> load_profiles(const std::string& filename) {
                 {"inventory_sha256",hash(inspected.at("files").dump())},{"files",inspected.at("files").size()},
                 {"payload_bytes",bytes},{"project_id",inspected.at("project_id")},{"source_revision",inspected.at("revision")},
                 {"target_os",inspected.at("target_os")},{"target_arch",inspected.at("target_arch")}}.dump();
+        };
+        profile.inspect_project=[](const fs::path& manifest) {return project_result(poima::inspect_project(text(manifest)));};
+        profile.adopt_gameplay=[](const fs::path& manifest,const fs::path& descriptor,const std::string& request) {
+            return project_result(poima::adopt_project_gameplay(text(manifest),text(descriptor),request));
         };
         result.push_back(std::move(profile));
     }

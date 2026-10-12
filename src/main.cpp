@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <charconv>
 #include <set>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string_view>
 #ifdef _WIN32
@@ -59,10 +61,35 @@ poima::Reply run(int argc, char** argv) {
     if (argc == 1) return poima::help();
     const std::string_view command = argv[1];
     if(command=="project") {
-        if(argc<4)return poima::usage_error("Use: project create <directory> --name <name> | inspect <project.json> | build <project.json> --output <new-directory> --runtime <installed-runtime>.");
+        if(argc<4)return poima::usage_error("Use: project create <directory> --name <name> | inspect <project.json> | adopt-gameplay <project.json> --artifact <descriptor.json> --request <request.json> | build <project.json> --output <new-directory> --runtime <installed-runtime>.");
         const std::string_view action=argv[2];
         if(action=="create" && argc==6 && std::string_view(argv[4])=="--name" && *argv[3] && *argv[5])return poima::create_project(argv[3],argv[5]);
         if(action=="inspect" && argc==4 && *argv[3])return poima::inspect_project(argv[3]);
+        if(action=="adopt-gameplay" && argc==8 && *argv[3]) {
+            std::string artifact,request;
+            for(int i=4;i<8;i+=2) {
+                if(!*argv[i+1])return poima::usage_error("Gameplay adoption requires nonempty paths.");
+                const std::string_view key=argv[i];
+                if(key=="--artifact" && artifact.empty())artifact=argv[i+1];
+                else if(key=="--request" && request.empty())request=argv[i+1];
+                else return poima::usage_error("Unknown or repeated gameplay adoption argument.");
+            }
+            if(!artifact.empty() && !request.empty()) {
+                const auto path=std::filesystem::path(std::u8string(request.begin(),request.end()));
+                std::error_code error;
+                if(!std::filesystem::is_regular_file(std::filesystem::symlink_status(path,error)) || error)
+                    return poima::usage_error("Gameplay adoption request must be a regular JSON file without a symlink.");
+                std::ifstream input(path,std::ios::binary|std::ios::ate);
+                if(!input)return poima::usage_error("Cannot read gameplay adoption request.");
+                const auto size=input.tellg();
+                if(size<0 || size>65536)return poima::usage_error("Gameplay adoption request exceeds 64 KiB.");
+                std::string bytes(static_cast<std::size_t>(size),'\0');input.seekg(0);
+                if((!bytes.empty() && !input.read(bytes.data(),static_cast<std::streamsize>(bytes.size()))) ||
+                   input.peek()!=std::char_traits<char>::eof())
+                    return poima::usage_error("Gameplay adoption request changed or failed during read.");
+                return poima::adopt_project_gameplay(argv[3],artifact,bytes);
+            }
+        }
         if(action=="build" && argc==8 && *argv[3]) {
             std::string output,runtime;for(int i=4;i<8;i+=2) {
                 const std::string_view key=argv[i];if(!*argv[i+1])return poima::usage_error("Project build requires nonempty paths.");

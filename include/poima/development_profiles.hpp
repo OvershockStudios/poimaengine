@@ -15,6 +15,8 @@ struct Profile {
     std::vector<std::pair<std::string,std::string>> environment;
     std::function<std::string(const std::filesystem::path&,const std::string&)> verify_publish;
     std::function<std::string(const std::filesystem::path&)> verify_export;
+    std::function<std::string(const std::filesystem::path&)> inspect_project;
+    std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> adopt_gameplay;
 };
 // Owner-side loader supplies canonical paths, explicit environment, content
 // fingerprints and native result verifiers. No tool discovery or installation.

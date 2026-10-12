@@ -208,3 +208,12 @@ with exact runtime and authored guards, then wait for the matching presented
 receipt before claiming a visible update. A successful apply preserves the
 current game and adopts its save baseline; ordinary `world.transact` alone does
 not update a frozen runtime. General scene changes still need a new runtime.
+
+## Publish, attach and export
+
+Use a host-configured [development profile](DEVELOPMENT_PROFILES.md) for native
+publishing. Inspect the verified publication descriptor and project hash, then
+[adopt the artifact](PROJECT_GAMEPLAY_ADOPTION.md) with a fresh request ID. Keep
+that exact request for retries. Export after successful adoption; do not copy
+artifacts or rewrite the manifest independently to bypass its revision guard.
+Adoption does not update a running module or migrate existing saves.

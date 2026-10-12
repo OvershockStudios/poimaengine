@@ -13,6 +13,13 @@ build-job submission separately from world editing. Other world operations can
 still execute explicitly selected trusted gameplay; this distinction is not a
 general code-execution sandbox.
 
+After publication, use [project gameplay adoption](PROJECT_GAMEPLAY_ADOPTION.md)
+to attach the verified artifact before export. `project.inspect` reads a profile
+project through `poima_call`; `project.gameplay.adopt` copies and updates it through
+`poima_build`. These synchronous project operations create no development job and
+launch no compiler. The per-project adoption receipt survives host restart;
+publish/export job submission receipts remain scoped to the running host.
+
 ## Configure a host
 
 Create an owner-controlled JSON file outside public project history. All paths
