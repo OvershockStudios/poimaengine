@@ -6,6 +6,10 @@ camera ID must still name a direct child with a `Camera` component. Camera-free
 actors retain capsule collision, gravity, heading, jump, observation, rollback
 and saved state. They are excluded from interactive player-camera selection.
 
+Optional [native crouch/stand](CHARACTER_STANCE.md) uses a frozen controller
+profile and an independent stance service. Movement input remains separately
+owned; an omitted stance command retains posture intent.
+
 ## C# movement
 
 Declare `ICharacterInputGame` alongside `Game<TState>`:

@@ -4,6 +4,11 @@ C# gameplay can request native checkpoints through `GameContext`. CoreCLR develo
 
 This extension requires the **176-byte save-services prefix of services epoch 7**. Later additive prefixes retain that negotiated view; games declaring other extensions also need their required prefix/features. Use a matching gameplay SDK/bridge or published native artifact. Saves still require their exact original module image and schema: rebuilding gameplay is not a save migration. Keep matching runtime/module builds for existing checkpoints.
 
+[Configured character stance](CHARACTER_STANCE.md#checkpoints-and-limits) uses
+runtime snapshot version 8, preserving actual capsule/intent and owned eye
+height. This does not grant a save-upgrade plan permission to change its frozen
+profile. No-profile worlds retain earlier format selection.
+
 ## Configure storage
 
 In the editor, use **Window > Saves**, or call `save.configure` through the world service. A standalone bundle accepts an existing external directory:

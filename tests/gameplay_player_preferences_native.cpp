@@ -172,7 +172,7 @@ void reset_sources_and_graphics() {
 void independent_feature_policy() {
     using namespace poima::gameplay_abi;
     Contract required;required.services_bytes=256;required.features.push_back(player_preferences_feature);
-    const auto available=available_contract();check(available.services_bytes==320 && compatibility_error(required,available).empty(),
+    const auto available=available_contract();check(available.services_bytes==character_stance_services_bytes && compatibility_error(required,available).empty(),
         "Default host lacks named preference extension.");
     check(compatibility_error(required,required).empty(),"Preference feature requires unrelated services.");
     for(auto extent:{176u,192u,208u,216u,224u,232u,255u,257u}) {

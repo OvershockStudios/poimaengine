@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-11 for **0.0.124**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-12 for **0.0.125**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.125 adds [optional character stance](CHARACTER_STANCE.md).
+Configured controllers shrink at their foot origin, use their authored crouched
+speed and eye drop, and test native collision shapes before standing. A blocked
+stand retains crouched posture and retries without another command. The profile
+stays frozen through live authoring; camera-free actors use the same clearance
+policy. Schema revision 93 adds guarded inspection and atomic stance commands.
+The independent `character_stance_v1` extension appends a 336-byte epoch-7
+services prefix; earlier declared profiles retain their bounded views.
+
+Twenty-five native CPU suites pass, including seven stance groups and four
+protocol groups with 62 native RPCs and two clean processes. Compiled SDK tests
+pass 92 ABI checks and 16 publishing tests. Actual CoreCLR and Native AOT
+consumers pass 523 RPCs across six clean processes, with exact quotas, staged
+reads, pending births, complete rollback and cold save continuation. CoreCLR
+also qualifies compatible reload. Forty AMD/NVIDIA forward/deferred Vulkan
+captures match twenty independent authored-camera references pixel for pixel;
+the eye drop visibly changes the synthetic course. Version-8 snapshots restore
+the saved capsule before body state and preserve complete posture intent.
+[Evidence](evidence/m2-character-stance.json).
+
+These checks cover scripted crouch/stand, fixed-tick physics and standalone
+320x240 rendering. Stairs, slope handling, moving platforms, swimming, physical
+input and animated body crouching remain separate qualification work. Durable
+continuation compares independently cold-restored owners; it does not serialize
+Jolt's warm contact caches. This checkpoint does not establish Alpha readiness.
 
 Version 0.0.124 adds opt-in `lens_interpolation` for interactive native players.
 World and first-person FOV interpolate in logarithmic perspective scale between

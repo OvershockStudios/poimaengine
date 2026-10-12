@@ -85,6 +85,12 @@ int main(){try{
     for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,280u,287u,289u}){auto wrong=ik;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_ik=ik;duplicate_ik["features"].push_back("animation_ik_v1");rejected(duplicate_ik.dump());
     auto unnamed_ik=ik;unnamed_ik["features"]=Json::array({"baseline_v7"});rejected(unnamed_ik.dump());
+    auto stance=baseline;stance["services_bytes"]=336;stance["features"].push_back("character_stance_v1");
+    const auto parsed_stance=poima::parse_gameplay_service_contract(stance.dump());
+    check(parsed_stance.services_bytes==336 && parsed_stance.features.size()==2,"Independent stance contract rejected.");
+    for(unsigned bytes:{176u,320u,328u,335u,337u}) {auto wrong=stance;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_stance=stance;duplicate_stance["features"].push_back("character_stance_v1");rejected(duplicate_stance.dump());
+    auto unnamed_stance=stance;unnamed_stance["features"]=Json::array({"baseline_v7"});rejected(unnamed_stance.dump());
     auto lens=baseline;lens["services_bytes"]=320;lens["features"].push_back("camera_lens_v1");
     const auto parsed_lens=poima::parse_gameplay_service_contract(lens.dump());
     check(parsed_lens.services_bytes==320 && parsed_lens.features.size()==2,"Independent camera lens contract rejected.");

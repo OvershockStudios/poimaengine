@@ -12,6 +12,11 @@ developer defines the actual game's rules, assets, pacing and presentation.
 Quality labels alone are insufficient: each supported feature needs an
 observable workload, declared hardware tier and measured acceptance evidence.
 
+Current foundation: [native crouch/stand](CHARACTER_STANCE.md) preserves feet,
+uses physical clearance before capsule growth and retains posture intent in
+checkpoints. Stairs, slopes, moving platforms, mantle, slide and vault remain
+separate locomotion gates. Character rigs need their own crouch animation policy.
+
 ## Capability matrix
 
 | Area | Engine responsibility | Reusable package or game responsibility | Acceptance examples |

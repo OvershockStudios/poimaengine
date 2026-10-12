@@ -433,6 +433,21 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     }
     std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.slot<b.slot;});return result;
 }
+RuntimeCharacterStanceProfile character_stance_value(const Json& value,double radius,double height) {
+    fields(value,{"crouched_height","crouched_speed","camera_drop"},{});
+    for(const auto* key:{"crouched_height","crouched_speed","camera_drop"})if(value.contains(key))
+        require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Character stance parameters must be finite numbers.");
+    const double crouched_height=value.value("crouched_height",1.0),speed=value.value("crouched_speed",2.0),drop=value.value("camera_drop",0.8);
+    require(crouched_height>2*radius && crouched_height<height,"Crouched height must exceed the capsule diameter and be below standing height.");
+    require(speed>0 && speed<=30,"Crouched speed must be within (0,30].");
+    require(drop>=0 && drop<=height-crouched_height+1e-6,"Camera drop must fit the standing-to-crouched height difference.");
+    RuntimeCharacterStanceProfile result{static_cast<float>(crouched_height),static_cast<float>(speed),static_cast<float>(drop)};
+    require(result.crouched_height>2*static_cast<float>(radius) && result.crouched_height<static_cast<float>(height) &&
+        result.crouched_speed>0 && result.crouched_speed<=30 && result.camera_drop>=0 &&
+        static_cast<double>(result.camera_drop)<=static_cast<double>(static_cast<float>(height))-result.crouched_height+1e-6,
+        "Character stance parameters are invalid at native precision.");
+    return result;
+}
 RuntimeRootMotionDefinition root_motion_value(const Json& value) {
     fields(value,{"node","mode","actor","enabled","yaw"},{"node"});
     RuntimeRootMotionDefinition result;const auto node=revision(value.at("node"));
@@ -597,11 +612,12 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if (type == "CharacterController") {
-        fields(value, {"radius","height","speed","jump_speed","camera"}, {"radius","height","speed","jump_speed","camera"});
+        fields(value, {"radius","height","speed","jump_speed","camera","stance"}, {"radius","height","speed","jump_speed","camera"});
         if(!value.at("camera").is_null())identifier(value.at("camera"));
         for(const auto* key:{"radius","height","speed","jump_speed"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid controller parameter.");
         require(value.at("radius")>=0.05 && value.at("radius")<=2 && value.at("height")>2*value.at("radius").get<double>() && value.at("height")<=4,"Invalid capsule dimensions.");
         require(value.at("speed")>0 && value.at("speed")<=30 && value.at("jump_speed")>=0 && value.at("jump_speed")<=20,"Controller speed out of range.");
+        if(value.contains("stance"))(void)character_stance_value(value.at("stance"),value.at("radius").get<double>(),value.at("height").get<double>());
         return;
     }
     throw Error(-32602, "Unknown component type.");
@@ -869,6 +885,16 @@ void validate(const Json& doc) {
             current = parent.is_null() ? "" : parent.get<std::string>();
         }
         for (const auto& item : chain) colors[item] = 2;
+    }
+    for(const auto& [id,entity]:entities.items()) {
+        const auto& bag=entity.at("components");
+        if(!bag.contains("CharacterController") || !bag.at("CharacterController").contains("stance"))continue;
+        const auto& camera=bag.at("CharacterController").at("camera");if(camera.is_null())continue;
+        const auto target=identifier(camera);
+        require(entities.contains(target) && entities.at(target).at("components").contains("Camera") && entities.at(target).at("parent")==id,
+            "Stance controller camera must be an existing direct-child Camera.");
+        require(!entities.at(target).at("components").contains("RigNode"),
+            "Stance controller camera cannot be an animation-owned RigNode.");
     }
     camera_draw_references(entities);
     std::set<std::pair<std::string,std::string>> regions;
@@ -2570,7 +2596,7 @@ public:
                 value.mesh_collider=std::move(collider);
             }
             if(components.contains("HitRegion"))value.hit_region=hit_region_value(components.at("HitRegion"));
-            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()}; }
+            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()};if(c.contains("stance"))value.character->stance=character_stance_value(c.at("stance"),c.at("radius").get<double>(),c.at("height").get<double>()); }
             result.entities.push_back(std::move(value));
         }
         if(!animation_only && !audio_only) {
@@ -2688,6 +2714,18 @@ public:
             require(seen.insert(command.entity).second,"Duplicate root-motion command target.");
             if(value.contains("enabled")){require(value.at("enabled").is_boolean(),"Root-motion enabled must be boolean.");command.enabled=value.at("enabled").get<bool>();}
             result.push_back(std::move(command));
+        }
+        return result;
+    }
+    static std::vector<RuntimeCharacterStanceCommand> parse_character_stances(const Json& raw) {
+        require(raw.is_array() && raw.size()<=32,"Character stances must contain at most 32 commands.");
+        std::vector<RuntimeCharacterStanceCommand> result;std::set<std::string> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","crouch"},{"entity","crouch"});
+            RuntimeCharacterStanceCommand command;command.entity=identifier(value.at("entity"));
+            require(value.at("crouch").is_boolean(),"Character stance crouch must be boolean.");
+            require(seen.insert(command.entity).second,"Duplicate character stance target.");
+            command.crouch=value.at("crouch").get<bool>();result.push_back(std::move(command));
         }
         return result;
     }
@@ -3115,6 +3153,20 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.character_stance") {
+            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));
+            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->character_stance(entity);Json value=nullptr;
+                if(state)value={{"entity",state->entity},{"ground",state->ground},{"configured",state->configured},
+                    {"requested_crouch",state->requested_crouch},{"crouched",state->crouched},{"stand_blocked",state->stand_blocked},
+                    {"radius",state->radius},{"standing_height",state->standing_height},{"crouched_height",state->crouched_height},
+                    {"height",state->height},{"speed",state->speed},{"camera_drop",state->camera_drop}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.camera_lens") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3166,7 +3218,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","character_stances","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -3176,6 +3228,8 @@ public:
             const auto root_motion=parse_root_motion(normalized.at("root_motion"));
             if(!normalized.contains("camera_lenses"))normalized["camera_lenses"]=Json::array();
             const auto camera_lenses=parse_camera_lenses(normalized.at("camera_lenses"));
+            if(!normalized.contains("character_stances"))normalized["character_stances"]=Json::array();
+            const auto character_stances=parse_character_stances(normalized.at("character_stances"));
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
                 if(!command.contains("enabled"))command["enabled"]=true;
@@ -3215,7 +3269,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

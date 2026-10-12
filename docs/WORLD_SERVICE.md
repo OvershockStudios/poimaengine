@@ -79,6 +79,12 @@ Focused schemas are selected after read-only and shared-session restrictions. Th
 
 The initial focused-discovery checkpoint qualified Linux protocol and in-process native tests for malformed selectors, exact projection, state preservation and all three session scopes. Its catalog measured 2,092 bytes and `entity.query` 860 bytes versus 110,867 bytes for full discovery, including the JSON-RPC envelope and newline. At that checkpoint, Windows compilation passed but execution was unqualified. [Historical evidence](evidence/m2-focused-discovery.json). The 0.0.48 mutation checkpoint now qualifies native Windows/Linux execution and records current wire counts separately. [Current evidence and request fixtures](evidence/m2-scoped-mutation-discovery.json).
 
+Schema revision 93 adds [character stance](CHARACTER_STANCE.md): optional frozen
+controller profiles, `character_stances` in `runtime.step`, and guarded
+`runtime.character_stance` inspection. Desired standing persists while an
+obstruction prevents capsule growth. This extension remains outside the stable
+authoring-core v1 boundary.
+
 Schema revision 21 added `runtime.status` and scope-aware shared-session discovery. Schema revision 20 added `world.history`, `world.undo` and `world.redo`. Undo/redo use `request_id` and `base_revision`, advance the revision, preserve known entity identities and store durable retry receipts. History is session-local, capped at 32 edits and 16 MiB of compact serialized entity snapshots. A new committed edit clears redo. Failed edits/previews preserve history. See the [history contract and native API](EDITOR.md#shared-service-and-history) for limits and restart behavior.
 
 ## Live native player

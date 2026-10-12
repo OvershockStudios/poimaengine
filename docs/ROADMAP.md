@@ -98,7 +98,8 @@ playback, layers, IK, foot placement and explicit root-motion ownership.
 Add motion-matched locomotion with inspectable pose/trajectory features,
 transitions and animation-database cost. Integrate ragdolls, damage-directed
 hit reactions and recovery with explicit animation/physics ownership.
-Harden movement for slopes, steps, crouching, moving platforms and swimming;
+Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and harden movement
+for slopes, steps, moving platforms and swimming;
 extend navigation with dynamic obstacles, traversal links and avoidance.
 Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
 [First-person viewmodels](VIEWMODELS.md) provide a separate FOV and

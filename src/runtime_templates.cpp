@@ -183,6 +183,14 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 check(character.camera.empty() || (graph.contains(character.camera) && graph.at(character.camera)->camera && graph.at(character.camera)->parent==entity.id),"Template controller camera must be a local direct-child Camera.");
                 check(bounded(character.radius,.05,2) && bounded(character.height,0,4) && character.height>2*character.radius,"Invalid template character capsule dimensions.");
                 check(bounded(character.speed,0,30) && character.speed>0 && bounded(character.jump_speed,0,20),"Invalid template controller speed.");
+                if(character.stance) {
+                    const auto& stance=*character.stance;
+                    check(bounded(stance.crouched_height,0,4) && stance.crouched_height>2*character.radius && stance.crouched_height<character.height &&
+                        bounded(stance.crouched_speed,0,30) && stance.crouched_speed>0 &&
+                        bounded(stance.camera_drop,0,4) && double(stance.camera_drop)<=double(character.height)-stance.crouched_height+1e-6,
+                        "Invalid template character stance profile.");
+                    check(character.camera.empty() || !graph.at(character.camera)->rig_node,"Stance camera position cannot also be owned by ModelNode animation.");
+                }
             }
             if(entity.camera)(void)perspective(entity.camera->vertical_fov,1,entity.camera->near_plane,entity.camera->far_plane);
             if(entity.light)validate_light(*entity.light);

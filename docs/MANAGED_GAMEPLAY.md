@@ -141,7 +141,7 @@ Invalid commands, failed curve samples and managed exceptions restore animation 
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, and 320 named camera lenses; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, 320 named camera lenses, and 336 named character stance; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
 
 ## Control masked layers from C#
 
@@ -407,6 +407,15 @@ saves; compatible reload does not change frozen bindings or authorize a new
 save identity. This extension does not add vertical climbing, automatic foot
 placement, stride warping or a complete animation graph. Qualification remains
 separate from this API contract.
+
+## Control character stance
+
+Declare `ICharacterStanceGame` for Tick-only `GetCharacterStance(entity)` and
+`SetCharacterStance(entity, crouch)`. Reads see committed state; setters stage
+persistent desired posture. The independent `character_stance_v1` prefix is
+336 bytes, with 256 reads and 32 combined caller/gameplay writes per Tick.
+[Authoring, blocked-standing retry, pending births and saved stance](CHARACTER_STANCE.md)
+define the surrounding physical and ownership contract.
 
 ## Control world and first-person lenses
 

@@ -19,6 +19,7 @@
 #include <Jolt/Physics/StateRecorderImpl.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/CollideShape.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Body/BodyLock.h>
@@ -80,6 +81,8 @@ struct Controller {
     JPH::Ref<JPH::Character> character;
     CharacterController settings;
     double yaw=0, pitch=0;
+    JPH::RefConst<JPH::Shape> standing_shape,crouched_shape;
+    bool requested_crouch=false,crouched=false,stand_blocked=false;
 };
 struct Pose { JPH::RVec3 position; JPH::Quat rotation; std::array<double,3> scale; };
 Pose pose(const Matrix4& world) {
@@ -186,6 +189,8 @@ struct Runtime::Impl {
     std::vector<RuntimeRootMotionCommand> game_root_motion_commands;
     std::vector<RuntimeCameraLensCommand> game_camera_lens_commands;
     std::vector<RuntimeInput> game_character_inputs;
+    std::vector<RuntimeCharacterStanceCommand> game_stance_commands;
+    std::size_t game_stance_reads=0,game_stance_writes=0;
     SoundState sounds;
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
@@ -259,6 +264,10 @@ struct Runtime::Impl {
                 const auto rotation=JPH::Quat(static_cast<float>(q[0]),static_cast<float>(q[1]),static_cast<float>(q[2]),static_cast<float>(q[3])).Normalized()
                     * JPH::Quat::sRotation(JPH::Vec3::sAxisX(),static_cast<float>(controller->pitch*radians));
                 camera.local.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
+                if(controller->settings.stance) {
+                    camera.local.position=camera.initial.position;
+                    if(controller->crouched)camera.local.position[1]-=controller->settings.stance->camera_drop;
+                }
             }
         }
         world_matrices();
@@ -372,9 +381,18 @@ struct Runtime::Impl {
                 std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
             require(std::isfinite(settings.speed) && settings.speed>0 && settings.speed<=30 &&
                 std::isfinite(settings.jump_speed) && settings.jump_speed>=0 && settings.jump_speed<=20,"Invalid controller speed.");
+            if(settings.stance) {
+                const auto& stance=*settings.stance;
+                require(std::isfinite(stance.crouched_height) && stance.crouched_height>2*settings.radius && stance.crouched_height<settings.height &&
+                    std::isfinite(stance.crouched_speed) && stance.crouched_speed>0 && stance.crouched_speed<=30 &&
+                    std::isfinite(stance.camera_drop) && stance.camera_drop>=0 &&
+                    double(stance.camera_drop)<=double(settings.height)-stance.crouched_height+1e-6,
+                    "Invalid character stance profile.");
+            }
             if(!settings.camera.empty()) {
                 const auto camera=find(settings.camera);
                 require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
+                require(!settings.stance || !registry.all_of<RuntimeRigNode>(camera),"Stance camera position cannot also be owned by ModelNode animation.");
                 require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
             }
             auto capsule=JPH::CapsuleShapeSettings(settings.height/2-settings.radius,settings.radius).Create();
@@ -386,7 +404,15 @@ struct Runtime::Impl {
             config.mSupportingVolume=JPH::Plane(JPH::Vec3::sAxisY(),-settings.radius);
             const auto p=pose(node.world);
             auto& controller=registry.emplace<Controller>(e);
-            controller.settings=settings;
+            controller.settings=settings;controller.standing_shape=shape.Get();
+            if(settings.stance) {
+                const auto& stance=*settings.stance;
+                auto crouch_capsule=JPH::CapsuleShapeSettings(stance.crouched_height/2-settings.radius,settings.radius).Create();
+                require(!crouch_capsule.HasError(),"Jolt crouched capsule creation failed.");
+                auto crouch_shape=JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0,stance.crouched_height/2,0),JPH::Quat::sIdentity(),crouch_capsule.Get()).Create();
+                require(!crouch_shape.HasError(),"Jolt crouched foot-origin shape creation failed.");
+                controller.crouched_shape=crouch_shape.Get();
+            }
             controller.yaw=JPH::ATan2(static_cast<float>(node.world[8]),static_cast<float>(node.world[0]))/radians;
             controller.character=bootstrap ? new JPH::Character(&config,p.position,p.rotation,0,&physics)
                 : new JPH::Character(&config,p.position,p.rotation,0,&physics,body_ids.allocate());
@@ -954,6 +980,100 @@ struct Runtime::Impl {
             self.game_character_inputs.push_back(std::move(command));
         });
     }
+    static int32_t POIMA_CALL get_character_stance(void* context,const PoimaEntityId* entity,
+        PoimaGameCharacterStanceStateV1* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && entity && output,"Character stance query is absent.");
+            require(output->version==1 && output->bytes==sizeof(PoimaGameCharacterStanceStateV1) && output->flags==0 && output->reserved==0,
+                "Character stance state requires version1, exactly64 bytes and zero input flags/reserved.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(self.game_stance_reads<256,"Gameplay exceeded256 character stance reads in one Tick.");
+            const auto id=gameplay_id(*entity);std::optional<RuntimeCharacterStanceState> state;
+            if(const auto* pending=self.pending_entity(id)) {
+                if(pending->character) {
+                    const auto& c=*pending->character;RuntimeCharacterStanceState value;value.entity=id;value.ground="in_air";
+                    value.configured=c.stance.has_value();value.radius=c.radius;value.standing_height=value.height=c.height;
+                    value.crouched_height=c.stance ? c.stance->crouched_height : c.height;value.speed=c.speed;state=std::move(value);
+                }
+            }else state=self.owner->character_stance(id);
+            PoimaGameCharacterStanceStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);
+            if(state) {
+                candidate.entity=*entity;candidate.present=1;
+                candidate.flags=(state->requested_crouch ? 1u : 0u)|(state->crouched ? 2u : 0u)|(state->stand_blocked ? 4u : 0u)|(state->configured ? 8u : 0u);
+                candidate.ground_state=state->ground=="on_ground" ? 0u : state->ground=="steep_ground" ? 1u : state->ground=="not_supported" ? 2u : 3u;
+                candidate.radius=state->radius;candidate.standing_height=state->standing_height;candidate.crouched_height=state->crouched_height;
+                candidate.height=state->height;candidate.speed=state->speed;candidate.camera_drop=state->camera_drop;
+            }
+            ++self.game_stance_reads;*output=candidate;
+        });
+    }
+    static int32_t POIMA_CALL set_character_stance(void* context,const PoimaGameCharacterStanceCommandV1* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && source,"Character stance command is absent.");
+            require(source->version==1 && source->bytes==sizeof(PoimaGameCharacterStanceCommandV1) && source->crouch<=1 && source->reserved==0,
+                "Character stance command requires version1, exactly32 bytes, Boolean crouch and zero reserved.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(self.game_stance_writes<32,"Gameplay exceeded32 character stance writes in one Tick.");
+            const auto id=gameplay_id(source->entity);
+            if(const auto* pending=self.pending_entity(id))require(pending->character && pending->character->stance,"Reserved stance target requires a configured CharacterController.");
+            else {const auto* c=self.registry.try_get<Controller>(self.find(id));require(c && c->settings.stance,"Character stance requires a configured live controller.");}
+            require(std::none_of(self.game_stance_commands.begin(),self.game_stance_commands.end(),[&](const auto& command){return command.entity==id;}),"Duplicate gameplay character stance target.");
+            self.game_stance_commands.push_back({id,source->crouch!=0});++self.game_stance_writes;
+        });
+    }
+    static void restore_character_stance(Controller& c,bool requested,bool crouched,bool blocked) {
+        require(c.settings.stance.has_value() || (!requested && !crouched && !blocked),"Legacy controller cannot restore stance state.");
+        require(blocked==(!requested && crouched),"Blocked stand must match actual crouched shape and standing intent.");
+        require(!requested || crouched,"Committed crouch intent requires the crouched shape.");
+        if(c.crouched!=crouched) {
+            const auto* shape=crouched ? c.crouched_shape.GetPtr() : c.standing_shape.GetPtr();
+            require(shape && c.character->SetShape(shape,std::numeric_limits<float>::max()),"Cannot restore owned character shape.");
+        }
+        c.requested_crouch=requested;c.crouched=crouched;c.stand_blocked=blocked;
+    }
+    void validate_stance_commands(const std::vector<RuntimeCharacterStanceCommand>& commands) const {
+        require(commands.size()<=32,"At most32 character stance commands per Tick.");
+        std::set<std::string> targets;
+        for(const auto& command:commands) {
+            require(targets.insert(command.entity).second,"Duplicate character stance target.");
+            const auto e=find(command.entity);const auto* c=registry.try_get<Controller>(e);
+            require(c && c->settings.stance,"Character stance requires a configured live controller.");
+        }
+    }
+    void apply_stance_requests(const std::vector<RuntimeCharacterStanceCommand>& commands) {
+        validate_stance_commands(commands);
+        for(const auto& command:commands)registry.get<Controller>(find(command.entity)).requested_crouch=command.crouch;
+    }
+    void update_character_stances() {
+        for(const auto e:topology->characters) {
+            auto& c=registry.get<Controller>(e);if(!c.settings.stance)continue;
+            c.stand_blocked=false;
+            if(c.requested_crouch==c.crouched)continue;
+            const auto* shape=c.requested_crouch ? c.crouched_shape.GetPtr() : c.standing_shape.GetPtr();
+            if(!c.requested_crouch) {
+                // Test actual shapes at the foot origin. Ordinary supporting
+                // contacts may retain solver slop; ceiling/wall contacts may
+                // not use that allowance to admit an obstructed expansion.
+                struct Clearance final : JPH::CollideShapeCollector {
+                    JPH::BodyID support;float radius,slop;bool blocked=false;
+                    Clearance(JPH::BodyID body,float r,float tolerance):support(body),radius(r),slop(tolerance) {}
+                    void AddHit(const JPH::CollideShapeResult& hit) override {
+                        const auto axis=hit.mPenetrationAxis;
+                        const bool supported=!support.IsInvalid() && hit.mBodyID2==support && axis.LengthSq()>1e-12f &&
+                            (-axis.Normalized()).GetY()>=.70710678f && hit.mContactPointOn2.GetY()<=radius+.001f;
+                        if(hit.mPenetrationDepth>(supported ? slop : .001f)) {blocked=true;ForceEarlyOut();}
+                    }
+                } clearance(c.character->GetGroundBodyID(),c.settings.radius,1.5f*physics.GetPhysicsSettings().mPenetrationSlop);
+                const auto position=c.character->GetPosition();
+                c.character->CheckCollision(position,c.character->GetRotation(),JPH::Vec3::sZero(),0,shape,position,clearance);
+                if(clearance.blocked) {c.stand_blocked=true;continue;}
+            }
+            // Shrinking is a strict subset at the same foot origin. The owner
+            // serializes the clearance query and publication; no Tick runs here.
+            require(c.character->SetShape(shape,std::numeric_limits<float>::max()),"Cannot publish owned stance shape.");
+            c.crouched=c.requested_crouch;
+        }
+    }
     void apply_character_input(entt::entity entity,const RuntimeInput& input,bool edges) {
         auto& controller=registry.get<Controller>(entity);
         if(edges) {
@@ -963,7 +1083,8 @@ struct Runtime::Impl {
         }
         JPH::Vec3 movement(input.move[0],0,-input.move[1]);
         if(movement.LengthSq()>1)movement=movement.Normalized();
-        const auto desired=controller.character->GetRotation()*movement*controller.settings.speed;
+        const auto speed=controller.crouched ? controller.settings.stance->crouched_speed : controller.settings.speed;
+        const auto desired=controller.character->GetRotation()*movement*speed;
         float y=controller.character->GetLinearVelocity().GetY();
         if(edges && input.jump && controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround)y=controller.settings.jump_speed;
         controller.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
@@ -1192,7 +1313,7 @@ struct Runtime::Impl {
             throw;
         }
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1214,6 +1335,7 @@ struct Runtime::Impl {
             }
         }
         require(sound_commands.size()<=64,"At most 64 sound commands per batch.");
+        validate_stance_commands(stance_commands);
         auto prepared=prepare_motions(motions);
         const auto structure_checkpoint=checkpoint_structure();
         std::vector<std::pair<entt::entity,std::optional<Motion>>> previous_motions;previous_motions.reserve(topology->kinematics.size());
@@ -1223,9 +1345,9 @@ struct Runtime::Impl {
         // objects alive through the whole transaction, without allocation.
         std::optional<profiling::Scope> checkpoint_profile(std::in_place,"runtime.checkpoint",static_cast<std::int64_t>(tick));
         JPH::StateRecorderImpl checkpoint; physics.SaveState(checkpoint);
-        struct ControllerCheckpoint { entt::entity entity;double yaw,pitch; };
+        struct ControllerCheckpoint { entt::entity entity;double yaw,pitch;bool requested,crouched,blocked; };
         std::vector<ControllerCheckpoint> angles;
-        for(auto e:topology->characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({e,c.yaw,c.pitch}); }
+        for(auto e:topology->characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({e,c.yaw,c.pitch,c.requested_crouch,c.crouched,c.stand_blocked}); }
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         std::vector<std::pair<entt::entity,RuntimeCamera>> camera_checkpoint;
         for(const auto e:topology->order)if(const auto* camera=registry.try_get<RuntimeCamera>(e))camera_checkpoint.emplace_back(e,*camera);
@@ -1271,10 +1393,10 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1334,6 +1456,10 @@ struct Runtime::Impl {
                                 "Gameplay camera lens and removal target the same instance in one tick.");
                             require(std::none_of(game_character_inputs.begin(),game_character_inputs.end(),[&](const auto& input){return input.entity==id;}),
                                 "Gameplay character input and removal target the same instance in one tick.");
+                            require(frame!=0 || std::none_of(stance_commands.begin(),stance_commands.end(),[&](const auto& command){return command.entity==id;}),
+                                "Caller stance and removal target the same instance in one Tick.");
+                            require(std::none_of(game_stance_commands.begin(),game_stance_commands.end(),[&](const auto& command){return command.entity==id;}),
+                                "Gameplay stance and removal target the same instance in one Tick.");
                         }
                     }
                     auto result=publish_structure(structure_revision,births,removals,assigned,game_structure_calls!=0);
@@ -1371,6 +1497,18 @@ struct Runtime::Impl {
                     const auto entity=find(input.entity);
                     require(!controls.contains(entity),"Gameplay and caller targeted the same character in one tick.");
                 }
+                require(game_stance_commands.size()+(frame==0 ? stance_commands.size() : 0)<=32,"Caller and gameplay exceed32 character stance writes in one Tick.");
+                for(const auto& command:game_stance_commands)
+                    require(frame!=0 || std::none_of(stance_commands.begin(),stance_commands.end(),[&](const auto& caller){return caller.entity==command.entity;}),
+                        "Gameplay and caller targeted the same character stance in one Tick.");
+                if(frame==0)apply_stance_requests(stance_commands);
+                apply_stance_requests(game_stance_commands);game_stance_commands.clear();
+                update_character_stances();
+                // Prepare movement at the selected height/speed without replaying
+                // yaw or jump edges. Legacy controllers retain their exact path.
+                for(const auto e:topology->characters)if(registry.get<Controller>(e).settings.stance) {
+                    const RuntimeInput neutral;apply_character_input(e,controls.contains(e) ? *controls.at(e) : neutral,false);
+                }
                 for(const auto& input:game_character_inputs)apply_character_input(find(input.entity),input,true);
                 game_commands.clear();clear_structure_commands();
                 for(auto e:topology->kinematics) {
@@ -1403,7 +1541,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_ik_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;
+            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_ik_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             clear_player_preferences_commands();
@@ -1417,6 +1555,9 @@ struct Runtime::Impl {
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();clear_structure_commands();
             game_animation_commands.clear();game_character_inputs.clear();game_navigation_calls=0;
+            // Jolt PhysicsState records motion/contact state but does not own
+            // collision shapes. Select the original shapes before replaying it.
+            for(const auto& saved:angles)restore_character_stance(registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
             for(const auto& saved:angles) {
@@ -1650,9 +1791,19 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
+std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::string& id) const {
+    const auto* c=impl_->registry.try_get<Controller>(impl_->find(id));if(!c)return std::nullopt;
+    RuntimeCharacterStanceState state;state.entity=id;state.ground=ground_name(c->character->GetGroundState());
+    state.configured=c->settings.stance.has_value();state.requested_crouch=c->requested_crouch;
+    state.crouched=c->crouched;state.stand_blocked=c->stand_blocked;state.radius=c->settings.radius;
+    state.standing_height=c->settings.height;state.crouched_height=state.configured ? c->settings.stance->crouched_height : state.standing_height;
+    state.height=state.crouched ? state.crouched_height : state.standing_height;
+    state.speed=state.crouched ? c->settings.stance->crouched_speed : c->settings.speed;
+    state.camera_drop=state.crouched ? c->settings.stance->camera_drop : 0;return state;
+}
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {

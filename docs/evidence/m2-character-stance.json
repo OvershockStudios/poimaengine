@@ -1,0 +1,1480 @@
+{
+  "format": "poima.character-stance-qualification.v1",
+  "publication_version": "0.0.125",
+  "passed": true,
+  "platform": "Windows x86_64",
+  "schema_revision": 93,
+  "native": {
+    "producer": {
+      "bytes": 37067,
+      "sha256": "bdbbfa2784bcd5f9322e4565eae8d6982d2d79161d213a48df496e8b1b9e9106"
+    },
+    "source_freeze": {
+      "bytes": 48261,
+      "sha256": "b14a8b35ad581b3db8fbd9b51322eb8fddb53e68912e065dae65da00b10d8097"
+    },
+    "source_file_count": 317,
+    "target_count": 26,
+    "image_count": 27,
+    "cpu_owner": {
+      "bytes": 70224,
+      "sha256": "89d08d588765413ad039553503f1fb7aa00c5e9e844baefd71ffd831d7f24ed4"
+    },
+    "cpu_worker": {
+      "bytes": 21960,
+      "sha256": "452508ca9ea1dc5bbdaeeda58c56c85e728fa5acc41e5d320e0fa1ec953fd4c2"
+    },
+    "cpu_suites": [
+      {
+        "name": "character-stance",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "c0924b086131fbcb020327ea454a1788ba48f618ae815618f41842e649b600f3"
+        }
+      },
+      {
+        "name": "player-lens",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "afe3b187f422e0dcd54e697acfb48a71e4e2ab3a8b6f58cc3281ea547858cb67"
+        }
+      },
+      {
+        "name": "player-window",
+        "stdout": {
+          "bytes": 230,
+          "sha256": "19cb707d44c70dae5e63ff719ff0f237643df3a574004f785fb02836381174da"
+        }
+      },
+      {
+        "name": "camera-lens",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "dc1618fe7c7561451dd005add4446414ce31d84c2fbbb22d8733a38987a097dd"
+        }
+      },
+      {
+        "name": "player-preferences",
+        "stdout": {
+          "bytes": 194,
+          "sha256": "8dd09a6e44f57a66a9459601e684215cb88ef743894c9f6ba035b0fd6c1581b0"
+        }
+      },
+      {
+        "name": "save-upgrade-snapshot",
+        "stdout": {
+          "bytes": 449,
+          "sha256": "01ceb487bfd9f01c961cd4b8496e32f9dcf29229b38c167372e686d0bf7fd6f4"
+        }
+      },
+      {
+        "name": "root-motion",
+        "stdout": {
+          "bytes": 37,
+          "sha256": "1b3966ed402f1fb5fdd7930a14f2b41a2b0c0d2615c2419e8f835e34ca9cb728"
+        }
+      },
+      {
+        "name": "two-bone-ik",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "4403459d8052811da839508f622aa17c715399ee1438e1f280f29fb4144e5d35"
+        }
+      },
+      {
+        "name": "hit-regions",
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        }
+      },
+      {
+        "name": "runtime",
+        "stdout": {
+          "bytes": 192,
+          "sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        }
+      },
+      {
+        "name": "templates",
+        "stdout": {
+          "bytes": 76,
+          "sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        }
+      },
+      {
+        "name": "instances",
+        "stdout": {
+          "bytes": 153,
+          "sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        }
+      },
+      {
+        "name": "runtime-save",
+        "stdout": {
+          "bytes": 324,
+          "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        }
+      },
+      {
+        "name": "world-save",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        }
+      },
+      {
+        "name": "world-schema",
+        "stdout": {
+          "bytes": 110,
+          "sha256": "af84f8778525c4bf0225159044351f9baf8adab9fe7a2cf5292c5e6f4e2bb400"
+        }
+      },
+      {
+        "name": "gameplay-compatibility",
+        "stdout": {
+          "bytes": 68,
+          "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        }
+      },
+      {
+        "name": "gameplay-service-contract",
+        "stdout": {
+          "bytes": 88,
+          "sha256": "cd250ba6f6a8c1626222772cf603ac307780df0802a9fa11db3b746fd51a749a"
+        }
+      },
+      {
+        "name": "gameplay-player-preferences",
+        "stdout": {
+          "bytes": 46,
+          "sha256": "84880a29bebbd1802585f150e63fd865807bd49c1c446022469a01de1c53a92d"
+        }
+      },
+      {
+        "name": "animation-membership",
+        "stdout": {
+          "bytes": 47,
+          "sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        }
+      },
+      {
+        "name": "animation",
+        "stdout": {
+          "bytes": 263,
+          "sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        }
+      },
+      {
+        "name": "animation-layers",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        }
+      },
+      {
+        "name": "animation-save",
+        "stdout": {
+          "bytes": 133,
+          "sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        }
+      },
+      {
+        "name": "camera-draw",
+        "stdout": {
+          "bytes": 29,
+          "sha256": "cf30c55c74b68f2ae14770a3a40f4c7f6f37d126d62f00e4f777cbdc7e222138"
+        }
+      },
+      {
+        "name": "player-input",
+        "stdout": {
+          "bytes": 89,
+          "sha256": "2fe4d5484161b1cf013c5d45858c83fd5e88d993fa5e166a2b919f3af89b6095"
+        }
+      },
+      {
+        "name": "render-schedule",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "7160346f88c119b389426d7d5d3dcbf5a69518a2f216bf8825963fc15695aba9"
+        }
+      }
+    ],
+    "native_stance_groups": 7,
+    "stance_protocol": {
+      "evidence": {
+        "bytes": 663698,
+        "sha256": "f749259469f2cebfbbdfebaca946f953bc7eb08a846bac2e4bf2d823ecef848b"
+      },
+      "functional_groups": 4,
+      "rpc_count": 62,
+      "clean_native_owners": 2,
+      "snapshot_version": 8,
+      "durable_payloads": 4
+    },
+    "camera_protocol": {
+      "evidence": {
+        "bytes": 634833,
+        "sha256": "38505176271d78f75137c206874e5e5c468f601c5805f45359e8dd305f349da8"
+      },
+      "functional_groups": 4,
+      "rpc_count": 62,
+      "clean_native_owners": 2,
+      "snapshot_version": 7,
+      "durable_payloads": 1
+    },
+    "schema_revision": 93,
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 63
+    },
+    "library": {
+      "bytes": 220865964,
+      "sha256": "bbba9ddca7efa559684b0ebad0c719a61fbd91181c153c165312027c2d3b53eb"
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25632256,
+        "sha256": "b4eda4c07896ba5741b9a4ceb4d5b7a3be9d8d5f08f5900d7754117fafe2bf34"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-character-stance-test.exe": {
+        "bytes": 18419712,
+        "sha256": "9cbb2e0968499f648be833211d2c7fa5e94dcfcd6977cc9944d5755d6f0643a6"
+      },
+      "poima-player-lens-test.exe": {
+        "bytes": 1197568,
+        "sha256": "4d44fa0f2859bb8ae93411f7eb93ef1db44155fb6311dc731f43beb54a3f0ff0"
+      },
+      "poima-player-window-test.exe": {
+        "bytes": 14558720,
+        "sha256": "bf217d75fadaa6089dd971f9b85db5b478206ebe1a1205384f50206af007d222"
+      },
+      "poima-runtime-camera-lens-test.exe": {
+        "bytes": 18380288,
+        "sha256": "956aef1d915699d0b905b25095bfe5c018e5d798d604802ba726f021c239b1cd"
+      },
+      "poima-player-preferences-test.exe": {
+        "bytes": 1602048,
+        "sha256": "b2ec7fc32d7a59136dbbebd4a0b107e483061f25a41368bdd424a73079ac44a1"
+      },
+      "poima-save-upgrade-snapshot-test.exe": {
+        "bytes": 18947584,
+        "sha256": "2d697279e6f89934a91638730f32d3ced41dbf52a287795b6717b520ac961269"
+      },
+      "poima-runtime-root-motion-test.exe": {
+        "bytes": 18423808,
+        "sha256": "107a56970aec050783add2305d412c48fb1335e28fa5f3dee47e1cccfaf102e3"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18425856,
+        "sha256": "06a7c2f58aff015a314002aae83d0f8d23bc9ff67601ff9a169c13d8b74d5e02"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18396672,
+        "sha256": "cbae207f3dca3ffb9908f3de72927faf1590c3808d9079076c4a7280f0953209"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18667008,
+        "sha256": "148f86af84466f68bb46da6a263fcb1ce4003c3ece165e21a04844cd53c937cc"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2262528,
+        "sha256": "ff123496f5cf79b0df4ac4d760e2fb23a62c428b7162a289e64f46e83317c37a"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18434560,
+        "sha256": "e34b0b7c0ffcc23f05b13667aef1b2308afcacfdb5022023287e3ef766daea5d"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18597376,
+        "sha256": "9ad6653ff8e8c2470b5b7b5b709e2530fa28fa91f5e3c5d4de33d4ed93268e0f"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 24062976,
+        "sha256": "16aaf61880eea2c03f1dc4316f7fb24e7b3a58487d2711433a975f5c046fa98f"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 24089088,
+        "sha256": "beb993b75e039a8dafd413cf751d0e742c8b1f99acac68dec13b79613582dff4"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 15114240,
+        "sha256": "7d1e3d4c04ae86de02c9c271be47c1cf3632850916d18a0e4ce9d1c8321147a8"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14990848,
+        "sha256": "99e262f3c9c5b8ec996a262e7fa4b5ff9250b5217e9b376e4c0ed8c076201749"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14926336,
+        "sha256": "1d97aea9c2dbf1c5a7f229882e5d570cf606e0a61ffa0954ef30731a4648f0d4"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1984000,
+        "sha256": "bfbd248149ad83299a75559b799a941b303b9d09a848e5a44de16ab76931666f"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18523648,
+        "sha256": "955afafbd70cc73b4e239ddb3bce5630ebf4908007ef273480c372e6f60ac9d4"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18440704,
+        "sha256": "83fa138293a2a28d9b4815ec7f94b07fc23545309730c023d956093b090bbdd8"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2120192,
+        "sha256": "8c45baead8fd24db95d3e029d1b8fadc70002a2d3d8cc8921357a004be40267f"
+      },
+      "poima-runtime-camera-draw-test.exe": {
+        "bytes": 18404864,
+        "sha256": "0ff8bfd2bbb996c464d1578e6a7607397bfcd200b6d8d5fe8f7f5392862f1019"
+      },
+      "poima-player-input-test.exe": {
+        "bytes": 1192960,
+        "sha256": "d3a2d18d9e49036911db3548326c9a5bb0c4cd71839b52285d707da6721c3e30"
+      },
+      "poima-render-schedule-test.exe": {
+        "bytes": 1424896,
+        "sha256": "2286f8f9ef8b87db00586ed8f8649791f960aade96f2b5a2e25001e4fc6589f6"
+      }
+    },
+    "repository_sources": {
+      "include/poima/runtime.hpp": {
+        "bytes": 25312,
+        "sha256": "6344eeb2a06eec59bb4bc85569a8c5121642dcbeaec55f319ad3c985ff23f099"
+      },
+      "include/poima/gameplay_abi.h": {
+        "bytes": 38482,
+        "sha256": "2a238cc703731f83486c49be9f7de6b51bb8f396560a00401e8a137e333ad4b2"
+      },
+      "include/poima/gameplay_compatibility.hpp": {
+        "bytes": 13624,
+        "sha256": "a53df159f61a43c9a5273963fd985a326938ff41f0230f51083356b0fb90f823"
+      },
+      "src/runtime.cpp": {
+        "bytes": 147260,
+        "sha256": "328d256192822028f1745bd91d4e6be9149a7e5d36a30018aaf5904eb4142c05"
+      },
+      "src/runtime_save.inc": {
+        "bytes": 39248,
+        "sha256": "3f38e6feced5176221232c9e9c6959853b8fd5238182ec23dbd10f0f0179f805"
+      },
+      "src/runtime_ui.inc": {
+        "bytes": 11171,
+        "sha256": "8f3692acc0bdc6a4e02d045a422b9734eb142017f23080391dc610436b052be0"
+      },
+      "src/runtime_templates.cpp": {
+        "bytes": 18438,
+        "sha256": "7c4286fa43034089283f9f55fcfe02750bbeddce3baf67ec619b6ddd0208cdd7"
+      },
+      "src/world.cpp": {
+        "bytes": 317232,
+        "sha256": "9b2786157e9add7ecfa695fca1604ca6140115ef5a00ac08a46227697085b627"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 105041,
+        "sha256": "edfc56972be82a485d286994b5962001b651636f71535a31376eefb52ebdf5f0"
+      },
+      "tests/runtime_character_stance_native.cpp": {
+        "bytes": 14184,
+        "sha256": "02b01ac4237330f8c08e49e43d1fc16f54277cecc3e66d57d93c53a6646fe696"
+      },
+      "tests/runtime_character_stance.py": {
+        "bytes": 12116,
+        "sha256": "ea620f7503e7c28a18038c5079a59090b214a0cb0003c62eb5fd3792d0064f3a"
+      }
+    },
+    "fixture_wall_seconds": 13.708534700010205
+  },
+  "managed": {
+    "publisher_tests": 16,
+    "artifact_count": 36,
+    "fixture_wall_seconds": 149.8063989999937,
+    "owner": {
+      "bytes": 27611,
+      "sha256": "66e1c17b3dc574bb011cfa512ecc0c083030b305e9a47febb9b2debb1a9ee140"
+    },
+    "worker": {
+      "bytes": 11998,
+      "sha256": "34e623fb956410dd08bbd57201795adc9a2cf75c8e41c6f83b2f59ff980bbd77"
+    },
+    "source_freeze": {
+      "bytes": 11350,
+      "sha256": "60297190e50f5d0249ebcb5e82f42c612f6ece0b3340b332e522a73b742f2847"
+    },
+    "source_file_count": 65,
+    "stages": [
+      "bridge-build",
+      "game-build",
+      "abi-build",
+      "abi-test",
+      "publisher-test",
+      "native-publish"
+    ],
+    "abi_checks": 92,
+    "abi_evidence": {
+      "bytes": 9634,
+      "sha256": "aa422b879af52578af26a10e30869dcc7b44a0b883e51578c88e1c1042a14c24"
+    },
+    "sdk": {
+      "bytes": 179712,
+      "sha256": "03ce7ff4d3565faf14cdcbf6a20e280619737353dcc1153c19f076c951b54d8c"
+    },
+    "bridge": {
+      "bytes": 36864,
+      "sha256": "3aae9b34fc7322bf396e64bf3306833b25bcd40c0af6db390930e56f888319b2"
+    },
+    "game": {
+      "bytes": 8704,
+      "sha256": "e92bfd37b35cbdc6d0cf94cef891fc46174479f2aaa6c6cb9525420897d9a3d8"
+    },
+    "native_descriptor": {
+      "bytes": 4230,
+      "sha256": "582489c2ff9428ce4c011d27a088a5c65396b7c3708c40537da9d4c5f5866cbb"
+    },
+    "services_version": 7,
+    "minimum_services_bytes": 336,
+    "command_bytes": 32,
+    "state_bytes": 64,
+    "required_features": [
+      "baseline_v7",
+      "character_stance_v1"
+    ],
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 48
+    }
+  },
+  "compiled_consumers": [
+    {
+      "backend": "coreclr",
+      "owner": {
+        "bytes": 81791,
+        "sha256": "ceff82c9926e7395ccefc7b0986a269bc493a36b9aa98be4d2f4cbd4c45492b8"
+      },
+      "worker": {
+        "bytes": 849,
+        "sha256": "318b4114916db70615303fe3a685d2add9ee205aa883151a42edc28e745a1ffd"
+      },
+      "evidence": {
+        "bytes": 1370769,
+        "sha256": "7426b2cc14dbb3d5003ffee790544f4d69678b78ec788ad56a5cfa76d6d169ba"
+      },
+      "rpc_count": 267,
+      "functional_groups": 5,
+      "clean_native_owners": 3,
+      "native_rejections": 10,
+      "snapshot_version": 8,
+      "durable_snapshots": 29,
+      "complete_state_pairs": 14,
+      "fresh_continuation_ticks": 3,
+      "compatible_reload": true,
+      "exact_read_budget": 256,
+      "exact_write_budget": 32,
+      "durable": [
+        {
+          "role": "before-quota-4",
+          "payload_sha256": "a0a9fb13a2b268e536f570f9e17a7f26ebf21a70f8e6a8bd66be5084ddd64125",
+          "snapshot_sha256": "a4585bf7e2f96a468bc9c577be40fc126ed2db3a3bdba8a99344375eaf6eff00"
+        },
+        {
+          "role": "after-quota-4",
+          "payload_sha256": "a0a9fb13a2b268e536f570f9e17a7f26ebf21a70f8e6a8bd66be5084ddd64125",
+          "snapshot_sha256": "a4585bf7e2f96a468bc9c577be40fc126ed2db3a3bdba8a99344375eaf6eff00"
+        },
+        {
+          "role": "before-quota-6",
+          "payload_sha256": "87ee367d40afb334e376dc915627e8c6f1466750d660db803c26335b0a682b52",
+          "snapshot_sha256": "00ea160b276ae3015e2ea5de07298bb845522476d5869f8f26888a2c46555019"
+        },
+        {
+          "role": "after-quota-6",
+          "payload_sha256": "87ee367d40afb334e376dc915627e8c6f1466750d660db803c26335b0a682b52",
+          "snapshot_sha256": "00ea160b276ae3015e2ea5de07298bb845522476d5869f8f26888a2c46555019"
+        },
+        {
+          "role": "before-combined-quota",
+          "payload_sha256": "47598c78a988818d78ec70e9ca972fa971745f4e370affdb80a78043b3accc12",
+          "snapshot_sha256": "869d1db58dc29e7b9641a15c3fff678115c8599d44137cb7f050678e0e8bab3f"
+        },
+        {
+          "role": "after-combined-quota",
+          "payload_sha256": "47598c78a988818d78ec70e9ca972fa971745f4e370affdb80a78043b3accc12",
+          "snapshot_sha256": "869d1db58dc29e7b9641a15c3fff678115c8599d44137cb7f050678e0e8bab3f"
+        },
+        {
+          "role": "before-step-retry",
+          "payload_sha256": "f6b9a4e151fb19465dd86b78845011b32497054d8afb7eeb7ab742e9e9de48ee",
+          "snapshot_sha256": "b56d6ab55723ab535d85b553dbab4315c8a0c5f697bf3705c68a2b3318b3895d"
+        },
+        {
+          "role": "after-step-retry",
+          "payload_sha256": "f6b9a4e151fb19465dd86b78845011b32497054d8afb7eeb7ab742e9e9de48ee",
+          "snapshot_sha256": "b56d6ab55723ab535d85b553dbab4315c8a0c5f697bf3705c68a2b3318b3895d"
+        },
+        {
+          "role": "before-rejected-mode-7",
+          "payload_sha256": "39f8e2b8464169ed7f82e48ca790f7ba695ea95b68fa36c9ed8659c7dd7473ae",
+          "snapshot_sha256": "2d5aea135edcfb40f8d854e57bf648628bb7086a9560c7ec57e73fec28376a07"
+        },
+        {
+          "role": "after-rejected-mode-7",
+          "payload_sha256": "39f8e2b8464169ed7f82e48ca790f7ba695ea95b68fa36c9ed8659c7dd7473ae",
+          "snapshot_sha256": "2d5aea135edcfb40f8d854e57bf648628bb7086a9560c7ec57e73fec28376a07"
+        },
+        {
+          "role": "before-rejected-mode-11",
+          "payload_sha256": "3b5c9d69753fb94b49ad267f307788eb93373ced9a72afdfd9c919adac390cd0",
+          "snapshot_sha256": "ee7d2a73188db0c64be86cebd100fdd626569f4928f811bc56bdbcaad9f5725f"
+        },
+        {
+          "role": "after-rejected-mode-11",
+          "payload_sha256": "3b5c9d69753fb94b49ad267f307788eb93373ced9a72afdfd9c919adac390cd0",
+          "snapshot_sha256": "ee7d2a73188db0c64be86cebd100fdd626569f4928f811bc56bdbcaad9f5725f"
+        },
+        {
+          "role": "before-rejected-mode-12",
+          "payload_sha256": "5771ad36b0ceee7e2622b45c201f503b7e8415750cf5ddb583e2faf5b9f9455e",
+          "snapshot_sha256": "8c162de89e966ba0586bbb550601659bad2bb00b0e847e656a2c8e62e737019d"
+        },
+        {
+          "role": "after-rejected-mode-12",
+          "payload_sha256": "5771ad36b0ceee7e2622b45c201f503b7e8415750cf5ddb583e2faf5b9f9455e",
+          "snapshot_sha256": "8c162de89e966ba0586bbb550601659bad2bb00b0e847e656a2c8e62e737019d"
+        },
+        {
+          "role": "before-rejected-mode-13",
+          "payload_sha256": "7410937166b2e396a3d98f5ba78cbe1e18097b3e4da487f3c8d94bd5bf506b68",
+          "snapshot_sha256": "2d88851f2c5a30727e7e0ab56c832446a009023fab44d42c75995b95f1d3e6e8"
+        },
+        {
+          "role": "after-rejected-mode-13",
+          "payload_sha256": "7410937166b2e396a3d98f5ba78cbe1e18097b3e4da487f3c8d94bd5bf506b68",
+          "snapshot_sha256": "2d88851f2c5a30727e7e0ab56c832446a009023fab44d42c75995b95f1d3e6e8"
+        },
+        {
+          "role": "before-caller-game-1",
+          "payload_sha256": "19cb87de7f1db7add0ae3190e2a08b70aa3796218b8e5ea4446de24cf2162d11",
+          "snapshot_sha256": "f877907cac2b6a82289459608193d8d531950f0233c8e8186cf0f8f20a3656a9"
+        },
+        {
+          "role": "after-caller-game-1",
+          "payload_sha256": "19cb87de7f1db7add0ae3190e2a08b70aa3796218b8e5ea4446de24cf2162d11",
+          "snapshot_sha256": "f877907cac2b6a82289459608193d8d531950f0233c8e8186cf0f8f20a3656a9"
+        },
+        {
+          "role": "before-later-Tick",
+          "payload_sha256": "226e4f5d22da93a3d98fe8d6697fcedebecf437efb72dd2f95e78e01d8b02b4c",
+          "snapshot_sha256": "d6a8eff59bfff7061d5cae8803bac0e5f1e0b7be5f8e1335dcaf54cf9221776e"
+        },
+        {
+          "role": "after-later-Tick",
+          "payload_sha256": "226e4f5d22da93a3d98fe8d6697fcedebecf437efb72dd2f95e78e01d8b02b4c",
+          "snapshot_sha256": "d6a8eff59bfff7061d5cae8803bac0e5f1e0b7be5f8e1335dcaf54cf9221776e"
+        },
+        {
+          "role": "before-removal-conflict",
+          "payload_sha256": "50bdcfdfd0dfef4a7885161740ad8b04af328ee4392ad92a03c608867f1f4399",
+          "snapshot_sha256": "ce515de73f67d08c9560f59eb741ea828598b02da0c12c2b1099e6e0e30da19d"
+        },
+        {
+          "role": "after-removal-conflict",
+          "payload_sha256": "50bdcfdfd0dfef4a7885161740ad8b04af328ee4392ad92a03c608867f1f4399",
+          "snapshot_sha256": "ce515de73f67d08c9560f59eb741ea828598b02da0c12c2b1099e6e0e30da19d"
+        },
+        {
+          "role": "before-compatible-reload",
+          "payload_sha256": "b563c2c3bed2e72062011c8e39abb567f819558062d48333c83559fbeda96325",
+          "snapshot_sha256": "f01724dc4a51a05b3e46890323a72fb8b5b424c309f7fad7b2dafb0f981ecda5"
+        },
+        {
+          "role": "after-compatible-reload",
+          "payload_sha256": "867db26ae82da4704fb1719b90ef36515e24243ef255a70f3fa7e8d7705ea335",
+          "snapshot_sha256": "3bc54d2022c25f324e891436c9a45ec95bf60ecadb74fd37eee89dd68252b2f4"
+        },
+        {
+          "role": "fresh-source",
+          "payload_sha256": "867db26ae82da4704fb1719b90ef36515e24243ef255a70f3fa7e8d7705ea335",
+          "snapshot_sha256": "3bc54d2022c25f324e891436c9a45ec95bf60ecadb74fd37eee89dd68252b2f4"
+        },
+        {
+          "role": "fresh-reference-restored",
+          "payload_sha256": "867db26ae82da4704fb1719b90ef36515e24243ef255a70f3fa7e8d7705ea335",
+          "snapshot_sha256": "3bc54d2022c25f324e891436c9a45ec95bf60ecadb74fd37eee89dd68252b2f4"
+        },
+        {
+          "role": "fresh-expected-continuation",
+          "payload_sha256": "5081e03ed8dc5974c7d8433f36f24b25b9a279ff529127c00abaa9404cff1456",
+          "snapshot_sha256": "0a45a1493b2bb0dfc07c6da8ae08dce38a17c2c89b4b96a86439c806199965d8"
+        },
+        {
+          "role": "fresh-restored",
+          "payload_sha256": "867db26ae82da4704fb1719b90ef36515e24243ef255a70f3fa7e8d7705ea335",
+          "snapshot_sha256": "3bc54d2022c25f324e891436c9a45ec95bf60ecadb74fd37eee89dd68252b2f4"
+        },
+        {
+          "role": "fresh-actual-continuation",
+          "payload_sha256": "5081e03ed8dc5974c7d8433f36f24b25b9a279ff529127c00abaa9404cff1456",
+          "snapshot_sha256": "0a45a1493b2bb0dfc07c6da8ae08dce38a17c2c89b4b96a86439c806199965d8"
+        }
+      ],
+      "intent_payload": {
+        "bytes": 7767,
+        "sha256": "a3e30da2c0cdaaaf9fa92bd31903279e1e43996364f3fe26028062a8fdf8d347"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 6
+      },
+      "fixture_wall_seconds": 2.4587565999827348
+    },
+    {
+      "backend": "native_aot",
+      "owner": {
+        "bytes": 81587,
+        "sha256": "a86ce26516e7e0d49974d575c8f55eaae1d0b383d7ab3fd4ad6c8a1933aa80ef"
+      },
+      "worker": {
+        "bytes": 646,
+        "sha256": "1a706c579041e02bd956bc5b4be57d285ecd5ef028c775fa8e6a580e09e2bf9b"
+      },
+      "evidence": {
+        "bytes": 1305649,
+        "sha256": "5bb02c672e8b89b82e3625cb10b8624cfe7d4fd21742d33b3d1f5fee197082dd"
+      },
+      "rpc_count": 256,
+      "functional_groups": 4,
+      "clean_native_owners": 3,
+      "native_rejections": 10,
+      "snapshot_version": 8,
+      "durable_snapshots": 27,
+      "complete_state_pairs": 14,
+      "fresh_continuation_ticks": 3,
+      "compatible_reload": false,
+      "exact_read_budget": 256,
+      "exact_write_budget": 32,
+      "durable": [
+        {
+          "role": "before-quota-4",
+          "payload_sha256": "c19e44f373783bb00ae3643dc0b4f9f099e6248cceb0c4c66157134f4811291d",
+          "snapshot_sha256": "2647d616090e1a20f49abaac47eaa3fd3531311eb5050d74c5f6f2c7669f88c8"
+        },
+        {
+          "role": "after-quota-4",
+          "payload_sha256": "c19e44f373783bb00ae3643dc0b4f9f099e6248cceb0c4c66157134f4811291d",
+          "snapshot_sha256": "2647d616090e1a20f49abaac47eaa3fd3531311eb5050d74c5f6f2c7669f88c8"
+        },
+        {
+          "role": "before-quota-6",
+          "payload_sha256": "8d5cf9cb3801fab084bf1acc14336c980381488a8e352b8f2a5e1f04c726ed92",
+          "snapshot_sha256": "579d12f9074ffc0f1344fa2202d28b55bb6302b8fa389bb197ad7e1a96816fd0"
+        },
+        {
+          "role": "after-quota-6",
+          "payload_sha256": "8d5cf9cb3801fab084bf1acc14336c980381488a8e352b8f2a5e1f04c726ed92",
+          "snapshot_sha256": "579d12f9074ffc0f1344fa2202d28b55bb6302b8fa389bb197ad7e1a96816fd0"
+        },
+        {
+          "role": "before-combined-quota",
+          "payload_sha256": "1ed66d24f7e969688a05fb7823a401790fbd7644520b6197badd198c6258a09d",
+          "snapshot_sha256": "9f8f8ed031e85bfe0e239de42b93100cb8822ebd0374ae390fbff8ce92aedc92"
+        },
+        {
+          "role": "after-combined-quota",
+          "payload_sha256": "1ed66d24f7e969688a05fb7823a401790fbd7644520b6197badd198c6258a09d",
+          "snapshot_sha256": "9f8f8ed031e85bfe0e239de42b93100cb8822ebd0374ae390fbff8ce92aedc92"
+        },
+        {
+          "role": "before-step-retry",
+          "payload_sha256": "e79379d9e707b74ed2cd8a5b3ad376303c233cc85fc7a57174403e8b0545c9f9",
+          "snapshot_sha256": "03eeb069c4b6dff72f2aa24993ad9b7029a5e933e708a9b952fcc3aa021e24af"
+        },
+        {
+          "role": "after-step-retry",
+          "payload_sha256": "e79379d9e707b74ed2cd8a5b3ad376303c233cc85fc7a57174403e8b0545c9f9",
+          "snapshot_sha256": "03eeb069c4b6dff72f2aa24993ad9b7029a5e933e708a9b952fcc3aa021e24af"
+        },
+        {
+          "role": "before-rejected-mode-7",
+          "payload_sha256": "bc7121955f1283327d417d0fd01f5f35d231c083424a99d4d28540d615f9152d",
+          "snapshot_sha256": "c64a2b01eec1613cf28299d7a24cf1ffedc9bc0811bed092b0c3fd575aefefa0"
+        },
+        {
+          "role": "after-rejected-mode-7",
+          "payload_sha256": "bc7121955f1283327d417d0fd01f5f35d231c083424a99d4d28540d615f9152d",
+          "snapshot_sha256": "c64a2b01eec1613cf28299d7a24cf1ffedc9bc0811bed092b0c3fd575aefefa0"
+        },
+        {
+          "role": "before-rejected-mode-11",
+          "payload_sha256": "4d18d21ddaf90c22ae706b4b399fde47691bd22b3f2e1607ad9ad868e3f9cb40",
+          "snapshot_sha256": "39cc31b661f3ab65abcc85c8112351f160579c54fc2d6971918a86dc4a529571"
+        },
+        {
+          "role": "after-rejected-mode-11",
+          "payload_sha256": "4d18d21ddaf90c22ae706b4b399fde47691bd22b3f2e1607ad9ad868e3f9cb40",
+          "snapshot_sha256": "39cc31b661f3ab65abcc85c8112351f160579c54fc2d6971918a86dc4a529571"
+        },
+        {
+          "role": "before-rejected-mode-12",
+          "payload_sha256": "68d1ad881a939bd9c858dbfcb04ef3c281cf4a49a8b71bfbf0e07ad380acbbef",
+          "snapshot_sha256": "7a58c2f4e5fe4eff3e9b045b091088361e5f81d2e1bc7a75054b2ff7ff87823c"
+        },
+        {
+          "role": "after-rejected-mode-12",
+          "payload_sha256": "68d1ad881a939bd9c858dbfcb04ef3c281cf4a49a8b71bfbf0e07ad380acbbef",
+          "snapshot_sha256": "7a58c2f4e5fe4eff3e9b045b091088361e5f81d2e1bc7a75054b2ff7ff87823c"
+        },
+        {
+          "role": "before-rejected-mode-13",
+          "payload_sha256": "076f2cf0d0dec22e14511f3b10faaa095daf1be74ae48b0c62dcff07ac572c03",
+          "snapshot_sha256": "0c92e4287b12496e5d692906cc31547742634f78d23eb7d1bd3bf838c970d07b"
+        },
+        {
+          "role": "after-rejected-mode-13",
+          "payload_sha256": "076f2cf0d0dec22e14511f3b10faaa095daf1be74ae48b0c62dcff07ac572c03",
+          "snapshot_sha256": "0c92e4287b12496e5d692906cc31547742634f78d23eb7d1bd3bf838c970d07b"
+        },
+        {
+          "role": "before-caller-game-1",
+          "payload_sha256": "d8491807d567f9076d8f9a93b84703eb3fed3c87e523af2f9ec52921e09a3f4c",
+          "snapshot_sha256": "f882729c1589bb3383bdc97a9894bfd15a63c8ec22a116d45a6f470d6a1bbacc"
+        },
+        {
+          "role": "after-caller-game-1",
+          "payload_sha256": "d8491807d567f9076d8f9a93b84703eb3fed3c87e523af2f9ec52921e09a3f4c",
+          "snapshot_sha256": "f882729c1589bb3383bdc97a9894bfd15a63c8ec22a116d45a6f470d6a1bbacc"
+        },
+        {
+          "role": "before-later-Tick",
+          "payload_sha256": "83ab01c6c2ad988ab917fc3f2ea0e9a68822426720581044521f59656b32b23c",
+          "snapshot_sha256": "d94d3190d57c6496a70cc022e4c064e7a559f13e1fbfbf68b1bd8a212778856f"
+        },
+        {
+          "role": "after-later-Tick",
+          "payload_sha256": "83ab01c6c2ad988ab917fc3f2ea0e9a68822426720581044521f59656b32b23c",
+          "snapshot_sha256": "d94d3190d57c6496a70cc022e4c064e7a559f13e1fbfbf68b1bd8a212778856f"
+        },
+        {
+          "role": "before-removal-conflict",
+          "payload_sha256": "c0f9f803cf67a65d73ce8c84f6606c7b9ffef328d9a9e2f1cf554c3dc17a07bf",
+          "snapshot_sha256": "1c2f303cc0bc1fcb34eece98469328190050b9b5ea72648782fd7a731027cfc1"
+        },
+        {
+          "role": "after-removal-conflict",
+          "payload_sha256": "c0f9f803cf67a65d73ce8c84f6606c7b9ffef328d9a9e2f1cf554c3dc17a07bf",
+          "snapshot_sha256": "1c2f303cc0bc1fcb34eece98469328190050b9b5ea72648782fd7a731027cfc1"
+        },
+        {
+          "role": "fresh-source",
+          "payload_sha256": "a9366858e50c542fbd70945c4bd2e40a5d24c6bb34b430e6ec6477c35b4b73fe",
+          "snapshot_sha256": "6c0a332b831e67a0ae2cfacc816f0e5fe01bbae4d74138d7be07bf37255cf062"
+        },
+        {
+          "role": "fresh-reference-restored",
+          "payload_sha256": "a9366858e50c542fbd70945c4bd2e40a5d24c6bb34b430e6ec6477c35b4b73fe",
+          "snapshot_sha256": "6c0a332b831e67a0ae2cfacc816f0e5fe01bbae4d74138d7be07bf37255cf062"
+        },
+        {
+          "role": "fresh-expected-continuation",
+          "payload_sha256": "a2cdc6912fef27649aeea19deb367a3fd741e7e77a06df7c6086e51568416675",
+          "snapshot_sha256": "c26a8a7f407d33298d84372dd092e04c3a95837c46c506aeb1671333dd878e73"
+        },
+        {
+          "role": "fresh-restored",
+          "payload_sha256": "a9366858e50c542fbd70945c4bd2e40a5d24c6bb34b430e6ec6477c35b4b73fe",
+          "snapshot_sha256": "6c0a332b831e67a0ae2cfacc816f0e5fe01bbae4d74138d7be07bf37255cf062"
+        },
+        {
+          "role": "fresh-actual-continuation",
+          "payload_sha256": "a2cdc6912fef27649aeea19deb367a3fd741e7e77a06df7c6086e51568416675",
+          "snapshot_sha256": "c26a8a7f407d33298d84372dd092e04c3a95837c46c506aeb1671333dd878e73"
+        }
+      ],
+      "intent_payload": {
+        "bytes": 7770,
+        "sha256": "daa19b7452c0e568627e66fee5abf023ebf1f9d4e3a26b31c2f39bba8a983284"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 6
+      },
+      "fixture_wall_seconds": 1.930138999974588
+    }
+  ],
+  "gpu": [
+    {
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "owner": {
+        "bytes": 88585,
+        "sha256": "b0f62814bc5db477604b2ac1fb73f7c9fcfded713499b44616ee6d32a602c93d"
+      },
+      "evidence": {
+        "bytes": 936459,
+        "sha256": "9a89fca6303bcb3ec532ceae2b3cb1cbee3859faf052837d4cc2b226d8a9618d"
+      },
+      "fixture": {
+        "bytes": 15862,
+        "sha256": "b892ce4a71cc0e6c78d7064c722c16a42d4f0ac1fe1993119886eee5e2a3373c"
+      },
+      "rpc_count": 54,
+      "capture_count": 10,
+      "authored_reference_pairs": 5,
+      "clean_native_owners": 1,
+      "width": 320,
+      "height": 240,
+      "samples": 1,
+      "images": [
+        {
+          "label": "standing-before",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        },
+        {
+          "label": "standing-before-reference",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before-reference",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door-reference",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        }
+      ],
+      "comparisons": [
+        {
+          "live": "standing-before",
+          "reference": "standing-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-before",
+          "reference": "crouched-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-under-door",
+          "reference": "crouched-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "blocked-under-door",
+          "reference": "blocked-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "standing-after-door",
+          "reference": "standing-after-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "eye_drop_comparison": {
+        "max_rgb_delta": 118,
+        "changed_pixels": 32000,
+        "strong_changed_pixels": 32000,
+        "total_rgb_delta": 3709120
+      },
+      "authored_course": {
+        "bytes": 29330,
+        "sha256": "420a6ffdf4761113d980dc159be5db347daefcac059cb6f559d5273db3b64764"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 2
+      },
+      "fixture_wall_seconds": 5.356382500001928
+    },
+    {
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "owner": {
+        "bytes": 88587,
+        "sha256": "104d085551aeb0e64c83b3af02cb3f46729a1c43ebcae1c403c346685a285408"
+      },
+      "evidence": {
+        "bytes": 936740,
+        "sha256": "042dc5c262f1feb4383dfb74806a91134f10e9f41c6ae7bd63d28e54699681ff"
+      },
+      "fixture": {
+        "bytes": 15862,
+        "sha256": "b892ce4a71cc0e6c78d7064c722c16a42d4f0ac1fe1993119886eee5e2a3373c"
+      },
+      "rpc_count": 54,
+      "capture_count": 10,
+      "authored_reference_pairs": 5,
+      "clean_native_owners": 1,
+      "width": 320,
+      "height": 240,
+      "samples": 1,
+      "images": [
+        {
+          "label": "standing-before",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        },
+        {
+          "label": "standing-before-reference",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before-reference",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door-reference",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        }
+      ],
+      "comparisons": [
+        {
+          "live": "standing-before",
+          "reference": "standing-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-before",
+          "reference": "crouched-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-under-door",
+          "reference": "crouched-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "blocked-under-door",
+          "reference": "blocked-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "standing-after-door",
+          "reference": "standing-after-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "eye_drop_comparison": {
+        "max_rgb_delta": 118,
+        "changed_pixels": 32000,
+        "strong_changed_pixels": 32000,
+        "total_rgb_delta": 3709120
+      },
+      "authored_course": {
+        "bytes": 29330,
+        "sha256": "a4b14bad0e6f059c6a1dd093989fe10ee409e86a16c6d18b304cac146f511486"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 2
+      },
+      "fixture_wall_seconds": 5.387441700004274
+    },
+    {
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "owner": {
+        "bytes": 88596,
+        "sha256": "48b275a7c7d1a1a8b77ad42afef37724952a6fb108683609c2047ecc8f740fc4"
+      },
+      "evidence": {
+        "bytes": 935361,
+        "sha256": "c71316b93cfaaf9385f70a92395dcbbe45718aea07a093dc33538a27a871ce83"
+      },
+      "fixture": {
+        "bytes": 15862,
+        "sha256": "b892ce4a71cc0e6c78d7064c722c16a42d4f0ac1fe1993119886eee5e2a3373c"
+      },
+      "rpc_count": 54,
+      "capture_count": 10,
+      "authored_reference_pairs": 5,
+      "clean_native_owners": 1,
+      "width": 320,
+      "height": 240,
+      "samples": 1,
+      "images": [
+        {
+          "label": "standing-before",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        },
+        {
+          "label": "standing-before-reference",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before-reference",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door-reference",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        }
+      ],
+      "comparisons": [
+        {
+          "live": "standing-before",
+          "reference": "standing-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-before",
+          "reference": "crouched-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-under-door",
+          "reference": "crouched-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "blocked-under-door",
+          "reference": "blocked-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "standing-after-door",
+          "reference": "standing-after-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "eye_drop_comparison": {
+        "max_rgb_delta": 118,
+        "changed_pixels": 32000,
+        "strong_changed_pixels": 32000,
+        "total_rgb_delta": 3709120
+      },
+      "authored_course": {
+        "bytes": 29330,
+        "sha256": "284495948840a03453657943287c7008d47c5a16a0f275fa2ed54b388b24ffc1"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 2
+      },
+      "fixture_wall_seconds": 6.609750799980247
+    },
+    {
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "owner": {
+        "bytes": 88599,
+        "sha256": "223c7c8cc4b1074f78c05882c1ded825d2e9e758940ea1a60ab143750fbd593c"
+      },
+      "evidence": {
+        "bytes": 935642,
+        "sha256": "d38a2d725b934b7ef322c591f38f0edc814f651133ab1a51a6f51d41c3069ac1"
+      },
+      "fixture": {
+        "bytes": 15862,
+        "sha256": "b892ce4a71cc0e6c78d7064c722c16a42d4f0ac1fe1993119886eee5e2a3373c"
+      },
+      "rpc_count": 54,
+      "capture_count": 10,
+      "authored_reference_pairs": 5,
+      "clean_native_owners": 1,
+      "width": 320,
+      "height": 240,
+      "samples": 1,
+      "images": [
+        {
+          "label": "standing-before",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        },
+        {
+          "label": "standing-before-reference",
+          "bytes": 307338,
+          "sha256": "4f85c08f6047d90d73dacc88deff71b22a1e9b149a22aef60987216790f29709"
+        },
+        {
+          "label": "crouched-before-reference",
+          "bytes": 307338,
+          "sha256": "7782f6fd6658d1257f71180d2dd2a10acb7829ddf0f60bad80c867e223583b00"
+        },
+        {
+          "label": "crouched-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "blocked-under-door-reference",
+          "bytes": 307338,
+          "sha256": "c61c17d24d1c00db568f3b94423ba9a248a5e6e6217d715a425514b984fbeb71"
+        },
+        {
+          "label": "standing-after-door-reference",
+          "bytes": 307338,
+          "sha256": "829c0c4092945b31f3bfa774b8609243b8f89fca41c8a8e618e9ca5f1b9d4fcc"
+        }
+      ],
+      "comparisons": [
+        {
+          "live": "standing-before",
+          "reference": "standing-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-before",
+          "reference": "crouched-before-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "crouched-under-door",
+          "reference": "crouched-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "blocked-under-door",
+          "reference": "blocked-under-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        },
+        {
+          "live": "standing-after-door",
+          "reference": "standing-after-door-reference",
+          "max_rgb_delta": 0,
+          "changed_pixels": 0,
+          "strong_changed_pixels": 0,
+          "total_rgb_delta": 0
+        }
+      ],
+      "eye_drop_comparison": {
+        "max_rgb_delta": 118,
+        "changed_pixels": 32000,
+        "strong_changed_pixels": 32000,
+        "total_rgb_delta": 3709120
+      },
+      "authored_course": {
+        "bytes": 29330,
+        "sha256": "410d4af5ec162ca6c0614ce62a53d6bbdc5a3eb8bac01efeefeba6ab132a03a0"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 2
+      },
+      "fixture_wall_seconds": 6.371166600001743
+    }
+  ],
+  "total_gpu_captures": 40,
+  "total_authored_reference_pairs": 20,
+  "excluded_attempts": [
+    {
+      "attempt": "native-producer-1",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "compilation",
+          "passed": false,
+          "receipt": {
+            "bytes": 18635,
+            "sha256": "7b791508e3f6d67d227d7f91e918e3068183b2022583fb0026c51bfe114ff93b"
+          }
+        }
+      ]
+    },
+    {
+      "attempt": "native-producer-2",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "compilation",
+          "passed": true,
+          "receipt": {
+            "bytes": 37066,
+            "sha256": "e556ef172dd326e32f1f187c0cd9b1ad41240ff98370e0494de0c50d8d60290e"
+          }
+        },
+        {
+          "role": "qualification",
+          "passed": false,
+          "receipt": {
+            "bytes": 49361,
+            "sha256": "54069d3a1fb954de8cf35a39277a6477d13e8336176aa4a2b9b7092d36449ee1"
+          }
+        }
+      ]
+    },
+    {
+      "attempt": "native-producer-3",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "compilation",
+          "passed": true,
+          "receipt": {
+            "bytes": 37066,
+            "sha256": "fe118a020ec9dde122ced4cd3f59e73f720dc44d159d693e32f76ea27124eadf"
+          }
+        },
+        {
+          "role": "qualification",
+          "passed": false,
+          "receipt": {
+            "bytes": 49377,
+            "sha256": "a61172c7bcd9a89804f6e824c45c3c942facca034a1da3a577e79233740906f6"
+          }
+        }
+      ]
+    },
+    {
+      "attempt": "managed-producer-1",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "qualification",
+          "passed": false,
+          "receipt": {
+            "bytes": 16558,
+            "sha256": "7adfbd648ecc9b2f15b2804e6d07e310b8c4a1e6be940296dfb76fadae9d74ef"
+          }
+        }
+      ]
+    },
+    {
+      "attempt": "gpu0-forward-1",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "qualification",
+          "passed": false,
+          "receipt": {
+            "bytes": 86761,
+            "sha256": "6d164a7f00d8ee116acabc7f5659bbc975c1af1e35ba63e47632197275a9885d"
+          }
+        }
+      ]
+    },
+    {
+      "attempt": "gpu0-deferred-1",
+      "admitted": false,
+      "receipts": [
+        {
+          "role": "qualification",
+          "passed": false,
+          "receipt": {
+            "bytes": 86764,
+            "sha256": "2757836be16fc52814901e2d714cd9f700b099d4065adc0c43153584489dbd23"
+          }
+        }
+      ]
+    }
+  ],
+  "contract": {
+    "services_epoch": 7,
+    "minimum_services_bytes": 336,
+    "call_bytes": 80,
+    "command_bytes": 32,
+    "state_bytes": 64,
+    "maximum_tick_reads": 256,
+    "maximum_tick_writes": 32,
+    "snapshot_version": 8
+  },
+  "limitations": [
+    "Frozen optional stance profiles; actual capsule clearance, owned eye-height change and sticky standing intent. No stairs, swimming, prone motion or moving-platform locomotion qualification.",
+    "Scripted fixed-Tick controls and standalone Vulkan captures; no physical input, animated-body crouch, continuous player-window proof or timing benchmark.",
+    "Two actual adapters, forward/deferred,320x240,one sample,no reconstruction. Image parity establishes the selected synthetic course and observed camera poses.",
+    "Exact complete save continuation compares independently cold-restored owners for three Ticks. Jolt warm contact caches are reconstructed rather than serialized.",
+    "CoreCLR reload is verified; Native AOT remains process-pinned. Qualification does not establish whole-engine or Alpha release readiness."
+  ]
+}

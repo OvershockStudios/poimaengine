@@ -177,6 +177,18 @@ class Requirements(unittest.TestCase):
             with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=extent,features=['baseline_v7','camera_lens_v1']))
         for features in [['baseline_v7'],['camera_lens_v1'],['baseline_v7','camera_lens_v1','camera_lens_v1'],['baseline_v7','camera_lens_v1','unknown_v1']]:
             with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=320,features=features))
+    def test_character_stance_independent_tail(self):
+        optional=['animation_inertial_v1','animation_layers_v1','character_input_v1','navigation_query_v1','hierarchical_instances_v1','player_preferences_v1','input_actions_v1','hit_regions_v1','animation_ik_v1','animation_root_motion_v1','camera_lens_v1']
+        for mask in range(2048):
+            features=sorted(['baseline_v7','character_stance_v1']+[name for i,name in enumerate(optional) if mask&(1<<i)])
+            required=dict(self.baseline,services_bytes=336,features=features)
+            if mask&2 and not mask&1:
+                with self.subTest(mask=mask),self.assertRaises(ValueError):self.read(required)
+            else:self.assertEqual(self.read(required),required)
+        for extent in [176,320,328,335,337]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=extent,features=['baseline_v7','character_stance_v1']))
+        for features in [['baseline_v7'],['character_stance_v1'],['baseline_v7','character_stance_v1','character_stance_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=336,features=features))
     def test_prefix_cannot_grant_undeclared_feature(self):
         for extent in [175,180,192,193,240]:
             with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=extent))

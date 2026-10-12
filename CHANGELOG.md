@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.125
+
+- Add opt-in crouch/stand with foot-preserving capsule changes, physical clearance before standing, persistent blocked-stand retries and controlled camera height. [Contract](docs/CHARACTER_STANCE.md).
+- Expose guarded stance reads and staged C# controls through schema revision 93 and the append-only 336-byte epoch-7 services prefix. Preserve actual posture and capsule shape through version-8 saves and complete batch rollback.
+- Pass 25 native suites, 92 compiled ABI checks, CoreCLR/Native AOT gameplay and 40 AMD/NVIDIA captures with 20 pixel-identical authored-camera comparisons. [Results](docs/evidence/m2-character-stance.json).
+
 ## 0.0.124
 
 - Add opt-in native FOV presentation between committed ticks, with independent world/viewmodel lenses, precise reset boundaries and exact frozen rendering receipts. [Contract](docs/PLAYER_LENS_PRESENTATION.md).

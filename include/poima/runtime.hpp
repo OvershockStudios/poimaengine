@@ -33,9 +33,22 @@ struct MeshCollider {
     std::shared_ptr<const MeshAsset> mesh;
     float friction=0.5f,restitution=0;
 };
+struct RuntimeCharacterStanceProfile {
+    float crouched_height=1, crouched_speed=2, camera_drop=0.8f;
+};
 struct CharacterController {
     float radius = 0.3f, height = 1.8f, speed = 4, jump_speed = 5;
     std::string camera;
+    std::optional<RuntimeCharacterStanceProfile> stance;
+};
+struct RuntimeCharacterStanceCommand {
+    std::string entity;
+    bool crouch=false;
+};
+struct RuntimeCharacterStanceState {
+    std::string entity,ground;
+    bool configured=false,requested_crouch=false,crouched=false,stand_blocked=false;
+    float radius=0,standing_height=0,crouched_height=0,height=0,speed=0,camera_drop=0;
 };
 struct RuntimeCamera {
     double vertical_fov=60, near_plane=0.1, far_plane=1000;
@@ -456,7 +469,9 @@ public:
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
         const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={},
         const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={},
-        const std::vector<RuntimeCameraLensCommand>& camera_lenses={});
+        const std::vector<RuntimeCameraLensCommand>& camera_lenses={},
+        const std::vector<RuntimeCharacterStanceCommand>& character_stances={});
+    std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;

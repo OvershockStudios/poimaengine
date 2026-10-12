@@ -81,11 +81,23 @@ void save_game_values(const SaveJson& g,const std::map<std::string,entt::entity>
         }
     }
 }
+bool save_stance_definition(const RuntimeDefinition& definition) {
+    const auto configured=[](const auto& entity) {return entity.character && entity.character->stance;};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),configured))return true;
+    for(const auto& recipe:definition.templates)
+        if(std::any_of(recipe.entities.begin(),recipe.entities.end(),configured))return true;
+    return false;
+}
+void save_stance_flags(bool requested,bool crouched,bool blocked) {
+    require((!requested || crouched) && blocked==(!requested && crouched),
+        "Snapshot character stance flags are inconsistent.");
+}
 }
 
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto& s=*impl_;
+    const bool stance_state=save_stance_definition(s.topology->live);
     (void)save_text(s.world_id);(void)save_integer(s.revision);(void)save_integer(s.tick);(void)save_integer(s.game_revision);
     SaveJson entities=SaveJson::array();auto& bodies=s.physics.GetBodyInterface();
     for(const auto e:s.topology->order) {
@@ -110,6 +122,11 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
             if(c) {
                 (void)save_number(c->yaw,180.00001);(void)save_number(c->pitch,85);
                 controller={{"yaw",c->yaw},{"pitch",c->pitch}};
+                if(c->settings.stance) {
+                    save_stance_flags(c->requested_crouch,c->crouched,c->stand_blocked);
+                    controller["requested_crouch"]=c->requested_crouch;controller["crouched"]=c->crouched;
+                    controller["stand_blocked"]=c->stand_blocked;
+                }
             }
         }
         entities.push_back({{"id",node.id},{"parent",node.parent},{"local",save_local(node.local)},{"body",body},{"controller",controller}});
@@ -135,7 +152,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     const bool structural=s.structure_revision!=0;
     const bool logical_ui=!s.ui_model->definition().empty();
     const bool hierarchical=structural && std::any_of(s.templates.begin(),s.templates.end(),[](const auto& recipe){return !recipe.entities.empty();});
-    if(custom || structural || logical_ui || camera_state)payload["components"]=SaveJson::parse(s.components->save());
+    if(custom || structural || logical_ui || camera_state || stance_state)payload["components"]=SaveJson::parse(s.components->save());
     if(logical_ui) {
         payload["ui"]=SaveJson::parse(s.ui_model->save());
         payload["control_sequence"]=s.control_sequence;
@@ -145,7 +162,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         SaveJson spawned=SaveJson::array();
         for(const auto& [id,origin]:s.topology->spawned) {
             SaveJson row={{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}};
-            if(hierarchical || camera_state)row["nodes"]=origin.nodes;
+            if(hierarchical || camera_state || stance_state)row["nodes"]=origin.nodes;
             spawned.push_back(std::move(row));
         }
         const auto cursor=s.entity_ids->cursor();
@@ -153,12 +170,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
     if(hierarchical && !logical_ui) {payload["ui"]=nullptr;payload["control_sequence"]=s.control_sequence;}
-    if(camera_state) {
+    if(camera_state || stance_state) {
         if(!payload.contains("structure"))payload["structure"]=nullptr;
         if(!payload.contains("ui"))payload["ui"]=nullptr;
         payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
     }
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -171,17 +188,18 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     const bool logical_ui=!definition.ui.empty();
     const auto version=save_integer(envelope.at("version"));
     require(envelope.at("format")=="poima.runtime-snapshot" &&
-        (version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
+        (version==8 || version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
+    require(version!=8 || save_stance_definition(definition),"Snapshot version 8 requires frozen character stance content.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(version==7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
+    if(version>=7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
     else if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
     else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
     else if(version==3)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
-    const bool structural=version==6 || version==3 || ((version==7 || logical_ui) && !data.at("structure").is_null());
-    if(version==6 || version==7)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
+    const bool structural=version==6 || version==3 || ((version>=7 || logical_ui) && !data.at("structure").is_null());
+    if(version>=6)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
@@ -294,13 +312,13 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         s.entity_ids=std::move(restored_ids);s.structure_revision=structure_revision;
         auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
     }
-    if(custom || structural || logical_ui || version==7)s.components->load(data.at("components").dump());
+    if(custom || structural || logical_ui || version>=7)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
     if(version>=5)s.control_sequence=save_integer(data.at("control_sequence"));
-    if(version==7) {
+    if(version>=7) {
         const auto& cameras=data.at("cameras");std::size_t count=0;
         for(const auto e:s.topology->order)count+=s.registry.all_of<RuntimeCamera>(e);
-        require(count>0 && cameras.is_array() && cameras.size()==count,"Snapshot Camera membership differs from frozen content.");
+        require((version==8 || count>0) && cameras.is_array() && cameras.size()==count,"Snapshot Camera membership differs from frozen content.");
         const auto lens_read=[](const SaveJson& value) {
             save_fields(value,{"vertical_fov","near","far"});
             SceneLens result{save_number(value.at("vertical_fov"),150),save_number(value.at("near"),1e7),save_number(value.at("far"),1e7)};
@@ -325,6 +343,34 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             : std::vector<components::Schema>{};
         s.components->validate_module(declared);
     }
+    // Validate the complete controller inventory before installing any shape.
+    // Body poses below are foot-origin poses and must use the restored shape.
+    struct StanceRestore {entt::entity entity;bool requested=false,crouched=false,blocked=false;};
+    std::vector<StanceRestore> stances;
+    std::string previous_stance_entity;
+    for(const auto& row:rows) {
+        save_fields(row,{"id","parent","local","body","controller"});
+        const auto id=save_text(row.at("id"));
+        require(previous_stance_entity.empty() || previous_stance_entity<id,"Runtime snapshot entity IDs must be unique and sorted.");
+        previous_stance_entity=id;
+        const auto e=s.find(id);auto* controller=s.registry.try_get<Controller>(e);
+        require(row.at("controller").is_null()==!controller,"Runtime snapshot controller components differ.");
+        if(!controller)continue;
+        const auto& saved=row.at("controller");
+        if(version==8 && controller->settings.stance) {
+            save_fields(saved,{"yaw","pitch","requested_crouch","crouched","stand_blocked"});
+            require(saved.at("requested_crouch").is_boolean() && saved.at("crouched").is_boolean() && saved.at("stand_blocked").is_boolean(),
+                "Snapshot character stance flags must be Boolean.");
+            const bool requested=saved.at("requested_crouch"),crouched=saved.at("crouched"),blocked=saved.at("stand_blocked");
+            save_stance_flags(requested,crouched,blocked);stances.push_back({e,requested,crouched,blocked});
+        }else {
+            save_fields(saved,{"yaw","pitch"});
+            if(controller->settings.stance)stances.push_back({e,false,false,false});
+        }
+        (void)save_number(saved.at("yaw"),180.00001);(void)save_number(saved.at("pitch"),85);
+    }
+    for(const auto& saved:stances)
+        s.restore_character_stance(s.registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
     s.animations->load_state(data.at("animation").dump(),tick);
     if(!s.animations->has_ik() && !s.animations->has_root_motion())s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
@@ -339,7 +385,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         const auto& record=row.at("body");require(record.is_null()==!(b || c),"Runtime snapshot body components differ.");
         require(row.at("controller").is_null()==!c,"Runtime snapshot controller components differ.");
         if(c) {
-            const auto& ctrl=row.at("controller");save_fields(ctrl,{"yaw","pitch"});
+            const auto& ctrl=row.at("controller");
             c->yaw=save_number(ctrl.at("yaw"),180.00001);c->pitch=save_number(ctrl.at("pitch"),85);
         }
         if(!b && !c)continue;

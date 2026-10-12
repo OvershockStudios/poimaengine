@@ -45,6 +45,8 @@ call ABI 1/80. Named service extensions have these minimum prefixes:
 | `hit_regions_v1` | 272 | [Committed hit regions](HIT_REGIONS.md) |
 | `animation_ik_v1` | 288 | [Two-bone IK](TWO_BONE_IK.md) |
 | `animation_root_motion_v1` | 304 | [Planar root motion](ROOT_MOTION.md) |
+| `camera_lens_v1` | 320 | [Camera lenses](CAMERA_LENSES.md) |
+| `character_stance_v1` | 336 | [Character stance](CHARACTER_STANCE.md) |
 
 `gameplay_persistence_v1` and `component_collections_v1` authorize their metadata
 formats without adding a services tail. Combined consumers declare every feature
