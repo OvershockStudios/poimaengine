@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included in World; observations read the committed owner state in one dispatch.
     static Json runtime_entity_value(const RuntimeEntityState& e) {
-        return {{"world_matrix",e.world},{"layout","column_major"},
+        Json result={{"world_matrix",e.world},{"layout","column_major"},
             {"local_transform",{{"position",e.local.position},{"rotation",e.local.rotation},{"scale",e.local.scale}}},
             {"animation",e.animation ? animation_json(*e.animation) : Json(nullptr)},
             {"motion",e.motion},{"kinematic_target",e.kinematic_target ? motion_json(*e.kinematic_target) : Json(nullptr)},
             {"motion_remaining_ticks",e.motion_remaining_ticks},{"velocity",e.velocity},{"has_body",e.has_body},
             {"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
+        if(e.locomotion) {
+            const auto& value=*e.locomotion;const auto& profile=value.profile;
+            result["locomotion"]={{"mode","virtual-v1"},{"profile",{{"step_height",profile.step_height},{"ground_snap",profile.ground_snap},{"max_slope_degrees",profile.max_slope_degrees}}},
+                {"ground_normal",value.ground_normal},{"ground_velocity",value.ground_velocity}};
+        }
+        return result;
     }
     Json observe_runtime(const Json& params) const {
         require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);

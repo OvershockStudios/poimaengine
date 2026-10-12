@@ -48,7 +48,7 @@ def main():
   owner.close();r['owners'].append(copy.deepcopy(r['native_owner']));owner=None
  try:
   owner=LensOwner(a,r,deadline,1);description=call('world.describe',{})
-  need(description['schema_revision']==93 and 'runtime.character_stance' in description['methods'] and description['methods']['runtime.step']['properties']['character_stances']['maxItems']==32,'Stance discovery missing')
+  need(description['schema_revision']==94 and 'runtime.character_stance' in description['methods'] and description['methods']['runtime.step']['properties']['character_stances']['maxItems']==32,'Stance discovery missing')
   ops=[]
   for n,pos,parent in [(1,[0,-.5,0],None),(2,[0,1.4,0],None),(100,[-2,.1,0],None),(101,[0,1.6,0],uid(100)),(300,[5,.1,0],None),(500,[0,0,4],None)]:
    ops += [dict(op='entity.create',id=uid(n),name='Stance '+str(n),parent=parent),transform(uid(n),position=pos)]

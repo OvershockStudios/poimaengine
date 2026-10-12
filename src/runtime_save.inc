@@ -88,6 +88,13 @@ bool save_stance_definition(const RuntimeDefinition& definition) {
         if(std::any_of(recipe.entities.begin(),recipe.entities.end(),configured))return true;
     return false;
 }
+bool save_locomotion_definition(const RuntimeDefinition& definition) {
+    const auto configured=[](const auto& entity) {return entity.character && entity.character->locomotion;};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),configured))return true;
+    for(const auto& recipe:definition.templates)
+        if(std::any_of(recipe.entities.begin(),recipe.entities.end(),configured))return true;
+    return false;
+}
 void save_stance_flags(bool requested,bool crouched,bool blocked) {
     require((!requested || crouched) && blocked==(!requested && crouched),
         "Snapshot character stance flags are inconsistent.");
@@ -98,6 +105,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto& s=*impl_;
     const bool stance_state=save_stance_definition(s.topology->live);
+    const bool motor_state=save_locomotion_definition(s.topology->live);
     (void)save_text(s.world_id);(void)save_integer(s.revision);(void)save_integer(s.tick);(void)save_integer(s.game_revision);
     SaveJson entities=SaveJson::array();auto& bodies=s.physics.GetBodyInterface();
     for(const auto e:s.topology->order) {
@@ -127,6 +135,27 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
                     controller["requested_crouch"]=c->requested_crouch;controller["crouched"]=c->crouched;
                     controller["stand_blocked"]=c->stand_blocked;
                 }
+                require(c->character->IsVirtual()==c->settings.locomotion.has_value(),"Character motor differs from frozen profile.");
+                if(c->character->IsVirtual()) {
+                    const auto position=c->character->GetPosition();const auto rotation=c->character->GetRotation();
+                    const auto velocity=c->character->GetLinearVelocity();const auto integration=c->character->GetIntegrationVelocity();
+                    const float maximum=bodies.GetMaxLinearVelocity(id);
+                    const auto& profile=*c->settings.locomotion;
+                    const float reported_maximum=maximum+(profile.step_height+profile.ground_snap+.04f)*60+1;
+                    require(integration.Length()<=maximum+1e-5f && velocity.Length()<=reported_maximum+1e-5f,
+                        "Motor snapshot velocity exceeds the configured limits.");
+                    controller["motor"]={{"position",save_xyz(position)},{"rotation",save_xyzw(rotation)},
+                        {"linear_velocity",save_xyz(velocity)},{"integration_velocity",save_xyz(integration)}};
+                    (void)save_vector<3>(controller["motor"]["position"],1e6);(void)save_rotation(controller["motor"]["rotation"]);
+                    (void)save_vector<3>(controller["motor"]["linear_velocity"],1e6);
+                    (void)save_vector<3>(controller["motor"]["integration_velocity"],1e6);
+                    require(bodies.GetLinearVelocity(id)==JPH::Vec3::sZero() && bodies.GetAngularVelocity(id)==JPH::Vec3::sZero(),
+                        "Virtual query proxy must not have independent velocity.");
+                    require(save_near(save_xyz(p).get<std::array<double,3>>(),
+                        save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>()) &&
+                        save_near(save_xyzw(q).get<std::array<double,4>>(),save_xyzw(rotation).get<std::array<double,4>>()),
+                        "Virtual query proxy differs from logical motor pose.");
+                }
             }
         }
         entities.push_back({{"id",node.id},{"parent",node.parent},{"local",save_local(node.local)},{"body",body},{"controller",controller}});
@@ -152,7 +181,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     const bool structural=s.structure_revision!=0;
     const bool logical_ui=!s.ui_model->definition().empty();
     const bool hierarchical=structural && std::any_of(s.templates.begin(),s.templates.end(),[](const auto& recipe){return !recipe.entities.empty();});
-    if(custom || structural || logical_ui || camera_state || stance_state)payload["components"]=SaveJson::parse(s.components->save());
+    if(custom || structural || logical_ui || camera_state || stance_state || motor_state)payload["components"]=SaveJson::parse(s.components->save());
     if(logical_ui) {
         payload["ui"]=SaveJson::parse(s.ui_model->save());
         payload["control_sequence"]=s.control_sequence;
@@ -162,7 +191,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         SaveJson spawned=SaveJson::array();
         for(const auto& [id,origin]:s.topology->spawned) {
             SaveJson row={{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}};
-            if(hierarchical || camera_state || stance_state)row["nodes"]=origin.nodes;
+            if(hierarchical || camera_state || stance_state || motor_state)row["nodes"]=origin.nodes;
             spawned.push_back(std::move(row));
         }
         const auto cursor=s.entity_ids->cursor();
@@ -170,12 +199,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
     if(hierarchical && !logical_ui) {payload["ui"]=nullptr;payload["control_sequence"]=s.control_sequence;}
-    if(camera_state || stance_state) {
+    if(camera_state || stance_state || motor_state) {
         if(!payload.contains("structure"))payload["structure"]=nullptr;
         if(!payload.contains("ui"))payload["ui"]=nullptr;
         payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
     }
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -188,7 +217,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     const bool logical_ui=!definition.ui.empty();
     const auto version=save_integer(envelope.at("version"));
     require(envelope.at("format")=="poima.runtime-snapshot" &&
-        (version==8 || version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
+        (version==9 || version==8 || version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
+    require((version==9)==save_locomotion_definition(definition),"Virtual locomotion content requires snapshot version 9.");
     require(version!=8 || save_stance_definition(definition),"Snapshot version 8 requires frozen character stance content.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
@@ -318,7 +348,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(version>=7) {
         const auto& cameras=data.at("cameras");std::size_t count=0;
         for(const auto e:s.topology->order)count+=s.registry.all_of<RuntimeCamera>(e);
-        require((version==8 || count>0) && cameras.is_array() && cameras.size()==count,"Snapshot Camera membership differs from frozen content.");
+        require((version>=8 || count>0) && cameras.is_array() && cameras.size()==count,"Snapshot Camera membership differs from frozen content.");
         const auto lens_read=[](const SaveJson& value) {
             save_fields(value,{"vertical_fov","near","far"});
             SceneLens result{save_number(value.at("vertical_fov"),150),save_number(value.at("near"),1e7),save_number(value.at("far"),1e7)};
@@ -347,6 +377,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Body poses below are foot-origin poses and must use the restored shape.
     struct StanceRestore {entt::entity entity;bool requested=false,crouched=false,blocked=false;};
     std::vector<StanceRestore> stances;
+    struct MotorRestore {entt::entity entity;JPH::RVec3 position;JPH::Quat rotation;JPH::Vec3 integration,reported;};
+    std::vector<MotorRestore> motors;
     std::string previous_stance_entity;
     for(const auto& row:rows) {
         save_fields(row,{"id","parent","local","body","controller"});
@@ -357,17 +389,48 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         require(row.at("controller").is_null()==!controller,"Runtime snapshot controller components differ.");
         if(!controller)continue;
         const auto& saved=row.at("controller");
-        if(version==8 && controller->settings.stance) {
-            save_fields(saved,{"yaw","pitch","requested_crouch","crouched","stand_blocked"});
+        const bool virtual_motor=controller->character->IsVirtual();
+        require(virtual_motor==controller->settings.locomotion.has_value(),"Character motor differs from frozen profile.");
+        if(version>=8 && controller->settings.stance) {
+            if(virtual_motor)save_fields(saved,{"yaw","pitch","requested_crouch","crouched","stand_blocked","motor"});
+            else save_fields(saved,{"yaw","pitch","requested_crouch","crouched","stand_blocked"});
             require(saved.at("requested_crouch").is_boolean() && saved.at("crouched").is_boolean() && saved.at("stand_blocked").is_boolean(),
                 "Snapshot character stance flags must be Boolean.");
             const bool requested=saved.at("requested_crouch"),crouched=saved.at("crouched"),blocked=saved.at("stand_blocked");
             save_stance_flags(requested,crouched,blocked);stances.push_back({e,requested,crouched,blocked});
         }else {
-            save_fields(saved,{"yaw","pitch"});
+            if(virtual_motor)save_fields(saved,{"yaw","pitch","motor"});else save_fields(saved,{"yaw","pitch"});
             if(controller->settings.stance)stances.push_back({e,false,false,false});
         }
         (void)save_number(saved.at("yaw"),180.00001);(void)save_number(saved.at("pitch"),85);
+        if(virtual_motor) {
+            require(version==9,"Virtual motor requires snapshot version 9.");
+            const auto& motor=saved.at("motor");save_fields(motor,{"position","rotation","linear_velocity","integration_velocity"});
+            const auto p=save_vector<3>(motor.at("position"),1e6);const auto q=save_rotation(motor.at("rotation"));
+            const auto v=save_vector<3>(motor.at("linear_velocity"),1e6);
+            const auto integrated=save_vector<3>(motor.at("integration_velocity"),1e6);
+            const auto position=save_position(p);const auto rotation=save_quat(q);const auto velocity=save_velocity(v);
+            const auto integration=save_velocity(integrated);
+            const float maximum=s.physics.GetBodyInterface().GetMaxLinearVelocity(controller->character->GetBodyID());
+            const auto& profile=*controller->settings.locomotion;
+            const float reported_maximum=maximum+(profile.step_height+profile.ground_snap+.04f)*60+1;
+            require(std::isfinite(velocity.GetX()) && std::isfinite(velocity.GetY()) && std::isfinite(velocity.GetZ()) &&
+                velocity.Length()<=reported_maximum+1e-5f && std::isfinite(integration.GetX()) &&
+                std::isfinite(integration.GetY()) && std::isfinite(integration.GetZ()) && integration.Length()<=maximum+1e-5f,
+                "Snapshot motor velocity exceeds the configured limits.");
+            const auto& body=row.at("body");save_fields(body,{"motion","position","rotation","linear_velocity","angular_velocity","active","motion_state"});
+            const auto proxy=save_vector<3>(body.at("position"),1e6);const auto proxy_rotation=save_rotation(body.at("rotation"));
+            const auto expected_proxy=save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>();
+            require(body.at("motion")=="character" && body.at("motion_state").is_null() &&
+                save_near(proxy,expected_proxy) && save_near(proxy_rotation,q),"Snapshot query proxy differs from logical motor pose.");
+            require(save_vector<3>(body.at("linear_velocity"),1e6)==std::array<double,3>{} &&
+                save_vector<3>(body.at("angular_velocity"),1e6)==std::array<double,3>{},"Virtual query proxy cannot have independent velocity.");
+            const auto expected_yaw=JPH::Quat::sRotation(JPH::Vec3::sAxisY(),static_cast<float>(saved.at("yaw").get<double>()*radians));
+            const auto local=save_transform(row.at("local"));
+            require(std::abs(std::abs(rotation.Dot(expected_yaw))-1)<1e-5 && save_near(local.position,p) && save_near(local.rotation,q),
+                "Snapshot logical motor pose differs from yaw/local state.");
+            motors.push_back({e,position,rotation,integration,velocity});
+        }
     }
     for(const auto& saved:stances)
         s.restore_character_stance(s.registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
@@ -436,6 +499,9 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             b->target=std::move(m);
         }
     }
+    // Logical virtual poses are separate from their zero-velocity query proxies.
+    // Restore them only after all platforms/body poses and motion clocks exist.
+    for(const auto& motor:motors)s.registry.get<Controller>(motor.entity).character->RestoreMotorPose(motor.position,motor.rotation,motor.integration,motor.reported);
     // Rebuild support from current geometry only after every body is restored.
     s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
     if(s.animations->has_ik() || s.animations->has_root_motion()) { s.animation_locals();s.sync(); }

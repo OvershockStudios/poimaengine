@@ -433,6 +433,19 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     }
     std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.slot<b.slot;});return result;
 }
+RuntimeCharacterLocomotionProfile character_locomotion_value(const Json& value) {
+    fields(value,{"step_height","ground_snap","max_slope_degrees"},{});
+    for(const auto* key:{"step_height","ground_snap","max_slope_degrees"})if(value.contains(key))
+        require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Character locomotion parameters must be finite numbers.");
+    const double step=value.value("step_height",0.4),snap=value.value("ground_snap",0.5),slope=value.value("max_slope_degrees",45.0);
+    require(step>=0 && step<=1 && snap>=0 && snap<=1 && slope>=0 && slope<=80,"Character locomotion parameters are outside their bounds.");
+    RuntimeCharacterLocomotionProfile result{static_cast<float>(step),static_cast<float>(snap),static_cast<float>(slope)};
+    require(std::isfinite(result.step_height) && result.step_height>=0 && result.step_height<=1 &&
+        std::isfinite(result.ground_snap) && result.ground_snap>=0 && result.ground_snap<=1 &&
+        std::isfinite(result.max_slope_degrees) && result.max_slope_degrees>=0 && result.max_slope_degrees<=80,
+        "Character locomotion parameters are invalid at native precision.");
+    return result;
+}
 RuntimeCharacterStanceProfile character_stance_value(const Json& value,double radius,double height) {
     fields(value,{"crouched_height","crouched_speed","camera_drop"},{});
     for(const auto* key:{"crouched_height","crouched_speed","camera_drop"})if(value.contains(key))
@@ -612,12 +625,13 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if (type == "CharacterController") {
-        fields(value, {"radius","height","speed","jump_speed","camera","stance"}, {"radius","height","speed","jump_speed","camera"});
+        fields(value, {"radius","height","speed","jump_speed","camera","stance","locomotion"}, {"radius","height","speed","jump_speed","camera"});
         if(!value.at("camera").is_null())identifier(value.at("camera"));
         for(const auto* key:{"radius","height","speed","jump_speed"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid controller parameter.");
         require(value.at("radius")>=0.05 && value.at("radius")<=2 && value.at("height")>2*value.at("radius").get<double>() && value.at("height")<=4,"Invalid capsule dimensions.");
         require(value.at("speed")>0 && value.at("speed")<=30 && value.at("jump_speed")>=0 && value.at("jump_speed")<=20,"Controller speed out of range.");
         if(value.contains("stance"))(void)character_stance_value(value.at("stance"),value.at("radius").get<double>(),value.at("height").get<double>());
+        if(value.contains("locomotion"))(void)character_locomotion_value(value.at("locomotion"));
         return;
     }
     throw Error(-32602, "Unknown component type.");
@@ -2596,7 +2610,7 @@ public:
                 value.mesh_collider=std::move(collider);
             }
             if(components.contains("HitRegion"))value.hit_region=hit_region_value(components.at("HitRegion"));
-            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()};if(c.contains("stance"))value.character->stance=character_stance_value(c.at("stance"),c.at("radius").get<double>(),c.at("height").get<double>()); }
+            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()};if(c.contains("stance"))value.character->stance=character_stance_value(c.at("stance"),c.at("radius").get<double>(),c.at("height").get<double>());if(c.contains("locomotion"))value.character->locomotion=character_locomotion_value(c.at("locomotion")); }
             result.entities.push_back(std::move(value));
         }
         if(!animation_only && !audio_only) {

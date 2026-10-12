@@ -106,7 +106,7 @@
             motion.world_requested[1]=0;
             const auto position=controller.character->GetPosition();
             interval.before_position={position.GetX(),position.GetY(),position.GetZ()};interval.actor=actor;
-            const auto velocity=controller.character->GetLinearVelocity();
+            const auto velocity=controller.character->GetIntegrationVelocity();
             controller.character->SetLinearVelocity(JPH::Vec3(
                 static_cast<float>(motion.world_requested[0]/Runtime::fixed_dt),velocity.GetY(),
                 static_cast<float>(motion.world_requested[2]/Runtime::fixed_dt)));

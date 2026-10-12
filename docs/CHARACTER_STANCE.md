@@ -2,8 +2,10 @@
 
 Opt an authored `CharacterController` into native crouch/stand clearance with an
 optional frozen `stance` profile. This changes its collision capsule, movement
-speed and controlled camera height. It does not implement stairs, swimming,
-platform transport, prone movement or a complete locomotion system.
+speed and controlled camera height. Combine it with optional
+[virtual locomotion](CHARACTER_LOCOMOTION.md) for stairs, slopes and supported
+platform transport. Swimming, prone movement and a complete locomotion system
+remain separate work.
 
 ## Author the profile
 
@@ -80,7 +82,7 @@ Query without advancing or retrying clearance:
 Send those parameters to `runtime.character_stance`. Its `state` contains
 `entity`, `ground`, `configured`, `requested_crouch`, `crouched`, `stand_blocked`,
 `radius`, `standing_height`, `crouched_height`, and the effective `height`,
-`speed`, `camera_drop`. Ground uses the existing `on_ground`, `on_steep_ground`,
+`speed`, `camera_drop`. Ground uses the existing `on_ground`, `steep_ground`,
 `not_supported`, `in_air` values. A live noncontroller returns null; a missing
 entity rejects. A legacy controller reports `configured:false`, standing height
 and speed, zero drop and neutral stance flags; it cannot receive stance writes.
@@ -128,7 +130,9 @@ Native AOT libraries remain pinned for their process lifetime.
 ## Checkpoints and limits
 
 Any frozen stance profile, including an unused hierarchical recipe, selects
-runtime snapshot version 8. It retains the complete version-7 payload, with an
+runtime snapshot version 8 when no virtual locomotion profile is present.
+[Virtual locomotion](CHARACTER_LOCOMOTION.md) selects version 9 and retains the
+same posture state alongside its logical motor state. Version 8 retains the complete version-7 payload, with an
 empty cameras array when appropriate, and adds strict posture flags only to
 configured controllers. Restore installs the saved capsule before restoring
 body poses and reconstructing the camera. Older snapshots default configured

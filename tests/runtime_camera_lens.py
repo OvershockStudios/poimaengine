@@ -48,7 +48,7 @@ def main():
    session_id=owner.session,expected_tick=tick,expected_gameplay_revision=0,expected_structure_revision=0,expected_material_revision=0))
  try:
   owner=LensOwner(a,r,deadline,1);d=call('world.describe',{})
-  need(d['schema_revision']==93 and 'runtime.camera_lens' in d['methods'] and 'camera_lenses' in d['methods']['runtime.step']['properties'],'Lens discovery missing')
+  need(d['schema_revision']==94 and 'runtime.camera_lens' in d['methods'] and 'camera_lenses' in d['methods']['runtime.step']['properties'],'Lens discovery missing')
   ops=[]
   for n,cam in [(1,dict(lens(),viewmodel=lens(75,.01,10))),(2,lens(90)),(3,None)]:
    ops += [dict(op='entity.create',id=uid(n),name='Camera '+str(n),parent=None),transform(uid(n))]

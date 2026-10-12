@@ -23,6 +23,15 @@ cmake --build --preset windows-runtime --target poima-runtime-test
 
 Both presets use two build workers. The physics baseline enables double-precision positions and Jolt's cross-platform determinism option, disables AVX/FMA and other optional CPU extensions, and uses a single-threaded job scheduler. Those choices simplify initial replay qualification; they are not a performance recommendation for every shipping game. The integration supplies `<type_traits>` when compiling the pinned Jolt release with LLVM-MinGW's newer libc++, through a compiler include. A narrow, hash-guarded Character constructor extension supplies explicit body IDs for atomic instance publication; original constructor behavior is retained. [Dependency notices](../THIRD_PARTY_NOTICES.md).
 
+## Character movement
+
+[Character input](CHARACTER_INPUT.md) controls players and camera-free actors.
+Optional [stance](CHARACTER_STANCE.md) owns crouched collision and eye height;
+optional [virtual locomotion](CHARACTER_LOCOMOTION.md) handles stairs, slopes and
+supported platform movement. Both profiles are frozen authoring choices with
+complete runtime rollback and portable state. Omitting locomotion retains the
+physical-character path.
+
 ## Standalone template catalog (development)
 
 Templates are authored recipes, independent of live scene entities. `world.transact` accepts `template.set` with `id`, `name`, and either a complete root `components` object or a hierarchical `root`/`entities` graph, or `template.remove` with `id`. The first template mutation upgrades the authored document to version 3. Preview, revision guards, retry receipts, undo and redo apply to these edits. Removing a template retires its identity; undo can restore it, but a new recipe cannot reuse it. [Runtime hierarchy instances](RUNTIME_INSTANCES.md) gives the graph format, identity rules, compiled API and recovery workflow.

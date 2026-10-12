@@ -183,6 +183,11 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 check(character.camera.empty() || (graph.contains(character.camera) && graph.at(character.camera)->camera && graph.at(character.camera)->parent==entity.id),"Template controller camera must be a local direct-child Camera.");
                 check(bounded(character.radius,.05,2) && bounded(character.height,0,4) && character.height>2*character.radius,"Invalid template character capsule dimensions.");
                 check(bounded(character.speed,0,30) && character.speed>0 && bounded(character.jump_speed,0,20),"Invalid template controller speed.");
+                if(character.locomotion) {
+                    const auto& locomotion=*character.locomotion;
+                    check(bounded(locomotion.step_height,0,1) && bounded(locomotion.ground_snap,0,1) && bounded(locomotion.max_slope_degrees,0,80),
+                        "Invalid template character locomotion profile.");
+                }
                 if(character.stance) {
                     const auto& stance=*character.stance;
                     check(bounded(stance.crouched_height,0,4) && stance.crouched_height>2*character.radius && stance.crouched_height<character.height &&

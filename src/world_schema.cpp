@@ -45,9 +45,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json stance=object_schema({{"crouched_height",{{"type","number"},{"exclusiveMinimum",0},{"maximum",4},{"default",1}}},
         {"crouched_speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30},{"default",2}}},
         {"camera_drop",{{"type","number"},{"minimum",0},{"maximum",4},{"default",0.8}}}},{});
+    const Json locomotion=object_schema({{"step_height",{{"type","number"},{"minimum",0},{"maximum",1},{"default",0.4}}},
+        {"ground_snap",{{"type","number"},{"minimum",0},{"maximum",1},{"default",0.5}}},
+        {"max_slope_degrees",{{"type","number"},{"minimum",0},{"maximum",80},{"default",45}}}},Json::array());
     const Json character = object_schema({{"radius",{{"type","number"},{"minimum",0.05},{"maximum",2}}},
         {"height",{{"type","number"},{"maximum",4}}}, {"speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
-        {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",parent},{"stance",stance}}, {"radius","height","speed","jump_speed","camera"});
+        {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",parent},{"stance",stance},{"locomotion",locomotion}}, {"radius","height","speed","jump_speed","camera"});
     const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
@@ -167,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 93}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 94}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -330,6 +333,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.step"]["properties"]["camera_lenses"]={{"type","array"},{"maxItems",64},{"items",lens_command}};
     methods["runtime.step"]["properties"]["character_stances"]={{"type","array"},{"maxItems",32},{"items",object_schema({{"entity",id},{"crouch",{{"type","boolean"}}}},{"entity","crouch"})}};
     result["invariants"].push_back("CharacterController stance is optional frozen content; omission preserves the old controller profile. Empty stance selects crouched_height=1, crouched_speed=2, camera_drop=0.8. Crouched height must exceed twice radius and be below standing height; camera drop must fit their difference (1e-6 numeric allowance). Complete unique character_stances commands persist desired posture and apply on the first Tick under full batch rollback. Obstructed standing remains crouched and reports stand_blocked; inspection never retries it. Body feet and collision-tested capsule clearance remain authoritative. No stair, platform, prone, camera-pose interpolation or general locomotion guarantee is implied.");
+    result["invariants"].push_back("CharacterController locomotion is an optional frozen virtual-v1 profile. Omission retains the legacy physical controller and omits locomotion from runtime.entity. Empty locomotion selects step_height=0.4, ground_snap=0.5 and max_slope_degrees=45; finite bounds are 0..1, 0..1 and 0..80. Runtime entity diagnostics expose only the configured profile and cached ground_normal/ground_velocity; inspection does not advance or refresh contacts. Body queries retain the character owner identity. Live authored edits do not change the frozen controller backend or profile.");
     result["invariants"].push_back("Camera lens commands replace complete world and/or configured viewmodel lenses, at most64 unique camera targets combined with gameplay per tick. Caller commands apply on the first tick; gameplay writes stage until callback completion. Viewmodel presence and CameraDraw membership stay frozen. All native camera changes roll back with a failed batch and persist in snapshotv7; old snapshots use authored lenses. Player FOV preferences form the neutral baseline: effective FOV composes the runtime/authored tan-half-angle ratio and saturates to5..150; viewmodel lens is independent.");
     methods["runtime.step"]["properties"]["root_motion"]={{"type","array"},{"maxItems",64},{"items",object_schema({{"entity",id},{"enabled",{{"type","boolean"},{"default",true}}}},{"entity"})}};
     result["invariants"].push_back("AnimationRig optionally freezes an explicit model-node root_motion profile. Extract observes planar intervals without moving physics; Character drives one self/ancestor capsule through the normal physics update, preserving gravity/jump and collision-resolved displacement. Configured pose stripping remains active when disabled. Positive-uniform upright bindings, exact source ancestry and layer-source exclusion are required. Enabled Character forbids move input, and yaw-enabled drivers forbid horizontal look. Complete first-Tick enable commands share rollback/retry; no blocked-motion debt, vertical root locomotion or motion warping is implied. Root-configured animation saves use nested statev5; absent profiles retain previous serialization.");

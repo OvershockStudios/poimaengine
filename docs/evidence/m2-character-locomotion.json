@@ -1,0 +1,881 @@
+{
+  "format": "poima.character-locomotion-qualification.v1",
+  "publication_version": "0.0.126",
+  "passed": true,
+  "platform": "Windows x86_64",
+  "schema_revision": 94,
+  "native": {
+    "producer": {
+      "bytes": 61854,
+      "sha256": "44cc6689270226e3804b43e4aecf5e3d0763ef3b886733952733befbc5d9312e"
+    },
+    "source_freeze": {
+      "bytes": 49596,
+      "sha256": "8ac57d6cf12086853371b224170ec33475579d96a0c425f0960ab8b82732218f"
+    },
+    "source_file_count": 324,
+    "target_count": 27,
+    "image_count": 28,
+    "sealed_manifest": {
+      "bytes": 4913,
+      "sha256": "8c3ed3e4859d9e86ea6c478b8f5792bf9e78b9623772e22be1bcb3170d80a2b6"
+    },
+    "library": {
+      "bytes": 221314664,
+      "sha256": "d2a029a2396636ab8715f13c162bf8eac95f1e80c0383bba7bc304cb30e526ab"
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25738240,
+        "sha256": "ad3975d9872b9630a48475b3ca33216bb072996257316e7ef68fe856db79435d"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima-runtime-character-locomotion-test.exe": {
+        "bytes": 18540032,
+        "sha256": "028fdc0967176f6028a1b43290c1d97aa086a203b48542f708b2ae3af06a10e7"
+      },
+      "poima-runtime-character-stance-test.exe": {
+        "bytes": 18511360,
+        "sha256": "11f21062b821fcc415d5564f90830b441d3822a54affb4e22a64e2e618131b82"
+      },
+      "poima-player-lens-test.exe": {
+        "bytes": 1197568,
+        "sha256": "e80170f4ee74d1831624eb42b4bfc8cea3f5dfc5816df7fa7e892ad61496b331"
+      },
+      "poima-player-window-test.exe": {
+        "bytes": 14558720,
+        "sha256": "e369ef79f336d26b8387a3fd2e9e418d0d8c269ecd5d8e2ce8cb3ef016ad2a52"
+      },
+      "poima-runtime-camera-lens-test.exe": {
+        "bytes": 18471936,
+        "sha256": "a983963b636a33fb6d5bd75fd48567e8ae849bb9f814b36d139313eeafa71313"
+      },
+      "poima-player-preferences-test.exe": {
+        "bytes": 1602048,
+        "sha256": "0f38b7402175df4b0c0b10543607e61e229c04ad081bbc322ab101e9ed137fe9"
+      },
+      "poima-save-upgrade-snapshot-test.exe": {
+        "bytes": 19040256,
+        "sha256": "871a0eb4147bf19a310ba389ba1620c7aa1b5f61a9a9b04eb3ff7e499549a863"
+      },
+      "poima-runtime-root-motion-test.exe": {
+        "bytes": 18515456,
+        "sha256": "27b6a0ee10c3d783a618b2602046c947fe9e604bf4cbce3a2aa23b32827fc40a"
+      },
+      "poima-runtime-two-bone-ik-test.exe": {
+        "bytes": 18518528,
+        "sha256": "c8ad3883438cf02188d2083d743c5acc6650fa166af5feb89fa7c962231dfba0"
+      },
+      "poima-runtime-hit-regions-test.exe": {
+        "bytes": 18488832,
+        "sha256": "a7a8e2c1e9630933bf09dc31006f084bb9f0ab4591922b5f5de67625dca5594d"
+      },
+      "poima-runtime-test.exe": {
+        "bytes": 18760192,
+        "sha256": "0b864c417cccdff789854e0ef6fa6c6d1972768bed9b04300f4eb21546f9b27f"
+      },
+      "poima-runtime-templates-test.exe": {
+        "bytes": 2263040,
+        "sha256": "7829a996ff5a9462d8e145373068ba23a550372793f88cb2e253b9556a6b4f6a"
+      },
+      "poima-runtime-instances-test.exe": {
+        "bytes": 18527744,
+        "sha256": "e95ce3c77a7d4abaceabddde18c223053971c501a060873ab4eaeba13f737c1d"
+      },
+      "poima-runtime-save-test.exe": {
+        "bytes": 18689536,
+        "sha256": "401b1f924fbd38e422a258779b9332c9a266592b02a5587c4b78e9930f73ab76"
+      },
+      "poima-world-save-test.exe": {
+        "bytes": 24167936,
+        "sha256": "15069ce4037465c87da932c3eb1ad1c9272519838c4cba11ceaec85720bcd622"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 24194560,
+        "sha256": "4635a00f67e3dd07219f739a669bd2b063c79293d9ffe38e71bd70ef67ad1d36"
+      },
+      "poima-gameplay-compatibility-test.exe": {
+        "bytes": 15114240,
+        "sha256": "d9ede481b63ed95ad9c4f18e992370821737a7708b7faf68bd2fb74f80adfc5d"
+      },
+      "poima-gameplay-service-contract-test.exe": {
+        "bytes": 14990848,
+        "sha256": "710b659c63adf58642706dfaa3b1a56947cf480ff64616d760d45bc8f79f07f7"
+      },
+      "poima-gameplay-player-preferences-test.exe": {
+        "bytes": 14926336,
+        "sha256": "98792ee729530db34c826a9fe2fd9f416b9ff0012a417f766b3841eb238a2434"
+      },
+      "poima-runtime-animation-membership-test.exe": {
+        "bytes": 1984000,
+        "sha256": "295b2dc301a9f62fc4bd52f5ce109b01f808dff0b50622e9e62cd173bba0c987"
+      },
+      "poima-runtime-animation-test.exe": {
+        "bytes": 18617344,
+        "sha256": "0b441ddcd311c1e747d762c71dda4a9a8169a30816bf4868b758f8147fd02699"
+      },
+      "poima-runtime-animation-layers-test.exe": {
+        "bytes": 18533376,
+        "sha256": "31462f18d3940f2bdbf14707f9e7fb0aefb6a0bc83b7f00e9960437b5105479b"
+      },
+      "poima-runtime-animation-save-test.exe": {
+        "bytes": 2120192,
+        "sha256": "a2dddc98a9f54786d0256d812388fb1fe725877479f25f1db1221fcf8f219d13"
+      },
+      "poima-runtime-camera-draw-test.exe": {
+        "bytes": 18497536,
+        "sha256": "de260e35485b9382b0ef3f6816150adf65caa510ab7c64736314fc483eff78f5"
+      },
+      "poima-player-input-test.exe": {
+        "bytes": 1192960,
+        "sha256": "53259fa6102e750b158fe54ac7aa30b5fbb4af54dfb733e17421af2a4457de43"
+      },
+      "poima-render-schedule-test.exe": {
+        "bytes": 1424896,
+        "sha256": "c0b98b2568563dd33ea2ad2726c67b08802463d932a767cadb65e24b3c55f9d5"
+      }
+    },
+    "tool_file_count": 24,
+    "cpu_owner": {
+      "bytes": 80872,
+      "sha256": "d4ffa5e8c68988747ab47586d2d31237357ce137e4c75df92e610c93d9dcf51e"
+    },
+    "cpu_worker": {
+      "bytes": 29098,
+      "sha256": "035de196b257142767193f3a6defb51503d8614a3cdf002aa745c8033929925d"
+    },
+    "cpu_suites": [
+      {
+        "name": "character-locomotion",
+        "stdout": {
+          "bytes": 45,
+          "sha256": "2a929a5a61c1a44f8c5722247c843ddbc0220cbdd6db8bf8f4f4cbe632850a62"
+        }
+      },
+      {
+        "name": "character-stance",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "c0924b086131fbcb020327ea454a1788ba48f618ae815618f41842e649b600f3"
+        }
+      },
+      {
+        "name": "player-lens",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "afe3b187f422e0dcd54e697acfb48a71e4e2ab3a8b6f58cc3281ea547858cb67"
+        }
+      },
+      {
+        "name": "player-window",
+        "stdout": {
+          "bytes": 230,
+          "sha256": "19cb707d44c70dae5e63ff719ff0f237643df3a574004f785fb02836381174da"
+        }
+      },
+      {
+        "name": "camera-lens",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "dc1618fe7c7561451dd005add4446414ce31d84c2fbbb22d8733a38987a097dd"
+        }
+      },
+      {
+        "name": "player-preferences",
+        "stdout": {
+          "bytes": 194,
+          "sha256": "8dd09a6e44f57a66a9459601e684215cb88ef743894c9f6ba035b0fd6c1581b0"
+        }
+      },
+      {
+        "name": "save-upgrade-snapshot",
+        "stdout": {
+          "bytes": 449,
+          "sha256": "01ceb487bfd9f01c961cd4b8496e32f9dcf29229b38c167372e686d0bf7fd6f4"
+        }
+      },
+      {
+        "name": "root-motion",
+        "stdout": {
+          "bytes": 37,
+          "sha256": "1b3966ed402f1fb5fdd7930a14f2b41a2b0c0d2615c2419e8f835e34ca9cb728"
+        }
+      },
+      {
+        "name": "two-bone-ik",
+        "stdout": {
+          "bytes": 36,
+          "sha256": "4403459d8052811da839508f622aa17c715399ee1438e1f280f29fb4144e5d35"
+        }
+      },
+      {
+        "name": "hit-regions",
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        }
+      },
+      {
+        "name": "runtime",
+        "stdout": {
+          "bytes": 192,
+          "sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        }
+      },
+      {
+        "name": "templates",
+        "stdout": {
+          "bytes": 76,
+          "sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        }
+      },
+      {
+        "name": "instances",
+        "stdout": {
+          "bytes": 153,
+          "sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        }
+      },
+      {
+        "name": "runtime-save",
+        "stdout": {
+          "bytes": 324,
+          "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        }
+      },
+      {
+        "name": "world-save",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        }
+      },
+      {
+        "name": "world-schema",
+        "stdout": {
+          "bytes": 110,
+          "sha256": "af84f8778525c4bf0225159044351f9baf8adab9fe7a2cf5292c5e6f4e2bb400"
+        }
+      },
+      {
+        "name": "gameplay-compatibility",
+        "stdout": {
+          "bytes": 68,
+          "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        }
+      },
+      {
+        "name": "gameplay-service-contract",
+        "stdout": {
+          "bytes": 88,
+          "sha256": "cd250ba6f6a8c1626222772cf603ac307780df0802a9fa11db3b746fd51a749a"
+        }
+      },
+      {
+        "name": "gameplay-player-preferences",
+        "stdout": {
+          "bytes": 46,
+          "sha256": "84880a29bebbd1802585f150e63fd865807bd49c1c446022469a01de1c53a92d"
+        }
+      },
+      {
+        "name": "animation-membership",
+        "stdout": {
+          "bytes": 47,
+          "sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        }
+      },
+      {
+        "name": "animation",
+        "stdout": {
+          "bytes": 263,
+          "sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        }
+      },
+      {
+        "name": "animation-layers",
+        "stdout": {
+          "bytes": 41,
+          "sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        }
+      },
+      {
+        "name": "animation-save",
+        "stdout": {
+          "bytes": 133,
+          "sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        }
+      },
+      {
+        "name": "camera-draw",
+        "stdout": {
+          "bytes": 29,
+          "sha256": "cf30c55c74b68f2ae14770a3a40f4c7f6f37d126d62f00e4f777cbdc7e222138"
+        }
+      },
+      {
+        "name": "player-input",
+        "stdout": {
+          "bytes": 89,
+          "sha256": "2fe4d5484161b1cf013c5d45858c83fd5e88d993fa5e166a2b919f3af89b6095"
+        }
+      },
+      {
+        "name": "render-schedule",
+        "stdout": {
+          "bytes": 82,
+          "sha256": "7160346f88c119b389426d7d5d3dcbf5a69518a2f216bf8825963fc15695aba9"
+        }
+      }
+    ],
+    "native_locomotion_groups": 9,
+    "protocols": {
+      "locomotion": {
+        "evidence": {
+          "bytes": 765512,
+          "sha256": "89210620847beba5f2e68a78f20283b778a67dfbe9e9b402095432d410cdc6a3"
+        },
+        "groups": 4,
+        "rpc_count": 67,
+        "clean_native_owners": 2,
+        "snapshot_version": 9,
+        "selected_payloads": 7,
+        "complete_snapshot_pairs": 4
+      },
+      "stance": {
+        "evidence": {
+          "bytes": 667264,
+          "sha256": "c38337d9c5e3e8dfedc7a8bffad4162dab59fb07f4c0d4133fa274d0d2ca7a31"
+        },
+        "groups": 4,
+        "rpc_count": 62,
+        "clean_native_owners": 2,
+        "snapshot_version": 8,
+        "selected_payloads": 4,
+        "complete_snapshot_pairs": 2
+      },
+      "camera_lens": {
+        "evidence": {
+          "bytes": 638399,
+          "sha256": "023ddab6fb3367a5d833e38903732056e09d770fa2cb4c0a69e4dcb8956d66ae"
+        },
+        "groups": 4,
+        "rpc_count": 62,
+        "clean_native_owners": 2,
+        "snapshot_version": 7,
+        "selected_payloads": 1,
+        "complete_snapshot_pairs": 0
+      }
+    },
+    "schema_revision": 94,
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 69
+    },
+    "repository_sources": {
+      "include/poima/runtime.hpp": {
+        "bytes": 25675,
+        "sha256": "889e5a3a3ac98e4eba7a8e8187a710573a3a6585e53b3bfe14489bf9ab63ad55"
+      },
+      "src/runtime.cpp": {
+        "bytes": 149378,
+        "sha256": "ca746f1a894a0da384bca00121712c7bd6ba4dc82d79448c1123f97b25cf0f3b"
+      },
+      "src/runtime_motor.inc": {
+        "bytes": 12055,
+        "sha256": "017034e141d25a19325ba5f4b8304332fed9e28c4207dddb654976554e2e602d"
+      },
+      "src/runtime_save.inc": {
+        "bytes": 45669,
+        "sha256": "7186438341553c3f9921bc3d97d3ff5e50146783416c56ea78e41b7ca04a2e6e"
+      },
+      "src/runtime_templates.cpp": {
+        "bytes": 18788,
+        "sha256": "5420d01df24d1743e0946c572e3a4dc1ab12b1cc1070ef02380ef587b597263b"
+      },
+      "src/save_upgrade_snapshot.cpp": {
+        "bytes": 15551,
+        "sha256": "eceec68c39159fe830f1aa30858614d67afd8afc4870cdce0c7e3d7c7e167d10"
+      },
+      "src/world.cpp": {
+        "bytes": 318647,
+        "sha256": "15aa3fe650d6591efbf44bb0c026e4b6a77d60d92fe994cd37ae8d45e44b74bc"
+      },
+      "src/world_observe.inc": {
+        "bytes": 8729,
+        "sha256": "30ebf5e72c42d16e19e4f3aa98906b444cdad211c3dfeb45befd9c528f9aa56b"
+      },
+      "src/world_schema.cpp": {
+        "bytes": 105994,
+        "sha256": "dac1e62204790e6b44be6ab16b7eaa058039fc3c157a27e21e3c67b489c9e4ab"
+      },
+      "tests/runtime_character_locomotion_native.cpp": {
+        "bytes": 20805,
+        "sha256": "8f78e780ad23d8d75a28998638e7688a736a444e415caecc04ab45af09a1a786"
+      },
+      "tests/runtime_character_locomotion.py": {
+        "bytes": 14934,
+        "sha256": "3b0745126012d100598cc366dd497406fdc5926736c45e74fd1c3affed8991f4"
+      },
+      "tests/character_locomotion_gameplay_contract.py": {
+        "bytes": 22912,
+        "sha256": "fbfefed535e8881cebaab9f2d3988a2a12097dafe625ab57464f40839080547e"
+      },
+      "tests/managed_character_locomotion_gameplay/ManagedCharacterLocomotionGame.cs": {
+        "bytes": 3934,
+        "sha256": "3571347bb48b244276a0aa73aabe795098929727fbe0ad4ff6a6b6bb77dc78d5"
+      }
+    },
+    "wall_seconds": 15.020058800000697
+  },
+  "managed": {
+    "publisher_tests": 16,
+    "artifact_count": 36,
+    "fixture_wall_seconds": 148.20685509999748,
+    "owner": {
+      "bytes": 27644,
+      "sha256": "44351d3d5a49ca5fce3a07c8a5cffd954a3dacae4a316e2462abbef259a85e2a"
+    },
+    "worker": {
+      "bytes": 12011,
+      "sha256": "fb9c8cbd0e3a228831d9dc74e94c92dbb00ffa57520eb9a1b8c55cf51bbb4e57"
+    },
+    "source_freeze": {
+      "bytes": 11366,
+      "sha256": "bd7ecc19c9875455250a566baba23bb435991d22cdd8f7effd796473c151f905"
+    },
+    "source_file_count": 65,
+    "stages": [
+      "bridge-build",
+      "game-build",
+      "abi-build",
+      "abi-test",
+      "publisher-test",
+      "native-publish"
+    ],
+    "abi_checks": 92,
+    "abi_evidence": {
+      "bytes": 9634,
+      "sha256": "836d54d01787f6b2cb069d9a6119fab73d134676156694eb67477dcf773e8d8c"
+    },
+    "sdk": {
+      "bytes": 179712,
+      "sha256": "cdd074fe07dad0b9ceeee8748891715de612c31e5ce58255d56f20723024a4fd"
+    },
+    "bridge": {
+      "bytes": 36864,
+      "sha256": "803852a54f71429e3f3de4c29edb6be5eed354467e641b827901f355dcb93902"
+    },
+    "game": {
+      "bytes": 9216,
+      "sha256": "29c1e61a246c8e7f3f1e8aa0137da744003c4ee8870a2761b5664b89e057387b"
+    },
+    "native_descriptor": {
+      "bytes": 4261,
+      "sha256": "ce7e8513778b43ec97c627b0842cfa2dbcb810f0c195e9e9935d33af0050b16f"
+    },
+    "services_version": 7,
+    "minimum_services_bytes": 336,
+    "reuses_existing_sdk_extensions": true,
+    "required_features": [
+      "baseline_v7",
+      "character_input_v1",
+      "character_stance_v1"
+    ],
+    "ownership": {
+      "natural_empty": true,
+      "forced_cleanup": false,
+      "terminated_processes": 0,
+      "total_processes": 48
+    }
+  },
+  "compiled_consumers": [
+    {
+      "backend": "CoreCLR",
+      "owner": {
+        "bytes": 85706,
+        "sha256": "25445b4450c1a9d0230a98e7ed70caac60f923feeffb83b388f72d0e0cb55527"
+      },
+      "worker": {
+        "bytes": 1189,
+        "sha256": "e9dcfac6bf1c5932012b688a61481d0d4b7c6923468b0ca33e28e966efe0b380"
+      },
+      "evidence": {
+        "bytes": 1861595,
+        "sha256": "8ad57056e97df84930ef7adeec2ec38fc40978ee94072f2c526d1f75009f867b"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      },
+      "clean_native_owners": 2,
+      "rpc_count": 127,
+      "functional_groups": 5,
+      "selected_snapshot_payloads": 15,
+      "full_atomic_snapshot_pairs": 4,
+      "full_cold_snapshot_pairs": 3,
+      "cold_continuation_ticks": 3,
+      "native_rejections": 3,
+      "compiled_stairs_slopes_wall_jump_stance_and_support": true,
+      "actual_proxy_queries": true,
+      "compatible_reload": true,
+      "durable_intent": {
+        "manifest": {
+          "bytes": 649,
+          "sha256": "89dac20d7bef29c90eb93dbe517d6c445615dde0296dc68d250088afd0efd21d"
+        },
+        "payload": {
+          "bytes": 14083,
+          "sha256": "bbc73bd23830e055f99a7d1d0eaa4e9fc56912e693f6c4a3f9ac9a196de0a99f"
+        }
+      },
+      "durable_snapshots": [
+        {
+          "role": "before-step-retry",
+          "payload_sha256": "519d8eae77fcfeafb914f60123073a46a641bf6e975726dd0eadde31bf940f20",
+          "snapshot_sha256": "815dc9b414c7e0c3a41f512d6f32ac49861e6f7d970993199548807d7820ffdd"
+        },
+        {
+          "role": "after-step-retry",
+          "payload_sha256": "519d8eae77fcfeafb914f60123073a46a641bf6e975726dd0eadde31bf940f20",
+          "snapshot_sha256": "815dc9b414c7e0c3a41f512d6f32ac49861e6f7d970993199548807d7820ffdd"
+        },
+        {
+          "role": "before-duplicate",
+          "payload_sha256": "ff3471ed0e8f81cb76eb04e656a5d204a00b7a96bea262213b81649569347f6a",
+          "snapshot_sha256": "1436c6da87bbebec6ab1bad591888d56a2aa491f808c255dd6282257d42abfee"
+        },
+        {
+          "role": "after-duplicate",
+          "payload_sha256": "ff3471ed0e8f81cb76eb04e656a5d204a00b7a96bea262213b81649569347f6a",
+          "snapshot_sha256": "1436c6da87bbebec6ab1bad591888d56a2aa491f808c255dd6282257d42abfee"
+        },
+        {
+          "role": "before-caller-game",
+          "payload_sha256": "f2018fe0d9d8238b0a85080e643479e3861503a7e9d772ec6503756c27f9f84f",
+          "snapshot_sha256": "a8abd8678816bd55b815c095a931680430b785b7a0c93656285058af24692225"
+        },
+        {
+          "role": "after-caller-game",
+          "payload_sha256": "f2018fe0d9d8238b0a85080e643479e3861503a7e9d772ec6503756c27f9f84f",
+          "snapshot_sha256": "a8abd8678816bd55b815c095a931680430b785b7a0c93656285058af24692225"
+        },
+        {
+          "role": "before-later-Tick",
+          "payload_sha256": "3c6ed8fe9a7cead781844ac39b01c08df6cb5594350d9c738737395a7895fd98",
+          "snapshot_sha256": "26f2300fd948c0e72a3670b3541525c098afe7bf7eaef458142d94b777d37e14"
+        },
+        {
+          "role": "after-later-Tick",
+          "payload_sha256": "3c6ed8fe9a7cead781844ac39b01c08df6cb5594350d9c738737395a7895fd98",
+          "snapshot_sha256": "26f2300fd948c0e72a3670b3541525c098afe7bf7eaef458142d94b777d37e14"
+        },
+        {
+          "role": "before-compatible-reload",
+          "payload_sha256": "9d34ae05fba4148b8f20c60f5aa842ff4abe5dc7e0465daa1fee18aba6d691a5",
+          "snapshot_sha256": "b46260318aec163e07e5f26b769859dc09d00f90f257b6bf5c6dcd7afc3d86cd"
+        },
+        {
+          "role": "after-compatible-reload",
+          "payload_sha256": "fd1acab07c7e85db0ec086912f4dad2aadfce9bd1dbe0933ccbf21e87de6816f",
+          "snapshot_sha256": "3627ba6ac0d41f9e199ffaebd7dc57b76d6988dda7783faa367a3dbaeb7eb2de"
+        },
+        {
+          "role": "fresh-source",
+          "payload_sha256": "fd1acab07c7e85db0ec086912f4dad2aadfce9bd1dbe0933ccbf21e87de6816f",
+          "snapshot_sha256": "3627ba6ac0d41f9e199ffaebd7dc57b76d6988dda7783faa367a3dbaeb7eb2de"
+        },
+        {
+          "role": "fresh-reference-restored",
+          "payload_sha256": "fd1acab07c7e85db0ec086912f4dad2aadfce9bd1dbe0933ccbf21e87de6816f",
+          "snapshot_sha256": "3627ba6ac0d41f9e199ffaebd7dc57b76d6988dda7783faa367a3dbaeb7eb2de"
+        },
+        {
+          "role": "fresh-expected-continuation",
+          "payload_sha256": "863dbfd5d7601efd4cde478faf5b78c0972d737d022229bc726d1500512837d1",
+          "snapshot_sha256": "cf4c490a01b5d24fbadca570dd62f86d37c7358da0f853658606e1468e674a0c"
+        },
+        {
+          "role": "fresh-restored",
+          "payload_sha256": "fd1acab07c7e85db0ec086912f4dad2aadfce9bd1dbe0933ccbf21e87de6816f",
+          "snapshot_sha256": "3627ba6ac0d41f9e199ffaebd7dc57b76d6988dda7783faa367a3dbaeb7eb2de"
+        },
+        {
+          "role": "fresh-actual-continuation",
+          "payload_sha256": "863dbfd5d7601efd4cde478faf5b78c0972d737d022229bc726d1500512837d1",
+          "snapshot_sha256": "cf4c490a01b5d24fbadca570dd62f86d37c7358da0f853658606e1468e674a0c"
+        }
+      ],
+      "wall_seconds": 1.5580628000025172
+    },
+    {
+      "backend": "Native AOT",
+      "owner": {
+        "bytes": 85499,
+        "sha256": "c0aa03170735ded404e5e85f89b049084a1cf6253ce4d1b7318952085b8fd52f"
+      },
+      "worker": {
+        "bytes": 983,
+        "sha256": "c289a431b3d30ef9af965206d837a1841287eb026105888a4670ea8c358a8701"
+      },
+      "evidence": {
+        "bytes": 1774169,
+        "sha256": "a401d299bd579f97b92be1443517f5cf6f669ab6252b6c8d27bbf2db36943c65"
+      },
+      "ownership": {
+        "natural_empty": true,
+        "forced_cleanup": false,
+        "terminated_processes": 0,
+        "total_processes": 5
+      },
+      "clean_native_owners": 2,
+      "rpc_count": 119,
+      "functional_groups": 4,
+      "selected_snapshot_payloads": 13,
+      "full_atomic_snapshot_pairs": 4,
+      "full_cold_snapshot_pairs": 3,
+      "cold_continuation_ticks": 3,
+      "native_rejections": 3,
+      "compiled_stairs_slopes_wall_jump_stance_and_support": true,
+      "actual_proxy_queries": true,
+      "compatible_reload": false,
+      "durable_intent": {
+        "manifest": {
+          "bytes": 649,
+          "sha256": "9b348a847433cc48930903ba1565e65bfd1b1f307cc1991b2de79ca509f75a1a"
+        },
+        "payload": {
+          "bytes": 14086,
+          "sha256": "257a7eebb8552d2c86f329df92aa07ca26be1e6fc3791cda84a85a7fcbd317cf"
+        }
+      },
+      "durable_snapshots": [
+        {
+          "role": "before-step-retry",
+          "payload_sha256": "d1ad840a9636a55501ba8565ce706bcad2bfc2fe7562bd94afa2736a6e144406",
+          "snapshot_sha256": "25bb2e0a74ebd0e3fc6826abf33399079ce612c58926015833a10151c8ec7bed"
+        },
+        {
+          "role": "after-step-retry",
+          "payload_sha256": "d1ad840a9636a55501ba8565ce706bcad2bfc2fe7562bd94afa2736a6e144406",
+          "snapshot_sha256": "25bb2e0a74ebd0e3fc6826abf33399079ce612c58926015833a10151c8ec7bed"
+        },
+        {
+          "role": "before-duplicate",
+          "payload_sha256": "6528dd533d701d38df531251ee18c9360efa363a577b810f02823dfca2a570ba",
+          "snapshot_sha256": "6b8b8ab51872ce347c9e1fde0f7758231531fd014e9f7eb058379fc14e2f1d70"
+        },
+        {
+          "role": "after-duplicate",
+          "payload_sha256": "6528dd533d701d38df531251ee18c9360efa363a577b810f02823dfca2a570ba",
+          "snapshot_sha256": "6b8b8ab51872ce347c9e1fde0f7758231531fd014e9f7eb058379fc14e2f1d70"
+        },
+        {
+          "role": "before-caller-game",
+          "payload_sha256": "9be7d3839ca02d45cb86d5821f30ac1c2029a7a83adbdb9e2ebe8941f750f322",
+          "snapshot_sha256": "9262690b23f17a9b29b3d741b05477f8c3aa072f125497cb9117d42a7f143e3d"
+        },
+        {
+          "role": "after-caller-game",
+          "payload_sha256": "9be7d3839ca02d45cb86d5821f30ac1c2029a7a83adbdb9e2ebe8941f750f322",
+          "snapshot_sha256": "9262690b23f17a9b29b3d741b05477f8c3aa072f125497cb9117d42a7f143e3d"
+        },
+        {
+          "role": "before-later-Tick",
+          "payload_sha256": "2faf42695e3d1b5d2a1f2f362fd3884d236e93bbdf5df0aea39015f2a162add1",
+          "snapshot_sha256": "e9287de9869ea9ee00b5e2e829368f66cd18c6f83726c59f491441a9982c88dd"
+        },
+        {
+          "role": "after-later-Tick",
+          "payload_sha256": "2faf42695e3d1b5d2a1f2f362fd3884d236e93bbdf5df0aea39015f2a162add1",
+          "snapshot_sha256": "e9287de9869ea9ee00b5e2e829368f66cd18c6f83726c59f491441a9982c88dd"
+        },
+        {
+          "role": "fresh-source",
+          "payload_sha256": "8739e90848bc68ee38a9312505af837912a98dede032280f8de08998a7ef5a59",
+          "snapshot_sha256": "6cccf3e8e5743016c973392805bcb6e3ff85f0dac225bb0e617b7cb0c9fcf176"
+        },
+        {
+          "role": "fresh-reference-restored",
+          "payload_sha256": "8739e90848bc68ee38a9312505af837912a98dede032280f8de08998a7ef5a59",
+          "snapshot_sha256": "6cccf3e8e5743016c973392805bcb6e3ff85f0dac225bb0e617b7cb0c9fcf176"
+        },
+        {
+          "role": "fresh-expected-continuation",
+          "payload_sha256": "dc1191646ae3ad2200d70bc6ae3720f017b7531c3c795b89d1f31e750060d59d",
+          "snapshot_sha256": "7c7160e925360df795854bb96259cd71e7e4cdc792265287f568e91b8db5e569"
+        },
+        {
+          "role": "fresh-restored",
+          "payload_sha256": "8739e90848bc68ee38a9312505af837912a98dede032280f8de08998a7ef5a59",
+          "snapshot_sha256": "6cccf3e8e5743016c973392805bcb6e3ff85f0dac225bb0e617b7cb0c9fcf176"
+        },
+        {
+          "role": "fresh-actual-continuation",
+          "payload_sha256": "dc1191646ae3ad2200d70bc6ae3720f017b7531c3c795b89d1f31e750060d59d",
+          "snapshot_sha256": "7c7160e925360df795854bb96259cd71e7e4cdc792265287f568e91b8db5e569"
+        }
+      ],
+      "wall_seconds": 1.2481477000110317
+    }
+  ],
+  "excluded_attempts": [
+    {
+      "role": "initial support qualification",
+      "admitted": false,
+      "build_passed": true,
+      "qualification_passed": false,
+      "completed_cpu_suites": 0,
+      "reason": "descending step support regression",
+      "producer": {
+        "bytes": 61855,
+        "sha256": "cb44393ff3d47e581fa30c9ec9255cb78398a5e7564aa50b8b41bb8f6428d46b"
+      },
+      "source_freeze": {
+        "bytes": 49596,
+        "sha256": "5df6f5f46ac6d91d4fe25ef1d8223edb94de89e20d4423951c3c5111625a286f"
+      },
+      "qualification_owner": {
+        "bytes": 52678,
+        "sha256": "30bf6094638271c86d4299916f2c7a48b53dede1f0a71ab937fa2856020a24cb"
+      },
+      "qualification_worker": {
+        "bytes": 6933,
+        "sha256": "18e3de33e5335f1a20f0dd1addd7cf73e59c5701a8463823c45b34c19fb9bf1e"
+      },
+      "failure_diagnostic": {
+        "bytes": 52,
+        "sha256": "ea8c21d96f059639ad085b9583807ee0bf2b04c0c45dc88b4ddcd9e676097ba1"
+      },
+      "partial_protocols": null,
+      "natural_empty": true,
+      "forced_cleanup": false
+    },
+    {
+      "role": "second stair qualification",
+      "admitted": false,
+      "build_passed": true,
+      "qualification_passed": false,
+      "completed_cpu_suites": 0,
+      "reason": "stair traversal regression",
+      "producer": {
+        "bytes": 61855,
+        "sha256": "79af637864af7e1717211c33795b35c45e4662b5dc760034f5c6f424f93d4343"
+      },
+      "source_freeze": {
+        "bytes": 49596,
+        "sha256": "68275c8b79bc4a1fda78f33450b188c155e37f7ace0d9f4aa8c725f513b8a784"
+      },
+      "qualification_owner": {
+        "bytes": 52681,
+        "sha256": "75be802f86979ca9f8f9d4df865e558a0f0528d7067d2b697291fd46f7422261"
+      },
+      "qualification_worker": {
+        "bytes": 6931,
+        "sha256": "128cade68276854aa00a7a2e76d2954d4b29539304d72beb4d4954cf883edc45"
+      },
+      "failure_diagnostic": {
+        "bytes": 59,
+        "sha256": "8825b77be5323a9d38d3206e9ef4bc9902d055fd59ac0cfdf965e61f1ff44113"
+      },
+      "partial_protocols": null,
+      "natural_empty": true,
+      "forced_cleanup": false
+    },
+    {
+      "role": "rounded edge qualification",
+      "admitted": false,
+      "build_passed": true,
+      "qualification_passed": false,
+      "completed_cpu_suites": 0,
+      "reason": "rounded capsule edge oracle",
+      "producer": {
+        "bytes": 61856,
+        "sha256": "6c24a7b6555fa143d852e368b99ed1a38e56169507eff3b46103df312f33880e"
+      },
+      "source_freeze": {
+        "bytes": 49596,
+        "sha256": "ef0f6c8b01d1f6da2fce2a7bceb0cd7f98dacd3b2ceae5a31a11fdbab7f55d00"
+      },
+      "qualification_owner": {
+        "bytes": 52677,
+        "sha256": "2a6a299e37123e430b3c270dbd434036d9ff14eaf50b8297e20cab2385cc69d2"
+      },
+      "qualification_worker": {
+        "bytes": 6930,
+        "sha256": "5a11365d6a289dfdebe24ef6cce449cceb7ec88f846ad9afbd6aa8a9f7bd7b06"
+      },
+      "failure_diagnostic": {
+        "bytes": 52,
+        "sha256": "ea8c21d96f059639ad085b9583807ee0bf2b04c0c45dc88b4ddcd9e676097ba1"
+      },
+      "partial_protocols": null,
+      "natural_empty": true,
+      "forced_cleanup": false
+    },
+    {
+      "role": "protocol endpoint qualification",
+      "admitted": false,
+      "build_passed": true,
+      "qualification_passed": false,
+      "completed_cpu_suites": 26,
+      "reason": "third tread endpoint oracle",
+      "producer": {
+        "bytes": 61854,
+        "sha256": "037d8f606c8a6978cfedd42204d427ac7113b4554aedef845a746367a9de9940"
+      },
+      "source_freeze": {
+        "bytes": 49596,
+        "sha256": "337722c1904bfca908ff42b3fd0fba8bb590e2359f51a50579d931c3b0394e84"
+      },
+      "qualification_owner": {
+        "bytes": 52697,
+        "sha256": "b8614f75926be04d9e029464a6ba08806da1affb79c39cf7bd6d5bbda410dcdc"
+      },
+      "qualification_worker": {
+        "bytes": 24404,
+        "sha256": "406d8d3438dc52cc9048222e7d24d59a9f30647e9c51a38c5d7a485fa3617755"
+      },
+      "failure_diagnostic": {
+        "bytes": 660,
+        "sha256": "8fe40be9e281e55a13b622c2c7acf79ae96358e5520ca340a093d0738df016cc"
+      },
+      "partial_protocols": {
+        "stance_groups": 4,
+        "stance_rpc_count": 62,
+        "stance_clean_native_owners": 2,
+        "failed_locomotion_rpc_count": 37,
+        "failed_locomotion_checks": 1,
+        "failed_locomotion_native_owners": 1
+      },
+      "natural_empty": true,
+      "forced_cleanup": false
+    }
+  ],
+  "contract": {
+    "optional_locomotion_profile": true,
+    "existing_services_epoch": 7,
+    "existing_minimum_services_bytes": 336,
+    "required_features": [
+      "baseline_v7",
+      "character_input_v1",
+      "character_stance_v1"
+    ],
+    "maximum_live_controllers": 32,
+    "snapshot_version": 9
+  },
+  "limitations": [
+    "Opt-in virtual capsule locomotion and original analytic collider courses. Legacy controllers remain a separately qualified unchanged path.",
+    "Code-driven fixed-Tick movement, stairs, limited slopes, jumping, stance and moving support; no GPU, window, physical input, audio, animation or performance qualification.",
+    "Exact complete continuation compares cold-restored native owners. It does not establish uninterrupted warm-contact-cache trajectory equivalence.",
+    "CoreCLR compatible reload is qualified; Native AOT remains process-pinned. Existing SDK marker rights and ABI epoch are unchanged.",
+    "Selected incremental native cache build with sealed independent artifact copies; inherited vendor/system dependencies are not a clean rebuild."
+  ]
+}

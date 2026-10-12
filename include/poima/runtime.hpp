@@ -36,10 +36,14 @@ struct MeshCollider {
 struct RuntimeCharacterStanceProfile {
     float crouched_height=1, crouched_speed=2, camera_drop=0.8f;
 };
+struct RuntimeCharacterLocomotionProfile {
+    float step_height=.4f,ground_snap=.5f,max_slope_degrees=45;
+};
 struct CharacterController {
     float radius = 0.3f, height = 1.8f, speed = 4, jump_speed = 5;
     std::string camera;
     std::optional<RuntimeCharacterStanceProfile> stance;
+    std::optional<RuntimeCharacterLocomotionProfile> locomotion;
 };
 struct RuntimeCharacterStanceCommand {
     std::string entity;
@@ -344,6 +348,11 @@ struct RuntimeEntityState {
     std::string motion="none";
     std::optional<KinematicTarget> kinematic_target;
     std::uint32_t motion_remaining_ticks=0;
+    struct Locomotion {
+        RuntimeCharacterLocomotionProfile profile;
+        std::array<double,3> ground_normal{},ground_velocity{};
+    };
+    std::optional<Locomotion> locomotion;
 };
 // Experimental native lifecycle input. Results follow spawn request order.
 struct RuntimeSpawnRequest {

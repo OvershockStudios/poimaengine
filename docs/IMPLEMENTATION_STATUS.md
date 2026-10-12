@@ -1,8 +1,38 @@
 # Implementation status
 
-Updated 2026-10-12 for **0.0.125**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-12 for **0.0.126**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.126 adds optional [native character locomotion](CHARACTER_LOCOMOTION.md)
+for steps, walkable slopes, floor following and supported kinematic platforms.
+The frozen profile selects a Jolt CharacterVirtual motor with a separately owned
+query capsule; omission retains the physical-character backend. Reported
+post-tick velocity measures actual foot displacement, while integration intent
+remains separate. Obstruction-safe stance and planar root-motion ownership
+continue through the existing controls, without a new C# service extension.
+Schema revision 94 exposes the configured profile and cached ground vectors.
+Strict version-9 snapshots preserve motor pose and both velocities, install
+saved stance shapes first and reconstruct support after all body poses.
+
+Twenty-six native CPU suites pass, including nine locomotion groups. Three
+four-group protocols pass 191 RPCs across six clean native processes. The
+locomotion protocol checks authored steps, slope/height rejection, a separate
+third-tread ray, platform transport, retries, frozen edits, complete rejection
+rollback and exact 20-tick continuation between cold-restored owners. Compiled
+CoreCLR and Native AOT consumers pass nine groups and 246 RPCs across four clean
+processes, with complete state rollback, actual proxy queries, staged stance,
+durable save intent and cold continuation. CoreCLR also qualifies compatible
+reload. Ninety-two SDK ABI checks and sixteen publishing tests pass.
+[Evidence](evidence/m2-character-locomotion.json).
+
+These are synthetic geometry and compiled-control checks. They do not qualify
+physical-input feel, animated foot placement, arbitrary crowded/dynamic support,
+swimming, new rendering behavior or production performance. A rounded capsule
+can remain supported by a steep tread-edge contact during descent; this does
+not make that contact walkable. Portable continuation compares independently
+cold-restored owners and does not preserve Jolt's internal warm contact caches.
+This checkpoint does not establish Alpha readiness.
 
 Version 0.0.125 adds [optional character stance](CHARACTER_STANCE.md).
 Configured controllers shrink at their foot origin, use their authored crouched

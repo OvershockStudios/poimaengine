@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.126
+
+- Add opt-in native character locomotion for steps, walkable slopes, floor following and supported kinematic platforms. Preserve the existing controller backend when the profile is omitted. [Contract](docs/CHARACTER_LOCOMOTION.md).
+- Report resolved movement independently of integration intent; retain obstruction-safe stance, planar root-motion controls, query-body ownership and complete batch rollback.
+- Preserve logical motor pose and both velocity states in strict version-9 snapshots, with shape-first restoration and cold continuation checks. Use existing C# character services without a new ABI extension.
+
 ## 0.0.125
 
 - Add opt-in crouch/stand with foot-preserving capsule changes, physical clearance before standing, persistent blocked-stand retries and controlled camera height. [Contract](docs/CHARACTER_STANCE.md).

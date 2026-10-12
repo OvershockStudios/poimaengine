@@ -25,6 +25,7 @@
 #include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Character/Character.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
@@ -77,8 +78,9 @@ struct Motion {
     std::uint32_t elapsed=0;
 };
 struct Body { JPH::BodyID id; BodyMotion motion=BodyMotion::Static; std::optional<Motion> target; };
+#include "runtime_motor.inc"
 struct Controller {
-    JPH::Ref<JPH::Character> character;
+    std::unique_ptr<CharacterMotor> character;
     CharacterController settings;
     double yaw=0, pitch=0;
     JPH::RefConst<JPH::Shape> standing_shape,crouched_shape;
@@ -381,6 +383,13 @@ struct Runtime::Impl {
                 std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
             require(std::isfinite(settings.speed) && settings.speed>0 && settings.speed<=30 &&
                 std::isfinite(settings.jump_speed) && settings.jump_speed>=0 && settings.jump_speed<=20,"Invalid controller speed.");
+            if(settings.locomotion) {
+                const auto& motor=*settings.locomotion;
+                require(std::isfinite(motor.step_height) && motor.step_height>=0 && motor.step_height<=1 &&
+                    std::isfinite(motor.ground_snap) && motor.ground_snap>=0 && motor.ground_snap<=1 &&
+                    std::isfinite(motor.max_slope_degrees) && motor.max_slope_degrees>=0 && motor.max_slope_degrees<=80,
+                    "Invalid virtual character locomotion profile.");
+            }
             if(settings.stance) {
                 const auto& stance=*settings.stance;
                 require(std::isfinite(stance.crouched_height) && stance.crouched_height>2*settings.radius && stance.crouched_height<settings.height &&
@@ -414,11 +423,11 @@ struct Runtime::Impl {
                 controller.crouched_shape=crouch_shape.Get();
             }
             controller.yaw=JPH::ATan2(static_cast<float>(node.world[8]),static_cast<float>(node.world[0]))/radians;
-            controller.character=bootstrap ? new JPH::Character(&config,p.position,p.rotation,0,&physics)
-                : new JPH::Character(&config,p.position,p.rotation,0,&physics,body_ids.allocate());
+            controller.character=std::make_unique<CharacterMotor>(config,settings.locomotion,p.position,p.rotation,physics,allocator,
+                bootstrap ? std::optional<JPH::BodyID>{} : std::optional<JPH::BodyID>{body_ids.allocate()});
             require(!controller.character->GetBodyID().IsInvalid(),"Jolt character body allocation failed.");
             if(bootstrap)controller.character->AddToPhysicsSystem();
-            physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
+            if(!controller.character->IsVirtual())physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
             candidate.characters.push_back(e);
             candidate.body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
         }
@@ -1085,8 +1094,11 @@ struct Runtime::Impl {
         if(movement.LengthSq()>1)movement=movement.Normalized();
         const auto speed=controller.crouched ? controller.settings.stance->crouched_speed : controller.settings.speed;
         const auto desired=controller.character->GetRotation()*movement*speed;
-        float y=controller.character->GetLinearVelocity().GetY();
-        if(edges && input.jump && controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround)y=controller.settings.jump_speed;
+        float y=controller.character->GetIntegrationVelocity().GetY();
+        if(edges && input.jump && controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround) {
+            y=controller.settings.jump_speed;
+            if(controller.character->IsVirtual())controller.character->RequestJump(controller.settings.jump_speed);
+        }
         controller.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
     }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
@@ -1369,6 +1381,7 @@ struct Runtime::Impl {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
                 game_character_inputs.clear();
                 for(auto e:topology->characters) {
+                    registry.get<Controller>(e).character->BeginTick();
                     const RuntimeInput neutral;
                     const auto& input=controls.contains(e) ? *controls.at(e) : neutral;
                     apply_character_input(e,input,frame==0);
@@ -1521,17 +1534,30 @@ struct Runtime::Impl {
                 }
                 auto root_intervals=prepare_root_motion_intervals(controls,game_character_inputs,frame==0);
                 game_character_inputs.clear();
+                // Virtual motors sweep once after all movement/root intentions
+                // and platform velocities are prepared. Their kinematic query
+                // proxies retain zero velocity, so physics cannot move them twice.
+                {
+                    profiling::Scope motor_profile("runtime.character.virtual.update");
+                    for(auto e:topology->characters)registry.get<Controller>(e).character->UpdateVirtual(1.0f/60.0f);
+                }
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
                     return physics.Update(1.0f/60.0f,1,&allocator,&jobs);
                 }();
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");
-                for(auto e:topology->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
+                for(auto e:topology->characters)if(!registry.get<Controller>(e).character->IsVirtual())
+                    registry.get<Controller>(e).character->PostSimulation(0.05f);
                 for(auto e:topology->kinematics) {
                     auto& body=registry.get<Body>(e);
                     if(body.target && ++body.target->elapsed==body.target->target.duration_ticks) {
                         physics.GetBodyInterface().SetLinearAndAngularVelocity(body.id,JPH::Vec3::sZero(),JPH::Vec3::sZero());body.target.reset();
                     }
+                }
+                {
+                    profiling::Scope contacts_profile("runtime.character.virtual.contacts");
+                    for(auto e:topology->characters)if(registry.get<Controller>(e).character->IsVirtual())
+                        registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
                 ++tick;animation_locals();sync();
@@ -1788,6 +1814,11 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     if(const auto* c=impl_->registry.try_get<Controller>(e)) {
         result.has_body=true; result.is_character=true;result.motion="character"; velocity=c->character->GetLinearVelocity();
         result.ground=ground_name(c->character->GetGroundState()); result.yaw=c->yaw; result.pitch=c->pitch;
+        if(c->settings.locomotion) {
+            const auto normal=c->character->GetGroundNormal(),ground=c->character->GetGroundVelocity();
+            result.locomotion=RuntimeEntityState::Locomotion{*c->settings.locomotion,
+                {normal.GetX(),normal.GetY(),normal.GetZ()},{ground.GetX(),ground.GetY(),ground.GetZ()}};
+        }
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }

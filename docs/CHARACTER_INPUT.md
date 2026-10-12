@@ -9,6 +9,8 @@ and saved state. They are excluded from interactive player-camera selection.
 Optional [native crouch/stand](CHARACTER_STANCE.md) uses a frozen controller
 profile and an independent stance service. Movement input remains separately
 owned; an omitted stance command retains posture intent.
+Optional [virtual locomotion](CHARACTER_LOCOMOTION.md) adds native step/slope
+handling and supported-platform transport through the same input API.
 
 ## C# movement
 
