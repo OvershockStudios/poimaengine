@@ -103,7 +103,8 @@ def worker(plan_path):
         assert obs['module']['schema']['identity']==plan['game_identity']
         schema={field['name']:field for field in obs['module']['schema']['fields']}
         assert all(schema[name]['kind']=='int32' for name in handoff['fields'].values())
-        assert schema[handoff['presentation']['save_status_field']]['kind']=='int32'
+        if handoff['format']=='poima.switchback-exercise.v1':
+            assert schema[handoff['presentation']['save_status_field']]['kind']=='int32'
         return o
     def load(o,slot):
         state=o.inspect(); game=o.rpc('runtime.gameplay.inspect',session_id=o.session,tick=state['tick'])
@@ -116,9 +117,10 @@ def worker(plan_path):
             expected_ui_revision=state['ui_revision'],expected_control_sequence=state['control_sequence'])
         o.session=r['session_id']; return r
     def checked_control(d,role):
-        d.owner.control(role); d.golden.control(role)
+        receipt=d.owner.control(role); d.golden.control(role)
         obs=d.owner.observe(query_hit=False)
         d.golden.assert_observed(obs['module']['values'],obs['lenses'],handoff['fields'])
+        return receipt
     try:
         o=start('positive'); report['import_binding']=oracle.inspect_import_binding(o)
         d=oracle.CheckedSession(o); drivers.append(('positive',d))
@@ -223,11 +225,21 @@ def worker(plan_path):
         report['checkpoints']['menu-restored']=restored_menu
         assert oracle.exact_checkpoint(menu,restored_menu)
         d.frames.held=menu_held
-        checked_control(d,'save')
+        save_control=checked_control(d,'save')
+        save_presentation={}
+        if handoff['format']=='poima.switchback-exercise.v2':
+            save_operation=save_control['save_operation']
+            assert save_control['save_serviced'] and save_operation['kind']==1 and save_operation['state']==3 and save_operation['error_code']==0
+            save_presentation['queued']=oracle.inspect_save_presentation(o,'queued')
         game_slot=o.rpc('save.inspect',slot='switchback-checkpoint')['selected']
         assert game_slot['verified'] and game_slot['generation']==2
+        if handoff['format']=='poima.switchback-exercise.v2':
+            assert save_operation['generation']==game_slot['generation']
         d.tick(aim=False,fire=False,reload=False)
-        assert o.observe()['module']['values'][handoff['presentation']['save_status_field']]==handoff['presentation']['save_status_complete']
+        if handoff['format']=='poima.switchback-exercise.v1':
+            assert o.observe()['module']['values'][handoff['presentation']['save_status_field']]==handoff['presentation']['save_status_complete']
+        else:
+            save_presentation['succeeded']=oracle.inspect_save_presentation(o,'succeeded')
         source_save_status=o.rpc('runtime.save.status',session_id=o.session)
         restored_by_game=o.control('load')
         operation=restored_by_game['save_operation']
@@ -247,12 +259,19 @@ def worker(plan_path):
         assert last_restore['restored_tick']==operation['restored_tick']
         assert last_restore['generation']==operation['generation']
         assert last_restore['recovered']==operation['recovered']
-        report['compiled_save_load']={'selected':game_slot,'restore':restored_by_game,'restore_status':restore_status,'source_save_status':source_save_status,
-            'presentation_field':handoff['presentation']['save_status_field'],
-            'presentation_complete':handoff['presentation']['save_status_complete']}
+        if handoff['format']=='poima.switchback-exercise.v1':
+            report['compiled_save_load']={'selected':game_slot,'restore':restored_by_game,'restore_status':restore_status,'source_save_status':source_save_status,
+                'presentation_field':handoff['presentation']['save_status_field'],
+                'presentation_complete':handoff['presentation']['save_status_complete']}
+        else:
+            report['compiled_save_load']={'selected':game_slot,'restore':restored_by_game,'restore_status':restore_status,'source_save_status':source_save_status,
+                'save_control':save_control,'presentation':save_presentation}
         observed=o.observe(); d.golden.assert_observed(observed['module']['values'],observed['lenses'],handoff['fields'])
         d.tick(aim=False,fire=False,reload=False)
-        assert o.observe()['module']['values'][handoff['presentation']['save_status_field']]==handoff['presentation']['save_status_complete']
+        if handoff['format']=='poima.switchback-exercise.v1':
+            assert o.observe()['module']['values'][handoff['presentation']['save_status_field']]==handoff['presentation']['save_status_complete']
+        else:
+            save_presentation['restored']=oracle.inspect_save_presentation(o,'restored')
         report['checks'].append('full-v9-menu-pair-and-compiled-game-save/load-ticket-reconciliation')
         checked_control(d,'resume')
         for x,z in [(-4.7,2),(0,2),(0,5)]: d.drive_to(x,z,max_ticks=300,aim=False,fire=False,reload=False,crouch=False)
@@ -263,8 +282,7 @@ def worker(plan_path):
         completed=o.checkpoint(1,storage,'completed'); report['checkpoints']['completed']=completed
         sound=completed['snapshot']['payload']['sound']
         assert sound['next_voice_id']==5 and len(sound['voices'])==4
-        original=handoff
-        assert [voice['emitter'] for voice in sound['voices']]==[original['roles']['pickup_hit_emitter']]*3+[original['roles']['completion_emitter']]
+        assert [voice['emitter'] for voice in sound['voices']]==oracle.expected_cue_emitters(handoff)
         oracle.assert_nine_checkpoints(report['checkpoints'])
         report['checks'].append('completed-native-course/winning-Use-before-Fire-and-terminal-gates')
         report['checks'].append('nine-full-v9-checkpoints/five-exact-pairs/no-field-exclusions-and-four-native-cues')

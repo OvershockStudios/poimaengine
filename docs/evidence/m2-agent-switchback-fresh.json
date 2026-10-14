@@ -1,0 +1,484 @@
+{
+  "format": "poima.agent-switchback-fresh-qualification.v1",
+  "source_checkpoint": "0.0.131",
+  "engine_version": "0.0.128",
+  "platform": "Windows x86_64",
+  "passed": true,
+  "qualification_state": "one-completed-bounded-fresh-workflow",
+  "scope": "One original fresh agent supervision pass joined with independent source gameplay, source-unavailable exported-gameplay and actual Vulkan observation. No portable source rebuild, newly built native 0.0.131 engine, Alpha, clean-machine or production-performance qualification.",
+  "fixture": "docs/evidence/fixtures/agent-switchback-fresh",
+  "game": {
+    "identity": "switchback.range",
+    "type": "Switchback.RangeGame",
+    "original_CSharp_preserved": true,
+    "CSharp": {
+      "bytes": 6528,
+      "sha256": "1863c8142d76d98bf2ae48b52d86041076eed7f7ceded3d4c245da81b1fed5b1"
+    },
+    "world_revision": 5,
+    "entities": 80,
+    "ui_elements": 10,
+    "cooked_assets": 3,
+    "content_license": "CC0-1.0"
+  },
+  "fresh_agent_workflow": {
+    "provider": "Codex CLI",
+    "provider_version": "0.162.1",
+    "model": "gpt-6.1-sol",
+    "attempt": 3,
+    "fixed_rules_task": {
+      "bytes": 16354,
+      "sha256": "ae0100b9b0a517fec59f4c7f0a4c16e5bbc74e086adc1b0c944fd877b865c571"
+    },
+    "original_parent": {
+      "passed": true,
+      "workflow_qualified": false,
+      "scope": "Supervision/receipts; game and composite workflow are adjudicated independently.",
+      "seconds": 1236.5388037720113,
+      "report": {
+        "bytes": 295007,
+        "sha256": "cf513ff26a70044002064bdc708dc698d2120570e95a94b989f81fc84418e50c"
+      },
+      "seconds_precision": "Original parent receipt duration; provider and parent durations have different scopes."
+    },
+    "provider_seconds": 1078.332094952988,
+    "native_invocations": 56,
+    "script_invocations": 45,
+    "self_repaired_failed_scripts": 18,
+    "source_unchanged_during_independent_checks": true,
+    "pipeline": "Fresh project creation, original licensed imports, authoring, compiled gameplay, agent playtests/repairs, Native AOT publication, guarded adoption and Windows export.",
+    "composite_qualified": true,
+    "repeated_fresh_workflow_gate_closed": false,
+    "historical_attempts": [
+      {
+        "attempt": 1,
+        "original_workflow_passed": false,
+        "original_report": {
+          "bytes": 173943,
+          "sha256": "b25d2fdcaaf59f66562caedbd82be27732ad8ac91d7c61d3b67f7b017f9bf965"
+        }
+      },
+      {
+        "attempt": 2,
+        "original_workflow_passed": false,
+        "original_report": {
+          "bytes": 184271,
+          "sha256": "8b5c026fc8a50dcd98d31e54718e7f26c6eef170f8b9b8bbe50eb4c982353e60"
+        }
+      }
+    ],
+    "history": "The first two failed fresh-workflow verdicts remain failed. A passing original supervisor here does not relabel them or establish repeated/general success."
+  },
+  "native_gameplay": {
+    "backend": "native_aot",
+    "descriptor": {
+      "bytes": 5368,
+      "sha256": "15c0ccacbc5780660a5127968c9541f91888b466752a4efd80b16292e3f6be09"
+    },
+    "descriptor_engine_version": "0.0.130",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 336,
+    "required_features": [
+      "baseline_v7",
+      "camera_lens_v1",
+      "character_input_v1",
+      "character_stance_v1",
+      "hit_regions_v1",
+      "input_actions_v1"
+    ],
+    "saved_state_fields": 27,
+    "saved_state_bytes": 152,
+    "runtime_engine_version": "0.0.128",
+    "dynamic_code_supported": false,
+    "dynamic_code_compiled": false
+  },
+  "independent_source_gameplay": {
+    "passed": true,
+    "seconds": 22.764054999977816,
+    "check_groups": 13,
+    "native_rpcs": 21990,
+    "rpcs_by_owner": {
+      "cold-fresh": 5504,
+      "cold-reference": 126,
+      "negative": 4920,
+      "positive": 11440
+    },
+    "native_owners": 4,
+    "all_native_owners_exit_zero_naturally": true,
+    "complete_v9_checkpoints": 9,
+    "typed_exact_complete_state_pairs": 5,
+    "snapshot_field_exclusions": [],
+    "checks": [
+      "Ready-gates-twelve-explicit-input-ticks",
+      "empty-fire-rejection-and-independent-ADS-endpoints/reversal",
+      "compiled-menu/resume-and-explicit-step-gating",
+      "authored-cover-occludes-start-ray",
+      "committed-crouch-pickup/reload-order-and-blocked-stand",
+      "real-camera-hit-tests-A/B-and-held-fire-single-edge",
+      "six-tick-native-batch/single-initial-fire-edge",
+      "full-v9-same-owner-mid-reload/ADS-restore-and-next-tick",
+      "two-sequential-fresh-native-owners/full-v9-restores-and-identical-continuation",
+      "full-v9-menu-pair-and-compiled-game-save/load-ticket-reconciliation",
+      "completed-native-course/winning-Use-before-Fire-and-terminal-gates",
+      "nine-full-v9-checkpoints/five-exact-pairs/no-field-exclusions-and-four-native-cues",
+      "native-hazard/death-gates-and-compiled-full-checkpoint-Retry"
+    ],
+    "verification": {
+      "bytes": 1491,
+      "sha256": "57f7542cffa41a5e5c1b0a5083d6feff1f0da1cf0899f5e44b8ea133ef899219"
+    },
+    "report": {
+      "bytes": 1791820,
+      "sha256": "70c5dd3bf37f2daed09efd5a5c5dad8b903ebd316f60acd5aa27122a8a483d68"
+    },
+    "owner": {
+      "bytes": 1398,
+      "sha256": "f7ed0fa4b3b180ce9221ca0dda1c445b2212c3b6eb663875dd50227bde14eab4"
+    }
+  },
+  "presentation_assertion_corrections": [
+    {
+      "attempt": "independent-source-1",
+      "passed": false,
+      "checks_completed": 9,
+      "verification": {
+        "bytes": 1181,
+        "sha256": "2b9623c1f3730613dfa3feddba3c5bf02886f77d20ed94fed72963e62fcc976e"
+      },
+      "correction": "The verifier had treated a saved request-admission marker as a copy of the SDK completion enum. Observe actual native UI Queued/Succeeded and native save results; do not change candidate code or full snapshot comparisons."
+    },
+    {
+      "attempt": "independent-source-2",
+      "passed": false,
+      "checks_completed": 9,
+      "verification": {
+        "bytes": 1181,
+        "sha256": "de3e584fbb7151850207a2df4c8c7271ce79eec65d7ab1bdba636d393d36cb0c"
+      },
+      "correction": "The verifier required a restore-specific phrase although the same-owner retained ticket legitimately remains Succeeded after verified load. Correct only the presentation expectation; native save/load and complete state comparisons stay strict."
+    }
+  ],
+  "save_presentation": {
+    "metadata": {
+      "bytes": 1754,
+      "sha256": "d89264bf7e8fa5f258d2df9922fdd8565c30b24e6e09622dcfb683357caeb480"
+    },
+    "queued_text": "Checkpoint: Queued",
+    "succeeded_text": "Checkpoint: Succeeded",
+    "same_owner_restored_text": "Checkpoint: Succeeded",
+    "source": "GetSaveResult; saved SaveStatus is request acceptance/rejection, not a duplicated completion enum."
+  },
+  "relocated_gameplay": {
+    "passed": true,
+    "seconds": 60.707134299969766,
+    "transport": "actual read-only game serve",
+    "original_authored_project_unavailable": true,
+    "native_rpcs": 22002,
+    "check_groups": 13,
+    "complete_v9_checkpoints": 9,
+    "typed_exact_complete_state_pairs": 5,
+    "native_owners": 4,
+    "snapshot_field_exclusions": [],
+    "verification": {
+      "bytes": 1491,
+      "sha256": "b08c4d9d49fe03de1a2238350e8b907fca99e9cd7ba6eb7857b98517d7689ba1"
+    },
+    "report": {
+      "bytes": 1791627,
+      "sha256": "72da40bdd5cec49e64dab980871fcaef9fbac369bfc832df95807faa01b00a6b"
+    },
+    "scope": "Original authored project/code/build directory was temporarily unavailable. Full checkout, SDK, toolchains and other copies remained installed. This is not a clean-machine proof."
+  },
+  "relocation_and_render_attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "gameplay_passed": true,
+      "renderer_observer_passed": false,
+      "source_restored_unchanged": true,
+      "report": {
+        "bytes": 1452,
+        "sha256": "c10dc3f400356527ea57df28ba625e77e8876ef450b1884825ae969c3cef6e4e"
+      },
+      "failure": "Renderer observer required a redundant AnimationClip C# field; this candidate reads native GetAnimation instead. Retain this failed observation, and qualify corrected native clip/time/body/GPU checks independently."
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "report": {
+        "bytes": 770,
+        "sha256": "06147a470400b0ac035a3a6491e7388ed975aeb431f38af5a097cea63b7fa69f"
+      },
+      "failure": "The immutable-root check correctly rejected a plan which listed only eight Python package files and omitted three SDK-root files already present at setup. No input bytes changed."
+    },
+    {
+      "attempt": 3,
+      "passed": true,
+      "report": {
+        "bytes": 823,
+        "sha256": "d2c932b123541be14c77469b0272a36679227a37178cfb8f715a799bd0afc56d"
+      },
+      "correction": "Same native renderer assertions, with all eleven existing SDK files explicitly pinned; actual source absence, unchanged bundle and natural closure verified."
+    }
+  ],
+  "public_fixture": {
+    "source_prepared": true,
+    "portable_source_build_qualified": false,
+    "world": {
+      "bytes": 64111,
+      "sha256": "9ed4340285cd2d17557b7b8d7495a6f7b341de39f459c0c3e663c1cc4e394649"
+    },
+    "profile": {
+      "bytes": 1694,
+      "sha256": "9d3b26841787808056395ba950911b1f52bd08077dc913d0096be429268f61ca"
+    },
+    "world_adaptation": "Only authoring receipts cleared; all other world values unchanged.",
+    "input_profile_original_bytes_preserved": true,
+    "native_binaries_in_source_fixture": false,
+    "preparation_manifest": {
+      "bytes": 2714,
+      "sha256": "0cd2d7ca05d1860242d41ef618a417cf475d39a3cca21f45ac45c30c873dceed"
+    },
+    "preparation_files": 16,
+    "preparation_bytes": 504129,
+    "files": 17,
+    "bytes": 506014,
+    "file_identities": {
+      "README.md": {
+        "bytes": 5765,
+        "sha256": "536dfc367451ca1dd8bfafb2e80e00c3ca10140f8c355a5a785b3f9af057cd06"
+      },
+      "TASK.md": {
+        "bytes": 12529,
+        "sha256": "ca20e2336cf7b243f504c09a55a188ee4e4c4a104aa9f4b479f0c9e175644a5e"
+      },
+      "content/character/License.txt": {
+        "bytes": 699,
+        "sha256": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "content/interface/License.txt": {
+        "bytes": 574,
+        "sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+      },
+      "exercise.json": {
+        "bytes": 1754,
+        "sha256": "d89264bf7e8fa5f258d2df9922fdd8565c30b24e6e09622dcfb683357caeb480"
+      },
+      "project.json": {
+        "bytes": 349,
+        "sha256": "358180c1517ab510834db098a468a1ec0ad7d301e2eaa40835cb483b81b0c499"
+      },
+      "provenance.json": {
+        "bytes": 3450,
+        "sha256": "421411844dad2b29701ed737a43fecdf398915f5aa103fc851f569f4395f3213"
+      },
+      "settings/range.poima-input.json": {
+        "bytes": 1694,
+        "sha256": "9d3b26841787808056395ba950911b1f52bd08077dc913d0096be429268f61ca"
+      },
+      "src/RangeGame.cs": {
+        "bytes": 6528,
+        "sha256": "1863c8142d76d98bf2ae48b52d86041076eed7f7ceded3d4c245da81b1fed5b1"
+      },
+      "src/Switchback.csproj": {
+        "bytes": 577,
+        "sha256": "01bdd26ddd21f68973c5c76dd44799edfbbf0f7c01f11737d77511af1bf100e0"
+      },
+      "world.json": {
+        "bytes": 64111,
+        "sha256": "9ed4340285cd2d17557b7b8d7495a6f7b341de39f459c0c3e663c1cc4e394649"
+      },
+      "world.json.assets/07cb1fd5612643d2676fe85f17c3860b536f9d8308ab16fe21ee0538c827141e.pprov": {
+        "bytes": 1358,
+        "sha256": "07cb1fd5612643d2676fe85f17c3860b536f9d8308ab16fe21ee0538c827141e"
+      },
+      "world.json.assets/2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8.paudio": {
+        "bytes": 55660,
+        "sha256": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8"
+      },
+      "world.json.assets/79524ed5ad054d1d763bb1a23ebf01566541e65997abba362fb956a36b27fd58.pprov": {
+        "bytes": 983,
+        "sha256": "79524ed5ad054d1d763bb1a23ebf01566541e65997abba362fb956a36b27fd58"
+      },
+      "world.json.assets/9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99.pmodel": {
+        "bytes": 245504,
+        "sha256": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99"
+      },
+      "world.json.assets/a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f.paudio": {
+        "bytes": 103500,
+        "sha256": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f"
+      },
+      "world.json.assets/f340127cb5bf8dfeb9ecd3caa58e8460d0dd926d4f4f1e50cec1f605becbe72a.pprov": {
+        "bytes": 979,
+        "sha256": "f340127cb5bf8dfeb9ecd3caa58e8460d0dd926d4f4f1e50cec1f605becbe72a"
+      }
+    },
+    "portable_world_with_original_module": {
+      "passed": true,
+      "seconds": 22.740077099995688,
+      "native_rpcs": 21990,
+      "rpcs_by_owner": {
+        "positive": 11440,
+        "cold-reference": 126,
+        "cold-fresh": 5504,
+        "negative": 4920
+      },
+      "check_groups": 13,
+      "native_owners": 4,
+      "complete_v9_checkpoints": 9,
+      "typed_exact_complete_state_pairs": 5,
+      "verification": {
+        "bytes": 1491,
+        "sha256": "f64b7e3afe78bcd9f5611dd3e9a08d70b209ed36e3b3d785d70e95c37a90beb4"
+      },
+      "report": {
+        "bytes": 1791753,
+        "sha256": "a35485bf28c80afca183a41c62bfbe56b594c74875dfd8f81f5b60251227ccca"
+      },
+      "scope": "Committed portable project/world/input and metadata exercised using the original agent-produced Native AOT module. This is not a recompilation of the portable csproj."
+    },
+    "source_regression": {
+      "passed": true,
+      "tests": 27,
+      "platforms": [
+        "Linux Python",
+        "Windows Python"
+      ],
+      "command": "python -B tests/agent_switchback_contract.py"
+    }
+  },
+  "reported_provider_usage": {
+    "input_tokens": 10740675,
+    "cached_input_tokens": 10525952,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 34002,
+    "reasoning_output_tokens": 10287,
+    "reported_input_minus_cached_input": 214723,
+    "interpretation": "Aggregate repeated model-context deliveries for this one rollout, not unique project tokens. Cached input is included in reported input. Input minus cached input is arithmetic, not a count of unique source tokens. Output and the separate reasoning-output counter are reported without adding them. No dollar cost, per-failure attribution, model comparison or general success rate inferred."
+  },
+  "limits": [
+    "Only one fresh provider rollout in this checkpoint; the repeated fresh-workflow gate stays open.",
+    "Corrected rendered observation passes separately after retained observer/plan failures.",
+    "Public portable source preparation is separate from a successful rebuild.",
+    "No physical-input, subjective presentation/audio quality, clean-machine deployment, game-scale performance, latency or Alpha claim.",
+    "Previously failed workflows and verifier attempts remain recorded."
+  ],
+  "rendered_observation": {
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "resolution": [
+      960,
+      540
+    ],
+    "outer_seconds": 6.354960599972401,
+    "worker_seconds": 5.060162000008859,
+    "checkpoints": [
+      {
+        "label": "Ready",
+        "tick": 0,
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "6525e3d0282a0c63f337497a5978d80467c5395e598c03811d9fdc53439e2363"
+        },
+        "native_clip": 0,
+        "native_time": 0.0,
+        "native_playing": false,
+        "skinned_instances": 1,
+        "skinned_vertices": 1029,
+        "world_samples": 4,
+        "foreground_samples": 4,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "Idle",
+        "tick": 1,
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "cc08901e50357bd7774a908a671ef87d91e948843c484126b22847a757a7e9a4"
+        },
+        "native_clip": 0,
+        "native_time": 0.016666666666666666,
+        "native_playing": true,
+        "skinned_instances": 1,
+        "skinned_vertices": 1029,
+        "world_samples": 4,
+        "foreground_samples": 4,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "Run",
+        "tick": 4,
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "2ef2d444229d32bd6cf70512c03a116956107bc6e3be9a235a60c2dfa0e05cf3"
+        },
+        "native_clip": 1,
+        "native_time": 0.05,
+        "native_playing": true,
+        "skinned_instances": 1,
+        "skinned_vertices": 1029,
+        "world_samples": 4,
+        "foreground_samples": 4,
+        "nvrhi_errors": 0
+      }
+    ],
+    "native_body_displacement": [
+      0.05000000260770321,
+      -6.332993152113886e-08,
+      0.0
+    ],
+    "original_source_unavailable": true,
+    "original_source_restored_unchanged": true,
+    "bundle_unchanged": true,
+    "changed_inputs": [],
+    "forced_cleanup": false,
+    "host_exit_code": 0,
+    "connect_exit_code": 0,
+    "report": {
+      "bytes": 823,
+      "sha256": "d2c932b123541be14c77469b0272a36679227a37178cfb8f715a799bd0afc56d"
+    },
+    "outer_owner": {
+      "bytes": 1350,
+      "sha256": "806914a803dc92e6eebf0ea4cfaab937f62cbd267543a491d6688e6e92a454e6"
+    },
+    "renderer_owner": {
+      "bytes": 189449,
+      "sha256": "6d1cef7a84fb93399165843af4349214ef733819509160336d74a667aa00ce9e"
+    },
+    "scope": "Actual Vulkan observations with native clips and GPU skinning; not physical input, listening, visual-polish or frame-time qualification.",
+    "visual_review": {
+      "reviewed": [
+        "Ready",
+        "Run"
+      ],
+      "finding": "Visible labels and menu controls are legible at the captured resolution. The primitive viewmodel and imported weighted character are visible; Run differs from the idle pose. The scene has basic shading and visibly coarse shadows.",
+      "scope": "Review of actual rendered captures; no physical-input, artistic-quality or performance claim."
+    }
+  },
+  "original_export": {
+    "manifest": {
+      "bytes": 14957,
+      "sha256": "3392a92cec3cd0336fbb470ffc8382823616da9d08afa66f42e0b90d622f2398"
+    },
+    "payload_files": 67,
+    "total_files_including_manifest": 68,
+    "runtime_engine_version": "0.0.128",
+    "source_unavailable_during_gameplay_and_render": true,
+    "bundle_unchanged": true
+  }
+}

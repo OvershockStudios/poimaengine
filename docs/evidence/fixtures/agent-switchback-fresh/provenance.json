@@ -1,0 +1,65 @@
+{
+  "format": "poima.switchback-source-provenance.v1",
+  "game_identity": "switchback.range",
+  "game_type": "Switchback.RangeGame",
+  "original_source": {
+    "RangeGame.cs": {
+      "bytes": 6528,
+      "sha256": "1863c8142d76d98bf2ae48b52d86041076eed7f7ceded3d4c245da81b1fed5b1"
+    },
+    "Switchback.csproj": {
+      "bytes": 381,
+      "sha256": "1d801483b1586b05d77469c3f0c08a3cf373eb31e8e6956611450420a2d5d3a3"
+    },
+    "world.json": {
+      "bytes": 110039,
+      "sha256": "c72f246c50301f12f5d57b73b8cb4ec6e4093b2b684543a93a533164bfe757fa"
+    },
+    "project.json": {
+      "bytes": 476,
+      "sha256": "bb1f64954039419f452b368d316ef4226f698b835cde57dec0998f956a16e965"
+    },
+    "range.poima-input.json": {
+      "bytes": 1694,
+      "sha256": "9d3b26841787808056395ba950911b1f52bd08077dc913d0096be429268f61ca"
+    }
+  },
+  "adaptations": [
+    "RangeGame.cs is byte-for-byte the third external agent implementation source.",
+    "Switchback.csproj replaces the local SDK hint with ../reference/Poima.Gameplay.dll, explicitly selects RangeGame.cs, and preserves the original project-derived Switchback assembly name and language/runtime properties.",
+    "world.json preserves world identity, revision 5, all 80 entities, all 10 UI elements, selected asset provenance, components and references. Only its five authoring receipts are cleared; already-empty retired-ID bookkeeping is unchanged. JSON is sorted and pretty-printed.",
+    "range.poima-input.json preserves the original profile bytes, revision and required committed receipt, with no machine-specific paths.",
+    "project.json preserves project identity, name, entry, input profile and audio. Version 1 omits the locally built gameplay artifact; documented publication/adoption installs a verified version-2 selection.",
+    "TASK.md preserves the earlier portable adaptation of the same fixed gameplay rules; exercise role metadata will be derived separately from this candidate, not copied from the earlier implementation.",
+    "Only the three actively referenced cooked assets and three selected CC0 provenance records are copied. Character and interface sound notices retain their exact original bytes and CRLF line endings."
+  ],
+  "content": [
+    {
+      "title": "Interface pickup",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "notice": "content/interface/License.txt",
+      "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+      "provenance": "f340127cb5bf8dfeb9ecd3caa58e8460d0dd926d4f4f1e50cec1f605becbe72a"
+    },
+    {
+      "title": "Animated Characters Protagonists / characterMedium + Idle + Run",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/animated-characters-protagonists",
+      "license": "CC0-1.0",
+      "notice": "content/character/License.txt",
+      "asset": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99",
+      "provenance": "07cb1fd5612643d2676fe85f17c3860b536f9d8308ab16fe21ee0538c827141e"
+    },
+    {
+      "title": "Interface completion",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "notice": "content/interface/License.txt",
+      "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+      "provenance": "79524ed5ad054d1d763bb1a23ebf01566541e65997abba362fb956a36b27fd58"
+    }
+  ]
+}

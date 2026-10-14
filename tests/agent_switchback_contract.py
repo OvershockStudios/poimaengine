@@ -41,6 +41,26 @@ def load(path):
     return oracle.strict_json(Path(path).read_bytes())
 
 
+class LogicalUiReceiptStub:
+    """Synthetic logical observations only; no rendered or native execution proof."""
+    def __init__(self, handoff, stage):
+        self.handoff = handoff
+        self.session = 'b'*32
+        self.calls = []
+        self.state = {'tick': 100, 'ui_revision': 12}
+        self.result = {'session_id': self.session, **self.state, 'next_after': None,
+                       'elements': [{'id': handoff['presentation']['save_status_control'],
+                                     'kind': 'label', 'visible': True, 'effective_visible': True,
+                                     'text': 'Ammo: 4\n' + handoff['presentation'][stage+'_text']}]}
+
+    def inspect(self):
+        return copy.deepcopy(self.state)
+
+    def rpc(self, method, **params):
+        self.calls.append((method, params))
+        return copy.deepcopy(self.result)
+
+
 class MetadataContract(unittest.TestCase):
     def setUp(self):
         self.metadata = load(FIXTURE / 'exercise.json')
@@ -54,6 +74,122 @@ class MetadataContract(unittest.TestCase):
 
     def test_public_metadata_is_admitted(self):
         self.assertEqual(self.read(self.metadata), self.metadata)
+
+    def cue_metadata_v2(self, hit=None):
+        value = copy.deepcopy(self.metadata)
+        value['format'] = 'poima.switchback-exercise.v2'
+        pickup = value['roles'].pop('pickup_hit_emitter')
+        value['roles']['pickup_emitter'] = pickup
+        value['roles']['hit_emitter'] = pickup if hit is None else hit
+        value['presentation'] = {'save_status_control': 'a'*32,
+                                 'queued_text': 'Checkpoint: Queued',
+                                 'succeeded_text': 'Checkpoint: Succeeded',
+                                 'restored_text': 'Checkpoint restored'}
+        return value
+
+    def test_v2_save_presentation_rejects_missing_ambiguous_or_invalid_markers(self):
+        valid = self.cue_metadata_v2()
+        mutations = []
+        for key in valid['presentation']:
+            value = copy.deepcopy(valid); del value['presentation'][key]; mutations.append(value)
+        for bad in (None, True, 3, '', '   ', 'x'*257, 'Queued\0',
+                    'Checkpoint: Succeeded', 'Succeeded'):
+            value = copy.deepcopy(valid); value['presentation']['queued_text'] = bad; mutations.append(value)
+        for bad in (None, True, 'invalid', '0'*32):
+            value = copy.deepcopy(valid); value['presentation']['save_status_control'] = bad; mutations.append(value)
+        value = copy.deepcopy(valid); value['presentation']['save_status_complete'] = 3; mutations.append(value)
+        for i, value in enumerate(mutations):
+            with self.subTest(case=i), self.assertRaises(AssertionError):
+                self.read(value)
+
+    def test_v2_save_presentation_accepts_each_exact_logical_boundary(self):
+        handoff = self.read(self.cue_metadata_v2())
+        for stage in ('queued', 'succeeded', 'restored'):
+            owner = LogicalUiReceiptStub(handoff, stage)
+            actual = oracle.inspect_save_presentation(owner, stage)
+            with self.subTest(stage=stage):
+                self.assertEqual(actual['stage'], stage)
+                self.assertEqual(actual['control'], owner.result['elements'][0])
+                self.assertEqual(owner.calls, [('runtime.ui.inspect', {
+                    'session_id': owner.session, 'tick': 100, 'ui_revision': 12, 'limit': 256})])
+
+    def test_v2_completed_wording_may_match_after_same_owner_restore(self):
+        value = self.cue_metadata_v2()
+        value['presentation']['restored_text'] = value['presentation']['succeeded_text']
+        handoff = self.read(value)
+        for stage in ('succeeded', 'restored'):
+            owner = LogicalUiReceiptStub(handoff, stage)
+            self.assertEqual(oracle.inspect_save_presentation(owner, stage)['stage'], stage)
+            owner.result['elements'][0]['text'] = handoff['presentation']['queued_text']
+            with self.assertRaises(AssertionError): oracle.inspect_save_presentation(owner, stage)
+        value['presentation']['restored_text'] += ' extra'
+        with self.assertRaises(AssertionError): self.read(value)
+
+    def test_v2_save_presentation_rejects_wrong_or_contradictory_status(self):
+        handoff = self.read(self.cue_metadata_v2())
+        for stage in ('queued', 'succeeded', 'restored'):
+            for other in ('queued', 'succeeded', 'restored'):
+                if stage == other: continue
+                for mixed in (False, True):
+                    owner = LogicalUiReceiptStub(handoff, stage)
+                    row = owner.result['elements'][0]
+                    row['text'] = (row['text']+'\n' if mixed else '') + handoff['presentation'][other+'_text']
+                    with self.subTest(stage=stage, other=other, mixed=mixed), self.assertRaises(AssertionError):
+                        oracle.inspect_save_presentation(owner, stage)
+
+    def test_v2_save_presentation_rejects_foreign_incomplete_or_hidden_ui(self):
+        mutations = (
+            lambda o: o.result.update(session_id='c'*32),
+            lambda o: o.result.update(tick=101),
+            lambda o: o.result.update(tick=True),
+            lambda o: o.result.update(ui_revision=13),
+            lambda o: o.result.update(ui_revision=True),
+            lambda o: o.result.update(next_after='a'*32),
+            lambda o: o.result['elements'].clear(),
+            lambda o: o.result['elements'].append(copy.deepcopy(o.result['elements'][0])),
+            lambda o: o.result['elements'][0].update(kind='button'),
+            lambda o: o.result['elements'][0].update(visible=False),
+            lambda o: o.result['elements'][0].update(effective_visible=False),
+            lambda o: o.result['elements'][0].update(visible=1),
+            lambda o: o.result['elements'][0].update(text=3))
+        for i, mutate in enumerate(mutations):
+            owner = LogicalUiReceiptStub(self.read(self.cue_metadata_v2()), 'succeeded')
+            mutate(owner)
+            with self.subTest(case=i), self.assertRaises(AssertionError):
+                oracle.inspect_save_presentation(owner, 'succeeded')
+
+    def test_shared_and_separate_cues_preserve_the_four_event_order(self):
+        pickup = self.metadata['roles']['pickup_hit_emitter']
+        complete = self.metadata['roles']['completion_emitter']
+        self.assertEqual(oracle.expected_cue_emitters(self.read(self.metadata)),
+                         [pickup, pickup, pickup, complete])
+        for hit in (pickup, 'd'*32):
+            value = self.cue_metadata_v2(hit)
+            self.assertEqual(self.read(value), value)
+            self.assertEqual(oracle.expected_cue_emitters(value),
+                             [pickup, hit, hit, complete])
+
+    def test_v2_rejects_bad_missing_and_conflicting_cue_identities(self):
+        valid = self.cue_metadata_v2('d'*32)
+        mutations = []
+        for key in ('pickup_emitter', 'hit_emitter', 'completion_emitter'):
+            value = copy.deepcopy(valid); del value['roles'][key]; mutations.append(value)
+            for bad in (True, None, 'invalid', 'd'*31):
+                value = copy.deepcopy(valid); value['roles'][key] = bad; mutations.append(value)
+        for key in ('pickup_emitter', 'hit_emitter'):
+            value = copy.deepcopy(valid)
+            value['roles']['completion_emitter'] = value['roles'][key]; mutations.append(value)
+        for value in mutations:
+            with self.subTest(roles=value['roles']), self.assertRaises(AssertionError):
+                self.read(value)
+
+    def test_cue_formats_cannot_silently_mix_role_shapes(self):
+        value = self.cue_metadata_v2(); value['format'] = self.metadata['format']
+        with self.assertRaises(AssertionError): self.read(value)
+        value = copy.deepcopy(self.metadata); value['format'] = 'poima.switchback-exercise.v2'
+        with self.assertRaises(AssertionError): self.read(value)
+        value = self.cue_metadata_v2(); value['roles']['pickup_hit_emitter'] = 'd'*32
+        with self.assertRaises(AssertionError): self.read(value)
 
     def test_missing_extra_and_conflicting_roles_are_rejected(self):
         mutations = []
@@ -170,9 +306,9 @@ class AuthoredReceiptStub:
     The public cooked asset identity is checked separately. These selected rows
     are a small receipt fixture, not an implementation of the model decoder.
     """
-    def __init__(self):
-        self.handoff = load(FIXTURE / 'exercise.json')
-        self.world = load(FIXTURE / 'world.json')
+    def __init__(self, fixture=FIXTURE):
+        self.handoff = load(fixture / 'exercise.json')
+        self.world = load(fixture / 'world.json')
         self.asset = self.handoff['b_binding']['asset']
         nodes = [(0, 'FBX Scene', -1), (1, 'Root', 0), (5, 'HipsCtrl', 1),
                  (12, 'Hips', 5), (19, 'Spine', 12), (24, 'Chest', 19), (29, 'UpperChest', 24)]
@@ -286,6 +422,93 @@ class PublicFixtureContract(unittest.TestCase):
                 self.assertEqual(record['license']['notice'], (FIXTURE/item['notice']).read_text(encoding='utf-8'))
                 self.assertEqual(record['creator'], item['creator'])
                 self.assertEqual(record['source'], item['source'])
+
+
+class FreshPublicFixtureContract(unittest.TestCase):
+    fixture = ROOT / 'docs/evidence/fixtures/agent-switchback-fresh'
+
+    def test_source_and_input_profile_preserve_original_agent_bytes(self):
+        provenance = load(self.fixture/'provenance.json')
+        pins = {
+            'src/RangeGame.cs': ('RangeGame.cs', 6528,
+                '1863c8142d76d98bf2ae48b52d86041076eed7f7ceded3d4c245da81b1fed5b1'),
+            'settings/range.poima-input.json': ('range.poima-input.json', 1694,
+                '9d3b26841787808056395ba950911b1f52bd08077dc913d0096be429268f61ca')}
+        for path, (original, size, digest) in pins.items():
+            data = (self.fixture/path).read_bytes()
+            with self.subTest(path=path):
+                self.assertEqual(len(data), size)
+                self.assertEqual(hashlib.sha256(data).hexdigest(), digest)
+                self.assertEqual(provenance['original_source'][original], {'bytes': size, 'sha256': digest})
+        profile = load(self.fixture/'settings/range.poima-input.json')
+        self.assertEqual(profile['revision'], 1)
+        self.assertEqual(len(profile['receipts']), 1)
+        self.assertEqual(profile['receipts'][0]['params']['profile'], profile['profile'])
+        project = ET.parse(self.fixture/'src/Switchback.csproj').getroot()
+        self.assertEqual(project.find('./ItemGroup/Compile').attrib['Include'], 'RangeGame.cs')
+        self.assertEqual(project.findtext('./ItemGroup/Reference/HintPath'), '../reference/Poima.Gameplay.dll')
+        self.assertEqual(project.findtext('./PropertyGroup/AssemblyName'), 'Switchback')
+
+    def test_world_changes_only_original_authoring_receipts(self):
+        world = load(self.fixture/'world.json')
+        self.assertEqual(world['receipts'], [])
+        # Pinned from the original agent world with only its receipts key omitted.
+        # It covers transforms, UI, schemas, references and provenance together.
+        semantic = {key: value for key, value in world.items() if key != 'receipts'}
+        encoded = json.dumps(semantic, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+        self.assertEqual(hashlib.sha256(encoded).hexdigest(),
+                         'fe4c38aeebd8f4d721ed35d1a7e973a3508cd55d25e01ed462d1d0843f0ce80a')
+        self.assertEqual((world['revision'], len(world['entities']), len(world['ui'])), (5, 80, 10))
+        original = load(self.fixture/'provenance.json')['original_source']['world.json']
+        self.assertEqual(original, {'bytes': 110039, 'sha256':
+                         'c72f246c50301f12f5d57b73b8cb4ec6e4093b2b684543a93a533164bfe757fa'})
+
+    def test_v2_roles_bind_to_public_authored_world_and_imported_receipts(self):
+        metadata = oracle.read_handoff(self.fixture/'exercise.json')
+        world = load(self.fixture/'world.json'); project = load(self.fixture/'project.json')
+        self.assertEqual(metadata['format'], 'poima.switchback-exercise.v2')
+        self.assertEqual(project['version'], 1); self.assertNotIn('gameplay', project)
+        self.assertEqual(project['entry']['controller'], metadata['roles']['player'])
+        self.assertEqual(project['entry']['camera'], metadata['roles']['camera'])
+        for role, identity in metadata['ui'].items():
+            row = world['ui'][identity]
+            self.assertEqual((row['kind'], row['action']), ('button', role))
+        self.assertEqual(world['ui'][metadata['presentation']['save_status_control']]['kind'], 'label')
+        for role in ('pickup_emitter', 'hit_emitter', 'completion_emitter'):
+            self.assertIn('AudioEmitter', world['entities'][metadata['roles'][role]]['components'])
+        cues = oracle.expected_cue_emitters(metadata)
+        self.assertEqual(cues[1], cues[2]); self.assertNotEqual(cues[0], cues[1])
+        # The same immutable imported asset is used by both fixtures. These are
+        # synthetic receipt joins, not new native decoding or animation proof.
+        result = oracle.inspect_import_binding(AuthoredReceiptStub(self.fixture))
+        self.assertEqual(result['ancestry'][-1]['name'], 'UpperChest')
+        self.assertEqual(len(result['meshes']), 1)
+        self.assertFalse(result['rendered_animation_verified'])
+
+    def test_active_assets_and_original_cc0_notices_are_preserved(self):
+        world = load(self.fixture/'world.json'); provenance = load(self.fixture/'provenance.json')
+        active = {component['asset'] for entity in world['entities'].values()
+                  for name, component in entity['components'].items()
+                  if name in ('SkinnedMesh', 'AnimationRig', 'AudioEmitter')}
+        self.assertEqual(active, set(world['asset_provenance']))
+        self.assertEqual(active, {item['asset'] for item in provenance['content']})
+        store = self.fixture/'world.json.assets'
+        self.assertEqual(len(list(store.iterdir())), 6)
+        for path in store.iterdir():
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), path.stem)
+        for item in provenance['content']:
+            record = load(store/(item['provenance']+'.pprov'))
+            self.assertEqual(world['asset_provenance'][item['asset']], [item['provenance']])
+            self.assertEqual(record['asset'], item['asset'])
+            self.assertEqual(record['license']['identifier'], 'CC0-1.0')
+            self.assertEqual(record['license']['notice'], (self.fixture/item['notice']).read_text())
+            self.assertEqual(record['creator'], 'Kenney')
+        for name, digest in (
+                ('character', '68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd'),
+                ('interface', 'f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9')):
+            data = (self.fixture/'content'/name/'License.txt').read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), digest)
+            self.assertGreater(data.count(b'\r\n'), 0)
 
 
 if __name__ == '__main__':

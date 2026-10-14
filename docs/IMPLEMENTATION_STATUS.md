@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.130**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.131**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.131 adds a [fresh agent-authored Switchback implementation](evidence/fixtures/agent-switchback-fresh/README.md). Its original supervisor passes with eighteen repaired script attempts in one provider session. Independent native gameplay passes thirteen groups and 21,990 RPCs through four naturally closed owners, including nine full version-9 checkpoints and five typed-exact state pairs. The exported service passes the same groups and Ready/Idle/Run Vulkan observations while the original project is unavailable. Earlier workflow, presentation-assertion and renderer-plan failures remain recorded; the candidate gameplay source is unchanged. This qualifies one bounded fresh workflow using the retained 0.0.128 engine, not a native 0.0.131 build. The portable source rebuild and repeated fresh-workflow Alpha gate remain open. [Results](evidence/m2-agent-switchback-fresh.json).
 
 Version 0.0.130 publishes the original [Switchback Range](evidence/fixtures/agent-switchback/README.md)
 C# game, licensed cooked content and an independent native verifier. The portable

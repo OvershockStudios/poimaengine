@@ -1,0 +1,13 @@
+{
+  "audio": true,
+  "entry": {
+    "camera": "00000000000000000000000000000003",
+    "controller": "00000000000000000000000000000002",
+    "world": "world.json"
+  },
+  "format": "poima.project",
+  "input_profile": "settings/range.poima-input.json",
+  "name": "Switchback Range",
+  "project_id": "5033dc963b4e80cf0fb229050df475bf",
+  "version": 1
+}

@@ -79,9 +79,11 @@ def read_handoff(path):
     require(file_row(path, 1048576)["bytes"] > 0, "Empty handoff")
     value = strict_json(Path(path).read_bytes())
     require(set(value) == {"format", "roles", "fields", "ui", "b_binding", "presentation"}, "Unexpected normalized handoff members")
-    require(value["format"] == "poima.switchback-exercise.v1", "Wrong exercise format")
+    require(value["format"] in ("poima.switchback-exercise.v1", "poima.switchback-exercise.v2"), "Wrong exercise format")
     roles = value["roles"]
-    require(set(roles) == {"player", "camera", "target_a", "target_b", "rig_b", "region_a", "region_b", "pickup_hit_emitter", "completion_emitter"}, "Incomplete game roles")
+    cue_roles = ({"pickup_hit_emitter", "completion_emitter"} if value["format"] == "poima.switchback-exercise.v1"
+                 else {"pickup_emitter", "hit_emitter", "completion_emitter"})
+    require(set(roles) == {"player", "camera", "target_a", "target_b", "rig_b", "region_a", "region_b"} | cue_roles, "Incomplete game roles")
     for entity in roles.values():
         identifier(entity)
     actor_roles = ("player", "camera", "target_a", "target_b", "rig_b")
@@ -97,7 +99,10 @@ def read_handoff(path):
     for entry in value["ui"].values():
         identifier(entry)
     require(len(set(value["ui"].values())) == 6, "Declared controls alias")
-    require(roles["pickup_hit_emitter"] != roles["completion_emitter"], "Distinct cue emitter roles required")
+    if value["format"] == "poima.switchback-exercise.v1":
+        require(roles["pickup_hit_emitter"] != roles["completion_emitter"], "Distinct cue emitter roles required")
+    else:
+        require(roles["completion_emitter"] not in (roles["pickup_emitter"], roles["hit_emitter"]), "Distinct completion emitter required")
     binding = value["b_binding"]
     require(set(binding) == {"asset", "node", "node_name", "node_path", "rig_node", "skin", "idle_clip", "run_clip"}, "Incomplete imported binding")
     require(type(binding["asset"]) is str and re.fullmatch(r"[0-9a-f]{64}", binding["asset"]), "Invalid model asset selector")
@@ -112,11 +117,57 @@ def read_handoff(path):
     identifier(binding["rig_node"])
     require(binding["rig_node"] not in {roles["player"], roles["camera"], roles["target_a"], roles["target_b"]}, "Rig node aliases an actor")
     presentation = value["presentation"]
-    require(type(presentation) is dict and set(presentation) == {"save_status_field", "save_status_complete"}, "Unexpected presentation mapping")
-    require(type(presentation["save_status_field"]) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", presentation["save_status_field"]), "Invalid save status field")
-    require(type(presentation["save_status_complete"]) is int, "Save success must be a discovered integer presentation value")
-    require(presentation["save_status_field"] not in fields.values(), "Save presentation aliases a gameplay semantic")
+    if value["format"] == "poima.switchback-exercise.v1":
+        require(type(presentation) is dict and set(presentation) == {"save_status_field", "save_status_complete"}, "Unexpected presentation mapping")
+        require(type(presentation["save_status_field"]) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", presentation["save_status_field"]), "Invalid save status field")
+        require(type(presentation["save_status_complete"]) is int, "Save success must be a discovered integer presentation value")
+        require(presentation["save_status_field"] not in fields.values(), "Save presentation aliases a gameplay semantic")
+    else:
+        require(type(presentation) is dict and set(presentation) == {"save_status_control", "queued_text", "succeeded_text", "restored_text"}, "Unexpected logical save presentation mapping")
+        identifier(presentation["save_status_control"])
+        require(presentation["save_status_control"] != "0" * 32, "Save status control must be a native nonzero identity")
+        markers = [presentation[key] for key in ("queued_text", "succeeded_text", "restored_text")]
+        require(all(type(text) is str and 1 <= len(text) <= 256 and text.strip() and "\0" not in text for text in markers), "Save presentation markers must be bounded nonempty text")
+        # Same-owner restore retains the ledger's successful save ticket, so
+        # Save and Load may legitimately display the same completion wording.
+        # Queued must remain distinguishable from either completed state.
+        for i, first in enumerate(markers):
+            for j, second in enumerate(markers):
+                if i == j or (i > 0 and j > 0 and first == second): continue
+                require(first not in second, "Save presentation markers overlap or alias")
     return value
+
+
+def inspect_save_presentation(owner, stage):
+    """Observe v2 logical completion UI at the exact current native boundary."""
+    require(owner.handoff["format"] == "poima.switchback-exercise.v2" and stage in ("queued", "succeeded", "restored"), "Expected v2 save presentation stage")
+    presentation = owner.handoff["presentation"]
+    state = owner.inspect()
+    require(type(state["tick"]) is int and state["tick"] >= 0, "Invalid native save presentation Tick")
+    require(type(state["ui_revision"]) is int and state["ui_revision"] >= 0, "Invalid native UI revision")
+    actual = owner.rpc("runtime.ui.inspect", session_id=owner.session, tick=state["tick"], ui_revision=state["ui_revision"], limit=256)
+    require(actual["session_id"] == owner.session and type(actual["tick"]) is int and actual["tick"] == state["tick"], "Foreign logical save presentation boundary")
+    require(type(actual["ui_revision"]) is int and actual["ui_revision"] == state["ui_revision"] and actual["next_after"] is None, "Incomplete logical save presentation")
+    require(type(actual["elements"]) is list and len(actual["elements"]) <= 256, "Logical save presentation exceeds bounds")
+    rows = [row for row in actual["elements"] if row["id"] == presentation["save_status_control"]]
+    require(len(rows) == 1, "Save status control is absent or duplicated")
+    row = rows[0]
+    require(row["kind"] == "label" and row["visible"] is True and row["effective_visible"] is True, "Save status must be a visible native label")
+    text = row["text"]
+    require(type(text) is str and len(text) <= 16384, "Invalid logical save status text")
+    expected = presentation[stage + "_text"]
+    require(expected in text and all(presentation[other + "_text"] not in text for other in ("queued", "succeeded", "restored")
+            if other != stage and presentation[other + "_text"] != expected), "Logical save status is missing or contradictory")
+    return {"stage": stage, "session_id": actual["session_id"], "tick": actual["tick"], "ui_revision": actual["ui_revision"], "control": copy.deepcopy(row)}
+
+
+def expected_cue_emitters(handoff):
+    """Fixed accepted-event order; v2 permits shared or separate pickup/hit cues."""
+    roles = handoff["roles"]
+    if handoff["format"] == "poima.switchback-exercise.v1":
+        return [roles["pickup_hit_emitter"]] * 3 + [roles["completion_emitter"]]
+    require(handoff["format"] == "poima.switchback-exercise.v2", "Wrong exercise format")
+    return [roles["pickup_emitter"], roles["hit_emitter"], roles["hit_emitter"], roles["completion_emitter"]]
 
 
 def inspect_import_binding(owner):

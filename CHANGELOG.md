@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.131
+
+- Add a [fresh agent-authored Switchback implementation](docs/evidence/fixtures/agent-switchback-fresh/README.md) with original C# bytes, selected CC0 content and portable build/adopt/export instructions. Its original supervisor passes after recorded repairs in one provider session; retain the earlier failed workflow verdicts.
+- Pass thirteen independent gameplay groups and 21,990 native RPCs with nine complete version-9 checkpoints and five typed-exact state comparisons. Check the actual exported game service with the original project unavailable using the retained Windows 0.0.128 engine. [Evidence](docs/evidence/m2-agent-switchback-fresh.json).
+- Support separate pickup/hit cue metadata and actual native save-status UI in the verifier. Qualify source-unavailable Ready/Idle/Run Vulkan observations with native clip/time/body/GPU checks, preserving failed presentation/observer/plan attempts and strict complete snapshot comparisons.
+
 ## 0.0.130
 
 - Publish [Switchback Range](docs/evidence/fixtures/agent-switchback/README.md), an agent-authored first-person game combining crouch clearance, camera-based shots, a weighted animated target, independent world/viewmodel ADS, reloads, compiled menus and checkpoints. Preserve the original C# source, licensed cooked assets and portable build/adopt/export instructions.
