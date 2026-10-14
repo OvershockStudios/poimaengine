@@ -1,0 +1,246 @@
+{
+  "format": "poima.switchback-fresh-repeat.v1",
+  "evidence_checkpoint": "0.0.139",
+  "platform": "Windows x86_64",
+  "publication_ready": true,
+  "qualification_state": "Second bounded fresh workflow and independent composite qualification pass",
+  "fresh_workflow_passed": true,
+  "bounded_second_fresh_workflow_qualified": true,
+  "versions": {
+    "native_engine": "0.0.134",
+    "authoring_reference_source": "0.0.138",
+    "python_client": "0.0.138",
+    "managed_sdk_producer": "0.0.127",
+    "original_case_checkpoint": "0.0.139",
+    "new_native_139_build_claimed": false
+  },
+  "scope": "Another independent fresh-project Switchback authoring workflow under the same frozen task rules. Original supervisor evidence remains separate from independent gameplay, relocated readonly export and native rendered observations.",
+  "provider": {
+    "name": "Codex CLI",
+    "version": "0.162.1",
+    "model": "gpt-6.1-sol",
+    "sessions": 1,
+    "ephemeral": true,
+    "ignore_user_config": true,
+    "sandbox": "workspace-write",
+    "approval_policy": "never",
+    "model_substitution": false,
+    "automatic_retry": false,
+    "provider_seconds": 1009.5521889829834,
+    "whole_supervisor_seconds": 1147.538463378005,
+    "passed": true,
+    "native_invocations": 36,
+    "script_invocations": 31,
+    "natural_failed_script_attempts_retained": 9,
+    "script_mcp_feedback_identity_joins": 31,
+    "forced_cleanup": false,
+    "incomplete_native_invocations": 0,
+    "incomplete_script_invocations": 0,
+    "changed_inputs": [],
+    "changed_corpus_directories": [],
+    "changed_named_historical_fixtures": [],
+    "all_rescans_complete": true,
+    "per_script_native_ancestry_verified": false,
+    "supervisor_workflow_qualified": false,
+    "independent_game_and_export_review": "completed independently",
+    "original_supervisor_preserved": true
+  },
+  "input_context": {
+    "task": {
+      "bytes": 16354,
+      "sha256": "ae0100b9b0a517fec59f4c7f0a4c16e5bbc74e086adc1b0c944fd877b865c571"
+    },
+    "approved_copies": 116,
+    "setup_workspace_files": 117,
+    "post_tools_workspace_files": 118,
+    "delta_from_previous_case": "Updated public Python138 shutdown helper and two additional generic references: Python client and shared-session guides. Generic tool-manifest lifecycle guidance distinguishes natural failed repair attempts from missing/forced closure. No prior game or oracle is supplied.",
+    "named_historical_fixture_fences": {
+      "roots": 3,
+      "files_by_root": [
+        17,
+        17,
+        4
+      ],
+      "outside_supplied_agent_corpus": true,
+      "repository_wide_scan": false,
+      "agent_read_isolation_claimed": false
+    }
+  },
+  "candidate": {
+    "module_identity": "switchback-range-original",
+    "source_record": "docs/evidence/fixtures/agent-switchback-fresh-repeat",
+    "original_sources": {
+      "Range.cs": {
+        "bytes": 5982,
+        "sha256": "78574aa348aff69f278f2c6b4ed2c89e094ac85e5bc1b135b9a18a238180d20c"
+      },
+      "State.cs": {
+        "bytes": 2126,
+        "sha256": "1daacdc33ecc8e900bef609504437d1f3c8fae65d917c8a2a3b2e9254ce1e388"
+      },
+      "Switchback.csproj": {
+        "bytes": 358,
+        "sha256": "1d1fda7aa5d9a0f9334d78c0f600bd9e52b580ad86753f6cb3d1190181140ef2"
+      }
+    },
+    "typed_saved_fields": 27,
+    "portable_source_record_rebuild_qualified": false
+  },
+  "source_gameplay": {
+    "passed": true,
+    "groups": 13,
+    "seconds": 25.393968599964865,
+    "native_rpc_count": 21990,
+    "rpc_counts_by_owner": {
+      "positive": 11440,
+      "cold-reference": 126,
+      "cold-fresh": 5504,
+      "negative": 4920
+    },
+    "complete_snapshot_version": 9,
+    "complete_checkpoints": 9,
+    "typed_exact_whole_checkpoint_pairs": 5,
+    "excluded_state_fields": [],
+    "natural_native_owners": 4
+  },
+  "relocated_gameplay": {
+    "passed": true,
+    "groups": 13,
+    "seconds": 65.8097267000121,
+    "native_rpc_count": 22002,
+    "rpc_counts_by_owner": {
+      "positive": 11443,
+      "cold-reference": 129,
+      "cold-fresh": 5507,
+      "negative": 4923
+    },
+    "complete_snapshot_version": 9,
+    "complete_checkpoints": 9,
+    "typed_exact_whole_checkpoint_pairs": 5,
+    "excluded_state_fields": [],
+    "natural_native_owners": 4
+  },
+  "source_absence": {
+    "passed": true,
+    "original_provider_case_paths_unavailable": true,
+    "evaluator_source_project_paths_unavailable": true,
+    "whole_original_trees_restored_byte_exact": true,
+    "bundle_files": 68,
+    "bundle_bytes": 99138600,
+    "bundle_unchanged": true,
+    "scope": "Named original paths unavailable during actual readonly gameplay and rendering; quarantine preserves bytes elsewhere. Generic SDK, engine checkout, installed toolchains and unrelated copies remain accessible. Not OS isolation or clean-machine execution."
+  },
+  "rendered_observation": {
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      960,
+      540
+    ],
+    "world_and_viewmodel_samples": 4,
+    "weighted_instances": 1,
+    "weighted_vertices": 1029,
+    "completed_gpu_skinning_samples_present": true,
+    "real_native_clip_execution_and_committed_patrol_displacement": true,
+    "natural_player_lifetimes": 2,
+    "host_and_connect_exit_code": 0,
+    "forced_cleanup": false,
+    "worker_job_seconds": 5.45766710001044,
+    "captures": {
+      "Ready": {
+        "tick": 0,
+        "clip": 0,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "b79fdc1e5dc00ceb9e11698f5f55040e8a26fb04f1c7832d473376ab4a902d9c"
+        }
+      },
+      "Idle": {
+        "tick": 1,
+        "clip": 0,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "823259c6b4a194dfc3f8597af1cc71a2f22233d9d03f64b9b7948e2ba222ab0e"
+        }
+      },
+      "Run": {
+        "tick": 4,
+        "clip": 1,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "1593df2f208543f1b225e765f00e87a9298f2f0ff943c6d64a73cfb235dca376"
+        }
+      }
+    },
+    "visual_review": {
+      "reviewed_by": "Engine development agent",
+      "all_three_images_inspected": true,
+      "lossless_png_pixel_signatures_match_original_bmps": true,
+      "observed": "Ready Begin/Load controls, active Menu, native character Idle/Run poses visible",
+      "limits": "Long sample HUD clips at right edge at960px; coarse shadows remain. No visual quality acceptance claim."
+    }
+  },
+  "retained_receipt_identities": {
+    "original-supervisor": {
+      "bytes": 280129,
+      "sha256": "64fdafd05938b2543d6405739e644e66018a798353e675b0626e01c38e66b2b0"
+    },
+    "setup": {
+      "bytes": 162325,
+      "sha256": "b56091aa540bd34cbfd5a89c11e4fba48d6b35e6253e63df923c9af482595700"
+    },
+    "root-tools": {
+      "bytes": 3222,
+      "sha256": "091d2697d333ae6ff789004c97ee02b21d9a18707ac6a450900e6623cd450f80"
+    },
+    "read-only-prelaunch": {
+      "bytes": 1635,
+      "sha256": "250cc097f84e732ebd8a7f3f3d60542903cd28309343da42178850392ed284fe"
+    },
+    "independent-composite": {
+      "bytes": 1695,
+      "sha256": "c4547079c625e23227374f7d02aaaae1db23bee91e34785bee46fd177d95d1d9"
+    },
+    "source_gameplay-verification": {
+      "bytes": 1491,
+      "sha256": "55b2b3c82ec6508feedd4a5e3b11801f9886ec60cd6c0a7b9638756f014c416f"
+    },
+    "source_gameplay-campaign": {
+      "bytes": 1815906,
+      "sha256": "f16b7152439d137ef0bc20d4d7178c3e3b4113a17aeeed26a47c5acef5dfe140"
+    },
+    "relocated_gameplay-verification": {
+      "bytes": 1489,
+      "sha256": "f64d9dc5d56ef470cbb88f0dc24288bc05efed51f44986f4a01126165be00ac1"
+    },
+    "relocated_gameplay-campaign": {
+      "bytes": 1815938,
+      "sha256": "88698d7e026a7b6721707bc9e4cdd927ae61788c5d018fd9708e93254fd348ef"
+    },
+    "relocation-owner": {
+      "bytes": 2392,
+      "sha256": "d17c3fffc1bde60c7c70cd29fbceb88b2433b095a3376ce603fe533ce2dafbc0"
+    },
+    "relocation-report": {
+      "bytes": 2436,
+      "sha256": "7cc7190ebd0d1c04031ca0d5a80894ed4c3685ec36b3d7342e317ea9604c43a4"
+    },
+    "render-owner": {
+      "bytes": 221485,
+      "sha256": "edb02e4b9d966471659e2c120977e3e9c0e72a9d59f1245bbb20429d4f86a877"
+    }
+  },
+  "limits": [
+    "This does not change previous failed workflow verdicts or establish a general agent success rate.",
+    "Recorded native and Script Job receipt closure is not a general actor census, per-script native ancestry, sandbox or endpoint ownership proof.",
+    "Named original paths being unavailable is distinct from clean-machine or OS-isolated execution; generic SDK/toolchains/engine checkout can remain accessible.",
+    "No native139 build, production visual/FPS quality, physical-input, listening, representative performance or portable source rebuild claim.",
+    "Only the repeated bounded-course criterion now has two successful fresh contexts; broader Alpha and agent-authoring qualification remain open."
+  ],
+  "composite_qualification": {
+    "passed": true,
+    "original_owner_workflow_qualified": false,
+    "independent_composite_workflow_qualified": true,
+    "basis": "Unchanged successful original supervisor plus independently qualified original-game, relocated readonly service and native Vulkan observations. No original owner or older failed verdict was rewritten."
+  }
+}

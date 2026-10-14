@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.139
+
+- Record a second fresh agent-authored Switchback workflow, preserving nine naturally closed failed script attempts and every previous workflow verdict. Independently verify thirteen gameplay groups, full checkpoint continuation and a relocated readonly game service.
+- Verify separate Ready/Idle/Run Vulkan observations with declared original source paths unavailable. Distinguish native 0.0.134, Python client/source references 0.0.138 and this evidence checkpoint; retain bounded scope and remaining Alpha limits. [Results](docs/evidence/m2-agent-switchback-fresh-repeat.json).
+
 ## 0.0.138
 
 - Add explicit Python `shutdown_host()` for authorized shared headless hosts, using the native empty-parameter request. Client close still detaches; host acknowledgement and process exit remain separate observations.

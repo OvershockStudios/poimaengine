@@ -1,0 +1,31 @@
+using Poima;
+namespace Switchback;
+[GameplayPersistence(1)] public struct State {
+[GameplayField("00000000000000000000000000000001")] public int Phase;
+[GameplayField("00000000000000000000000000000002")] public int Supply;
+[GameplayField("00000000000000000000000000000003")] public int ClearedMask;
+[GameplayField("00000000000000000000000000000004")] public int Ammo;
+[GameplayField("00000000000000000000000000000005")] public int Shots;
+[GameplayField("00000000000000000000000000000006")] public int Rejected;
+[GameplayField("00000000000000000000000000000007")] public int Health;
+[GameplayField("00000000000000000000000000000008")] public int Timer;
+[GameplayField("00000000000000000000000000000009")] public int MenuOpen;
+[GameplayField("0000000000000000000000000000000a")] public int ReloadRemaining;
+[GameplayField("0000000000000000000000000000000b")] public int AimTarget;
+[GameplayField("0000000000000000000000000000000c")] public int AdsElapsed;
+[GameplayField("0000000000000000000000000000000d")] public int AdsDuration;
+[GameplayField("0000000000000000000000000000000e")] public int HazardInside;
+[GameplayField("0000000000000000000000000000000f")] public int PatrolDirection;
+[GameplayField("00000000000000000000000000000010")] public int AnimationClip;
+[GameplayField("00000000000000000000000000000011")] public int SaveState;
+[GameplayField("00000000000000000000000000000012")] public double WorldStart;
+[GameplayField("00000000000000000000000000000013")] public double WorldTarget;
+[GameplayField("00000000000000000000000000000014")] public double ForegroundStart;
+[GameplayField("00000000000000000000000000000015")] public double ForegroundTarget;
+[GameplayField("00000000000000000000000000000016")] public double PreviousBX;
+[GameplayField("00000000000000000000000000000017")] public double PreviousBZ;
+[GameplayField("00000000000000000000000000000018")] public long SaveHigh;
+[GameplayField("00000000000000000000000000000019")] public long SaveLow;
+[GameplayField("0000000000000000000000000000001a")] public long SaveSequence;
+[GameplayField("0000000000000000000000000000001b")] public long SaveGeneration;
+}

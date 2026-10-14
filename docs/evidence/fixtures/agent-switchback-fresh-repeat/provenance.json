@@ -1,0 +1,29 @@
+{
+  "format": "poima.agent-game-source-record.v1",
+  "evidence": "../../m2-agent-switchback-fresh-repeat.json",
+  "module_identity": "switchback-range-original",
+  "original_sources": {
+    "Range.cs": {
+      "bytes": 5982,
+      "sha256": "78574aa348aff69f278f2c6b4ed2c89e094ac85e5bc1b135b9a18a238180d20c"
+    },
+    "State.cs": {
+      "bytes": 2126,
+      "sha256": "1daacdc33ecc8e900bef609504437d1f3c8fae65d917c8a2a3b2e9254ce1e388"
+    }
+  },
+  "exercise_metadata": {
+    "bytes": 1734,
+    "sha256": "89646b9c599c3efb95e36ba874671ee594c39a7182fa9e8961c09344ffa439c5"
+  },
+  "native_library_sha256": "a5cf138c8d632832454650cb27e28d8e07fa9d553698ceb2b249f2b8ed35fec9",
+  "source_bytes_preserved": true,
+  "portable_project_rebuild_qualified": false,
+  "licensed_inputs": "Original character, Idle/Run takes and interface sounds use the same licensed reference packs documented by the existing fresh fixture; no source asset or compiled bundle is redistributed in this record.",
+  "rendered_run_png": {
+    "bytes": 63262,
+    "sha256": "9b002be31b172d0ad4e6ee85eb1ae057691bac9ed9a8227bc86d510b1bebe772",
+    "native_tick": 4,
+    "conversion": "Lossless PNG of the qualified native Run.bmp; pixel signatures match."
+  }
+}
