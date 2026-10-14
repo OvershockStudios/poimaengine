@@ -65,8 +65,8 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - Publisher: Sam Lantinga and contributors; [source](https://github.com/libsdl-org/SDL).
 - Release: `3.4.16`.
 - Archive SHA-256: `7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68`.
-- License: zlib; original `LICENSE.txt` is installed. Individual upstream source files retain their notices.
-- Statically linked window/events, Vulkan surface creation and BMP output. SDL's own renderer/GPU/audio APIs are disabled in this experiment.
+- License: zlib; original `LICENSE.txt` is installed. Bundled yuv2rgb uses BSD-3-Clause; its original notice is installed in `share/poima/licenses/SDL3/yuv2rgb`. Poima selects HIDAPI's BSD-style license and installs the unchanged terms, upstream alternatives overview and selection note in `share/poima/licenses/SDL3/HIDAPI`.
+- Statically linked window/events, gamepad input, Vulkan surface creation and BMP output. SDL's own renderer/GPU APIs are disabled. SDL audio backends may be compiled; Poima's engine mixer and acoustic processing are separate.
 
 ## Jolt Physics (optional runtime)
 

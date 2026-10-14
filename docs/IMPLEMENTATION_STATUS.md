@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-10-12 for **0.0.128**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.129**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.129 completes the identified SDL runtime-notice packaging gap.
+Installed rendering runtimes include the original yuv2rgb BSD notice, the
+selected HIDAPI BSD terms and an explicit selection note. Configuration checks
+the pinned upstream notice bytes. Actual CMake installation and native Windows
+export/inspection verify the added payloads; the Windows export check uses the
+retained 0.0.128 runtime. [Recorded scope](evidence/m2-sdl-runtime-notices.json).
 
 Version 0.0.128 adds [guarded project gameplay adoption](PROJECT_GAMEPLAY_ADOPTION.md).
 The CLI and profile-scoped agent service verify and copy a published Native AOT

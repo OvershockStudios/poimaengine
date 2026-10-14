@@ -105,7 +105,8 @@ target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 
 install(FILES "${nvrhi_SOURCE_DIR}/LICENSE.txt" DESTINATION share/poima/licenses/NVRHI)
-install(FILES "${sdl3_SOURCE_DIR}/LICENSE.txt" DESTINATION share/poima/licenses/SDL3)
+include("${CMAKE_CURRENT_LIST_DIR}/sdl_notices.cmake")
+poima_install_sdl_notices("${sdl3_SOURCE_DIR}")
 
 if(POIMA_BUILD_TESTS)
     add_executable(poima-gamepad-sdl-test tests/gamepad_sdl.cpp src/gamepad_sdl.cpp src/input_profile.cpp src/player.cpp)

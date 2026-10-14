@@ -1,0 +1,110 @@
+{
+  "format": "poima.sdl-runtime-notices-qualification.v1",
+  "source_checkpoint": "0.0.129",
+  "passed": true,
+  "scope": "Original SDL 3.4.16 redistribution notices, permissive HIDAPI selection, actual CMake installation and native Windows project export/inspection. No graphics or gameplay API change.",
+  "cmake_install": {
+    "platform": "Linux",
+    "compiler_invoked": false,
+    "original_notices": [
+      {
+        "installed": "LICENSE.txt",
+        "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+      },
+      {
+        "installed": "yuv2rgb/LICENSE",
+        "sha256": "f7d74004cc75778cae46c5f0139f244d67c07ef64cf51937e8272352197dcb18"
+      },
+      {
+        "installed": "HIDAPI/LICENSE-bsd.txt",
+        "sha256": "30eb1bef29b46f8ba7ab8b416035dbd93cb034a45481dd97815b944284582cd2"
+      },
+      {
+        "installed": "HIDAPI/LICENSE.txt",
+        "sha256": "7d3b087c34f35d4d538e3bcddd1ff8f66e92f9ef336881999482800ddf840913"
+      }
+    ],
+    "selection_sha256": "8c3c695f04951ac933fb27d3b22192664efd1dfbc5c96576c81b80aa846ddd0b",
+    "selection_lines": 4,
+    "report": {
+      "bytes": 1631,
+      "sha256": "e47604b89b19772c10917d3b06f70792c12f5bab9da045aee69421bc9b035dd9"
+    },
+    "missing_or_changed_notice_rejected": true,
+    "negative_report": {
+      "bytes": 426,
+      "sha256": "24d672d82583594577527eda751926abda3715cec4246855b456755e18a6d6d0"
+    }
+  },
+  "windows_export": {
+    "engine_version": "0.0.128",
+    "engine": {
+      "bytes": 25943040,
+      "sha256": "bc261bf62c5f9b76501d7533e0077b6630d19db364dcfdc7ee22f3780bf471ad"
+    },
+    "payload_files": 63,
+    "manifest": {
+      "bytes": 13977,
+      "sha256": "38d9b14fbb072ae1af8327754ff093fdc73fc0573545899e2a001f4d2d414bb0"
+    },
+    "added_notice_paths": [
+      "share/poima/licenses/SDL3/yuv2rgb/LICENSE",
+      "share/poima/licenses/SDL3/HIDAPI/LICENSE-bsd.txt",
+      "share/poima/licenses/SDL3/HIDAPI/LICENSE.txt",
+      "share/poima/licenses/SDL3/HIDAPI/HIDAPI-LICENSE-SELECTION.txt"
+    ],
+    "original_project_and_runtime_unchanged": true,
+    "report": {
+      "bytes": 1246,
+      "sha256": "4d8d9678e5425636946e192b23ab17b0b29aa8c7e44b64f8ba05aa7961027e3b"
+    },
+    "native_owner": {
+      "bytes": 1327,
+      "sha256": "a220fe373ef022a5b7dc2fd42b7a24c735018b43a1cf97228e7a2535b9b8e861"
+    },
+    "natural_exit_code": 0,
+    "forced_cleanup": false,
+    "active_processes_after_cleanup": 0
+  },
+  "implementation_sources": {
+    "cmake/sdl_notices.cmake": {
+      "bytes": 2267,
+      "sha256": "d3006933c3a7c173c6ea2c7eda82ef026b7725596e4a237d3fbe6ac68626eab1"
+    },
+    "cmake/render_smoke.cmake": {
+      "bytes": 7336,
+      "sha256": "7f1bf6248aa59d1f72f981c71afb0426b25f499c25bad3b4e2d4fe54b1d7014d"
+    }
+  },
+  "limitations": [
+    "The original incomplete bundles remain historical inputs; newly built runtimes and exports carry the additional notices.",
+    "This checks the identified SDL notice omission, not a new independent audit of every future dependency version."
+  ],
+  "linux_headless": {
+    "version": {
+      "version": "0.0.129",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "configuration": "Debug; simulation and Vulkan probe disabled; two build workers",
+    "binary": {
+      "bytes": 80423240,
+      "sha256": "19323e017ed3cca01859c90ae537fe1e12c7e4c47927cb816a724b2b813851ed"
+    },
+    "passed_suites": [
+      "asset_provenance_project_contract",
+      "authoring_api_projection",
+      "build_metadata_contract",
+      "project_contract",
+      "project_gameplay_contract",
+      "cli_contract"
+    ],
+    "ctest_log": {
+      "bytes": 14459,
+      "sha256": "abedda0aca7ac398f594452f1a1df1683951ad8b5494845ad69a1a4c1ea6f818"
+    },
+    "scope": "Headless source/version and selected authoring/export contract regressions, not Windows rendering or simulation qualification."
+  }
+}

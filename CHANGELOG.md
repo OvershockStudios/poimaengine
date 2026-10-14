@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.129
+
+- Include SDL’s bundled yuv2rgb BSD notice and the selected HIDAPI BSD terms in installed runtimes and exported games. Retain the original upstream notice bytes and reject missing or changed pinned notices during configuration.
+- Verify actual CMake installation and Windows native game export/inspection with the additional notices. [Results](docs/evidence/m2-sdl-runtime-notices.json).
+
 ## 0.0.128
 
 - Add [native project gameplay adoption](docs/PROJECT_GAMEPLAY_ADOPTION.md): verify and copy compiled artifacts, update manifests with exact hash guards, and retain durable receipts for restart recovery and safe historical retries.
