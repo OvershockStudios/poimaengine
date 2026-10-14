@@ -128,3 +128,10 @@ passes 463 RPCs, rollback/save continuation and 100 collectible reloads. Those
 bounded consumer checks do not release a response/behavior contract for all
 21 methods. The released authoring-core v1 and remaining Alpha gates retain
 their existing boundaries.
+
+## Selected result checks
+
+The separate [prospective result contract](WORKFLOW_RESPONSE_CONTRACT.md) now
+provides opt-in Python checks for the same 21 methods. Its retained-consumer and
+focused native evidence qualifies covered result variants; it does not turn a
+request projection into a full error, behavior or stable runtime contract.

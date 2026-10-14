@@ -1,0 +1,524 @@
+{
+  "format": "poima.workflow-response-qualification.v1",
+  "checkpoint": "0.0.143",
+  "date": "2026-10-14",
+  "passed": true,
+  "status": "prospective-covered-results",
+  "scope": "Opt-in selected successful-result checks and preserved recorded-consumer evidence, with focused real native source/shared/readonly captures. No broader stable response/error/behavior/ABI or Alpha release.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "b943d3e18f758230305ae79cf14021a66fd71b629238eeb0c717d86266ab3228"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 539,
+      "sha256": "2ba8f20631ab3c0d8b93c9c0c17224e7ff4058854ac3b8bdf902bccfd331a21b"
+    },
+    "tools/python/poima_client/workflow_responses.py": {
+      "bytes": 47219,
+      "sha256": "b838da0d0681e2ee25a27756f4b47f02748eb3e9b09d7690b82b7f4185c5c473"
+    },
+    "docs/contracts/runtime-save-responses-v1.candidate.json": {
+      "bytes": 63224,
+      "sha256": "cc9a5267b81221dd2326c21cf705b36608322a00d15fbe4b76b0c3c733cc1a2f"
+    },
+    "tests/python_workflow_responses.py": {
+      "bytes": 25192,
+      "sha256": "f9f301b28ed9acb708c7e1c621f7fc19c4867178fb48df45be4d388d10eb810f"
+    },
+    "tests/workflow_response_native.py": {
+      "bytes": 20143,
+      "sha256": "73c997ab54629e135104eb8f19148aca28a80fdcd0cb8365382c4ca3b7db29fc"
+    },
+    "tests/switchback_game_service.py": {
+      "bytes": 17034,
+      "sha256": "2700cbb3e522ae24c89ede0ac6f4d139f1264047fb7c6d02cd3a9a39f373294b"
+    },
+    "tests/switchback_ownership.py": {
+      "bytes": 8658,
+      "sha256": "f6a44c6de87a03010de4f13ef569648acd01027eedd1e7a0a93cc729ee824233"
+    },
+    "docs/WORKFLOW_RESPONSE_CONTRACT.md": {
+      "bytes": 6563,
+      "sha256": "934b57e775fcc0043975677a61446dd188a03b6bbabda5c4df8a7887f917bc60"
+    },
+    "tools/python/poima_client/responses.py": {
+      "bytes": 14658,
+      "sha256": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593"
+    },
+    "tools/python/poima_client/observation.py": {
+      "bytes": 9608,
+      "sha256": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c"
+    }
+  },
+  "raw_receipts": [
+    {
+      "path": ".cache/alpha-contract-next/response143/retained-focused-check-2.json",
+      "identity": {
+        "bytes": 68893,
+        "sha256": "d21a9fe8c7554293823ccff7cdd67b0bebaf1b403a4d5c3da28062d135497e50"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/response143/gate-negative-checks-v2.json",
+      "identity": {
+        "bytes": 1080,
+        "sha256": "7c6b636e28a599d287d12a51d85d9a1c3b9b615a280e92a19ff6854e5636eab2"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/response143/portable-final-v2.json",
+      "identity": {
+        "bytes": 2513,
+        "sha256": "57b514a4eb8a04c5e18a26a54dd136b0b643fdf5c28c157c70eeb19cd2a84cff"
+      }
+    },
+    {
+      "path": "build/alpha-contract-next/response143-gap-6/qualification.json",
+      "identity": {
+        "bytes": 1666,
+        "sha256": "4a6e2a6cbf9af4790d8a203b5dda1c2b4e79b820f256383f6f1cfc992e49b5ff"
+      }
+    },
+    {
+      "path": "build/alpha-contract-next/response143-gap-6/capture/report.json",
+      "identity": {
+        "bytes": 1100,
+        "sha256": "717869d9dee73203277aee33f3fec6f87c6bf9306da6b60379d48dfbf23caab3"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/response143/retained_gate_v2.py",
+      "identity": {
+        "bytes": 25105,
+        "sha256": "1b6e64bbf126b85ffb9e511d01866c8ced9948419b4999bc447cc62c8aa0b090"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/response143/context_helpers_v2.py",
+      "identity": {
+        "bytes": 3245,
+        "sha256": "90ae023437890c1d15eaec1492d3643182b830cf8ca8f49ee94ee93a9e76618c"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/response143/focused-inputs-v2.json",
+      "identity": {
+        "bytes": 5782,
+        "sha256": "8b6d4d665578a38cae20c3642deda3af6817bc2b725c6f1fdc1ad1ac13779d85"
+      }
+    }
+  ],
+  "portable": {
+    "platforms": [
+      "Linux Python",
+      "Windows Python"
+    ],
+    "new_workflow_tests": 31,
+    "unchanged_authoring_response_tests": 19,
+    "unchanged_observation_tests": 17,
+    "tests_per_platform": 67,
+    "logs": {
+      "portable-linux-final-v2.txt": {
+        "bytes": 130,
+        "sha256": "0ab66217759b280d56a70a1e3f043242f7216bb264322d3491d069d61bb80bf4"
+      },
+      "portable-windows-final-v2.txt": {
+        "bytes": 135,
+        "sha256": "845a5da5ba06e842e1f8b1673cd48900409a8e3cb3fcce1b6092ec251a8774c3"
+      },
+      "core-linux-1.txt": {
+        "bytes": 118,
+        "sha256": "4a524af42e7f5852f848bfb98b06317d148e05d14568e5b3e389b188d1061d43"
+      },
+      "core-windows-1.txt": {
+        "bytes": 123,
+        "sha256": "60d105adeb27d268af79e20e2314db98d1b5b3d9c15cbbbaf345bea7fe049ca1"
+      },
+      "observation-linux-1.txt": {
+        "bytes": 2534,
+        "sha256": "af67bde67146f339d9ac9a3a87dca7342432fd1979fd6cf51aca9cb45e8649fd"
+      },
+      "observation-windows-1.txt": {
+        "bytes": 2556,
+        "sha256": "572bb4f66c7abb54ccf1257576ae14f84c7f846600b441ab0d3bc0707e497c7c"
+      }
+    }
+  },
+  "retained": {
+    "recorded_native_versions": [
+      "0.0.134",
+      "0.0.141"
+    ],
+    "file_count": 16,
+    "typed_native_joins": 87984,
+    "selected_successes": 65132,
+    "bytes": 234473186,
+    "qualification": "Offline inspection of original retained requests/results and native envelopes; no engine replay or new liveness proof.",
+    "files": [
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/source-proof/positive-rpc.json",
+        "identity": {
+          "bytes": 31038069,
+          "sha256": "9b44d01196014ffb3aa0af1789ebbbaf0e5dd12f679831c1ef6c843f87b3544f"
+        },
+        "version": "native141",
+        "scope": "source",
+        "validated_successes": 8454,
+        "strict_typed_native_joins": 11440
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/source-proof/negative-rpc.json",
+        "identity": {
+          "bytes": 12680862,
+          "sha256": "b685c38f36c745bef38baf7fb130d3420e9dc7cdcd6c4902bc63c650522ed80f"
+        },
+        "version": "native141",
+        "scope": "source",
+        "validated_successes": 3644,
+        "strict_typed_native_joins": 4920
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/source-proof/cold-fresh-rpc.json",
+        "identity": {
+          "bytes": 14671232,
+          "sha256": "290bda25c875d163b391ec19fd2f9bc615f1a142baf1bb8c902b4a0fa6f167d4"
+        },
+        "version": "native141",
+        "scope": "source",
+        "validated_successes": 4088,
+        "strict_typed_native_joins": 5504
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/source-proof/cold-reference-rpc.json",
+        "identity": {
+          "bytes": 311298,
+          "sha256": "3d67eda9bf0342b3ca00a8398b81e2042e8245b3a9744bb0f7bd38d751526013"
+        },
+        "version": "native141",
+        "scope": "source",
+        "validated_successes": 95,
+        "strict_typed_native_joins": 126
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/game-proof/positive-rpc.json",
+        "identity": {
+          "bytes": 30914131,
+          "sha256": "f1214653305f1ed00129229f110c80e803231557d7decb0fba14ccf3208d273f"
+        },
+        "version": "native141",
+        "scope": "readonly_game",
+        "validated_successes": 8455,
+        "strict_typed_native_joins": 11443
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/game-proof/negative-rpc.json",
+        "identity": {
+          "bytes": 12620742,
+          "sha256": "ef14c68125ef16ecd60afc83aba14acd6ca10314e6a13eb84b1923dc92dd463b"
+        },
+        "version": "native141",
+        "scope": "readonly_game",
+        "validated_successes": 3645,
+        "strict_typed_native_joins": 4923
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/game-proof/cold-fresh-rpc.json",
+        "identity": {
+          "bytes": 14602965,
+          "sha256": "778887b041882c6c46ee1b6296393aafbbdf1977ae55b18766764f739d456255"
+        },
+        "version": "native141",
+        "scope": "readonly_game",
+        "validated_successes": 4089,
+        "strict_typed_native_joins": 5507
+      },
+      {
+        "path": "build/shadow-core-0.0.141/retained-game-3/game-proof/cold-reference-rpc.json",
+        "identity": {
+          "bytes": 302210,
+          "sha256": "3358a9d712f994caca55e7313699d48d9a69ba560bdb507fdd89eb9e8c8aa056"
+        },
+        "version": "native141",
+        "scope": "readonly_game",
+        "validated_successes": 96,
+        "strict_typed_native_joins": 129
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/positive-rpc.json",
+        "identity": {
+          "bytes": 31078325,
+          "sha256": "9414886a892d05df5ec71332ab18ec01a1328aa8bbbd158068f2db198aa24229"
+        },
+        "version": "native134",
+        "scope": "source",
+        "validated_successes": 8454,
+        "strict_typed_native_joins": 11440
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/negative-rpc.json",
+        "identity": {
+          "bytes": 12698200,
+          "sha256": "1e6ee3d4d4ec0cc21dc96c97ba2c7bb1877d4c9e94ff35c100fc328fe5d7e84c"
+        },
+        "version": "native134",
+        "scope": "source",
+        "validated_successes": 3644,
+        "strict_typed_native_joins": 4920
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/cold-fresh-rpc.json",
+        "identity": {
+          "bytes": 14687126,
+          "sha256": "648f945753611218e04cd4ba02ef73fe7b8a89e0908b3ce9583e8158d6f20425"
+        },
+        "version": "native134",
+        "scope": "source",
+        "validated_successes": 4088,
+        "strict_typed_native_joins": 5504
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/cold-reference-rpc.json",
+        "identity": {
+          "bytes": 311754,
+          "sha256": "cfb6a4f4f0be5cefa6b6e08afe04d3a2625dcead9528c129bf446e3568946cf7"
+        },
+        "version": "native134",
+        "scope": "source",
+        "validated_successes": 95,
+        "strict_typed_native_joins": 126
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/positive-rpc.json",
+        "identity": {
+          "bytes": 30972214,
+          "sha256": "b14039b0811b053d2d80f2bdbf2a5cc1bf1cbcb7332d1b94b2ea06f1dbb290e1"
+        },
+        "version": "native134",
+        "scope": "readonly_game",
+        "validated_successes": 8455,
+        "strict_typed_native_joins": 11443
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/negative-rpc.json",
+        "identity": {
+          "bytes": 12647937,
+          "sha256": "1371ad0a2679af44d023e8e23fcefe9e1e1d585c2d8f66671a078aba58534d6b"
+        },
+        "version": "native134",
+        "scope": "readonly_game",
+        "validated_successes": 3645,
+        "strict_typed_native_joins": 4923
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/cold-fresh-rpc.json",
+        "identity": {
+          "bytes": 14633242,
+          "sha256": "2bc8ace4b7584d035651262b4b15c49878bf46f26bbdfd2c4d50e559e5b60403"
+        },
+        "version": "native134",
+        "scope": "readonly_game",
+        "validated_successes": 4089,
+        "strict_typed_native_joins": 5507
+      },
+      {
+        "path": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/cold-reference-rpc.json",
+        "identity": {
+          "bytes": 302879,
+          "sha256": "99c0be1daabb0d911449402302e1b87d0bbc211ac8bf8c34c987bac653fca8f6"
+        },
+        "version": "native134",
+        "scope": "readonly_game",
+        "validated_successes": 96,
+        "strict_typed_native_joins": 129
+      }
+    ]
+  },
+  "focused": {
+    "recorded_native_version": "0.0.142",
+    "scopes": [
+      "source_world",
+      "source_shared_player",
+      "readonly_game"
+    ],
+    "owners": 4,
+    "strict_ndjson_joins": 185,
+    "selected_successes": 161,
+    "selected_error_envelope_joins": 19,
+    "supervised_seconds": 2.551719899987802,
+    "observed_job_processes": 7,
+    "natural_empty_job": true,
+    "original_source_and_game_unchanged": true,
+    "captures": [
+      {
+        "name": "component-standalone",
+        "profile": "source_world",
+        "transcript_identity": {
+          "bytes": 92229,
+          "sha256": "0f26e6743a831492734afa137720f600a9ffefc00b3a22c74e2bd82fcc973420"
+        },
+        "stdin_identity": {
+          "bytes": 12175,
+          "sha256": "13e878becc19038d4ab55155a37de771b3e6a18a547654db40a487512dbc2453"
+        },
+        "stdout_identity": {
+          "bytes": 21255,
+          "sha256": "90f738bd7d2f307b12894ce063dfe0f87876c1f0f75f4ea14bc4197e6c8a82cb"
+        },
+        "strict_ndjson_joins": 57,
+        "validated_successes": 49,
+        "selected_errors_envelope_only": 7,
+        "schema_context": {
+          "component_schema_context_calls": 7,
+          "gameplay_schema_context_calls": 0,
+          "component_schema_versions": 1,
+          "gameplay_schema_versions": 0,
+          "provenance": "Only prior successful validated runtime.components/full gameplay schema replies; historical versions retained."
+        }
+      },
+      {
+        "name": "component-shared",
+        "profile": "source_shared_player",
+        "transcript_identity": {
+          "bytes": 92450,
+          "sha256": "f7f56732518c9f736177285a9341237ca794f63a50c85a29498e3c105ba07131"
+        },
+        "stdin_identity": {
+          "bytes": 12230,
+          "sha256": "abc2d1ce465d5966ebddbd24b3222bfea448cfe1c6a8750963e6e09351adcf8c"
+        },
+        "stdout_identity": {
+          "bytes": 21299,
+          "sha256": "9aed637fcac69b2f23e87da5cca2dd65e98bb652a7de1a02e07f8e320431b94b"
+        },
+        "strict_ndjson_joins": 58,
+        "validated_successes": 49,
+        "selected_errors_envelope_only": 7,
+        "schema_context": {
+          "component_schema_context_calls": 7,
+          "gameplay_schema_context_calls": 0,
+          "component_schema_versions": 1,
+          "gameplay_schema_versions": 0,
+          "provenance": "Only prior successful validated runtime.components/full gameplay schema replies; historical versions retained."
+        }
+      },
+      {
+        "name": "compiled-standalone",
+        "profile": "source_world",
+        "transcript_identity": {
+          "bytes": 249628,
+          "sha256": "1b242a43a25a362236e4c9bc811bf3a10cbaf527d4133d9a0a33040e88e6466a"
+        },
+        "stdin_identity": {
+          "bytes": 5728,
+          "sha256": "1916b811b46fc599ed911f3eb824c510b8d7bd93b4eda526c5556a5739c88197"
+        },
+        "stdout_identity": {
+          "bytes": 54756,
+          "sha256": "0e0d850e1cbfecc3a796c714b5e1c76523484f10f1455f42781ff4590c5bb0e4"
+        },
+        "strict_ndjson_joins": 37,
+        "validated_successes": 33,
+        "selected_errors_envelope_only": 3,
+        "schema_context": {
+          "component_schema_context_calls": 0,
+          "gameplay_schema_context_calls": 8,
+          "component_schema_versions": 0,
+          "gameplay_schema_versions": 1,
+          "provenance": "Only prior successful validated runtime.components/full gameplay schema replies; historical versions retained."
+        }
+      },
+      {
+        "name": "compiled-readonly",
+        "profile": "readonly_game",
+        "transcript_identity": {
+          "bytes": 193876,
+          "sha256": "cb1b2fbf64e99411a297f3582fedf05e681c7ed81870e5b13862a650cf44b371"
+        },
+        "stdin_identity": {
+          "bytes": 4434,
+          "sha256": "a91d527fc5d42fe34a79f308cfea043e35cb5d04369b63b2c285357e732465a1"
+        },
+        "stdout_identity": {
+          "bytes": 42889,
+          "sha256": "e6a1fd6fe9a1a55763dde13483578fbb23d0ba197462472e4ac5035393e13cf9"
+        },
+        "strict_ndjson_joins": 33,
+        "validated_successes": 30,
+        "selected_errors_envelope_only": 2,
+        "schema_context": {
+          "component_schema_context_calls": 0,
+          "gameplay_schema_context_calls": 6,
+          "component_schema_versions": 0,
+          "gameplay_schema_versions": 1,
+          "provenance": "Only prior successful validated runtime.components/full gameplay schema replies; historical versions retained."
+        }
+      }
+    ],
+    "behaviors": [
+      "Exact component int64 text and ordered duplicate array values survive active/stopped save restoration.",
+      "Component exclusive pagination, absent values, joined union/projections and native gameplay compact/full/empty field selectors.",
+      "Typed historical native-load guards reject malformed numeric tokens; exact lifecycle, step, configuration, write/load and UI retries preserve observed outcomes.",
+      "Nineteen contextual native rejections; rejected read/selector checks preserve authored bytes and selected runtime/gameplay/registry/UI/save-configuration observations."
+    ],
+    "limits": [
+      "Error replies receive only strict envelope/wire joins, not independent method-specific error semantics.",
+      "Runtime/component/gameplay schemas used only after previously validated real replies, with historical metadata versions retained.",
+      "Captured rejection harness compares selected observations; not all physics/component-instance/save-slot state.",
+      "Queued/resolving/failed ticket variants and recovered/upgraded saves remain separate gaps."
+    ],
+    "capture_worker_seconds": 2.3029564000316896
+  },
+  "independent": {
+    "selected_successes": 65293,
+    "all_selected_methods_observed": true,
+    "synthetic_additive_probes": 21,
+    "unknown_method_rejected": true,
+    "negative_gate_checks": 12,
+    "context_helper": {
+      "bytes": 3245,
+      "sha256": "90ae023437890c1d15eaec1492d3643182b830cf8ca8f49ee94ee93a9e76618c"
+    },
+    "schema_context": "Prior successful native canonical runtime.components and full gameplay replies; historical versions retained. No invented canonicalization of embedded module declarations.",
+    "offline_gate_seconds": 34.38278555299621
+  },
+  "preserved_attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "reason": "Supervisor trampoline received -B instead of its script; failed before engine execution.",
+      "forced_cleanup": false
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "reason": "Authored array fixture incorrectly used component schema version1.",
+      "forced_cleanup": false
+    },
+    {
+      "attempt": 3,
+      "passed": false,
+      "reason": "Harness omitted required runtime.ui.inspect tick.",
+      "forced_cleanup": false
+    },
+    {
+      "attempt": 4,
+      "passed": true,
+      "reason": "Earlier focused subset, superseded by selector and stopped-load coverage."
+    },
+    {
+      "attempt": 5,
+      "passed": true,
+      "reason": "Earlier focused subset, superseded by stopped-load coverage."
+    }
+  ],
+  "limits": [
+    "All native captures use retained sealed images; no native0.0.143 or new C++ behavior qualification.",
+    "Nonempty registered components are covered in standalone/shared authoring; readonly compiled fixture has an empty registry.",
+    "Queued/resolving/failed tickets, recovered/upgraded saves, more selector/replacement/lifetime variants and complete method-specific error behavior remain open.",
+    "Rejected-call selected observation equality is not a full physics/component-instance/save-slot snapshot proof.",
+    "Embedded declaration compatibility has source review and portable regressions; no separately compiled third-party module exercise.",
+    "Fingerprint derivation, full persistence/upgrade and UI layout/style schemas remain explicitly unchecked.",
+    "No renderer/GPU/player, physical-input, performance, clean-machine, provider success-rate, generic upgrade or stable runtime API qualification."
+  ]
+}

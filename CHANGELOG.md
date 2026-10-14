@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.143
+
+- Add opt-in Python result validation for 21 runtime/component/UI/save methods, with strict wire types, dynamic schema context, compact selectors, exclusive pagination and historical retry/replacement boundaries. Preserve the distinction between canonical runtime schemas and original embedded gameplay declarations. [Contract](docs/WORKFLOW_RESPONSE_CONTRACT.md).
+- Qualify the candidate against 65,293 selected recorded successes and 31 new portable consumer tests on Linux and Windows. Four focused native captures cover missing result families, nineteen expected errors and active/stopped save restoration, with natural Windows Job closure. Broader stable API and unobserved variant gates remain open. [Results](docs/evidence/m2-workflow-response-contract.json).
+
 ## 0.0.142
 
 - Add a prospective compatibility checker for 21 runtime/component/UI/save request schemas in three discovery scopes. Preserve complete selected schemas, exact metadata and explicit reference context; reject malformed projections cleanly. This does not release a broader stable API. [Contract and scope](docs/WORKFLOW_API_COMPATIBILITY.md).

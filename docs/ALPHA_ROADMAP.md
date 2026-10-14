@@ -93,3 +93,9 @@ and development hardware.
 
 There is no qualified release-date forecast yet. Progress is assessed by
 closed gates and runnable games, not patch count or lines of code.
+
+The 0.0.143 [prospective runtime/save result checks](WORKFLOW_RESPONSE_CONTRACT.md)
+validate the selected successful-result surface independently of request
+projection. Retained and focused native traces cover all 21 selected methods,
+with explicit remaining variant/error/behavior gaps. This advances the contract
+gate without closing the broader Alpha criteria. [Evidence](evidence/m2-workflow-response-contract.json).

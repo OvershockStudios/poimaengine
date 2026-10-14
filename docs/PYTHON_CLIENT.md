@@ -408,3 +408,12 @@ The [0.0.133 diagnostics record](evidence/m2-python-rpc-diagnostics.json) passes
 native terminal-error context and same-channel deliberate recovery. The wheel
 contains the exact qualified modules/resources and passes an isolated native
 error smoke check. These SDK checks use the qualified native 0.0.132 engine.
+
+## Prospective runtime/save result checks
+
+The optional `poima_client.workflow_responses` module checks successful results
+for 21 selected runtime/component/UI/save methods against their initiating
+requests and optional trusted schema context. It returns the original result or
+raises `ResponseContractError`; normal `WorldClient.call` behavior remains
+unchanged. This is a candidate surface, not an extension of the released stable
+authoring-core contract. See [usage, distinctions and qualification](WORKFLOW_RESPONSE_CONTRACT.md).
