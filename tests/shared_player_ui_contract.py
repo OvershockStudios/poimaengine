@@ -13,7 +13,7 @@ import traceback
 import uuid
 
 import player_service_contract as shared
-from player_ui_observation_contract import verify as verify_ui_observation, verify_live_reads
+from player_ui_observation_contract import verify as verify_ui_observation, verify_live_reads, verify_readiness
 from scene_capture import pixels
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,9 @@ check, sha, uid = shared.check, shared.sha, shared.uid
 
 def qualify(client, observer, args, record, world):
     shared.common_checks(client, observer)
-    check(client.call('player.inspect')['available'], 'Native frame-driven player is unavailable')
+    absent = client.call('player.inspect')
+    check(absent['available'], 'Native frame-driven player is unavailable')
+    check(absent['player_id'] is None and absent['readiness'] is None, absent)
     descriptor = json.loads(args.native_descriptor.read_text(encoding='utf-8'))
     check(descriptor['identity'] == 'poima.test.managed-ui' and
           descriptor['type'] == 'Poima.Tests.ManagedUiGame' and
@@ -57,8 +59,13 @@ def qualify(client, observer, args, record, world):
     params.pop('controller')  # The GUI is actual gameplay; no controller or camera hack is needed.
     ack = client.call('player.start', params)
     check(ack['state'] == 'initializing' and ack['active'] and not ack['ready'], ack)
+    initial_readiness = verify_readiness(ack)
+    check(not initial_readiness['initialized'] and initial_readiness['focused'] is None and
+          initial_readiness['drawable'] is None, 'Admission fabricated platform observations')
     initial = shared.await_state(observer, lambda item: item['ready'], 'ui-initial-ready')
     check(initial['paused'] and initial['tick'] == 0, initial)
+    verify_readiness(initial)
+    check(initial['readiness']['owner_paused'], 'Initial owner pause not reported')
     player_id = initial['player_id']
     ui_observation_reads = 0
 
@@ -100,11 +107,19 @@ def qualify(client, observer, args, record, world):
             'expected_gameplay_revision': before['game']['revision'], 'id': uid(number)}
         return request, client.call('runtime.ui.activate', request)
 
+    pause_receipts = []
+
     def force_pause(label):
         current = client.call('player.inspect')
-        client.call('player.control', shared.control_parameters(current, 'pause'))
+        request = shared.control_parameters(current, 'pause')
+        acknowledgement = client.call('player.control', request)
+        verify_readiness(acknowledgement)
+        check(acknowledgement['readiness']['owner_paused'], 'Pause acknowledgement retained pre-action readiness')
+        pause_receipts.append((request, acknowledgement))
         result = shared.await_state(observer, lambda item: item['ready'] and item['paused'], label)
         check(result['player_id'] == player_id, 'Owner pause replaced the player window')
+        verify_readiness(result)
+        check(result['readiness']['owner_paused'], 'Explicit pause not reflected in owner state')
         return result
 
     def capture(label):
@@ -190,6 +205,8 @@ def qualify(client, observer, args, record, world):
     restored_owner = shared.await_state(observer,
         lambda item: item['ready'] and item['paused'], 'compiled-load-ready')
     restored = state(); fresh = restored_owner['current_session_id']
+    verify_readiness(restored_owner)
+    check(restored_owner['readiness']['owner_paused'], 'Runtime replacement did not expose owner pause')
     check(restored_owner['player_id'] == player_id and restored_owner['generation'] == 1 and
           restored_owner['control_revision'] > saved_state['owner']['control_revision'] and
           restored_owner['tick'] == saved_state['owner']['tick'] and fresh != old_epoch,
@@ -216,9 +233,16 @@ def qualify(client, observer, args, record, world):
           'Save retry modified durable generation')
     record['replacement'] = {'result': replaced, 'before': saved_state, 'after': after_epoch_retry,
                              'verified_slot': slot}
-    client.call('player.control', shared.control_parameters(client.call('player.inspect'), 'stop'))
+    stop_ack = client.call('player.control', shared.control_parameters(client.call('player.inspect'), 'stop'))
+    verify_readiness(stop_ack)
     terminal = shared.await_state(observer, lambda item: not item['active'], 'ui-player-stopped')
     check(terminal['state'] == 'finished' and terminal['report']['stop_reason'] == 'requested_stop', terminal)
+    verify_readiness(terminal)
+    old_request, old_ack = pause_receipts[-1]
+    historical = client.call('player.control', old_request)
+    check(historical == {**old_ack, 'replayed': True}, 'Historical control readiness was recaptured')
+    verify_readiness(historical)
+    check(not client.call('player.inspect')['active'], 'Historical pause revived a terminal owner')
     client.call('runtime.stop', {'session_id': fresh})
     check(world.read_bytes() == authored, 'Compiled UI player changed authored world bytes')
     record['checks'] = {'compiled_native_controls': True, 'visible_same_tick_ui_edit': True,

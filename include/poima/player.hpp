@@ -5,6 +5,7 @@
 #include "poima/gamepad.hpp"
 #include "poima/player_diagnostics.hpp"
 #include "poima/player_lens.hpp"
+#include "poima/player_readiness.hpp"
 #include "poima/ui_presenter.hpp"
 #include <memory>
 
@@ -210,6 +211,7 @@ public:
     bool finished() const;
     bool ready() const; // Initialized, with a current successful presentation.
     PlayerReport report() const; // Owned partial/final CPU state; no graphics drain.
+    PlayerReadiness readiness() const; // Cached CPU facts only; no synchronization or platform query.
     // Owner-only bounded CPU/clock/audio history; no poll, device read or GPU drain.
     player_diagnostics::Snapshot diagnostics() const;
     // Last presented immutable UI sample; null before a UI frame.

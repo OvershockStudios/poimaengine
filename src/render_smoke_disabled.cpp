@@ -22,9 +22,9 @@ struct PlayerWindow::Impl {
     PlayerSession& session;
     std::shared_ptr<PlayerPreferences> preferences;
     std::thread::id owner=std::this_thread::get_id();
-    bool done=false,is_paused=false,stopping=false;
+    bool done=false,is_paused=false,stopping=false,replay=false;
     Impl(const PlayerOptions& options,PlayerSession& value,bool paused):session(value),preferences(options.preferences),is_paused(paused) {
-        result.render=run_render_smoke(options.render);
+        replay=options.replay;result.render=run_render_smoke(options.render);
         result.initial_tick=result.final_tick=session.tick();
         result.initial_session=result.final_session=session.identity();
         result.effective_ui_scale=options.ui_scale.value_or(1.f);
@@ -70,6 +70,10 @@ bool PlayerWindow::paused() const {impl_->check_thread();return impl_->is_paused
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return false;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+PlayerReadiness PlayerWindow::readiness() const {
+    impl_->check_thread();PlayerReadiness out;out.finished=impl_->done;out.closing=impl_->stopping;
+    out.owner_paused=impl_->is_paused;out.replay=impl_->replay;return out;
+}
 const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
     impl_->check_thread();static const std::optional<PlayerUiObservation> unavailable;return unavailable;
 }

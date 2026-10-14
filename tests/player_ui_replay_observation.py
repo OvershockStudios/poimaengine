@@ -23,7 +23,7 @@ import traceback
 import uuid
 
 import player_service_contract as shared
-from player_ui_observation_contract import verify_live_reads
+from player_ui_observation_contract import verify_live_reads, verify_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
 check, sha, uid = shared.check, shared.sha, shared.uid
@@ -83,6 +83,7 @@ def qualify(client, observer, args, record, world):
     initial = shared.await_state(observer, lambda owner: owner['ready'] or not owner['active'], 'replay-ready')
     check(initial['active'] and initial['ready'] and not initial['paused'] and initial['mode'] == 'replay', initial)
     check(initial['report']['hardware'] and initial['report']['nvrhi_errors'] == 0, initial)
+    verify_readiness(initial)
     record['initial'] = initial
 
     # No runtime edit, explicit step, pause, focus or synthetic input occurs
@@ -128,6 +129,7 @@ def qualify(client, observer, args, record, world):
     check(terminal['state'] == 'finished' and terminal['report']['success'] and
           terminal['report']['stop_reason'] in ('requested_stop', 'replay_complete') and
           terminal['player_id'] == initial['player_id'] and terminal['generation'] == initial['generation'], terminal)
+    verify_readiness(terminal)
     final = client.call('runtime.inspect', {'session_id': session})
     game = client.call('runtime.gameplay.inspect', {'session_id': session})
     ui = client.call('runtime.ui.inspect', {'session_id': session, 'tick': final['tick'],

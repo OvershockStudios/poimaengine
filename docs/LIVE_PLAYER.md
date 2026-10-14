@@ -89,6 +89,51 @@ see the [live settings task](PLAYER_SETTINGS.md#task-adjust-and-observe-a-live-p
 owner; [exported game clients](GAME_SERVICE.md) can exercise them through this
 shared service.
 
+## Readiness and pause conditions
+
+`player.inspect` includes a `readiness` object with format
+`poima.player-readiness.v1`. It is null before any player owner exists. Use it
+alongside the outer identity, state, `ready` and `paused` fields when deciding
+whether to wait, resume, inspect an error, or stop.
+
+- `ready_conditions` lists the conditions preventing readiness:
+  `backend_unavailable`, `not_initialized`, `no_current_presentation`, `closing`
+  and `finished`. An active player's `ready` is true when this list is empty.
+- `pause_conditions` lists `owner_pause` when the owner pause flag is set, and
+  `interactive_inactive` when an initialized interactive player is inactive.
+  `paused` is true when either condition applies. Replay does not require
+  interactive activity or input focus to advance its declared inputs.
+- Raw flags include `initialized`, `closing`, `finished`, `replay`,
+  `owner_paused`, `interactive_active`, `ui_ready`, `ui_presented`,
+  `ui_observation_retained` and `ui_scale_pending`.
+- `focused` is the cached input-focus gate. `focus_observation` names its last
+  source: `initial_window_flags`, `focus_gained_event`, `focus_lost_event` or
+  `minimized_event`. Both are null before that path observes focus. A minimized
+  event clears the input-focus gate; it does not prove the current foreground
+  application or whether Windows is locked.
+- `drawable` and `drawable_size` are null until the ordinary frame path checks
+  window pixel size and minimized state. They retain that check's result and
+  `[width, height]`, with `drawable_observation: "last_ordinary_frame_check"`;
+  they are not a fresh query at inspection or capture time.
+
+These are cached owner-thread facts. Reading them does not initialize a window,
+poll events, move focus, resume playback, advance simulation or query a device.
+The shared host can perform its ordinary next poll between requests. A start
+acknowledgement therefore describes an uninitialized owner; inspect again for
+the subsequent presentation. `report.detail` changes from the first-poll
+message as initialization and successful presentation occur; errors retain
+their own detail.
+
+The terminal readiness snapshot survives until the next player replaces its
+owner. It describes that finished window's last state. In particular,
+`ui_observation_retained` does not make terminal `player.ui.inspect` available;
+that method still requires a live player. Conditions describe the implemented
+ready/pause predicates, rather than diagnosing operating-system causes.
+
+Start and control acknowledgements include readiness for their command
+boundary. Retrying the same request returns its historical outcome, including
+that readiness snapshot. Use a fresh `player.inspect` to observe the owner now.
+
 ## Slow-poll diagnostics
 
 `player.diagnostics.inspect` reads the native player's bounded CPU recorder:

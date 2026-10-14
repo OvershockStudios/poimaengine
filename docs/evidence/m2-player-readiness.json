@@ -1,0 +1,359 @@
+{
+  "format": "poima.player-readiness-qualification.v1",
+  "passed": true,
+  "source_checkpoint": "0.0.134",
+  "engine_version": "0.0.134",
+  "discovery_revision": 97,
+  "contract": {
+    "format": "poima.player-readiness.v1",
+    "responses": [
+      "player.inspect",
+      "player.start",
+      "player.control"
+    ],
+    "no_owner_is_null": true,
+    "read_is_cached_CPU_only": true,
+    "ready_pause_policy_unchanged": true,
+    "nullable_platform_facts": true,
+    "focus_and_drawable_provenance": true,
+    "terminal_snapshot_retained": true,
+    "command_retry_preserves_historical_snapshot": true,
+    "authoring_core_v1_changed": false,
+    "gameplay_C_ABI_changed": false
+  },
+  "windows_build": {
+    "passed": true,
+    "scope": "Selected incremental Windows x86_64 CLI, desktop bridge and five native test executables; inherited vendor dependencies were not rebuilt.",
+    "seconds": 296.6837198370049,
+    "cache_generation": 14,
+    "source_inputs_unchanged": true,
+    "source_pins": {
+      "bytes": 44899,
+      "sha256": "d4f426a294ad4a46cd7fc87f8c224ebb37dc336d9fd8b3185b354d80ad97a0df"
+    },
+    "sealed_manifest": {
+      "bytes": 1770,
+      "sha256": "8e9233f953879f8b8cd77b145fd1a4f4e884ed5c151bb5bc0d05f5a8b7fe054f"
+    },
+    "report": {
+      "bytes": 54615,
+      "sha256": "06fe33dc8acfc95d47f6199696b452171f976b081b34372ca13c166ac3630952"
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25980928,
+        "sha256": "ac07ee697126f25046bf52467b4f43f2df5e17bd1e605e9bc9a62846ae31fafb"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima_desktop.dll": {
+        "bytes": 296792064,
+        "sha256": "9d834e69b26f15fb01d18e57687319bf6e9e3285783d36027722f3d868e8e8a3"
+      },
+      "poima-ui-document-test.exe": {
+        "bytes": 4374016,
+        "sha256": "2a086e23041e7c34b97d286a84954796ed245a40cb0dbd59210eb3248c1e3eda"
+      },
+      "poima-ui-presenter-test.exe": {
+        "bytes": 5046272,
+        "sha256": "990b31e34b69c4cb8789f180c011515c9b80551c167cc7db5ca58e7fa526616d"
+      },
+      "poima-player-readiness-test.exe": {
+        "bytes": 14252032,
+        "sha256": "e1a5a6a9225258cefe4d6a203e28241dffc0182bc527547cce99b406c990a34b"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 24433152,
+        "sha256": "d6dee2e5d19e289ac70fe6f042ff8f75c6e5efc23800a04d5b8c287cb96f4ef2"
+      },
+      "poima-mcp-test.exe": {
+        "bytes": 15152640,
+        "sha256": "073e9bddb41937006af35ead3a312ba656f936055d654dfe2116318cc2e219f1"
+      }
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "tests": 5,
+    "cases": [
+      "RmlUi document",
+      "UI presenter",
+      "256 readiness predicate combinations and actual unpolled owner",
+      "world schema:1311 responses/six owner scopes",
+      "MCP:17 backend calls"
+    ],
+    "report": {
+      "bytes": 3786,
+      "sha256": "903e5f4b38364cba227b288da66c187c14e2896d73ccc93b6f74a82b4a08448c"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1342,
+        "sha256": "8e37229f150dc98165e209e94f9c261258ec2b82007a0bcd70a1729ed519f923"
+      },
+      "seconds": 10.66869309998583,
+      "job_assigned_before_children": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    }
+  },
+  "interactive": {
+    "passed": true,
+    "gpu": "AMD Radeon(TM) Graphics",
+    "hardware": true,
+    "width": 640,
+    "height": 480,
+    "nvrhi_errors": 0,
+    "rpc_count": 353,
+    "owners": 3,
+    "checks": {
+      "compiled_native_controls": true,
+      "visible_same_tick_ui_edit": true,
+      "resume_receipt_cannot_override_newer_pause": true,
+      "actual_compiled_save_load": true,
+      "replacement_paused_same_player": true,
+      "old_epoch_resume_not_reapplied": true,
+      "exact_saved_ui_pixels": true,
+      "authored_world_unchanged": true,
+      "ui_observation_owner_guards_and_read_only": true,
+      "running_ui_observation": false
+    },
+    "start_readiness": {
+      "backend_available": true,
+      "closing": false,
+      "drawable": null,
+      "drawable_observation": null,
+      "drawable_size": null,
+      "finished": false,
+      "focus_observation": null,
+      "focused": null,
+      "format": "poima.player-readiness.v1",
+      "initialized": false,
+      "interactive_active": false,
+      "owner_paused": true,
+      "pause_conditions": [
+        "owner_pause"
+      ],
+      "ready_conditions": [
+        "not_initialized",
+        "no_current_presentation"
+      ],
+      "replay": false,
+      "ui_observation_retained": false,
+      "ui_presented": false,
+      "ui_ready": false,
+      "ui_scale_pending": false
+    },
+    "terminal_readiness": {
+      "backend_available": true,
+      "closing": true,
+      "drawable": true,
+      "drawable_observation": "last_ordinary_frame_check",
+      "drawable_size": [
+        640,
+        480
+      ],
+      "finished": true,
+      "focus_observation": "initial_window_flags",
+      "focused": false,
+      "format": "poima.player-readiness.v1",
+      "initialized": true,
+      "interactive_active": false,
+      "owner_paused": true,
+      "pause_conditions": [
+        "owner_pause",
+        "interactive_inactive"
+      ],
+      "ready_conditions": [
+        "closing",
+        "finished"
+      ],
+      "replay": false,
+      "ui_observation_retained": true,
+      "ui_presented": true,
+      "ui_ready": true,
+      "ui_scale_pending": false
+    },
+    "historical_pause_after_stop_is_exact": true,
+    "unpaused_reads": 0,
+    "report": {
+      "bytes": 6238640,
+      "sha256": "e295a914893879130301f435597033ae03edf6e81d17d8743291e457b2f8fa15"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1349,
+        "sha256": "21ed18043e87d4c82534e6c26156913b2b5e400bf80a2c508f7175303cdefc6c"
+      },
+      "seconds": 10.157797300023958,
+      "job_assigned_before_children": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "scope": "Actual compiled native UI callbacks, explicit pause, same-window runtime save/load replacement, terminal readiness and historical control retry; interactive live observations remained paused."
+  },
+  "replay": {
+    "passed": true,
+    "rpc_count": 124,
+    "owners": 3,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "hardware": true,
+    "width": 640,
+    "height": 480,
+    "nvrhi_errors": 0,
+    "unpaused_reads": 32,
+    "first_observed_tick": 2,
+    "last_observed_tick": 154,
+    "terminal_tick": 165,
+    "terminal_readiness": {
+      "backend_available": true,
+      "closing": true,
+      "drawable": true,
+      "drawable_observation": "last_ordinary_frame_check",
+      "drawable_size": [
+        640,
+        480
+      ],
+      "finished": true,
+      "focus_observation": "initial_window_flags",
+      "focused": false,
+      "format": "poima.player-readiness.v1",
+      "initialized": true,
+      "interactive_active": false,
+      "owner_paused": false,
+      "pause_conditions": [],
+      "ready_conditions": [
+        "closing",
+        "finished"
+      ],
+      "replay": true,
+      "ui_observation_retained": true,
+      "ui_presented": true,
+      "ui_ready": true,
+      "ui_scale_pending": false
+    },
+    "checks": {
+      "unattended_native_replay": true,
+      "bounded_neutral_replay_ticks": 600,
+      "running_reads": 32,
+      "native_tick_and_ui_revision_progress": true,
+      "compiled_tick_label_changed": true,
+      "no_control_callback": true,
+      "exact_owner_and_optional_stale_guards": true,
+      "live_interval_reads_only": true,
+      "authored_world_unchanged": true,
+      "terminal_ui_observation_rejected": true
+    },
+    "report": {
+      "bytes": 4207755,
+      "sha256": "9c582aa257ac5eed6d44a315a97fce06a90cffe580340e8a8c52469dfb294295"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1344,
+        "sha256": "ade90f21fce46b534313f1983abc8a67d3ec5bf308d031eae81233fafd2fd721"
+      },
+      "seconds": 3.6878121999907307,
+      "job_assigned_before_children": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "scope": "Genuine native replay advances while cached input-focus gate and interactive activity are false; no focus manipulation, external simulation steps or writes in observation interval."
+  },
+  "linux_nonrendering": {
+    "passed": true,
+    "scope": "Linux authoring/non-renderer with GAME_UI and simulation disabled; no Linux graphics or native gameplay claim",
+    "seconds": 326.15453402799903,
+    "tests": [
+      {
+        "name": "poima-world-schema-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-mcp-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-player-readiness-test",
+        "exit_code": 0
+      }
+    ],
+    "artifacts": {
+      "poima": {
+        "bytes": 80759840,
+        "sha256": "0807bbc4812b18754c07f5d16d410b9681ad38c7f73f481441410218b2a75f86"
+      },
+      "poima-world-schema-test": {
+        "bytes": 77456296,
+        "sha256": "ff60716e28db5b2ff90196f17a61505f4394c2cb13055a99911457c59dd97957"
+      },
+      "poima-mcp-test": {
+        "bytes": 8796304,
+        "sha256": "70b73e88a4f8b72054a4baa5b3fd1ec9d39519f61769cb8a9289601545baa7cc"
+      },
+      "poima-player-readiness-test": {
+        "bytes": 2376888,
+        "sha256": "9a7b4dfacddb5c83311dcf49b5211614ddf46e4763b1a27a67af164964f4c81c"
+      }
+    },
+    "report": {
+      "bytes": 2214,
+      "sha256": "3495f8a2309280cda357e31baf27f2d69ceee6bbdbd7fe63e432901e26e896ad"
+    },
+    "authoring_identity_and_version": {
+      "bytes": 2690,
+      "sha256": "950f6d57a9db15b992c29d81ef0dba06fa51f5f9d1ec7f0d565983767976659c"
+    }
+  },
+  "authoring_core_windows": {
+    "passed": true,
+    "tests": 2,
+    "compiled_version": "0.0.134",
+    "report": {
+      "bytes": 4804,
+      "sha256": "d645e50558f4c9a2739bc185e7955e2df76d9868df24ebf6cc6a7ba2c71a94db"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1329,
+        "sha256": "43321bdfab06e439eb74377613cc4b63772019f7fc7ce31bb254b22536d7b571"
+      },
+      "seconds": 2.1118145000073127,
+      "job_assigned_before_children": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    }
+  },
+  "retained_compiled_fixture": {
+    "descriptor": {
+      "bytes": 3545,
+      "sha256": "932ec0c112727952308795544312a810192c0c5d91c1ddf7ed20e890d209e81e"
+    },
+    "declared_producer_version": "0.0.91",
+    "identity": "poima.test.managed-ui",
+    "services_version": 7,
+    "minimum_services_bytes": 176,
+    "library": {
+      "bytes": 1339392,
+      "sha256": "0f3431361b2a6332471cb6f394184645e7691b93645e5cb07da6287f8a785282"
+    },
+    "scope": "Existing compiled test gameplay loaded by the newly built134 runtime; no new AOT publication claim."
+  },
+  "limits": [
+    "Cached focus and drawable facts may predate inspection or capture; they do not diagnose Windows lock state or actual foreground ownership.",
+    "No physical mouse/controller or focused unpaused interactive qualification.",
+    "No real minimize/focus-transition qualification; provenance assignments were reviewed at existing platform paths.",
+    "No new observation-cost, representative frame-time, Linux graphics, exported134game or Alpha qualification.",
+    "Terminal readiness flags are historical; terminal player.ui.inspect remains unavailable."
+  ]
+}

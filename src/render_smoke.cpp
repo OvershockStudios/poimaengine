@@ -3415,6 +3415,9 @@ struct PlayerWindow::Impl {
     bool focused=false,captured=false,active=false,ui_ready=false,ui_presented=false;
     bool ui_scale_pending=false;
     bool audio_gain_failed=false;
+    PlayerReadiness::FocusObservation focus_observation=PlayerReadiness::FocusObservation::none;
+    std::optional<bool> last_drawable;
+    std::optional<std::array<std::int32_t,2>> last_drawable_size;
     std::size_t segment=0;
     std::uint32_t offset=0;
     std::uint64_t previous=0,performance_sequence=0;
@@ -3435,13 +3438,22 @@ struct PlayerWindow::Impl {
         apply_preferences();
         gamepads=options.replay ? nullptr : options.gamepad_host.get();
         result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
-        result.render.detail="Native player awaits its first owner poll.";
+        result.render.detail=player_readiness::initial_detail;
     }
     void check_thread() const {
         if(std::this_thread::get_id()!=owner)throw std::runtime_error("Player window calls require its creating thread.");
     }
     player_diagnostics::AudioWork pending_audio() const noexcept {
         return player_diagnostics::audio_delta(audio_work,previous_audio_work);
+    }
+    PlayerReadiness readiness() const noexcept {
+        PlayerReadiness out;out.backend_available=true;out.initialized=initialized;
+        out.closing=quit;out.finished=done;out.replay=options.replay;out.owner_paused=owner_paused;
+        out.interactive_active=active;out.ui_ready=ui_ready;out.ui_presented=ui_presented;
+        out.ui_observation_retained=bool(ui_observation);out.ui_scale_pending=ui_scale_pending;
+        out.focus_observation=focus_observation;
+        if(focus_observation!=PlayerReadiness::FocusObservation::none)out.focused=focused;
+        out.drawable=last_drawable;out.drawable_size=last_drawable_size;return out;
     }
     bool ui_modal() const { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); }
     bool ui_available() const { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); }
@@ -3565,6 +3577,9 @@ struct PlayerWindow::Impl {
         result.effective_ui_scale=context.effective_game_ui_scale();
         if(initialized)result.preferences.effective_vertical_fov=snapshot.vertical_fov;
         auto& report=result.render;
+        if(report.detail==player_readiness::initial_detail || report.detail==player_readiness::initialized_detail ||
+            report.detail==player_readiness::presented_detail)
+            report.detail=player_readiness::phase_detail(readiness(),report.frames_presented);
         report.width=context.extent.width;report.height=context.extent.height;report.samples=context.samples;
         report.hardware=context.hardware;report.gpu_name=context.gpu_name;
         report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
@@ -3586,6 +3601,7 @@ struct PlayerWindow::Impl {
         }
         if(configuration)result.preferences.applied_revision=configuration->revision;
         focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
+        focus_observation=PlayerReadiness::FocusObservation::initial_flags;
         captured=!owner_paused && !options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
         active=!owner_paused && !options.replay && focused;
         ui_ready=false;ui_presented=false;
@@ -3716,10 +3732,11 @@ struct PlayerWindow::Impl {
             }
             if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
                 intervention(fp::Flag::skip);focused=false; captured=false; active=false; if(!options.replay)owner_paused=true; input.clear();if(gamepads)gamepads->activate(false);
+                focus_observation=event.type==SDL_EVENT_WINDOW_FOCUS_LOST ? PlayerReadiness::FocusObservation::focus_lost_event : PlayerReadiness::FocusObservation::minimized_event;
                 ui_ready=false;ui_presented=false;context.reset_game_ui_input();if(gamepads)gamepads->ui_active(false);
                 if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
             }
-            if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
+            if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) {focused=true;focus_observation=PlayerReadiness::FocusObservation::focus_gained_event;}
             if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
                 intervention(fp::Flag::resize);context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
             }
@@ -3791,6 +3808,7 @@ struct PlayerWindow::Impl {
         const auto now=SDL_GetTicksNS();
         const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
         const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
+        last_drawable=drawable;last_drawable_size=std::array<std::int32_t,2>{width,height};
         if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);reset_lenses("not_drawable");PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(10);return;}
         require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
         if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
@@ -3955,11 +3973,12 @@ void PlayerWindow::synchronize() {
     catch(const std::exception& error) {state.fail(error);}
 }
 bool PlayerWindow::paused() const {
-    impl_->check_thread();return impl_->owner_paused || (!impl_->options.replay && impl_->initialized && !impl_->active);
+    impl_->check_thread();return impl_->readiness().paused();
 }
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
-bool PlayerWindow::ready() const {impl_->check_thread();return impl_->initialized && impl_->ui_presented && !impl_->quit && !impl_->done;}
+bool PlayerWindow::ready() const {impl_->check_thread();return impl_->readiness().ready();}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+PlayerReadiness PlayerWindow::readiness() const {impl_->check_thread();return impl_->readiness();}
 const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
     impl_->check_thread();return impl_->ui_observation;
 }

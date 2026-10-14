@@ -185,6 +185,7 @@
         std::unique_ptr<PlayerWindow> window;
         Json cached_report;
         std::optional<player_diagnostics::Snapshot> terminal_diagnostics;
+        std::optional<PlayerReadiness> terminal_readiness;
         std::uint64_t applied_ui_control_sequence=0;
     };
     static constexpr bool player_available() noexcept { return POIMA_SIMULATION!=0 && POIMA_RENDER_SMOKE!=0; }
@@ -259,6 +260,7 @@
             // Copy the bounded CPU recorder exactly once before any terminal
             // window destruction. Reads after stop retain this owner identity.
             if(!player.terminal_diagnostics)player.terminal_diagnostics=player.window->diagnostics();
+            if(!player.terminal_readiness)player.terminal_readiness=player.window->readiness();
             // Normal finish retires actual GPU work. A fault must retain loss,
             // never report the unfinished ticket as a completed duration.
             auto& capture=performance_.recorder();capture.stop_admission();
@@ -278,12 +280,41 @@
         player_owner_->window->request_stop();player_owner_->window->poll();reconcile_player();
         require(!player_active(),"Native player did not complete owner stop.",-32080);
     }
+    static Json player_readiness_json(const PlayerReadiness& state) {
+        using R=PlayerReadiness;Json ready=Json::array(),paused=Json::array();
+        const auto rc=state.ready_conditions(),pc=state.pause_conditions();
+        for(const auto& [bit,name]:std::array<std::pair<std::uint32_t,const char*>,5>{{
+            {R::backend_unavailable,"backend_unavailable"},{R::not_initialized,"not_initialized"},
+            {R::no_current_presentation,"no_current_presentation"},{R::closing_condition,"closing"},{R::finished_condition,"finished"}}})
+            if(rc&bit)ready.push_back(name);
+        if(pc&R::owner_pause)paused.push_back("owner_pause");
+        if(pc&R::interactive_inactive)paused.push_back("interactive_inactive");
+        const char* focus=nullptr;
+        switch(state.focus_observation) {
+        case R::FocusObservation::none:break;
+        case R::FocusObservation::initial_flags:focus="initial_window_flags";break;
+        case R::FocusObservation::focus_gained_event:focus="focus_gained_event";break;
+        case R::FocusObservation::focus_lost_event:focus="focus_lost_event";break;
+        case R::FocusObservation::minimized_event:focus="minimized_event";break;
+        }
+        return {{"format","poima.player-readiness.v1"},{"backend_available",state.backend_available},
+            {"initialized",state.initialized},{"closing",state.closing},{"finished",state.finished},{"replay",state.replay},
+            {"owner_paused",state.owner_paused},{"interactive_active",state.interactive_active},
+            {"ui_ready",state.ui_ready},{"ui_presented",state.ui_presented},
+            {"ui_observation_retained",state.ui_observation_retained},{"ui_scale_pending",state.ui_scale_pending},
+            {"focused",state.focused ? Json(*state.focused):Json(nullptr)},
+            {"focus_observation",focus ? Json(focus):Json(nullptr)},
+            {"drawable",state.drawable ? Json(*state.drawable):Json(nullptr)},
+            {"drawable_size",state.drawable_size ? Json(*state.drawable_size):Json(nullptr)},
+            {"drawable_observation",state.drawable ? Json("last_ordinary_frame_check"):Json(nullptr)},
+            {"ready_conditions",std::move(ready)},{"pause_conditions",std::move(paused)}};
+    }
     Json player_info(bool include_report=true) const {
         Json result={{"available",player_available()},{"generation",player_generation_},
             {"player_id",nullptr},{"control_revision",player_control_revision_},{"state","absent"},
             {"active",false},{"ready",false},{"paused",false},{"mode",nullptr},
             {"session_id",nullptr},{"current_session_id",nullptr},{"tick",nullptr},
-            {"structure_revision",nullptr},{"ui_revision",nullptr},{"control_sequence",nullptr},{"report",nullptr}};
+            {"structure_revision",nullptr},{"ui_revision",nullptr},{"control_sequence",nullptr},{"report",nullptr},{"readiness",nullptr}};
         if(!player_owner_)return result;
         const auto& player=*player_owner_;const bool active=bool(player.window);
         const bool paused=active ? player.window->paused() : player.observed_paused;
@@ -297,6 +328,8 @@
         result["structure_revision"]=active ? runtime_->structure_revision() : player.structure_revision;
         result["ui_revision"]=active ? runtime_->ui_model().revision() : player.ui_revision;
         result["control_sequence"]=active ? runtime_->control_sequence() : player.control_sequence;
+        if(active)result["readiness"]=player_readiness_json(player.window->readiness());
+        else if(player.terminal_readiness)result["readiness"]=player_readiness_json(*player.terminal_readiness);
         if(include_report)result["report"]=player.cached_report;
         return result;
     }
@@ -410,6 +443,7 @@
     struct PlayerReceipt {
         Json params,result;
         std::optional<RenderReport> capture;
+        std::optional<PlayerReadiness> readiness;
         std::exception_ptr failure;
         bool committed=false,control=false;
         std::uint64_t control_revision=0;
@@ -427,6 +461,7 @@
         if(receipt.control) {
             result["control_revision"]=receipt.control_revision;result["active"]=receipt.active;
             result["ready"]=receipt.ready;result["paused"]=receipt.paused;
+            result["readiness"]=receipt.readiness ? player_readiness_json(*receipt.readiness):Json(nullptr);
             result["state"]=receipt.state==PlayerReceipt::State::finished ? "finished" :
                 receipt.state==PlayerReceipt::State::initializing ? "initializing" : receipt.state==PlayerReceipt::State::paused ? "paused" : "running";
         }
@@ -458,9 +493,11 @@
         receipt.control_revision=player_control_revision_;receipt.active=player_active();
         if(receipt.active) {
             receipt.ready=player_owner_->window->ready();receipt.paused=player_owner_->window->paused();
+            receipt.readiness=player_owner_->window->readiness();
             receipt.state=!receipt.ready ? PlayerReceipt::State::initializing : receipt.paused ? PlayerReceipt::State::paused : PlayerReceipt::State::running;
         }else {
             receipt.ready=false;receipt.paused=player_owner_->observed_paused;receipt.state=PlayerReceipt::State::finished;
+            receipt.readiness=player_owner_->terminal_readiness;
         }
         receipt.committed=true;
     }
@@ -610,7 +647,8 @@
                 {"control_revision",0},{"state","initializing"},{"active",true},{"ready",false},
                 {"paused",candidate->observed_paused},{"mode",candidate->mode},{"session_id",runtime_id_},
                 {"current_session_id",runtime_id_},{"tick",candidate->tick},{"structure_revision",candidate->structure_revision},
-                {"ui_revision",candidate->ui_revision},{"control_sequence",candidate->control_sequence},{"report",nullptr},{"replayed",false}};
+                {"ui_revision",candidate->ui_revision},{"control_sequence",candidate->control_sequence},{"report",nullptr},
+                {"readiness",player_readiness_json(candidate->window->readiness())},{"replayed",false}};
             receipts->result=ack;receipts->committed=true;
             player_owner_=std::move(candidate);++player_generation_;player_control_revision_=0;
             attach_gameplay_player_preferences(player_owner_->prepared.gameplay_preferences);

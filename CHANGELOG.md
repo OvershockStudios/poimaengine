@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.134
+
+- Explain native-player readiness and pause conditions through cached state, nullable focus/drawable observations and retained terminal snapshots. Read without polling, device queries or playback changes. [Contract](docs/LIVE_PLAYER.md#readiness-and-pause-conditions).
+- Keep initialization and control acknowledgements coherent with their readiness snapshots. Retried control commands preserve their original state, including after the player stops; update the stale first-poll status detail after initialization/presentation.
+- Verify five Windows native suites, three Linux non-rendering suites and authoring-core identity on both platforms. Qualify the actual compiled UI/save-load workflow and 32 advancing replay observations. [Results](docs/evidence/m2-player-readiness.json).
+
 ## 0.0.133
 
 - Retain method, correlation and detached request context on Python `RpcError`, preserving native code/message/data and existing exception formatting. Keep recovery explicit without automatic retries, discovery or parameter rewriting.
