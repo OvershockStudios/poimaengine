@@ -85,6 +85,7 @@ pipes. Startup failures need their own cleanup of the process you launched.
 import subprocess
 import sys
 
+completion = {}  # Caller-owned; available after handling the operation's error.
 try:
     # Work through engine; retain the IDs of any player/runtime you start.
     print(engine.inspect())
@@ -120,14 +121,13 @@ finally:
         errors.append(error)
     if host.returncode != 0:
         errors.append(RuntimeError("Owned host exit: " + str(host.returncode)))
-    completion = {"exit_code": host.returncode, "forced": forced, "errors": errors}
-    if primary is not None:
-        primary.owned_host_completion = completion  # Preserve the body error.
-    elif errors:
-        errors[0].owned_host_completion = completion
+    completion.update(exit_code=host.returncode, forced=forced, errors=errors)
+    if primary is None and errors:
         raise errors[0]
 ```
 
+The caller explicitly inspects or records `completion` after handling the
+operation; cleanup diagnostics do not require attributes on its exception.
 The shutdown RPC, bridge cleanup and process waits have separate finite budgets;
 this fragment is not a hard combined deadline or descendant-process supervisor.
 Record forced cleanup as failure even if the host eventually exits with code 0.
@@ -366,7 +366,35 @@ calls in your embedding application. Timeouts/protocol failures disconnect the
 whole channel: writing/written calls have unknown outcomes, queued calls remain
 known unsent. Closing cancels pending calls and reaps the direct child; generic
 descendant-tree cleanup is not promised. Context exit preserves an existing
-primary exception if cleanup also fails.
+primary exception when close also raises `TransportError`.
+
+Both `WorldClient.cleanup_error` and `JsonRpcProcess.cleanup_error` are read-only
+properties retaining the most recent `TransportError` observed by that object's
+`close()`, including one suppressed by context exit to preserve a body exception.
+They start as `None`. A later successful close leaves the diagnostic available;
+a later failed close replaces it. Direct close and successful-body context exit
+still raise cleanup errors. A body exception propagates unchanged when cleanup
+also raises `TransportError`; the client does not attach attributes to it.
+
+```python
+engine = WorldClient.open(binary, world_path)
+try:
+    with engine:
+        engine.inspect()
+except RpcError:
+    cleanup_failure = engine.cleanup_error  # Inspect separately from the primary error.
+    raise
+```
+
+With an embedded transport, `WorldClient` records the exact `TransportError`
+raised by its `close()`. With `JsonRpcProcess`, the wrapper and transport retain
+the same exception. Reading these properties performs no I/O, logging, retry or
+cleanup. Error objects/messages are not redacted or added to client/transport
+representations automatically; choose explicitly what to record. The property
+is an observed close failure, not a live cleanup-health or process-ownership
+signal, and does not establish that a request succeeded or is safe to retry.
+A non-`None` value does not mean the process is still live.
+Unexpected errors and interrupts from close continue to propagate normally.
 
 Use `closed`, `process_id`, `returncode`, `stderr_tail` and `stderr_truncated`
 for bounded diagnostics. Tests exercise real Windows/Linux native authoring,

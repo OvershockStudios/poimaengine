@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.139**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.140**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.140 adds read-only Python `cleanup_error` diagnostics to `WorldClient` and `JsonRpcProcess`. An active body exception propagates unchanged while callers retain access to the latest close `TransportError`; successful closes do not erase that history. All 49 client contract tests pass on each of Linux and Windows with native 0.0.134, including thirteen cleanup tests; the Windows Job closes naturally with no forced cleanup or source drift. [API and recipe](PYTHON_CLIENT.md), [evidence and limits](evidence/m2-python-cleanup-diagnostics.json).
 
 Version 0.0.139 records a second bounded fresh Switchback workflow: its original supervisor passes with 36 native invocations and 31 naturally closed script attempts, including nine retained failed attempts. Independent source and relocated readonly game checks pass thirteen groups with complete checkpoint continuation; separate native Vulkan observations pass with declared original paths unavailable. This uses native 0.0.134, Python client/reference source 0.0.138 and the retained managed SDK 0.0.127. Earlier failed workflow verdicts remain unchanged; broader Alpha, physical-input and representative-performance gates remain open. [Evidence and limits](evidence/m2-agent-switchback-fresh-repeat.json).
 

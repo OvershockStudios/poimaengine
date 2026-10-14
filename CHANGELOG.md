@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.140
+
+- Retain Python client and process-transport close failures in a read-only `cleanup_error` property so callers can inspect cleanup diagnostics without replacing an active body exception. Successful later closes preserve the last observed failure; process closure remains a separate observation.
+- Add thirteen cleanup tests to the existing client contract suite and update the [owned-host cleanup recipe](docs/PYTHON_CLIENT.md#explicitly-close-a-host-you-own) to keep completion data outside exceptions. All 49 client tests pass on Linux and Windows with native 0.0.134; the Windows Job closes naturally without forced cleanup. [Results and limits](docs/evidence/m2-python-cleanup-diagnostics.json).
+
 ## 0.0.139
 
 - Record a second fresh agent-authored Switchback workflow, preserving nine naturally closed failed script attempts and every previous workflow verdict. Independently verify thirteen gameplay groups, full checkpoint continuation and a relocated readonly game service.

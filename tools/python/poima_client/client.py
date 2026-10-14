@@ -73,6 +73,7 @@ class WorldClient:
             raise ValueError("validate_responses must be a boolean")
         self.transport = transport
         self.validate_responses = validate_responses
+        self._cleanup_error = None
 
     @classmethod
     def open(cls, binary, world_path, *, cwd=None, validate_responses=True, **transport_options):
@@ -106,9 +107,18 @@ class WorldClient:
     def closed(self):
         return self.transport.closed
 
+    @property
+    def cleanup_error(self):
+        """Most recent close TransportError, or None; a successful close retains it."""
+        return self._cleanup_error
+
     def close(self):
-        """Close the owned transport, preserving the shared host and other clients."""
-        self.transport.close()
+        """Close the transport; retain TransportError and propagate it unchanged."""
+        try:
+            self.transport.close()
+        except TransportError as error:
+            self._cleanup_error = error
+            raise
 
     def shutdown_host(self, *, timeout=30.0):
         """Explicitly request shutdown of an authorized shared headless host.

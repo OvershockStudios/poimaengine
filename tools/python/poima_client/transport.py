@@ -116,6 +116,7 @@ class JsonRpcProcess:
         self._cleanup_done = threading.Event()
         self._cleanup_thread = None
         self._cleanup_error = None
+        self._close_error = None
         self._threads = []
         self._thread_by_role = {}
         self._writer_active = False
@@ -143,6 +144,12 @@ class JsonRpcProcess:
     def closed(self):
         with self._condition:
             return self._closed
+
+    @property
+    def cleanup_error(self):
+        """Most recent close TransportError, or None; not asynchronous cleanup status."""
+        with self._condition:
+            return self._close_error
 
     @property
     def process_id(self):
@@ -405,11 +412,16 @@ class JsonRpcProcess:
             self._cleanup_done.set()
 
     def close(self):
-        self._disconnect("Transport was closed; interrupted calls have no trusted outcome")
-        if not self._cleanup_done.wait(self._close_timeout + 0.1):
-            raise TransportError("Owned process cleanup exceeded its bounded deadline")
-        if self._cleanup_error is not None:
-            raise TransportError("Owned process cleanup failed: " + str(self._cleanup_error))
+        try:
+            self._disconnect("Transport was closed; interrupted calls have no trusted outcome")
+            if not self._cleanup_done.wait(self._close_timeout + 0.1):
+                raise TransportError("Owned process cleanup exceeded its bounded deadline")
+            if self._cleanup_error is not None:
+                raise TransportError("Owned process cleanup failed: " + str(self._cleanup_error))
+        except TransportError as error:
+            with self._condition:
+                self._close_error = error
+            raise
 
     def __enter__(self):
         if self.closed:

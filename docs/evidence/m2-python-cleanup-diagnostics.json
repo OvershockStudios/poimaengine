@@ -1,0 +1,156 @@
+{
+  "format": "poima.python-cleanup-diagnostics-evidence.v1",
+  "source_checkpoint": "0.0.140",
+  "status": "passed",
+  "qualified": true,
+  "scope": "Python client close-failure diagnostics and contract integration; no engine protocol, gameplay ABI, build or GPU change.",
+  "api": {
+    "classes": [
+      "WorldClient",
+      "JsonRpcProcess"
+    ],
+    "property": "cleanup_error",
+    "read_only": true,
+    "value": "Most recent TransportError raised by close, or None before any such failure.",
+    "retention": "A later successful close does not clear the retained error; a later close TransportError replaces it.",
+    "primary_exception": "Context cleanup preserves an active body exception without attaching attributes or printing diagnostics.",
+    "limits": [
+      "The property is not process-liveness or process-closure evidence.",
+      "Exceptions may contain paths or transport diagnostics; callers choose what to record.",
+      "Close and context-manager error propagation otherwise remain unchanged."
+    ]
+  },
+  "source": {
+    "tools/python/poima_client/client.py": {
+      "bytes": 17888,
+      "sha256": "75bfaad03fee51892965ae7f873ef37bf270f2c6530cd953cf22cfc8509cadb8"
+    },
+    "tools/python/poima_client/transport.py": {
+      "bytes": 19179,
+      "sha256": "5be09fdc801ca2302c587b7e0dd2579350c196435183204d3c05e57b43f13792"
+    },
+    "docs/PYTHON_CLIENT.md": {
+      "bytes": 21589,
+      "sha256": "3987eb9b06f5ed69d4515169b86b98b8a740211dbc7df00f132e960836c72122"
+    },
+    "tests/python_client_contract.py": {
+      "bytes": 41977,
+      "sha256": "d665576a673429bd4fa6b6627fd5e814483709805f58da7578aacd3c70a799b6"
+    },
+    "tests/python_client_cleanup_diagnostics.py": {
+      "bytes": 9107,
+      "sha256": "a29c09b636021ad2bcba0552b5578669482254bc4d6aacbe4adebc212a220b15"
+    }
+  },
+  "qualification": {
+    "linux_integrated_without_native": {
+      "passed": true,
+      "discovered": 49,
+      "executed": 43,
+      "skipped": 6,
+      "unittest_seconds": 5.461,
+      "outer_seconds": 5.882650611019926,
+      "reason_for_skips": "No engine was selected; all six NativeContract cases explicitly skipped.",
+      "source_pins_unchanged": true,
+      "report": {
+        "bytes": 1014,
+        "sha256": "7cf56b805a7fd5e007c4044eed6543f8e1bd8ba11dfad9c7fd3460b700777cb6"
+      }
+    },
+    "linux_full_native": {
+      "passed": true,
+      "discovered": 49,
+      "executed": 49,
+      "skipped": 0,
+      "native_engine_version": "0.0.134",
+      "unittest_seconds": 9.378,
+      "outer_seconds": 10.160534238995751,
+      "source_pins_unchanged": true,
+      "report": {
+        "bytes": 4435,
+        "sha256": "036ee433c59b57c4713b6ada89cbc38bcaee6a36e18a4f294b0992cfe64ea4de"
+      }
+    },
+    "windows_full_native": {
+      "passed": true,
+      "discovered": 49,
+      "executed": 49,
+      "skipped": 0,
+      "native_engine_version": "0.0.134",
+      "unittest_seconds": 6.538,
+      "worker_seconds": 7.420888599997852,
+      "outer_seconds": 7.581787900009658,
+      "source_pins_unchanged": true,
+      "source_membership_unchanged": true,
+      "natural_windows_job_closure": true,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "job_accounting": {
+        "job_accounting_at_child_exit": {
+          "total_processes": 30,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "total_processes": 30,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "report": {
+        "bytes": 10386,
+        "sha256": "ab9b6625da91079ac7bcaf50965f0cffc443cd55a0c8eeca9a8dd66cefbd653a"
+      },
+      "qualification": {
+        "bytes": 394,
+        "sha256": "cd5996e94af21dce02758d0c01e8053bb2ff0659185d2e282abc52555a73337b"
+      },
+      "owner": {
+        "bytes": 1492,
+        "sha256": "97ad29064587eae1a8cddcdd2fe6e6483afacfb88c8b98635aafa806ba2f81ec"
+      }
+    },
+    "diagnostic_tests": {
+      "count": 13,
+      "scope": "In-memory failures and mocked process/thread construction exercise the real client and transport context/close paths. Tests do not launch a process or thread.",
+      "coverage": [
+        "No previous error and read-only property",
+        "Failed close retains exact error object",
+        "Successful close preserves previous failure",
+        "Later failure replaces previous failure",
+        "Embedded transport and JsonRpcProcess",
+        "Body exception remains identical, including foreign exceptions rejecting attribute assignment",
+        "Normal-body cleanup failure still raises",
+        "Interrupts are not swallowed by ordinary close",
+        "No automatic diagnostic representation"
+      ]
+    }
+  },
+  "compatibility": {
+    "python_runtime_minimum": "3.9",
+    "syntax_check": "Python 3.9 grammar accepted for successor SDK and diagnostic test.",
+    "public_authoring_protocol_changed": false,
+    "gameplay_abi_changed": false,
+    "existing_ctest_registration": "python_client_contract discovers CleanupDiagnostics via its main fixture; no new CMake registration."
+  },
+  "limits": [
+    "Results qualify the exact isolated SDK implementation, documentation and tests identified above, against native 0.0.134 on both platforms.",
+    "The test tree retains SDK metadata 0.0.138; publication metadata 0.0.140 does not change the qualified implementation bytes. No newly compiled engine or installed distribution is claimed.",
+    "The thirteen diagnostic tests use controlled in-memory errors and mocked process/thread construction; the complete suite also runs real synthetic subprocess peers and six native authoring contract tests.",
+    "Python 3.9 compatibility was checked as syntax; these results are not a runtime matrix for every supported Python version."
+  ],
+  "tested_sdk_metadata_version": "0.0.138",
+  "publication_version": "0.0.140",
+  "native_images": {
+    "linux": {
+      "version": "0.0.134",
+      "bytes": 80759840,
+      "sha256": "0807bbc4812b18754c07f5d16d410b9681ad38c7f73f481441410218b2a75f86"
+    },
+    "windows": {
+      "version": "0.0.134",
+      "bytes": 25980928,
+      "sha256": "ac07ee697126f25046bf52467b4f43f2df5e17bd1e605e9bc9a62846ae31fafb"
+    }
+  }
+}

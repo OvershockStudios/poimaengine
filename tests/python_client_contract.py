@@ -79,6 +79,7 @@ if not args.installed:
 from poima_client import (JsonRpcProcess, WorldClient, RpcError, TransportError,
                          OutcomeUnknown, ResponseContractError, PaginationError, new_id)
 from poima_client.responses import validate_core_result
+from python_client_cleanup_diagnostics import CleanupDiagnostics
 
 BINARY = None if args.engine is None else str(args.engine.resolve())
 SCRATCH = ROOT/'build/python-client-contract'
