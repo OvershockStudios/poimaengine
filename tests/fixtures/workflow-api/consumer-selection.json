@@ -1,0 +1,74 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0",
+  "format": "poima.alpha-workflow-method-selection.v2",
+  "status": "prospective",
+  "methods": [
+    "runtime.start",
+    "runtime.step",
+    "save.load"
+  ],
+  "components": [
+    "Transform"
+  ],
+  "context_keys": [
+    "limits",
+    "mode",
+    "protocol_version",
+    "read_only",
+    "runtime_available",
+    "session_scope",
+    "spawn_templates",
+    "transport"
+  ],
+  "full_limits": true,
+  "context_schema_paths": [
+    [
+      "spawn_templates",
+      "components"
+    ],
+    [
+      "spawn_templates",
+      "hierarchy"
+    ]
+  ],
+  "profiles": {
+    "source_world": {
+      "selected_methods": [
+        "runtime.start",
+        "runtime.step",
+        "save.load"
+      ],
+      "context_expected": {
+        "mode": "authoring",
+        "read_only": false
+      },
+      "session_scope_presence": false
+    },
+    "source_shared_player": {
+      "selected_methods": [
+        "runtime.start",
+        "runtime.step",
+        "save.load"
+      ],
+      "context_expected": {
+        "mode": "authoring",
+        "read_only": false,
+        "session_scope": "shared_headless"
+      },
+      "session_scope_presence": true
+    },
+    "readonly_game": {
+      "selected_methods": [
+        "runtime.start",
+        "runtime.step",
+        "save.load"
+      ],
+      "context_expected": {
+        "mode": "read_only_runtime",
+        "read_only": true,
+        "session_scope": "shared_headless"
+      },
+      "session_scope_presence": true
+    }
+  }
+}

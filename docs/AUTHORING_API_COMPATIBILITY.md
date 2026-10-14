@@ -4,6 +4,10 @@ Poima 0.0.49 releases **authoring-core v1**, a small stability boundary for agen
 and tools editing authored worlds. The rest of the engine remains in early
 development. A stable authoring contract does not make the engine alpha-ready.
 
+The [prospective workflow request gate](WORKFLOW_API_COMPATIBILITY.md) separately
+tracks selected runtime/save schemas and discovery context. It does not extend
+this released v1 stability promise or replace native response/behavior checks.
+
 ## Scope and discovery
 
 The [release manifest](contracts/authoring-core-v1.release.json) pins the

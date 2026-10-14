@@ -105,6 +105,15 @@ def main():
         rejected=process.load(dict(config,values=dict(Selected=uid(999999))),error=True)
         assert all(text in rejected['message'] for text in ('reference','Selected',uid(999999))) and process.game()==before_load
         loaded=process.load(config)
+        load_request=copy.deepcopy(evidence['calls'][-1]['request'])
+        before_retry=process.state()
+        for field in ('expected_tick','expected_revision'):
+            invalid=dict(load_request['params']);invalid[field]=float(invalid[field])
+            process.rpc(load_request['method'],invalid,error=-32602)
+            assert process.state()==before_retry
+        assert process.rpc(load_request['method'],load_request['params'])==dict(loaded,replayed=True)
+        assert process.state()==before_retry
+        evidence['checks'].append('Float-equal historical module-load guards reject before retry lookup; typed retries preserve the original result and observed gameplay/component state')
         module=loaded['module'];assert module['backend']==evidence['backend']
         assert {s['id']:s['fingerprint'] for s in module['schema']['components']}=={s['id']:s['fingerprint'] for s in registered}
         if args.native_descriptor:assert module['native_diagnostics']==dict(dynamic_code_supported=False,dynamic_code_compiled=False)

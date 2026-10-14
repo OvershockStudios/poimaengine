@@ -2962,12 +2962,15 @@ public:
         identifier(params.at("request_id"));auto normalized=params;normalized["method"]=method;
         if(!normalized.contains("values"))normalized["values"]=Json::object();
         require(normalized.at("values").is_object() && normalized.at("values").size()<=128,"Gameplay values must be a bounded field object.");
+        // Validate wire types before receipt equality: JSON numeric comparison
+        // can equate 0.0 with 0, but historical retries still need integer guards.
+        const auto expected_tick=revision(params.at("expected_tick")),expected_revision=revision(params.at("expected_revision"));
         for(const auto& receipt:runtime_receipts_)if(receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
         }
         structure_mutation_guard(params);
-        require(revision(params.at("expected_tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-        require(revision(params.at("expected_revision"))==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
+        require(expected_tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        require(expected_revision==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
         require(managed_load ? Gameplay::available() : native_load ? Gameplay::native_available() : (Gameplay::available() || Gameplay::native_available()),
             native_load ? "Native gameplay is not built. Configure POIMA_ENABLE_NATIVE_GAMEPLAY=ON." : "Requested gameplay support is not built.",-32003);
         GameplayConfig config;

@@ -1,0 +1,159 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0",
+  "format": "poima.alpha-workflow-method-selection.v2",
+  "status": "prospective",
+  "context_keys": [
+    "authoring_contract",
+    "custom_components",
+    "development",
+    "gameplay_camera_lenses",
+    "gameplay_player_preferences",
+    "gameplay_saves",
+    "input_actions",
+    "limits",
+    "live_materials",
+    "live_player_settings",
+    "live_textures",
+    "mode",
+    "navigation",
+    "protocol_version",
+    "read_only",
+    "runtime_available",
+    "saves",
+    "session_scope",
+    "spawn_templates",
+    "transport",
+    "ui",
+    "unavailable_methods",
+    "unavailable_mutations"
+  ],
+  "full_limits": true,
+  "methods": [
+    "runtime.component.get",
+    "runtime.component.query",
+    "runtime.components",
+    "runtime.entity",
+    "runtime.gameplay.inspect",
+    "runtime.gameplay.load_native",
+    "runtime.inspect",
+    "runtime.observe",
+    "runtime.save.result",
+    "runtime.save.status",
+    "runtime.start",
+    "runtime.status",
+    "runtime.step",
+    "runtime.stop",
+    "runtime.ui.activate",
+    "runtime.ui.inspect",
+    "save.configure",
+    "save.inspect",
+    "save.load",
+    "save.status",
+    "save.write"
+  ],
+  "components": [],
+  "profiles": {
+    "source_world": {
+      "context_expected": {
+        "mode": "authoring",
+        "read_only": false
+      },
+      "session_scope_presence": false,
+      "selected_methods": [
+        "runtime.component.get",
+        "runtime.component.query",
+        "runtime.components",
+        "runtime.entity",
+        "runtime.gameplay.inspect",
+        "runtime.gameplay.load_native",
+        "runtime.inspect",
+        "runtime.observe",
+        "runtime.save.result",
+        "runtime.save.status",
+        "runtime.start",
+        "runtime.status",
+        "runtime.step",
+        "runtime.stop",
+        "runtime.ui.activate",
+        "runtime.ui.inspect",
+        "save.configure",
+        "save.inspect",
+        "save.load",
+        "save.status",
+        "save.write"
+      ]
+    },
+    "source_shared_player": {
+      "context_expected": {
+        "mode": "authoring",
+        "read_only": false,
+        "session_scope": "shared_headless"
+      },
+      "session_scope_presence": true,
+      "selected_methods": [
+        "runtime.component.get",
+        "runtime.component.query",
+        "runtime.components",
+        "runtime.entity",
+        "runtime.gameplay.inspect",
+        "runtime.gameplay.load_native",
+        "runtime.inspect",
+        "runtime.observe",
+        "runtime.save.result",
+        "runtime.save.status",
+        "runtime.start",
+        "runtime.status",
+        "runtime.step",
+        "runtime.stop",
+        "runtime.ui.activate",
+        "runtime.ui.inspect",
+        "save.configure",
+        "save.inspect",
+        "save.load",
+        "save.status",
+        "save.write"
+      ]
+    },
+    "readonly_game": {
+      "context_expected": {
+        "mode": "read_only_runtime",
+        "read_only": true,
+        "session_scope": "shared_headless"
+      },
+      "session_scope_presence": true,
+      "selected_methods": [
+        "runtime.component.get",
+        "runtime.component.query",
+        "runtime.components",
+        "runtime.entity",
+        "runtime.gameplay.inspect",
+        "runtime.gameplay.load_native",
+        "runtime.inspect",
+        "runtime.observe",
+        "runtime.save.result",
+        "runtime.save.status",
+        "runtime.start",
+        "runtime.status",
+        "runtime.step",
+        "runtime.stop",
+        "runtime.ui.activate",
+        "runtime.ui.inspect",
+        "save.configure",
+        "save.inspect",
+        "save.load",
+        "save.status",
+        "save.write"
+      ]
+    }
+  },
+  "context_schema_paths": [
+    [
+      "spawn_templates",
+      "components"
+    ],
+    [
+      "spawn_templates",
+      "hierarchy"
+    ]
+  ]
+}

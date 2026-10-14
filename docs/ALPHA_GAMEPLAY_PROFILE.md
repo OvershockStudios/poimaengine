@@ -20,7 +20,9 @@ Only the selected authoring contract currently carries the released stability
 promise. Gameplay and content compatibility must be evaluated at their declared
 boundary and against retained consumers. Broader API stabilization remains an
 alpha gate. Never relabel an experimental operation as stable because a sample
-uses it successfully.
+uses it successfully. The [prospective runtime/save request gate](WORKFLOW_API_COMPATIBILITY.md)
+tracks a selected candidate surface; response, behavioral, SDK and ABI guarantees
+remain separate.
 
 ## Compile and select gameplay
 

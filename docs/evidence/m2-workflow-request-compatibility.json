@@ -1,0 +1,481 @@
+{
+  "format": "poima.workflow-request-compatibility-evidence.v1",
+  "source_checkpoint": "0.0.142",
+  "status": "passed",
+  "qualified": true,
+  "scope": "Prospective whole-request compatibility projection and bounded Windows native gameplay retry validation; no release of a broader stable gameplay API.",
+  "compatibility_status": "prospective",
+  "authoring_core_v1_unchanged": true,
+  "source": {
+    "CMakeLists.txt": {
+      "bytes": 83541,
+      "sha256": "037536b08eac49976ce7aae404ea1de5514a93efd4c551b3676be723c0542d5c"
+    },
+    "src/world.cpp": {
+      "bytes": 319468,
+      "sha256": "ea0cc4906c89efbaed727607deedf330e260f5f31507fc8bf492970a2cb49c6e"
+    },
+    "scripts/project_workflow_api.py": {
+      "bytes": 15510,
+      "sha256": "9223a796252d8c2fc41344143cd15710752ed13db98841f029712628f79a0c87"
+    },
+    "scripts/check_authoring_api.py": {
+      "bytes": 22630,
+      "sha256": "8564bd290d5f3cece4ebf97fe3223b186e0c27771c512e5132d89c649a4dafef"
+    },
+    "tests/workflow_api_projection.py": {
+      "bytes": 26052,
+      "sha256": "d1a93a28d89e9bbec85a792203a6e8ea20c532f8d991e78cc32f8d95b6ef0279"
+    },
+    "tests/components_gameplay_contract.py": {
+      "bytes": 18301,
+      "sha256": "0ef5d4da4521e8d616ef232356388428a6ec40d2c91a70cc6c064464650734ba"
+    },
+    "tests/fixtures/workflow-api/consumer-discovery.json": {
+      "bytes": 5070,
+      "sha256": "492a75956d6c10d077d46593a2c915e57823d75a110a2f4dc544cb82212bc61d"
+    },
+    "tests/fixtures/workflow-api/consumer-selection.json": {
+      "bytes": 1520,
+      "sha256": "cabb1db9f149055bda78bc64a0e2325670357a96bb5cc7cbb175d5ae2e55856d"
+    },
+    "docs/contracts/runtime-save-workflow-v1.candidate.json": {
+      "bytes": 3863,
+      "sha256": "e8a10bb730d7d95037e8d00898103db15f1ea6c59f7269976702a01cb90f4b68"
+    },
+    "docs/WORKFLOW_API_COMPATIBILITY.md": {
+      "bytes": 7110,
+      "sha256": "eaa1f93ae48d96d3118462701897c531fe6dc537c1c858c476b73b7cb139a2c7"
+    },
+    "docs/ALPHA_GAMEPLAY_PROFILE.md": {
+      "bytes": 11453,
+      "sha256": "e9499f0139103e64a32ea8443315e83547817308d7662aeb01540b6ae356f2bf"
+    },
+    "docs/AUTHORING_API_COMPATIBILITY.md": {
+      "bytes": 10090,
+      "sha256": "8622f1f62b6e435dc197e2866c2a6fb07c8b4fcef2cd7b71b0b96ac3ff4ac874"
+    },
+    "docs/GPU_SKINNING.md": {
+      "bytes": 6641,
+      "sha256": "deea2a659a526c6a15acd4937387d35bf679ad8b1208717fa582359a6f983b6f"
+    },
+    "docs/MANAGED_GAMEPLAY.md": {
+      "bytes": 44297,
+      "sha256": "22b9d28e4fe0f5146d5ba773e50d42eecd303b5b1ac017497277afb05bc4633c"
+    },
+    "docs/NATIVE_GAMEPLAY.md": {
+      "bytes": 30223,
+      "sha256": "b86b30a09667828b55176134825534c520d5aadbd4b5797d3633244cdc4845de"
+    }
+  },
+  "selection": {
+    "methods": [
+      "runtime.component.get",
+      "runtime.component.query",
+      "runtime.components",
+      "runtime.entity",
+      "runtime.gameplay.inspect",
+      "runtime.gameplay.load_native",
+      "runtime.inspect",
+      "runtime.observe",
+      "runtime.save.result",
+      "runtime.save.status",
+      "runtime.start",
+      "runtime.status",
+      "runtime.step",
+      "runtime.stop",
+      "runtime.ui.activate",
+      "runtime.ui.inspect",
+      "save.configure",
+      "save.inspect",
+      "save.load",
+      "save.status",
+      "save.write"
+    ],
+    "profiles": [
+      "source_world",
+      "source_shared_player",
+      "readonly_game"
+    ],
+    "selected_component_schemas": [],
+    "context_schema_paths": [
+      [
+        "spawn_templates",
+        "components"
+      ],
+      [
+        "spawn_templates",
+        "hierarchy"
+      ]
+    ],
+    "full_limits_exact": true,
+    "other_selected_context_exact": true,
+    "reference_resolution": "Complete source retained; reference/dialect scope stays unproven."
+  },
+  "qualification": {
+    "portable_request_gate": {
+      "Linux": {
+        "passed": true,
+        "tests": 36,
+        "skipped": 0,
+        "native_execution": false,
+        "old_native_version": "0.0.134",
+        "current_native_version": "0.0.142",
+        "profiles": [
+          {
+            "profile": "source_world",
+            "selected_methods": 21,
+            "current_discovery_sha256": "95c1f5050232caa54b8dae55659cf185493fc01d3b7542ee6bda1519bdfbe209",
+            "metadata_only": true,
+            "previous_discovery_sha256": "9351e1de0ace306ce565b4e10377f92ff1eebcab86006c2ebb848cd9669dc577",
+            "findings": []
+          },
+          {
+            "profile": "source_shared_player",
+            "selected_methods": 21,
+            "current_discovery_sha256": "a0e1e9b4131b1783efba73d914f9a85526c11f72cd294f587c29f19fc78fbb46",
+            "metadata_only": true,
+            "previous_discovery_sha256": "7ca10d44844857d7fc7d9c4581da146e1277007d3c01ad9571d1a186cd48ef32",
+            "findings": []
+          },
+          {
+            "profile": "readonly_game",
+            "selected_methods": 21,
+            "current_discovery_sha256": "db8d53d0e7e4c94faa93713e612cd47265a02a83afb01e1dec65986bd390e1b7",
+            "metadata_only": true,
+            "previous_discovery_sha256": "50be678877d70df5a396a470702c5589423bc2ffd59e81505b588d9f85b96353",
+            "findings": []
+          }
+        ],
+        "report": {
+          "bytes": 1187,
+          "sha256": "e9ee42232d4851600605a56af5426619f79fd63b9f20af745ae1a7dcd5bcc7e3"
+        }
+      },
+      "Windows": {
+        "passed": true,
+        "tests": 36,
+        "skipped": 0,
+        "native_execution": false,
+        "old_native_version": "0.0.134",
+        "current_native_version": "0.0.142",
+        "profiles": [
+          {
+            "profile": "source_world",
+            "selected_methods": 21,
+            "current_discovery_sha256": "95c1f5050232caa54b8dae55659cf185493fc01d3b7542ee6bda1519bdfbe209",
+            "metadata_only": true,
+            "previous_discovery_sha256": "9351e1de0ace306ce565b4e10377f92ff1eebcab86006c2ebb848cd9669dc577",
+            "findings": []
+          },
+          {
+            "profile": "source_shared_player",
+            "selected_methods": 21,
+            "current_discovery_sha256": "a0e1e9b4131b1783efba73d914f9a85526c11f72cd294f587c29f19fc78fbb46",
+            "metadata_only": true,
+            "previous_discovery_sha256": "7ca10d44844857d7fc7d9c4581da146e1277007d3c01ad9571d1a186cd48ef32",
+            "findings": []
+          },
+          {
+            "profile": "readonly_game",
+            "selected_methods": 21,
+            "current_discovery_sha256": "db8d53d0e7e4c94faa93713e612cd47265a02a83afb01e1dec65986bd390e1b7",
+            "metadata_only": true,
+            "previous_discovery_sha256": "50be678877d70df5a396a470702c5589423bc2ffd59e81505b588d9f85b96353",
+            "findings": []
+          }
+        ],
+        "report": {
+          "bytes": 1221,
+          "sha256": "faaec32c716f4c4d28d5176f0026cd5e9be80aa87e9084a1f843f6f7f45357d7"
+        }
+      }
+    },
+    "windows_native": {
+      "engine_version": "0.0.142",
+      "target": "Windows x86_64",
+      "incremental_selected_build": true,
+      "first_build_seconds": 278.59538349998184,
+      "final_fixture_reseal_seconds": 178.69589880201966,
+      "final_native_build_work": "Ninja reports no work; source/fixture admission and independent sealed copies were refreshed.",
+      "cache_generation": 17,
+      "first_build_report": {
+        "bytes": 54955,
+        "sha256": "d6cecc9f8e0f666e0f0266398924946e4e60f6990413818b64318f6f75b90be8"
+      },
+      "final_build_report": {
+        "bytes": 54952,
+        "sha256": "98bff749efece3c749d854fb9c17f7e8bde798581dcb8a263a09ff508f3c7806"
+      },
+      "first_sealed_manifest": {
+        "bytes": 1924,
+        "sha256": "69cedd1677ab3e500c6e2af4e6a70849d118b2df7a412a4078a28ff4f47b79e9"
+      },
+      "final_sealed_manifest": {
+        "bytes": 1924,
+        "sha256": "fb560b95fdfd4f0f8ec8eac08828fd42eb39985901aec633dea332a0d028013a"
+      },
+      "all_sealed_artifacts_byte_identical": true,
+      "cli": {
+        "bytes": 25973248,
+        "sha256": "43143b08d4f1c9318426d7075f09001aa0c681ecb5d4913983ba375ac904f2ab"
+      },
+      "desktop_bridge": {
+        "bytes": 296836096,
+        "sha256": "1806a52780a3630d1e86aa5d572b76f7ba1b68c766356add9e611f3d41d25d0f"
+      },
+      "native_suites": 6,
+      "suite_scope": "UI document/presenter, shadow math, player readiness, world schemas and MCP; same tested binary bytes retained by final fixture reseal.",
+      "suite_report": {
+        "bytes": 4000,
+        "sha256": "95b1ec8a7b16c146ede1903d2dab5a4081c75a48feeb4fa7d2de0d7f73b8d4a2"
+      },
+      "forced_cleanup": false,
+      "source_inputs_unchanged_during_each_build": true
+    },
+    "native_aot_retry": {
+      "passed": true,
+      "native_engine_version": "0.0.142",
+      "module_rebuilt": false,
+      "guard_results": {
+        "142": [
+          {
+            "field": "expected_tick",
+            "rejected": true,
+            "error_code": -32602,
+            "replayed": null
+          },
+          {
+            "field": "expected_revision",
+            "rejected": true,
+            "error_code": -32602,
+            "replayed": null
+          },
+          {
+            "field": "expected_structure_revision",
+            "rejected": true,
+            "error_code": -32602,
+            "replayed": null
+          }
+        ]
+      },
+      "valid_typed_retry_preserved_original_result": true,
+      "checked_state": "Full gameplay inspection and runtime inspection responses; not a new campaign or all subsystem-state qualification.",
+      "original_source_unchanged": true,
+      "report": {
+        "bytes": 98363,
+        "sha256": "6549fb09f26633bfa29cf83851616bad4102b971e63254d322c2c2fd1c6d71d3"
+      },
+      "owner": {
+        "bytes": 1315,
+        "sha256": "43a8aca0a8b6a2fc1a940002ac65c7a20c0d71afcb35e3d93d9c7af8746249c4"
+      }
+    },
+    "coreclr_components": {
+      "passed": true,
+      "native_engine_version": "0.0.142",
+      "fresh_current_sdk_and_fixture_build": true,
+      "fixture_variants": [
+        "base",
+        "field reorder",
+        "labels and units",
+        "incompatible default"
+      ],
+      "compile_stages": 6,
+      "metadata_extract_stages": 1,
+      "fresh_build_outer_seconds": 32.72096509998664,
+      "final_test_uses_verified_retained_compiled_artifacts": true,
+      "final_consumer_outer_seconds": 3.773985299980268,
+      "rpc_calls": 463,
+      "checks": [
+        "Float-equal historical module-load guards reject before retry lookup; typed retries preserve the original result and observed gameplay/component state",
+        "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+        "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+        "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+        "100 real CoreCLR reloads collect all retired modules",
+        "Compatible CLR reorder/labels preserve native values",
+        "Changed component defaults reject without swapping the live module",
+        "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+        "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+        "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+      ],
+      "reloads": 100,
+      "retired_modules_alive_after_collect": 0,
+      "fresh_native_world_owners": 3,
+      "malformed_retry_state_observation": "Gameplay and component responses, including selected component values; not a complete physics/audio/UI/save-ledger equality snapshot.",
+      "build_receipt": {
+        "bytes": 1481,
+        "sha256": "7cf67460c8819575482d8d2700000751d755ad138cd322dcd954edf1954847ff"
+      },
+      "final_consumer_receipt": {
+        "bytes": 1484,
+        "sha256": "44f2462edc345aff4aa8fda1594ed49c1fd9beaf5f208611d91960dcf82b7cad"
+      },
+      "final_raw_evidence": {
+        "bytes": 2374280,
+        "sha256": "f8f29823c6a31aeb6ec3a2146c3510acfc296d5e254f5e74e910df9d9e2714ab"
+      },
+      "natural_windows_job_closure": true,
+      "forced_cleanup": false,
+      "cleanup_errors": []
+    },
+    "matched_install_and_export": {
+      "passed": true,
+      "native_engine_version": "0.0.142",
+      "installed_files": 49,
+      "exact_non_image_files": 47,
+      "stripped_pe_code_data_loader_equivalence": 2,
+      "runtime_bytes": 97025293,
+      "runtime_maximum_bytes": 134217728,
+      "installer_seconds": 96.2457003199961,
+      "installer_receipt": {
+        "bytes": 23413,
+        "sha256": "25875af4e77144d0d8cae27d9860df25d525be6b1d44d11c550264162ffb4eb4"
+      },
+      "export_seconds": 5.462709299987182,
+      "export_receipt": {
+        "bytes": 17062,
+        "sha256": "e0c50d364e8ae6af8ad85d5ae723a0204ffe50cf83082e7f46f754e4509df62b"
+      },
+      "retained_original_and_copied_content_unchanged": true,
+      "whole_typed_export_matches_declared_freeze_policy": true,
+      "gameplay_rebuilt": false,
+      "gameplay_campaign_rerun": false,
+      "new_relocation_or_graphics_qualification": false
+    },
+    "native_discovery": {
+      "passed": true,
+      "native_engine_version": "0.0.142",
+      "schema_revision": 98,
+      "scopes": [
+        {
+          "scope": "standalone",
+          "returncode": 0
+        },
+        {
+          "scope": "shared-authoring",
+          "player_active": false,
+          "methods": 134,
+          "schema_revision": 98,
+          "host_returncode": 0,
+          "client_returncode": 0
+        },
+        {
+          "scope": "shared-readonly-game",
+          "player_active": false,
+          "methods": 107,
+          "schema_revision": 98,
+          "host_returncode": 0,
+          "client_returncode": 0
+        }
+      ],
+      "world_and_complete_game_unchanged": true,
+      "seconds": 1.5766043000039645,
+      "report": {
+        "bytes": 1313,
+        "sha256": "bc278656768b190e43bf78bb96b3b0589ef7d8b42f6b402f9ed87579cb9c7aff"
+      },
+      "owner": {
+        "bytes": 1314,
+        "sha256": "9d603e6c3fbbd31ea2d033b20cfcb80ff0efa481443bd04250b3a0b4f0eeead5"
+      },
+      "player_started": false,
+      "gpu_execution": false
+    }
+  },
+  "preserved_failures": [
+    {
+      "kind": "Native bug reproduction",
+      "native_versions": [
+        "0.0.134",
+        "0.0.141"
+      ],
+      "original_verdict": "failed",
+      "results": {
+        "134": [
+          {
+            "field": "expected_tick",
+            "rejected": false,
+            "error_code": null,
+            "replayed": true
+          },
+          {
+            "field": "expected_revision",
+            "rejected": false,
+            "error_code": null,
+            "replayed": true
+          },
+          {
+            "field": "expected_structure_revision",
+            "rejected": true,
+            "error_code": -32602,
+            "replayed": null
+          }
+        ],
+        "141": [
+          {
+            "field": "expected_tick",
+            "rejected": false,
+            "error_code": null,
+            "replayed": true
+          },
+          {
+            "field": "expected_revision",
+            "rejected": false,
+            "error_code": null,
+            "replayed": true
+          },
+          {
+            "field": "expected_structure_revision",
+            "rejected": true,
+            "error_code": -32602,
+            "replayed": null
+          }
+        ]
+      },
+      "report": {
+        "bytes": 313433,
+        "sha256": "25facdbf26dc45ce88b0abf23891654c7e6612d2cee16e8ee3c01c572b8793fe"
+      },
+      "note": "Float-equal tick/revision retries were accepted; structure-guard tokens already rejected. Original failure remains unchanged."
+    },
+    {
+      "kind": "CoreCLR preflight",
+      "original_verdict": "failed",
+      "reason": "Old isolated profile omitted the actual Windows processor architecture; worker closed naturally before compiler stages. Successor explicitly retained the observed AMD64 host value.",
+      "owner": {
+        "bytes": 2649,
+        "sha256": "df1102fef73cd0d085a9bb39cb1228fbc749b455874734c5f72159276218f025"
+      }
+    },
+    {
+      "kind": "Version-mismatched discovery preparation",
+      "original_verdict": "failed",
+      "reason": "New142 host correctly rejected the retained141 export. Source/shared authoring observations passed, but the overall attempt stays failed; successor used a genuine matching export.",
+      "report": {
+        "bytes": 3267,
+        "sha256": "ab65a6cc4459b9c91536e05314b91d283699cb6c57e6264d0504226419d88353"
+      },
+      "owner": {
+        "bytes": 1790,
+        "sha256": "e65a0a2436d0022857378f8f2c377ad4534223f80d14e527379c7682ef3db20c"
+      }
+    },
+    {
+      "kind": "export wrapper",
+      "original_verdict": "failed",
+      "reason": "Path helper received a string before export began. Original naturally closed attempt retained; successor normalized it to Path.",
+      "owner": {
+        "bytes": 1774,
+        "sha256": "65735cf9ba489f0935a071b5943d9f16bc4ac227bff76379b149f3d7f35f3b53"
+      }
+    }
+  ],
+  "limits": [
+    "Selected request compatibility is prospective, not a stable runtime/content/save API release.",
+    "No independent response/error/behavior contract for all21methods is released; successful discovery alone is not operation qualification.",
+    "No new Linux native142 build; portable tests pass on Linux, and previous Linux native141 evidence remains separate.",
+    "No new binary ABI or general C# source-compatibility promise.",
+    "No new rendered image, physical input, audio listening, latency, representative performance, clean-machine, crowd or Alpha gate qualification."
+  ]
+}

@@ -203,6 +203,10 @@ The descriptor resolves relative to the world document. `values` is optional and
 
 The existing runtime receipt pool, exact retry matching, tick/revision guards and gameplay inspection/edit operations apply. `runtime.gameplay.inspect` with `include_schema: true` reports `backend: "native_aot"`, the library hash, state schema, values and native diagnostics. Simulation uses the same callback queue timing, native animation authority and whole-batch rollback as CoreCLR gameplay.
 
+The [guard and retry contract](MANAGED_GAMEPLAY.md) requires integer JSON tick
+and revision tokens even for retained retries. Floating-token guards reject
+before receipt recovery; a valid typed retry preserves its original result.
+
 Only one canonical native library path and image are selected per process. The loader never unloads it, including after export or generated-schema validation fails. Replacing a loaded native game is rejected. Stopping a world releases its game instance; starting a new world can create another instance from the same pinned artifact. Selecting a different artifact requires restarting the process. This is separate from development-time compatible CoreCLR reload.
 
 ## Package a game

@@ -1,6 +1,6 @@
 # Vulkan compute skinning
 
-Poima 0.0.18 adds a compute skinning pass to the shared scene renderer. It consumes immutable mesh vertices/influences and a separate palette per instance, then writes the existing 48-byte vertex format. Opaque materials, normal maps and every shadow view use that same output. Asset pose capture exercises this path; 0.0.21 also supplies palettes from [ordinary editable rigs and native runtime playback](RUNTIME_ANIMATION.md). Blending remains unfinished.
+Poima's compute skinning pass consumes immutable mesh vertices/influences and a separate palette per instance, then writes the existing 48-byte vertex format. Opaque materials, normal maps and every shadow view use that same output. Asset pose capture and [ordinary editable rigs and native runtime playback](RUNTIME_ANIMATION.md) supply the palettes. Runtime animation supports the documented crossfades, inertial transitions and masked layers; these features evaluate poses before skinning.
 
 ## Agent controls
 
@@ -34,4 +34,8 @@ The native `SceneObject::skin` owns an immutable `SkinPose` with mesh-local affi
 
 `tests/animation_capture.py` retains the independently baked geometry comparison. The committed [GPU evidence](evidence/m2-gpu-skinning.json) records the actual executed hardware, binary/source hashes and comparison results.
 
-This is a rendering foundation. Native fixed-tick playback and runtime ownership are documented separately in [runtime animation](RUNTIME_ANIMATION.md). Root motion, retargeting, IK, compressed sampling, motion vectors and previous-frame skinning remain unimplemented. The renderer still serializes frames and waits for GPU completion; the status check uses that existing wait. No crowd throughput, frame-latency, animation streaming or production memory target is established. Native Linux graphics and console graphics remain unqualified.
+Native fixed-tick playback and runtime ownership are documented separately in [runtime animation](RUNTIME_ANIMATION.md). [Explicit rotation retargeting](ANIMATION_RETARGETING.md), [configured two-bone IK](TWO_BONE_IK.md) and [planar root motion](ROOT_MOTION.md) have their own supported profiles and limitations. They do not imply anatomical mapping, automatic foot grounding or a complete locomotion system.
+
+Single-sample [scene products](SCENE_PRODUCTS.md#motion-history-and-numeric-probes) retain previous accepted skin output for geometric motion correspondence. Missing or incompatible history invalidates correspondence; this is not temporal reconstruction or disocclusion rejection. The [render schedule](RENDER_SCHEDULE.md) distinguishes bounded overlapping native presentation from serialized capture/readback and validation paths. The original skinning evidence above does not qualify those later features.
+
+Compressed animation sampling, animation streaming and motion matching remain unfinished. No crowd throughput, production memory target or game-scale skinning performance is established. Native Linux graphics and console graphics remain unqualified.

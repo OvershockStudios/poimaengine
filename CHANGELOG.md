@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.142
+
+- Add a prospective compatibility checker for 21 runtime/component/UI/save request schemas in three discovery scopes. Preserve complete selected schemas, exact metadata and explicit reference context; reject malformed projections cleanly. This does not release a broader stable API. [Contract and scope](docs/WORKFLOW_API_COMPATIBILITY.md).
+- Validate integer gameplay tick/revision guards before retry lookup, rejecting float-equal malformed retries while preserving valid historical results. Verify retained Native AOT gameplay and freshly compiled CoreCLR components, including rollback, saves and 100 reloads. [Qualification](docs/evidence/m2-workflow-request-compatibility.json).
+- Correct the skinning guide's stale animation, motion-history and frame-execution limits, linking the existing qualified profiles.
+
 ## 0.0.141
 
 - Add optional authored shadow-filter selection with per-capture/player overrides and effective diagnostics. Existing worlds retain point filtering when the field is absent; new project starters explicitly use fractional filtering, 1024-pixel maps and lower Sun bias.

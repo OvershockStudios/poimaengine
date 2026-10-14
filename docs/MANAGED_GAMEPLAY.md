@@ -219,6 +219,12 @@ The final inspection reports `Open: 1`, `Activations: 1` and gameplay revision 1
 
 Gameplay revision is separate from authored-world revision and tick. It changes on successful load/edit, not each game update. Load/edit share the runtime's 32 retry receipts with step/play: an identical request ID and payload returns its previous result without rerunning the operation; a different payload conflicts. Guards reject stale ticks/revisions. After any runtime structural edit, load/edit also require `expected_structure_revision` from the gameplay observation; retain it with the edit or reload draft. The field is optional before the first structural edit, but a supplied value is always checked. An identical retained retry recovers its original result before comparing current revisions. Unknown fields, unsupported types and invalid values are errors, with no partial field edits. Important error codes are `-32003` for an unavailable build feature, `-32009` for a guard conflict, `-32010` for reused request identity, `-32060` for gameplay load/edit/collection failure and `-32040` for a failed headless simulation batch.
 
+Tick and revision guards use integer JSON tokens. A floating token such as
+`0.0` is rejected with `-32602`, including when retrying a retained request that
+originally supplied `0`. Type validation precedes receipt lookup; valid integer
+retries still recover the original result without applying the mutation again
+or comparing its historical guards against the current tick/revision.
+
 ## Replace game code
 
 Global `EntityId` fields must be unset (all zero) or refer to an existing runtime entity. The engine checks them before activating a module, after paused field edits, after each gameplay callback against the candidate component state, and during save restoration. Invalid references reject activation/edit/restore or roll back the entire explicit simulation batch. This applies to both CoreCLR and Native AOT gameplay.
