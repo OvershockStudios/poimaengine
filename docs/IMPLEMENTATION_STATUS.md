@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.136**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.137**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.137 preserves [another independently authored Switchback game](evidence/fixtures/agent-switchback-repeat/README.md). Its source and relocated readonly service each pass thirteen groups, nine complete checkpoints and five typed-exact save comparisons; separate Ready/Idle/Run Vulkan observations pass with the original project paths unavailable. Both source trees restore byte-for-byte. The original agent workflow remains failed after forced script cleanup and missing historical owner proof. The repeated-workflow Alpha gate stays open. [Results, native version and limits](evidence/m2-agent-switchback-repeat.json).
 
 Version 0.0.136 adds [retired build storage maintenance](BUILD_STORAGE.md): explicit root selection, read-only reports, reviewed plans and guarded removal of proven compiler objects/PCH. Qualification passes 24 temporary-filesystem tests on Linux and 21 on Windows; three Windows symlink tests are skipped for unavailable creation privileges and pass on Linux. Retirement with no live writers or consumers is required; the helper does not detect or contain processes. [Evidence and limits](evidence/m2-build-storage.json).
 

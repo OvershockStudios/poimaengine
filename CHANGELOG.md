@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.137
+
+- Preserve [another independently authored Switchback implementation](docs/evidence/fixtures/agent-switchback-repeat/README.md) and verify thirteen gameplay groups against its source project and actual relocated readonly game service, with complete save continuation and cold owners. The original fresh workflow remains failed; the repeated-workflow Alpha gate stays open.
+- Qualify Ready/Idle/Run Vulkan captures while the original provider case and evaluator project paths are unavailable, then restore both trees byte-for-byte. Preserve the failed relocation-gate attempt and distinguish the native 0.0.134 runtime from source checkpoint identities. [Evidence and limits](docs/evidence/m2-agent-switchback-repeat.json).
+
 ## 0.0.136
 
 - Add [retired build storage maintenance](docs/BUILD_STORAGE.md) with report-first inspection, exact reviewed plans and guarded removal of generated compiler objects/PCH. Preserve sources, assets, reports and binaries; require explicit retirement and no live consumers.

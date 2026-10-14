@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.136.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.137.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -34,7 +34,7 @@ Three recorded exercises put this workflow into practice: [Codex builds an escap
 
 A [fresh Switchback implementation](docs/evidence/fixtures/agent-switchback-fresh/README.md) completes a supervised create/import/author/compile/playtest/repair/publish/adopt/export workflow and thirteen independent native gameplay groups with complete save comparisons. Its exported game passes the same groups and Vulkan observations while the original project is unavailable. This is one bounded fresh run; earlier failures remain recorded. [Evidence](docs/evidence/m2-agent-switchback-fresh.json).
 
-Its published C# and project also [rebuild unchanged](docs/evidence/m2-agent-switchback-fresh-rebuild.json) against the current SDK. The newly compiled module passes all thirteen native gameplay groups and complete save-continuation comparisons independently of the original binary.
+Its published C# and project also [rebuild unchanged](docs/evidence/m2-agent-switchback-fresh-rebuild.json) against the current SDK. The newly compiled module passes all thirteen native gameplay groups and complete save-continuation comparisons independently of the original binary. An [additional independent implementation](docs/evidence/fixtures/agent-switchback-repeat/README.md) also passes source and relocated gameplay checks; its original automation workflow remains failed.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 

@@ -32,6 +32,8 @@ listed there is complete or production-ready.
 
 The 0.0.131 [fresh Switchback checkpoint](evidence/m2-agent-switchback-fresh.json) passes its original agent supervisor and thirteen independent gameplay groups with full save continuation, including the exported service with the original project unavailable. Separate Ready/Idle/Run Vulkan observations pass with the original project unavailable. The [0.0.135 portable-source rebuild](evidence/m2-agent-switchback-fresh-rebuild.json) also passes all thirteen groups and complete save comparisons with a newly compiled module using native 0.0.134. This is still one fresh provider run; it preserves the earlier failures and does not close the repeated-workflow or other Alpha gates.
 
+The [additional Switchback evaluation](evidence/m2-agent-switchback-repeat.json) independently passes source and relocated readonly gameplay, full save comparisons and rendered Idle/Run observation using native 0.0.134. Its original fresh workflow remains failed after incomplete historical owner proof and a forced Script Job cleanup. These separate game results do not supply a second successful fresh workflow; the repeated-workflow gate remains open.
+
 ### Qualification target
 
 The initial alpha matrix is Windows native editor/player/rendering and Linux

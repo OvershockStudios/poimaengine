@@ -1,0 +1,178 @@
+{
+  "format": "poima.switchback-independent-repeat.v1",
+  "evidence_checkpoint": "0.0.137",
+  "platform": "Windows x86_64",
+  "qualification_state": "Independent game checks pass; original fresh workflow failed",
+  "independent_game_qualification_passed": true,
+  "fresh_workflow_passed": false,
+  "versions": {
+    "native_engine": "0.0.134",
+    "candidate_producer_source": "0.0.135",
+    "managed_sdk_producer": "0.0.127",
+    "maintenance_source_at_evaluation": "0.0.136",
+    "new_native_137_build_claimed": false
+  },
+  "scope": "An additional independently authored Switchback implementation, evaluated after its original failed supervisor closed. Separate source gameplay, relocated readonly game service and rendered native observation; no original workflow verdict is changed.",
+  "candidate": {
+    "identity": "switchback.range.original.v1",
+    "CSharp": {
+      "bytes": 10942,
+      "sha256": "fb2a36e301b9b29a5d273f87898502b690b99c1de827f08666f7a7f1e078c19d"
+    },
+    "native_library": {
+      "bytes": 1389568,
+      "sha256": "1428d62113033881eed96d091c49bd67bf5fc817f95d7aa91a65e9c1cf880dba"
+    },
+    "normalized_exercise": {
+      "bytes": 1782,
+      "sha256": "a9ef6d5151be5b5fd30ea0a484c2bad111f8962ec002a8002f44b27b902224b7"
+    },
+    "source_record": "docs/evidence/fixtures/agent-switchback-repeat",
+    "portable_source_record_rebuild_qualified": false
+  },
+  "original_fresh_workflow": {
+    "passed": false,
+    "provider_process_exit_code": 0,
+    "provider_process_passed": true,
+    "missing_historical_native_receipts": 1,
+    "forced_script_job_closures": 1,
+    "source_and_corpus_rescans_complete": true,
+    "changed_inputs": [],
+    "changed_corpus_directories": [],
+    "reason": "Unsupported host.shutdown request_id, forced Script Job cleanup and a missing historical native owner receipt prevent workflow qualification. A later current-actor census admitted separate game evaluation; it does not reconstruct missing historical proof."
+  },
+  "source_gameplay": {
+    "passed": true,
+    "groups": 13,
+    "native_rpc_count": 21990,
+    "rpc_counts_by_owner": {
+      "cold-fresh": 5504,
+      "cold-reference": 126,
+      "negative": 4920,
+      "positive": 11440
+    },
+    "complete_snapshot_version": 9,
+    "complete_checkpoints": 9,
+    "typed_exact_whole_checkpoint_pairs": 5,
+    "excluded_state_fields": [],
+    "natural_native_owners": 4
+  },
+  "relocated_gameplay": {
+    "passed": true,
+    "groups": 13,
+    "native_rpc_count": 22002,
+    "rpc_counts_by_owner": {
+      "cold-fresh": 5507,
+      "cold-reference": 129,
+      "negative": 4923,
+      "positive": 11443
+    },
+    "complete_snapshot_version": 9,
+    "complete_checkpoints": 9,
+    "typed_exact_whole_checkpoint_pairs": 5,
+    "excluded_state_fields": [],
+    "natural_native_owners": 4
+  },
+  "source_absence": {
+    "original_provider_case_paths_unavailable": true,
+    "evaluator_source_project_paths_unavailable": true,
+    "whole_original_case_and_source_copy_restored_byte_exact": true,
+    "bundle_files": 68,
+    "bundle_bytes": 99128590,
+    "bundle_unchanged": true,
+    "scope": "Named original paths unavailable; byte-preserving quarantine, generic SDK, engine checkout and installed toolchains remain accessible. Not OS isolation or a clean machine."
+  },
+  "rendered_observation": {
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      960,
+      540
+    ],
+    "world_and_viewmodel_samples": 4,
+    "weighted_instances": 1,
+    "weighted_vertices": 1029,
+    "completed_gpu_skinning_samples_present": true,
+    "real_native_clip_execution_and_committed_patrol_displacement": true,
+    "host_and_connect_exit_code": 0,
+    "natural_player_lifetimes": 2,
+    "captures": {
+      "Ready": {
+        "tick": 0,
+        "clip": 0,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "8d69cecfb81966ec886332e260a00bf0d1ef7d20dbd7c45e73324842a0926c61"
+        }
+      },
+      "Idle": {
+        "tick": 1,
+        "clip": 0,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "b749603b3b108e94dc065cad7ecc0040993d9917a0cf1ec5d37924008efff16e"
+        }
+      },
+      "Run": {
+        "tick": 4,
+        "clip": 1,
+        "image": {
+          "bytes": 2073738,
+          "sha256": "b60887e1bac2207dc77a261ed5a62f11c75f86133eb8775ed8ab2bf9d2726c77"
+        }
+      }
+    },
+    "visual_review": {
+      "reviewed_by": "Engine development agent",
+      "scope": "Readable Ready/menu and HUD/save status, imported humanoid and visible Idle-to-Run pose/motion. Simple greybox with rough shadow edges; no high visual quality claim."
+    }
+  },
+  "retained_failed_harness_attempt": {
+    "preserved": true,
+    "scope": "First relocation gate rejected a Python -B command before worker/native execution; successor corrects only that gate command and uses a new owner directory."
+  },
+  "retained_receipt_identities": {
+    "original-failed-supervisor": {
+      "bytes": 260442,
+      "sha256": "aeeb255dde44dd2a4e5721fbb64bceb52b9a98a2264b37ebe9c8fc7c6ec1e699"
+    },
+    "current-case-absence-observation": {
+      "bytes": 979,
+      "sha256": "fb9bd9d97ee3240088348f6dd8b5a70cdd13d0ee2bd30d02100624707d0501fa"
+    },
+    "source-gameplay-verification": {
+      "bytes": 1491,
+      "sha256": "daaefe67a82251a4e8ea82ca8889e7d437ddfec40fc34548137f7ead042ed68b"
+    },
+    "source-gameplay-report": {
+      "bytes": 1978469,
+      "sha256": "0d9a15433a63d39fae6fe5a663ef972925795ae536ef1b14638b9ace08b4a968"
+    },
+    "relocation-owner": {
+      "bytes": 2345,
+      "sha256": "65fcb9194060bf6213f7722ca984323ba9c1d4dc43671509a853d5418592b500"
+    },
+    "relocation-report": {
+      "bytes": 2388,
+      "sha256": "a320daa15b1af49e4b03c6c64f68ed3d9f53969ae54e4c945913cf338eb4ae8f"
+    },
+    "relocated-gameplay-verification": {
+      "bytes": 1490,
+      "sha256": "6b478abee42f820149aa5ded1397e712c26f02569d054bcb40a89fd98099228a"
+    },
+    "relocated-gameplay-report": {
+      "bytes": 1978490,
+      "sha256": "1a64da4f727920ecbcc0527f9f862cf2044d23c534b8da237ffcc71106688156"
+    },
+    "render-owner": {
+      "bytes": 227494,
+      "sha256": "fde1e44f5f385a38cf3e347d0d51b09f5435146d5796b629490abce0914400b8"
+    }
+  },
+  "limits": [
+    "This is not a second successful fresh-agent workflow; the repeated-workflow Alpha gate remains open.",
+    "No general agent success rate, production readiness, physical input, listening, representative performance or clean-machine claim.",
+    "The candidate source/library/world were not edited to pass the independent verifier.",
+    "Publication adds evidence; it does not claim a native 0.0.137 build or new gameplay API."
+  ]
+}

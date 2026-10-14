@@ -1,0 +1,47 @@
+{
+  "format": "poima.switchback-repeat-source-provenance.v1",
+  "CSharp": {
+    "file": "src/RangeGame.cs",
+    "bytes": 10942,
+    "sha256": "fb2a36e301b9b29a5d273f87898502b690b99c1de827f08666f7a7f1e078c19d",
+    "original_bytes_preserved": true
+  },
+  "exercise": {
+    "file": "exercise.json",
+    "bytes": 1782,
+    "sha256": "a9ef6d5151be5b5fd30ea0a484c2bad111f8962ec002a8002f44b27b902224b7",
+    "origin": "Independent evaluator identity and logical UI mapping derived after the provider closed; gameplay rules are unchanged."
+  },
+  "source_project_evaluated": true,
+  "portable_project_rebuild_qualified": false,
+  "original_fresh_workflow_passed": false,
+  "compiled_identity": "switchback.range.original.v1",
+  "qualified_native_engine_version": "0.0.134",
+  "shared_cooked_assets": [
+    {
+      "existing_public_file": "docs/evidence/fixtures/agent-switchback-fresh/world.json.assets/9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99.pmodel",
+      "bytes": 245504,
+      "sha256": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99"
+    },
+    {
+      "existing_public_file": "docs/evidence/fixtures/agent-switchback-fresh/world.json.assets/2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8.paudio",
+      "bytes": 55660,
+      "sha256": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8"
+    },
+    {
+      "existing_public_file": "docs/evidence/fixtures/agent-switchback-fresh/world.json.assets/a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f.paudio",
+      "bytes": 103500,
+      "sha256": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f"
+    }
+  ],
+  "licenses": {
+    "source": "Apache-2.0 under repository license",
+    "shared_content": "CC0-1.0; original character/interface notices remain with the existing fresh fixture"
+  },
+  "adaptations": [
+    "C# gameplay bytes unchanged.",
+    "Normalized exercise metadata maps actual authored actor/UI/import identities and actual queued/completed text.",
+    "No machine-specific project file, compiled gameplay binary, raw imported source asset or duplicated cooked asset is included."
+  ],
+  "candidate_publisher_source_version": "0.0.135"
+}
