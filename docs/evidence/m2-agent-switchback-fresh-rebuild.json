@@ -1,0 +1,401 @@
+{
+  "format": "poima.switchback-fresh-source-rebuild.v1",
+  "passed": true,
+  "source_checkpoint": "0.0.135",
+  "native_engine_version": "0.0.134",
+  "platform": "Windows x86_64",
+  "scope": "Rebuild the published original C# and project with the current copied SDK/publisher, then execute the unchanged thirteen-group native campaign against the new artifact. This extends original131 evidence; it is not another fresh-provider rollout or exported-game qualification.",
+  "inputs": {
+    "fixture": "docs/evidence/fixtures/agent-switchback-fresh",
+    "CSharp": {
+      "bytes": 6528,
+      "sha256": "1863c8142d76d98bf2ae48b52d86041076eed7f7ceded3d4c245da81b1fed5b1"
+    },
+    "project": {
+      "bytes": 577,
+      "sha256": "01bdd26ddd21f68973c5c76dd44799edfbbf0f7c01f11737d77511af1bf100e0"
+    },
+    "world": {
+      "bytes": 64111,
+      "sha256": "9ed4340285cd2d17557b7b8d7495a6f7b341de39f459c0c3e663c1cc4e394649"
+    },
+    "CSharp_and_project_preserved_exactly": true,
+    "reference": "reference/Poima.Gameplay.dll supplied from newly built SDK; project bytes unchanged",
+    "engine": {
+      "bytes": 25980928,
+      "sha256": "ac07ee697126f25046bf52467b4f43f2df5e17bd1e605e9bc9a62846ae31fafb"
+    },
+    "producer_source_pins": {
+      "managed/Directory.Build.props": {
+        "bytes": 341,
+        "sha256": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d"
+      },
+      "managed/Poima.Components.Generator/Buffers.cs": {
+        "bytes": 7873,
+        "sha256": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d"
+      },
+      "managed/Poima.Components.Generator/Generator.cs": {
+        "bytes": 14846,
+        "sha256": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612"
+      },
+      "managed/Poima.Components.Generator/Poima.Components.Generator.csproj": {
+        "bytes": 510,
+        "sha256": "a0efd70e361774a8ea1fde88b9f1bb5fd94ed276a3d1c907f4b33684e80c530e"
+      },
+      "managed/Poima.Components.targets": {
+        "bytes": 308,
+        "sha256": "be51eef6e02f456ad64dbe71a9d8ca73b9969199776cf3be7a4d04f6762dc6a2"
+      },
+      "managed/Poima.Gameplay/Animation.cs": {
+        "bytes": 9184,
+        "sha256": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9"
+      },
+      "managed/Poima.Gameplay/AnimationLayers.cs": {
+        "bytes": 9308,
+        "sha256": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497"
+      },
+      "managed/Poima.Gameplay/Buffers.cs": {
+        "bytes": 615,
+        "sha256": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f"
+      },
+      "managed/Poima.Gameplay/CameraFovTransition.cs": {
+        "bytes": 2419,
+        "sha256": "27da92ef62d4ae3dc0494a40fcb9d8d248d1145b3e9e1f1c5303b6eb56bdb606"
+      },
+      "managed/Poima.Gameplay/CameraLens.cs": {
+        "bytes": 7224,
+        "sha256": "5025df2b26531e1f9a13a6edc70dcd6b718b31e7e5aeafc1e75f671e4f622878"
+      },
+      "managed/Poima.Gameplay/CharacterInput.cs": {
+        "bytes": 4234,
+        "sha256": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118"
+      },
+      "managed/Poima.Gameplay/CharacterStance.cs": {
+        "bytes": 6935,
+        "sha256": "0fb5d428cef3bf3ee55e4e1b79048a284c3034619de1a5f0821ce0fe9deb86eb"
+      },
+      "managed/Poima.Gameplay/Components.cs": {
+        "bytes": 5008,
+        "sha256": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4"
+      },
+      "managed/Poima.Gameplay/Gameplay.cs": {
+        "bytes": 19927,
+        "sha256": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a"
+      },
+      "managed/Poima.Gameplay/GameplayRequirements.cs": {
+        "bytes": 21849,
+        "sha256": "7f61c2e6f038cafd0ecc27664533158c05986c38eb68cee9a3d18950a2c95932"
+      },
+      "managed/Poima.Gameplay/HitRegions.cs": {
+        "bytes": 6268,
+        "sha256": "a289737edf8918e785173f5da239e75ab4d9d90c6d10c720cbfcde76da221101"
+      },
+      "managed/Poima.Gameplay/InputActions.cs": {
+        "bytes": 3358,
+        "sha256": "11a29e9140cbee941d43beaf92e45269825fc60ae69eae93ddeb7ea741df1583"
+      },
+      "managed/Poima.Gameplay/Instances.cs": {
+        "bytes": 4063,
+        "sha256": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7"
+      },
+      "managed/Poima.Gameplay/Lifecycle.cs": {
+        "bytes": 5088,
+        "sha256": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172"
+      },
+      "managed/Poima.Gameplay/Navigation.cs": {
+        "bytes": 9450,
+        "sha256": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef"
+      },
+      "managed/Poima.Gameplay/Persistence.cs": {
+        "bytes": 456,
+        "sha256": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2"
+      },
+      "managed/Poima.Gameplay/PlayerPreferences.cs": {
+        "bytes": 19802,
+        "sha256": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a"
+      },
+      "managed/Poima.Gameplay/Poima.Gameplay.csproj": {
+        "bytes": 36,
+        "sha256": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3"
+      },
+      "managed/Poima.Gameplay/RootMotion.cs": {
+        "bytes": 7526,
+        "sha256": "b0f1902c5f77f7be08d7bd82fb4ab12f1d13e75246681611372f0607771b0caf"
+      },
+      "managed/Poima.Gameplay/ServiceAbi.cs": {
+        "bytes": 1579,
+        "sha256": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e"
+      },
+      "managed/Poima.Gameplay/TwoBoneIk.cs": {
+        "bytes": 8296,
+        "sha256": "65095a82cba754fed491dd0c446f43d4d4e72658e4ac465f5cdf5552f8e72039"
+      },
+      "managed/Poima.Gameplay/Ui.cs": {
+        "bytes": 7655,
+        "sha256": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c"
+      },
+      "managed/Poima.ManagedBridge/Entry.cs": {
+        "bytes": 12141,
+        "sha256": "72eb638a9037f07671e47dab57b9f1d87a62000e086ff3363883fd1f9d794d0d"
+      },
+      "managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj": {
+        "bytes": 478,
+        "sha256": "fca83a20df45dea4f10593b7503f774d37ea2a4beceb7cd3b4a4072d1806ee8e"
+      },
+      "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": {
+        "bytes": 393,
+        "sha256": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098"
+      },
+      "managed/Poima.NativeGame.Generator/Program.cs": {
+        "bytes": 7120,
+        "sha256": "a7186a1b7759d38f6d9b13d54e28a331df92d7034677a3a080d7161c83de4cb6"
+      },
+      "managed/Poima.NativeGame/Entry.cs": {
+        "bytes": 6712,
+        "sha256": "ba78b92aec1f54e0a8b1a4faf9910617175a4d578a1124c0d87744b5f259722c"
+      },
+      "managed/Shared/ComponentMetadata.cs": {
+        "bytes": 3084,
+        "sha256": "1c67e83c6a3b5048dd80737a542a843df5ca5ef68e5d01cccefbab1cc30e33d7"
+      },
+      "managed/Shared/PersistenceMetadata.cs": {
+        "bytes": 5919,
+        "sha256": "953c5cbfef06b2b3ffa7814ee16b9486ecb6ac540358c8d9698829a5515206f8"
+      },
+      "scripts/publish_native_gameplay.py": {
+        "bytes": 14860,
+        "sha256": "1cb21d37ae593d4d948e4488d11a461771d8e686c75552ab6bfdc5b971849ca1"
+      },
+      "LICENSE": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "THIRD_PARTY_NOTICES.md": {
+        "bytes": 21435,
+        "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+      }
+    },
+    "clean_public_client_files": 9,
+    "clean_sdk_manifest": {
+      "bytes": 1645,
+      "sha256": "5d28f50a588bceb1dcf5a5c75777c435ac421ee88fea2f8936c44b526fbd1b72"
+    },
+    "exercise_metadata": {
+      "bytes": 1754,
+      "sha256": "d89264bf7e8fa5f258d2df9922fdd8565c30b24e6e09622dcfb683357caeb480"
+    },
+    "portable_task": {
+      "bytes": 12529,
+      "sha256": "ca20e2336cf7b243f504c09a55a188ee4e4c4a104aa9f4b479f0c9e175644a5e"
+    }
+  },
+  "compilation": {
+    "passed": true,
+    "seconds": 22.257941799995024,
+    "dotnet_sdk": "10.0.401",
+    "dotnet_info": {
+      "bytes": 2722,
+      "sha256": "a22f3e94792b418b8844826934ae9b3466dcc991f3f03eec202201a32a4582b2"
+    },
+    "descriptor": {
+      "bytes": 5368,
+      "sha256": "45f39ef2377e0b248e89282ffafea4a8cfcc5d71b2327cc9b7353436513272a4"
+    },
+    "library": {
+      "bytes": 1380864,
+      "sha256": "777cf152f8eeb98ac701e615760aeebf2e3390aacb72a940b65b882fe2da07c6"
+    },
+    "declared_engine_version": "0.0.134",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 336,
+    "required_features": [
+      "baseline_v7",
+      "camera_lens_v1",
+      "character_input_v1",
+      "character_stance_v1",
+      "hit_regions_v1",
+      "input_actions_v1"
+    ],
+    "state_bytes": 152,
+    "fields": 27,
+    "existing_package_bytes_unchanged": true,
+    "package_additions": 0,
+    "admission": {
+      "bytes": 10981,
+      "sha256": "7e251adb86642af8e7429c052f40d46f57135592cdc51cda3ff9a7e51aa43d8f"
+    },
+    "report": {
+      "bytes": 18076,
+      "sha256": "fcde601026b35467c7b98e73548cb6a6a669c89d363cce323002b19ad832b32f"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1347,
+        "sha256": "7c947228068cd41ec03414ea65e2290547fd3e22c489f163d7859782d671fab8"
+      },
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 22.386487899988424,
+      "job_assigned_before_children": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "scope": "Fresh owned output/source/tool tree using selected existing installed SDK/linker and package cache; no cold-cache or bit-identical-build claim."
+  },
+  "gameplay": {
+    "passed": true,
+    "transport": "world",
+    "groups": 13,
+    "checks": [
+      "Ready-gates-twelve-explicit-input-ticks",
+      "empty-fire-rejection-and-independent-ADS-endpoints/reversal",
+      "compiled-menu/resume-and-explicit-step-gating",
+      "authored-cover-occludes-start-ray",
+      "committed-crouch-pickup/reload-order-and-blocked-stand",
+      "real-camera-hit-tests-A/B-and-held-fire-single-edge",
+      "six-tick-native-batch/single-initial-fire-edge",
+      "full-v9-same-owner-mid-reload/ADS-restore-and-next-tick",
+      "two-sequential-fresh-native-owners/full-v9-restores-and-identical-continuation",
+      "full-v9-menu-pair-and-compiled-game-save/load-ticket-reconciliation",
+      "completed-native-course/winning-Use-before-Fire-and-terminal-gates",
+      "nine-full-v9-checkpoints/five-exact-pairs/no-field-exclusions-and-four-native-cues",
+      "native-hazard/death-gates-and-compiled-full-checkpoint-Retry"
+    ],
+    "native_rpcs": 21990,
+    "owners": 4,
+    "full_snapshot_version": 9,
+    "full_checkpoints": 9,
+    "typed_exact_pairs": 5,
+    "field_exclusions": [],
+    "all_native_exits_natural": true,
+    "raw_receipts": {
+      "positive-rpc.json": {
+        "bytes": 24187796,
+        "sha256": "82bb4aeebbda83ba8ba8a24628088d79d0d2fb374314cf60b46610f4dc0fc49a"
+      },
+      "cold-reference-rpc.json": {
+        "bytes": 246536,
+        "sha256": "ef3bb233a0dc290e8a2c7a55b24d894772fee2116970314d66333afd911c4564"
+      },
+      "cold-fresh-rpc.json": {
+        "bytes": 11374629,
+        "sha256": "156b4084d635a3603235769a56658b6e3f93de4182f8e40b50debb40ea67c18b"
+      },
+      "negative-rpc.json": {
+        "bytes": 9719237,
+        "sha256": "61257e1e4f5542e9d2fe8d8e416df842497786425f8db2ae606656041bf31065"
+      }
+    },
+    "verification": {
+      "bytes": 1491,
+      "sha256": "9446b59cf3e7dbe3bb905a3aa9762a7112632726a4a3474622651de35eaa8d56"
+    },
+    "report": {
+      "bytes": 1791670,
+      "sha256": "44a52619c4c745e60e3bee8f1d78c0563046292b7fbef63214f5dc81578b83f6"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1400,
+        "sha256": "6b7f2239529c9748a48e12d2125c7f8c4db5362cc2074a8245079a6ec19874b4"
+      },
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 23.144565999973565,
+      "job_assigned_before_children": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    }
+  },
+  "profile_correction": {
+    "passed": true,
+    "source": "tests/development_toolchain.py",
+    "change": "Retain the actual host PROCESSOR_ARCHITECTURE in the explicit qualification environment allowlist.",
+    "actual_external_check": "dotnet --info under actual JobRunner isolated environment",
+    "processor_architecture": "AMD64",
+    "report": {
+      "bytes": 1426,
+      "sha256": "9bc5511310ba5241d599ec9bd90fa63240ae92f072c7845d42306af3cbf9e81d"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1337,
+        "sha256": "7c765d56cb722cb4ec10c161fbf51e153e4ef127fcb03d82697f88d8164658d5"
+      },
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 0.6262922000023536,
+      "job_assigned_before_children": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "upstream_reference": "https://raw.githubusercontent.com/dotnet/sdk/v10.0.401/src/Cli/dotnet/Installer/Windows/InstallerBase.cs"
+  },
+  "retained_failures": [
+    {
+      "phase": "first compiler-environment diagnostic",
+      "passed": false,
+      "cause": "The inherited explicit profile omitted PROCESSOR_ARCHITECTURE; SDK10.0.401 InstallerBase initialization dereferenced the absent value during dotnet --info. Compilation did not begin.",
+      "failure": {
+        "bytes": 5951,
+        "sha256": "6457123546e51f0a5ffe15c2c76f72369574ed3401cf040d8f00cbfcfa972459"
+      },
+      "stderr": {
+        "bytes": 2481,
+        "sha256": "98f4282cf18f209f8612c510c334e3e54b17db9e740d6b0c850fdaa866da28d6"
+      },
+      "owner": {
+        "receipt": {
+          "bytes": 1804,
+          "sha256": "114f1e018a42a59e7d94fa2311ef145eeb6f03b0d17714e0e743a2fd0bb1bc60"
+        },
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 25.090291300031822,
+        "job_assigned_before_children": true,
+        "forced_cleanup": false,
+        "active_descendants_at_exit": 0,
+        "terminated_descendants": 0
+      }
+    },
+    {
+      "phase": "first campaign preflight",
+      "passed": false,
+      "cause": "Existing __pycache__ in the chosen SDK input was correctly rejected before output creation or native owners. Used a fresh exact tracked-file SDK copy for the successful campaign.",
+      "record_kind": "root-recorded preflight failure",
+      "receipt": {
+        "bytes": 442,
+        "sha256": "45422132b0ef34e1ce6b3d7fdc656e4d8aa1e4d9ed455e6ff709a7e027e37d3a"
+      },
+      "native_owners_started": 0
+    }
+  ],
+  "limits": [
+    "Original131 fresh provider run, source-unavailable export and Vulkan results remain separate historical evidence. No new provider success-rate claim.",
+    "Newly rebuilt module has native gameplay/save-continuation qualification here; its export, source-absence and rendered observations are not qualified by this campaign.",
+    "No physical input, listening, clean-machine deployment, representative performance or Alpha qualification."
+  ],
+  "verifier_sources": {
+    "agent_switchback_oracle.py": {
+      "bytes": 31211,
+      "sha256": "ff1493cbd1331eccfa4844c6eec06471cce1aa84c11a5edca0546c7c9bf706eb"
+    },
+    "switchback_oracle.py": {
+      "bytes": 39455,
+      "sha256": "43782dd91a219490132966761143444a290c2958015f5afebb1ab9daebf8a210"
+    },
+    "switchback_ownership.py": {
+      "bytes": 8658,
+      "sha256": "f6a44c6de87a03010de4f13ef569648acd01027eedd1e7a0a93cc729ee824233"
+    },
+    "switchback_game_service.py": {
+      "bytes": 17034,
+      "sha256": "2700cbb3e522ae24c89ede0ac6f4d139f1264047fb7c6d02cd3a9a39f373294b"
+    }
+  }
+}

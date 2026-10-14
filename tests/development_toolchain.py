@@ -27,7 +27,7 @@ class JobRunner(Runner):
         # variables or a prefix wildcard that might include account credentials.
         selected = {
             'PATH', 'SYSTEMROOT', 'WINDIR', 'SYSTEMDRIVE', 'COMSPEC', 'OS',
-            'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMW6432',
+            'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMW6432', 'PROCESSOR_ARCHITECTURE',
             'PROGRAMDATA', 'ALLUSERSPROFILE',
             'INCLUDE', 'LIB', 'LIBPATH', 'VCTOOLSINSTALLDIR', 'VCINSTALLDIR',
             'VSINSTALLDIR', 'WINDOWSSDKDIR', 'WINDOWSSDKVERSION',

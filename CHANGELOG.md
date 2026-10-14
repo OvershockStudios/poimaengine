@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.135
+
+- Rebuild the published fresh Switchback C# and project unchanged with the current SDK and Native AOT publisher. Verify the new module through thirteen independent gameplay groups, 21,990 native RPCs and complete save continuation using native 0.0.134. [Results](docs/evidence/m2-agent-switchback-fresh-rebuild.json).
+- Retain the host processor architecture in isolated qualification profiles so `.NET --info` can initialize correctly. Preserve the failed diagnostic and rejected non-clean SDK preflight alongside successful compiler, profile and gameplay receipts.
+
 ## 0.0.134
 
 - Explain native-player readiness and pause conditions through cached state, nullable focus/drawable observations and retained terminal snapshots. Read without polling, device queries or playback changes. [Contract](docs/LIVE_PLAYER.md#readiness-and-pause-conditions).
