@@ -334,6 +334,45 @@
             {"audio_wall_ns",player_diagnostic_audio(a)},
             {"audio_counters_saturated",a.counters_saturated}};
     }
+    Json player_ui_info(const Json& params) const {
+        fields(params,{"player_id","generation","session_id","tick","ui_revision"},
+            {"player_id","generation","session_id"});
+        const auto id=identifier(params.at("player_id"));const auto generation=revision(params.at("generation"));
+        identifier(params.at("session_id"));
+        if(params.contains("tick"))revision(params.at("tick"));
+        if(params.contains("ui_revision"))revision(params.at("ui_revision"));
+        require(player_owner_ && id==player_owner_->id,"Player identity is not retained.",-32004);
+        require(generation==player_generation_,"Player generation conflict.",-32009);
+        require(player_owner_->window && runtime_,"Live player UI observation is unavailable.",-32003);
+        require(params.at("session_id")==runtime_id_,"Runtime session conflict.",-32009);
+        if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
+        require(POIMA_GAME_UI!=0,"Native UI presentation is not available in this build.",-32003);
+        const auto& sample=player_owner_->window->ui_observation();
+        Json result={{"format","poima.player-ui-observation.v1"},{"player_id",id},{"generation",generation},
+            {"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"ui_revision",runtime_->ui_model().revision()},
+            {"displayed",nullptr}};
+        if(!sample)return result;
+        require(sample->layout && sample->layout->projection && sample->layout->controls,"Invalid retained player UI observation.",-32020);
+        const auto& layout=*sample->layout;
+        Json controls=Json::array();
+        for(const auto& row:*layout.controls) {
+            controls.push_back({{"id",row.id},{"kind",row.kind==UiElementKind::button?"button":"label"},
+                {"bounds",row.bounds},{"clip",row.clip},
+                {"font_size_px",row.font_size_px},{"visible",row.visible},{"enabled",row.enabled},
+                {"hittable",row.hittable},{"focused",row.focused}});
+        }
+        const bool current=sample->session_id==runtime_id_ && sample->tick==runtime_->inspect().tick &&
+            sample->player_generation==player_generation_ && layout.projection==runtime_->ui_model().presentation() &&
+            player_owner_->window->ready();
+        result["displayed"]={{"session_id",sample->session_id},{"tick",sample->tick},
+            {"ui_revision",layout.projection->revision},{"player_generation",sample->player_generation},
+            {"frame_sequence",sample->frame_sequence},{"submission_id",sample->submission_id},
+            {"layout_generation",layout.generation},{"viewport",sample->viewport},
+            {"width",layout.width},{"height",layout.height},{"scale",layout.scale},
+            {"matches_current_owner",current},{"controls",std::move(controls)}};
+        return result;
+    }
     Json player_diagnostics_info(const Json& params) const {
         fields(params,{"player_id","generation"},{"player_id","generation"});
         const auto id=identifier(params.at("player_id"));const auto generation=revision(params.at("generation"));
@@ -521,6 +560,7 @@
             }
             return player_receipt_json(receipt,false);
         }
+        if(method=="player.ui.inspect")return player_ui_info(params);
         if(method=="player.diagnostics.inspect")return player_diagnostics_info(params);
         if(method=="player.inspect") {
             fields(params,{"player_id"});

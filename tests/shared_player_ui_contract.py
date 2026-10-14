@@ -13,6 +13,7 @@ import traceback
 import uuid
 
 import player_service_contract as shared
+from player_ui_observation_contract import verify as verify_ui_observation, verify_live_reads
 from scene_capture import pixels
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,16 +60,22 @@ def qualify(client, observer, args, record, world):
     initial = shared.await_state(observer, lambda item: item['ready'], 'ui-initial-ready')
     check(initial['paused'] and initial['tick'] == 0, initial)
     player_id = initial['player_id']
+    ui_observation_reads = 0
 
     def state():
+        nonlocal ui_observation_reads
         owner = client.call('player.inspect')
         check(owner['paused'], 'State observations require an explicit paused owner boundary')
         sid = owner['current_session_id']
         runtime = client.call('runtime.inspect', {'session_id': sid})
-        return {'owner': owner,
+        boundary = {'owner': owner,
                 'runtime': runtime,
                 'game': client.call('runtime.gameplay.inspect', {'session_id': sid}),
                 'ui': client.call('runtime.ui.inspect', {'session_id': sid, 'tick': runtime['tick']})}
+        if owner['ready']:
+            verify_ui_observation(client, boundary, guards=ui_observation_reads == 0)
+            ui_observation_reads += 1
+        return boundary
 
     def values(boundary):
         return boundary['game']['module']['values']
@@ -148,6 +155,7 @@ def qualify(client, observer, args, record, world):
     # creates the decisive boundary, without pretending to synthesize focus.
     resume_request, resumed = activate(5)
     check(resumed['intent'] == 1, resumed)
+    record['live_ui_observation'] = verify_live_reads(client, require_unpaused=args.require_unpaused_ui)
     force_pause('newer-owner-pause')
     paused = state()
     check(values(paused)['ControlCalls'] == 2 and values(paused)['LastAction'] == 3, paused)
@@ -216,7 +224,9 @@ def qualify(client, observer, args, record, world):
     record['checks'] = {'compiled_native_controls': True, 'visible_same_tick_ui_edit': True,
         'resume_receipt_cannot_override_newer_pause': True, 'actual_compiled_save_load': True,
         'replacement_paused_same_player': True, 'old_epoch_resume_not_reapplied': True,
-        'exact_saved_ui_pixels': True, 'authored_world_unchanged': True}
+        'exact_saved_ui_pixels': True, 'authored_world_unchanged': True,
+        'ui_observation_owner_guards_and_read_only': ui_observation_reads > 0,
+        'running_ui_observation': record['live_ui_observation']['unpaused_advancing_observation_qualified']}
 
 
 def main():
@@ -225,6 +235,8 @@ def main():
     parser.add_argument('--native-descriptor', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--require-unpaused-ui', action='store_true',
+        help='Require actual unpaused, advancing native ownership during live UI reads; keep the test window focused')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--timeout', type=int, default=180)
     args = parser.parse_args()
@@ -236,6 +248,7 @@ def main():
     inputs = {'binary': args.binary, 'descriptor': args.native_descriptor,
               'verifier': Path(__file__).resolve(), 'shared_helper': Path(shared.__file__).resolve(),
               'fixture_source': ROOT/'tests/managed_ui_gameplay/ManagedUiGame.cs',
+              'ui_observation_helper': ROOT/'tests/player_ui_observation_contract.py',
               'pixel_helper': ROOT/'tests/scene_capture.py'}
     for index,item in enumerate(descriptor['files']):
         relative = Path(item['path'])

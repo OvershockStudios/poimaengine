@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.132
+
+- Add [live displayed UI inspection](docs/PLAYER_UI_OBSERVATION.md) with native pixel bounds, ancestor clipping, computed font size and sampled hittability. Keep immutable last-presented frame tags distinct from current runtime state, with exact ownership and optional optimistic Tick/UI guards.
+- Share retained UI control storage across the document and presenter. Verify native DPI/clipped targets, immutable old frames and storage lifetime, plus discovery/MCP checks on Windows and non-rendering Linux.
+- Qualify actual AMD compiled UI controls/save-load and NVIDIA unattended replay observation: 32 unpaused reads advance with native C# UI updates, reject stale guards and close cleanly. [Results and limits](docs/evidence/m2-player-ui-observation.json).
+
 ## 0.0.131
 
 - Add a [fresh agent-authored Switchback implementation](docs/evidence/fixtures/agent-switchback-fresh/README.md) with original C# bytes, selected CC0 content and portable build/adopt/export instructions. Its original supervisor passes after recorded repairs in one provider session; retain the earlier failed workflow verdicts.

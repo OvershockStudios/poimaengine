@@ -5,6 +5,7 @@
 #include "poima/gamepad.hpp"
 #include "poima/player_diagnostics.hpp"
 #include "poima/player_lens.hpp"
+#include "poima/ui_presenter.hpp"
 #include <memory>
 
 namespace poima::frame_performance { class Recorder; }
@@ -153,6 +154,14 @@ struct PlayerMaterialReport {
     bool submit(PlayerMaterialReceipt&& frame) noexcept;
     bool present(PlayerMaterialReceipt&& frame) noexcept;
 };
+// Last successful presentation, retained independently of later preparation,
+// failed/skipped frames, UI edits and runtime replacement.
+struct PlayerUiObservation {
+    std::string session_id;
+    std::uint64_t tick=0,player_generation=0,frame_sequence=0,submission_id=0;
+    std::array<std::int32_t,4> viewport{}; // Target-pixel rectangle; controls local.
+    std::shared_ptr<const UiLayoutObservation> layout;
+};
 struct PlayerReport {
     std::string initial_session,final_session;
     std::uint32_t runtime_replacements=0; // Diagnostic only; saturates at UINT32_MAX.
@@ -203,6 +212,9 @@ public:
     PlayerReport report() const; // Owned partial/final CPU state; no graphics drain.
     // Owner-only bounded CPU/clock/audio history; no poll, device read or GPU drain.
     player_diagnostics::Snapshot diagnostics() const;
+    // Last presented immutable UI sample; null before a UI frame.
+    // No poll, DOM work, owner snapshot, native action or device access.
+    const std::optional<PlayerUiObservation>& ui_observation() const;
     // Observe a fresh owner snapshot through this live context, without stepping.
     // The caller validates the output path; capture_exclusive is honored.
     RenderReport capture(const std::string& path);

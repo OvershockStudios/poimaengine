@@ -187,7 +187,52 @@ void input_tests() {
     check(last_visible,"Scrollbar thumb drag did not expose last button.");
 }
 }
+
+void layout_observation_tests() {
+    using namespace poima;using namespace poima::ui;
+    const auto button=stable_id('1');Element e{button,"","Bottom",Kind::button,"Bottom","bottom"};
+    Layout l;l.position=Position::absolute;l.left=Length{24};l.top=Length{420};
+    l.width=Length{180};l.height=Length{36};l.padding=std::array<double,4>{0,0,0,0};e.layout=l;
+    Style s;s.font_size=16;s.border_width=0;e.style=s;Model model({e});UiPresenter p;
+    check(!p.layout_observation(),"Unframed presenter fabricated observations.");
+    auto frame=p.frame(model.presentation(),960,540,1.25f);const auto frozen=p.layout_observation();
+    check(frozen && frozen->projection==model.presentation() && frozen->generation==frame->revision &&
+        frozen->width==960 && frozen->height==540 && frozen->scale==1.25f,"Layout/frame ownership tags differ.");
+    const auto storage=frozen->controls;
+    check(storage && storage.use_count()>=3 && p.layout_observation()->controls==storage,
+        "Presenter duplicated rather than shared its document's immutable control storage.");
+    const auto original=storage->at(0);rectangle(original.bounds,{30,525,255,570});
+    rectangle(original.clip,{0,0,960,540});check(std::abs(original.font_size_px-20)<.01f,"Computed dp font scale differs.");
+    check(original.hittable && p.input({UiInputKind::pointer_down,40,530}).consumed &&
+        p.input({UiInputKind::pointer_up,40,530}).activated==button,"Actual clipped pointer target differs from observation.");
+    check(!p.input({UiInputKind::pointer_down,40,545}).consumed &&
+        !p.input({UiInputKind::pointer_up,40,545}).activated,"Out-of-viewport button activated.");
+    // Reading is immutable and must not rebuild even after a pending UI edit.
+    model.edit(0,{{button,"Changed",false}});check(p.layout_observation()==frozen &&
+        frozen->controls->at(0).text=="Bottom" && frozen->controls->at(0).visible,"Read fabricated newer presentation state.");
+    p.frame(model.presentation(),960,540,1.25f);const auto hidden=p.layout_observation();
+    check(hidden!=frozen && hidden->controls!=storage && !hidden->controls->at(0).visible && !hidden->controls->at(0).hittable &&
+        storage->at(0).visible && storage->at(0).text=="Bottom","New frame mutated a retained old control storage.");
+    rejects([&]{p.frame(model.presentation(),0,720,2);});
+    check(p.layout_observation()==hidden,"Rejected frame overwrote the last successful observation.");
+    p.frame(model.presentation(),1280,720,2);const auto resized=p.layout_observation();
+    check(resized->width==1280 && resized->height==720 && std::abs(resized->controls->at(0).font_size_px-32)<.01f,
+        "Resize/DPI observations do not follow the actual computed document.");
+    std::shared_ptr<const std::vector<UiElementInspection>> orphan;
+    {
+        Model temporary_model({e});UiPresenter temporary;
+        temporary.frame(temporary_model.presentation(),960,540,1.25f);
+        orphan=temporary.layout_observation()->controls;
+        check(orphan && orphan.use_count()>=3,"Temporary presenter did not share document storage.");
+    }
+    check(orphan.use_count()==1 && orphan->size()==1 && orphan->at(0).id==button &&
+        orphan->at(0).text=="Bottom" && orphan->at(0).action=="bottom" && orphan->at(0).hittable,
+        "Control storage did not survive document/presenter/projection destruction.");
+    rectangle(orphan->at(0).bounds,{30,525,255,570});
+}
+
 int main() {try {
+    layout_observation_tests();
     authored_layout_tests();
     authored_scroll_tests();
     mixed_root_tests();

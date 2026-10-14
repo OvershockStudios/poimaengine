@@ -129,6 +129,7 @@ struct UiPresenter::Impl {
     std::shared_ptr<const ui::Presentation> projection;
     std::unique_ptr<UiDocument> document;
     std::shared_ptr<const UiFrame> packet;
+    std::shared_ptr<const UiLayoutObservation> observation;
     std::uint32_t width=0,height=0;float scale=0;
     std::optional<std::string> focused,pointer_pressed,accept_pressed;
     std::optional<std::array<float,2>> pointer_position;
@@ -195,11 +196,20 @@ std::shared_ptr<const UiFrame> UiPresenter::frame(std::shared_ptr<const ui::Pres
     }
     check(!changed || s.generation<9007199254740991ULL,"UI presentation generation exhausted.");
     auto packet=*result;packet.revision=s.generation+(changed?1:0);auto frozen=freeze_ui_frame(std::move(packet));
+    auto observation=std::make_shared<UiLayoutObservation>();
+    observation->width=width;observation->height=height;observation->scale=scale;
+    observation->generation=frozen->revision;observation->projection=projection;
+    const auto inspection=document->frame_inspection();
+    check(inspection!=nullptr,"Successful UI frame omitted its inspection.");observation->controls=inspection;
     if(replacement)s.document=std::move(replacement);
+    s.observation=std::move(observation);
     s.projection=std::move(projection);s.packet=std::move(frozen);s.width=width;s.height=height;s.scale=scale;
     if(changed)++s.generation;
     if(s.focused && !s.eligible(*s.focused)) {s.focused.reset();s.document->focus({});}
     return s.packet;
+}
+std::shared_ptr<const UiLayoutObservation> UiPresenter::layout_observation() const {
+    return impl_->observation;
 }
 std::vector<UiElementInspection> UiPresenter::inspect() {
     auto& s=*impl_;check(s.document && s.width,"UI inspection requires a successful frame.");return s.document->inspect();

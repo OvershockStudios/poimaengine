@@ -493,6 +493,7 @@ struct Context {
     std::array<std::uint32_t,2> game_ui_layout_extent{};
 #if POIMA_GAME_UI
     std::unique_ptr<UiPresenter> game_ui_presenter;
+    std::shared_ptr<const UiLayoutObservation> game_ui_observation;
 #endif
     nvrhi::ShaderHandle game_ui_vs,game_ui_ps;
     nvrhi::InputLayoutHandle game_ui_input;
@@ -2322,16 +2323,17 @@ struct Context {
         game_ui_source=scene ? scene->ui : nullptr;
 #if POIMA_GAME_UI
         if(!scene || !scene->logical_ui || scene->logical_ui->elements.empty()) {
-            game_ui_presenter.reset();game_ui_layout_frame.reset();game_ui_composed_frame.reset();return;
+            game_ui_presenter.reset();game_ui_layout_frame.reset();game_ui_composed_frame.reset();game_ui_observation.reset();return;
         }
-        if(!scene_visible) {game_ui_source.reset();return;}
+        if(!scene_visible) {game_ui_source.reset();game_ui_observation.reset();return;}
         const auto view=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const std::array<std::int32_t,4> rect{static_cast<std::int32_t>(std::floor(view.minX)),static_cast<std::int32_t>(std::floor(view.minY)),
             static_cast<std::int32_t>(std::ceil(view.maxX)),static_cast<std::int32_t>(std::ceil(view.maxY))};
-        if(rect[0]>=rect[2] || rect[1]>=rect[3]) {game_ui_source.reset();return;}
+        if(rect[0]>=rect[2] || rect[1]>=rect[3]) {game_ui_source.reset();game_ui_observation.reset();return;}
         if(!game_ui_presenter)game_ui_presenter=std::make_unique<UiPresenter>();
         const float scale=effective_game_ui_scale();
         const auto layout=game_ui_presenter->frame(scene->logical_ui,static_cast<std::uint32_t>(rect[2]-rect[0]),static_cast<std::uint32_t>(rect[3]-rect[1]),scale);
+        game_ui_observation=game_ui_presenter->layout_observation();
         const std::array<std::uint32_t,2> target_extent{extent.width,extent.height};
         if(game_ui_layout_frame!=layout || game_ui_layout_rect!=rect || game_ui_layout_extent!=target_extent) {
             auto packet=*layout;packet.width=extent.width;packet.height=extent.height;
@@ -3408,6 +3410,7 @@ struct PlayerWindow::Impl {
     std::unique_ptr<PlayerAudio> audio;
     std::shared_ptr<const PlayerPreferences::State> configuration;
     std::thread::id owner=std::this_thread::get_id();
+    std::optional<PlayerUiObservation> ui_observation;
     bool initialized=false,done=false,quit=false,owner_paused=false;
     bool focused=false,captured=false,active=false,ui_ready=false,ui_presented=false;
     bool ui_scale_pending=false;
@@ -3523,6 +3526,11 @@ struct PlayerWindow::Impl {
         // Prepare owned receipt storage before queue work. These tags describe
         // the current frame, not a later snapshot or an older retiring slot.
         auto submitted=*result.materials.observed,presented=submitted;
+        // Own tags before submission; publication below only moves/assigns owned
+        // data and never calls RmlUi after queue work. Captures also present.
+        PlayerUiObservation observed_ui;
+        observed_ui.session_id=submitted.session_id;observed_ui.tick=submitted.tick;
+        observed_ui.player_generation=submitted.player_generation;
         auto acknowledge=[&](bool drawn) noexcept {
             const auto& actual=context.diagnostics.scene_submitted;
             if(!actual || !same_renderer_snapshot(submitted.scene,*actual))return;
@@ -3532,6 +3540,13 @@ struct PlayerWindow::Impl {
             if(!shown || *shown!=*actual)return;
             presented.scene.frame_sequence=shown->frame_sequence;presented.scene.submission_id=shown->submission_id;
             result.materials.present(std::move(presented));
+#if POIMA_GAME_UI
+            if(context.game_ui_observation) {
+                observed_ui.frame_sequence=shown->frame_sequence;observed_ui.submission_id=shown->submission_id;
+                observed_ui.layout=context.game_ui_observation;observed_ui.viewport=context.game_ui_layout_rect;
+                ui_observation=std::move(observed_ui);
+            }else ui_observation.reset();
+#endif
         };
         try {const bool drawn=context.frame(capture);acknowledge(drawn);return drawn;}
         catch(...) {acknowledge(false);throw;}
@@ -3945,6 +3960,9 @@ bool PlayerWindow::paused() const {
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return impl_->initialized && impl_->ui_presented && !impl_->quit && !impl_->done;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
+    impl_->check_thread();return impl_->ui_observation;
+}
 player_diagnostics::Snapshot PlayerWindow::diagnostics() const {
     impl_->check_thread();auto snapshot=impl_->diagnostics.snapshot();
     snapshot.audio_cumulative=impl_->audio_work;snapshot.audio_since_last_poll=impl_->pending_audio();

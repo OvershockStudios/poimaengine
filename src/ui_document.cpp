@@ -131,6 +131,7 @@ struct UiDocument::Impl {
     std::string error,name,focus;Renderer renderer{error};Rml::Context* context=nullptr;Rml::ElementDocument* document=nullptr;bool joined=false;
     std::vector<UiElementBinding> bindings;std::map<std::string,Rml::Element*> elements;std::map<std::string,std::string> texts;
     std::vector<Rml::Element*> hit_regions;
+    std::shared_ptr<const std::vector<UiElementInspection>> last_frame_inspection;
     std::uint32_t width=640,height=480;float scale=1;double time=0;std::uint64_t revision=0;
     void valid() const {if(!error.empty())throw std::runtime_error(error);}
     void update() {
@@ -207,6 +208,11 @@ struct UiDocument::Impl {
         if(Rml::ElementUtilities::GetClippingRegion(e,clip)) {out[0]=std::max(out[0],float(clip.Left()));out[1]=std::max(out[1],float(clip.Top()));out[2]=std::min(out[2],float(clip.Right()));out[3]=std::min(out[3],float(clip.Bottom()));}
         return out;
     }
+    std::vector<UiElementInspection> inspection() {
+        std::vector<UiElementInspection> out;out.reserve(bindings.size());
+        for(const auto& b:bindings) {auto* e=element(b.id);out.push_back({b.id,b.action,texts.contains(b.id)?texts.at(b.id):plain_text(e),b.kind,e->IsVisible(true),enabled(e),b.kind==UiElementKind::button && hittable(e),focus==b.id,bounds(e),clipping(e),e->GetComputedValues().font_size()});}
+        valid();return out;
+    }
     bool hit(Rml::Element* e,float x,float y) {
         if(!e->IsVisible(true) || !enabled(e) || x<0 || y<0 || x>=static_cast<float>(width) || y>=static_cast<float>(height))return false;
         const auto clip=clipping(e);if(x<clip[0] || y<clip[1] || x>=clip[2] || y>=clip[3])return false;
@@ -235,11 +241,17 @@ std::shared_ptr<const UiFrame> UiDocument::frame(std::uint32_t width,std::uint32
     auto& s=*impl_;Operation operation(s.error,time);s.valid();s.time=time;s.width=width;s.height=height;s.scale=scale;
     s.context->SetDimensions({static_cast<int>(width),static_cast<int>(height)});s.context->SetDensityIndependentPixelRatio(scale);s.update();
     auto& renderer=s.renderer;renderer.packet={};renderer.packet.width=width;renderer.packet.height=height;renderer.packet.revision=++s.revision;renderer.frame_textures.clear();renderer.scissor_enabled=false;renderer.matrix=UiDraw{}.transform;
-    check(s.context->Render(),"RmlUi rendering failed.");s.valid();return freeze_ui_frame(std::move(renderer.packet));
+    // Inspection and render read the same already-updated DOM. In particular,
+    // querying an observation must never run a second Update/scroll step.
+    auto inspection=std::make_shared<const std::vector<UiElementInspection>>(s.inspection());
+    check(s.context->Render(),"RmlUi rendering failed.");s.valid();
+    auto frozen=freeze_ui_frame(std::move(renderer.packet));s.last_frame_inspection=std::move(inspection);return frozen;
 }
 std::vector<UiElementInspection> UiDocument::inspect() {
-    auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();std::vector<UiElementInspection> out;
-    for(const auto& b:s.bindings) {auto* e=s.element(b.id);out.push_back({b.id,b.action,s.texts.contains(b.id)?s.texts.at(b.id):s.plain_text(e),b.kind,e->IsVisible(true),s.enabled(e),b.kind==UiElementKind::button && s.hittable(e),s.focus==b.id,s.bounds(e),s.clipping(e)});}s.valid();return out;
+    auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();return s.inspection();
+}
+std::shared_ptr<const std::vector<UiElementInspection>> UiDocument::frame_inspection() const {
+    auto& g=globals();std::lock_guard lock(g.mutex);return impl_->last_frame_inspection;
 }
 void UiDocument::set_text(const std::string& id,const std::string& text) {
     text_bound(text,16384,true);auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();auto* e=s.element(id);

@@ -1,0 +1,347 @@
+{
+  "format": "poima.player-ui-observation-qualification.v1",
+  "source_checkpoint": "0.0.132",
+  "engine_version": "0.0.132",
+  "passed": true,
+  "method": "player.ui.inspect",
+  "discovery_revision": 96,
+  "contract": {
+    "format": "poima.player-ui-observation.v1",
+    "required": [
+      "player_id",
+      "generation",
+      "session_id"
+    ],
+    "optional_optimistic_guards": [
+      "tick",
+      "ui_revision"
+    ],
+    "authoring_core_v1_changed": false,
+    "gameplay_C_ABI_changed": false,
+    "displayed_and_current_boundaries_separate": true,
+    "immutable_RmlUi_update_before_render_inspection": true,
+    "successful_presentation_only_publication": true,
+    "shared_control_storage": true,
+    "read_has_no_action_DOM_update_or_device_access": true
+  },
+  "windows_build": {
+    "passed": true,
+    "scope": "Selected incremental Windows x86_64 CLI, desktop bridge and four native regression executables; inherited vendor dependencies were not rebuilt.",
+    "seconds": 325.3539091319981,
+    "cache_generation": 13,
+    "source_inputs_unchanged": true,
+    "source_pins": {
+      "bytes": 44292,
+      "sha256": "a6b0503eb2ab6f4ee6a140bf210f11f798b2d455148263eb317a1b572e3b2176"
+    },
+    "sealed_manifest": {
+      "bytes": 1610,
+      "sha256": "56c8c9d7d8abd0abb1650637db9874513a804630974de39b66f1402ea1a29362"
+    },
+    "report": {
+      "bytes": 54260,
+      "sha256": "112f9a4de4b5313e32557cd65e1fae538a9a0c5c439b6da460565aa6794cb3be"
+    },
+    "images": {
+      "poima.exe": {
+        "bytes": 25969152,
+        "sha256": "976f476e4dc03deb799cba87e2e17dcbf24630c9779e32c94fb833dcc1e0ad2f"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima_desktop.dll": {
+        "bytes": 296676352,
+        "sha256": "ffd6236cde2215de6fca647fda7bf38d23adc886b0176d65f7c736f33898779f"
+      },
+      "poima-ui-document-test.exe": {
+        "bytes": 4374016,
+        "sha256": "2a086e23041e7c34b97d286a84954796ed245a40cb0dbd59210eb3248c1e3eda"
+      },
+      "poima-ui-presenter-test.exe": {
+        "bytes": 5046272,
+        "sha256": "990b31e34b69c4cb8789f180c011515c9b80551c167cc7db5ca58e7fa526616d"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 24420352,
+        "sha256": "ff988229b9f38e2c8f1e1bcaa21d32916b59fafe0d1af41eee0c846adacac6ff"
+      },
+      "poima-mcp-test.exe": {
+        "bytes": 15152128,
+        "sha256": "40cc97252c56a2ccbfd21e40b6d67340d6663011eb504efaa213d1f4278a67c4"
+      }
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "tests": 4,
+    "cases": [
+      "RmlUi document layout/input/clipping/immutable frame/font lifetime",
+      "UI presenter cached geometry/DPI/clipped hit tests/retained shared storage/lifetime",
+      "1311 discovery responses across six owner scopes without state/history/file mutation",
+      "MCP lifecycle/envelope/exact-once adapter"
+    ],
+    "report": {
+      "bytes": 1556,
+      "sha256": "b2c6f2b85d3a1bce1e14f542bbccc6aff8ff0c6565bfe63d617cd7087ca4d2a7"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1347,
+        "sha256": "343271d1dd119bb27db31fd09543b6caada6b8abc41495f2ad36de496ac29f6a"
+      },
+      "seconds": 10.7160889999941,
+      "exit_code": 0,
+      "job_assigned_before_fixture": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    }
+  },
+  "managed_fixture": {
+    "identity": "poima.test.managed-ui",
+    "type": "Poima.Tests.ManagedUiGame",
+    "descriptor_engine_version": "0.0.91",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 176,
+    "schema_bytes": 72,
+    "schema_fields": 13,
+    "descriptor": {
+      "bytes": 3545,
+      "sha256": "932ec0c112727952308795544312a810192c0c5d91c1ddf7ed20e890d209e81e"
+    },
+    "library": {
+      "bytes": 1339392,
+      "sha256": "0f3431361b2a6332471cb6f394184645e7691b93645e5cb07da6287f8a785282"
+    },
+    "scope": "Retained Native AOT game; no managed compilation or publication in this checkpoint."
+  },
+  "paused_interactive": {
+    "passed": true,
+    "gpu": "AMD Radeon(TM) Graphics",
+    "resolution": [
+      640,
+      480
+    ],
+    "samples": 1,
+    "nvrhi_errors": 0,
+    "rpc_count": 351,
+    "ui_queries": {
+      "total": 69,
+      "successful": 57,
+      "rejected": 12
+    },
+    "checks": {
+      "compiled_native_controls": true,
+      "visible_same_tick_ui_edit": true,
+      "resume_receipt_cannot_override_newer_pause": true,
+      "actual_compiled_save_load": true,
+      "replacement_paused_same_player": true,
+      "old_epoch_resume_not_reapplied": true,
+      "exact_saved_ui_pixels": true,
+      "authored_world_unchanged": true,
+      "ui_observation_owner_guards_and_read_only": true,
+      "running_ui_observation": false
+    },
+    "captures": [
+      "original",
+      "edited",
+      "saved",
+      "restored"
+    ],
+    "exact_saved_ui_pixels": true,
+    "live_read_attempt": {
+      "reads": 32,
+      "unpaused_reads": 0,
+      "unpaused_qualified": false,
+      "scope": "The interactive owner remained paused; this is not advancing interactive observation evidence."
+    },
+    "report": {
+      "bytes": 6022204,
+      "sha256": "8354576b5df63e3bff31992cac1d3d32c3dca46b6bd4ee47c3cb437880521348"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1350,
+        "sha256": "6974e682b2d4cefbd1a85aea13a06ea2e10e6c58e3128c40725449b203c1dc34"
+      },
+      "seconds": 10.201339500024915,
+      "exit_code": 0,
+      "job_assigned_before_fixture": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "owners": 3,
+    "all_exit_zero_naturally": true
+  },
+  "unattended_replay": {
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "resolution": [
+      640,
+      480
+    ],
+    "samples": 1,
+    "nvrhi_errors": 0,
+    "rpc_count": 124,
+    "ui_queries": {
+      "total": 40,
+      "successful": 32,
+      "rejected": 8
+    },
+    "unpaused_reads": 32,
+    "first_observed_tick": 3,
+    "last_observed_tick": 149,
+    "first_observed_ui_revision": 3,
+    "last_observed_ui_revision": 149,
+    "final_tick": 161,
+    "final_label": "Tick 161",
+    "checks": {
+      "unattended_native_replay": true,
+      "bounded_neutral_replay_ticks": 600,
+      "running_reads": 32,
+      "native_tick_and_ui_revision_progress": true,
+      "compiled_tick_label_changed": true,
+      "no_control_callback": true,
+      "exact_owner_and_optional_stale_guards": true,
+      "live_interval_reads_only": true,
+      "authored_world_unchanged": true,
+      "terminal_ui_observation_rejected": true
+    },
+    "report": {
+      "bytes": 4087497,
+      "sha256": "111746504db7d475c7f0ae0e75bcc6b77f1b01c5597b3113e2ecabed7251e0b0"
+    },
+    "owner": {
+      "receipt": {
+        "bytes": 1348,
+        "sha256": "0dc9078ff652d8c59d21528169055c24f34f88edf10533584609870f4a7e6f4d"
+      },
+      "seconds": 4.53246700001182,
+      "exit_code": 0,
+      "job_assigned_before_fixture": true,
+      "forced_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "terminated_descendants": 0
+    },
+    "scope": "Actual advancing native replay and compiled Tick-driven UI. No focus/input synthesis, external steps or writes during the live-read interval; not focused interactive or physical input qualification.",
+    "owners": 3,
+    "all_exit_zero_naturally": true
+  },
+  "linux_nonrendering": {
+    "passed": true,
+    "scope": "Linux authoring/non-renderer with GAME_UI and simulation disabled; no Linux graphics or native gameplay claim",
+    "seconds": 328.0897654750006,
+    "artifacts": {
+      "poima": {
+        "bytes": 80645888,
+        "sha256": "878012a48de07ad1d7c1bfb5fb242c008f7256cb3e2811e592b9344dfdbd074b"
+      },
+      "poima-world-schema-test": {
+        "bytes": 77342360,
+        "sha256": "281c32e9e8506dd324dd42a89a83d5cadc4051d8b6f9c3344126e3212a9dcc9c"
+      },
+      "poima-mcp-test": {
+        "bytes": 8783520,
+        "sha256": "d473f0fb50cc8fa6f9f5d7cfff95e7bc2eea1fbfedb41e4a058e3c37ab8858ba"
+      }
+    },
+    "tests": [
+      {
+        "name": "poima-world-schema-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-mcp-test",
+        "exit_code": 0
+      }
+    ],
+    "discovery_responses": 1305,
+    "owner_scopes": 6,
+    "report": {
+      "bytes": 1943,
+      "sha256": "6d8b943fb0259f45cdbd62717f39d80ecbf8dccd936f975304edbf6183fe3e47"
+    },
+    "metadata_contract": {
+      "passed": true,
+      "checks": [
+        "compiled CLI version/ELF target",
+        "actual MCP initialization version",
+        "authoring profiler capture build version"
+      ],
+      "report": {
+        "bytes": 7460,
+        "sha256": "127b6e6e73ae367523a3ee45a3449226103d22e589e59937496f8fe6f3e6744b"
+      }
+    }
+  },
+  "retained_failed_qualification_attempts": [
+    {
+      "passed": false,
+      "cause": "Incorrect old fixture selection: descriptor library had been removed as a duplicate; exact retained bytes restored.",
+      "owner": {
+        "bytes": 1811,
+        "sha256": "d36b2e39a4457e2e3f259e7a69318cf53045f640f0aa775e6035ad836a161a66"
+      },
+      "forced_cleanup": false
+    },
+    {
+      "passed": false,
+      "cause": "The selected legacy v0.0.39 descriptor lacks the required min-services metadata. Select the complete retained ABI7/min176 v0.0.91 fixture, without relaxing admission or editing its descriptor.",
+      "owner": {
+        "bytes": 1811,
+        "sha256": "f6adeda1db9868681b4986d743bd3df869796629c4e46d6207f7a13be3a15974"
+      },
+      "forced_cleanup": false
+    }
+  ],
+  "visual_review": {
+    "reviewed_capture": "original paused interactive UI",
+    "capture": {
+      "bytes": 1228938,
+      "sha256": "68895b6f2c10993997dc78de5e42f519fa12f9445ada5ecb705715c60f922821"
+    },
+    "finding": "Original label and Edit/Save/Resume/Pause/Load controls are legible within the panel. The observed native border/clip/font samples use the same committed UI boundary.",
+    "scope": "Separate image and inspection RPCs do not atomically join the exact renderer frame."
+  },
+  "historical_visual_correction": {
+    "source": "m2-agent-switchback.json rendered_observation.visual_review (0.0.130)",
+    "correction": "The lower partially clipped control in Run is Menu. Load checkpoint is fully visible in Ready; the earlier visual text mislabeled it.",
+    "images": {
+      "Ready": {
+        "bytes": 2073738,
+        "sha256": "436f067aae655d3a6a98efcfe191374109aea43477bb3438e2393b23c9129c87"
+      },
+      "Run": {
+        "bytes": 2073738,
+        "sha256": "873cbfcbe307b59cb207ec9585c0033f8b413d4242f0cd0d57fa86579205043c"
+      }
+    },
+    "scope": "Reinspection of the retained original captures; no old game, historical report or changelog entry rewritten."
+  },
+  "limits": [
+    "Focused unpaused interactive ownership and physical mouse/controller input remain unqualified.",
+    "No exact atomic screenshot/layout join; compare frame tags and label same-boundary observations honestly.",
+    "Observation freeze/sampled-hit cost has not been measured on representative or maximum-size UI.",
+    "No Linux graphics, new Native AOT publication, exported132game service, production-performance or Alpha claim.",
+    "RmlUi border/scissor and sampled 5x5 hittability are not glyph ink, transformed coverage or occlusion-area estimates."
+  ],
+  "authoring_core_v1_identity": {
+    "passed": true,
+    "tests_per_platform": 2,
+    "platforms": [
+      "Windows x86_64",
+      "Linux x86_64"
+    ],
+    "windows_owner": {
+      "bytes": 1368,
+      "sha256": "3fbf91c64391319672f5eea022344a1d48b379690db20b80641b58f652b0d7f6"
+    },
+    "linux_command": "python -B tests/authoring_contract_identity.py <qualified Linux binary>",
+    "scope": "Selected authoring-core v1 identity/schema projection remains compatible; the new evolving method is outside that projection."
+  }
+}

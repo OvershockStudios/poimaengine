@@ -70,6 +70,9 @@ bool PlayerWindow::paused() const {impl_->check_thread();return impl_->is_paused
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return false;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
+    impl_->check_thread();static const std::optional<PlayerUiObservation> unavailable;return unavailable;
+}
 player_diagnostics::Snapshot PlayerWindow::diagnostics() const {impl_->check_thread();return {};}
 void PlayerWindow::drain_performance() { impl_->check_thread(); }
 void PlayerWindow::note_performance_intervention(std::uint32_t) { impl_->check_thread(); }

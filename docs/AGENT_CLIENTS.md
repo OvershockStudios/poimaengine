@@ -78,6 +78,12 @@ Provider-backed exercises are explicit integration checks, not part of the defau
 
 ## Rendered observations
 
+For live game UI, [displayed-control inspection](PLAYER_UI_OBSERVATION.md)
+provides physical bounds, clipping, effective font pixels and presentation tags
+from the actual native layout, alongside `runtime.ui.inspect` for text and
+logical state. Omit optional Tick/UI guards for running reads; use the documented
+pause/capture recipe when matching a screenshot to a committed UI boundary.
+
 Both tested clients receive Poima's MCP PNG image blocks. In a separate exercise, each identified the left/right colors of two rendered objects without being told the colors. A verifier checked that only discovery and one capture occurred, that the receipt hash matched the fresh BMP, that a PNG image block reached the client, and that the answer matched independently measured source pixels. [Observation evidence](evidence/m2-agent-observation.json).
 
 The exercise uses a camera at `(0, 0, 5)` looking along local `-Z`, with two unit boxes at `(-1, 0, 0)` and `(1, 0, 0)`. Object names are neutral; choose two distinct dominant RGB albedos independently of the agent prompt. Ask for one `world.capture` at 640×400 with four samples and the adapter option `"image": {"max_edge": 640}`. Restrict this exercise to discovery and capture, then request a JSON answer containing `left` and `right` colors.

@@ -14,6 +14,7 @@ struct UiElementInspection {
     bool visible=false,enabled=false,hittable=false,focused=false;
     std::array<float,4> bounds{}; // Untransformed border bounds in physical pixels.
     std::array<float,4> clip{}; // Ancestor scissor intersected with viewport.
+    float font_size_px=0; // RmlUi computed inherited font size, in physical pixels.
 };
 // Native presentation only: semantic actions are returned to the owner, never
 // executed as gameplay. No script host, disk resources, external images or URLs.
@@ -27,6 +28,9 @@ public:
     UiDocument(const UiDocument&)=delete;UiDocument& operator=(const UiDocument&)=delete;
     std::shared_ptr<const UiFrame> frame(std::uint32_t width,std::uint32_t height,float scale,double time);
     std::vector<UiElementInspection> inspect();
+    // Immutable registration inspection frozen after the successful frame's
+    // Update and before its Render. No DOM/update/input work on read.
+    std::shared_ptr<const std::vector<UiElementInspection>> frame_inspection() const;
     void set_text(const std::string& id,const std::string& plain_text);
     void set_enabled(const std::string& id,bool);
     void set_visible(const std::string& id,bool);
