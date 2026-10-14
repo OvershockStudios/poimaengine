@@ -1,0 +1,161 @@
+{
+  "format": "poima.retired-build-storage-qualification.v1",
+  "source_checkpoint": "0.0.136",
+  "passed": true,
+  "scope": "Standard-library build-storage maintenance: temporary-filesystem qualification on Linux and Windows, configured CTest, read-only inspection and guarded application to one explicitly retired CMake build.",
+  "sources": {
+    "scripts/build_storage.py": {
+      "bytes": 19198,
+      "sha256": "014f0bac639214e58fb0ef8f7abd969e3ce57bfad42987331f1074022dff64da"
+    },
+    "tests/build_storage_test.py": {
+      "bytes": 13372,
+      "sha256": "02d80079d5b3566b321427f00fb5be45fd817e08348740eb726208a96b758e31"
+    },
+    "docs/BUILD_STORAGE.md": {
+      "bytes": 4874,
+      "sha256": "58d99ab315c3c63e2c90f00c3c637008c781b0afbb2d19b0a9e348e6b7548eaf"
+    },
+    "CMakeLists.txt": {
+      "bytes": 83403,
+      "sha256": "4cda407d6f7b004a7516a8ec4c165f71d5d8c8dc240ff1fd8d5941d1491157d1"
+    }
+  },
+  "contract": {
+    "explicit_retired_cmake_roots_required": true,
+    "auto_retirement_or_age_inference": false,
+    "read_only_by_default": true,
+    "apply_requires_exact_plan_sha256": true,
+    "plan_freshness_seconds": 900,
+    "compiler_output_ownership": "Literal generated Ninja C/C++/ASM compiler outputs in constrained CMakeFiles target or root obj namespaces; source/input/evidence prefixes excluded.",
+    "formats": [
+      "bounded ELF relocatable",
+      "bounded ordinary and bigobj COFF relocatable",
+      "CMake-named GCC or Clang PCH signatures"
+    ],
+    "unrecognized_files_preserved": true,
+    "thin_archives_anywhere_inside_selected_root_refuse_selection": true,
+    "explicit_protect_paths_and_current_presets_excluded": true,
+    "linked_reparse_hardlinked_special_files_and_ninja_lock_refused": true,
+    "full_membership_identity_and_candidate_hash_revalidation": true,
+    "deletion_transactional": false,
+    "process_detection_or_containment": false
+  },
+  "qualification": {
+    "linux": {
+      "passed": true,
+      "discovered": 24,
+      "executed": 24,
+      "skipped": 0,
+      "exit_code": 0,
+      "source_files_unchanged": true,
+      "report": {
+        "bytes": 512,
+        "sha256": "409a3a318b3ba7955f31ab83437cd9af3fd86caca261731721b5c1a2ac29c02f"
+      },
+      "test_output": {
+        "bytes": 123,
+        "sha256": "4a42d0f5ccab8e17c81556f61669ae92359b591606073a268d23802b8fa118d9"
+      },
+      "elapsed_seconds": 0.6122136970079737
+    },
+    "windows": {
+      "passed": true,
+      "discovered": 24,
+      "executed": 21,
+      "skipped": 3,
+      "skip_reason": "The test process cannot create Windows symbolic links without the required privileges.",
+      "skipped_tests": [
+        "test_link_inserted_after_report_blocks_apply",
+        "test_linked_file_and_parent_rejected",
+        "test_linked_selection_ancestor_rejected"
+      ],
+      "corresponding_actual_symlink_tests_pass_on_linux": true,
+      "reparse_attribute_check": "Synthetic reparse-attribute refusal test; not a native junction creation test.",
+      "source_files_unchanged": true,
+      "exit_code": 0,
+      "natural_windows_job_closure": true,
+      "forced_cleanup": false,
+      "report": {
+        "bytes": 1001,
+        "sha256": "1dafb66feffdf776640e116739e4dac9565282c2211828742a319efaf557653d"
+      },
+      "owner": {
+        "bytes": 1323,
+        "sha256": "5e26a65ba6da26b2833ab130e244451f4b5b875242b392abb3bd09542ae05bb5"
+      },
+      "test_output": {
+        "bytes": 140,
+        "sha256": "70345e15e7468110c2620d24594c0d3a2552daf8c0d5f1a53d19e4c2d6e85641"
+      },
+      "elapsed_seconds": 1.9507851000525989,
+      "job_seconds": 1.9345082000363618
+    },
+    "read_only_retired_root_report": {
+      "passed": true,
+      "roots": 1,
+      "candidates": 83,
+      "candidate_logical_bytes": 286145080,
+      "deletions": 0,
+      "report": {
+        "bytes": 39982,
+        "sha256": "c9f76050ac3647666e3e2223491e80fa2bb02df2df88ee785239f554d3be42df"
+      }
+    },
+    "retired_root_application": {
+      "passed": true,
+      "roots": 1,
+      "removed_generated_objects": 83,
+      "removed_logical_bytes": 286145080,
+      "removed_allocated_bytes_before_unlink": 286145080,
+      "retained_files": 38,
+      "retained_hashes_unchanged": true,
+      "final_membership_exact": true,
+      "plan_sha256": "6568c4aa868277c233c0f0f1ac46c1f59018ec22d860f0047a51f84481bd6a41",
+      "application_report": {
+        "bytes": 12865,
+        "sha256": "4676a4f90da78c2214cc12e125db58ca4626c97438e934ef5f99e0935a329bff"
+      },
+      "retained_verification": {
+        "bytes": 674,
+        "sha256": "8d7dc4065915c44c298ec0e6bc6a927fde29ad7c1602654d470ee69a02c1fba3"
+      },
+      "scope": "One retired Linux CMake build on a Windows-mounted filesystem; no active workflow input selected."
+    },
+    "ctest": {
+      "passed": true,
+      "test": "retired_build_storage",
+      "tests": 1,
+      "failures": 0,
+      "timeout_seconds": 30,
+      "log": {
+        "bytes": 860,
+        "sha256": "5bc4561284815f6b0b09d8a878c07e71c7d077fb506f019bf4981cdba8c93f03"
+      },
+      "engine_targets_built": false
+    }
+  },
+  "coverage": [
+    "report leaves files unchanged; binaries, sources, reports and non-object .o data retained",
+    "explicit protected/current-preset roots and unsupported preset syntax refuse cleanup",
+    "thin archives, linked ancestry, hardlinks, reparse attributes and new Ninja locks refuse cleanup",
+    "unproven vendor/prebuilt/source/evidence objects excluded despite valid object bytes",
+    "ordinary/bigobj COFF, bounded ELF and CMake PCH recognition; malformed/truncated files preserved",
+    "plan hash/freshness and same-size/same-mtime content changes checked before deletion",
+    "late file changes stop apply with explicit completed subset",
+    "exclusive plan creation and forward-slash Windows path labels"
+  ],
+  "reproduce": {
+    "python_minimum": "3.11",
+    "temporary_filesystem_suite": "python -B tests/build_storage_test.py",
+    "ctest_name": "retired_build_storage"
+  },
+  "limits": [
+    "Temporary-filesystem cases are separate from the one retired-build application. Recovery size is a local observation, not a general disk-space saving guarantee.",
+    "All selected roots must be retired and have no live writers or consumers, including thin archives outside selected roots; selected-tree scanning cannot discover those external references.",
+    "Portable path/identity checks are not held-handle deletion, atomic compare-and-unlink or adversarial filesystem isolation.",
+    "No global process census, process containment or guarantee of safety for an active build.",
+    "Windows actual symlink tests were skipped for unavailable privileges; synthetic reparse refusal does not qualify real junction transitions.",
+    "Unknown Ninja variables/rules, Makefile-only ownership and unsupported formats remain untouched; preset syntax not understood by the helper fails closed."
+  ]
+}

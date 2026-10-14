@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.136
+
+- Add [retired build storage maintenance](docs/BUILD_STORAGE.md) with report-first inspection, exact reviewed plans and guarded removal of generated compiler objects/PCH. Preserve sources, assets, reports and binaries; require explicit retirement and no live consumers.
+- Verify 24 Linux and 21 Windows temporary-filesystem tests, with three Windows symlink-privilege skips covered on Linux. Register the bounded `retired_build_storage` CTest for Python 3.11+. [Results and limits](docs/evidence/m2-build-storage.json).
+
 ## 0.0.135
 
 - Rebuild the published fresh Switchback C# and project unchanged with the current SDK and Native AOT publisher. Verify the new module through thirteen independent gameplay groups, 21,990 native RPCs and complete save continuation using native 0.0.134. [Results](docs/evidence/m2-agent-switchback-fresh-rebuild.json).

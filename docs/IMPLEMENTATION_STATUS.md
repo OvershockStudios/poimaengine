@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.135**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.136**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.136 adds [retired build storage maintenance](BUILD_STORAGE.md): explicit root selection, read-only reports, reviewed plans and guarded removal of proven compiler objects/PCH. Qualification passes 24 temporary-filesystem tests on Linux and 21 on Windows; three Windows symlink tests are skipped for unavailable creation privileges and pass on Linux. Retirement with no live writers or consumers is required; the helper does not detect or contain processes. [Evidence and limits](evidence/m2-build-storage.json).
 
 Version 0.0.135 qualifies rebuilding the published fresh Switchback C# and project without changes, using copied current SDK/publisher sources and the native 0.0.134 runtime. The new Native AOT module passes all thirteen independent groups and 21,990 RPCs through four naturally closed owners, nine complete version-9 checkpoints and five typed-exact state comparisons. Preserve the failed environment diagnostic and rejected non-clean SDK preflight separately. Qualification profiles now retain the host processor architecture; actual isolated `.NET --info` succeeds. This closes the portable-source rebuild gap, while repeated fresh workflows, export/rendering of this new module and the remaining Alpha gates stay open. [Evidence](evidence/m2-agent-switchback-fresh-rebuild.json).
 

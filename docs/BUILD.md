@@ -8,6 +8,8 @@ For the graphical authoring workspace, follow the [desktop editor build](DESKTOP
 
 Run commands from your repository checkout. Build outputs go under `build/`; optional downloaded tools go under `.cache/`. No particular checkout path or developer account is required. Historical evidence describes the machine and filesystem used for each measurement, not a general build-time promise.
 
+Use [retired build storage maintenance](BUILD_STORAGE.md) to report and explicitly plan removal of compiler intermediates from retired CMake roots. Stop all consumers first; current presets and explicitly protected paths remain excluded.
+
 - CMake 3.24+, Ninja and a C++20 compiler and C99 support for MikkTSpace.
 - Python 3.10+ for the black-box tests, using only the standard library and repository fixtures. Disable tests with `-DPOIMA_BUILD_TESTS=OFF` if unavailable. Optional bootstrap and packaging scripts have their own requirements below; the native engine does not invoke Python.
 - The `dev` preset fetches a hash-verified, commit-pinned Vulkan-Headers archive on first configuration. No Vulkan SDK installation or loader is needed to compile. A system loader/driver is needed only when requesting graphics inspection.
