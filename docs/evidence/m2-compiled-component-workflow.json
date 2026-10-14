@@ -1,0 +1,642 @@
+{
+  "format": "poima.compiled-component-workflow-qualification.v1",
+  "checkpoint": "0.0.144",
+  "date": "2026-10-14",
+  "passed": true,
+  "scope": "Fresh Windows Native AOT ComponentGame publication, native source/adoption/export, actual bundled executable consumer, selected typed state, saves and callback rollback. Additional candidate contract evidence; broader Alpha and stable runtime contract remain open.",
+  "lineage": {
+    "native_engine": "0.0.142",
+    "cpp_engine_rebuilt": false,
+    "managed_sources": "Current 0.0.143 gameplay SDK and original ComponentGame, unchanged by this checkpoint.",
+    "publication_descriptor_engine_version": "0.0.142",
+    "source_binary": {
+      "bytes": 25973248,
+      "sha256": "43143b08d4f1c9318426d7075f09001aa0c681ecb5d4913983ba375ac904f2ab"
+    },
+    "bundled_binary": {
+      "path": "runtime/bin/poima.exe",
+      "bytes": 22217728,
+      "sha256": "1b473579e1605c8463c4319fb95c511dd7c7b44d99da6dcc52bb051a3175c200"
+    },
+    "native_module": {
+      "bytes": 1364480,
+      "sha256": "20efe9ecb5646b759b44d530ca1ccdc0c1df9f924790e8e7aa8ec63917495405"
+    },
+    "canonical_components_manifest": {
+      "bytes": 925,
+      "sha256": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048"
+    }
+  },
+  "source_pins": {
+    "docs/COMPONENT_GAME_WORKFLOW.md": {
+      "bytes": 10772,
+      "sha256": "b2f98f5e4d8f331fa872f6734e30329f7aec4e9e79cc033beb447c104e4cadd5"
+    },
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "ef46cf8990ecde9dcbf668a4438dd7baf3a53acb723ef5b91a421e78b587f5f8"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 539,
+      "sha256": "b338f6ae39301c65dd922809d30710385848eec35e80563628847c79e7f14162"
+    },
+    "scripts/prepare_component_workflow.py": {
+      "bytes": 8604,
+      "sha256": "21635d1bc45b5c1432f3a995bb522d149cd56c618fcd2d78db33d9c6aacf246d"
+    },
+    "tests/workflow_components_game_service.py": {
+      "bytes": 32919,
+      "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+    },
+    "tests/workflow_response_native.py": {
+      "bytes": 20143,
+      "sha256": "73c997ab54629e135104eb8f19148aca28a80fdcd0cb8365382c4ca3b7db29fc"
+    },
+    "tests/switchback_game_service.py": {
+      "bytes": 17034,
+      "sha256": "2700cbb3e522ae24c89ede0ac6f4d139f1264047fb7c6d02cd3a9a39f373294b"
+    },
+    "tests/switchback_ownership.py": {
+      "bytes": 8658,
+      "sha256": "f6a44c6de87a03010de4f13ef569648acd01027eedd1e7a0a93cc729ee824233"
+    },
+    "tools/python/poima_client/workflow_responses.py": {
+      "bytes": 47219,
+      "sha256": "b838da0d0681e2ee25a27756f4b47f02748eb3e9b09d7690b82b7f4185c5c473"
+    },
+    "docs/contracts/runtime-save-responses-v1.candidate.json": {
+      "bytes": 63224,
+      "sha256": "cc9a5267b81221dd2326c21cf705b36608322a00d15fbe4b76b0c3c733cc1a2f"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 14860,
+      "sha256": "1cb21d37ae593d4d948e4488d11a461771d8e686c75552ab6bfdc5b971849ca1"
+    }
+  },
+  "compiled_source_closure": {
+    "LICENSE": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "bytes": 21435,
+      "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+    },
+    "managed/Directory.Build.props": {
+      "bytes": 341,
+      "sha256": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d"
+    },
+    "managed/Poima.Components.Generator/Buffers.cs": {
+      "bytes": 7873,
+      "sha256": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d"
+    },
+    "managed/Poima.Components.Generator/Generator.cs": {
+      "bytes": 14846,
+      "sha256": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612"
+    },
+    "managed/Poima.Components.Generator/Poima.Components.Generator.csproj": {
+      "bytes": 510,
+      "sha256": "a0efd70e361774a8ea1fde88b9f1bb5fd94ed276a3d1c907f4b33684e80c530e"
+    },
+    "managed/Poima.Components.targets": {
+      "bytes": 308,
+      "sha256": "be51eef6e02f456ad64dbe71a9d8ca73b9969199776cf3be7a4d04f6762dc6a2"
+    },
+    "managed/Poima.Gameplay/Animation.cs": {
+      "bytes": 9184,
+      "sha256": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9"
+    },
+    "managed/Poima.Gameplay/AnimationLayers.cs": {
+      "bytes": 9308,
+      "sha256": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497"
+    },
+    "managed/Poima.Gameplay/Buffers.cs": {
+      "bytes": 615,
+      "sha256": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f"
+    },
+    "managed/Poima.Gameplay/CameraFovTransition.cs": {
+      "bytes": 2419,
+      "sha256": "27da92ef62d4ae3dc0494a40fcb9d8d248d1145b3e9e1f1c5303b6eb56bdb606"
+    },
+    "managed/Poima.Gameplay/CameraLens.cs": {
+      "bytes": 7224,
+      "sha256": "5025df2b26531e1f9a13a6edc70dcd6b718b31e7e5aeafc1e75f671e4f622878"
+    },
+    "managed/Poima.Gameplay/CharacterInput.cs": {
+      "bytes": 4234,
+      "sha256": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118"
+    },
+    "managed/Poima.Gameplay/CharacterStance.cs": {
+      "bytes": 6935,
+      "sha256": "0fb5d428cef3bf3ee55e4e1b79048a284c3034619de1a5f0821ce0fe9deb86eb"
+    },
+    "managed/Poima.Gameplay/Components.cs": {
+      "bytes": 5008,
+      "sha256": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4"
+    },
+    "managed/Poima.Gameplay/Gameplay.cs": {
+      "bytes": 19927,
+      "sha256": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 21849,
+      "sha256": "7f61c2e6f038cafd0ecc27664533158c05986c38eb68cee9a3d18950a2c95932"
+    },
+    "managed/Poima.Gameplay/HitRegions.cs": {
+      "bytes": 6268,
+      "sha256": "a289737edf8918e785173f5da239e75ab4d9d90c6d10c720cbfcde76da221101"
+    },
+    "managed/Poima.Gameplay/InputActions.cs": {
+      "bytes": 3358,
+      "sha256": "11a29e9140cbee941d43beaf92e45269825fc60ae69eae93ddeb7ea741df1583"
+    },
+    "managed/Poima.Gameplay/Instances.cs": {
+      "bytes": 4063,
+      "sha256": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7"
+    },
+    "managed/Poima.Gameplay/Lifecycle.cs": {
+      "bytes": 5088,
+      "sha256": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172"
+    },
+    "managed/Poima.Gameplay/Navigation.cs": {
+      "bytes": 9450,
+      "sha256": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef"
+    },
+    "managed/Poima.Gameplay/Persistence.cs": {
+      "bytes": 456,
+      "sha256": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2"
+    },
+    "managed/Poima.Gameplay/PlayerPreferences.cs": {
+      "bytes": 19802,
+      "sha256": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a"
+    },
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": {
+      "bytes": 36,
+      "sha256": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3"
+    },
+    "managed/Poima.Gameplay/RootMotion.cs": {
+      "bytes": 7526,
+      "sha256": "b0f1902c5f77f7be08d7bd82fb4ab12f1d13e75246681611372f0607771b0caf"
+    },
+    "managed/Poima.Gameplay/ServiceAbi.cs": {
+      "bytes": 1579,
+      "sha256": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e"
+    },
+    "managed/Poima.Gameplay/TwoBoneIk.cs": {
+      "bytes": 8296,
+      "sha256": "65095a82cba754fed491dd0c446f43d4d4e72658e4ac465f5cdf5552f8e72039"
+    },
+    "managed/Poima.Gameplay/Ui.cs": {
+      "bytes": 7655,
+      "sha256": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c"
+    },
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": {
+      "bytes": 393,
+      "sha256": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7120,
+      "sha256": "a7186a1b7759d38f6d9b13d54e28a331df92d7034677a3a080d7161c83de4cb6"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 6712,
+      "sha256": "ba78b92aec1f54e0a8b1a4faf9910617175a4d578a1124c0d87744b5f259722c"
+    },
+    "managed/Shared/ComponentMetadata.cs": {
+      "bytes": 3084,
+      "sha256": "1c67e83c6a3b5048dd80737a542a843df5ca5ef68e5d01cccefbab1cc30e33d7"
+    },
+    "managed/Shared/PersistenceMetadata.cs": {
+      "bytes": 5919,
+      "sha256": "953c5cbfef06b2b3ffa7814ee16b9486ecb6ac540358c8d9698829a5515206f8"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 14860,
+      "sha256": "1cb21d37ae593d4d948e4488d11a461771d8e686c75552ab6bfdc5b971849ca1"
+    },
+    "tests/components_gameplay/ComponentGame.cs": {
+      "bytes": 4896,
+      "sha256": "83a261d0142e52af8594105dce56c68d4f1f8c533decdca3f07c14ddb021cee2"
+    },
+    "tests/components_gameplay/Poima.ComponentGame.csproj": {
+      "bytes": 380,
+      "sha256": "ecb4f7f8a4e691c0ea23d65083a75afbb6249289e166a1b99519c6d4ce992621"
+    }
+  },
+  "publisher": {
+    "passed": true,
+    "owner": {
+      "passed": true,
+      "job_assigned": true,
+      "exit_code": 0,
+      "seconds": 35.77703450003173,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "processes": 32,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "single_publish_stage_seconds": 33.91331109998282,
+    "source_files_unchanged": true,
+    "artifact_files": 9,
+    "packages": {
+      "Microsoft.DotNet.ILCompiler/10.0.12": {
+        "path": "microsoft.dotnet.ilcompiler/10.0.12",
+        "sha512": "AawF393Q+VkdrnrnI1gu612zh5iqpa1AGSvnKCQ3IkMgSKJXIQbO1sXYRgEzOU4f0cPZ6MaCCF29xZSGWlmbuQ=="
+      },
+      "Microsoft.NET.ILLink.Tasks/10.0.12": {
+        "path": "microsoft.net.illink.tasks/10.0.12",
+        "sha512": "xi+BDjFpW+Sb+MHFHaH6Y/gV9I8BluFwRXc1QyCdoZbIK26eNiBeFuMTe/FMwc33G1wdHCyDg7CVTmb8OdQrMQ=="
+      },
+      "runtime.win-x64.Microsoft.DotNet.ILCompiler/10.0.12": {
+        "path": "runtime.win-x64.microsoft.dotnet.ilcompiler/10.0.12",
+        "sha512": "clsgU9GnioCJ+PBzQTCoJHxLXRU+7O/BzYrwRT8CUP7jgyYjNgJmNsQ/kbzAA7MG5kDvFoFvIBGHGzYdINh/EQ=="
+      }
+    },
+    "abi": {
+      "call_version": 1,
+      "call_bytes": 80,
+      "services_version": 7,
+      "minimum_services_bytes": 176,
+      "required_features": [
+        "baseline_v7"
+      ]
+    },
+    "toolchain_scope": "Actual generated/restore/link response metadata and selected package identities; not a complete immutable SDK/package/toolchain input closure."
+  },
+  "public_preparation": {
+    "owner": {
+      "passed": true,
+      "job_assigned": true,
+      "exit_code": 0,
+      "seconds": 6.118418300000485,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "processes": 5,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "harness": {
+      "bytes": 8604,
+      "sha256": "21635d1bc45b5c1432f3a995bb522d149cd56c618fcd2d78db33d9c6aacf246d"
+    },
+    "whole_typed_export_matches": true,
+    "original_inputs_unchanged": true,
+    "operations": [
+      "project create",
+      "component.schema.import",
+      "world.transact",
+      "project adopt-gameplay",
+      "project build"
+    ]
+  },
+  "consumer": {
+    "owner": {
+      "passed": true,
+      "job_assigned": true,
+      "exit_code": 0,
+      "seconds": 5.899461599998176,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "processes": 6,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "harness": {
+      "bytes": 32919,
+      "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+    },
+    "owners": [
+      {
+        "name": "source-standalone",
+        "calls": 347,
+        "validated_successes": 334,
+        "returncode": 0,
+        "host_returncode": null,
+        "expected_native_errors": 6,
+        "other_successes": 7
+      },
+      {
+        "name": "readonly-shared",
+        "calls": 343,
+        "validated_successes": 330,
+        "returncode": 0,
+        "host_returncode": 0,
+        "expected_native_errors": 6,
+        "other_successes": 7
+      },
+      {
+        "name": "readonly-cold",
+        "calls": 52,
+        "validated_successes": 51,
+        "returncode": 0,
+        "host_returncode": 0,
+        "expected_native_errors": 0,
+        "other_successes": 1
+      }
+    ],
+    "native_calls": 742,
+    "candidate_validated_successes": 715,
+    "expected_native_errors": 12,
+    "other_successes": 15,
+    "binary_selection": "Source standalone uses explicit --binary; readonly shared/cold hosts and clients use exact declared bundled executable.",
+    "source_readonly_typed_pairs": 3,
+    "same_owner_save_restore_typed_pairs": 2,
+    "cold_readonly_save_restore_typed_pairs": 1,
+    "rollback": {
+      "total": 4,
+      "scopes": [
+        "source-standalone",
+        "readonly-shared"
+      ],
+      "cases": [
+        "duplicate_staged_write",
+        "later_tick_exception"
+      ],
+      "assertion": "Strict typed equality of complete selected entity/component/gameplay/UI checkpoint, actual owner save routing/queue and external save-file inventory before/after native -32040. No failed-command receipt or complete internal snapshot claim."
+    },
+    "checkpoint_scope": "All five fixture entities, all 13 selected entity fields, complete scalar Health/Interaction membership and values, canonical registry schemas, full gameplay module/schema/values/diagnostics/migration, runtime headers and bounded complete UI. Session identity is checked within each owner before comparison; declared source/bundle native-library paths are verified separately.",
+    "comparison_scope": "Three pre-ticket cross-owner pairs; full post-ticket save/restore pairs within each owner and cold readonly owner. Random ticket globals remain present and exact in restore pairs.",
+    "cold_ticket_continuation": "Full cold restore equals saved selected state. Only explicit predicted SaveState 3 to 0 differs in the following tick relative to same-owner continuation, because the old owner ticket is expired.",
+    "original_inputs_unchanged": true
+  },
+  "documented_supervisor_smoke": {
+    "owner": {
+      "passed": true,
+      "job_assigned": true,
+      "exit_code": 0,
+      "seconds": 0.21752020000712946,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "processes": 1,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "scope": "Exact guide wrapper running preparation --help only; no compiler, native gameplay or equivalence of generic developer environment to recorded private linker inputs."
+  },
+  "preparation_ownership_rejections": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "artifact",
+        "passed": true,
+        "no_output_created": true,
+        "inputs_unchanged": true,
+        "processes": 1
+      },
+      {
+        "name": "runtime",
+        "passed": true,
+        "no_output_created": true,
+        "inputs_unchanged": true,
+        "processes": 1
+      }
+    ],
+    "helper": {
+      "bytes": 8604,
+      "sha256": "21635d1bc45b5c1432f3a995bb522d149cd56c618fcd2d78db33d9c6aacf246d"
+    }
+  },
+  "earlier_failed_attempts": [
+    {
+      "attempt": "components-aot-1",
+      "passed": false,
+      "reason": "Publisher preparation attempted to create the same owned temporary directory twice; stopped before the compiler.",
+      "receipt": {
+        "path": "build/alpha-contract-0.0.144/components-aot-1/owner.json",
+        "identity": {
+          "bytes": 3510,
+          "sha256": "cffa62f39e23a0708346a70ee4055a1d550e3b05dac6601a671dc311f19e81c5"
+        }
+      }
+    },
+    {
+      "attempt": "component-export-1",
+      "passed": false,
+      "reason": "Evaluation helper added absent optional retired-world keys to its expected value after successful native export; native output was preserved.",
+      "receipt": {
+        "path": "build/alpha-contract-0.0.144/component-export-1/worker.json",
+        "identity": {
+          "bytes": 6788,
+          "sha256": "dc4583e1486a9b43f6cab9980240ad19d50e2f9d746d26a63f47db4f86510a5a"
+        }
+      }
+    },
+    {
+      "attempt": "components-game-1",
+      "passed": false,
+      "reason": "Cold restore request omitted expected_component_revision; native -32602 preserved. Corrected request obtains all applicable guards from the current owner.",
+      "receipt": {
+        "path": "build/alpha-contract-0.0.144/components-game-1/verification/report.json",
+        "identity": {
+          "bytes": 518716,
+          "sha256": "f8cf0df22b37a2fe6cdb451d471590021763fc345255f840a351fff759ce976c"
+        }
+      }
+    }
+  ],
+  "earlier_subset_passes": [
+    {
+      "attempt": "components-game-2",
+      "scope": "Successful typed/save/cold consumer before callback rollback cases; retained unchanged."
+    },
+    {
+      "attempt": "components-game-3",
+      "scope": "Same final verifier using earlier private preparation; superseded by successful actual public-helper consumer, not erased."
+    }
+  ],
+  "raw_receipts": [
+    {
+      "path": ".cache/alpha-contract-next/components144/independent-actual-review-v1.json",
+      "identity": {
+        "bytes": 8252,
+        "sha256": "51d32e1c3465d8809bed64ceec8da87b769d69a8499f7617799a595c1c037f74"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/documented-owner-1/job/owner.json",
+      "identity": {
+        "bytes": 1291,
+        "sha256": "17fa2155e91be5d858df7b72685b0009a62487074be8f9b02b1c5b1d548141d9"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/documented-owner-1/run-component-owned.py",
+      "identity": {
+        "bytes": 936,
+        "sha256": "56294049dca808f1bf8a3d0cbc207a21463ae0792a29b9f0fc10804b2e6d493a"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-aot-2/owner.json",
+      "identity": {
+        "bytes": 1490,
+        "sha256": "dcf5ff38e86b9c4ee721d55fd7b131b555f60db8c22968fc9728c8614ec7edbe"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-aot-2/worker.json",
+      "identity": {
+        "bytes": 11712,
+        "sha256": "131712ee8f25218cf33d82b682c4f3190cfd265cf74b04e5e3f1f483b1a74f9f"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-aot-2/source-pins.json",
+      "identity": {
+        "bytes": 9294,
+        "sha256": "fb9040d2a764e9cdb68a03f05b88c176c4e615603b83acf1ea46c9836d0398c8"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-aot-2/private-linker-pins.json",
+      "identity": {
+        "bytes": 2566,
+        "sha256": "d284ea65377c899d5dc6ffb4492397fcdf81996886c8e1ed61065caeeb8cda9c"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/public-prepare-1/qualification.json",
+      "identity": {
+        "bytes": 1688,
+        "sha256": "d21bb0f0a8cf7d692251bc755c995140fd372cc4ccf0f376af92493151be79a9"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/public-prepare-1/prepared/report.json",
+      "identity": {
+        "bytes": 20014,
+        "sha256": "82d7a703fb5fbdc1ad8339072eeca92789c9d0150f4a04f133221c35607885ea"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/qualification.json",
+      "identity": {
+        "bytes": 1760,
+        "sha256": "062c95bb38eb83b16671747b9f4b1eb04eb008595ab125bf480aaf918552aca5"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/report.json",
+      "identity": {
+        "bytes": 1003942,
+        "sha256": "c9e2682e3d4937d170fed5b0e67339aa3eeb41438682d7c39dde172d074f5f2c"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/prepare-ownership-negative-1/report.json",
+      "identity": {
+        "bytes": 473,
+        "sha256": "7783d306828c796887d5e44d81eb421fd9f76767062b886431adcd48f5f06338"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/prepare-ownership-negative-1/artifact-job.json",
+      "identity": {
+        "bytes": 2191,
+        "sha256": "1341368f9edc9fe488c3a12028c37351d7582fdec401b0c534d9a1ebe9a57d44"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/prepare-ownership-negative-1/runtime-job.json",
+      "identity": {
+        "bytes": 2184,
+        "sha256": "8cc5d2d1c7d99026ea3bc44b23a7c8ce9c06a8e17c3aee21199e9c7cd2a152d2"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/source-standalone/transcript.json",
+      "identity": {
+        "bytes": 1485776,
+        "sha256": "93487705b848382a4dd28fcdf59bb1e5449eb4587696bd1bc84c32fae899c574"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/source-standalone/connect-stdin.ndjson",
+      "identity": {
+        "bytes": 72112,
+        "sha256": "5bade4d8962e85a0e613813b3c31ea09b171592bae21665b45f4c14468831df5"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/source-standalone/connect-stdout.ndjson",
+      "identity": {
+        "bytes": 342477,
+        "sha256": "700a695302ff5a42a2ce06e3b2c91db33a7dc058ec526f6bcc920c8743f16712"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-shared/transcript.json",
+      "identity": {
+        "bytes": 1466420,
+        "sha256": "fb294fc6f317f81bb49523e3d5970b6466fe23e66ed06efdb48c082e10c090b0"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-shared/connect-stdin.ndjson",
+      "identity": {
+        "bytes": 71245,
+        "sha256": "65f1cdb027badce2fa513dca5aa99720aa860530193a0fe98d4104a7ac4712ec"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-shared/connect-stdout.ndjson",
+      "identity": {
+        "bytes": 337200,
+        "sha256": "872733998f874faf2c03e07fc539e8b41e67701d8377e40638a1bafc0ded87e4"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-cold/transcript.json",
+      "identity": {
+        "bytes": 198737,
+        "sha256": "2127371273f6339b1fd61824bd64f38cabd058d6875aac8539cb13c2e8e75065"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-cold/connect-stdin.ndjson",
+      "identity": {
+        "bytes": 10320,
+        "sha256": "f865ea108c9d6283a52eb3bdd84f1b98ac4afb269c411ad5a62eb7d09263bd15"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-public-game-1/verification/readonly-cold/connect-stdout.ndjson",
+      "identity": {
+        "bytes": 46241,
+        "sha256": "f67291df351a40021260a5d103ea9dccc15604922c5460c2212891dada23f305"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-aot-1/owner.json",
+      "identity": {
+        "bytes": 3510,
+        "sha256": "cffa62f39e23a0708346a70ee4055a1d550e3b05dac6601a671dc311f19e81c5"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/component-export-1/worker.json",
+      "identity": {
+        "bytes": 6788,
+        "sha256": "dc4583e1486a9b43f6cab9980240ad19d50e2f9d746d26a63f47db4f86510a5a"
+      }
+    },
+    {
+      "path": "build/alpha-contract-0.0.144/components-game-1/verification/report.json",
+      "identity": {
+        "bytes": 518716,
+        "sha256": "f8cf0df22b37a2fe6cdb451d471590021763fc345255f840a351fff759ce976c"
+      }
+    }
+  ],
+  "limits": [
+    "Selected full entity/component/gameplay/UI observations; no claim of complete internal version9 snapshot comparison.",
+    "Actual Job closure must be joined to the supervising ownership receipt; no inferred global process census.",
+    "No rendering, physical input, audio listening, performance or complete21method/ABI/stability qualification.",
+    "This fixture has scalar Health/Interaction fields; readonly bounded arrays remain a separate consumer gate.",
+    "Source, compiler and generic checkout/toolchain paths may remain available; no source-absence or clean-machine claim.",
+    "No resolving/failed ticket, recovered/upgraded save or complete error-response guarantee.",
+    "CLI subprocess output budget is checked after trusted subprocess returns, not a streaming-memory bound.",
+    "No new provider session, full production game, native Linux consumer, broader stable runtime contract or Alpha release."
+  ]
+}

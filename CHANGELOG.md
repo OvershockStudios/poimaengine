@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.144
+
+- Add a reproducible compiled-component workflow: publish the original C# fixture, prepare its typed source project, adopt gameplay and export, then launch the actual bundled executable. [Guide](docs/COMPONENT_GAME_WORKFLOW.md).
+- Qualify nonempty scalar components, Tick-driven save/load, cold restoration and four failed-callback rollback checks across source and readonly game services. Validate 715 selected successful results from 742 native calls; preserve failed preparation and evaluation attempts. [Results and limits](docs/evidence/m2-compiled-component-workflow.json).
+
 ## 0.0.143
 
 - Add opt-in Python result validation for 21 runtime/component/UI/save methods, with strict wire types, dynamic schema context, compact selectors, exclusive pagination and historical retry/replacement boundaries. Preserve the distinction between canonical runtime schemas and original embedded gameplay declarations. [Contract](docs/WORKFLOW_RESPONSE_CONTRACT.md).

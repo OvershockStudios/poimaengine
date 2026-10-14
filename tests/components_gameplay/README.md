@@ -42,3 +42,8 @@ cmake --build --preset runtime-headless --target poima-runtime-lifecycle-gamepla
 ```
 
 The uppercase arguments are paths to matching built artifacts. These checks cover atomic component writes/removal, next-tick query visibility, full-batch rollback, save-ticket continuity and v3 restoration. They do not expose a C# spawn API. [Qualification evidence](../../docs/evidence/m2-runtime-lifecycle-batch.json).
+
+For a Windows Native AOT source/export consumer check, follow the
+[compiled-component workflow](../../docs/COMPONENT_GAME_WORKFLOW.md). It creates
+a typed project, adopts this module, exports a matching runtime and checks the
+source service and actual bundled executable with retained native transcripts.

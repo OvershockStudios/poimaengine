@@ -106,3 +106,11 @@ coverage; they do not fill unobserved branches by inference.
 
 [Recorded qualification and remaining gaps](evidence/m2-workflow-response-contract.json)
 join the native captures, portable tests and independent retained-result checks.
+
+The subsequent [compiled-component workflow](COMPONENT_GAME_WORKFLOW.md) adds
+nonempty scalar Health/Interaction components in the actual exported game,
+Tick-driven save/load, cold restoration, and rejected compiled callbacks.
+It observes queued ticket globals at the save boundary and completed/expired
+tickets in their respective owners. It does not qualify every transient ticket
+state, readonly arrays, general upgrades or complete internal save equality.
+[Additional execution evidence](evidence/m2-compiled-component-workflow.json).

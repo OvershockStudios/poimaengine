@@ -99,3 +99,9 @@ validate the selected successful-result surface independently of request
 projection. Retained and focused native traces cover all 21 selected methods,
 with explicit remaining variant/error/behavior gaps. This advances the contract
 gate without closing the broader Alpha criteria. [Evidence](evidence/m2-workflow-response-contract.json).
+
+The 0.0.144 [compiled-component workflow](COMPONENT_GAME_WORKFLOW.md) adds
+fresh Native AOT publication and typed scalar component consumption through the
+actual exported executable, including save/load, cold continuation and compiled
+callback rollback. Its selected observations and expected errors strengthen the
+contract gate; the broader Alpha release criteria remain open.
