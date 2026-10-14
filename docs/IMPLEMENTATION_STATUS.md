@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.132**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.133**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.133 improves [Python terminal-error diagnostics](PYTHON_CLIENT.md#failure-and-deliberate-recovery). `RpcError` retains the correlated method, RPC ID and original bounded request context while preserving native errors and existing exception formatting. It performs no automatic retry, schema lookup or parameter rewriting. All 32 client tests pass against native 0.0.132 on Windows and Linux, including real peer/native error context and deliberate recovery; the SDK wheel passes exact-content and isolated native checks. [Evidence](evidence/m2-python-rpc-diagnostics.json).
 
 Version 0.0.132 adds [displayed game UI inspection](PLAYER_UI_OBSERVATION.md): immutable native bounds, clipping, computed font size and sampled hittability tagged with the actual presented frame. Exact player/session/generation guards remain required; optional Tick/UI guards allow live reads without a prior-read race. Native Windows UI/discovery/MCP checks and Linux non-rendering discovery/MCP/version checks pass. The actual AMD player passes 351 RPCs through compiled controls, UI edits and save/load; NVIDIA replay passes 32 genuinely advancing UI observations with compiled Tick-driven text. Focused interactive observation, physical input, atomic image/layout joins and observation cost at scale remain separate gaps. [Evidence](evidence/m2-player-ui-observation.json).
 

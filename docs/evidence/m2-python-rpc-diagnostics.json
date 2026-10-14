@@ -1,0 +1,152 @@
+{
+  "format": "poima.python-rpc-diagnostics-qualification.v1",
+  "source_checkpoint": "0.0.133",
+  "sdk_version": "0.0.133",
+  "native_engine_version": "0.0.132",
+  "passed": true,
+  "change": "Validated terminal RpcError carries the correlated method, RPC id, detached original parameter snapshot and optional operation request id through native transport and WorldClient embedding.",
+  "compatibility": {
+    "native_protocol_changed": false,
+    "native_C_ABI_changed": false,
+    "native_parser_changed": false,
+    "exception_constructor_args_and_formatting_changed": false,
+    "native_code_message_data_preserved": true,
+    "request_bound_bytes": 1048576,
+    "automatic_retry_reconnect_discovery_or_parameter_rewrite": false,
+    "raw_native_messages_remain_unmodified": true
+  },
+  "tests": {
+    "per_platform": 32,
+    "groups": {
+      "TransportContract": 8,
+      "WrapperContract": 10,
+      "RpcDiagnosticsContract": 9,
+      "NativeContract": 5
+    },
+    "real_peer_transport_error_context": true,
+    "real_native_revision_conflict_context_and_explicit_recovery": true,
+    "malformed_unknown_or_duplicate_correlations_rejected": true,
+    "mutable_caller_embedding_and_convenience_copies_cannot_change_original_JSON": true,
+    "parameter_values_not_added_to_exception_formatting": true,
+    "linux": {
+      "passed": true,
+      "python": "3.14",
+      "test_seconds": 6.204,
+      "log": {
+        "bytes": 4725,
+        "sha256": "caa0175d717b2420d573ea42cf137d0f280384281dcf9b4227ccd51c2a8dca63"
+      },
+      "binary": {
+        "bytes": 80645888,
+        "sha256": "878012a48de07ad1d7c1bfb5fb242c008f7256cb3e2811e592b9344dfdbd074b"
+      }
+    },
+    "windows": {
+      "passed": true,
+      "python": "3.14",
+      "owner_seconds": 7.06311079999432,
+      "report": {
+        "bytes": 471,
+        "sha256": "137217ae2fa09a86d8eaeb2c195ddaa7cd12316edd925875b808fd107c6d7f0b"
+      },
+      "owner": {
+        "bytes": 1391,
+        "sha256": "2b077c5ab57ba2026894c9b2db079e0c8e4fb3601c5f5110114701b5d6c43ecc"
+      },
+      "input_pins": {
+        "bytes": 2746,
+        "sha256": "25ae1356c6a4cb4f072d18ee122c182f0265a45fd58c024a40d3693ef9fbbb26"
+      },
+      "source_and_artifacts_unchanged": true,
+      "forced_supervisor_cleanup": false,
+      "active_descendants_at_exit": 0,
+      "binary": {
+        "bytes": 25969152,
+        "sha256": "976f476e4dc03deb799cba87e2e17dcbf24630c9779e32c94fb833dcc1e0ad2f"
+      }
+    }
+  },
+  "distribution": {
+    "passed": true,
+    "wheel": {
+      "bytes": 34792,
+      "sha256": "89030ac53e69fc839d55fbf7c989978e49bdfe206498e72a5c7f5fa8e4e37bc4"
+    },
+    "version": "0.0.133",
+    "build_backend": "setuptools 78.1.1",
+    "build_python": "3.13",
+    "exact_qualified_package_files": 9,
+    "package_sources": {
+      "client.py": {
+        "bytes": 17057,
+        "sha256": "6d73fc7b7e2e9b657dc11334cc12dd6176c5cd70635cf53abc86a3f40d2a75c4"
+      },
+      "core_responses.v1.candidate.json": {
+        "bytes": 25153,
+        "sha256": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90"
+      },
+      "core_responses.v1.json": {
+        "bytes": 25150,
+        "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+      },
+      "development.py": {
+        "bytes": 3633,
+        "sha256": "00cb5f5339ab6f1cd64eb6f6b99fc797b28343182b76a7c55d807059412011c9"
+      },
+      "errors.py": {
+        "bytes": 1455,
+        "sha256": "7578e3055e5997f7e83831afc2e366563582c3d2ef289cc6882095de3fd3f1c3"
+      },
+      "observation.py": {
+        "bytes": 9608,
+        "sha256": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c"
+      },
+      "responses.py": {
+        "bytes": 14658,
+        "sha256": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593"
+      },
+      "transport.py": {
+        "bytes": 18778,
+        "sha256": "75fa753b2b50067bd6d20d7d9a947baeb5f88dd8217c65511ab7d108236f8ff8"
+      },
+      "__init__.py": {
+        "bytes": 680,
+        "sha256": "d722f614ce26f98e703f42e9c4466fd8fd0d474c4ab3055ecbfc8d8ba10fbb32"
+      }
+    },
+    "schema_resources_loaded": true,
+    "isolated_native_error_smoke": {
+      "passed": true,
+      "version": "0.0.133",
+      "isolated_extracted_wheel": true,
+      "packaged_schema_resources_loaded": true,
+      "real_native_error_context": true,
+      "native_child_exit_code": 0,
+      "native_engine_version": "0.0.132"
+    },
+    "global_environment_changed": false,
+    "content_check": {
+      "bytes": 1564,
+      "sha256": "ebb7e559fc6d945d48667cd962e636e5858d39557ea61120c6ae66e9b9d8b1e1"
+    },
+    "installed_smoke_report": {
+      "bytes": 231,
+      "sha256": "08209a879bbd655b8adee8fe94d066b2035121afa67aeceef6f00cd8c6de25fd"
+    }
+  },
+  "retained_build_attempt": {
+    "passed": false,
+    "scope": "The first wheel command could not start because pip was unavailable for that interpreter. An existing local build backend then built and qualified the wheel without changing the global environment.",
+    "log": {
+      "bytes": 55,
+      "sha256": "6c69f18fdbe59ca3ac7660bd0ab59be085d13c09719e0b127db968c7c7cc3d7d"
+    }
+  },
+  "limits": [
+    "No new native 0.0.133 engine build; native process checks use qualified 0.0.132 binaries.",
+    "Synthetic protocol-fault tests deliberately dispose their malformed or delayed peer processes; supervisor cleanup did not rescue a passing cohort.",
+    "Error context describes the failed request; it does not prove rollback or authorize mutation retries.",
+    "No provider rollout, token/cost improvement, new graphics, managed gameplay, performance or Alpha qualification.",
+    "Explicit parameter-context inspection can expose its original request values; native messages/data are preserved rather than redacted."
+  ]
+}

@@ -9,7 +9,7 @@ import os
 import re
 import uuid
 
-from .errors import OutcomeUnknown, TransportError
+from .errors import OutcomeUnknown, RpcError, TransportError
 from .development import inspect_job, wait_for_job
 from .observation import iter_component_observations as _iter_component_observations
 from .responses import ResponseContractError, validate_core_result
@@ -147,7 +147,7 @@ class WorldClient:
                 # change the parameters used to validate the terminal result.
                 validate_core_result(method, result, json.loads(serialized))
             return result
-        except (OutcomeUnknown, ResponseContractError, KeyboardInterrupt, SystemExit) as error:
+        except (RpcError, OutcomeUnknown, ResponseContractError, KeyboardInterrupt, SystemExit) as error:
             # params_json remains authoritative if the convenient decoded copy
             # is edited later. Control-flow context does not assert transmission.
             error.method = method

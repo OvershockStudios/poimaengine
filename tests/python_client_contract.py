@@ -119,9 +119,17 @@ class TransportContract(unittest.TestCase):
 
     def test_structured_errors_keep_connection_usable(self):
         transport = self.start('error')
+        params = {'request_id': B, 'nested': ['private-context', '世界']}
         with self.assertRaises(RpcError) as caught:
-            transport.request('fail')
-        self.assertEqual((caught.exception.code, caught.exception.data), (-32009, {'revision': 9}))
+            transport.request('fail', params)
+        error = caught.exception
+        self.assertEqual((error.code, error.data), (-32009, {'revision': 9}))
+        self.assertEqual((error.method, error.request_id), ('fail', B))
+        self.assertIs(type(error.rpc_id), int)
+        self.assertEqual(json.loads(error.params_json), params)
+        params['nested'][0] = 'later caller edit'
+        self.assertEqual(error.params['nested'][0], 'private-context')
+        self.assertNotIn('private-context', repr(error))
         self.assertEqual(transport.request('echo', {'ok': True}), {'ok': True})
 
     def test_protocol_corruption_never_becomes_success(self):
@@ -402,8 +410,184 @@ class WrapperContract(unittest.TestCase):
         self.assertFalse(client.closed)
 
 
+class RpcDiagnosticsContract(unittest.TestCase):
+    def pending_transport(self, requests):
+        import threading
+        from poima_client.transport import _Pending
+        transport = object.__new__(JsonRpcProcess)
+        transport._condition = threading.Condition()
+        transport._closed = False
+        transport._pending = {}
+        for rpc_id, method, params in requests:
+            serialized = json.dumps(params, ensure_ascii=False, separators=(",", ":"))
+            pending = _Pending(rpc_id, b"", time.monotonic()+10, method, serialized)
+            pending.state = "written"
+            transport._pending[rpc_id] = pending
+        return transport, dict(transport._pending)
+
+    @staticmethod
+    def failure(rpc_id, message="Invalid selectors", data=None):
+        return dict(jsonrpc="2.0", id=rpc_id,
+                    error=dict(code=-32602, message=message, data=data))
+
+    def test_constructor_and_formatting_remain_compatible(self):
+        error = RpcError(-32009, "Original", {"secret": "native-data"})
+        self.assertEqual(error.args, ("Original",))
+        self.assertEqual(str(error), "Original")
+        self.assertEqual(repr(error), "RpcError('Original')")
+        self.assertEqual(error.data, {"secret": "native-data"})
+        for name in ("method", "rpc_id", "params_json", "params", "request_id"):
+            self.assertIsNone(getattr(error, name))
+
+    def test_terminal_error_carries_correlated_detached_context(self):
+        params = {"request_id": B, "nested": ["private-token", "世界"], "revision": 5.0}
+        transport, pending = self.pending_transport([(7, "world.transact", params)])
+        data = {"required": ["tick"], "host_detail": "unchanged"}
+        transport._accept_response(self.failure(7, data=data))
+        error = pending[7].error
+        self.assertIsInstance(error, RpcError)
+        self.assertTrue(pending[7].event.is_set())
+        self.assertEqual((error.method, error.rpc_id, error.request_id), ("world.transact", 7, B))
+        self.assertIs(error.data, data)
+        self.assertEqual((error.code, error.message), (-32602, "Invalid selectors"))
+        params["nested"][0] = "later"
+        self.assertEqual(error.params["nested"][0], "private-token")
+        error.params["nested"][0] = "edited convenience copy"
+        self.assertEqual(json.loads(error.params_json)["nested"][0], "private-token")
+        self.assertIs(type(json.loads(error.params_json)["revision"]), float)
+        self.assertNotIn("private-token", str(error))
+        self.assertNotIn("private-token", repr(error))
+        self.assertNotIn("host_detail", repr(error))
+        self.assertFalse(transport.closed)
+
+    def test_reordered_errors_keep_distinct_ids_and_success_remains_available(self):
+        transport, pending = self.pending_transport([
+            (11, "first", {"request_id": A}), (12, "second", [2]), (13, "third", {})])
+        transport._accept_response(self.failure(12))
+        self.assertFalse(pending[11].event.is_set())
+        transport._accept_response(self.failure(11))
+        transport._accept_response(dict(jsonrpc="2.0", id=13, result={"ok": True}))
+        self.assertEqual((pending[11].error.method, pending[11].error.rpc_id), ("first", 11))
+        self.assertEqual((pending[12].error.method, pending[12].error.rpc_id), ("second", 12))
+        self.assertIsNone(pending[12].error.request_id)
+        self.assertEqual(pending[12].error.params, [2])
+        self.assertEqual(pending[13].result, {"ok": True})
+        self.assertIsNone(pending[13].error)
+        self.assertFalse(transport.closed)
+        self.assertEqual(transport._pending, {})
+
+    def test_invalid_errors_never_gain_terminal_authority(self):
+        cases = [self.failure(True), self.failure(99),
+                 dict(jsonrpc="2.0", id=1, error={"code": True, "message": "bad"}),
+                 dict(jsonrpc="2.0", id=1, error={"code": -1, "message": "bad", "extra": 1}),
+                 dict(jsonrpc="2.0", id=1, result={}, error={"code": -1, "message": "bad"})]
+        for response in cases:
+            with self.subTest(response=response):
+                transport, pending = self.pending_transport([(1, "echo", {"secret": "retained"})])
+                with self.assertRaises(ValueError):
+                    transport._accept_response(response)
+                self.assertIsNone(pending[1].error)
+                self.assertFalse(pending[1].event.is_set())
+                self.assertIn(1, transport._pending)
+        # Reader-driven disconnection/unknown outcomes remain covered separately.
+
+    def test_duplicate_response_cannot_overwrite_context(self):
+        transport, pending = self.pending_transport([(1, "first", {"value": 1})])
+        transport._accept_response(self.failure(1))
+        original = pending[1].error
+        with self.assertRaises(ValueError):
+            transport._accept_response(self.failure(1, message="replacement"))
+        self.assertIs(pending[1].error, original)
+        self.assertEqual(original.message, "Invalid selectors")
+
+    def test_embedding_mutation_keeps_original_context_and_native_correlation(self):
+        native_error = RpcError(-32602, "Missing tick", {"required": ["tick"]})
+        native_error.rpc_id = 42
+        class MutatingTransport(ScriptedTransport):
+            def request(self, method, params=None, timeout=30.0):
+                self.calls.append((method, copy.deepcopy(params)))
+                params["nested"][0] = "embedding edit"
+                raise native_error
+        transport = MutatingTransport()
+        original = {"nested": ["private-token"], "request_id": B, "tick": 5.0}
+        with self.assertRaises(RpcError) as caught:
+            WorldClient(transport).call("runtime.ui.inspect", original)
+        error = caught.exception
+        self.assertIs(error, native_error)
+        self.assertEqual((error.method, error.rpc_id, error.request_id), ("runtime.ui.inspect", 42, B))
+        original["nested"][0] = "caller edit"
+        self.assertEqual(error.params["nested"], ["private-token"])
+        error.params["nested"][0] = "convenience edit"
+        self.assertEqual(json.loads(error.params_json)["nested"], ["private-token"])
+        self.assertIs(type(json.loads(error.params_json)["tick"]), float)
+        self.assertEqual(len(transport.calls), 1)
+        self.assertFalse(transport.closed)
+        self.assertNotIn("private-token", repr(error))
+
+    def test_generated_receipt_is_retained_without_retry_or_discovery(self):
+        transport = ScriptedTransport(error=RpcError(-32009, "Stale revision"))
+        ops = [{"op": "entity.create", "id": A, "name": "Original"}]
+        with self.assertRaises(RpcError) as caught:
+            WorldClient(transport).transact(ops, 7)
+        error = caught.exception
+        self.assertEqual(error.method, "world.transact")
+        self.assertIsNone(error.rpc_id, "Embedding transport did not supply correlation.")
+        self.assertRegex(error.request_id, "^[0-9a-f]{32}$")
+        self.assertEqual(json.loads(error.params_json)["request_id"], error.request_id)
+        ops[0]["name"] = "Later"
+        self.assertEqual(error.params["ops"][0]["name"], "Original")
+        self.assertEqual([x[0] for x in transport.calls], ["world.transact"])
+        self.assertFalse(transport.closed)
+
+    def test_array_and_empty_parameter_context_does_not_invent_receipts(self):
+        for params in ([1, {"secret": "private-token"}], None):
+            with self.subTest(params=params):
+                transport = ScriptedTransport(error=RpcError(-32602, "Rejected"))
+                with self.assertRaises(RpcError) as caught:
+                    WorldClient(transport).call("custom.operation", params)
+                error = caught.exception
+                self.assertEqual(error.params, {} if params is None else params)
+                self.assertIsNone(error.request_id)
+                self.assertIsNone(error.rpc_id)
+                self.assertEqual(len(transport.calls), 1)
+                self.assertNotIn("private-token", repr(error))
+
+    def test_oversized_parameters_still_fail_locally_without_error_context(self):
+        transport = ScriptedTransport(error=RpcError(-32602, "Not reached"))
+        with self.assertRaises(ValueError):
+            WorldClient(transport).call("custom.operation", {"data": "x"*(1024*1024)})
+        self.assertEqual(transport.calls, [])
+        self.assertIsNone(transport.error.method)
+        self.assertIsNone(transport.error.params_json)
+
+
 @unittest.skipIf(BINARY is None, 'Supply --engine for real native qualification.')
 class NativeContract(unittest.TestCase):
+    def test_terminal_error_context_from_native_process(self):
+        with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:
+            with WorldClient.open(BINARY, Path(tmp)/'context.json') as client:
+                original = [{'op': 'entity.create', 'id': A, 'name': 'Private context'}]
+                with self.assertRaises(RpcError) as caught:
+                    client.transact(original, 1, request_id=B)
+                error = caught.exception
+                self.assertEqual((error.code, error.method, error.request_id),
+                                 (-32009, 'world.transact', B))
+                self.assertIs(type(error.rpc_id), int)
+                params = json.loads(error.params_json)
+                self.assertEqual(params['base_revision'], 1)
+                self.assertEqual(params['ops'], original)
+                self.assertEqual(params['request_id'], B)
+                original[0]['name'] = 'Caller edit'
+                error.params['ops'][0]['name'] = 'Convenience edit'
+                self.assertEqual(json.loads(error.params_json)['ops'][0]['name'], 'Private context')
+                self.assertNotIn('Private context', repr(error))
+                self.assertFalse(client.closed)
+                # Rejection did not commit the requested entity. The same
+                # transport accepts a deliberately corrected fresh request.
+                self.assertEqual(client.inspect()['revision'], 0)
+                self.assertEqual(client.transact(params['ops'], 0)['revision'], 1)
+                self.assertEqual(client.get(A)['value']['name'], 'Private context')
+
     def test_legacy_receipt_still_replays_without_invented_history(self):
         with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:
             world = Path(tmp)/'legacy.json'

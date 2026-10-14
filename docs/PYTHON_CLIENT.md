@@ -208,13 +208,41 @@ There are no automatic retries, revision repairs or reconnects.
 | Failure | Meaning |
 | --- | --- |
 | `ValueError` | Local encoding/argument failure; no request sent. |
-| `RpcError` | A valid terminal native error, with `code`, `message` and optional `data`. The channel remains usable. Follow the operation's failure contract. |
+| `RpcError` | A valid terminal native error, with `code`, `message`, optional `data` and detached request context. The channel remains usable. Follow the operation's failure contract. |
 | `TransportError` | Launch/local capacity failure or a disconnected request known not to have been sent. |
 | `OutcomeUnknown` | A request began writing but received no trusted terminal result. It may have applied. The entire transport disconnects. |
 | `ResponseContractError` | A terminal success arrived with an unexpected core shape or invariant. It may already have committed. The channel remains usable; inspect deliberately. |
 | `PaginationError` | Traversal guards/cursors are invalid or the page budget was exhausted. |
 | `DevelopmentJobError` | A received job record violates the requested identity or lifecycle fields. |
 | `JobWaitExpired` | Local polling budget expired; native work remains uncancelled and terminal completion is unobserved. |
+
+Terminal `RpcError` retains `method`, transport `rpc_id`, immutable
+`params_json`, a detached `params` copy and optional operation `request_id`.
+The native transport attaches context only after validating response correlation;
+`WorldClient` also retains its original request for explicitly embedded transports.
+An embedding transport without a correlation ID leaves `rpc_id` as `None`.
+The existing constructor, `args`, `str` and `repr` stay unchanged: parameters and
+native error `data` are never added to automatic exception formatting. Native
+messages are preserved and may themselves contain host-provided details. Treat
+explicit parameter inspection as sensitive. Context shares the existing 1 MiB
+request bound; mutating `params` does not change the saved JSON string.
+
+```python
+from poima_client import RpcError
+
+try:
+    engine.call("runtime.ui.inspect", selectors)
+except RpcError as failure:
+    print(f"{failure.method}: {failure.message} (RPC {failure.rpc_id})")
+    # Deliberately inspect the relevant method schema if needed:
+    schema = engine.discover("method", failure.method)
+    # Decide how to repair the request; the SDK does not retry or rename fields.
+```
+
+A terminal error follows its operation's documented failure/partial-progress
+contract; it does not imply that nothing changed. Request context adds no schema
+lookup, transmission, automatic repair or retry. `rpc_id` is local correlation;
+it is never a durable mutation receipt or evidence that a retry is safe.
 
 `OutcomeUnknown` inherits `TransportError`; catch it first. Mutation helpers
 generate a receipt ID once when omitted. Failed-call recovery context retains
@@ -275,3 +303,9 @@ shared sessions, durable/legacy retries and conflicts, plus synthetic reordered
 responses, corrupt frames, blocked writes and interrupt races. These are client
 and core-authoring checks, not GUI, GPU, agent-provider, game-scale performance
 or full API stability qualification. See the [checkpoint evidence](evidence/m2-python-client.json).
+
+The [0.0.133 diagnostics record](evidence/m2-python-rpc-diagnostics.json) passes
+32 client tests on both Windows and Linux, including real process transport,
+native terminal-error context and same-channel deliberate recovery. The wheel
+contains the exact qualified modules/resources and passes an isolated native
+error smoke check. These SDK checks use the qualified native 0.0.132 engine.

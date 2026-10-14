@@ -308,6 +308,16 @@ class JsonRpcProcess:
             pending = self._pending.get(request_id)
             if pending is None or pending.state not in ("writing", "written"):
                 raise ValueError("Response id is unknown, duplicated, or not yet sent")
+            if rpc_error is not None:
+                # Attach only after validating the exact pending correlation.
+                # params_json was captured from the bounded encoded request,
+                # never from mutable caller data or an untrusted error payload.
+                rpc_error.rpc_id = pending.request_id
+                rpc_error.method = pending.method
+                rpc_error.params_json = pending.params_json
+                rpc_error.params = json.loads(pending.params_json)
+                rpc_error.request_id = (rpc_error.params.get("request_id")
+                                        if isinstance(rpc_error.params, dict) else None)
             del self._pending[request_id]
             pending.state = "completed"
             pending.error = rpc_error

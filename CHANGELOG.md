@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.133
+
+- Retain method, correlation and detached request context on Python `RpcError`, preserving native code/message/data and existing exception formatting. Keep recovery explicit without automatic retries, discovery or parameter rewriting.
+- Verify 32 client tests on both Windows and Linux, including actual process/native error recovery. Build the 0.0.133 SDK wheel with exact qualified modules/resources and check isolated native use. [Diagnostics contract and results](docs/evidence/m2-python-rpc-diagnostics.json).
+
 ## 0.0.132
 
 - Add [live displayed UI inspection](docs/PLAYER_UI_OBSERVATION.md) with native pixel bounds, ancestor clipping, computed font size and sampled hittability. Keep immutable last-presented frame tags distinct from current runtime state, with exact ownership and optional optimistic Tick/UI guards.
