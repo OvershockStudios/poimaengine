@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.138
+
+- Add explicit Python `shutdown_host()` for authorized shared headless hosts, using the native empty-parameter request. Client close still detaches; host acknowledgement and process exit remain separate observations.
+- Verify nineteen client/lifecycle tests on Linux and Windows, including rejected shutdown parameters, standalone scope rejection, usable clients after errors and natural shared-host exit. Add an [owned-host cleanup recipe](docs/PYTHON_CLIENT.md#explicitly-close-a-host-you-own). [Results](docs/evidence/m2-python-host-shutdown.json).
+
 ## 0.0.137
 
 - Preserve [another independently authored Switchback implementation](docs/evidence/fixtures/agent-switchback-repeat/README.md) and verify thirteen gameplay groups against its source project and actual relocated readonly game service, with complete save continuation and cold owners. The original fresh workflow remains failed; the repeated-workflow Alpha gate stays open.

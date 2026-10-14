@@ -60,8 +60,79 @@ establishment and each native bridge exchange, independently of Python call
 deadlines. Closing this client detaches it; it does not call
 `session.close`, `host.shutdown` or terminate the owning editor/headless host.
 Other clients keep working. Endpoint names contain 1–64 ASCII letters, digits,
-underscores or hyphens. Stop a headless host only with an explicit
-`engine.call("host.shutdown")` from an authorized client.
+underscores or hyphens.
+
+### Explicitly close a host you own
+
+`engine.shutdown_host(timeout=5)` explicitly sends `host.shutdown` with `{}`.
+Use it only when you own the shared headless host or have the owner's permission.
+The helper does not establish ownership, detach the client, wait for any process,
+or retry. It returns the native reply unchanged; native errors and uncertain
+outcomes propagate. There is no `request_id` parameter or durable shutdown
+receipt. A standalone world or editor rejects this operation. Stop an owned
+player first, then explicitly stop its runtime when appropriate.
+
+A reply with `closed: true` acknowledges the request; it does not prove that the
+host exited. For a host process you started, close its client bridge and observe
+that exact process separately. This cleanup fragment assumes `host` is your own
+`subprocess.Popen`, `engine` is its connected client, and the new host's readiness
+was observed before connecting. Use a fresh endpoint for each owned host; never
+infer ownership from discovering an existing endpoint. Drain host output or
+redirect it to explicit log files while it runs, rather than leaving unread
+pipes. Startup failures need their own cleanup of the process you launched.
+
+```python
+import subprocess
+import sys
+
+try:
+    # Work through engine; retain the IDs of any player/runtime you start.
+    print(engine.inspect())
+finally:
+    primary = sys.exc_info()[1]
+    errors = []
+    forced = False
+    try:
+        reply = engine.shutdown_host(timeout=5)
+        if reply.get("closed") is not True:
+            errors.append(RuntimeError("Host did not acknowledge shutdown"))
+    except BaseException as error:
+        errors.append(error)
+    try:
+        engine.close()  # Detach/reap the bridge; this has its own cleanup budget.
+    except BaseException as error:
+        errors.append(error)
+    try:
+        host.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        forced = True
+        errors.append(RuntimeError("Owned host required forced cleanup"))
+        try:
+            host.terminate()  # Only the exact process this task launched.
+            try:
+                host.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                host.kill()
+                host.wait(timeout=3)
+        except BaseException as error:
+            errors.append(error)
+    except BaseException as error:
+        errors.append(error)
+    if host.returncode != 0:
+        errors.append(RuntimeError("Owned host exit: " + str(host.returncode)))
+    completion = {"exit_code": host.returncode, "forced": forced, "errors": errors}
+    if primary is not None:
+        primary.owned_host_completion = completion  # Preserve the body error.
+    elif errors:
+        errors[0].owned_host_completion = completion
+        raise errors[0]
+```
+
+The shutdown RPC, bridge cleanup and process waits have separate finite budgets;
+this fragment is not a hard combined deadline or descendant-process supervisor.
+Record forced cleanup as failure even if the host eventually exits with code 0.
+An uncertain shutdown is not automatically resent or reconnected. For a host
+you only attached to, use `engine.close()` and leave the owner running.
 
 ## Discover and call the entire native API
 

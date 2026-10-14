@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.137**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.138**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.138 adds explicit Python `shutdown_host()` with native empty parameters and an [owned-host cleanup recipe](PYTHON_CLIENT.md#explicitly-close-a-host-you-own). Nineteen client/lifecycle tests pass on each of Linux and Windows using native 0.0.134. Attached-client close still detaches, and shutdown acknowledgement does not imply observed process exit. [Evidence and scope](evidence/m2-python-host-shutdown.json).
 
 Version 0.0.137 preserves [another independently authored Switchback game](evidence/fixtures/agent-switchback-repeat/README.md). Its source and relocated readonly service each pass thirteen groups, nine complete checkpoints and five typed-exact save comparisons; separate Ready/Idle/Run Vulkan observations pass with the original project paths unavailable. Both source trees restore byte-for-byte. The original agent workflow remains failed after forced script cleanup and missing historical owner proof. The repeated-workflow Alpha gate stays open. [Results, native version and limits](evidence/m2-agent-switchback-repeat.json).
 

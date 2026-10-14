@@ -1,0 +1,95 @@
+{
+  "format": "poima.python-host-shutdown-qualification.v1",
+  "source_checkpoint": "0.0.138",
+  "native_engine_version": "0.0.134",
+  "passed": true,
+  "scope": "Explicit external Python client convenience and native authoring/shared-host lifecycle; no engine-runtime code change.",
+  "sources": {
+    "tools/python/poima_client/client.py": {
+      "bytes": 17573,
+      "sha256": "332da380ba3f4621ee8e4199a79836d65ba5b57ec7442dbdc9a1e10defb8dad7"
+    },
+    "tests/python_client_contract.py": {
+      "bytes": 41912,
+      "sha256": "08f1f59f90a79e3a7bc2dd736295bc53cf53fd0e955e5e0d37d21917adca0c15"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 539,
+      "sha256": "a9bea491a45f1e9fdbcaa0ffa7a210465e62d6fdd40d484775e7e57b12e2ba7f"
+    },
+    "docs/PYTHON_CLIENT.md": {
+      "bytes": 20020,
+      "sha256": "1a99a1592545ed47f08c973a50eac118e204c6d0c679c2b101039ce47aaec753"
+    }
+  },
+  "contract": {
+    "method": "WorldClient.shutdown_host(*, timeout=30.0)",
+    "native_method": "host.shutdown",
+    "native_params": {},
+    "native_reply_and_errors_preserved": true,
+    "automatic_retry_or_reconnect": false,
+    "implicit_discovery": false,
+    "implicit_client_detach": false,
+    "process_wait_or_ownership_inference": false,
+    "durable_shutdown_receipt": false
+  },
+  "coverage": [
+    "Exactly one empty-parameter call; timeout and native reply preserved",
+    "Unexpected positional/request_id arguments reject before transmission",
+    "Terminal RPC errors and unknown outcomes propagate without retries or helper-initiated close",
+    "Attached context exit performs only transport close",
+    "Native standalone rejects shutdown with -32080 and remains usable",
+    "Native shared host rejects unknown request_id with -32602; same client and host remain usable",
+    "One shared client detaches while another continues; authorized helper shutdown acknowledges closed:true and exact host exits0"
+  ],
+  "qualification": {
+    "linux": {
+      "passed": true,
+      "tests": 19,
+      "skips": 0,
+      "unittest_seconds": 1.194,
+      "exit_code": 0,
+      "report": {
+        "bytes": 684,
+        "sha256": "364499e12a8a710d5a5c16ce00f58ae205fb80478cc98fb79779a4bc337523ad"
+      },
+      "recording": "Terminal command observation; no retained raw stderr file."
+    },
+    "windows": {
+      "passed": true,
+      "tests": 19,
+      "skips": 0,
+      "unittest_seconds": 0.359,
+      "job_seconds": 0.624665500014089,
+      "exit_code": 0,
+      "job_assigned_before_test": true,
+      "forced_cleanup": false,
+      "active_processes_at_exit": 0,
+      "terminated_processes": 0,
+      "report": {
+        "bytes": 3915,
+        "sha256": "1be591e6fd7da2c83806e194b83734f9464ffeb70ddf87397275f3efe2a40ac7"
+      },
+      "owner": {
+        "bytes": 1428,
+        "sha256": "ff7311585d450fbbcd3c843ed259b66e1c4f5157d21806e5dc64150dded0a9e2"
+      },
+      "unittest_stderr": {
+        "bytes": 2933,
+        "sha256": "9e332bf9ea5f5617c17188c38b09c5233994e5cb2550cadbbe056b75293a7e4b"
+      }
+    }
+  },
+  "reproduce": {
+    "command": "python -B tests/python_client_contract.py --engine /path/to/matching-platform/poima WrapperContract NativeContract",
+    "python_package_minimum": "3.9",
+    "dependencies": "Standard library; compiled same-platform Poima engine for native tests"
+  },
+  "limits": [
+    "Caller must own the shared headless host or have explicit authority; discovering its endpoint does not establish ownership.",
+    "A native reply acknowledges shutdown, not host-process exit; observe an owned process separately.",
+    "WorldClient.close retains its existing direct-child cleanup scope, without a generic descendant-process guarantee.",
+    "This does not repair earlier failed agent workflows or qualify repeated fresh creation, active graphics teardown, physical input or performance.",
+    "The documentation cleanup fragment has separate RPC, bridge and host-wait budgets; it is not a new process supervisor or a combined hard deadline."
+  ]
+}

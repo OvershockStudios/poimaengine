@@ -249,6 +249,47 @@ class TransportContract(unittest.TestCase):
 
 
 class WrapperContract(unittest.TestCase):
+    def test_shutdown_host_sends_empty_params_and_preserves_native_result(self):
+        result = {"closed": True, "future_metadata": {"native": "unchanged"}}
+        class TimedTransport(ScriptedTransport):
+            def request(self, method, params=None, timeout=30.0):
+                self.timeout = timeout
+                return super().request(method, params, timeout)
+        transport = TimedTransport([result])
+        client = WorldClient(transport)
+        self.assertIs(client.shutdown_host(timeout=2.5), result)
+        self.assertEqual(transport.timeout, 2.5)
+        self.assertEqual(transport.calls, [("host.shutdown", {})])
+        self.assertFalse(client.closed, "A shutdown request must not detach the client.")
+
+    def test_shutdown_host_preserves_errors_without_retry_or_detach(self):
+        for error in (RpcError(-32080, "Stop the active player first"),
+                      OutcomeUnknown("Reply was not received")):
+            with self.subTest(error=type(error).__name__):
+                transport = ScriptedTransport(error=error)
+                client = WorldClient(transport)
+                with self.assertRaises(type(error)) as caught:
+                    client.shutdown_host()
+                self.assertIs(caught.exception, error)
+                self.assertEqual((error.method, error.params_json, error.params),
+                                 ("host.shutdown", "{}", {}))
+                self.assertIsNone(error.request_id)
+                self.assertEqual(transport.calls, [("host.shutdown", {})])
+                self.assertFalse(client.closed)
+
+    def test_shutdown_receipt_arguments_reject_locally_and_context_only_detaches(self):
+        transport = ScriptedTransport()
+        client = WorldClient(transport)
+        with self.assertRaises(TypeError):
+            client.shutdown_host(request_id=B)
+        with self.assertRaises(TypeError):
+            client.shutdown_host({"request_id": B})
+        self.assertEqual(transport.calls, [])
+        with client:
+            pass
+        self.assertTrue(client.closed)
+        self.assertEqual(transport.calls, [], "Attached context exit must not shut down a host.")
+
     def test_mutation_discovery_helper_sends_exact_selectors(self):
         def result(operation, component=None):
             selection = {'operation': operation}
@@ -588,6 +629,18 @@ class NativeContract(unittest.TestCase):
                 self.assertEqual(client.transact(params['ops'], 0)['revision'], 1)
                 self.assertEqual(client.get(A)['value']['name'], 'Private context')
 
+    def test_shutdown_host_rejects_standalone_without_closing_client(self):
+        with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:
+            with WorldClient.open(BINARY, Path(tmp)/'standalone.json') as client:
+                with self.assertRaises(RpcError) as caught:
+                    client.shutdown_host()
+                self.assertEqual(caught.exception.code, -32080)
+                self.assertEqual(caught.exception.method, 'host.shutdown')
+                self.assertEqual(caught.exception.params, {})
+                self.assertIsNone(caught.exception.request_id)
+                self.assertFalse(client.closed)
+                self.assertEqual(client.inspect()['revision'], 0)
+
     def test_legacy_receipt_still_replays_without_invented_history(self):
         with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:
             world = Path(tmp)/'legacy.json'
@@ -629,7 +682,13 @@ class NativeContract(unittest.TestCase):
                     self.assertIsNone(host.poll(), 'Detachment stopped the shared host.')
                     self.assertEqual(second.get(A)['value']['name'], 'Shared')
                     self.assertEqual(second.history()['undo_count'], 1)
-                    self.assertTrue(second.call('host.shutdown')['closed'])
+                    with self.assertRaises(RpcError) as rejected:
+                        second.call('host.shutdown', {'request_id': new_id()})
+                    self.assertEqual(rejected.exception.code, -32602)
+                    self.assertIsNone(host.poll(), 'Rejected shutdown stopped the host.')
+                    self.assertFalse(second.closed)
+                    self.assertEqual(second.get(A)['value']['name'], 'Shared')
+                    self.assertTrue(second.shutdown_host()['closed'])
                 self.assertEqual(host.wait(timeout=10), 0)
             finally:
                 if client is not None:

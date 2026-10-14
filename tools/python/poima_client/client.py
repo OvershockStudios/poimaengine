@@ -110,6 +110,16 @@ class WorldClient:
         """Close the owned transport, preserving the shared host and other clients."""
         self.transport.close()
 
+    def shutdown_host(self, *, timeout=30.0):
+        """Explicitly request shutdown of an authorized shared headless host.
+
+        Sends an empty parameter object, without a durable request receipt.
+        This does not establish ownership, detach the client, wait for the host
+        process or retry an uncertain outcome. Attached clients should normally
+        use close() instead. Stop any owned player before requesting shutdown.
+        """
+        return self.call("host.shutdown", {}, timeout=timeout)
+
     def __enter__(self):
         if self.closed:
             raise TransportError("World client transport is closed")
