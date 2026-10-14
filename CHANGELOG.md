@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.130
+
+- Publish [Switchback Range](docs/evidence/fixtures/agent-switchback/README.md), an agent-authored first-person game combining crouch clearance, camera-based shots, a weighted animated target, independent world/viewmodel ADS, reloads, compiled menus and checkpoints. Preserve the original C# source, licensed cooked assets and portable build/adopt/export instructions.
+- Add an [independent native verifier](tests/agent_switchback_oracle.py). Rebuild the public fixture and pass thirteen gameplay groups, complete save restoration and cold-owner continuation using the retained Windows 0.0.128 engine. Preserve failed fresh-agent workflow verdicts separately from the corrected receipt audit and independent game checks. [Results](docs/evidence/m2-agent-switchback.json).
+- Run all thirteen groups against the relocated bundle through its actual read-only game service after removing owned build-source paths; verify Vulkan skinning/captures and retain the failed authoring-route relocation check. Add fifteen portable evidence/content regressions.
+
 ## 0.0.129
 
 - Include SDL’s bundled yuv2rgb BSD notice and the selected HIDAPI BSD terms in installed runtimes and exported games. Retain the original upstream notice bytes and reject missing or changed pinned notices during configuration.

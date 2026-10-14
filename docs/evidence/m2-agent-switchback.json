@@ -1,0 +1,296 @@
+{
+  "format": "poima.agent-switchback-qualification.v1",
+  "source_checkpoint": "0.0.130",
+  "engine_version": "0.0.128",
+  "platform": "Windows x86_64",
+  "passed": true,
+  "scope": "Public source rebuild, independent native gameplay and real readonly exported-game service/Vulkan observation using retained Windows engine 0.0.128. This source checkpoint does not qualify a newly built native 0.0.130 engine or Alpha release.",
+  "fixture": "docs/evidence/fixtures/agent-switchback",
+  "game": {
+    "identity": "switchback.range",
+    "type": "Switchback.RangeGame",
+    "original_CSharp_preserved": true,
+    "CSharp": {
+      "bytes": 8028,
+      "sha256": "3b89178dac23d04316cf9735b047746ac354910cacfe231679185179d183cbcc"
+    },
+    "world_revision": 5,
+    "entities": 82,
+    "ui_elements": 11,
+    "cooked_assets": 3,
+    "content_license": "CC0-1.0"
+  },
+  "fresh_agent_exercises": {
+    "provider": "Codex CLI",
+    "provider_version": "0.162.1",
+    "model": "gpt-6.1-sol",
+    "independent_implementations": 2,
+    "attempts": [
+      {
+        "attempt": 1,
+        "original_workflow_passed": false,
+        "provider_exit_code": 0,
+        "failure": "Incomplete native invocation receipt, immutable-input bytecode writes and supervision/finalization failures.",
+        "original_report": {
+          "bytes": 173943,
+          "sha256": "b25d2fdcaaf59f66562caedbd82be27732ad8ac91d7c61d3b67f7b017f9bf965"
+        }
+      },
+      {
+        "attempt": 2,
+        "original_workflow_passed": false,
+        "provider_exit_code": 0,
+        "failure": "Supervisor normalized script-outcome mismatch; a separate review also corrected rejection of valid quaternion serialization.",
+        "original_report": {
+          "bytes": 184271,
+          "sha256": "8b5c026fc8a50dcd98d31e54718e7f26c6eef170f8b9b8bbe50eb4c982353e60"
+        }
+      }
+    ],
+    "second_attempt_retrospective_audit": {
+      "passed": true,
+      "provider_rerun": false,
+      "original_workflow_verdict_changed": false,
+      "scope": "Retrospective process/receipt/handoff/export screen; not fresh workflow qualification",
+      "report": {
+        "bytes": 650018,
+        "sha256": "6fd5cd541f1e3c92a84b0086a7fdddb3bc189d4088efbf939dc9aab2debb40d9"
+      }
+    },
+    "repeated_fresh_workflow_gate_closed": false
+  },
+  "public_build": {
+    "passed": true,
+    "engine": {
+      "bytes": 25943040,
+      "sha256": "bc261bf62c5f9b76501d7533e0077b6630d19db364dcfdc7ee22f3780bf471ad"
+    },
+    "sdk_rebuilt": true,
+    "native_game_rebuilt": true,
+    "artifact_adopted": true,
+    "bundle_exported_and_inspected": true,
+    "payload_files": 63,
+    "descriptor": {
+      "bytes": 5844,
+      "sha256": "ed0fc722d66d26839084dfbc288cce255fb5fb1597df6078de88d5f3a8e50a08"
+    },
+    "bundle_manifest": {
+      "bytes": 13977,
+      "sha256": "573690bc73b10b9e46ea2b48b55e49e02abee0c67f72bf45e99d89e19016c1a6"
+    },
+    "report": {
+      "bytes": 13725,
+      "sha256": "459b454b612c14bcc2eb9213cdc75d5465b6526705597d98288727027621e72a"
+    },
+    "owner": {
+      "bytes": 1332,
+      "sha256": "befd3667b2014a6c018ffdfa6bc75ec3c07370c7bc8990ed60794c35f87e1488"
+    }
+  },
+  "public_source_gameplay": {
+    "passed": true,
+    "transport": "world",
+    "checks": 13,
+    "native_rpcs": 22002,
+    "owner_groups": 4,
+    "full_snapshot_version": 9,
+    "full_checkpoints": 9,
+    "typed_exact_pairs": 5,
+    "field_exclusions": [],
+    "all_native_exits_natural": true,
+    "forced_cleanup": false,
+    "public_Python_SDK_files": 9,
+    "verification": {
+      "bytes": 1489,
+      "sha256": "1434bbdb0102f0849efeaf5bd8c2e4c0031623aebddc5016de52135ac5a73cac"
+    },
+    "report": {
+      "bytes": 1869144,
+      "sha256": "f7c3668ce3a3c20d66fccf81d39e37f20789261d534f570e993af7cae3825dbf"
+    },
+    "owner": {
+      "bytes": 1391,
+      "sha256": "a017c59830d7bf27a7b81ad1212e19dd9f210320a1d04714d9f4c196fc637363"
+    },
+    "job_processes": 5
+  },
+  "limits": [
+    "Both original fresh-agent workflow verdicts remain failed; retrospective review and independent gameplay are separate evidence. No repeated-fresh-workflow gate or general agent success rate is established.",
+    "Only the identified Windows native128 build and this NativeAOT game image are qualified here; no cross-build or cross-hardware determinism claim.",
+    "Owned build project/publisher source paths were removed, but the full checkout and installed tools remained on the host. Clean-machine installation remains open.",
+    "Synthetic semantic input, logical audio and native rendered observations do not qualify physical controls, listening quality, production graphics or game-scale performance.",
+    "This is a diagnostic small game, not Alpha or AA/AAA release readiness."
+  ],
+  "relocated_gameplay": {
+    "passed": true,
+    "transport": "game.serve",
+    "checks": 13,
+    "native_rpcs": 22014,
+    "owner_groups": 4,
+    "full_snapshot_version": 9,
+    "full_checkpoints": 9,
+    "typed_exact_pairs": 5,
+    "field_exclusions": [],
+    "all_native_exits_natural": true,
+    "forced_cleanup": false,
+    "public_Python_SDK_files": 9,
+    "verification": {
+      "bytes": 1490,
+      "sha256": "59a5ead85f7561e3115e5b6988d32d5ed9857b0bb267fba67e78973c2e33b8cf"
+    },
+    "report": {
+      "bytes": 1869166,
+      "sha256": "be7accd3ee3cc00b1a6eb4d93063cead8649de6ee076823c3006b219480820a5"
+    },
+    "owner": {
+      "bytes": 1399,
+      "sha256": "e2b13d960b1e65aa3038bfbcd77be76b354d7e9b08e2ae5c00140add0efc7a23"
+    },
+    "job_processes": 9
+  },
+  "relocation": {
+    "passed": true,
+    "bundle_files": 64,
+    "bundle_unchanged": true,
+    "owned_build_project_and_publisher_source_paths_removed_before_after": true,
+    "system_only_PATH": true,
+    "development_environment_variables_removed": true,
+    "complete_checkout_and_installed_tools_still_on_host": true,
+    "clean_machine_qualified": false,
+    "admission": {
+      "bytes": 12285,
+      "sha256": "fb9daafdb9830e17a4a45f2bb14344c7bfce9b8921b2b4f5421f16b48175753f"
+    },
+    "reopen": {
+      "bytes": 1012,
+      "sha256": "596bd9e0f28ac35157b393b49f4ea267cbeca562c8a4b6750cbb072c589f66a6"
+    }
+  },
+  "rendered_observation": {
+    "passed": true,
+    "api": "Vulkan",
+    "scope": "Two paused player lifetimes over the actual readonly game service; native surface captures, not OS screenshots or physical input.",
+    "gpu_index": 1,
+    "captures": {
+      "Ready": {
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "436f067aae655d3a6a98efcfe191374109aea43477bb3438e2393b23c9129c87"
+        },
+        "tick": 0,
+        "rig_clip": 0,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "world_samples": 4,
+        "viewmodel_samples": 4,
+        "skinned_vertices": 1029,
+        "nvrhi_errors": 0
+      },
+      "Idle": {
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "3234ad2e42a4d0f5fcfc0dbc64f1a62ade56eb535aa7b03ee433e46d373b0c4c"
+        },
+        "tick": 1,
+        "rig_clip": 0,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "world_samples": 4,
+        "viewmodel_samples": 4,
+        "skinned_vertices": 1029,
+        "nvrhi_errors": 0
+      },
+      "Run": {
+        "image": {
+          "format": "BMP",
+          "width": 960,
+          "height": 540,
+          "bits": 32,
+          "bytes": 2073738,
+          "sha256": "873cbfcbe307b59cb207ec9585c0033f8b413d4242f0cd0d57fa86579205043c"
+        },
+        "tick": 4,
+        "rig_clip": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "world_samples": 4,
+        "viewmodel_samples": 4,
+        "skinned_vertices": 1029,
+        "nvrhi_errors": 0
+      }
+    },
+    "native_patrol_displacement": [
+      0.05000000260770321,
+      -6.332993152113886e-08,
+      0.0
+    ],
+    "host_and_connect_exit_codes": [
+      0,
+      0
+    ],
+    "forced_cleanup": false,
+    "owner": {
+      "bytes": 193439,
+      "sha256": "97ca38312f8c9bfaa4753659d998d988fab562337ba2e1a33d9e1815e01d40b1"
+    },
+    "relocation_report": {
+      "bytes": 1028,
+      "sha256": "02c3274fa0b89e219a9f08861fa06c16e5284030980f66c4ba94c20cb2426248"
+    },
+    "visual_review": "Ready and Run inspected. Diagnostic HUD remains oversized and lower Load control partly clipped at 960x540; game UI polish remains open."
+  },
+  "preserved_failed_relocation_check": {
+    "passed": false,
+    "route": "Authoring world CLI with full exported-bundle inventory guard",
+    "reason": "Authoring creates persistent world.json.lock. Exact inventory correctly rejected the new file after8 check groups. The corrected check uses actual readonly game.serve; the original failed result and changed copy remain retained.",
+    "verification": {
+      "bytes": 1066,
+      "sha256": "01b53960a795faf5d78a80460094d4a13d0dacb66bcd16474958a92a29b944d5"
+    },
+    "report": {
+      "bytes": 372267,
+      "sha256": "88d47b0d066708d2c459e1e2962876d103bce80cd7c5c14206b7724b1335e6df"
+    }
+  },
+  "source_contract": {
+    "tests": 15,
+    "linux_ctest_passed": true,
+    "windows_python_passed": true,
+    "scope": "Portable metadata/checkpoint/admission/content regressions; synthetic native receipt mutations do not substitute for actual native/GPU checks.",
+    "linux_ctest_log": {
+      "bytes": 883,
+      "sha256": "edc1bf8c26805eed414bfffaf71601f22e00f77d832fcfbba31e2a12f3c09971"
+    }
+  },
+  "public_verifier_sources": {
+    "agent_switchback_oracle.py": {
+      "bytes": 29990,
+      "sha256": "107b19811e061fa56669b3837865eb6bcd7d52566c714955b5f762b682c60edf"
+    },
+    "switchback_oracle.py": {
+      "bytes": 35246,
+      "sha256": "59758a76808e56e8cf5f33e71aa519a531ab7b34b3a0c78df69f126a9b9fc092"
+    },
+    "switchback_ownership.py": {
+      "bytes": 8658,
+      "sha256": "f6a44c6de87a03010de4f13ef569648acd01027eedd1e7a0a93cc729ee824233"
+    },
+    "switchback_game_service.py": {
+      "bytes": 17034,
+      "sha256": "2700cbb3e522ae24c89ede0ac6f4d139f1264047fb7c6d02cd3a9a39f373294b"
+    },
+    "agent_switchback_contract.py": {
+      "bytes": 17081,
+      "sha256": "c629bdd783b0d8956da78322e24e9223162de4a8fd87c603e5035f49fd2cb965"
+    }
+  },
+  "terminal_wire_guard": {
+    "passed": true,
+    "scope": "After joined stream EOF, require exactly one EOF marker and no unconsumed native response. Missing, duplicate and unsolicited terminal frames reject in portable regressions; actual four game owners pass the guard."
+  }
+}

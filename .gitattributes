@@ -2,6 +2,7 @@
 
 # Preserve verbatim licensed content inputs, including original line endings.
 examples/relay-yard/audio/sources/*/License.txt -text -whitespace
+docs/evidence/fixtures/agent-switchback/content/*/License.txt -text -whitespace
 *.png binary
 *.bmp binary
 # Preserve upstream license bytes, including its original line endings/spacing.

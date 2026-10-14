@@ -1,0 +1,65 @@
+{
+  "format": "poima.switchback-source-provenance.v1",
+  "game_identity": "switchback.range",
+  "game_type": "Switchback.RangeGame",
+  "original_source": {
+    "Range.cs": {
+      "bytes": 8028,
+      "sha256": "3b89178dac23d04316cf9735b047746ac354910cacfe231679185179d183cbcc"
+    },
+    "Switchback.csproj": {
+      "bytes": 358,
+      "sha256": "1d1fda7aa5d9a0f9334d78c0f600bd9e52b580ad86753f6cb3d1190181140ef2"
+    },
+    "world.json": {
+      "bytes": 113043,
+      "sha256": "6b14cfd8a09924df99464e7dae2647a96136aa1139e8f4e86dec0037be844b70"
+    },
+    "project.json": {
+      "bytes": 476,
+      "sha256": "b61f67baeb1fe91a6b6ccc913c73a2250a2ae86458aa7661e54823dc6ba3deee"
+    },
+    "range.poima-input.json": {
+      "bytes": 1694,
+      "sha256": "68669525890ea4a5f98881933ada4241fffdabd5076a97ceaeea36dab8ef3332"
+    }
+  },
+  "adaptations": [
+    "Range.cs is byte-for-byte the second external agent exercise source.",
+    "Switchback.csproj replaces the machine-specific SDK hint with ../reference/Poima.Gameplay.dll; explicitly selects Range.cs and preserves the Switchback assembly name and language/runtime properties.",
+    "world.json preserves world identity, revision 5, all 82 entities, all 11 UI controls, components and references; authoring receipts and empty retired-ID arrays are reset to empty arrays, then pretty-printed.",
+    "range.poima-input.json preserves the original profile bytes, revision 1 and its required committed receipt. The receipt contains no machine-specific paths.",
+    "project.json preserves project identity, name, entry, input profile and audio; version 1 omits the absent native gameplay artifact until the documented publish/adopt operation installs a verified version-2 selection.",
+    "exercise.json selects portable roles, semantic fields, UI identities and inspected imported rig binding from the second game handoff, plus SaveStatus completion value 3.",
+    "Only the three actively referenced cooked assets and their three CC0 provenance records are copied. Original character and interface sound notices are copied byte-for-byte."
+  ],
+  "content": [
+    {
+      "title": "Animated Characters Protagonists / original Idle and Run",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/animated-characters-protagonists",
+      "license": "CC0-1.0",
+      "notice": "content/character/License.txt",
+      "asset": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99",
+      "provenance": "a4d0aabccf0fc0c10efd55b64967c5dbf9e9f94776db46989f324f41de647a00"
+    },
+    {
+      "title": "Pickup and hit cue",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "notice": "content/interface/License.txt",
+      "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+      "provenance": "be6804503de3246345922654e2943e8bbe8ba6c4c227c432e84e192779c92a5a"
+    },
+    {
+      "title": "Completion cue",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "notice": "content/interface/License.txt",
+      "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+      "provenance": "ae01dfc7184578b26616a98ae87d8c079232e168945448dab96c75196203dda0"
+    }
+  ]
+}

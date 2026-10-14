@@ -1,0 +1,2897 @@
+{
+  "component_schemas": {},
+  "entities": {
+    "00000000000000000000000000000001": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.12,
+            0.17,
+            0.21
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.25,
+            -1.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            20,
+            0.5,
+            22
+          ]
+        }
+      },
+      "name": "Floor",
+      "parent": null
+    },
+    "00000000000000000000000000000002": {
+      "components": {
+        "CharacterController": {
+          "camera": "00000000000000000000000000000003",
+          "height": 1.8,
+          "jump_speed": 5,
+          "locomotion": {
+            "ground_snap": 0.5,
+            "max_slope_degrees": 45,
+            "step_height": 0.4
+          },
+          "radius": 0.3,
+          "speed": 4,
+          "stance": {
+            "camera_drop": 0.6,
+            "crouched_height": 1,
+            "crouched_speed": 2
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.1,
+            5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player",
+      "parent": null
+    },
+    "00000000000000000000000000000003": {
+      "components": {
+        "Camera": {
+          "far": 80,
+          "near": 0.1,
+          "vertical_fov": 70,
+          "viewmodel": {
+            "far": 3,
+            "near": 0.01,
+            "vertical_fov": 75
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player camera",
+      "parent": "00000000000000000000000000000002"
+    },
+    "00000000000000000000000000000004": {
+      "components": {
+        "LightingEnvironment": {
+          "ambient": [
+            0.12,
+            0.14,
+            0.18
+          ],
+          "exposure": 1,
+          "sky": {
+            "enabled": true,
+            "ground": [
+              0.12,
+              0.1,
+              0.08
+            ],
+            "horizon": [
+              0.55,
+              0.7,
+              0.85
+            ],
+            "horizon_falloff": 0.35,
+            "sun": "00000000000000000000000000000005",
+            "sun_intensity": 20,
+            "sun_size_degrees": 0.53,
+            "zenith": [
+              0.06,
+              0.22,
+              0.55
+            ]
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Environment",
+      "parent": null
+    },
+    "00000000000000000000000000000005": {
+      "components": {
+        "Light": {
+          "color": [
+            1,
+            0.95,
+            0.85
+          ],
+          "enabled": true,
+          "intensity": 3.5,
+          "kind": "directional",
+          "shadow": {
+            "enabled": true
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -0.9614638770465722,
+            -0.0375843445352855,
+            -0.16953202249987687,
+            0.2131514098652129
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Sun",
+      "parent": null
+    },
+    "0000000000000000000000000000000a": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.09,
+            0.32,
+            0.35
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            1.45,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            2,
+            0.4,
+            1.6
+          ]
+        }
+      },
+      "name": "Supply lintel",
+      "parent": null
+    },
+    "0000000000000000000000000000000b": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.65,
+            0.28,
+            0.08
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -2,
+            0.8,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            1.6,
+            0.4
+          ]
+        }
+      },
+      "name": "Occluding cover",
+      "parent": null
+    },
+    "0000000000000000000000000000000c": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.08,
+            0.8,
+            0.65
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            0.006,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            0.012,
+            1
+          ]
+        }
+      },
+      "name": "Supply pad",
+      "parent": null
+    },
+    "0000000000000000000000000000000d": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.12,
+            0.06
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.006,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.8,
+            0.012,
+            0.8
+          ]
+        }
+      },
+      "name": "Hazard pad",
+      "parent": null
+    },
+    "0000000000000000000000000000000e": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.15,
+            0.55,
+            0.95
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.006,
+            5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.012,
+            1.2
+          ]
+        }
+      },
+      "name": "Finish console",
+      "parent": null
+    },
+    "00000000000000000000000000000014": {
+      "components": {
+        "Transform": {
+          "position": [
+            -3,
+            0,
+            -6
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Target A",
+      "parent": null
+    },
+    "00000000000000000000000000000015": {
+      "components": {
+        "HitRegion": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "name": "target",
+          "owner": "00000000000000000000000000000014",
+          "shape": "box"
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.9,
+            0.28,
+            0.12
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.3,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.7,
+            0.9,
+            0.15
+          ]
+        }
+      },
+      "name": "Target A plate",
+      "parent": "00000000000000000000000000000014"
+    },
+    "0000000000000000000000000000001e": {
+      "components": {
+        "CharacterController": {
+          "camera": null,
+          "height": 1.8,
+          "jump_speed": 0,
+          "locomotion": {},
+          "radius": 0.3,
+          "speed": 1
+        },
+        "Transform": {
+          "position": [
+            3,
+            0,
+            -6
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Patrol B",
+      "parent": null
+    },
+    "0000000000000000000000000000001f": {
+      "components": {
+        "AnimationRig": {
+          "asset": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99",
+          "clip": 0,
+          "loop": true,
+          "playing": false,
+          "speed": 0,
+          "time": 0
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.65,
+            0.65,
+            0.65
+          ]
+        }
+      },
+      "name": "B weighted rig",
+      "parent": "0000000000000000000000000000001e"
+    },
+    "00000000000000000000000000000028": {
+      "components": {
+        "CameraDraw": {
+          "camera": "00000000000000000000000000000003",
+          "mode": "viewmodel"
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.08,
+            0.58,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0.24,
+            -0.22,
+            -0.45
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.13,
+            0.12,
+            0.48
+          ]
+        }
+      },
+      "name": "Range instrument",
+      "parent": "00000000000000000000000000000003"
+    },
+    "00000000000000000000000000000032": {
+      "components": {
+        "AudioEmitter": {
+          "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+          "enabled": true,
+          "gain": 0.7,
+          "loop": false
+        },
+        "Transform": {
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Permanent cue emitter",
+      "parent": null
+    },
+    "00000000000000000000000000000033": {
+      "components": {
+        "AudioEmitter": {
+          "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+          "enabled": true,
+          "gain": 0.7,
+          "loop": false
+        },
+        "Transform": {
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Permanent cue emitter",
+      "parent": null
+    },
+    "0000000000000000000000000000003c": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.16,
+            0.24,
+            0.29
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -9,
+            1,
+            -1.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.4,
+            2,
+            19
+          ]
+        }
+      },
+      "name": "Range perimeter",
+      "parent": null
+    },
+    "0000000000000000000000000000003d": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.16,
+            0.24,
+            0.29
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            9,
+            1,
+            -1.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.4,
+            2,
+            19
+          ]
+        }
+      },
+      "name": "Range perimeter",
+      "parent": null
+    },
+    "0000000000000000000000000000003e": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.16,
+            0.24,
+            0.29
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1,
+            -11
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            18,
+            2,
+            0.4
+          ]
+        }
+      },
+      "name": "Range perimeter",
+      "parent": null
+    },
+    "06e112c506ec8bad9309fa98e5b16051": {
+      "components": {
+        "RigNode": {
+          "node": 49,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            2.7008354663848875e-10,
+            0.0013859981298446654,
+            -1.1641532182693482e-11
+          ],
+          "rotation": [
+            -0.05672726537675791,
+            -0.07746363504672502,
+            -0.00014847114885142062,
+            0.995380018166198
+          ],
+          "scale": [
+            1.0000001192092896,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHandIndex1",
+      "parent": "4333366148ee4bd0f1220be5c5feba90"
+    },
+    "073bf289496d699f0c26d8b550c28c16": {
+      "components": {
+        "RigNode": {
+          "node": 17,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0029276666045188905,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightFootRollCtrl_end",
+      "parent": "a5b69285149c02fe4627d54c78d7dbf7"
+    },
+    "1a317d3bfbd77e9efda8414d9c848b3f": {
+      "components": {
+        "RigNode": {
+          "node": 36,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            2.6193447411060333e-10,
+            0.0030125445127487183,
+            -1.8626451492309571e-10
+          ],
+          "rotation": [
+            -0.0282608818230563,
+            -0.9539411518330503,
+            0.2975736289068705,
+            0.025446743941275565
+          ],
+          "scale": [
+            1.0000001192092896,
+            1.000000238418579,
+            1.0
+          ]
+        }
+      },
+      "name": "RightToes",
+      "parent": "24d271d6efc2de9c1c0a9b839b46605b"
+    },
+    "1b32d21981fbcef62a9e3c65ca984c12": {
+      "components": {
+        "RigNode": {
+          "node": 16,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0002867288328707218,
+            0.0030693286657333375,
+            -7.68702884670347e-06
+          ],
+          "rotation": [
+            0.015675767888615095,
+            0.0011517380783344733,
+            0.9946256562163274,
+            0.10233644412789444
+          ],
+          "scale": [
+            0.9999934434890747,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "RightToeRoll",
+      "parent": "fcb799d2ab8cbb8200bb034678cc9c12"
+    },
+    "23e326b91625da171825aabea438aad3": {
+      "components": {
+        "RigNode": {
+          "node": 48,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0006514833867549896,
+            0.0005098103359341622,
+            2.445373684167862e-05
+          ],
+          "rotation": [
+            -0.3360726569188606,
+            0.63071191376396,
+            0.4469285236961191,
+            0.5380637005174282
+          ],
+          "scale": [
+            1.0,
+            1.0000001192092896,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHandThumb1",
+      "parent": "30847e2a482bcd79fc87a41120df4636"
+    },
+    "24d271d6efc2de9c1c0a9b839b46605b": {
+      "components": {
+        "RigNode": {
+          "node": 31,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -1.30385160446167e-10,
+            0.006088117957115173,
+            -1.8626451492309571e-10
+          ],
+          "rotation": [
+            -0.5484954951675232,
+            0.22882911386928248,
+            0.17182079111622495,
+            0.7856637602479366
+          ],
+          "scale": [
+            0.9999949932098389,
+            1.000003695487976,
+            1.0000011920928955
+          ]
+        }
+      },
+      "name": "RightFoot",
+      "parent": "8faa460603bb52fbe1ba18107b555693"
+    },
+    "255daacaac3065d607afc21554a150b2": {
+      "components": {
+        "RigNode": {
+          "node": 15,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0033681571483612062,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftKneeCtrl_end",
+      "parent": "a1a8ae7c0f20c4ed93435f3490c0d88b"
+    },
+    "2c26b2bc9501b8146fefbc8fcb62bd40": {
+      "components": {
+        "RigNode": {
+          "node": 40,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.002132362872362137,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftToes_end",
+      "parent": "c6a0f58639ef6afc7f79e84de0e08f25"
+    },
+    "2e009b398691e300a57dff3cd12c9995": {
+      "components": {
+        "RigNode": {
+          "node": 53,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            2.0489096641540527e-10,
+            0.0011282125115394592,
+            -8.405186235904693e-10
+          ],
+          "rotation": [
+            -0.08137267130519191,
+            0.06692128913271657,
+            0.0006392499220164204,
+            0.9944343220067426
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "RightHandIndex2",
+      "parent": "06e112c506ec8bad9309fa98e5b16051"
+    },
+    "30847e2a482bcd79fc87a41120df4636": {
+      "components": {
+        "RigNode": {
+          "node": 45,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -2.5890767574310305e-09,
+            0.005272276997566223,
+            -3.725290298461914e-11
+          ],
+          "rotation": [
+            -0.026546779415095704,
+            0.7247396685505382,
+            -0.021308184492244368,
+            0.6881814023973526
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999995827674866,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "LeftHand",
+      "parent": "7b33005e8410cee2337916b53a49b9ff"
+    },
+    "37800f09380dee94b3d4a1d6527a0f17": {
+      "components": {
+        "RigNode": {
+          "node": 27,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0030125424265861514,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftFootIK_end",
+      "parent": "7a798107bb5764d8f8564f7f6df79aa6"
+    },
+    "3c841a555f94270f6adb2a1899e87fcc": {
+      "components": {
+        "RigNode": {
+          "node": 7,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.054421083779289e-10,
+            -5.42590292695877e-10,
+            -1.186286069376763e-12
+          ],
+          "rotation": [
+            0.5000000298023063,
+            0.49999997019766135,
+            -0.4999998728440822,
+            0.500000127155916
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftFootRollCtrl",
+      "parent": "9b8f4c7d7750310a09491507a77d9f33"
+    },
+    "4333366148ee4bd0f1220be5c5feba90": {
+      "components": {
+        "RigNode": {
+          "node": 46,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            7.450580596923828e-11,
+            0.005272275805473328,
+            9.033828973770141e-10
+          ],
+          "rotation": [
+            0.008204221082400008,
+            0.0003330626556269764,
+            -0.03303726526819709,
+            0.9994203914916372
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999998807907104,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "RightHand",
+      "parent": "9cc7fb563bce8febb4f5c3976e9ff1aa"
+    },
+    "4978691fb2f892bc22e06089a1c32005": {
+      "components": {
+        "RigNode": {
+          "node": 23,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.8214082811027765e-05,
+            0.0024152174592018127,
+            0.0018004995584487914
+          ],
+          "rotation": [
+            -0.9481119111248657,
+            -0.011444970988490585,
+            0.04409314466146284,
+            0.3146563382741412
+          ],
+          "scale": [
+            1.0000001192092896,
+            0.9999999403953552,
+            0.9999997615814209
+          ]
+        }
+      },
+      "name": "RightFootIK",
+      "parent": "1b32d21981fbcef62a9e3c65ca984c12"
+    },
+    "54ba362db372e8fc4cad15e59af86e47": {
+      "components": {
+        "RigNode": {
+          "node": 14,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0029276666045188905,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftFootRollCtrl_end",
+      "parent": "3c841a555f94270f6adb2a1899e87fcc"
+    },
+    "60193acf9c8134dffdc2f5f3a82fda8d": {
+      "components": {
+        "RigNode": {
+          "node": 39,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.4901161193847657e-10,
+            0.002588014006614685,
+            -5.727633833885193e-10
+          ],
+          "rotation": [
+            0.0009363195055426994,
+            -0.9648764042921906,
+            0.10390247989256783,
+            0.2412818319271704
+          ],
+          "scale": [
+            1.0000070333480835,
+            0.9999955296516418,
+            1.000001311302185
+          ]
+        }
+      },
+      "name": "RightArm",
+      "parent": "de50076f451a31c407ce7ec4cb1276cb"
+    },
+    "615faef241590a7f8c13d6f0cedad5cb": {
+      "components": {
+        "RigNode": {
+          "node": 25,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.4901161193847657e-10,
+            0.005261740684509277,
+            2.444721758365631e-11
+          ],
+          "rotation": [
+            0.14157400866769415,
+            0.032444481151051065,
+            0.05285427755327647,
+            0.9879830874346585
+          ],
+          "scale": [
+            0.999999463558197,
+            0.9999988079071045,
+            1.0000022649765015
+          ]
+        }
+      },
+      "name": "LeftLeg",
+      "parent": "ee9d8b7ca92e778a8113e470c9a4d6cb"
+    },
+    "63b073054725c2d5eb5ea5d7285e1537": {
+      "components": {
+        "RigNode": {
+          "node": 21,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0020152910053730013,
+            0.0005846330896019936,
+            7.520936406990586e-10
+          ],
+          "rotation": [
+            0.9765877147591191,
+            -0.0013587963553778938,
+            -0.21511474743386616,
+            0.00048424218128304783
+          ],
+          "scale": [
+            0.9999869465827942,
+            0.999999463558197,
+            0.9999992847442627
+          ]
+        }
+      },
+      "name": "RightUpLeg",
+      "parent": "9a30fd48cb4e905b201f35e384dbb625"
+    },
+    "652bead999fbd1b324130ff1dce43ed1": {
+      "components": {
+        "RigNode": {
+          "node": 33,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0008828003704547883,
+            0.0028108188509941103,
+            0.0006496106088161468
+          ],
+          "rotation": [
+            -0.5868819991980845,
+            -0.41065362035542613,
+            -0.5482944688987255,
+            0.43163213328169386
+          ],
+          "scale": [
+            0.9999997615814209,
+            0.9999998211860657,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "LeftShoulder",
+      "parent": "7154c88346a3facfbc31ba85b0757e9a"
+    },
+    "6af36a20d10d33c4bfb5f50e56edff3e": {
+      "components": {
+        "RigNode": {
+          "node": 50,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0006391923874616623,
+            0.0005098118633031846,
+            -0.00012830083258450031
+          ],
+          "rotation": [
+            0.3583740105375134,
+            -0.7295986886388046,
+            0.42925204102469705,
+            0.39369595804875485
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHandThumb1",
+      "parent": "4333366148ee4bd0f1220be5c5feba90"
+    },
+    "6d8ea6373e022ed23f04f450d7331aa0": {
+      "components": {
+        "RigNode": {
+          "node": 54,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            2.9802322387695313e-10,
+            0.0010586769878864288,
+            -2.60770320892334e-10
+          ],
+          "rotation": [
+            -0.19090290184797676,
+            -0.025671415203565858,
+            0.06366158592178602,
+            0.97920593492145
+          ],
+          "scale": [
+            0.9999998807907104,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHandThumb2",
+      "parent": "6af36a20d10d33c4bfb5f50e56edff3e"
+    },
+    "6dfbbf836d9235692cbe32dfde631235": {
+      "components": {
+        "RigNode": {
+          "node": 5,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -2.2340875875670465e-06,
+            -0.00031240254640579223,
+            0.015641721487045287
+          ],
+          "rotation": [
+            0.0009546565177875929,
+            0.7071061212967464,
+            -0.7071059623743022,
+            0.0010861999429456343
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.000000238418579,
+            1.0
+          ]
+        }
+      },
+      "name": "HipsCtrl",
+      "parent": "ca3c32bb85ab70f0740084890c5635f2"
+    },
+    "6f6dd58dcc884d907bfef82796dd2131": {
+      "components": {
+        "RigNode": {
+          "node": 60,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0013049882650375366,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHandIndex3_end",
+      "parent": "b7220bdf4fcc6138b2faed970cd8841d"
+    },
+    "7154c88346a3facfbc31ba85b0757e9a": {
+      "components": {
+        "HitRegion": {
+          "name": "target",
+          "owner": "0000000000000000000000000000001e",
+          "radius": 0.006,
+          "shape": "sphere"
+        },
+        "RigNode": {
+          "node": 29,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            4.399771833755311e-15,
+            0.003052766025066376,
+            -2.6077360715248686e-10
+          ],
+          "rotation": [
+            0.04916578558898079,
+            -3.8279617088737917e-13,
+            -1.8956674719124788e-14,
+            0.9987906314775977
+          ],
+          "scale": [
+            1.0,
+            1.0000001192092896,
+            1.0
+          ]
+        }
+      },
+      "name": "UpperChest",
+      "parent": "9add1727bd004b440e5c2b1fa6b2f8c9"
+    },
+    "75ceb4ed9d04b4ee88e14e90457e508e": {
+      "components": {
+        "RigNode": {
+          "node": 41,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.002132362872362137,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightToes_end",
+      "parent": "1a317d3bfbd77e9efda8414d9c848b3f"
+    },
+    "77121fd336dcadac792b7b792d2fbb3d": {
+      "components": {
+        "RigNode": {
+          "node": 37,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.3696619359515604e-13,
+            0.0027800926566123965,
+            -1.3969514434108987e-10
+          ],
+          "rotation": [
+            -0.07413526532849979,
+            -2.5269782216681963e-14,
+            -8.820014059525127e-15,
+            0.9972481950019629
+          ],
+          "scale": [
+            1.0000040531158447,
+            0.9999998807907104,
+            1.0
+          ]
+        }
+      },
+      "name": "Head",
+      "parent": "f7aa6828da9900b41649db8225736d27"
+    },
+    "7949eeb9d517f5407323ca894ef54e4d": {
+      "components": {
+        "RigNode": {
+          "node": 51,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -1.1175870895385742e-10,
+            0.0011282142996788026,
+            -7.310882210731507e-10
+          ],
+          "rotation": [
+            0.08137376104333126,
+            0.0669221942641871,
+            -0.0006391020296426502,
+            0.994434172018
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "LeftHandIndex2",
+      "parent": "dd6be4947961ab2a89d568a047d818a3"
+    },
+    "794f21c6ec4a93b081c3e872a92d32f3": {
+      "components": {
+        "RigNode": {
+          "node": 42,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.010044100284576417,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Head_end",
+      "parent": "77121fd336dcadac792b7b792d2fbb3d"
+    },
+    "7a798107bb5764d8f8564f7f6df79aa6": {
+      "components": {
+        "RigNode": {
+          "node": 22,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -1.8214230658486488e-05,
+            0.002415217608213425,
+            0.0018004995584487914
+          ],
+          "rotation": [
+            -0.9461288548090167,
+            0.02187085120156892,
+            -0.07550260173135905,
+            0.3141038253464819
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "LeftFootIK",
+      "parent": "d5b0bfc67b24cd23e8cbfbff6178de58"
+    },
+    "7ad771a17e1a16fd9d7441564d0b480d": {
+      "components": {
+        "RigNode": {
+          "node": 18,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0033681571483612062,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightKneeCtrl_end",
+      "parent": "b96c2c2a39551bba6a82b968293ae573"
+    },
+    "7b33005e8410cee2337916b53a49b9ff": {
+      "components": {
+        "RigNode": {
+          "node": 43,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -2.996239345520735e-09,
+            0.004707749485969544,
+            2.3283064365386964e-11
+          ],
+          "rotation": [
+            0.046761539386994386,
+            0.012573271019035,
+            0.005446292642537521,
+            0.9988120990388996
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftForeArm",
+      "parent": "af9ed7f49a87fa2036938a8ef53fbc28"
+    },
+    "7c9d57688003b5ad797248d0f61eb1b8": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            0.64000004529953,
+            0.64000004529953,
+            0.64000004529953
+          ],
+          "double_sided": false,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 1.0
+        },
+        "SkinnedMesh": {
+          "asset": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99",
+          "node": 2,
+          "primitive": 0,
+          "rig": "0000000000000000000000000000001f",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "a1e1838322ef05414627dc573d626db8"
+    },
+    "80df2ff0eefb5065e7414fbb49310164": {
+      "components": {
+        "RigNode": {
+          "node": 30,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -5.587935447692871e-11,
+            0.006088110208511353,
+            1.8626451492309571e-10
+          ],
+          "rotation": [
+            -0.5438064818762978,
+            -0.19418123693708567,
+            -0.1875435056742876,
+            0.7946040466611693
+          ],
+          "scale": [
+            1.0000205039978027,
+            0.9999836087226868,
+            0.999995768070221
+          ]
+        }
+      },
+      "name": "LeftFoot",
+      "parent": "615faef241590a7f8c13d6f0cedad5cb"
+    },
+    "876808df2646a2788a21d05a5cc34a0f": {
+      "components": {
+        "RigNode": {
+          "node": 6,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0007085253298282624,
+            0.0017990143597126007,
+            -0.00022240428254008293
+          ],
+          "rotation": [
+            0.5075118082066272,
+            -0.5082283553850669,
+            0.4919062558428794,
+            0.49210155331605027
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHeelRoll",
+      "parent": "9b8f4c7d7750310a09491507a77d9f33"
+    },
+    "8faa460603bb52fbe1ba18107b555693": {
+      "components": {
+        "RigNode": {
+          "node": 26,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -6.984919309616089e-11,
+            0.005261740684509277,
+            -4.831235855817795e-11
+          ],
+          "rotation": [
+            0.1389478803122245,
+            0.011510127295933674,
+            -0.05917321729566122,
+            0.9884632182743329
+          ],
+          "scale": [
+            0.9999991059303284,
+            1.0000003576278687,
+            1.0
+          ]
+        }
+      },
+      "name": "RightLeg",
+      "parent": "63b073054725c2d5eb5ea5d7285e1537"
+    },
+    "9a30fd48cb4e905b201f35e384dbb625": {
+      "components": {
+        "RigNode": {
+          "node": 12,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            4.645995213650167e-06,
+            0.003219510018825531,
+            -4.691141697321654e-10
+          ],
+          "rotation": [
+            9.301443380652788e-05,
+            -2.664778736094541e-07,
+            0.9999989543997874,
+            0.0014431034530810155
+          ],
+          "scale": [
+            1.0000040531158447,
+            1.0,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "Hips",
+      "parent": "6dfbbf836d9235692cbe32dfde631235"
+    },
+    "9add1727bd004b440e5c2b1fa6b2f8c9": {
+      "components": {
+        "RigNode": {
+          "node": 24,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.3624497363640132e-13,
+            0.002870488166809082,
+            2.5606221143448236e-10
+          ],
+          "rotation": [
+            0.011894642205000116,
+            9.999340513066984e-09,
+            1.10409312634363e-08,
+            0.9999292562410677
+          ],
+          "scale": [
+            1.0,
+            0.9999998211860657,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "Chest",
+      "parent": "bfad778618e6ce60106fca33890e1fad"
+    },
+    "9b8f4c7d7750310a09491507a77d9f33": {
+      "components": {
+        "RigNode": {
+          "node": 3,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0020420879125595095,
+            0.0014880996942520143,
+            0.0019320479035377504
+          ],
+          "rotation": [
+            -0.4999999105930359,
+            -0.5000000516580037,
+            0.500000149011601,
+            0.4999998887373143
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftFootCtrl",
+      "parent": "ca3c32bb85ab70f0740084890c5635f2"
+    },
+    "9cc7fb563bce8febb4f5c3976e9ff1aa": {
+      "components": {
+        "RigNode": {
+          "node": 44,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -1.5366822481155396e-10,
+            0.00470774918794632,
+            2.4519977159798145e-09
+          ],
+          "rotation": [
+            0.0007336911302361663,
+            -0.00476749250343017,
+            0.04707185033727604,
+            0.9988798594517663
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "RightForeArm",
+      "parent": "60193acf9c8134dffdc2f5f3a82fda8d"
+    },
+    "9e4c639ab2211069ae32899e0811eb06": {
+      "components": {
+        "RigNode": {
+          "node": 56,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0013225968182086945,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHandThumb2_end",
+      "parent": "f3383c2a84d902a30afaca617be59bf2"
+    },
+    "a1a8ae7c0f20c4ed93435f3490c0d88b": {
+      "components": {
+        "RigNode": {
+          "node": 8,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.006179578304290771,
+            -0.005867005586624146,
+            0.000258870217949152
+          ],
+          "rotation": [
+            -0.7071069764664509,
+            5.3385061993154476e-08,
+            0.7071065859065861,
+            5.3385091479603915e-08
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftKneeCtrl",
+      "parent": "9b8f4c7d7750310a09491507a77d9f33"
+    },
+    "a1e1838322ef05414627dc573d626db8": {
+      "components": {
+        "RigNode": {
+          "node": 2,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            -0.7071068387877039,
+            0.0,
+            0.0,
+            0.7071067235853865
+          ],
+          "scale": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      "name": "characterMedium",
+      "parent": "e903e4ba8d31852611f0c226557220b7"
+    },
+    "a5b69285149c02fe4627d54c78d7dbf7": {
+      "components": {
+        "RigNode": {
+          "node": 10,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -3.026601191891132e-11,
+            -4.642473427907135e-10,
+            -1.186499232197491e-12
+          ],
+          "rotation": [
+            0.5000000298023063,
+            0.49999997019766135,
+            -0.4999998728440822,
+            0.500000127155916
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "RightFootRollCtrl",
+      "parent": "d73aaea42126dbdf858ca89f893f61f7"
+    },
+    "af9ed7f49a87fa2036938a8ef53fbc28": {
+      "components": {
+        "RigNode": {
+          "node": 38,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.002588014304637909,
+            -2.569577191025019e-09
+          ],
+          "rotation": [
+            0.08389000161444282,
+            0.7108129267041796,
+            0.06131061238416102,
+            0.6956640422419765
+          ],
+          "scale": [
+            1.0000005960464478,
+            0.999995768070221,
+            1.000006914138794
+          ]
+        }
+      },
+      "name": "LeftArm",
+      "parent": "652bead999fbd1b324130ff1dce43ed1"
+    },
+    "b062239ac59782d64245553c1e2fb10a": {
+      "components": {
+        "RigNode": {
+          "node": 28,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.003012542724609375,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightFootIK_end",
+      "parent": "4978691fb2f892bc22e06089a1c32005"
+    },
+    "b7220bdf4fcc6138b2faed970cd8841d": {
+      "components": {
+        "RigNode": {
+          "node": 57,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.4901161193847657e-10,
+            0.0010213059931993484,
+            1.3364478945732117e-09
+          ],
+          "rotation": [
+            -0.03097384333992619,
+            -0.030523022455675043,
+            -0.0008921936218194152,
+            0.9990536372585135
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999998211860657,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "RightHandIndex3",
+      "parent": "2e009b398691e300a57dff3cd12c9995"
+    },
+    "b96c2c2a39551bba6a82b968293ae573": {
+      "components": {
+        "RigNode": {
+          "node": 11,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0061795789003372195,
+            -0.005867005586624146,
+            -0.0002919821999967098
+          ],
+          "rotation": [
+            -0.7071069764664509,
+            5.3385061993154476e-08,
+            0.7071065859065861,
+            5.3385091479603915e-08
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightKneeCtrl",
+      "parent": "d73aaea42126dbdf858ca89f893f61f7"
+    },
+    "bfad778618e6ce60106fca33890e1fad": {
+      "components": {
+        "RigNode": {
+          "node": 19,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -5.046533069902326e-14,
+            0.0032195159792900085,
+            7.755615039073404e-12
+          ],
+          "rotation": [
+            -0.06104257205231622,
+            -1.0545779577861622e-08,
+            -1.0392164547353262e-08,
+            0.9981351633908293
+          ],
+          "scale": [
+            1.0000040531158447,
+            0.9999999403953552,
+            1.000000238418579
+          ]
+        }
+      },
+      "name": "Spine",
+      "parent": "9a30fd48cb4e905b201f35e384dbb625"
+    },
+    "c53ab4e268b814758234605822926e84": {
+      "components": {
+        "RigNode": {
+          "node": 55,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            3.725290298461914e-11,
+            0.0010213042050600052,
+            -3.4901313483715058e-09
+          ],
+          "rotation": [
+            0.030971774417833036,
+            -0.030524252739781328,
+            0.0008921602934716187,
+            0.9990536638409868
+          ],
+          "scale": [
+            0.9999997019767761,
+            1.0000003576278687,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHandIndex3",
+      "parent": "7949eeb9d517f5407323ca894ef54e4d"
+    },
+    "c6a0f58639ef6afc7f79e84de0e08f25": {
+      "components": {
+        "RigNode": {
+          "node": 35,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -6.402842700481415e-11,
+            0.0030125394463539124,
+            -9.313225746154785e-12
+          ],
+          "rotation": [
+            -0.019817861557825417,
+            0.9522868074069503,
+            -0.2982552509036582,
+            0.06165139179571551
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999998807907104,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "LeftToes",
+      "parent": "80df2ff0eefb5065e7414fbb49310164"
+    },
+    "ca3c32bb85ab70f0740084890c5635f2": {
+      "components": {
+        "RigNode": {
+          "node": 1,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            -0.7071068387877039,
+            0.0,
+            0.0,
+            0.7071067235853865
+          ],
+          "scale": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      "name": "Root",
+      "parent": "e903e4ba8d31852611f0c226557220b7"
+    },
+    "d5b0bfc67b24cd23e8cbfbff6178de58": {
+      "components": {
+        "RigNode": {
+          "node": 13,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.000286642387509346,
+            0.0030693286657333375,
+            1.0425294749438763e-05
+          ],
+          "rotation": [
+            -0.01573585358534863,
+            0.0020787376539440575,
+            -0.9946247336629513,
+            0.10232155661252217
+          ],
+          "scale": [
+            0.9999982118606567,
+            0.9999998807907104,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftToeRoll",
+      "parent": "876808df2646a2788a21d05a5cc34a0f"
+    },
+    "d73aaea42126dbdf858ca89f893f61f7": {
+      "components": {
+        "RigNode": {
+          "node": 4,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0020752048492431643,
+            0.001488100290298462,
+            0.0019320479035377504
+          ],
+          "rotation": [
+            -0.4999999105930359,
+            -0.5000000516580037,
+            0.500000149011601,
+            0.4999998887373143
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "RightFootCtrl",
+      "parent": "ca3c32bb85ab70f0740084890c5635f2"
+    },
+    "dd6be4947961ab2a89d568a047d818a3": {
+      "components": {
+        "RigNode": {
+          "node": 47,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -4.656612873077393e-11,
+            0.0013859978318214417,
+            -1.8742866814136507e-09
+          ],
+          "rotation": [
+            0.05672738466941558,
+            -0.07746504541669756,
+            0.00014853867855374635,
+            0.9953799015970828
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "LeftHandIndex1",
+      "parent": "30847e2a482bcd79fc87a41120df4636"
+    },
+    "de50076f451a31c407ce7ec4cb1276cb": {
+      "components": {
+        "RigNode": {
+          "node": 34,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            -0.0008828005939722062,
+            0.0028108188509941103,
+            0.0006496106088161468
+          ],
+          "rotation": [
+            0.6583795269981922,
+            -0.50761117173074,
+            0.4599934319692739,
+            0.3118867411560018
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightShoulder",
+      "parent": "7154c88346a3facfbc31ba85b0757e9a"
+    },
+    "e903e4ba8d31852611f0c226557220b7": {
+      "components": {
+        "RigNode": {
+          "node": 0,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "FBX Scene",
+      "parent": "0000000000000000000000000000001f"
+    },
+    "ee9d8b7ca92e778a8113e470c9a4d6cb": {
+      "components": {
+        "RigNode": {
+          "node": 20,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.002015291154384613,
+            0.0005846330523490905,
+            7.509206056965923e-10
+          ],
+          "rotation": [
+            0.986703058594693,
+            0.0010609757124685794,
+            0.16252845803531255,
+            0.00066993960855285
+          ],
+          "scale": [
+            1.0000545978546143,
+            1.0000014305114746,
+            1.0000004768371582
+          ]
+        }
+      },
+      "name": "LeftUpLeg",
+      "parent": "9a30fd48cb4e905b201f35e384dbb625"
+    },
+    "eea8cd942c43802075803baaf2d5d873": {
+      "components": {
+        "RigNode": {
+          "node": 58,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0013225968182086945,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHandThumb2_end",
+      "parent": "6d8ea6373e022ed23f04f450d7331aa0"
+    },
+    "f3383c2a84d902a30afaca617be59bf2": {
+      "components": {
+        "RigNode": {
+          "node": 52,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            1.4901161193847657e-10,
+            0.0010586779564619065,
+            -1.7322599887847901e-09
+          ],
+          "rotation": [
+            0.20120006837485246,
+            -0.0134934290987951,
+            0.003930167764916995,
+            0.9794493420480971
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHandThumb2",
+      "parent": "23e326b91625da171825aabea438aad3"
+    },
+    "f4b786bdebe731de966190064b077f68": {
+      "components": {
+        "RigNode": {
+          "node": 59,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0013049884140491487,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "LeftHandIndex3_end",
+      "parent": "c53ab4e268b814758234605822926e84"
+    },
+    "f7aa6828da9900b41649db8225736d27": {
+      "components": {
+        "RigNode": {
+          "node": 32,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            2.2970770251207195e-14,
+            0.0027086451649665833,
+            -4.2935015542866494e-11
+          ],
+          "rotation": [
+            0.07661575813516532,
+            -2.541474296118604e-13,
+            -3.625577035280754e-12,
+            0.9970606930399843
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "Neck",
+      "parent": "7154c88346a3facfbc31ba85b0757e9a"
+    },
+    "fcb799d2ab8cbb8200bb034678cc9c12": {
+      "components": {
+        "RigNode": {
+          "node": 9,
+          "rig": "0000000000000000000000000000001f"
+        },
+        "Transform": {
+          "position": [
+            0.0007085256278514862,
+            0.0017990143597126007,
+            0.00022240402176976204
+          ],
+          "rotation": [
+            0.507685648295614,
+            -0.507902037710097,
+            0.4917279192442678,
+            0.4924372610194076
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "RightHeelRoll",
+      "parent": "d73aaea42126dbdf858ca89f893f61f7"
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 5,
+  "templates": {},
+  "ui": {
+    "00000000000000000000000000000064": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 16
+        },
+        "width": {
+          "unit": "dp",
+          "value": 700
+        }
+      },
+      "name": "Status",
+      "parent": null,
+      "style": {
+        "background_color": "#102b3580",
+        "color": "#e3f4f5",
+        "font_size": 24
+      },
+      "text": "WELCOME / SWITCHBACK RANGE",
+      "visible": true
+    },
+    "00000000000000000000000000000065": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 110
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 58
+        },
+        "width": {
+          "unit": "dp",
+          "value": 700
+        }
+      },
+      "name": "HUD",
+      "parent": null,
+      "style": {
+        "background_color": "#102b3580",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "AMMO 0/4   TARGETS 0/2   HEALTH 3/3",
+      "visible": true
+    },
+    "00000000000000000000000000000066": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 165
+        },
+        "width": {
+          "unit": "dp",
+          "value": 700
+        }
+      },
+      "name": "Stance",
+      "parent": null,
+      "style": {
+        "background_color": "#102b3580",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "STANDING",
+      "visible": true
+    },
+    "00000000000000000000000000000067": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 205
+        },
+        "width": {
+          "unit": "dp",
+          "value": 700
+        }
+      },
+      "name": "Instructions",
+      "parent": null,
+      "style": {
+        "background_color": "#102b3580",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "WASD move / Mouse look / E use / C crouch\nMouse 1 fire / Mouse 2 aim / R reload\nCrouch beneath teal lintel for supply. Clear A and B. Return to blue pad.",
+      "visible": true
+    },
+    "00000000000000000000000000000068": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "percent",
+          "value": 50
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 260
+        },
+        "width": {
+          "unit": "dp",
+          "value": 24
+        }
+      },
+      "name": "Crosshair",
+      "parent": null,
+      "style": {
+        "background_color": "#00000000",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "+",
+      "visible": true
+    },
+    "0000000000000000000000000000006e": {
+      "action": "begin",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 330
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Begin",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Begin",
+      "visible": true
+    },
+    "0000000000000000000000000000006f": {
+      "action": "load",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 375
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Load checkpoint",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Load checkpoint",
+      "visible": true
+    },
+    "00000000000000000000000000000070": {
+      "action": "menu",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 420
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Menu",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Menu",
+      "visible": false
+    },
+    "00000000000000000000000000000071": {
+      "action": "save",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 330
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Save checkpoint",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Save checkpoint",
+      "visible": false
+    },
+    "00000000000000000000000000000072": {
+      "action": "resume",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 420
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Resume",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Resume",
+      "visible": false
+    },
+    "00000000000000000000000000000073": {
+      "action": "retry",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 330
+        },
+        "width": {
+          "unit": "dp",
+          "value": 180
+        }
+      },
+      "name": "Retry checkpoint",
+      "parent": null,
+      "style": {
+        "background_color": "#102b35dd",
+        "color": "#e3f4f5",
+        "font_size": 16
+      },
+      "text": "Retry checkpoint",
+      "visible": false
+    }
+  },
+  "version": 4,
+  "world_id": "d2c3c39643e618bc73de5a5c7bd8d60d"
+}

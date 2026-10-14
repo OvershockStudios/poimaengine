@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-14 for **0.0.129**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-14 for **0.0.130**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.130 publishes the original [Switchback Range](evidence/fixtures/agent-switchback/README.md)
+C# game, licensed cooked content and an independent native verifier. The portable
+fixture rebuilds its SDK and Native AOT game, adopts the artifact and exports a
+verified Windows bundle using the retained 0.0.128 engine with corrected runtime
+notices. Thirteen gameplay groups pass across four naturally closed owners,
+including nine full version-9 checkpoints and five typed-exact state pairs.
+Both original fresh-agent workflow verdicts remain failed; the corrected receipt
+audit and independent game qualification are separate results. The repeated
+fresh-workflow Alpha gate remains open. [Results](evidence/m2-agent-switchback.json).
+
+The actual relocated `game serve` route passes the same thirteen groups through
+four fresh host/client pairs with an unchanged bundle after owned build-source
+paths are removed. Ready/Idle/Run Vulkan captures show real GPU skinning and
+4× world/foreground MSAA. The full checkout remains installed; clean-machine,
+physical-input, audio-listening and performance gates remain open.
 
 Version 0.0.129 completes the identified SDL runtime-notice packaging gap.
 Installed rendering runtimes include the original yuv2rgb BSD notice, the

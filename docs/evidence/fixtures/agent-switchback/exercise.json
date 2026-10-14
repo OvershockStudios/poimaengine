@@ -1,0 +1,56 @@
+{
+  "roles": {
+    "player": "00000000000000000000000000000002",
+    "camera": "00000000000000000000000000000003",
+    "target_a": "00000000000000000000000000000014",
+    "target_b": "0000000000000000000000000000001e",
+    "rig_b": "0000000000000000000000000000001f",
+    "region_a": "00000000000000000000000000000015",
+    "region_b": "7154c88346a3facfbc31ba85b0757e9a",
+    "pickup_hit_emitter": "00000000000000000000000000000032",
+    "completion_emitter": "00000000000000000000000000000033"
+  },
+  "fields": {
+    "Phase": "Phase",
+    "Supply": "Supply",
+    "ClearedMask": "ClearedMask",
+    "Ammo": "Ammo",
+    "Shots": "Shots",
+    "Rejected": "Rejected",
+    "Health": "Health",
+    "Timer": "Timer",
+    "MenuOpen": "MenuOpen",
+    "ReloadRemaining": "ReloadRemaining"
+  },
+  "ui": {
+    "begin": "0000000000000000000000000000006e",
+    "menu": "00000000000000000000000000000070",
+    "save": "00000000000000000000000000000071",
+    "load": "0000000000000000000000000000006f",
+    "resume": "00000000000000000000000000000072",
+    "retry": "00000000000000000000000000000073"
+  },
+  "b_binding": {
+    "asset": "9548a73296fca2eaecdb9e23793b0ef42a5a0310ae18eb2a19fbf642056cfe99",
+    "node": 29,
+    "node_name": "UpperChest",
+    "node_path": [
+      0,
+      1,
+      5,
+      12,
+      19,
+      24,
+      29
+    ],
+    "rig_node": "7154c88346a3facfbc31ba85b0757e9a",
+    "skin": 0,
+    "idle_clip": 0,
+    "run_clip": 1
+  },
+  "format": "poima.switchback-exercise.v1",
+  "presentation": {
+    "save_status_field": "SaveStatus",
+    "save_status_complete": 3
+  }
+}

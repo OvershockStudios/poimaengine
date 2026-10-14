@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.129.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.130.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -29,6 +29,8 @@ Explicit [live material editing](docs/LIVE_MATERIALS.md) applies authored color,
 Three recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md), and [Codex builds Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) with a native inventory, recipes and styled UI. They compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
 
 [DEPOT RUN](docs/evidence/fixtures/agent-depot/README.md) extends that evidence through licensed imports, agent-submitted Native AOT publication and verified Windows export. Its first attempt stopped at a host outage; a separate agent session completed the workflow after an explicit infrastructure recovery. The retained source and public verifier pass native gameplay, complete checkpoint restoration and relocated-bundle checks. [Attempts and results](docs/evidence/m2-agent-depot.json).
+
+[Switchback Range](docs/evidence/fixtures/agent-switchback/README.md) adds a small agent-authored FPS with crouch clearance, actual camera-ray shots, a patrolling animated target, ADS, reloads and checkpoints. Its public source rebuilds to Native AOT and passes thirteen independent gameplay groups with complete save and cold-owner comparisons, including the actual relocated game service. Both original fresh-workflow verdicts remain failed; a corrected receipt audit and independent game checks establish separate evidence. [Source, reproduction and results](docs/evidence/fixtures/agent-switchback/README.md).
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 
