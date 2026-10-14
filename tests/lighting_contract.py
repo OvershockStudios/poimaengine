@@ -123,7 +123,7 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(denied['message'],'Player service mutations require a pumped shared headless owner.')
         for method in ('world.capture','runtime.capture','runtime.play','asset.animation.capture'):
             self.assertEqual(discovery['methods'][method]['properties']['shadow_filter'],
-                             {'enum':['pcf3_point','pcf3_fractional'],'default':'pcf3_point'})
+                             {'enum':['pcf3_point','pcf3_fractional'],'description':'Explicit override; omission inherits LightingEnvironment.shadow_filter, falling back to pcf3_point for legacy scenes.'})
         c.txn(0,[create(1),component(1,'Camera',{'vertical_fov':60,'near':.1,'far':100})])
         authored=self.path.read_bytes();history=c.rpc('world.history');player=c.rpc('player.inspect')
         capabilities=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
@@ -160,6 +160,32 @@ class LightingContract(unittest.TestCase):
                 self.assertEqual(c.rpc('world.history'),history)
                 self.assertEqual(c.rpc('player.inspect'),player)
                 if runtime is not None:self.assertEqual(c.rpc('runtime.inspect',{'session_id':session}),runtime)
+    def test_authored_filter_legacy_defaults_validation_persistence_and_freeze(self):
+        c=self.open();c.txn(0,[create(1),environment(1)])
+        self.assertEqual(c.rpc('world.lighting')['shadow_filter'],'pcf3_point')
+        self.assertNotIn('shadow_filter',c.rpc('entity.get',{'id':uid(1)})['value']['components']['LightingEnvironment'])
+        c.close();c=self.open()
+        self.assertNotIn('shadow_filter',c.rpc('entity.get',{'id':uid(1)})['value']['components']['LightingEnvironment'])
+        authored={'ambient':[0,0,0],'exposure':1,'shadow_filter':'pcf3_fractional'}
+        c.txn(1,[component(1,'LightingEnvironment',authored)])
+        self.assertEqual(c.rpc('world.lighting')['shadow_filter'],'pcf3_fractional')
+        before=self.path.read_bytes();history=c.rpc('world.history')
+        for value in ('','unknown',None,True,1,[],{}):
+            c.txn(2,[component(1,'LightingEnvironment',{**authored,'shadow_filter':value})],error=-32602)
+            self.assertEqual(self.path.read_bytes(),before);self.assertEqual(c.rpc('world.history'),history)
+        c.rpc('world.undo',{'base_revision':2,'request_id':uuid.uuid4().hex})
+        self.assertEqual(c.rpc('world.lighting')['shadow_filter'],'pcf3_point')
+        self.assertNotIn('shadow_filter',c.rpc('entity.get',{'id':uid(1)})['value']['components']['LightingEnvironment'])
+        c.rpc('world.redo',{'base_revision':3,'request_id':uuid.uuid4().hex})
+        c.close();c=self.open();self.assertEqual(c.rpc('world.lighting')['shadow_filter'],'pcf3_fractional')
+        features=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
+        if features['simulation']:
+            session=uid(963);c.rpc('runtime.start',{'session_id':session,'revision':4})
+            c.txn(4,[component(1,'LightingEnvironment',{**authored,'shadow_filter':'pcf3_point'})])
+            self.assertEqual(c.rpc('world.lighting')['shadow_filter'],'pcf3_point')
+            self.assertEqual(c.rpc('runtime.lighting',{'session_id':session})['shadow_filter'],'pcf3_fractional')
+            c.rpc('runtime.stop',{'session_id':session})
+
     def test_runtime_freezes_settings_and_tracks_moving_parent(self):
         # Capability is queried from the built binary, so this test also runs in headless-only builds.
         cap=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))

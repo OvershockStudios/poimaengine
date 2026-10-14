@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-#include "poima/scene.hpp"
+#include "poima/core.hpp"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -12,6 +12,16 @@ V project(const poima::Matrix4& m,V p) {
 void close(double a,double b) { check(std::isfinite(a) && std::abs(a-b)<1e-6,"Projection value mismatch."); }
 int main() {
     try {
+        poima::LightingEnvironment environment;
+        check(environment.shadow_filter==poima::ShadowFilter::pcf3_point,"Legacy environment filter changed.");
+        poima::validate_environment(environment);
+        environment.shadow_filter=poima::ShadowFilter::pcf3_fractional;poima::validate_environment(environment);
+        environment.shadow_filter=static_cast<poima::ShadowFilter>(2);
+        bool invalid_filter=false;try { poima::validate_environment(environment); }catch(const std::runtime_error&) { invalid_filter=true; }
+        check(invalid_filter,"Unknown native environment filter accepted.");
+        poima::RenderOptions options;check(!options.shadow_filter.has_value(),"Default rendering must inherit the environment.");
+        options.shadow_filter=poima::ShadowFilter::pcf3_point;
+        check(options.shadow_filter.has_value(),"Explicit point override lost its presence.");
         poima::SceneSnapshot scene;scene.camera_world=poima::identity_matrix();scene.near_plane=.1;scene.far_plane=100;
         scene.lighting.preview=false;poima::SceneLight source;source.light.shadow.enabled=true;source.light.shadow.distance=80;source.light.kind=poima::LightKind::point;scene.lighting.lights.push_back(source);
         auto views=poima::shadow_views(scene,1.5);check(views.size()==6,"Point needs six faces.");

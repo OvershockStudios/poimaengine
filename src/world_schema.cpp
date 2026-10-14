@@ -112,7 +112,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     for(const auto& [key,value]:sky_defaults.items())sky_properties[key]["default"]=value;
     auto sky=object_schema(sky_properties,{"enabled","zenith","horizon","ground","horizon_falloff","sun","sun_size_degrees","sun_intensity"});sky["default"]=sky_defaults;
     const Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
-        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"sky",sky}}, {"ambient","exposure"});
+        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"shadow_filter",{{"enum",{"pcf3_point","pcf3_fractional"}},{"default","pcf3_point"}}},{"sky",sky}}, {"ambient","exposure"});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
     const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}}, {"asset","gain","loop","enabled"});
     Json hit_variants=Json::array();
@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 97}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 98}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -213,7 +213,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; a supplied controller camera must be a direct child; camera:null creates a camera-free actor.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
-    methods["world.capture"]["properties"]["shadow_filter"]={{"enum",{"pcf3_point","pcf3_fractional"}},{"default","pcf3_point"}};
+    methods["world.capture"]["properties"]["shadow_filter"]={{"enum",{"pcf3_point","pcf3_fractional"}},{"description","Explicit override; omission inherits LightingEnvironment.shadow_filter, falling back to pcf3_point for legacy scenes."}};
     methods.update(navigation::schemas());
     methods.update(provenance::schemas());
     result["navigation"]=navigation::capability();
@@ -423,7 +423,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play clustered_lighting defaults true. False evaluates the full light table as a reference. Cluster overflow falls back to all lights; directional and range-zero lights are never distance-culled. Assignment diagnostics distinguish requested mode, active mode and measured GPU statistics.");
-    result["invariants"].push_back("Capture/play shadow_filter is pcf3_point (default reference) or pcf3_fractional. Both retain the same shadow maps, geometric receiver-plane correction and bias. Fractional mode continuously weights four neighboring three-by-three comparison boxes; it does not add contact hardening, cross-face point filtering or shadow caching. Render diagnostics identify the selected filter.");
+    result["invariants"].push_back("Capture/play shadow_filter explicitly overrides the authored LightingEnvironment.shadow_filter. Omission inherits it; legacy scenes without the authored field retain pcf3_point. Both choices are pcf3_point or pcf3_fractional. Both retain the same shadow maps, geometric receiver-plane correction and bias. Fractional mode continuously weights four neighboring three-by-three comparison boxes; it does not add contact hardening, cross-face point filtering or shadow caching. Render diagnostics identify the selected filter.");
     result["invariants"].push_back("Capture/play ambient_occlusion defaults to {mode:none,quality:medium,radius:1}; gtao requires deferred and samples=1. Radius is finite in [0.01,100] world units. The ambient_occlusion debug view requires enabled AO. Probes expose raw_ambient_visibility and ambient_visibility; 1 means unoccluded. This contract does not imply renderer qualification.");
     result["invariants"].push_back("Capture/play viewmodel_samples is 1 (default), 2, 4 or 8 independently of world samples, lighting path and reconstruction. Configured foreground diagnostics report the selected count even when no foreground draw is rendered; settings profiles do not persist this option.");
     result["invariants"].push_back("Capture/play lighting_path is forward (default) or deferred. Deferred requires samples=1; this option does not change authored content or imply renderer qualification.");

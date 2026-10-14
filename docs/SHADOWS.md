@@ -28,6 +28,40 @@ Set the shared map resolution through the optional LightingEnvironment field:
 
 Allowed resolutions are 256, 512, 1024 and 2048 texels per view. Default: 1024. This field does not change the viewport resolution or MSAA count.
 
+For a persistent filter choice, add `"shadow_filter":"pcf3_fractional"` to the
+same component. For example, this is the complete Environment value in a new
+starter project, including its procedural sky and Sun reference:
+
+```json
+{
+  "ambient": [0.12, 0.14, 0.18],
+  "exposure": 1,
+  "shadow_resolution": 1024,
+  "shadow_filter": "pcf3_fractional",
+  "sky": {
+    "enabled": true,
+    "zenith": [0.06, 0.22, 0.55],
+    "horizon": [0.55, 0.70, 0.85],
+    "ground": [0.12, 0.10, 0.08],
+    "horizon_falloff": 0.35,
+    "sun": "00000000000000000000000000000005",
+    "sun_size_degrees": 0.53,
+    "sun_intensity": 20
+  }
+}
+```
+
+For an existing scene, read `entity.get`, clone its current
+`value.components.LightingEnvironment`, and change only the desired fields.
+Submit the full cloned value through `component.set` in a revision-guarded
+`world.transact`. `component.set` replaces the whole component: sending only
+ambient, exposure and filter would remove an existing sky. Use that scene's
+actual Sun reference rather than copying the starter ID.
+
+The native API and world-service CLI expose both filter values. The desktop
+Inspector preserves the field when applying its other Environment edits; a
+dedicated filter dropdown is not implemented.
+
 | Enabled shadowed light | Depth views | Storage at 1024² D32 |
 | --- | ---: | ---: |
 | Directional | 4 cascades | 16 MiB |
@@ -188,18 +222,25 @@ Point-face filter taps clamp to the current face at its edges. Cross-face filter
 
 The optional `shadow_filter` rendering parameter is available on `world.capture`,
 `runtime.capture`, `asset.animation.capture`, `runtime.play` and `player.start`.
-It uses the shared forward/deferred lighting implementation without changing
-authored light data or game saves. Omission selects `pcf3_point`.
+It uses the shared forward/deferred lighting implementation. An explicit launch
+or capture parameter overrides the optional authored
+`LightingEnvironment.shadow_filter` value. Without either, legacy worlds retain
+`pcf3_point`; reading an omitted authored field does not insert it into the saved
+component. `world.lighting` and `runtime.lighting` report the authored effective
+choice, while render diagnostics report the effective filter actually rendered.
 
 | Value | Behavior |
 | --- | --- |
-| `pcf3_point` | Default reference: nine equal-weight depth comparisons around the selected texel. |
+| `pcf3_point` | Legacy fallback: nine equal-weight depth comparisons around the selected texel. |
 | `pcf3_fractional` | Sixteen weighted comparisons, interpolating four neighboring 3×3 comparison boxes. |
 
 Add `"shadow_filter":"pcf3_fractional"` to a supported capture or player-launch
 request. Capture and player reports expose the actual choice through
-`render_diagnostics.shadow_filter`. A launched player retains its filter; use
-`player.capture` to observe that window. Invalid values are rejected.
+`render_diagnostics.shadow_filter`. An explicit player-launch override remains
+fixed for that owner. With no override,
+the runtime uses its frozen environment. Authoring previews instead inherit their
+current environment, including subsequent edits and undo/redo. Use `player.capture`
+to observe that window. Invalid values are rejected.
 
 Fractional mode evaluates texel-center coordinates `uv * resolution - 0.5` with
 axis weights `[1-f, 1, 1, f]`. Their products sum to nine; comparison results are
@@ -208,10 +249,54 @@ correction at the actual clamped texel center. Bias, cascade fitting, distance
 fades, caster geometry and map allocations are unchanged.
 
 The extra comparisons run in forward opaque shading or deferred lighting,
-not shadow-depth generation. GPU cost has not been qualified; the tap-count
-increase alone does not establish a frame-time increase. This remains fixed-width
+not shadow-depth generation. The controlled measurements below do not establish
+representative game cost; the tap-count increase alone is not a frame-time increase. This remains fixed-width
 filtering, with no physically sized penumbra or general moving-scene stability
-claim. The default remains the reference pending broader quality/cost checks.
+claim. New `project create` starter worlds explicitly choose 1024-pixel maps and
+`pcf3_fractional`, with a directional sun using 80-metre coverage, depth bias
+0.0001 and normal bias 0.005 metres. Existing worlds and global bias defaults are
+unchanged. This starter recipe is editable; its lower biases need checking against
+the scene's surfaces, scale and light direction to avoid acne.
+
+### Authored filter and starter comparison
+
+Version 0.0.141 checks 25 NVIDIA and 10 AMD captures using the licensed imported
+character, one directional light and a matte floor at 1280×720. Four recipes
+isolate point versus fractional filtering, the starter bias change, and 1024
+versus 2048 map resolution. Coverage is 80 metres with a 100-metre camera far
+plane. Forward/deferred captures, small camera offsets, a committed Run pose and
+a forward 4× MSAA capture retain actual GPU skinning.
+
+Eight NVIDIA and two AMD exact-pixel comparisons cover omitted/explicit choices,
+the explicit point override and frozen runtime settings; two NVIDIA comparisons
+also match the retained 0.0.134 engine. Actual visual inspection finds smoother
+edges and closer floor contact without obvious added acne in these fixed simple
+views. This does not establish general temporal stability or character quality.
+The 2048 reference uses four times the shadow texel storage and is not the default.
+A separate NVIDIA native-presentation check records four captures across three
+paused player generations: inherited fractional filtering, frozen images after an
+authoring edit, explicit point filtering and explicit fractional filtering. One
+owned HostedViewport attachment records fractional → point → fractional with exact
+pixel restoration through explicit world transactions, not undo. These seven
+captures do not exercise the Avalonia frontend or physical input, and do not
+qualify temporal quality or frame-time cost.
+
+| Point filter, previous bias (A) | Fractional filter, starter bias (C) |
+| --- | --- |
+| ![Actual character shadow capture with point filtering](evidence/shadow-starter-point.png) | ![Actual character shadow capture with fractional filtering and starter bias](evidence/shadow-starter-balanced.png) |
+
+Both images use the same camera, scene and committed pose at 1280×720, with
+1024-pixel maps and 80-metre coverage. A uses normalized depth bias 0.0005 and
+normal bias 0.01 metres; C uses 0.0001 and 0.005 metres. The comparison changes
+both filtering and bias. The PNGs preserve the original capture pixels. The
+1,029-vertex, 1,604-triangle model is from Kenney's
+[Animated Characters Protagonists 1.1](https://kenney.nl/assets/animated-characters-protagonists),
+licensed CC0-1.0.
+
+The forward shading mean increases by 0.005584 ms in the small NVIDIA fixture,
+within its predeclared 0.5 ms ceiling. Deferred measurements, including reversed
+capture order, remain noisy and inconclusive on both GPUs. These short aggregate
+timings establish no game FPS target. [Evidence and limits](evidence/m2-shadow-environment-preset.json).
 
 ## Runtime and costs
 
@@ -288,7 +373,8 @@ This is one stylized character and directional light, not a photorealistic
 character or universal quality gate. Higher map resolution improves silhouette
 detail in this fixture, but 2048 pixels is not physical ground truth. Moving
 scenes, transparent hair/cloth, forward-path images, fractional local-light seams
-and per-GPU cost remain unqualified. The default filter and biases are unchanged.
+and per-GPU cost remain unqualified. That historical comparison did not change
+the default filter or biases; the new-project recipe described above is separate.
 
 The public verifier uses native Windows Python and a prepared
 [Performance Yard](../examples/performance-yard/README.md) manifest. Run the two modes with separate

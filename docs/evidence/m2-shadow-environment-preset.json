@@ -1,0 +1,593 @@
+{
+  "format": "poima.evidence.shadow-environment-preset.v1",
+  "checkpoint": "0.0.141",
+  "native_engine": "0.0.141",
+  "feature": {
+    "authored_field": "LightingEnvironment.shadow_filter",
+    "values": [
+      "pcf3_point",
+      "pcf3_fractional"
+    ],
+    "omission": "pcf3_point",
+    "precedence": "explicit render option, otherwise scene environment",
+    "new_project_only": {
+      "shadow_filter": "pcf3_fractional",
+      "shadow_resolution": 1024,
+      "sun_distance_m": 80,
+      "sun_depth_bias": 0.0001,
+      "sun_normal_bias_m": 0.005
+    },
+    "shader_algorithm_changed": false,
+    "gameplay_services_abi_changed": false,
+    "cpp_render_options_type_changed": true
+  },
+  "qualification": {
+    "windows_native_suites": 6,
+    "windows_lighting_tests": 10,
+    "windows_authoring_identity_tests": 2,
+    "linux_nonrenderer_suites": 4,
+    "windows_project_tests": {
+      "run": 13,
+      "skipped": 0
+    },
+    "linux_contract_tests": {
+      "authoring_identity": {
+        "run": 2,
+        "skipped": 0
+      },
+      "lighting": {
+        "run": 10,
+        "skipped": 2,
+        "skip_reason": "simulation disabled"
+      },
+      "projects": {
+        "run": 13,
+        "skipped": 2,
+        "skip_reason": "no installed runtime supplied"
+      }
+    },
+    "runtime_install_files": 49,
+    "runtime_install_bytes": 97025293,
+    "runtime_strip_policy": "debug-symbol-stripped-equivalent",
+    "images": [
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 25,
+        "exact_pixel_pairs": [
+          {
+            "first": "forward-A",
+            "second": "forward-A-explicit",
+            "exact_pixels": true
+          },
+          {
+            "first": "forward-B",
+            "second": "forward-B-explicit",
+            "exact_pixels": true
+          },
+          {
+            "first": "old-forward-A",
+            "second": "forward-A",
+            "exact_pixels": true
+          },
+          {
+            "first": "forward-A",
+            "second": "forward-B-point",
+            "exact_pixels": true
+          },
+          {
+            "first": "forward-B",
+            "second": "frozen-after-edit",
+            "exact_pixels": true
+          },
+          {
+            "first": "forward-B",
+            "second": "frozen-after-undo",
+            "exact_pixels": true
+          },
+          {
+            "first": "old-deferred-A",
+            "second": "deferred-A",
+            "exact_pixels": true
+          },
+          {
+            "first": "deferred-B",
+            "second": "deferred-B-explicit",
+            "exact_pixels": true
+          }
+        ],
+        "correctness_passed": true,
+        "inputs_unchanged": true
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "captures": 10,
+        "exact_pixel_pairs": [
+          {
+            "first": "forward-A",
+            "second": "forward-A-explicit",
+            "exact_pixels": true
+          },
+          {
+            "first": "forward-B",
+            "second": "forward-B-explicit",
+            "exact_pixels": true
+          }
+        ],
+        "correctness_passed": true,
+        "inputs_unchanged": true
+      }
+    ],
+    "fixture": {
+      "content": "licensed imported humanoid, matte floor, one directional light",
+      "gpu_skinned_vertices": 1029,
+      "model_triangles": 1604,
+      "capture_size": [
+        1280,
+        720
+      ],
+      "sun_shadow_distance_m": 80,
+      "camera_far_m": 100,
+      "paths": [
+        "forward",
+        "deferred"
+      ],
+      "additional_forward_msaa_samples": 4,
+      "camera_offset_checks_m": [
+        0.005,
+        0.01
+      ],
+      "pose_check": "Run quarter-clip; fixed committed pose, not real-time motion quality",
+      "floor_control_verified_samples": 27,
+      "floor_control_changed_samples": 8
+    },
+    "recipes": [
+      {
+        "name": "A",
+        "filter": "pcf3_point",
+        "resolution": 1024,
+        "depth_bias": 0.0005,
+        "normal_bias_m": 0.01
+      },
+      {
+        "name": "B",
+        "filter": "pcf3_fractional",
+        "resolution": 1024,
+        "depth_bias": 0.0005,
+        "normal_bias_m": 0.01
+      },
+      {
+        "name": "C",
+        "filter": "pcf3_fractional",
+        "resolution": 1024,
+        "depth_bias": 0.0001,
+        "normal_bias_m": 0.005
+      },
+      {
+        "name": "D",
+        "filter": "pcf3_fractional",
+        "resolution": 2048,
+        "depth_bias": 0.0001,
+        "normal_bias_m": 0.005
+      }
+    ],
+    "visual_review": "Root inspected actual losslessly converted captures. Fractional edges look smoother and proposed bias retains visible floor contact without obvious added acne in these fixed simple views. Not a general quality gate.",
+    "timing": {
+      "nvidia": {
+        "forward": {
+          "mean_delta_ms": 0.005584000000000103,
+          "mean_ratio": 1.0886912325285913,
+          "ceiling_ms": 0.5,
+          "observed_mean_within_ceiling": true,
+          "range_noise_ms": 0.0051199999999999996,
+          "status": "within_budget",
+          "scope": "Small fixed fixture aggregate GPU shading samples; no FPS/percentile or quality claim."
+        },
+        "deferred": {
+          "mean_delta_ms": 0.02025599999999997,
+          "mean_ratio": 1.2742634315424606,
+          "ceiling_ms": 0.5,
+          "observed_mean_within_ceiling": true,
+          "range_noise_ms": 0.27648,
+          "status": "inconclusive",
+          "scope": "Small fixed fixture aggregate GPU shading samples; no FPS/percentile or quality claim.",
+          "reverse_repeat": {
+            "mean_delta_ms": 0.0004799999999999527,
+            "mean_ratio": 1.004473605726215,
+            "ceiling_ms": 0.5,
+            "observed_mean_within_ceiling": true,
+            "range_noise_ms": 0.371712,
+            "status": "inconclusive",
+            "scope": "Small fixed fixture aggregate GPU shading samples; no FPS/percentile or quality claim."
+          },
+          "repeat_mean_delta_ms": 0.01036799999999996,
+          "final_status": "inconclusive"
+        }
+      },
+      "amd": {
+        "deferred": {
+          "mean_delta_ms": 0.08447249999999973,
+          "mean_ratio": 1.1085678218538564,
+          "ceiling_ms": 1.0,
+          "observed_mean_within_ceiling": true,
+          "range_noise_ms": 1.2219799999999998,
+          "status": "inconclusive",
+          "scope": "Small fixed fixture aggregate GPU shading samples; no FPS/percentile or quality claim.",
+          "reverse_repeat": {
+            "mean_delta_ms": 0.05645437499999961,
+            "mean_ratio": 1.063151414792834,
+            "ceiling_ms": 1.0,
+            "observed_mean_within_ceiling": true,
+            "range_noise_ms": 1.48685,
+            "status": "inconclusive",
+            "scope": "Small fixed fixture aggregate GPU shading samples; no FPS/percentile or quality claim."
+          },
+          "repeat_mean_delta_ms": 0.07046343749999967,
+          "final_status": "inconclusive"
+        }
+      },
+      "interpretation": "Forward fixture delta is within its predeclared 0.5 ms ceiling; deferred first and reverse-order observations are noisy and inconclusive on both GPUs. No universal performance pass.",
+      "frames_per_cost_capture": 64,
+      "minimum_gpu_samples": 32
+    },
+    "retained_game": {
+      "passed": true,
+      "module_rebuilt": false,
+      "fresh_agent_workflow": false,
+      "native_module": {
+        "bytes": 1385472,
+        "sha256": "a5cf138c8d632832454650cb27e28d8e07fa9d553698ceb2b249f2b8ed35fec9"
+      },
+      "source_content_files": 20,
+      "exact_known_native_sidecars": 2,
+      "inputs_unchanged": true,
+      "source_campaign": {
+        "gameplay_groups": 13,
+        "full_v9_checkpoints": 9,
+        "typed_exact_pairs": 5,
+        "naturally_closed_native_owners": 4
+      },
+      "exported_readonly_game_campaign": {
+        "gameplay_groups": 13,
+        "full_v9_checkpoints": 9,
+        "typed_exact_pairs": 5,
+        "naturally_closed_native_owners": 4
+      },
+      "export_world": {
+        "source": {
+          "bytes": 100291,
+          "sha256": "5df042d9d875c8174c62dd03e3cd35a1aa7c390136ae70e300c1636b408102cc"
+        },
+        "exported": {
+          "bytes": 61340,
+          "sha256": "ac5b00c537ce3d0652f879cb0b1be57dc6aa446dbdcb0e99b0a163b3b84eff94"
+        },
+        "policy": "Complete typed JSON equals authored document with only receipts=[]; all four already-empty retired registries remain unchanged"
+      },
+      "natural_windows_job_closure": true
+    },
+    "native_player_presentation": {
+      "passed": true,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "scope": "Three paused native player generations; effective filter forwarding and frozen runtime images, not live-motion qualification.",
+      "generations": 3,
+      "captures": 4,
+      "players": [
+        {
+          "label": "inherited",
+          "override_supplied": false,
+          "generation": 1,
+          "paused": true,
+          "captures": [
+            {
+              "label": "inherited",
+              "image": "inherited.bmp",
+              "identity": {
+                "bytes": 3686538,
+                "sha256": "5ddfedbaa620d09f4f8e61d2a7dd3560dc987a9a38af246e6d938a5a6103b9ff"
+              },
+              "generation": 1,
+              "tick": 1,
+              "runtime_filter": "pcf3_fractional",
+              "effective_filter": "pcf3_fractional"
+            },
+            {
+              "label": "inherited-after-author-edit",
+              "image": "inherited-after-author-edit.bmp",
+              "identity": {
+                "bytes": 3686538,
+                "sha256": "5ddfedbaa620d09f4f8e61d2a7dd3560dc987a9a38af246e6d938a5a6103b9ff"
+              },
+              "generation": 1,
+              "tick": 1,
+              "runtime_filter": "pcf3_fractional",
+              "effective_filter": "pcf3_fractional"
+            }
+          ]
+        },
+        {
+          "label": "explicit-point",
+          "override_supplied": true,
+          "generation": 2,
+          "paused": true,
+          "captures": [
+            {
+              "label": "explicit-point",
+              "image": "explicit-point.bmp",
+              "identity": {
+                "bytes": 3686538,
+                "sha256": "070ec184f4ed0edc393bb90de3ef6285110fbe18365ef2aad8156d1fef60e2d3"
+              },
+              "generation": 2,
+              "tick": 1,
+              "runtime_filter": "pcf3_fractional",
+              "effective_filter": "pcf3_point"
+            }
+          ]
+        },
+        {
+          "label": "explicit-fractional",
+          "override_supplied": true,
+          "generation": 3,
+          "paused": true,
+          "captures": [
+            {
+              "label": "explicit-fractional",
+              "image": "explicit-fractional.bmp",
+              "identity": {
+                "bytes": 3686538,
+                "sha256": "5ddfedbaa620d09f4f8e61d2a7dd3560dc987a9a38af246e6d938a5a6103b9ff"
+              },
+              "generation": 3,
+              "tick": 1,
+              "runtime_filter": "pcf3_fractional",
+              "effective_filter": "pcf3_fractional"
+            }
+          ]
+        }
+      ],
+      "frozen_after_authored_edit_exact_pixels": true,
+      "point_vs_fractional_pixels_differ": true
+    },
+    "native_hosted_viewport_presentation": {
+      "passed": true,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "scope": "One owned native host and HWND attachment; authored image refresh by explicit transactions and exact restoration. No Avalonia frontend or effective-filter diagnostic.",
+      "host_creations": 1,
+      "viewport_attachments": 1,
+      "captures": [
+        {
+          "label": "fractional-before",
+          "authored_filter": "pcf3_fractional",
+          "image": "hosted-fractional-before.bmp",
+          "identity": {
+            "bytes": 3686538,
+            "sha256": "b5f3fef08979b3969693f03d117e2a96bcbb4a5ec8b01a0abe0bb1f04b98875a"
+          },
+          "revision": 28
+        },
+        {
+          "label": "point",
+          "authored_filter": "pcf3_point",
+          "image": "hosted-point.bmp",
+          "identity": {
+            "bytes": 3686538,
+            "sha256": "41c9cb43439d36e83419e4ffb1543813d2173ff5d42956de7bf27a93a95c552e"
+          },
+          "revision": 29
+        },
+        {
+          "label": "fractional-restored",
+          "authored_filter": "pcf3_fractional",
+          "image": "hosted-fractional-restored.bmp",
+          "identity": {
+            "bytes": 3686538,
+            "sha256": "b5f3fef08979b3969693f03d117e2a96bcbb4a5ec8b01a0abe0bb1f04b98875a"
+          },
+          "revision": 30
+        }
+      ],
+      "fractional_restoration_exact_pixels": true,
+      "point_edit_changed_pixels": true,
+      "restoration_action": "Explicit world transaction; not undo."
+    },
+    "native_presentation_ownership": {
+      "natural_windows_job_closure": true,
+      "total_processes": 4,
+      "active_processes_after_cleanup": 0,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "job_seconds": 12.994506500021089,
+      "native_owners": 3,
+      "native_owner_exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "sources_unchanged": true,
+      "runtime_unchanged": true,
+      "original_fixture_unchanged": true,
+      "owned_assets_unchanged": true
+    }
+  },
+  "limits": [
+    "Fixed simple character fixture; no general moving-scene or production-quality claim.",
+    "No physical area-light penumbrae, shadow caching, GI or RTAO added.",
+    "No representative FPS, latency, clean-machine or physical-input qualification."
+  ],
+  "retained_failures": [
+    {
+      "attempt": "first retained-game evaluation",
+      "passed": false,
+      "reason": "Evaluation wrapper rejected the native world.json.previous backup sidecar before gameplay evaluation. Original nonzero verdict retained; owned Job closed naturally without forced cleanup."
+    },
+    {
+      "attempt": "second retained-game evaluation",
+      "passed": false,
+      "source_gameplay_groups_passed": 13,
+      "native_export_passed": true,
+      "reason": "Wrapper required byte-identical source and exported worlds, contradicting the documented receipt/history stripping on export. Original nonzero verdict retained; the source gameplay and successful export are separate results."
+    }
+  ],
+  "retained_receipt_identities": {
+    "windows_build": {
+      "bytes": 54955,
+      "sha256": "5514e4c7aa52885c2d8b07598a541672c0199d78f9e89c7670cd79d19886e411"
+    },
+    "sealed_artifacts": {
+      "bytes": 1924,
+      "sha256": "d0cd2aee13e2a8d9bf0d5f1a70075b05038afab0b3e84fb8f48655a32023edab"
+    },
+    "windows_six_suites": {
+      "bytes": 3999,
+      "sha256": "b925485a9b8d27cfd9e87a859fe0c9eea52c16a127b70242ee086a5c3b5488cf"
+    },
+    "windows_core_contract": {
+      "bytes": 5108,
+      "sha256": "1c44e07fb9a1012c9857bf984abbe9724593197a63f09c238067650748781c60"
+    },
+    "windows_core_job": {
+      "bytes": 1341,
+      "sha256": "b9760bc0b5e308e8572a76b03699ee8332e6d0149569e360978a32665cc5b4d7"
+    },
+    "linux_nonrenderer": {
+      "bytes": 2468,
+      "sha256": "ddf9ac8bd01594c2df4cb77405496aa92eec51aacf0539c2572b9d7a8aef505e"
+    },
+    "linux_contract": {
+      "bytes": 3736,
+      "sha256": "f7af27d249b894bd4eb954ebdb999abcf0b6134a6c7defbcd6061d7ecd4c4956"
+    },
+    "windows_project_contract": {
+      "bytes": 5028,
+      "sha256": "956c02e73af61f6434fd13c22e5b2291a637194486893f046f6dccce648c6fa8"
+    },
+    "retained_game_original_failed_evaluation": {
+      "bytes": 344,
+      "sha256": "8bfeb1a3b8ce5efda583c775cb670fcf93d036f2c6b2cc7fafadbf7f1beb547e"
+    },
+    "retained_game_original_failed_report": {
+      "bytes": 5877,
+      "sha256": "d850885945209791cf6b99e966fd437a16ca9030c57e95e4f337d35f9b85817d"
+    },
+    "retained_game_second_failed_evaluation": {
+      "bytes": 345,
+      "sha256": "31a3bcae89048608a5182bd46ea2adb5ed371e5b361597b871d33f4bb2d9f53f"
+    },
+    "retained_game_second_failed_report": {
+      "bytes": 11365,
+      "sha256": "2f167e11c409df8a4096420cd45c92ac95715bab2959785672283b6465b0f891"
+    },
+    "retained_game_second_source_proof": {
+      "bytes": 1491,
+      "sha256": "d62af0932fe17852d1af87aada7e699a5a375fbae99007a3406eefad39a63f32"
+    },
+    "image_conversion": {
+      "bytes": 1327,
+      "sha256": "6b2eb0e69bb49617cacca9379ee68972dca91321c0c82e24813530ccd154ee5e"
+    },
+    "retained_game_third_evaluation": {
+      "bytes": 344,
+      "sha256": "ae4730367a93ce0a98ce49a5baa642409f201b1206e17af6932edcb466c489d0"
+    },
+    "retained_game_third_report": {
+      "bytes": 24890,
+      "sha256": "797fded9da8f80ce1c404ba960fa2343e9c836c10f8334c2f677bbcbd047afc3"
+    },
+    "retained_game_third_source_verifier": {
+      "bytes": 1491,
+      "sha256": "2f298ded8f01a7599213e4f676e1106a29b4693a0e5a1108469c1009d622bfa0"
+    },
+    "retained_game_third_exported_verifier": {
+      "bytes": 1491,
+      "sha256": "3a479862238dde5051826de4165008cb7ee4389864900548eff7d9282dae5e65"
+    },
+    "runtime_install": {
+      "bytes": 23794,
+      "sha256": "64f243e77903c2330d6ea74fbc6a5c858d88029c954aad96af9748ece1da62bc"
+    },
+    "nvidia_images_owner": {
+      "bytes": 6357,
+      "sha256": "85d8c821ea42ad78ce69c616671e138328e13d0ae4fe4d8219186fa78846ff77"
+    },
+    "nvidia_images": {
+      "bytes": 6240835,
+      "sha256": "853cd6457c21bdf4b75007931152de899ae486d2c16766c00984f90bc90bfb9e"
+    },
+    "amd_images_owner": {
+      "bytes": 6338,
+      "sha256": "ba882d3b9d153bde2223393ff12d8e078f79a2e6f859cfb9daabdae97d71b099"
+    },
+    "amd_images": {
+      "bytes": 2533734,
+      "sha256": "1b93546b153d38a808c3ad8829d1c703e2a2bd09fff4a13178fcf504f65f70b7"
+    },
+    "root_visual_review": {
+      "bytes": 665,
+      "sha256": "59c1da4b18841b3a6880790a92617c31a238058d792dd729b000890e093239bc"
+    },
+    "native_presentation_owner": {
+      "bytes": 2099,
+      "sha256": "c7234f79db5695acb2998d912dcc45c373bf289631bb36bf62931a229f5151d9"
+    },
+    "native_presentation_evidence": {
+      "bytes": 3395238,
+      "sha256": "b548304f3ed9125b196864fc4c28fbfdf6398c1bcde4fa2c096d3f721301b8ba"
+    }
+  },
+  "content_provenance": {
+    "asset": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+    "creator": "Kenney",
+    "format": "poima.asset-provenance",
+    "kind": "model",
+    "license": {
+      "identifier": "CC0-1.0",
+      "notice": "Kenney Animated Characters Protagonists 1.1, CC0-1.0 (https://creativecommons.org/publicdomain/zero/1.0/). Original base and Run/Idle sources cooked with explicit orientation retargeting and HipsCtrl/Hips position deltas; target geometry and binds retained."
+    },
+    "source": "https://kenney.nl/assets/animated-characters-protagonists",
+    "title": "Animated Characters Protagonists \u2014 body, Run and Idle",
+    "version": 1,
+    "provenance_record": {
+      "bytes": 595,
+      "sha256": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857"
+    },
+    "model": {
+      "bytes": 247696,
+      "sha256": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b"
+    }
+  },
+  "documentation_images": [
+    {
+      "path": "shadow-starter-point.png",
+      "capture_label": "forward-A",
+      "png": {
+        "bytes": 14825,
+        "sha256": "3642c32dfab1c638b5e0d2954b1313d575a77d6568823ff872a0d8ad404f3878"
+      },
+      "original_bmp": {
+        "bytes": 3686538,
+        "sha256": "b763e7df4074820d74e3354d168d6e6178dae3e7e3799b9ef8978db6342cee30"
+      },
+      "decoded_rgba8_sha256": "cbecc278cec2ca30d5a865deb3001fdb070db50521370456d9f1fbb3df138b82",
+      "decoded_pixels_equal": true,
+      "retouched": false
+    },
+    {
+      "path": "shadow-starter-balanced.png",
+      "capture_label": "forward-C",
+      "png": {
+        "bytes": 16018,
+        "sha256": "1c389d223c8790991c909457fdd0013f5ccca63c1789a9e6c45cb1e5c0cc5a1c"
+      },
+      "original_bmp": {
+        "bytes": 3686538,
+        "sha256": "044a720f3e53316a2b36f314501f714900dcb14982dc991eff7e9b2259ba8c9c"
+      },
+      "decoded_rgba8_sha256": "1a8432dc936a06cf4bb950447dcdc1ef0ba5bea0d661478859249361c59df41f",
+      "decoded_pixels_equal": true,
+      "retouched": false
+    }
+  ],
+  "remaining_qualification": [
+    "Broader moving-scene shadow quality/cost, physical input and Avalonia presentation remain unqualified; this bounded native check does not qualify performance, caching, GI or RTAO."
+  ]
+}

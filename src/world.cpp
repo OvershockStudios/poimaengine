@@ -327,11 +327,16 @@ SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","sky"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
     LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
+    if(value.contains("shadow_filter")) {
+        const auto& filter=value.at("shadow_filter");
+        require(filter.is_string() && (filter=="pcf3_point" || filter=="pcf3_fractional"),"Environment shadow_filter must be pcf3_point or pcf3_fractional.");
+        result.shadow_filter=filter=="pcf3_fractional" ? ShadowFilter::pcf3_fractional : ShadowFilter::pcf3_point;
+    }
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
     try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     return result;
@@ -1654,7 +1659,7 @@ public:
             std::array<double,3> direction=light.direction;for(auto& value:direction)value=-value;
             sun={{"id",light.entity_id},{"direction",direction},{"color",light.light.color},{"intensity",light.light.intensity}};break;
         }
-        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
+        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
             {"sky",sky_json(sky)},{"sky_sun",sun}};
     }
     SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {

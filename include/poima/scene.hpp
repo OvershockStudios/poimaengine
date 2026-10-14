@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace poima {
@@ -26,6 +27,15 @@ Matrix4 inverse_affine(const Matrix4& matrix);
 Matrix4 perspective(double vertical_fov_degrees, double aspect, double near_plane, double far_plane);
 bool rigid_transform(const Matrix4& matrix);
 
+enum class ShadowFilter : std::uint32_t { pcf3_point=0, pcf3_fractional=1 };
+constexpr std::string_view shadow_filter_name(ShadowFilter filter) {
+    switch(filter) {
+    case ShadowFilter::pcf3_point: return "pcf3_point";
+    case ShadowFilter::pcf3_fractional: return "pcf3_fractional";
+    }
+    return "invalid";
+}
+
 enum class LightKind : std::uint32_t { directional=0,point=1,spot=2 };
 struct ShadowSettings { bool enabled=false;float near_plane=.05f,distance=80,bias=.0005f,normal_bias=.01f; };
 struct Light {
@@ -42,7 +52,7 @@ struct SkySettings {
     std::string sun; // Empty means no sun disk; otherwise an authored directional Light ID.
     float sun_size_degrees=.53f,sun_intensity=20; // Angular diameter; background radiance multiplier.
 };
-struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky; };
+struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky;ShadowFilter shadow_filter=ShadowFilter::pcf3_point; };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
     std::vector<SceneLight> lights;

@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.141
+
+- Add optional authored shadow-filter selection with per-capture/player overrides and effective diagnostics. Existing worlds retain point filtering when the field is absent; new project starters explicitly use fractional filtering, 1024-pixel maps and lower Sun bias.
+- Compare 25 NVIDIA and 10 AMD character captures across forward/deferred paths, with ten exact-pixel comparisons including two retained-engine baselines. Visual inspection finds smoother edges and closer contact in this controlled scene. Forward timing stays within the fixture ceiling; deferred timing remains inconclusive.
+- Verify the retained compiled Switchback game with the authored preset through thirteen gameplay groups in its source project and exported readonly service, including complete save comparisons. Preserve two failed evaluation-wrapper attempts. [Results and scope](docs/evidence/m2-shadow-environment-preset.json).
+- Verify seven NVIDIA native-presentation captures across three paused player generations and one same-HWND hosted viewport, including filter inheritance/overrides, frozen runtime images and exact authored restoration through explicit transactions.
+
 ## 0.0.140
 
 - Retain Python client and process-transport close failures in a read-only `cleanup_error` property so callers can inspect cleanup diagnostics without replacing an active body exception. Successful later closes preserve the last observed failure; process closure remains a separate observation.

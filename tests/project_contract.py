@@ -89,11 +89,14 @@ class ProjectContract(unittest.TestCase):
         environments = [e['components']['LightingEnvironment'] for e in world['entities'].values()
                         if 'LightingEnvironment' in e['components']]
         self.assertEqual(len(environments), 1)
+        self.assertEqual(environments[0]['shadow_resolution'],1024)
+        self.assertEqual(environments[0]['shadow_filter'],'pcf3_fractional')
         sky = environments[0]['sky']
         self.assertTrue(sky['enabled'])
         sun = world['entities'][sky['sun']]['components']['Light']
         self.assertEqual(sun['kind'], 'directional')
         self.assertTrue(sun['enabled'])
+        self.assertEqual(sun['shadow'],{'enabled':True,'distance':80,'bias':.0001,'normal_bias':.005})
         inspected = self.inspect()
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])

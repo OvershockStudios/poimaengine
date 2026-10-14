@@ -376,6 +376,7 @@ struct Context {
     std::array<const void*,14> deferred_binding_key{};
     AmbientOcclusionOptions ambient_occlusion;
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
+    std::optional<ShadowFilter> shadow_filter_override;
     bool ao_enabled=false;
     nvrhi::TextureHandle ao_raw,ao_filtered;
     nvrhi::BufferHandle ao_buffer;
@@ -598,8 +599,10 @@ struct Context {
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;player_context=player;
         deferred=options.deferred;diagnostics.deferred=deferred;
-        require(options.shadow_filter==ShadowFilter::pcf3_point || options.shadow_filter==ShadowFilter::pcf3_fractional,"Invalid shadow filter.");
-        shadow_filter=options.shadow_filter;diagnostics.shadow_filter=shadow_filter;
+        shadow_filter_override=options.shadow_filter;
+        shadow_filter=shadow_filter_override.value_or(source ? source->lighting.environment.shadow_filter : ShadowFilter::pcf3_point);
+        require(shadow_filter==ShadowFilter::pcf3_point || shadow_filter==ShadowFilter::pcf3_fractional,"Invalid shadow filter.");
+        diagnostics.shadow_filter=shadow_filter;
         ambient_occlusion=options.ambient_occlusion;diagnostics.ambient_occlusion=ambient_occlusion;
         require(ambient_occlusion.mode==AmbientOcclusionMode::none || ambient_occlusion.mode==AmbientOcclusionMode::gtao,"Invalid ambient occlusion mode.");
         require(ambient_occlusion.quality==AmbientOcclusionQuality::low || ambient_occlusion.quality==AmbientOcclusionQuality::medium || ambient_occlusion.quality==AmbientOcclusionQuality::high,"Invalid ambient occlusion quality.");
@@ -1798,6 +1801,8 @@ struct Context {
         const auto started=SteadyClock::now();draws.clear();object_data.clear();pending_draws={};
         retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
         auto lighting=scene->lighting;finalize_lighting(lighting);
+        shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
+        diagnostics.shadow_filter=shadow_filter;
         require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
         const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
         const auto vp=multiply(perspective(scene->vertical_fov,aspect,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
