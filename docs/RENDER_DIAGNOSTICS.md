@@ -38,6 +38,7 @@ This is object-level frustum culling, not occlusion culling. Bounds can produce 
 
 Successful capture and all returned player reports include `render_diagnostics`:
 
+- `memory_budget`: optional per-process heap allocation estimates, dynamic budgets, device identity and sample age. See [GPU memory diagnostics](GPU_MEMORY.md) for availability and interpretation.
 - `culling`, `profile_requested`: selected options.
 - `completed_submissions`: command submissions whose graphics completion and diagnostic readbacks have retired. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
 - `frame_execution`: configured limit, submitted/outstanding/peak counts, slot/drain/device-idle wait counts and the presentation retirement policy.

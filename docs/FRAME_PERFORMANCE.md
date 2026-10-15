@@ -42,6 +42,10 @@ not manufacture completed samples. After freezing, pages are immutable. Follow
 outside the timed run using your client. There is no per-frame JSON encoding or
 file write in the recorder.
 
+GPU heap allocation estimates and budgets are available separately in
+[GPU memory diagnostics](GPU_MEMORY.md). Keep them distinct from process RAM,
+resident memory and the frame recorder’s CPU/GPU timings.
+
 ## Read the timings
 
 Each row has an ordered sequence, CPU start/end, native tick boundaries, runtime

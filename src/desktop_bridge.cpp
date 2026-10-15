@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "gpu_memory_json.hpp"
 #include "poima/desktop_bridge.h"
 #include "poima/world.hpp"
 #include "poima/local_session.hpp"
@@ -884,7 +885,8 @@ struct Bridge : ViewportState {
         const auto& report=*view.last_render;
         return {{"available",report.available},{"success",report.success},{"gpu",report.gpu_name},{"hardware",report.hardware},
             {"width",report.width},{"height",report.height},{"samples",report.samples},{"frames_presented",report.frames_presented},
-            {"nvrhi_errors",report.validation_errors},{"capture_written",report.capture_written},{"detail",report.detail}};
+            {"nvrhi_errors",report.validation_errors},{"capture_written",report.capture_written},
+            {"memory_budget",gpu_memory::to_json(report.diagnostics.memory_budget)},{"detail",report.detail}};
     }
     Json render_json() const { return render_json(*this); }
     static void remember_render(ViewportState& view) {

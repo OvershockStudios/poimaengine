@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 #include "poima/scene.hpp"
+#include "poima/gpu_memory.hpp"
 
 namespace poima {
 
@@ -211,6 +212,7 @@ inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSc
         a.material_revision==b.material_revision && a.camera_draw==b.camera_draw && a.camera_lens==b.camera_lens;
 }
 struct RenderDiagnostics {
+    gpu_memory::Diagnostics memory_budget;
     bool deferred=false;
     std::uint64_t deferred_buffer_bytes=0;
     TimingSummary deferred_lighting_gpu;

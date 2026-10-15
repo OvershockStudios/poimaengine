@@ -1,0 +1,1507 @@
+{
+  "format": "poima.gpu-memory-qualification.v1",
+  "engine_version": "0.0.152",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Optional current-process Vulkan heap allocation estimates and dynamic budgets. Numeric diagnostic contract, cadence, state invariance and lifecycle only.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 84218,
+      "sha256": "55175cb02175de37c2f10b38ad9a3f83224592735c5c3241ea8e72cd24c618c9"
+    },
+    "include/poima/core.hpp": {
+      "bytes": 11142,
+      "sha256": "a4971da48deec55d464bc6a86149fd8cf7ea63150101f15fc1696013e6de5e9a"
+    },
+    "include/poima/gpu_memory.hpp": {
+      "bytes": 4959,
+      "sha256": "20a8a175d005cdd706c2d1e80538747c27dfdfc356636a176e5d56c6529c0deb"
+    },
+    "src/core.cpp": {
+      "bytes": 19942,
+      "sha256": "0f63cd21a63df69cd55e1fd7381c5883961afb6c218dde81255d2c6ec0e5c2d9"
+    },
+    "src/desktop_bridge.cpp": {
+      "bytes": 127511,
+      "sha256": "09d1bf6b7935860ce394348d9c105c7231c16981ee736dd5d16f22ba8e480ebc"
+    },
+    "src/gpu_memory_json.hpp": {
+      "bytes": 2038,
+      "sha256": "45b3db54023c5e726422b2a254a79e38bfc02f7b8eeea6d18e2165ae57d37a8c"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 332251,
+      "sha256": "b9f1cca6b36f5090bdacb8245ff3dde492827bbab3e86ae31ebeb510f64f21f8"
+    },
+    "src/world.cpp": {
+      "bytes": 322479,
+      "sha256": "e16eb7d2a56bf078af53dd3f759c065c3b42134bed332f38069911c48a8ca595"
+    },
+    "tests/gpu_memory.cpp": {
+      "bytes": 5181,
+      "sha256": "a5d5f37b01151a5ede32cfee8576b0ca31749d3caddd51b355ccb9ea53b70488"
+    }
+  },
+  "native_build": {
+    "passed": true,
+    "target": "Windows x86_64",
+    "cache_generation": 22,
+    "seconds": 415.63191127599566,
+    "forced_cleanup": false,
+    "source_inputs_unchanged": true,
+    "source_authority": {
+      "bytes": 44665,
+      "sha256": "8e1f720f269309cae9dda20c1c1e3de7a4a14ff247dd442dba20d653c0c5c5e2"
+    },
+    "sealed_manifest": {
+      "bytes": 2091,
+      "sha256": "17135b45b190696a9237a57b0cddcfbfbef72bc644284976237d09d4b1f15319"
+    },
+    "cli": {
+      "bytes": 26020352,
+      "sha256": "41154795eda6fdf42e8b123afee104a8fdc35799d76161016629293328643f71"
+    },
+    "desktop_bridge": {
+      "bytes": 298308096,
+      "sha256": "cb2cf21eec04f9a68b931af196da80b9deb81fa77e84968ab632022070b241ba"
+    },
+    "policy": "Two-worker incremental Ninja build; independently sealed copies; previous qualified151 binaries preserved. Not a clean-toolchain rebuild."
+  },
+  "native_cpu": {
+    "passed": true,
+    "suites": [
+      {
+        "name": "world_session",
+        "binary": "poima-world-session-test.exe",
+        "exit_code": 0,
+        "seconds": 3.195555099984631,
+        "stdout": {
+          "bytes": 147,
+          "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "binary": "poima-world-schema-test.exe",
+        "exit_code": 0,
+        "seconds": 12.162184600019827,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "binary": "poima-mcp-test.exe",
+        "exit_code": 0,
+        "seconds": 0.10643109999364242,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      },
+      {
+        "name": "hit_regions",
+        "binary": "poima-runtime-hit-regions-test.exe",
+        "exit_code": 0,
+        "seconds": 0.10102639999240637,
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mesh",
+        "binary": "poima-runtime-mesh-test.exe",
+        "exit_code": 0,
+        "seconds": 0.17511019995436072,
+        "stdout": {
+          "bytes": 132,
+          "sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mutation_discovery",
+        "binary": "poima-mutation-discovery-test.exe",
+        "exit_code": 0,
+        "seconds": 0.052553400048054755,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "gpu_memory",
+        "binary": "poima-gpu-memory-test.exe",
+        "exit_code": 0,
+        "seconds": 0.052304500015452504,
+        "stdout": {
+          "bytes": 52,
+          "sha256": "f629fffd3581ed4a55a3f60ce8afdfa0b867dfe54d5b40a755128eafe0a29413"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "lifetime": {
+      "seconds": 17.593409799970686,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "processes": 8,
+      "active_at_child_exit": 0,
+      "active_after_cleanup": 0,
+      "terminated_processes": 0
+    },
+    "report": {
+      "bytes": 11272,
+      "sha256": "d9f7912bc5ada0dff33749b04164a8bcdbdecab2d51631c44479b0e1fa568dce"
+    }
+  },
+  "linux_headless": {
+    "passed": true,
+    "seconds": 506.7133943249937,
+    "forced_cleanup": false,
+    "tests": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.6123"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.19172"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "46.8826"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.106428"
+      },
+      {
+        "name": "gpu_memory",
+        "seconds": "0.0126794"
+      }
+    ],
+    "ctest_results": {
+      "bytes": 3006,
+      "sha256": "1ea1c3006b0ea8c21cf7b8cd07a97d197e5b05cb6fe5dbe505f46cf64ea4a0f9"
+    },
+    "cli": {
+      "bytes": 18295392,
+      "sha256": "bebce3890afa3b87ecf97c16048ec65adf4e9843545496e2c805f04f2bac08bc"
+    },
+    "scope": "Fresh Debug -O0 -g0; simulation, rendering, gameplay, audio and editor disabled. Five CPU/headless tests, no skips; no Linux GPU claim."
+  },
+  "headless_cli": {
+    "passed": true,
+    "exit_code": 3,
+    "expected_error": "render_smoke_not_built",
+    "memory_budget": {
+      "age_at_report_ns": null,
+      "available": false,
+      "device": null,
+      "extension_supported": null,
+      "heaps": [],
+      "issue": "none",
+      "minimum_interval_ns": 500000000,
+      "peak_qualified": false,
+      "query_cpu_ns": null,
+      "reported_at_ns": null,
+      "residency_qualified": false,
+      "sample_sequence": 0,
+      "sampled_at_ns": null,
+      "sampling_active": false,
+      "scope": "current_process_on_selected_physical_device",
+      "source": "VK_EXT_memory_budget",
+      "status": "uninitialized"
+    },
+    "stdout": {
+      "bytes": 1073,
+      "sha256": "0f5cf3f0e164898fed163baf6ab09852fb52d5feac861d1ffcccd1e6d453d5ec"
+    }
+  },
+  "gpu": {
+    "passed": true,
+    "measurement_qualified": true,
+    "extent": [
+      640,
+      360
+    ],
+    "sample_seconds_per_owner": 2.2,
+    "minimum_interval_ns": 500000000,
+    "lifetime": {
+      "seconds": 21.01272609998705,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "processes": 12,
+      "active_at_child_exit": 0,
+      "active_after_cleanup": 0,
+      "terminated_processes": 0
+    },
+    "cases": [
+      {
+        "gpu": 0,
+        "fresh_owner": false,
+        "name": "AMD Radeon(TM) Graphics",
+        "device": {
+          "api_version": 4206872,
+          "device_id": 6400,
+          "device_type": 1,
+          "vendor_id": 4098,
+          "uuid_sha256": "3fd7753f4d76b6c8122d6025326f50dd3967866032e35e8cfedc31f5c0e20990"
+        },
+        "observations": 20,
+        "distinct_usable_sequences": 5,
+        "whole_saved_bytes_equal": true,
+        "before": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "after": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "samples": [
+          {
+            "age_at_report_ns": 187471300,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 1700,
+            "reported_at_ns": 462730294799300,
+            "residency_qualified": false,
+            "sample_sequence": 1,
+            "sampled_at_ns": 462730107328000,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 0,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3600,
+            "reported_at_ns": 462730627441200,
+            "residency_qualified": false,
+            "sample_sequence": 2,
+            "sampled_at_ns": 462730627441200,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 44207500,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 2800,
+            "reported_at_ns": 462731177742400,
+            "residency_qualified": false,
+            "sample_sequence": 3,
+            "sampled_at_ns": 462731133534900,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 88702000,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3500,
+            "reported_at_ns": 462731727998200,
+            "residency_qualified": false,
+            "sample_sequence": 4,
+            "sampled_at_ns": 462731639296200,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 22850300,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3400,
+            "reported_at_ns": 462732170926600,
+            "residency_qualified": false,
+            "sample_sequence": 5,
+            "sampled_at_ns": 462732148076300,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          }
+        ],
+        "terminal": {
+          "age_at_report_ns": 377620700,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 32137224,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 0,
+              "size_bytes": 268435456
+            },
+            {
+              "allocated_estimate_bytes": 879632,
+              "budget_bytes": 7553784320,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 7951351808
+            },
+            {
+              "allocated_estimate_bytes": 0,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 2,
+              "size_bytes": 268435456
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 3400,
+          "reported_at_ns": 462732525697000,
+          "residency_qualified": false,
+          "sample_sequence": 5,
+          "sampled_at_ns": 462732148076300,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        },
+        "world_capture": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "width": 640,
+          "height": 360,
+          "frames_presented": 2,
+          "capture_written": true,
+          "nvrhi_errors": 0
+        }
+      },
+      {
+        "gpu": 0,
+        "fresh_owner": true,
+        "name": "AMD Radeon(TM) Graphics",
+        "device": {
+          "api_version": 4206872,
+          "device_id": 6400,
+          "device_type": 1,
+          "vendor_id": 4098,
+          "uuid_sha256": "3fd7753f4d76b6c8122d6025326f50dd3967866032e35e8cfedc31f5c0e20990"
+        },
+        "observations": 20,
+        "distinct_usable_sequences": 5,
+        "whole_saved_bytes_equal": true,
+        "before": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "after": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "samples": [
+          {
+            "age_at_report_ns": 180754400,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 1700,
+            "reported_at_ns": 462734393051900,
+            "residency_qualified": false,
+            "sample_sequence": 1,
+            "sampled_at_ns": 462734212297500,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 0,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3600,
+            "reported_at_ns": 462734720675200,
+            "residency_qualified": false,
+            "sample_sequence": 2,
+            "sampled_at_ns": 462734720675200,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 45303200,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3500,
+            "reported_at_ns": 462735278749700,
+            "residency_qualified": false,
+            "sample_sequence": 3,
+            "sampled_at_ns": 462735233446500,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 88081700,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3300,
+            "reported_at_ns": 462735830371600,
+            "residency_qualified": false,
+            "sample_sequence": 4,
+            "sampled_at_ns": 462735742289900,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 20650900,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 32137224,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 0,
+                "size_bytes": 268435456
+              },
+              {
+                "allocated_estimate_bytes": 879632,
+                "budget_bytes": 7553784320,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 7951351808
+              },
+              {
+                "allocated_estimate_bytes": 0,
+                "budget_bytes": 255013680,
+                "device_local": true,
+                "flags": 3,
+                "index": 2,
+                "size_bytes": 268435456
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 3400,
+            "reported_at_ns": 462736265488300,
+            "residency_qualified": false,
+            "sample_sequence": 5,
+            "sampled_at_ns": 462736244837400,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          }
+        ],
+        "terminal": {
+          "age_at_report_ns": 372864600,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 32137224,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 0,
+              "size_bytes": 268435456
+            },
+            {
+              "allocated_estimate_bytes": 879632,
+              "budget_bytes": 7553784320,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 7951351808
+            },
+            {
+              "allocated_estimate_bytes": 0,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 2,
+              "size_bytes": 268435456
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 3400,
+          "reported_at_ns": 462736617702000,
+          "residency_qualified": false,
+          "sample_sequence": 5,
+          "sampled_at_ns": 462736244837400,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        },
+        "world_capture": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "width": 640,
+          "height": 360,
+          "frames_presented": 2,
+          "capture_written": true,
+          "nvrhi_errors": 0
+        }
+      },
+      {
+        "gpu": 1,
+        "fresh_owner": false,
+        "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "device": {
+          "api_version": 4211039,
+          "device_id": 10272,
+          "device_type": 2,
+          "vendor_id": 4318,
+          "uuid_sha256": "78553a0a5e039d19e32b1c9d519553fb3b73697dbb4592fd23881486206afc71"
+        },
+        "observations": 19,
+        "distinct_usable_sequences": 5,
+        "whole_saved_bytes_equal": true,
+        "before": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "after": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "samples": [
+          {
+            "age_at_report_ns": 170207200,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 61206528,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 41172992,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 7200,
+            "reported_at_ns": 462739570200600,
+            "residency_qualified": false,
+            "sample_sequence": 1,
+            "sampled_at_ns": 462739399993400,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 19457400,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51302400,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 10600,
+            "reported_at_ns": 462739924652000,
+            "residency_qualified": false,
+            "sample_sequence": 2,
+            "sampled_at_ns": 462739905194600,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 82398700,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51302400,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 10500,
+            "reported_at_ns": 462740503914400,
+            "residency_qualified": false,
+            "sample_sequence": 3,
+            "sampled_at_ns": 462740421515700,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 40560500,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51302400,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 11300,
+            "reported_at_ns": 462740980860900,
+            "residency_qualified": false,
+            "sample_sequence": 4,
+            "sampled_at_ns": 462740940300400,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 0,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51302400,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 11600,
+            "reported_at_ns": 462741458779900,
+            "residency_qualified": false,
+            "sample_sequence": 5,
+            "sampled_at_ns": 462741458779900,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          }
+        ],
+        "terminal": {
+          "age_at_report_ns": 384303100,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 62259200,
+              "budget_bytes": 7528775680,
+              "device_local": true,
+              "flags": 1,
+              "index": 0,
+              "size_bytes": 8334082048
+            },
+            {
+              "allocated_estimate_bytes": 51302400,
+              "budget_bytes": 7540792423,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 8220237824
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 11600,
+          "reported_at_ns": 462741843083000,
+          "residency_qualified": false,
+          "sample_sequence": 5,
+          "sampled_at_ns": 462741458779900,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        },
+        "world_capture": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "width": 640,
+          "height": 360,
+          "frames_presented": 2,
+          "capture_written": true,
+          "nvrhi_errors": 0
+        }
+      },
+      {
+        "gpu": 1,
+        "fresh_owner": true,
+        "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "device": {
+          "api_version": 4211039,
+          "device_id": 10272,
+          "device_type": 2,
+          "vendor_id": 4318,
+          "uuid_sha256": "78553a0a5e039d19e32b1c9d519553fb3b73697dbb4592fd23881486206afc71"
+        },
+        "observations": 19,
+        "distinct_usable_sequences": 5,
+        "whole_saved_bytes_equal": true,
+        "before": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "after": {
+          "bytes": 62135,
+          "sha256": "e8f49722940c606802a5fa862c4b7d60677a09dfa23dabeddf2c30c55363bcdc",
+          "snapshot_version": 9,
+          "manifest_generation": 1,
+          "raw_snapshot_checksum_verified": true
+        },
+        "samples": [
+          {
+            "age_at_report_ns": 162985900,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 61206528,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 41172992,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 6200,
+            "reported_at_ns": 462744125709000,
+            "residency_qualified": false,
+            "sample_sequence": 1,
+            "sampled_at_ns": 462743962723100,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 20737600,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51318784,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 8700,
+            "reported_at_ns": 462744485277300,
+            "residency_qualified": false,
+            "sample_sequence": 2,
+            "sampled_at_ns": 462744464539700,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 102772500,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51318784,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 10600,
+            "reported_at_ns": 462745083713000,
+            "residency_qualified": false,
+            "sample_sequence": 3,
+            "sampled_at_ns": 462744980940500,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 57684900,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51318784,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 11900,
+            "reported_at_ns": 462745557528100,
+            "residency_qualified": false,
+            "sample_sequence": 4,
+            "sampled_at_ns": 462745499843200,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          },
+          {
+            "age_at_report_ns": 19778900,
+            "available": true,
+            "extension_supported": true,
+            "heaps": [
+              {
+                "allocated_estimate_bytes": 62259200,
+                "budget_bytes": 7528775680,
+                "device_local": true,
+                "flags": 1,
+                "index": 0,
+                "size_bytes": 8334082048
+              },
+              {
+                "allocated_estimate_bytes": 51318784,
+                "budget_bytes": 7540792423,
+                "device_local": false,
+                "flags": 0,
+                "index": 1,
+                "size_bytes": 8220237824
+              }
+            ],
+            "issue": "none",
+            "minimum_interval_ns": 500000000,
+            "peak_qualified": false,
+            "query_cpu_ns": 11200,
+            "reported_at_ns": 462746026921300,
+            "residency_qualified": false,
+            "sample_sequence": 5,
+            "sampled_at_ns": 462746007142400,
+            "sampling_active": true,
+            "scope": "current_process_on_selected_physical_device",
+            "source": "VK_EXT_memory_budget",
+            "status": "sampled"
+          }
+        ],
+        "terminal": {
+          "age_at_report_ns": 397378900,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 62259200,
+              "budget_bytes": 7528775680,
+              "device_local": true,
+              "flags": 1,
+              "index": 0,
+              "size_bytes": 8334082048
+            },
+            {
+              "allocated_estimate_bytes": 51318784,
+              "budget_bytes": 7540792423,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 8220237824
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 11200,
+          "reported_at_ns": 462746404521300,
+          "residency_qualified": false,
+          "sample_sequence": 5,
+          "sampled_at_ns": 462746007142400,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        },
+        "world_capture": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "width": 640,
+          "height": 360,
+          "frames_presented": 2,
+          "capture_written": true,
+          "nvrhi_errors": 0
+        }
+      }
+    ],
+    "cli_smoke": [
+      {
+        "passed": true,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "frames_presented": 2,
+        "nvrhi_errors": 0,
+        "memory_budget": {
+          "age_at_report_ns": 0,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 0,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 0,
+              "size_bytes": 268435456
+            },
+            {
+              "allocated_estimate_bytes": 0,
+              "budget_bytes": 7553784320,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 7951351808
+            },
+            {
+              "allocated_estimate_bytes": 0,
+              "budget_bytes": 255013680,
+              "device_local": true,
+              "flags": 3,
+              "index": 2,
+              "size_bytes": 268435456
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 2400,
+          "reported_at_ns": 462738068413700,
+          "residency_qualified": false,
+          "sample_sequence": 1,
+          "sampled_at_ns": 462738068413700,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        }
+      },
+      {
+        "passed": true,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "frames_presented": 2,
+        "nvrhi_errors": 0,
+        "memory_budget": {
+          "age_at_report_ns": 0,
+          "available": true,
+          "extension_supported": true,
+          "heaps": [
+            {
+              "allocated_estimate_bytes": 24834048,
+              "budget_bytes": 7528775680,
+              "device_local": true,
+              "flags": 1,
+              "index": 0,
+              "size_bytes": 8334082048
+            },
+            {
+              "allocated_estimate_bytes": 41332736,
+              "budget_bytes": 7540792423,
+              "device_local": false,
+              "flags": 0,
+              "index": 1,
+              "size_bytes": 8220237824
+            }
+          ],
+          "issue": "none",
+          "minimum_interval_ns": 500000000,
+          "peak_qualified": false,
+          "query_cpu_ns": 5700,
+          "reported_at_ns": 462748383280700,
+          "residency_qualified": false,
+          "sample_sequence": 1,
+          "sampled_at_ns": 462748383280700,
+          "sampling_active": false,
+          "scope": "current_process_on_selected_physical_device",
+          "source": "VK_EXT_memory_budget",
+          "status": "sampled"
+        }
+      }
+    ],
+    "report": {
+      "bytes": 2375532,
+      "sha256": "c8050b11916ef0435dc21cc72a06548ca02e3e7dfa3ae781394fd7e118f2b51e"
+    },
+    "qualification": {
+      "bytes": 1890,
+      "sha256": "6909cedd4e283b66067d2926a44b8b5214b54fbb6c62d80510dba1b9b17f5d87"
+    }
+  },
+  "failures_retained": [
+    {
+      "stage": "producer_preflight",
+      "passed": false,
+      "compiler_invoked": false,
+      "cause": "Private producer retained a stale generation assertion; stopped before compiler/cache mutation. Corrected private successor admitted the exact21-to22 transition."
+    },
+    {
+      "stage": "native-1",
+      "passed": false,
+      "seconds": 6.182804899988696,
+      "forced_cleanup": false,
+      "cause": "Verifier requested world.capture while an attached player owned graphics presentation. Engine correctly rejected it; successor stops the player before separate capture.",
+      "partial_only": "Five actual usable AMD sample sequences; complete attempt failed.",
+      "qualification": {
+        "bytes": 2367,
+        "sha256": "c67af3277d085a3a8bc185c71ec1ed43ddd0f8ff05ba389f9fb62ecd7c15a14b"
+      }
+    }
+  ],
+  "limits": [
+    "Driver allocation estimates and budgets are not resident/dedicated/peak VRAM or an Alpha memory-budget qualification. Device-local heaps may be shared system memory.",
+    "Actual laptop GPUs both support the extension; unsupported/invalid-data branches have CPU coverage, not an unsupported native GPU run.",
+    "Queries are cached on each renderer owner thread, driven by reports with at least500ms between samples. Multiple contexts describe the same process/device scope and must not be summed.",
+    "The saved world-document and native snapshot remain byte-exact across paused observations, stop and separate capture. No saved data is removed or normalized.",
+    "CLI smoke, World capture and player reports have actual execution evidence. Desktop bridge exposure is compiled/source-reviewed; HostedViewport and legacy EditorViewport sampling have no new native qualification in this record.",
+    "No foreground acquisition, physical input, scanout/FPS, query-overhead performance guarantee, representative game workload, leak-free soak, residency, resource attribution or complete Alpha claim."
+  ],
+  "selected_result_artifacts": {
+    "tools/python/poima_client/core_responses.v1.json": {
+      "bytes": 25150,
+      "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+    },
+    "tools/python/poima_client/runtime_game_session_responses.v1.json": {
+      "bytes": 65252,
+      "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "gpu_memory_json.hpp"
 #include <limits>
 #include "poima/world.hpp"
 #include "poima/animation.hpp"
@@ -1643,7 +1644,8 @@ public:
         for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
             {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
         const auto& reconstruction=d.reconstruction;
-        Json result={{"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
+        Json result={{"memory_budget",gpu_memory::to_json(d.memory_budget)},
+            {"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
             {"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
             {"ambient_occlusion",{{"mode",ambient_occlusion_mode_name(d.ambient_occlusion.mode)},{"quality",ambient_occlusion_quality_name(d.ambient_occlusion.quality)},{"radius",d.ambient_occlusion.radius}}},
             {"ambient_occlusion_buffer_bytes",d.ambient_occlusion_buffer_bytes},{"ambient_occlusion_gpu",timing(d.ambient_occlusion_gpu)},{"ambient_occlusion_filter_gpu",timing(d.ambient_occlusion_filter_gpu)},

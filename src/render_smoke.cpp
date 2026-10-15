@@ -465,6 +465,8 @@ struct Context {
     nvrhi::ComputePipelineHandle skin_pipeline;
     nvrhi::BufferHandle skin_errors,skin_readback;
     RenderDiagnostics diagnostics;
+    gpu_memory::Sampler memory_sampler;
+    const std::thread::id memory_owner=std::this_thread::get_id();
     DrawCounts pending_draws;
     LightAssignmentDiagnostics pending_lights;
     vk::QueryPool timestamp_pool;
@@ -715,6 +717,26 @@ struct Context {
         const auto available_extensions=physical.enumerateDeviceExtensionProperties(nullptr,dispatch);
         auto has_device=[&](const char* name) {return std::any_of(available_extensions.begin(),available_extensions.end(),[&](const auto& e) {return std::string_view(e.extensionName.data())==name;});};
         auto has_instance=[&](const char* name) {return std::find(shared_instance->extensions.begin(),shared_instance->extensions.end(),name)!=shared_instance->extensions.end();};
+        // Optional observation only: no allocation policy/reservations change.
+        const bool budget_supported=has_device(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+        if(budget_supported)device_extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+        vk::PhysicalDeviceIDProperties memory_id;
+        vk::PhysicalDeviceProperties2 memory_properties;memory_properties.pNext=&memory_id;
+        physical.getProperties2(&memory_properties,dispatch);
+        gpu_memory::Identity memory_identity;
+        memory_identity.vendor_id=memory_properties.properties.vendorID;
+        memory_identity.device_id=memory_properties.properties.deviceID;
+        memory_identity.api_version=memory_properties.properties.apiVersion;
+        memory_identity.device_type=static_cast<std::uint32_t>(memory_properties.properties.deviceType);
+        std::copy_n(memory_id.deviceUUID.begin(),memory_identity.device_uuid.size(),memory_identity.device_uuid.begin());
+        const auto memory=physical.getMemoryProperties(dispatch);
+        static_assert(VK_MAX_MEMORY_HEAPS==gpu_memory::max_heaps);
+        static_assert(VK_MEMORY_HEAP_DEVICE_LOCAL_BIT==gpu_memory::device_local_bit);
+        std::array<gpu_memory::RawHeap,gpu_memory::max_heaps> memory_heaps{};
+        const auto memory_count=memory.memoryHeapCount<=gpu_memory::max_heaps ? memory.memoryHeapCount : 0;
+        for(std::uint32_t i=0;i<memory_count;++i)memory_heaps[i]={memory.memoryHeaps[i].size,
+            static_cast<std::uint32_t>(memory.memoryHeaps[i].flags),0,0};
+        memory_sampler.configure(budget_supported,memory_identity,std::span(memory_heaps.data(),memory_count));
         const char* maintenance_extension=nullptr;
         if(has_instance(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
         else if(has_instance(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
@@ -820,6 +842,31 @@ struct Context {
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
         if(options.profile)prepare_timestamps();
         if (scene) { prepare_shadows();prepare_scene(); }
+    }
+
+    RenderDiagnostics report_diagnostics(bool refresh=true,bool active=true) {
+        const bool owner=std::this_thread::get_id()==memory_owner;
+        const bool live=owner && static_cast<bool>(physical) && static_cast<bool>(checked) && !renderer_fault;
+        auto now=fp::Recorder::now_ns();
+        if(refresh && live && memory_sampler.due(now)) {
+            const auto started=now;
+            VkPhysicalDeviceMemoryBudgetPropertiesEXT budget{};
+            budget.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+            VkPhysicalDeviceMemoryProperties2 properties{};
+            properties.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+            properties.pNext=&budget;
+            dispatch.vkGetPhysicalDeviceMemoryProperties2(static_cast<VkPhysicalDevice>(physical),&properties);
+            now=fp::Recorder::now_ns();
+            std::array<gpu_memory::RawHeap,gpu_memory::max_heaps> heaps{};
+            const auto count=properties.memoryProperties.memoryHeapCount<=gpu_memory::max_heaps ? properties.memoryProperties.memoryHeapCount : 0;
+            for(std::uint32_t i=0;i<count;++i)heaps[i]={properties.memoryProperties.memoryHeaps[i].size,
+                properties.memoryProperties.memoryHeaps[i].flags,budget.heapUsage[i],budget.heapBudget[i]};
+            const auto duration=now>=started ? std::optional<std::uint64_t>(now-started) : std::nullopt;
+            memory_sampler.record(now,duration,std::span(heaps.data(),count));
+        }
+        auto result=diagnostics;
+        result.memory_budget=memory_sampler.snapshot(now,active && live);
+        return result;
     }
 
     void prepare_object_buffer() {
@@ -3207,7 +3254,7 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
     }
     report.hardware = context.hardware;
     report.gpu_name = context.gpu_name;
-    report.validation_errors = context.messages.errors;report.diagnostics=context.diagnostics;
+    report.validation_errors = context.messages.errors;report.diagnostics=context.report_diagnostics(true,false);
     return report;
 }
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
@@ -3316,7 +3363,7 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
     } catch(const std::exception& error) { state.result.success=false;state.result.detail=error.what();throw; }
 }
 RenderReport HostedViewport::report() const {
-    impl_->check_thread();if(impl_->context.checked && !impl_->context.renderer_fault)impl_->context.retire_frames();auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
+    impl_->check_thread();if(impl_->context.checked && !impl_->context.renderer_fault)impl_->context.retire_frames();auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.report_diagnostics(true,impl_->ready);return result;
 }
 
 #if POIMA_EDITOR
@@ -3385,7 +3432,7 @@ bool EditorViewport::draw_frame(const SceneSnapshot& scene,EditorRect viewport,c
 }
 RenderReport EditorViewport::report() const {
     if(impl_->context.checked && !impl_->context.renderer_fault)impl_->context.retire_frames();
-    auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
+    auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.report_diagnostics();return result;
 }
 EditorViewportResources EditorViewport::resources() const {
     const auto& c=impl_->context;
@@ -3587,7 +3634,7 @@ struct PlayerWindow::Impl {
             report.detail=player_readiness::phase_detail(readiness(),report.frames_presented);
         report.width=context.extent.width;report.height=context.extent.height;report.samples=context.samples;
         report.hardware=context.hardware;report.gpu_name=context.gpu_name;
-        report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
+        report.validation_errors=context.messages.errors;report.diagnostics=context.report_diagnostics(!done,!done);
         session.preference_observation(result);
     }
     void initialize() {

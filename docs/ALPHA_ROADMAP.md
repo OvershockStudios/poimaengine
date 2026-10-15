@@ -162,3 +162,9 @@ generated-launcher saves, cold loads, relocation and explicit overrides.
 This addresses a standalone setup gap; the management-game workflow,
 representative performance, physical interaction and fresh-install gates remain
 open.
+
+The 0.0.152 [GPU memory diagnostics](GPU_MEMORY.md) add actual per-process heap
+allocation estimates and budgets, with sampling/lifetime checks on both laptop
+GPUs and exact saved-state invariance. This supplies a measurement prerequisite;
+it does not close the representative performance, peak-memory or reliability
+gates. [Evidence](evidence/m2-gpu-memory.json).

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "gpu_memory_json.hpp"
 #include "poima/navigation.hpp"
 #include "poima/build_info.hpp"
 #include "poima/build_metadata.hpp"
@@ -191,6 +192,7 @@ Reply render_smoke(const RenderOptions& options) {
         ",\"capture_written\":" + boolean(report.capture_written) + ",\"capture_path\":" +
         (report.capture_written ? quote(options.capture) : "null") +
         ",\"nvrhi_errors\":" + std::to_string(report.validation_errors) +
+        ",\"memory_budget\":" + gpu_memory::to_json(report.diagnostics.memory_budget).dump() +
         ",\"renderer_qualified\":false,\"detail\":" + quote(report.detail) + "}";
     if (!report.available) return envelope("render-smoke", result, 3, "render_smoke_not_built", report.detail);
     if (!report.success) return envelope("render-smoke", result, 4, "render_smoke_failed", report.detail);

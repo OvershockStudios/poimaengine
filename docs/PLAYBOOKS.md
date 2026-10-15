@@ -107,7 +107,9 @@ qualified workflows under the [documentation standard](DOCUMENTATION.md).
 4. Stop to drain pending GPU work, freeze, and read immutable frame pages. Inspect
    dropped/failed/pending counts before comparing percentiles.
 5. Sample the actual native process with the Windows memory tool. Keep working set
-   and private commit distinct; this does not measure GPU residency.
+   and private commit distinct; this does not measure GPU residency. Use
+   [GPU memory diagnostics](GPU_MEMORY.md) for separate heap allocation estimates
+   and budgets, keeping device identity and sample age.
 6. Retain workload, hardware, build/settings identity and raw evidence. The small
    [qualification probe](../tests/player_performance.py) checks telemetry integrity;
    it does not establish a game-scale performance result.
