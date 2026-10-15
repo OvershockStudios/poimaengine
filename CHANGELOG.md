@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.154
+
+- Add opt-in GPU-memory recording to the Performance Yard reliability harness using existing player reports, without extra native requests or changes to gameplay, focus, frame-time and save checks. [Recording guide](docs/PERFORMANCE_YARD_RELIABILITY.md#optional-gpu-memory-recording).
+- Retain bounded per-owner/device observations, cache consistency checks, unavailable states, session transitions and terminal reports. Keep diagnostic errors and omissions separate from gameplay results; sampled heap estimates do not qualify peak or resident VRAM. [Checks and scope](docs/evidence/m2-gpu-memory-observations.json).
+
 ## 0.0.153
 
 - Qualify a fresh Codex-authored management game through native publication and Windows export, a capacity-four FIFO of real work-unit entities, and retained V1→V2 save upgrades. Publish the original [Beacon Foundry source and world](docs/evidence/fixtures/agent-beacon-foundry/README.md); preserve the earlier failed workflows.

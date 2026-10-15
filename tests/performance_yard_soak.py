@@ -32,6 +32,7 @@ import player_service_contract as shared
 import performance_yard as yard
 from player_performance import verify_capture
 import windows_process_memory as memory
+import gpu_memory_observations
 
 PERFORMANCE = 'c0940000000000000000000000000001'
 CADENCE = 'c0870000000000000000000000000001'
@@ -201,7 +202,17 @@ class Soak:
         need(report['hardware'] and report['nvrhi_errors'] == 0 and
              report['runtime_replacements'] == self.replacements, 'Native report failed/replacement count differs')
         self.sid = state['session_id']
+        self.observe_gpu_memory(state)
         return state
+
+    def observe_gpu_memory(self, state):
+        if not getattr(self.args, 'record_gpu_memory', False):
+            return
+        if not hasattr(self, 'gpu_memory_collector'):
+            self.gpu_memory_collector = gpu_memory_observations.Collector()
+        self.gpu_memory_collector.observe(dict(label=self.label, pid=self.host.process.pid,
+            player_id=self.player_id, generation=self.generation), state,
+            time.monotonic()-self.record['started_monotonic'])
 
     def pause(self):
         state = self.player()
@@ -475,6 +486,7 @@ class Soak:
             if state['active']:
                 self.rpc('player.control', shared.control_parameters(state,'stop'))
             terminal = self.rpc('player.inspect')
+            self.observe_gpu_memory(terminal)
             need(terminal['report']['success'] and terminal['report']['nvrhi_errors'] == 0,
                  'Actual player ended unsuccessfully')
             need(terminal['report']['audio']['enabled'] and terminal['report']['audio']['stream_drained'],
@@ -512,6 +524,8 @@ def main():
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--gpu',type=int,default=1)
     parser.add_argument('--rehearsal', action='store_true', help='Short harness check; never a reliability qualification')
+    parser.add_argument('--record-gpu-memory', action='store_true',
+        help='Retain bounded heap estimates from existing player reports; not peak/resident VRAM')
     parser.add_argument('--cycles',type=int,default=40)
     parser.add_argument('--warmup',type=float,default=60)
     parser.add_argument('--before-save-seconds',type=float,default=35)
@@ -552,6 +566,7 @@ def main():
             'Present-return cadence is not scanout FPS or click-to-photon latency; no frame generation.',
             'Memory is one owning process working set/private commit; no WDDM VRAM or editor combined budget.',
             'Memory growth must be reviewed separately; this check does not equate bounded samples with absence of leaks.'])
+    gpu_memory_collector = gpu_memory_observations.Collector() if args.record_gpu_memory else None
     log = RpcLog(args.output/'rpc.jsonl.gz');record['calls'] = log
     shared.ARGS, shared.RECORD = args, record
     owned, game, original_pins = [], None, None
@@ -601,6 +616,9 @@ def main():
         record['source_sha256'] = {str(path.relative_to(ROOT)).replace('\\','/'):shared.sha(path)
             for path in (Path(__file__),ROOT/'tests/performance_yard.py',ROOT/'tests/player_service_contract.py',
                          ROOT/'tests/player_performance.py',ROOT/'tools/performance/windows_process_memory.py')}
+        if args.record_gpu_memory:
+            record['source_sha256']['tools/performance/gpu_memory_observations.py'] = shared.sha(
+                ROOT/'tools/performance/gpu_memory_observations.py')
         world = args.output/'world.json'
         shutil.copy2(args.world,world)
         shutil.copytree(Path(str(args.world)+'.assets'),Path(str(world)+'.assets'))
@@ -608,6 +626,8 @@ def main():
         u.SetThreadDpiAwarenessContext.argtypes=[ctypes.c_void_p];u.SetThreadDpiAwarenessContext.restype=ctypes.c_void_p
         need(u.SetThreadDpiAwarenessContext(ctypes.c_void_p(-4)), 'Cannot establish per-monitor DPI context')
         game = Soak(args,record,world,descriptor,manifest,deadline,owned)
+        if gpu_memory_collector is not None:
+            game.gpu_memory_collector = gpu_memory_collector
         game.start('soak')
         first_identity, first_pid = game.player_id,game.host.process.pid
         game.control('begin')
@@ -784,6 +804,8 @@ def main():
                              sha256=shared.sha(args.output/'rpc.jsonl.gz'))
         record['functional_reliability_passed'] &= record['passed']
         record['harness_rehearsal_passed'] &= record['passed']
+        if gpu_memory_collector is not None:
+            record['gpu_memory_observations'] = gpu_memory_collector.snapshot()
         json_write(args.output/'evidence.json',record)
         print(json.dumps(dict(passed=record['passed'],output=str(args.output),error=record.get('error'))),flush=True)
     return 0 if record['passed'] else 1

@@ -30,6 +30,42 @@ logic without qualifying the reliability duration:
 python tests/performance_yard_soak.py --binary build/windows-runtime/poima.exe --world build/performance-world/world.json --descriptor build/performance-artifact/native-gameplay.json --workload-manifest build/performance-world/manifest.json --output build/reliability-rehearsal --gpu 1 --rehearsal --cycles 2 --warmup 10 --before-save-seconds 10 --after-save-seconds 5 --continuation-seconds 30 --timeout 600
 ```
 
+## Optional GPU-memory recording
+
+Add `--record-gpu-memory` to the existing soak or diagnostic-wrapper command to
+retain the heap telemetry already returned by player inspection. The option is
+off by default. Tooling 0.0.154 supplies the recorder; Vulkan native 0.0.152
+introduced the optional report. It adds no native request, sampling thread or
+driver query and preserves the original workload, foreground, clock, frame-time
+and save checks.
+
+`evidence.json.gpu_memory_observations` records first/last observation tags,
+cached sample counts, per-heap observed allocation/budget ranges, separate
+owner/device continuity segments and terminal reports. Session changes after
+Load are annotated without treating them as a new graphics owner. Native sample
+times and the recorder's elapsed observation times have separate clock domains.
+Absent telemetry, explicit null, unsupported/invalid samples and measured zero
+remain distinct. Older engines can still run the original checks. A cache reset
+or changed device starts a separate observation segment; it does not establish
+an unexposed native renderer-context identity.
+
+The recorder retains at most 4,096 records within a 16 MiB compact-JSON budget,
+including its summaries. Inspect both `complete` and `contract_ok`: omissions
+and diagnostic errors are recorded separately from gameplay success. A passing
+game result alone does not qualify the telemetry. `complete` means no recording
+omissions; it does not imply that usable measurements exist. Check
+`legacy_unavailable`, each segment’s `usable_samples`, `omission_reasons` and
+`error_counts`. The full collection is snapshotted at finalization; ordinary
+observations process bounded sample data.
+
+These are sampled driver allocation estimates, not residency or lifetime peaks.
+Separate contexts are never summed, and these values do not pass the Alpha
+VRAM ceiling or establish a memory leak's cause. Recording has CPU/storage
+cost; its overhead on representative play has not been measured. Portable
+checks and offline ingestion of retained native reports qualify the recorder,
+not a new foreground, frame-rate or reliability run.
+[Results and limits](evidence/m2-gpu-memory-observations.json).
+
 ## What it checks
 
 The full run warms up for 60 seconds, then performs 40 Save/Load cycles. Each

@@ -1,0 +1,168 @@
+{
+  "format": "poima.gpu-memory-observations-qualification.v1",
+  "checkpoint": "0.0.154",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Portable collector/integration qualification and offline ingestion of unchanged native 0.0.152 player replies. No new native performance or reliability run.",
+  "source_pins": {
+    "tools/performance/gpu_memory_observations.py": {
+      "bytes": 14779,
+      "sha256": "2817eb0ed37a0cfd20ca76c03239e7ccb1371e5f0d2776c7ef51971c67eed2db"
+    },
+    "tests/gpu_memory_observations.py": {
+      "bytes": 15805,
+      "sha256": "9909863fb4263df6c4841ff4974ba44af711d34c090d1dfc3c2488714a4aad09"
+    },
+    "tests/performance_yard_soak.py": {
+      "bytes": 50261,
+      "sha256": "9e807970170a0e3f35e606f048702c1bc5544cfc5000eb35fd9d055aace33093"
+    },
+    "CMakeLists.txt": {
+      "bytes": 84365,
+      "sha256": "47d6791f370e44729e7d378312dbde6cd43c0972b81c9ffdac15b05ba802747b"
+    }
+  },
+  "recording": {
+    "option": "--record-gpu-memory",
+    "enabled_by_default": false,
+    "new_native_requests": 0,
+    "new_sampler_threads": 0,
+    "new_driver_queries": 0,
+    "full_collection_snapshot": "At finalization, outside measured play; no growing full-snapshot serialization on ordinary observations.",
+    "maximum_records": 4096,
+    "maximum_compact_ascii_json_bytes": 16777216,
+    "budget_includes": "Retained records, per-segment summaries and report metadata/counters; not caller indentation or transient Python process memory.",
+    "diagnostic_result_separate_from_gameplay": true,
+    "data_semantics": [
+      "Absent field, explicit null, unsupported/invalid telemetry and valid measured integer zero remain distinct.",
+      "Same owner/device/sequence/sample time requires exact typed cached-value equality; only report time, age and sampling activity may change.",
+      "Save-load session changes retain the graphics observation segment. Terminal records are retained separately.",
+      "Sequence resets, backwards sample times, changed device or heap identity create explicit continuity boundaries; no unexposed native renderer-context identity is inferred.",
+      "Per-heap sampled ranges are not summed across contexts or relabeled resident, dedicated or peak VRAM.",
+      "Complete means no recording omissions, not measured availability. Inspect contract_ok, legacy_unavailable, usable_samples, error_counts and omission_reasons."
+    ]
+  },
+  "portable_tests": {
+    "linux": {
+      "passed": true,
+      "tests": 29,
+      "exit_code": 0,
+      "test_seconds": 0.011
+    },
+    "windows": {
+      "passed": true,
+      "tests": 29,
+      "exit_code": 0,
+      "test_seconds": 0.01
+    },
+    "coverage": [
+      "Unknown and zero estimates; valid full-width integers; unsupported/invalid states and missing field versus explicit null.",
+      "Cache mutation including boolean/integer type changes; first/last report metadata and duplicate counts.",
+      "Owner, device, heap and sequence discontinuities; session changes; terminal data.",
+      "Serialized byte/count bounds including summaries, explicit omissions/errors and detached evidence.",
+      "Default-off and opt-in Soak hooks use existing responses and requests; diagnostic errors preserve the original functional result."
+    ],
+    "no_os_graphics_or_game_execution": true
+  },
+  "offline_retained_native": {
+    "passed": true,
+    "native_checkpoint": "0.0.152",
+    "original_qualification": "docs/evidence/m2-gpu-memory.json",
+    "original_evidence_pin": {
+      "bytes": 50630,
+      "sha256": "4bfd8713af38aceaa2e88705a8bd203abd0d36dbe6ed33cb22ac6de34aef42ea"
+    },
+    "observations": 102,
+    "usable_unique_samples": 20,
+    "retained_records": 24,
+    "cases": [
+      {
+        "label": "gpu0-first",
+        "observations": 26,
+        "retained_records": 6,
+        "usable_unique_samples": 5,
+        "complete": true,
+        "contract_ok": true,
+        "omitted": 0,
+        "errors": 0,
+        "original_transcript": {
+          "bytes": 1526295,
+          "sha256": "2b9fc36148fe99e5f72fa02888214fd9795f0552b001723889cba102582c4af9"
+        }
+      },
+      {
+        "label": "gpu0-fresh",
+        "observations": 26,
+        "retained_records": 6,
+        "usable_unique_samples": 5,
+        "complete": true,
+        "contract_ok": true,
+        "omitted": 0,
+        "errors": 0,
+        "original_transcript": {
+          "bytes": 1526295,
+          "sha256": "94265c7b1d0f1bf5db88bbdd3ce00b3884f16858f7daf5ae71b12baeb5d5b53e"
+        }
+      },
+      {
+        "label": "gpu1-first",
+        "observations": 25,
+        "retained_records": 6,
+        "usable_unique_samples": 5,
+        "complete": true,
+        "contract_ok": true,
+        "omitted": 0,
+        "errors": 0,
+        "original_transcript": {
+          "bytes": 1455436,
+          "sha256": "d43e33d659d6c4d8db6ec0bb7d4d6b7255fafdd3f7712709c80de955e2786a85"
+        }
+      },
+      {
+        "label": "gpu1-fresh",
+        "observations": 25,
+        "retained_records": 6,
+        "usable_unique_samples": 5,
+        "complete": true,
+        "contract_ok": true,
+        "omitted": 0,
+        "errors": 0,
+        "original_transcript": {
+          "bytes": 1455442,
+          "sha256": "39b35ee5bac8e89810de9fa93c37f8dd6fdb673f6b26832cb08bf4c3d2977e85"
+        }
+      }
+    ],
+    "inputs_unchanged": true,
+    "original_host_pid": null,
+    "original_python_observation_times": null,
+    "missing_metadata_policy": "Explicit nulls tagged incomplete; no fabricated process identities, timing or phase joins.",
+    "new_hardware_execution": false
+  },
+  "independent_source_review": {
+    "passed": true,
+    "unchanged_prior_functions": 30,
+    "scope": "Frozen source/AST and bound-accounting review; not a new hardware run."
+  },
+  "retained_validation_identities": {
+    "root_validation": {
+      "bytes": 1555,
+      "sha256": "5cfca8a8ca770a8221b3050965012699589a40fb58a67981287e4ee455b399ff"
+    },
+    "offline_replay": {
+      "bytes": 83563,
+      "sha256": "22bbde517c97c2c750547f842b7aca05645dcf42be9cb7514cd88e53c0128ffa"
+    },
+    "implementation_handoff": {
+      "bytes": 1561,
+      "sha256": "aa22e02e149061daa0da0220649e46f4603b58eab7cafeb1093f2bc0e9db5f66"
+    }
+  },
+  "limits": [
+    "Selected telemetry-shape and cache checks, not a full frozen native schema validator or adversarial OS security boundary.",
+    "The new recording path has not run during representative focused play; CPU/storage overhead is unmeasured.",
+    "Historical paused native reports do not supply fresh performance, physical-input, foreground or lifetime VRAM qualification.",
+    "Earlier foreground failures remain failed; no focus or acceptance predicate was relaxed.",
+    "No Alpha gate is closed by this instrumentation slice."
+  ]
+}
