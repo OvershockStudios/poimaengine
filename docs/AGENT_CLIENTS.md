@@ -151,3 +151,12 @@ An independent replay started a fresh runtime, rejected an early exit, collected
 The [public fixture runner](evidence/fixtures/agent-escape/README.md#reproduce-the-headless-check) separately passes Windows CoreCLR replay using the portable project's rebuilt assembly, including checkpoint continuation and completion in a second native process. It records input hashes and actual native results, and requires clean process exits. Linux/Native AOT fixture replay, graphics and physical input remain unqualified. [Replay evidence](evidence/m2-agent-game-replay.json).
 
 The exercise also exposed workflow gaps: code compilation and SDK lookup still required external tools. The development [native build-worker foundation](DEVELOPMENT_JOBS.md) addresses background process ownership; world-service integration and packaged qualification are recorded separately.
+
+The later [Pump House workflow](evidence/fixtures/agent-pumphouse/README.md)
+qualifies one fresh Claude Code session through native publication, adoption and
+export. It uses file tools and an owned Python-script MCP executor forwarding the
+actual CLI/JSON-RPC, with frozen general documentation and no supplied game code.
+Independent source and relocated bundled services verify inventory, mechanisms,
+full checkpoint restoration, cold Welcome Load and reset without losing saves.
+This does not qualify Claude chat in the desktop editor, a security sandbox,
+physical input or a general agent success rate. [Evidence](evidence/m2-agent-pumphouse.json).

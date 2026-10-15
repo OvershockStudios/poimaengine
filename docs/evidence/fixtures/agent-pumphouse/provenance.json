@@ -1,0 +1,57 @@
+{
+  "format": "poima.agent-game-source-record.v1",
+  "game": "Pump House",
+  "status": "Qualified bounded original workflow and independent source/relocated-game consumer",
+  "original_sources": {
+    "PumpHouseGame.cs": {
+      "bytes": 16048,
+      "sha256": "397265ab2775e514e739470f9edc37e79c39bcb46e7f64c926c8efb83235c871"
+    },
+    "LOCATOR.json": {
+      "bytes": 7762,
+      "sha256": "4fd49902fc1bd5f951515569e29f64fe528da3b36707533a311f1dc6c0987463"
+    },
+    "TASK_v1.md": {
+      "bytes": 6587,
+      "sha256": "9a14172438430756d83e4801a27a668fe5fae1755e11e429c85efb771f19131f"
+    }
+  },
+  "source_bytes_preserved": true,
+  "task_bytes_preserved": true,
+  "provider": {
+    "name": "Claude Code",
+    "version": "2.1.290",
+    "model": "claude-opus-5-5",
+    "single_original_session": true,
+    "original_run_completed": true,
+    "elapsed_minutes_approx": 14,
+    "actual_terminal_metadata": {
+      "subtype": "success",
+      "is_error": false,
+      "num_turns": 105,
+      "duration_ms": 842412
+    }
+  },
+  "native_submissions": {
+    "publication": 1,
+    "export": 2,
+    "uncertain": 0,
+    "budget_audit_identity": {
+      "bytes": 78842,
+      "sha256": "b647f8ed0009d812c3c1bc12226714503fd9c2789be4bdd0e015a6d83177d512"
+    }
+  },
+  "independent_game_evaluation": "passed",
+  "portable_project_rebuild_qualified": false,
+  "notes": [
+    "The locator is the original agent-provided map, not an external correctness oracle.",
+    "Relative source/project/artifact/export locators refer to the original delivery structure; this source record does not include that complete structure.",
+    "The first owner-failed attempt remains failed; this source record is from the separate root-authorized second trial."
+  ],
+  "declared_limitations": [
+    "The generated launcher does not supply an external save root; Save/Load require an explicitly configured directory outside the immutable bundle.",
+    "Character-level mid-word text wrapping remains visible in 1280\u00d7720 observations.",
+    "Provider playtest/capture reports are distinct from independent gameplay, full checkpoint, relocation and visual acceptance."
+  ],
+  "evidence": "../../m2-agent-pumphouse.json"
+}

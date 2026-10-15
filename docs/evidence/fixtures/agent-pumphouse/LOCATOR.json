@@ -1,0 +1,93 @@
+{
+  "format": "pumphouse.locator.v1",
+  "note": "Documents this implementation only; not an external correctness oracle.",
+  "game": {
+    "module_identity": "pumphouse.repair",
+    "type": "PumpHouse.PumpHouseGame",
+    "source": "game/PumpHouseGame/PumpHouseGame.cs",
+    "project": "game/PumpHouse/project.json",
+    "published_artifact": "products/pumphouse-native-1/native-gameplay.json",
+    "artifact_descriptor_sha256": "37402fc1e232dca3bef9370a6bdbc88ce3a5f1fcf7a33e7d19055bbc58a0a88f",
+    "library_sha256": "6d93ba1fe5181cdd1ace3ce58b62f9b306afd0ddc5e13cd49e1acf7f6c652e4e",
+    "adopted_descriptor": "game/PumpHouse/gameplay/adopt-c4cf6ff0715248079b87b5fff3237996/native-gameplay.json",
+    "export": "products/pumphouse-game-2/game.json",
+    "export_manifest_sha256": "6790aa8169e829aaa32169afcf04e35f47132a52179f021599a8aa2dd6d94cd7",
+    "save_slot": "checkpoint"
+  },
+  "entities": {
+    "player_controller": "00000000000000000000000000000002",
+    "player_camera": "00000000000000000000000000000003",
+    "items": {
+      "fuse_a": {"id": "00000000000000000000000000000010", "item": "fuse", "home": [-6, 0.95, 5], "taken_pose_y": -3, "where": "on crate, south-west"},
+      "fuse_b": {"id": "00000000000000000000000000000011", "item": "fuse", "home": [5, 1.05, 6.5], "taken_pose_y": -3, "where": "on workbench, south-east"},
+      "drive_cog": {"id": "00000000000000000000000000000012", "item": "drive_cog", "home": [7.5, 1.1, 0], "taken_pose_y": -3, "where": "inside parts locker, east wall (behind shutter)"}
+    },
+    "interactions": {
+      "breaker_panel": {"id": "00000000000000000000000000000020", "requires": "2 fuses", "consumes": "2 fuses", "effect": "world change 1: opens locker shutter", "reject_feedback_code": 3, "repeat_feedback_code": 5},
+      "locker_shutter": {"id": "00000000000000000000000000000021", "kinematic": true, "closed_pose": [6.95, 1.2, 0], "open_pose": [6.95, 3.0, 0], "blocks": "ray/physical access to drive cog while closed"},
+      "bridge_winch": {"id": "00000000000000000000000000000022", "requires": "1 drive cog", "consumes": "1 drive cog", "effect": "world change 2: raises bridge deck", "reject_feedback_code": 8, "repeat_feedback_code": 10},
+      "bridge_deck": {"id": "00000000000000000000000000000023", "kinematic": true, "lowered_pose": [0, -0.05, -6.5], "raised_pose": [0, 1.7, -6.5], "effect": "walkable span between 1.8 m catwalk and console platform (not reachable by jumping)"},
+      "pump_console": {"id": "00000000000000000000000000000024", "requires": "bridge raised (physical access)", "effect": "PumpOn=1, objective complete", "repeat_feedback_code": 13}
+    },
+    "architecture": {
+      "west_catwalk": "00000000000000000000000000000104",
+      "east_console_platform": "00000000000000000000000000000105",
+      "catwalk_ramp": "00000000000000000000000000000106"
+    }
+  },
+  "state_schema": {
+    "persistence_revision": 1,
+    "fields": {
+      "FuseCount": {"id": "a0000000000000000000000000000001", "kind": "int32", "bound": "0..2", "role": "inventory"},
+      "CogCount": {"id": "a0000000000000000000000000000002", "kind": "int32", "bound": "0..1", "role": "inventory"},
+      "FuseAPresent": {"id": "a0000000000000000000000000000003", "kind": "int32"},
+      "FuseBPresent": {"id": "a0000000000000000000000000000004", "kind": "int32"},
+      "CogPresent": {"id": "a0000000000000000000000000000005", "kind": "int32"},
+      "BreakerOn": {"id": "a0000000000000000000000000000006", "kind": "int32", "role": "world change 1 (shutter open)"},
+      "BridgeRaised": {"id": "a0000000000000000000000000000007", "kind": "int32", "role": "world change 2 (bridge raised)"},
+      "PumpOn": {"id": "a0000000000000000000000000000008", "kind": "int32", "role": "final objective"},
+      "Started": {"id": "a0000000000000000000000000000009", "kind": "int32"},
+      "Paused": {"id": "a000000000000000000000000000000a", "kind": "int32"},
+      "Feedback": {"id": "a000000000000000000000000000000b", "kind": "int32", "role": "feedback message code"},
+      "LookCode": {"id": "a000000000000000000000000000000c", "kind": "int32", "role": "current camera-ray target (0 none,1 fuseA,2 fuseB,3 cog,4 breaker,5 shutter,6 winch,7 deck,8 console)"},
+      "HudDirty": {"id": "a000000000000000000000000000000d", "kind": "int32"},
+      "ResetPending": {"id": "a000000000000000000000000000000e", "kind": "int32", "role": "New Game staged body reset"},
+      "ModalShown": {"id": "a000000000000000000000000000000f", "kind": "int32"},
+      "SaveStatus": {"id": "a0000000000000000000000000000010", "kind": "int32", "values": {"0": "none", "1": "saving", "2": "saved", "3": "save failed", "4": "loading", "5": "load failed", "6": "loaded", "7": "busy/unavailable"}},
+      "SaveKindPending": {"id": "a0000000000000000000000000000011", "kind": "int32"},
+      "SaveEpochHigh": {"id": "a0000000000000000000000000000012", "kind": "int64"},
+      "SaveEpochLow": {"id": "a0000000000000000000000000000013", "kind": "int64"},
+      "SaveSequence": {"id": "a0000000000000000000000000000014", "kind": "int64"},
+      "SessionEpochHigh": {"id": "a0000000000000000000000000000015", "kind": "int64"},
+      "SessionEpochLow": {"id": "a0000000000000000000000000000016", "kind": "int64"},
+      "SavedTick": {"id": "a0000000000000000000000000000017", "kind": "int64"},
+      "Objective": {"id": "a0000000000000000000000000000018", "kind": "int32"},
+      "Interactions": {"id": "a0000000000000000000000000000019", "kind": "int32"}
+    }
+  },
+  "objective_states": {
+    "0": "Restore power (find 2 fuses, install at breaker)",
+    "1": "Breaker on, shutter open: take drive cog",
+    "2": "PARTIAL CHECKPOINT TARGET: carrying drive cog; fit it in bridge winch",
+    "3": "Bridge raised: start pump at console",
+    "4": "Complete: pump running"
+  },
+  "world_states": {
+    "initial": {"BreakerOn": 0, "shutter_y": 1.2, "BridgeRaised": 0, "deck_y": -0.05, "PumpOn": 0, "inventory": {"fuse": 0, "drive_cog": 0}},
+    "partial_checkpoint": {"BreakerOn": 1, "shutter_y": 3.0, "BridgeRaised": 0, "deck_y": -0.05, "PumpOn": 0, "inventory": {"fuse": 0, "drive_cog": 1}, "Objective": 2},
+    "completed": {"BreakerOn": 1, "shutter_y": 3.0, "BridgeRaised": 1, "deck_y": 1.7, "PumpOn": 1, "inventory": {"fuse": 0, "drive_cog": 0}, "Objective": 4}
+  },
+  "ui": {
+    "hud": {"panel": "700000000000000000000000000000a0", "objective": "700000000000000000000000000000a1", "inventory": "700000000000000000000000000000a2", "feedback": "700000000000000000000000000000a3", "prompt": "700000000000000000000000000000a4", "save_status": "700000000000000000000000000000a5", "crosshair": "700000000000000000000000000000a7"},
+    "start_menu": {"panel": "700000000000000000000000000000b0", "status": "700000000000000000000000000000b5"},
+    "pause_menu": {"panel": "700000000000000000000000000000c0", "status": "700000000000000000000000000000c6"}
+  },
+  "menu_actions": {
+    "start": {"button": "700000000000000000000000000000b3", "effect": "hide start menu, clear modal, resume"},
+    "pause": {"button": "700000000000000000000000000000a6", "label": "Menu / Pause", "effect": "show pause menu (modal), pause"},
+    "resume": {"button": "700000000000000000000000000000c2"},
+    "save": {"button": "700000000000000000000000000000c3", "effect": "TryRequestSave('checkpoint'); HUD shows 'Saving...' then 'Checkpoint saved (tick N)' only after the ticket resolves Succeeded"},
+    "load": {"buttons": ["700000000000000000000000000000c4", "700000000000000000000000000000b4"], "effect": "TryRequestLoad('checkpoint'); exact restore, no Initialize"},
+    "newgame": {"button": "700000000000000000000000000000c5", "effect": "reset inventory/flags/objective; next Tick returns fuses, cog, shutter (30 ticks), deck (45 ticks); slot untouched"}
+  }
+}

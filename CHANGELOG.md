@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.148
+
+- Record a fresh Claude-authored repair adventure through native publication, adoption and Windows export; preserve the interrupted earlier trial and all repair attempts. [Original source and task](docs/evidence/fixtures/agent-pumphouse/README.md).
+- Independently verify real inventory/mechanism interactions, complete checkpoint restoration before callbacks, cold Welcome Load and New Game retaining saves through source and relocated bundled executables. Join three Vulkan captures to logical UI and retain documented limits. [Evidence](docs/evidence/m2-agent-pumphouse.json).
+
 ## 0.0.147
 
 - Require explicit Boolean recovery consent when joining a recovered `save.load` result to its original request in the opt-in Python validator. Preserve response-only checks and historical receipt semantics. [Result contract](docs/WORKFLOW_RESPONSE_CONTRACT.md#request-dependent-results).

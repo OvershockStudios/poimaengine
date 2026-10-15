@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.147.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.148.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -35,6 +35,8 @@ Three recorded exercises put this workflow into practice: [Codex builds an escap
 A [fresh Switchback implementation](docs/evidence/fixtures/agent-switchback-fresh/README.md) and a [second fresh run](docs/evidence/m2-agent-switchback-fresh-repeat.json) each complete supervised create/import/author/compile/playtest/repair/publish/adopt/export workflows and thirteen independent native gameplay groups with complete save comparisons. Their exported games also pass the same groups and Vulkan observations while the declared original project paths are unavailable. These are two bounded runs under documented input contexts; earlier failures remain recorded. [First-run evidence](docs/evidence/m2-agent-switchback-fresh.json).
 
 The earlier fresh implementation’s published C# and project also [rebuild unchanged](docs/evidence/m2-agent-switchback-fresh-rebuild.json) against the current SDK. The newly compiled module passes all thirteen native gameplay groups and complete save-continuation comparisons independently of the original binary. An [additional independent implementation](docs/evidence/fixtures/agent-switchback-repeat/README.md) also passes source and relocated gameplay checks; its original automation workflow remains failed.
+
+A fresh Claude session built [Pump House](docs/evidence/fixtures/agent-pumphouse/README.md), a first-person repair adventure with inventory and persistent mechanisms. Independent source and relocated-export checks verify real interactions, complete checkpoint restoration, cold continuation and New Game preserving the old checkpoint. This adds puzzle/adventure evidence alongside the Codex combat exercises; the [broader Alpha gates](docs/ALPHA_ROADMAP.md) remain open.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 

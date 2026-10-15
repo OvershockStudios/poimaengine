@@ -63,6 +63,17 @@ memory and reliability measurements; the three-game matrix separately checks
 that the authoring workflow generalizes. The cross-engine benchmark is later
 work and does not block this engine qualification.
 
+Current bounded records cover combat through the [second fresh Codex Switchback
+workflow](evidence/m2-agent-switchback-fresh-repeat.json) and puzzle/adventure
+through the [fresh Claude Pump House workflow](evidence/m2-agent-pumphouse.json).
+Switchback exercises imported animation, aiming, damage, death/retry and saves;
+Pump House adds inventory, causal world mechanisms and full same-owner/cold
+checkpoint continuation. Both agent clients are represented. The management
+composition with collections, spawning and a retained save-schema update remains
+open, along with the separate contract, content, performance, physical-input,
+editor and delivery gates. Each record retains its own toolchain, reproducibility
+and observation limits; neither closes an entire release gate by itself.
+
 The initial alpha matrix is Windows native editor/player/rendering and Linux
 native CLI authoring/simulation. Each needs a fresh-project regression and
 source-independent cooked-content reopen. Linux desktop rendering, browser and
