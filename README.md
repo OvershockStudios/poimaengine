@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.156.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.157.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -48,7 +48,7 @@ Earlier exercises include an [escape room](docs/evidence/fixtures/agent-escape/R
 
 The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits. [Runtime game-session v1](docs/RUNTIME_GAME_SESSION_V1.md) adds a separate 19-method boundary for running games: typed state, spatial queries, logical controls and external saves. Both have request/result compatibility gates and native behavioral checks. The [Python client](docs/PYTHON_CLIENT.md) provides guarded authoring and opt-in frozen result validation. The [gameplay, content and save profile](docs/ALPHA_GAMEPLAY_PROFILE.md) distinguishes these selected promises from experimental APIs and native binary compatibility.
 
-A [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation on the retained 0.0.97 engine. A separate [0.0.106 development comparison](docs/evidence/m2-iteration-comparison.json) verifies twenty compatible edits per cohort with preserved game state and changed behavior. With the owned compiler, batching state reads lowers measured edit-to-first-verified-tick p95 from 7.732 to 3.759 seconds. Compiler reuse alone improves the mean while worsening p95 against isolated builds. The three-second target and broader Alpha gate remain open.
+A [Windows CoreCLR iteration check](docs/evidence/m2-relay-yard-iteration-156.json) passes twenty real C# edits at **2.206 s p95**, preserving the full saved game state and verifying changed behavior on the first updated tick. This meets the selected warm-iteration target on the tested laptop; it is not a general latency guarantee. A separate [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation. The broader [Alpha gates](docs/ALPHA_ROADMAP.md) remain open.
 
 Joined [runtime observations](docs/RUNTIME_OBSERVATION.md) let tools inspect live poses and selected component fields together. A provider-free Workshop replay comparison uses 49% fewer native RPCs with identical checked gameplay and checkpoint state. [Reproduction and results](docs/RUNTIME_OBSERVATION.md#reproduce-the-replay-comparison).
 

@@ -9,6 +9,36 @@ Windows player window; it is not a GPU-free or unattended desktop test.
 
 ## Recorded check
 
+The [current native 0.0.156 cohort](evidence/m2-relay-yard-iteration-156.json),
+recorded at checkpoint 0.0.157, passes twenty source edits and 25 compiler jobs
+with retained 0.0.88 managed tooling. Mean is **1.959289 seconds**, nearest-rank
+p95 is **2.205853 seconds**, and maximum is **2.213399 seconds**. This meets the
+selected three-second warm-iteration budget. All twenty samples retain the
+original timer and verify complete current native state: version-7 snapshots,
+both cameras and all 50 gameplay fields, with only the expected assembly digest
+and gameplay revision changing across reload.
+
+A separate fresh six-edit pilot qualifies actual paged observation parity,
+seven real stale boundaries and removed-member rejection. Its proof-heavy
+full-poll/rewrite timing is separate from the measured compact-poll/journal arm.
+Independent checks join all 21,030 measured journal records, 46 selected native
+save files and five hardware captures; all 78 Job processes exit naturally.
+Journal records include raw replies and decoded check rows, rather than 21,030
+unique RPC calls. Syntax failure/repair, incompatible-state rejection, retry,
+objective completion, explicit scene restart and exact original-image restore
+remain required and pass.
+
+The measurement uses one paused 960×540 Windows Vulkan game on the RTX 4070
+Laptop GPU with a warm project/output and an engine-owned compiler. It does not
+qualify cold builds, unpaused throughput, physical input or the broader Alpha
+release. Engine and tooling inputs are pinned separately; no new SDK or Native
+AOT compilation is implied. This is an independent cohort, not a matched
+experiment attributing its result to the scheduling change. The public command
+below remains the original workflow fixture, rather than the exact compact
+polling, batched-read and journal recipe used for the recorded result.
+
+### Historical checkpoints
+
 The [0.0.98 evidence](evidence/m2-relay-yard-iteration.json) records the retained
 0.0.97 Windows engine and 0.0.88 managed tooling. Twenty actual edits preserved
 the complete supported state and demonstrated the changed range on the first

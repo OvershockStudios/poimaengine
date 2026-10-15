@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.157
+
+- Qualify twenty real compatible C# edits through the first changed gameplay tick at **2.206 s p95**, meeting the selected three-second warm-iteration target. Preserve all 50 gameplay values and complete current native save state through every reload.
+- Retain a separate six-edit guard pilot, actual compiler/image joins, capture checks and natural process closure. The measured native engine is 0.0.156 with retained 0.0.88 managed tooling; broader Alpha gates remain open. [Results and scope](docs/evidence/m2-relay-yard-iteration-156.json).
+
 ## 0.0.156
 
 - Let shared CLI requests interrupt voluntary idle-player waits while retaining paced background presentation, owner maintenance and capture invalidation. Keep standalone and desktop polling on their existing paths.
