@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.153
+
+- Qualify a fresh Codex-authored management game through native publication and Windows export, a capacity-four FIFO of real work-unit entities, and retained V1→V2 save upgrades. Publish the original [Beacon Foundry source and world](docs/evidence/fixtures/agent-beacon-foundry/README.md); preserve the earlier failed workflows.
+- Independently check complete checkpoint restoration, queue/progress and allocator continuation, warm and cold new-unit completion in source and relocated exports, plus three readable Vulkan captures. The selected three-family agent matrix now has bounded evidence; the broader Alpha gates remain open. [Results and limits](docs/evidence/m2-agent-beacon-foundry.json).
+
 ## 0.0.152
 
 - Expose optional Vulkan heap allocation estimates, dynamic budgets, device identity and sample age through native player/capture diagnostics, CLI smoke reports and desktop viewport reports. [GPU memory diagnostics](docs/GPU_MEMORY.md).

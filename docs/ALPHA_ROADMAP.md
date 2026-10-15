@@ -17,7 +17,7 @@ entry criteria. Alpha 1 is an intermediate usable-game milestone.
 
 | Gate | Current evidence | What must be closed for Alpha 1 |
 | --- | --- | --- |
-| Agent authoring | Recorded Codex/Claude games include [DEPOT RUN](evidence/fixtures/agent-depot/README.md) and [Switchback Range](evidence/fixtures/agent-switchback/README.md). Switchback's public source rebuilds, publishes, adopts and exports; thirteen independent native groups verify gameplay and full checkpoint continuation. Focused discovery, transactions, guards, retries, observations and replay have bounded evidence. [Workflows](AGENT_CLIENTS.md). | Two bounded Switchback fresh-project workflows now pass create → import → author → compile → playtest → repair → publish → adopt → export and independent gameplay/export/render checks under their documented input contexts. Earlier failed workflows remain failed. Extend that repeated-workflow evidence into the selected Alpha contract and additional practical game tasks; preserve failed attempts, machine-readable results and actionable errors. This does not close the broader Alpha gates. |
+| Agent authoring | Recorded Codex/Claude games include [DEPOT RUN](evidence/fixtures/agent-depot/README.md) and [Switchback Range](evidence/fixtures/agent-switchback/README.md). Switchback's public source rebuilds, publishes, adopts and exports; thirteen independent native groups verify gameplay and full checkpoint continuation. Focused discovery, transactions, guards, retries, observations and replay have bounded evidence. [Workflows](AGENT_CLIENTS.md). | Repeated Switchback workflows and the selected combat, puzzle/adventure and management matrix now have qualifying fresh-project, independent gameplay/save and relocated-export evidence under their documented input contexts. Preserve those workflows through the Alpha candidate regression, with machine-readable results and actionable errors. Earlier failed workflows remain failed; the wider contract, content, interaction, performance and delivery gates stay separate. |
 | Contracts and persistence | Selected [authoring-core v1](AUTHORING_API_COMPATIBILITY.md) is stable; C# components, reload, saves and bounded upgrades have recorded qualification. [Runtime game-session v1](RUNTIME_GAME_SESSION_V1.md) releases a separate 19-method running-game boundary with frozen request/result artifacts and retained-consumer checks; the older prospective 21-method gate remains separate. The [gameplay/content/save profile](ALPHA_GAMEPLAY_PROFILE.md) defines the current boundary and [Relay Yard upgrade](../examples/relay-yard/UPGRADING.md) exercises a retained real game. The [paused CoreCLR iteration cohort](evidence/m2-relay-yard-iteration.json) verifies 20 compatible edits with exact 50-field/native-state preservation, stale/type rejection and changed behavior; its 7.599 s p95 misses the 3 s target. The later [0.0.106 comparison](evidence/m2-iteration-comparison.json) preserves the full checked state with qualified batched reads and reaches 3.759 s p95. An independent [native 0.0.108 journal cohort](evidence/m2-iteration-journal.json) passes 20 full-state edits with 3.004 s p95; the 3 s target remains open. Exact old-image saves remain separate from upgrades. [Defaulted new-component upgrades](evidence/m2-defaulted-component-additions.json) retain a real CoreCLR game's complete old state, complete its objective and reopen the target save in a fresh process. | Preserve the released authoring/session contracts and their compatibility gates. Qualify the remaining selected Alpha workflow and upgrade boundaries. Extend retained-game coverage where supported component/content changes are needed; clearly identify experimental APIs. Alpha does not freeze every engine API. |
 | Content and characters | Bounded FBX/glTF intake, images, WAV, cooked assets, provenance and native animation have evidence. [Character Yard](../examples/character-yard/README.md) covers weighted GLB; [Locomotion Yard](../examples/locomotion-yard/README.md) covers original FBX body/takes, controller-driven idle/run, checkpoints and relocated Windows export. | Publish the supported character intake/rig/material profile and actionable unsupported-content diagnostics. Extend beyond the single pinned FBX pack; integrate this path into the fresh-project agent workflow. Contact/IK and broader exporter coverage remain separate gaps. |
 | Playable systems | Physics, character controls, static navigation, keyboard/mouse/gamepad profiles, [portable and live native preferences](PLAYER_SETTINGS.md), styled game UI, audio, checkpoints and compiled callbacks exist. [Relay Yard audio](evidence/m2-relay-yard-audio.json) combines licensed gameplay cues with continuous playback and active-sound checkpoints. [Traversal Yard](../examples/traversal-yard/README.md) combines steps, crouch clearance, a physical lift, objectives and checkpoints; compiled and relocated cooked-world runs complete its course. | [Relay Yard](../examples/relay-yard/README.md) exercises native pickups, animation/navigation, menus, settings, exact partial saves and fresh-process game completion. Representative performance and additional fresh-project workflows remain separate. Close blocking focus, input, text/layout and lifecycle defects; verify physical mouse/keyboard/controller interaction on Windows and qualify listening on actual audio hardware. |
@@ -64,15 +64,22 @@ that the authoring workflow generalizes. The cross-engine benchmark is later
 work and does not block this engine qualification.
 
 Current bounded records cover combat through the [second fresh Codex Switchback
-workflow](evidence/m2-agent-switchback-fresh-repeat.json) and puzzle/adventure
-through the [fresh Claude Pump House workflow](evidence/m2-agent-pumphouse.json).
-Switchback exercises imported animation, aiming, damage, death/retry and saves;
-Pump House adds inventory, causal world mechanisms and full same-owner/cold
-checkpoint continuation. Both agent clients are represented. The management
-composition with collections, spawning and a retained save-schema update remains
-open, along with the separate contract, content, performance, physical-input,
-editor and delivery gates. Each record retains its own toolchain, reproducibility
-and observation limits; neither closes an entire release gate by itself.
+workflow](evidence/m2-agent-switchback-fresh-repeat.json), puzzle/adventure
+through the [fresh Claude Pump House workflow](evidence/m2-agent-pumphouse.json),
+and simulation/management through the [fresh Codex Beacon Foundry
+workflow](evidence/m2-agent-beacon-foundry.json). Switchback exercises imported
+animation, aiming, damage, death/retry and saves; Pump House adds inventory,
+causal world mechanisms and full same-owner/cold checkpoint continuation.
+Beacon Foundry adds a bounded native FIFO, real spawned work units and an
+explicit V1→V2 save upgrade with warm and cold new-unit completion. Both agent
+clients are represented, and the selected three-family matrix is qualified.
+
+This closes the selected breadth requirement, not an entire Alpha release gate.
+The separate contract, content, representative performance, physical-input,
+editor and delivery gates remain open. Each workflow retains its own toolchain,
+reproducibility and observation limits, and earlier failed attempts remain
+failed. Return to the fixed representative performance/reliability workload;
+additional genre demonstrations are not the next release requirement.
 
 The initial alpha matrix is Windows native editor/player/rendering and Linux
 native CLI authoring/simulation. Each needs a fresh-project regression and

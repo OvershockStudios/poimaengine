@@ -1,0 +1,62 @@
+{
+  "format": "poima.agent-beacon-source-provenance.v1",
+  "license": "Apache-2.0",
+  "files": {
+    "src/v1/Foundry.cs": {
+      "bytes": 5533,
+      "sha256": "5c8b4478145f6f34c22a762f0bed46c5eebab13c0aea552d4aa8475e41bb96e3",
+      "origin": "Original agent-authored V1 C# source; bytes preserved including line endings.",
+      "license": "Apache-2.0"
+    },
+    "src/v2/Foundry.cs": {
+      "bytes": 5720,
+      "sha256": "233ac687d42a5ba3b76540455c6a9b0b10caa8d8ffa338412b691be4d35efc3b",
+      "origin": "Original agent-authored V2 C# source; bytes preserved including line endings.",
+      "license": "Apache-2.0"
+    },
+    "world.json": {
+      "bytes": 32247,
+      "sha256": "0f70a45149d937492b1d99d7fd9d8014f2d086816062d0859e53fef4275a61cb",
+      "origin": "Common original V1/V2 authored world; receipts and all four retired-history arrays already empty; no adaptation.",
+      "license": "Apache-2.0"
+    }
+  },
+  "unchanged_originals": true,
+  "world": {
+    "authored_revision": 3,
+    "world_id": "f738ae0115517194eac6ecd7360a0bb4",
+    "authored_entities": 24,
+    "root_prop_templates": 1,
+    "custom_component_types": 2,
+    "work_capacity": 4,
+    "work_ticks_per_unit": 90,
+    "objective": 9
+  },
+  "documentary_inputs_not_included": {
+    "original_gameplay_project": {
+      "v1": {
+        "bytes": 471,
+        "sha256": "d76f611f378082b513acd262f53d55b4511fdb1e9f026e71c83c5f5b9746e433"
+      },
+      "v2": {
+        "bytes": 471,
+        "sha256": "d76f611f378082b513acd262f53d55b4511fdb1e9f026e71c83c5f5b9746e433"
+      }
+    },
+    "input_profile": {
+      "bytes": 1520,
+      "sha256": "c4ae0f212221861ea6e88418911d15a95ff696a95dbd41b10462824bbbcd1e19",
+      "included": false,
+      "reason": "Documentary hash only; omitted from this minimal source selection."
+    }
+  },
+  "content": "Native primitive geometry, authored text/style and original code; no task-specific external art/model/audio files.",
+  "native_cohort": "0.0.149",
+  "supplied_managed_sdk_checkpoint": "0.0.150",
+  "public_engine_checkpoint_at_qualification": "0.0.152",
+  "reproducibility": "The original admitted projects/artifacts and separate actual bundles were qualified. This minimal source record has not been independently built/adopted/exported as a portable public project.",
+  "source_changes": [],
+  "world_changes": [],
+  "portable_project_qualified": false,
+  "compiled_binaries_or_sdk_copies_included": false
+}

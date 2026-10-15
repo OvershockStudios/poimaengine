@@ -1,0 +1,1484 @@
+{
+  "component_schemas": {
+    "b30ac203016a409086e0561f072117c1": {
+      "fields": [
+        {
+          "capacity": 4,
+          "default": [],
+          "element_kind": "entity",
+          "id": "b30ac203016a409086e0561f072117c2",
+          "kind": "array",
+          "name": "Queue",
+          "unit": ""
+        }
+      ],
+      "fingerprint": "6c4f6efac507fd685e13824e24c63d97cab8abddf772a35a51c57dabb4ed849e",
+      "id": "b30ac203016a409086e0561f072117c1",
+      "name": "Line",
+      "version": 2
+    },
+    "b30ac203016a409086e0561f072117d1": {
+      "fields": [
+        {
+          "default": 0,
+          "id": "b30ac203016a409086e0561f072117d2",
+          "kind": "int32",
+          "name": "Progress",
+          "unit": ""
+        },
+        {
+          "default": 90,
+          "id": "b30ac203016a409086e0561f072117d3",
+          "kind": "int32",
+          "name": "Required",
+          "unit": ""
+        },
+        {
+          "default": 0,
+          "id": "b30ac203016a409086e0561f072117d4",
+          "kind": "int32",
+          "name": "Serial",
+          "unit": ""
+        }
+      ],
+      "fingerprint": "2609377ccce61f57c3d5fc2d2bc3be8de059d3ef950ab458034fc977d046e291",
+      "id": "b30ac203016a409086e0561f072117d1",
+      "name": "Core",
+      "version": 1
+    }
+  },
+  "entities": {
+    "00000000000000000000000000000001": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 10,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.14,
+            0.2,
+            0.24
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            20,
+            1,
+            20
+          ]
+        }
+      },
+      "name": "Floor",
+      "parent": null
+    },
+    "00000000000000000000000000000002": {
+      "components": {
+        "CharacterController": {
+          "camera": "00000000000000000000000000000003",
+          "height": 1.8,
+          "jump_speed": 5,
+          "radius": 0.3,
+          "speed": 4
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.95,
+            5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player",
+      "parent": null
+    },
+    "00000000000000000000000000000003": {
+      "components": {
+        "Camera": {
+          "far": 200,
+          "near": 0.1,
+          "vertical_fov": 70
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            -0.12186934340514748,
+            0,
+            0,
+            0.992546151641322
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player camera",
+      "parent": "00000000000000000000000000000002"
+    },
+    "00000000000000000000000000000004": {
+      "components": {
+        "LightingEnvironment": {
+          "ambient": [
+            0.12,
+            0.14,
+            0.18
+          ],
+          "exposure": 1,
+          "shadow_filter": "pcf3_fractional",
+          "shadow_resolution": 1024,
+          "sky": {
+            "enabled": true,
+            "ground": [
+              0.12,
+              0.1,
+              0.08
+            ],
+            "horizon": [
+              0.55,
+              0.7,
+              0.85
+            ],
+            "horizon_falloff": 0.35,
+            "sun": "00000000000000000000000000000005",
+            "sun_intensity": 20,
+            "sun_size_degrees": 0.53,
+            "zenith": [
+              0.06,
+              0.22,
+              0.55
+            ]
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Environment",
+      "parent": null
+    },
+    "00000000000000000000000000000005": {
+      "components": {
+        "Light": {
+          "color": [
+            1,
+            0.95,
+            0.85
+          ],
+          "enabled": true,
+          "intensity": 3.5,
+          "kind": "directional",
+          "shadow": {
+            "bias": 0.0001,
+            "distance": 80,
+            "enabled": true,
+            "normal_bias": 0.005
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -0.9614638770465722,
+            -0.0375843445352855,
+            -0.16953202249987687,
+            0.2131514098652129
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Sun",
+      "parent": null
+    },
+    "a10ac203016a409086e0561f07211001": {
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "game:b30ac203016a409086e0561f072117c1": {
+          "b30ac203016a409086e0561f072117c2": []
+        }
+      },
+      "name": "Native FIFO owner",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210001": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.13,
+            0.22,
+            0.27
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.65,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            7,
+            0.35,
+            1.8
+          ]
+        }
+      },
+      "name": "Casting table",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210002": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.2,
+            0.29,
+            0.34
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4.4,
+            1.05,
+            -3.2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.3,
+            2.1,
+            1.5
+          ]
+        }
+      },
+      "name": "Furnace body",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210003": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            1,
+            0.37,
+            0.05
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4.4,
+            1.25,
+            -2.43
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.85,
+            0.9,
+            0.08
+          ]
+        }
+      },
+      "name": "Furnace aperture",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210004": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.1,
+            0.16,
+            0.21
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4.4,
+            3,
+            -3.2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.6,
+            1.8,
+            0.6
+          ]
+        }
+      },
+      "name": "Chimney",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210005": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.1,
+            0.16,
+            0.23
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.3,
+            -5.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            2.6,
+            0.25
+          ]
+        }
+      },
+      "name": "Rear workshop wall",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721000a": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.19,
+            0.55,
+            0.57
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -2.4,
+            0.87,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.15,
+            0.08,
+            1.1
+          ]
+        }
+      },
+      "name": "Core work pad 1",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721000b": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.19,
+            0.55,
+            0.57
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -0.7999999999999998,
+            0.87,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.15,
+            0.08,
+            1.1
+          ]
+        }
+      },
+      "name": "Core work pad 2",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721000c": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.19,
+            0.55,
+            0.57
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0.8000000000000003,
+            0.87,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.15,
+            0.08,
+            1.1
+          ]
+        }
+      },
+      "name": "Core work pad 3",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721000d": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.19,
+            0.55,
+            0.57
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            2.400000000000001,
+            0.87,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.15,
+            0.08,
+            1.1
+          ]
+        }
+      },
+      "name": "Core work pad 4",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721001e": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4.2,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 1",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f0721001f": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3.3000000000000003,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 2",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210020": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -2.4000000000000004,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 3",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210021": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -1.5,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 4",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210022": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -0.6000000000000001,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 5",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210023": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0.2999999999999998,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 6",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210024": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            1.2000000000000002,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 7",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210025": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            2.0999999999999996,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 8",
+      "parent": null
+    },
+    "a20ac203016a409086e0561f07210026": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.68,
+            0.18
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            3.0,
+            0.15,
+            -0.7
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.15,
+            0.3,
+            0.15
+          ]
+        }
+      },
+      "name": "Harbor marker 9",
+      "parent": null
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 3,
+  "templates": {
+    "a10ac203016a409086e0561f07211002": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.96,
+            0.66,
+            0.19
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.25,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.7,
+            0.7,
+            0.7
+          ]
+        },
+        "game:b30ac203016a409086e0561f072117d1": {
+          "b30ac203016a409086e0561f072117d2": 0,
+          "b30ac203016a409086e0561f072117d3": 90,
+          "b30ac203016a409086e0561f072117d4": 0
+        }
+      },
+      "name": "Beacon core"
+    }
+  },
+  "ui": {
+    "e10ac203016a409086e0561f07210000": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 680
+        },
+        "left": {
+          "unit": "dp",
+          "value": 722
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 20
+        },
+        "width": {
+          "unit": "dp",
+          "value": 538
+        }
+      },
+      "name": "Workshop console",
+      "parent": null,
+      "style": {
+        "background_color": "#101d2af5",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210001": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 16
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "Foundry title",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#122333ee",
+        "color": "#ffcf70",
+        "font_size": 32
+      },
+      "text": "BEACON FOUNDRY",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210002": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 44
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 75
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "Contract output",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#122333ee",
+        "color": "#e9f1f5",
+        "font_size": 23
+      },
+      "text": "BEACON CONTRACT     0 / 9 cores finished",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210003": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 52
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 126
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "Production status",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#122333ee",
+        "color": "#75dfd9",
+        "font_size": 18
+      },
+      "text": "PRODUCTION PAUSED | press Start",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210004": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 40
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 195
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "FIFO slot 1",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#203544",
+        "color": "#e9f1f5",
+        "font_size": 21
+      },
+      "text": "1.  -- empty --",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210005": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 40
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 243
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "FIFO slot 2",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#203544",
+        "color": "#e9f1f5",
+        "font_size": 21
+      },
+      "text": "2.  -- empty --",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210006": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 40
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 291
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "FIFO slot 3",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#203544",
+        "color": "#e9f1f5",
+        "font_size": 21
+      },
+      "text": "3.  -- empty --",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210007": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 40
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 339
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "FIFO slot 4",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#203544",
+        "color": "#e9f1f5",
+        "font_size": 21
+      },
+      "text": "4.  -- empty --",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210008": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 62
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 406
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "Action feedback",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#122333ee",
+        "color": "#ffdc98",
+        "font_size": 19
+      },
+      "text": "Start the foundry, then submit beacon cores.",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210009": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 40
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 474
+        },
+        "width": {
+          "unit": "dp",
+          "value": 494
+        }
+      },
+      "name": "Cadence and update count",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#122333ee",
+        "color": "#9bb7c7",
+        "font_size": 18
+      },
+      "text": "90 ticks / core | 4 slots | 9 cores to supply",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210010": {
+      "action": "start",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 532
+        },
+        "width": {
+          "unit": "dp",
+          "value": 150
+        }
+      },
+      "name": "START",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#285665",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "START",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210011": {
+      "action": "pause",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 188
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 532
+        },
+        "width": {
+          "unit": "dp",
+          "value": 328
+        }
+      },
+      "name": "PAUSE / RESUME",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#285665",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "PAUSE / RESUME",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210012": {
+      "action": "submit",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 22
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 590
+        },
+        "width": {
+          "unit": "dp",
+          "value": 228
+        }
+      },
+      "name": "SUBMIT CORE",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#285665",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "SUBMIT CORE",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210013": {
+      "action": "save",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 266
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 590
+        },
+        "width": {
+          "unit": "dp",
+          "value": 115
+        }
+      },
+      "name": "SAVE",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#285665",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "SAVE",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210014": {
+      "action": "load",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 397
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 590
+        },
+        "width": {
+          "unit": "dp",
+          "value": 119
+        }
+      },
+      "name": "LOAD",
+      "parent": "e10ac203016a409086e0561f07210000",
+      "style": {
+        "background_color": "#285665",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "LOAD",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210020": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 48
+        },
+        "left": {
+          "unit": "dp",
+          "value": 20
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 20
+        },
+        "width": {
+          "unit": "dp",
+          "value": 680
+        }
+      },
+      "name": "Scene caption",
+      "parent": null,
+      "style": {
+        "background_color": "#101d2add",
+        "color": "#e9f1f5",
+        "font_size": 20
+      },
+      "text": "HARBOR WORKSHOP  /  NINE CORES TO LIGHT THE COAST",
+      "visible": true
+    },
+    "e10ac203016a409086e0561f07210021": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 78
+        },
+        "left": {
+          "unit": "dp",
+          "value": 20
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 615
+        },
+        "width": {
+          "unit": "dp",
+          "value": 680
+        }
+      },
+      "name": "Play hint",
+      "parent": null,
+      "style": {
+        "background_color": "#101d2add",
+        "color": "#e9f1f5",
+        "font_size": 21
+      },
+      "text": "Submit up to four cores. Pause to inspect or save.\nOnly the oldest admitted core is processed.",
+      "visible": true
+    }
+  },
+  "version": 4,
+  "world_id": "f738ae0115517194eac6ecd7360a0bb4"
+}

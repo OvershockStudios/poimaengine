@@ -1,0 +1,336 @@
+{
+  "format": "poima.agent-beacon-qualification.v1",
+  "checkpoint": "0.0.153",
+  "date": "2026-10-15",
+  "passed": true,
+  "qualification_status": "Qualified bounded original fresh management workflow: original process/submission audit, independent source and actual relocated causal campaigns, native UI/capture audit and root pixel inspection.",
+  "task_family": "simulation/management",
+  "fixture": "docs/evidence/fixtures/agent-beacon-foundry",
+  "scope": "One fresh agent-authored game with V1/V2 durable upgrade, independent source and actual bundled readonly causal campaigns. No general success-rate, portable public rebuild, clean-machine, physical input, performance or Alpha-complete claim.",
+  "versions": {
+    "current_public_checkpoint_at_qualification": "0.0.152",
+    "native_runtime": "0.0.149",
+    "supplied_managed_sdk": "0.0.150",
+    "artifact_descriptor_metadata": "0.0.150",
+    "bundled_executable": {
+      "bytes": 22229504,
+      "sha256": "4f5d1a222614834120e1fd76013a9f833791a7168a27d637e6c95871604f6a44"
+    },
+    "runtime_files_per_game": 49,
+    "evidence_checkpoint": "0.0.153"
+  },
+  "provider": {
+    "client": "Codex CLI",
+    "version": "0.162.1",
+    "requested_model": "gpt-6.1-sol",
+    "reported_actual_model_identity": null,
+    "default_reasoning_effort": true,
+    "provider_seconds": 794.7352328939887,
+    "owner_seconds": 850.987197873008,
+    "terminal_completion": true,
+    "natural_provider_group_closure": true,
+    "script_attempts": 16,
+    "failed_script_attempts": 4,
+    "native_invocations": 23,
+    "publication_submissions": 2,
+    "export_submissions": 2,
+    "admitted_windows_jobs_natural": true,
+    "supplied_context": "Frozen functional task plus generic engine/SDK references; no prior game implementation or evaluator feedback.",
+    "file_policy_scope": "Recorded commands reviewed consistently; trusted ownership, not OS sandbox/per-native ancestry or proof of every historical shell side effect.",
+    "controlled_success_rate_experiment": false
+  },
+  "game": {
+    "name": "Beacon Foundry",
+    "module_identity": "beacon.foundry",
+    "type": "Beacon.Foundry",
+    "sources": {
+      "v1": {
+        "bytes": 5533,
+        "sha256": "5c8b4478145f6f34c22a762f0bed46c5eebab13c0aea552d4aa8475e41bb96e3"
+      },
+      "v2": {
+        "bytes": 5720,
+        "sha256": "233ac687d42a5ba3b76540455c6a9b0b10caa8d8ffa338412b691be4d35efc3b"
+      }
+    },
+    "world": {
+      "bytes": 32247,
+      "sha256": "0f70a45149d937492b1d99d7fd9d8014f2d086816062d0859e53fef4275a61cb"
+    },
+    "globals_v1": 12,
+    "globals_v2": 13,
+    "state_bytes_both_versions": 64,
+    "global_upgrade": "Preserve all12 stable IDs/kinds/defaults; default only AfterUpdate int32 to literal zero; changed field offsets are mapped by stable IDs. No component mapping.",
+    "native_components": {
+      "Line": "EntityId buffer capacity4 for authoritative ordered unfinished work",
+      "Core": "Progress/Required/Serial int32 fields"
+    },
+    "production": "Only FIFO head progresses,90 unpaused callbacks/unit, objective9. Eligible unticked full Submit refuses without mutating queue/work/resources/output.",
+    "content": "Native primitive geometry and authored text/style/code; no task-specific external art, music or model files."
+  },
+  "independent": {
+    "source": {
+      "passed": true,
+      "native_version": "0.0.149",
+      "rpc": 2653,
+      "candidate_validated_successes": 2626,
+      "stable19_validated_successes": 2617,
+      "expected_rejections": 12,
+      "events": 100,
+      "raw_native_save_checksums": 28,
+      "whole_same_image_or_denial_pairs": 4,
+      "whole_refusal_comparisons": 1,
+      "whole_approved_global_only_upgrades": 1,
+      "allocator_points": 26,
+      "all_global_tick_forecasts": 36,
+      "ordinary_control_forecasts": 22,
+      "source_derived_global_fields": [
+        12,
+        13
+      ],
+      "seconds": 18.96541200001957,
+      "gameplay_owners": 3,
+      "natural_job_processes": 4,
+      "active_after": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "named_original_source_roots_unavailable": 0,
+      "named_roots_restored_exact": null,
+      "actual_snapshot_comparisons": "Entire typed document/snapshot before restored callbacks; approved upgrade changes only bound image/schema/content/revision/global mapping plus derived checksum.",
+      "continuation_comparisons": "Complete 12/13-global and FIFO/per-unit native component forecasts, live membership, strong references and branch-aware allocator observations; not whole-internal-state equality on every later Tick."
+    },
+    "relocated_readonly": {
+      "passed": true,
+      "native_version": "0.0.149",
+      "rpc": 2644,
+      "candidate_validated_successes": 2614,
+      "stable19_validated_successes": 2614,
+      "expected_rejections": 12,
+      "events": 100,
+      "raw_native_save_checksums": 28,
+      "whole_same_image_or_denial_pairs": 4,
+      "whole_refusal_comparisons": 1,
+      "whole_approved_global_only_upgrades": 1,
+      "allocator_points": 26,
+      "all_global_tick_forecasts": 36,
+      "ordinary_control_forecasts": 22,
+      "source_derived_global_fields": [
+        12,
+        13
+      ],
+      "seconds": 30.322825099981856,
+      "gameplay_owners": 3,
+      "natural_job_processes": 7,
+      "active_after": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "named_original_source_roots_unavailable": 3,
+      "named_roots_restored_exact": true,
+      "actual_snapshot_comparisons": "Entire typed document/snapshot before restored callbacks; approved upgrade changes only bound image/schema/content/revision/global mapping plus derived checksum.",
+      "continuation_comparisons": "Complete 12/13-global and FIFO/per-unit native component forecasts, live membership, strong references and branch-aware allocator observations; not whole-internal-state equality on every later Tick."
+    },
+    "outcomes": [
+      "Earned V1 output1 with three live units and partially processed head; compiled Save succeeds durably.",
+      "Same-image ordinary Load restores the complete native checkpoint before callbacks; source ticket halves/sequence remain intact.",
+      "Changed-image ordinary load and wrong-plan-hash load deny with whole state/routing/file invariance.",
+      "Explicit approved V2 upgrade preserves all old data and defaults only the new counter; no first-restored callback occurs before comparison.",
+      "Warm V2-born unit actually completes/removes; a new healthy unfinished V2 save has output6/counter5/head7 progress30/90.",
+      "Fresh bundled V2 cold-loads whole exact save; ordinary new births8/9 finish to output9/counter8 with correct strong-reference repair."
+    ],
+    "runtime_ticket_forecast": "Queries actual old native ticket before first restored callback; only Callbacks+1, SaveStatus2 and actual-result-dependent Feedback change. No zero-sequence/guessed epoch normalization.",
+    "bundled_route_proof": "Pinned NativeOwner source chooses verified manifest-declared executable and own descriptor; actual readonly world/module/native_library observations, original no-bootstrap wires and natural seven-process Job. No independently retained per-owner OS argv claim."
+  },
+  "visual": {
+    "passed": true,
+    "native_capture_campaign": true,
+    "offline_ui_review": true,
+    "pixel_inspection": true,
+    "rpc": 1179,
+    "candidate_validated_successes": 1145,
+    "stable19_validated_successes": 1145,
+    "expected_retired_entity_errors": 3,
+    "events": 29,
+    "native_gameplay_owners": 1,
+    "paused_player_lifetimes": 3,
+    "exclusive_captures": 3,
+    "natural_job_processes": 3,
+    "forced_cleanup": false,
+    "named_roots_unavailable": 4,
+    "named_roots_restored_exact": true,
+    "run_local_raw_save_checksums": 11,
+    "qualified_healthy_input_checksums": 1,
+    "whole_render_before_after_pairs": 3,
+    "whole_same_image_cold_loads": 1,
+    "all_global_callback_forecast_fields": 13,
+    "complete_selected_observation_groups": 9,
+    "essential_ui_elements_per_sample": 16,
+    "resolution": [
+      1280,
+      720
+    ],
+    "ui_scale": 1.0,
+    "seconds": 19.770447299990337,
+    "images": [
+      {
+        "label": "initial",
+        "file": "docs/evidence/agent-beacon-foundry-initial.png",
+        "bytes": 97755,
+        "sha256": "a2c8b1eebffd4bd0a4a5ce1e0ed86cb37990ff0326a7af2bac16708b0cf0b82e",
+        "native_bmp": {
+          "relative": "initial.bmp",
+          "bytes": 3686538,
+          "sha256": "a6970d853881040af80b771b2429b31533b44a5988c329e50dd742ef77c7f764"
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 4,
+        "object_count": 19,
+        "width": 1280,
+        "height": 720,
+        "renderer_errors": 0,
+        "exact_frame_geometry_sides": [],
+        "shared_committed_state_join": true
+      },
+      {
+        "label": "partial",
+        "file": "docs/evidence/agent-beacon-foundry-partial.png",
+        "bytes": 102038,
+        "sha256": "9f11d5e536db8c48fe38c8a9686b3e3d1de3f0b08ac3bc91e2a891f128a763e5",
+        "native_bmp": {
+          "relative": "partial.bmp",
+          "bytes": 3686538,
+          "sha256": "a790eba930d37133cf287caefa5fa1b62e47940d051f08602661dda011ad55b3"
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 4,
+        "object_count": 20,
+        "width": 1280,
+        "height": 720,
+        "renderer_errors": 0,
+        "exact_frame_geometry_sides": [],
+        "shared_committed_state_join": true
+      },
+      {
+        "label": "completed",
+        "file": "docs/evidence/agent-beacon-foundry-completed.png",
+        "bytes": 95081,
+        "sha256": "d5f53e92d82006e77be928ffa8307f8ec39f0b0581e4cbb2e2468f766dd1fa66",
+        "native_bmp": {
+          "relative": "completed.bmp",
+          "bytes": 3686538,
+          "sha256": "05e7f64b1856eae4e8efe0ac7b89776f0eefee276030fb65212414e538f54b7f"
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 4,
+        "object_count": 19,
+        "width": 1280,
+        "height": 720,
+        "renderer_errors": 0,
+        "exact_frame_geometry_sides": [],
+        "shared_committed_state_join": true
+      }
+    ],
+    "initial_counter_zero_displayed": false,
+    "minor_ui_issue": "Paused status wraps 'available' mid-word; complete text remains readable.",
+    "frame_join": "All three captures have differing UI-before/after and image frame IDs. Only shared unchanged paused player/session/tick/UI state is joined; no atomic frame/layout claim.",
+    "scope": "Three native paused views and ordinary restored-lineage continuation, not physical input, real-time performance or polished graphics."
+  },
+  "prior_outcomes": [
+    {
+      "checkpoint": "0.0.150",
+      "outcome": "Original management game failed immediate unticked full-capacity refusal. Later positive upgrade checks and the separate SDK fixture do not repair that original game."
+    },
+    {
+      "checkpoint": "0.0.151",
+      "outcome": "Separate fresh provider run ended at a provider session limit without accepted final completion. It remains failed; not a game-correctness or controlled model comparison."
+    }
+  ],
+  "qualification_harness_history": [
+    {
+      "scope": "relocated_launch_metadata",
+      "outcome": "Convenience receipt script failed; actual already-admitted wrapper ran once and enforced input checks. Explicit postlaunch observation retained; no fabricated prior receipt or restart."
+    },
+    {
+      "scope": "offline_relocated_audit",
+      "outcome": "First independent audit rejected an auditor Path-vs-JSON helper misuse. Authorized successor uses direct path equality, preserves failed attempt and rechecks the same untouched native result; no game or state allowance change."
+    },
+    {
+      "scope": "offline_visual_review",
+      "outcome": "A preliminary reviewer assertion required unique labels although two legitimate Submit events share a label. Review instead preserves all29 uniquely numbered event files/28 labels. Original native run and comparisons are unchanged; no rerender."
+    }
+  ],
+  "portable_fixture": {
+    "source_world_bytes_preserved": true,
+    "original_profile_and_csproj_included": false,
+    "portable_rebuild_adopt_export_qualified": false,
+    "redistributed_binaries": false
+  },
+  "limits": [
+    "One management workflow and fixed small greybox game; not a general agent benchmark, polished visual-quality or representative performance result.",
+    "Only named owned source/evaluator roots were absent and restored; generic checkout, toolchains and execution infrastructure remained.",
+    "Logical compiled controls and actual native state, not physical mouse/controller, audio listening or click-to-photon qualification.",
+    "Broader Alpha workload, API/documentation and delivery gates remain independent."
+  ],
+  "retained_identity_references": {
+    "provider_owner": {
+      "bytes": 18873,
+      "sha256": "91a69d744a6084ceef6fb8f369305493f56269d8cdb612d83a81e07013e2f880"
+    },
+    "source_native_qualification": {
+      "bytes": 2065,
+      "sha256": "84804d1b107c6b4ee259c0ae0a11d90db665e4a720fe487cb0170f3145ff24db"
+    },
+    "source_independent_review": {
+      "bytes": 72168,
+      "sha256": "7a15c8589e5cec2335bf802ea7fa1c3c2096e1dcb0ed1580229d842157a3697b"
+    },
+    "relocated_native_qualification": {
+      "bytes": 3563,
+      "sha256": "822c6609eabaa0eef62c237fbc9119b0705fd08c48191f174dc13250049a2a18"
+    },
+    "relocated_independent_review": {
+      "bytes": 99934,
+      "sha256": "2c2813f54d003eb397f8cd0ebe77cc7737b30794bf606b23ce08f83f660c5062"
+    },
+    "relocated_audit_history_index": {
+      "bytes": 6696,
+      "sha256": "2956245ec9e9da976deba52d19af365066d8883bd802b4bd4356756808a61204"
+    },
+    "visual_native_qualification": {
+      "bytes": 4023,
+      "sha256": "4d19d84287872987eb6ca40d87489d15d4d1ccd785adc39e5f54c5176a6283cf"
+    },
+    "visual_independent_review": {
+      "bytes": 29849,
+      "sha256": "9b302b6193ea569b1423ae99672c4953814604fa6070a44f85128e07b982cdf6"
+    },
+    "pixel_review": {
+      "bytes": 3640,
+      "sha256": "e773b0bfe06991c5f138aab1604d41febd0b8d4d632b3e735048d02953e4f59a"
+    },
+    "lossless_conversion": {
+      "bytes": 3355,
+      "sha256": "2fb13c11a7b0e61b8350c6f89cbc3eb94fd6328035656d659cc9efa2cf32a7f2"
+    },
+    "fresh_workflow_final": {
+      "bytes": 3094,
+      "sha256": "76dc6023edf45734a830b824c878a07100107c9fe157008efc6822d39d8e6b77"
+    }
+  },
+  "independent_totals": {
+    "native_rpc": 6476,
+    "gameplay_owners": 7,
+    "natural_job_processes": 14,
+    "exclusive_captures": 3,
+    "forced_cleanup": false
+  },
+  "alpha_family_matrix": {
+    "selected_families": [
+      "combat",
+      "puzzle/adventure",
+      "simulation/management"
+    ],
+    "both_agent_clients_represented": true,
+    "selected_matrix_qualified": true,
+    "whole_alpha_release_qualified": false
+  }
+}

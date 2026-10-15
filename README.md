@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.152.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.153.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -26,17 +26,17 @@ The desktop editor is a visual client of the same engine, with a hierarchy, type
 
 Explicit [live material editing](docs/LIVE_MATERIALS.md) applies authored color, emission, metallic and roughness changes while the game continues. [Live texture editing](docs/LIVE_TEXTURES.md) also adopts all five PBR maps, sampler settings and map strengths while preserving gameplay and save state. Separate acceptance, submission and presentation receipts let tools check which snapshot reached rendering.
 
-Three recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md), and [Codex builds Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) with a native inventory, recipes and styled UI. They compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
+Three game families now have qualifying fresh agent workflows, with independent gameplay, saved-state continuation and relocated Windows export checks:
 
-[DEPOT RUN](docs/evidence/fixtures/agent-depot/README.md) extends that evidence through licensed imports, agent-submitted Native AOT publication and verified Windows export. Its first attempt stopped at a host outage; a separate agent session completed the workflow after an explicit infrastructure recovery. The retained source and public verifier pass native gameplay, complete checkpoint restoration and relocated-bundle checks. [Attempts and results](docs/evidence/m2-agent-depot.json).
+| Game | Agent | What it exercises |
+| --- | --- | --- |
+| [Switchback Range](docs/evidence/fixtures/agent-switchback-fresh/README.md) | Codex | First-person movement, imported animation, aiming, damage, death/retry and checkpoints. [Second fresh run](docs/evidence/m2-agent-switchback-fresh-repeat.json). |
+| [Pump House](docs/evidence/fixtures/agent-pumphouse/README.md) | Claude | Inventory, interactions, persistent repair mechanisms and cold checkpoint continuation. |
+| [Beacon Foundry](docs/evidence/fixtures/agent-beacon-foundry/README.md) | Codex | A bounded native work queue, real entity spawning and progress retained through an explicit save-schema upgrade. |
 
-[Switchback Range](docs/evidence/fixtures/agent-switchback/README.md) adds a small agent-authored FPS with crouch clearance, actual camera-ray shots, a patrolling animated target, ADS, reloads and checkpoints. Its public source rebuilds to Native AOT and passes thirteen independent gameplay groups with complete save and cold-owner comparisons, including the actual relocated game service. Both original fresh-workflow verdicts remain failed; a corrected receipt audit and independent game checks establish separate evidence. [Source, reproduction and results](docs/evidence/fixtures/agent-switchback/README.md).
+Each has rendered observations with its declared original project paths unavailable. These are small demonstrations under documented SDK/toolchain contexts, not a controlled agent success-rate experiment or an Alpha release. Earlier failed attempts remain recorded. Switchback's published source also [rebuilds independently](docs/evidence/m2-agent-switchback-fresh-rebuild.json); Beacon's minimal public source record has a separate, unqualified rebuild boundary. The [Alpha roadmap](docs/ALPHA_ROADMAP.md) tracks the remaining performance, content, interaction and delivery gates.
 
-A [fresh Switchback implementation](docs/evidence/fixtures/agent-switchback-fresh/README.md) and a [second fresh run](docs/evidence/m2-agent-switchback-fresh-repeat.json) each complete supervised create/import/author/compile/playtest/repair/publish/adopt/export workflows and thirteen independent native gameplay groups with complete save comparisons. Their exported games also pass the same groups and Vulkan observations while the declared original project paths are unavailable. These are two bounded runs under documented input contexts; earlier failures remain recorded. [First-run evidence](docs/evidence/m2-agent-switchback-fresh.json).
-
-The earlier fresh implementation’s published C# and project also [rebuild unchanged](docs/evidence/m2-agent-switchback-fresh-rebuild.json) against the current SDK. The newly compiled module passes all thirteen native gameplay groups and complete save-continuation comparisons independently of the original binary. An [additional independent implementation](docs/evidence/fixtures/agent-switchback-repeat/README.md) also passes source and relocated gameplay checks; its original automation workflow remains failed.
-
-A fresh Claude session built [Pump House](docs/evidence/fixtures/agent-pumphouse/README.md), a first-person repair adventure with inventory and persistent mechanisms. Independent source and relocated-export checks verify real interactions, complete checkpoint restoration, cold continuation and New Game preserving the old checkpoint. This adds puzzle/adventure evidence alongside the Codex combat exercises; the [broader Alpha gates](docs/ALPHA_ROADMAP.md) remain open.
+Earlier exercises include an [escape room](docs/evidence/fixtures/agent-escape/README.md), [wave defense](docs/evidence/fixtures/agent-defense/README.md), [Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) and [DEPOT RUN](docs/evidence/fixtures/agent-depot/README.md). The [original](docs/evidence/fixtures/agent-switchback/README.md) and [additional](docs/evidence/fixtures/agent-switchback-repeat/README.md) Switchback records distinguish independent game passes from failed original automation workflows.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 
