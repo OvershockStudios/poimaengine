@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.159
+
+- Qualify twenty live PNG texture edits at **0.909 s p95**, including native decoding, mip cooking, adoption and fresh rendered verification on the full Performance Yard. Report verifier preparation separately; the preparation-through-verification p95 is 1.426 s.
+- Preserve complete game state, original scalar materials and inherited maps through every adoption. Verify missing-package failure, exact state preservation and successful retry after restoration. [Results and scope](docs/evidence/m2-live-texture-iteration.json).
+
 ## 0.0.158
 
 - Reserve a bounded full-frame buffer for exclusive BMP captures, avoiding SDL's repeated small reallocations while preserving the serializer, exclusive creation and durable writes.

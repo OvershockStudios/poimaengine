@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.158.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.159.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -48,7 +48,7 @@ Earlier exercises include an [escape room](docs/evidence/fixtures/agent-escape/R
 
 The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits. [Runtime game-session v1](docs/RUNTIME_GAME_SESSION_V1.md) adds a separate 19-method boundary for running games: typed state, spatial queries, logical controls and external saves. Both have request/result compatibility gates and native behavioral checks. The [Python client](docs/PYTHON_CLIENT.md) provides guarded authoring and opt-in frozen result validation. The [gameplay, content and save profile](docs/ALPHA_GAMEPLAY_PROFILE.md) distinguishes these selected promises from experimental APIs and native binary compatibility.
 
-A [Windows CoreCLR iteration check](docs/evidence/m2-relay-yard-iteration-156.json) passes twenty real C# edits at **2.206 s p95**, preserving the full saved game state and verifying changed behavior on the first updated tick. A [1080p live-material check](docs/evidence/m2-live-material-iteration.json) passes twenty edits across 24 animated characters at **0.660 s p95**, with exact reference images and complete saved-state checks. These meet their selected iteration targets on the tested laptop; they are not general latency guarantees. A separate [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation. The broader [Alpha gates](docs/ALPHA_ROADMAP.md) remain open.
+A [Windows CoreCLR iteration check](docs/evidence/m2-relay-yard-iteration-156.json) passes twenty real C# edits at **2.206 s p95**, preserving the full saved game state and verifying changed behavior on the first updated tick. At 1080p, twenty [scalar-material edits](docs/evidence/m2-live-material-iteration.json) reach **0.660 s p95**, and twenty [PNG texture edits](docs/evidence/m2-live-texture-iteration.json) reach **0.909 s p95**, including decoding and cooking. Both retain 24 animated characters, exact reference images and complete saved-state checks. These meet their selected iteration targets on the tested laptop; they are not general latency guarantees. A separate [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation. The broader [Alpha gates](docs/ALPHA_ROADMAP.md) remain open.
 
 Joined [runtime observations](docs/RUNTIME_OBSERVATION.md) let tools inspect live poses and selected component fields together. A provider-free Workshop replay comparison uses 49% fewer native RPCs with identical checked gameplay and checkpoint state. [Reproduction and results](docs/RUNTIME_OBSERVATION.md#reproduce-the-replay-comparison).
 

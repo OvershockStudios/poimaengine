@@ -1,0 +1,2192 @@
+{
+  "format": "poima.live-texture-iteration.v1",
+  "checkpoint": "0.0.159",
+  "date": "2026-10-15",
+  "functional_passed": true,
+  "iteration_budget_passed": true,
+  "alpha_gate_closed": false,
+  "measured_native_engine_version": "0.0.158",
+  "retained_gameplay_engine_metadata": "0.0.94",
+  "timing_headline": {
+    "primary_p95_seconds": 0.9092923,
+    "preparation_inclusive_descriptive_p95_seconds": 1.4256265,
+    "scope": "Primary begins before the timed complete authored-byte verification read and native PNG import, AFTER separately recorded oracle preparation. That preparation includes a separate pre-author semantic read. Complete functional checks follow the primary interval. Preparation-inclusive descriptive p95 is not the one-second primary gate or total task wall time; the pinned worker timing text below is retained unchanged."
+  },
+  "scope": "Twenty timed encoded-PNG texture edits over24 existing skinned meshes in the complete2394-entity Performance Yard; actual native read/decode/mips/cook even for existing packages, guarded author/adopt, presented observation and fresh hardware pixel proof.",
+  "native_source_base_commit": "55f0eebd802e105a118e9be9aa66e3481930ce97",
+  "compiled_native_source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 84766,
+      "sha256": "eed05e8ee63b4d018cbe4069e3d244190d76751395b1d8c81f84a92fd411f09c"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 335392,
+      "sha256": "150acb4af501c5739ad0d74daf40699272cbc4f819640fd05be2a89d38902752"
+    }
+  },
+  "source_authority": {
+    "build/native-snapshot-0.0.158/native-build-1/build-result.json": {
+      "bytes": 56160,
+      "sha256": "614d42f95866460351c05aef1c92773e294a48ccfab686ba8f7c1d3d1b9cb916"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/source-pins.json": {
+      "bytes": 45306,
+      "sha256": "784a7a81ddf2f8cdd833086724ad6082ecc10673996f1c05ece0ba5f2824dda7"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/sealed-artifacts.json": {
+      "bytes": 2109,
+      "sha256": "4b46eafb9b423dece48cafa51bdb39002b576fa4c2118c164a05d766a07f9254"
+    }
+  },
+  "native_build": {
+    "version": "0.0.158",
+    "cache_generation": 25,
+    "source_rows": 302,
+    "sealed_artifact_count": 12,
+    "artifacts": {
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima.exe": {
+        "bytes": 26053632,
+        "sha256": "36e8f4184b8abfb109fb5f2ca756d475aca6230ea65065af425fe151a96bd361"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima_desktop.dll": {
+        "bytes": 298481664,
+        "sha256": "37ebd4c2ab688dd0668837bf0321a867f72f134189905954748e66beb6f37816"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-poll-test.exe": {
+        "bytes": 1111552,
+        "sha256": "2236c5f8c76ea2624561057e7d02ef98554a1c0bd20eddd22db310261a79bc71"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-owner-poll-disabled-test.exe": {
+        "bytes": 1246720,
+        "sha256": "3ff89733817be6e7fd93f813d3456f64c0559c053803b84fd440af96bb23849e"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-window-test.exe": {
+        "bytes": 14589952,
+        "sha256": "f4354ee1e80875b5b9b92b76e3518bdad931fbde5f95ee8bdbf418e34fce5b20"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-replacement-test.exe": {
+        "bytes": 18504192,
+        "sha256": "0995f340bb2508366038b46f4367e08c6e8afb30debefdb7f03c06602f2417c6"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-world-session-test.exe": {
+        "bytes": 24928256,
+        "sha256": "3fb9033a008b73c5cb51fdc08ab6dbfddfce43660a7fcc683f20d387fecdae7a"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-local-session-test.exe": {
+        "bytes": 1283584,
+        "sha256": "8336eca06a1e4b8f45340afcd7e5b154741d6df1a6e65efe11495efcf84e15f4"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-capture-image-test.exe": {
+        "bytes": 1318400,
+        "sha256": "e222146ae0fc652f89271ffcfd9b7f794f00ab8edc221769764d7eb1946ac68f"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/library/libpoima_core.a": {
+        "bytes": 226116218,
+        "sha256": "4ef39824c287a64f9e9d22481511da328d89b47332a1a2749e991728742f4bdb"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/library/libpoima_desktop.dll.a": {
+        "bytes": 3876,
+        "sha256": "df4b5bac6f0aee22da2376eb1e9543a5eacc147dc4a84e2a0f3d88e72ecd24bb"
+      }
+    },
+    "scope": "Actual Windows native158 generation25 sealed images used by this cohort."
+  },
+  "workload": {
+    "authored_entities": 2394,
+    "selected_skinned_meshes": 24,
+    "props": 768,
+    "dynamic_bodies": 32,
+    "lights": 64,
+    "settle_ticks": 60,
+    "paused_tick": 61,
+    "camera_id": "00000000000000000000000000000066",
+    "width": 1920,
+    "height": 1080,
+    "lighting_path": "deferred",
+    "ambient_occlusion": {
+      "mode": "gtao",
+      "quality": "medium",
+      "radius": 1
+    },
+    "reconstruction": "none",
+    "samples": 1,
+    "frames_in_flight": 2,
+    "audio_enabled": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "hardware": true,
+    "nvrhi_errors": 0,
+    "retained_module": {
+      "bytes": 1445888,
+      "sha256": "ba66e320bbe0375dca25b4934112e7c4bc487e03a5f8980a0618b5cd3b578f80"
+    }
+  },
+  "measured": {
+    "passed": true,
+    "budget_met": true,
+    "rpc_pairs": 344,
+    "source_pins": 412,
+    "worker_seconds": 70.97041870001704,
+    "owner": {
+      "total_processes": 4,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 78.71864279999863
+    },
+    "statistics": {
+      "edit_to_presented_observation_seconds": {
+        "count": 20,
+        "maximum": 0.7328182,
+        "mean": 0.68743024,
+        "nearest_rank": 19,
+        "p95": 0.7280027
+      },
+      "edit_to_verified_visible_seconds": {
+        "count": 20,
+        "maximum": 0.9107622,
+        "mean": 0.8538929,
+        "nearest_rank": 19,
+        "p95": 0.9092923
+      },
+      "oracle_preparation_seconds": {
+        "count": 20,
+        "maximum": 0.6248985,
+        "mean": 0.464326275,
+        "nearest_rank": 19,
+        "p95": 0.5804977
+      },
+      "preparation_to_verified_visible_seconds": {
+        "count": 20,
+        "maximum": 1.4581863,
+        "mean": 1.31822108,
+        "nearest_rank": 19,
+        "p95": 1.4256265
+      }
+    },
+    "mean_actual_timed_rpc_seconds": {
+      "asset.image.import": 0.16395002499921246,
+      "world.transact": 0.1347744300001068,
+      "runtime.texture.apply": 0.30571984499983956,
+      "player.capture": 0.05081334499700461
+    },
+    "timing_contract": {
+      "budget_seconds": 1,
+      "cache_policy": "Normal warm OS/filesystem/GPU caches. Every timed import still calls native asset.image.import on original encodedPNG; no pre-cooked adoption or request replay substitutes for it.",
+      "p95": "nearest rank19 of20",
+      "primary": "perf_counter_ns before first pre-import complete authored byte read AND native asset.image.import; includes actual PNG read/decode/mips/cook/cached-package validation, author/apply, matching presented observation, fresh capture/fullRGB/effect/mask writes and image fences",
+      "samples": 20,
+      "untimed": "Four current-owner setup imports/adoptions toT3, external reference decoding/precomputation, next complete author document/receipt/bytes preparation, old runtime/map guards, actual complete texture/scalar inspections and full native save/document/payload pairs AFTER every primary interval"
+    },
+    "samples": {
+      "columns": [
+        "began_ns",
+        "edit_to_presented_observation_seconds",
+        "edit_to_verified_visible_seconds",
+        "label",
+        "oracle_preparation_ended_ns",
+        "oracle_preparation_seconds",
+        "oracle_preparation_started_ns",
+        "preparation_to_verified_visible_seconds",
+        "presented_observed_ns",
+        "sample",
+        "state",
+        "verified_visible_ns"
+      ],
+      "rows": [
+        [
+          485030422328100,
+          0.6239828,
+          0.7741204,
+          "sample-01-t0",
+          485030422321700,
+          0.4306982,
+          485029991623500,
+          1.204825,
+          485031046310900,
+          1,
+          "t0",
+          485031196448500
+        ],
+        [
+          485032716159400,
+          0.620903,
+          0.7661508,
+          "sample-02-t1",
+          485032716152400,
+          0.4124075,
+          485032303744900,
+          1.1785653,
+          485033337062400,
+          2,
+          "t1",
+          485033482310200
+        ],
+        [
+          485035068358800,
+          0.6161329,
+          0.7624744,
+          "sample-03-t2",
+          485035068358000,
+          0.4273056,
+          485034641052400,
+          1.1897808,
+          485035684491700,
+          3,
+          "t2",
+          485035830833200
+        ],
+        [
+          485037439335200,
+          0.6675357,
+          0.808234,
+          "sample-04-t3",
+          485037439333900,
+          0.5324994,
+          485036906834500,
+          1.3407347,
+          485038106870900,
+          4,
+          "t3",
+          485038247569200
+        ],
+        [
+          485039860691700,
+          0.6603208,
+          0.813522,
+          "sample-05-t0",
+          485039860690300,
+          0.5554522,
+          485039305238100,
+          1.3689756,
+          485040521012500,
+          5,
+          "t0",
+          485040674213700
+        ],
+        [
+          485042258888400,
+          0.7034864,
+          0.8627356,
+          "sample-06-t1",
+          485042258887800,
+          0.5310815,
+          485041727806300,
+          1.3938177,
+          485042962374800,
+          6,
+          "t1",
+          485043121624000
+        ],
+        [
+          485044810806600,
+          0.6813394,
+          0.8451275,
+          "sample-07-t2",
+          485044810805300,
+          0.5804977,
+          485044230307600,
+          1.4256265,
+          485045492146000,
+          7,
+          "t2",
+          485045655934100
+        ],
+        [
+          485047092960000,
+          0.6952599,
+          0.8612285,
+          "sample-08-t3",
+          485047092958900,
+          0.4059983,
+          485046686960600,
+          1.2672279,
+          485047788219900,
+          8,
+          "t3",
+          485047954188500
+        ],
+        [
+          485049682855500,
+          0.6725277,
+          0.8289221,
+          "sample-09-t0",
+          485049682854300,
+          0.4369144,
+          485049245939900,
+          1.2658377,
+          485050355383200,
+          9,
+          "t0",
+          485050511777600
+        ],
+        [
+          485052242673600,
+          0.6923964,
+          0.8698887,
+          "sample-10-t1",
+          485052242672100,
+          0.4230523,
+          485051819619800,
+          1.2929425,
+          485052935070000,
+          10,
+          "t1",
+          485053112562300
+        ],
+        [
+          485054841263000,
+          0.7220968,
+          0.9074041,
+          "sample-11-t2",
+          485054841261900,
+          0.4337006,
+          485054407561300,
+          1.3411058,
+          485055563359800,
+          11,
+          "t2",
+          485055748667100
+        ],
+        [
+          485057492315400,
+          0.7186634,
+          0.8962034,
+          "sample-12-t3",
+          485057492314400,
+          0.4369907,
+          485057055323700,
+          1.3331951,
+          485058210978800,
+          12,
+          "t3",
+          485058388518800
+        ],
+        [
+          485060126804900,
+          0.651686,
+          0.8332858,
+          "sample-13-t0",
+          485060126802900,
+          0.6248985,
+          485059501904400,
+          1.4581863,
+          485060778490900,
+          13,
+          "t0",
+          485060960090700
+        ],
+        [
+          485062474270600,
+          0.7094165,
+          0.8726028,
+          "sample-14-t1",
+          485062474269000,
+          0.4339399,
+          485062040329100,
+          1.3065443,
+          485063183687100,
+          14,
+          "t1",
+          485063346873400
+        ],
+        [
+          485065109100300,
+          0.7047123,
+          0.866507,
+          "sample-15-t2",
+          485065109098200,
+          0.4353419,
+          485064673756300,
+          1.301851,
+          485065813812600,
+          15,
+          "t2",
+          485065975607300
+        ],
+        [
+          485067749784400,
+          0.7101786,
+          0.8793055,
+          "sample-16-t3",
+          485067749783000,
+          0.4243426,
+          485067325440400,
+          1.3036495,
+          485068459963000,
+          16,
+          "t3",
+          485068629089900
+        ],
+        [
+          485070224700400,
+          0.7280027,
+          0.9058502,
+          "sample-17-t0",
+          485070224699200,
+          0.4530597,
+          485069771639500,
+          1.3589111,
+          485070952703100,
+          17,
+          "t0",
+          485071130550600
+        ],
+        [
+          485072881781500,
+          0.7196759,
+          0.9042407,
+          "sample-18-t1",
+          485072881779900,
+          0.4305306,
+          485072451249300,
+          1.3347729,
+          485073601457400,
+          18,
+          "t1",
+          485073786022200
+        ],
+        [
+          485075622484500,
+          0.7174694,
+          0.9092923,
+          "sample-19-t2",
+          485075622482000,
+          0.4465809,
+          485075175901100,
+          1.3558757,
+          485076339953900,
+          19,
+          "t2",
+          485076531776800
+        ],
+        [
+          485078110718800,
+          0.7328182,
+          0.9107622,
+          "sample-20-t3",
+          485078110717800,
+          0.431233,
+          485077679484800,
+          1.3419962,
+          485078843537000,
+          20,
+          "t3",
+          485079021481000
+        ]
+      ]
+    },
+    "imports": {
+      "columns": [
+        "label",
+        "state",
+        "timed"
+      ],
+      "rows": [
+        [
+          "setup-t0",
+          "t0",
+          false
+        ],
+        [
+          "setup-t1",
+          "t1",
+          false
+        ],
+        [
+          "setup-t2",
+          "t2",
+          false
+        ],
+        [
+          "setup-t3",
+          "t3",
+          false
+        ],
+        [
+          "sample-01-t0",
+          "t0",
+          true
+        ],
+        [
+          "sample-02-t1",
+          "t1",
+          true
+        ],
+        [
+          "sample-03-t2",
+          "t2",
+          true
+        ],
+        [
+          "sample-04-t3",
+          "t3",
+          true
+        ],
+        [
+          "sample-05-t0",
+          "t0",
+          true
+        ],
+        [
+          "sample-06-t1",
+          "t1",
+          true
+        ],
+        [
+          "sample-07-t2",
+          "t2",
+          true
+        ],
+        [
+          "sample-08-t3",
+          "t3",
+          true
+        ],
+        [
+          "sample-09-t0",
+          "t0",
+          true
+        ],
+        [
+          "sample-10-t1",
+          "t1",
+          true
+        ],
+        [
+          "sample-11-t2",
+          "t2",
+          true
+        ],
+        [
+          "sample-12-t3",
+          "t3",
+          true
+        ],
+        [
+          "sample-13-t0",
+          "t0",
+          true
+        ],
+        [
+          "sample-14-t1",
+          "t1",
+          true
+        ],
+        [
+          "sample-15-t2",
+          "t2",
+          true
+        ],
+        [
+          "sample-16-t3",
+          "t3",
+          true
+        ],
+        [
+          "sample-17-t0",
+          "t0",
+          true
+        ],
+        [
+          "sample-18-t1",
+          "t1",
+          true
+        ],
+        [
+          "sample-19-t2",
+          "t2",
+          true
+        ],
+        [
+          "sample-20-t3",
+          "t3",
+          true
+        ]
+      ]
+    },
+    "retained_run_directory": "build/texture-iteration-0.0.159/measured-1/run",
+    "captures": {
+      "columns": [
+        "label",
+        "file",
+        "identity",
+        "material_revision",
+        "frame_sequence",
+        "submission_id",
+        "earlier_presented_frame",
+        "earlier_presented_submission"
+      ],
+      "rows": [
+        [
+          "baseline-t3",
+          "baseline-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          4,
+          534,
+          543,
+          516,
+          525
+        ],
+        [
+          "sample-01-t0",
+          "sample-01-t0.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+          },
+          5,
+          566,
+          576,
+          564,
+          574
+        ],
+        [
+          "sample-02-t1",
+          "sample-02-t1.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+          },
+          6,
+          628,
+          639,
+          626,
+          637
+        ],
+        [
+          "sample-03-t2",
+          "sample-03-t2.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+          },
+          7,
+          691,
+          703,
+          689,
+          701
+        ],
+        [
+          "sample-04-t3",
+          "sample-04-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          8,
+          755,
+          768,
+          753,
+          766
+        ],
+        [
+          "sample-05-t0",
+          "sample-05-t0.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+          },
+          9,
+          819,
+          833,
+          817,
+          831
+        ],
+        [
+          "sample-06-t1",
+          "sample-06-t1.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+          },
+          10,
+          883,
+          898,
+          881,
+          896
+        ],
+        [
+          "sample-07-t2",
+          "sample-07-t2.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+          },
+          11,
+          949,
+          965,
+          947,
+          963
+        ],
+        [
+          "sample-08-t3",
+          "sample-08-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          12,
+          1009,
+          1026,
+          1007,
+          1024
+        ],
+        [
+          "sample-09-t0",
+          "sample-09-t0.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+          },
+          13,
+          1080,
+          1098,
+          1078,
+          1096
+        ],
+        [
+          "sample-10-t1",
+          "sample-10-t1.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+          },
+          14,
+          1151,
+          1170,
+          1148,
+          1167
+        ],
+        [
+          "sample-11-t2",
+          "sample-11-t2.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+          },
+          15,
+          1221,
+          1241,
+          1218,
+          1238
+        ],
+        [
+          "sample-12-t3",
+          "sample-12-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          16,
+          1294,
+          1315,
+          1291,
+          1312
+        ],
+        [
+          "sample-13-t0",
+          "sample-13-t0.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+          },
+          17,
+          1366,
+          1388,
+          1363,
+          1385
+        ],
+        [
+          "sample-14-t1",
+          "sample-14-t1.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+          },
+          18,
+          1429,
+          1452,
+          1426,
+          1449
+        ],
+        [
+          "sample-15-t2",
+          "sample-15-t2.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+          },
+          19,
+          1503,
+          1527,
+          1500,
+          1524
+        ],
+        [
+          "sample-16-t3",
+          "sample-16-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          20,
+          1576,
+          1601,
+          1573,
+          1598
+        ],
+        [
+          "sample-17-t0",
+          "sample-17-t0.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+          },
+          21,
+          1642,
+          1668,
+          1639,
+          1665
+        ],
+        [
+          "sample-18-t1",
+          "sample-18-t1.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+          },
+          22,
+          1714,
+          1741,
+          1711,
+          1738
+        ],
+        [
+          "sample-19-t2",
+          "sample-19-t2.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+          },
+          23,
+          1789,
+          1817,
+          1786,
+          1814
+        ],
+        [
+          "sample-20-t3",
+          "sample-20-t3.bmp",
+          {
+            "bytes": 8294538,
+            "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+          },
+          24,
+          1855,
+          1884,
+          1852,
+          1881
+        ]
+      ]
+    },
+    "checkpoints": {
+      "columns": [
+        "label",
+        "file",
+        "identity",
+        "native_payload_checksum",
+        "generation"
+      ],
+      "rows": [
+        [
+          "baseline-t3",
+          "saves/slot-baseline-t3/p-e930449cfe58147ba37517477194e678.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "607e1b32343b389671c8e6da2f95d971a35f75387401804c46f08de35bb3e67f"
+          },
+          "5f2d19eb2af22a7aecea009de596e88d86ac60ae9c00b019b2fd55a5a982fe58",
+          1
+        ],
+        [
+          "sample-01-t0",
+          "saves/slot-sample-01-t0/p-2c7de7518088d902679659fce7f08738.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "8fa015f7935231c06a28c5bfe552c988c1ed37f8e220d9d23b93a9a51bde36f1"
+          },
+          "5da66393e28faa945037d12893d734d4f0eaa111fbd9392b3083ced70b78a532",
+          1
+        ],
+        [
+          "sample-02-t1",
+          "saves/slot-sample-02-t1/p-6d2849426bff79eaf5483ebab248172b.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "951860102bc901e898a8af1a76fb8f9bba023c3d64fa3e537adedfc053ce939e"
+          },
+          "0cabc5831b7cfe9e349c81e6d5722c693f35116348ce41fd5dd8543bc53633bc",
+          1
+        ],
+        [
+          "sample-03-t2",
+          "saves/slot-sample-03-t2/p-ca4733424b7c1dabae6a1b7839d3e56f.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "5cb064004b53090283ecb2a2b8013fe6c26a0f0d11684d1a77d594412050580f"
+          },
+          "899d4ca55bc63d83c6305f3a2b2a9a4a168db0012923a156e2d946a993f7654f",
+          1
+        ],
+        [
+          "sample-04-t3",
+          "saves/slot-sample-04-t3/p-861ebddf0bc1d8edb97908dd99ae934e.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "5190a2febb681e5e0c935ce5e45d2af71680674b8cc6d0fe849a04378110fea2"
+          },
+          "8b3ae870048c5318ae490ff9a31e93838d5c1c1d54b647024f3354aecc3fee4e",
+          1
+        ],
+        [
+          "sample-05-t0",
+          "saves/slot-sample-05-t0/p-2ddbc3e9a8dad713affd64bde745fceb.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "d131a2faa4074ced9a8b00db08dcff5968172864fe89e4d54d7d1b1db6d1b134"
+          },
+          "1140bb3fee8b9aa4c4cf67dc3c423a5d59aca4559260c0d7630dd4576fe308bc",
+          1
+        ],
+        [
+          "sample-06-t1",
+          "saves/slot-sample-06-t1/p-f1fd8b3f36a64ca88f7b80a24fdd9bd3.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "f7bd45d09b5bcb740745c72c29270ab3d2ce5f771fc1ad485e6fa9f46e6158da"
+          },
+          "f33539d66f0149f6540911acfb3f97db68544d7eec6679189e1565b1267c4045",
+          1
+        ],
+        [
+          "sample-07-t2",
+          "saves/slot-sample-07-t2/p-4b2ae38146efe57f8ed95979cda6c505.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "cdbda7d6a8dbcbe24d45a5e47d0de4f2c17e8c9fa838ca6a303a39826153a53d"
+          },
+          "514e9806b9b57414d34f85d48ea0b9a7017c40c70f4933a5d8faebdb3fa8a235",
+          1
+        ],
+        [
+          "sample-08-t3",
+          "saves/slot-sample-08-t3/p-32eac3220ea37caa7e81b5b23261e279.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "5349e20195a864cf77ae7121f37a355cc72fc5d2736daf6630a707d043a3ad24"
+          },
+          "1ad1677df119dd3eec45d87ebd17aa031ee9b020052b97f0e3524ad036e8dc08",
+          1
+        ],
+        [
+          "sample-09-t0",
+          "saves/slot-sample-09-t0/p-df940a1df9f2dba1298429d1b65d71c6.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "da806cf0cbead493cdc1de6ee2879f243d9e1db672197693ed2f6d527c96fe5c"
+          },
+          "376cd26282b5b9a3fdf12140bcc526526a47fee4f92408fe38040b92e767ca4a",
+          1
+        ],
+        [
+          "sample-10-t1",
+          "saves/slot-sample-10-t1/p-1199e621c731d35d9628fed203f1039d.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "bf3e72951f2ca1b811bb4451e81fb41979f5c820e6e712325701d81ef343c8c1"
+          },
+          "0c29662e658acf2a36298ccd55f603b55411536d9fc9f96233546d1a2b88ef2e",
+          1
+        ],
+        [
+          "sample-11-t2",
+          "saves/slot-sample-11-t2/p-fef9f79e2254d2f6626e478ef905869b.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "cf4ca976413f48ce36a7f8f0c2876651840c947c95c46afb873c2265fdb3282d"
+          },
+          "6e37743f65cce910cf030963ad2a5c18c038406e88e07bfd6bb874ce43cb7e3c",
+          1
+        ],
+        [
+          "sample-12-t3",
+          "saves/slot-sample-12-t3/p-d8a771fd1e0aaff19ee7d19e00c570e1.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "4e1884d70f631dbb0d14917824fd8f3a4ab9817d909dcf7329f6129e2a39a017"
+          },
+          "ac1acb44ababafa8a90e8a71477334d95bb555ced29f6c418915e4fb6f057c3a",
+          1
+        ],
+        [
+          "sample-13-t0",
+          "saves/slot-sample-13-t0/p-cd6837231a8e7440c992019ae81a994c.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "7ca3334d759e42b13724af52287fbc01cb4705bcc60cc18921e3b73178acc3db"
+          },
+          "9c74acae4aca50e90568b0cd2132c7eeb62e3732f9cde78913a7ea179e62cd19",
+          1
+        ],
+        [
+          "sample-14-t1",
+          "saves/slot-sample-14-t1/p-ee672ab21dff2f31bc6532bb425358fb.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "771079818e97f11d2d841a6a3633c58c554c182fff0327edbad4845c617631b6"
+          },
+          "936eb4e28413d56f5e30dbba1c3983203ca103f8160386aa65a59958832fcd13",
+          1
+        ],
+        [
+          "sample-15-t2",
+          "saves/slot-sample-15-t2/p-92ca24c53e516165719f8c887fb4a397.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "73bed4ab1b171a30b96f08b92c09256ad0ad1656df915cf556058dfab92794d3"
+          },
+          "83450d685b5b3fc51c4b3c1fe81d52c2b8fe545059dbb0fa18b9badba938fe34",
+          1
+        ],
+        [
+          "sample-16-t3",
+          "saves/slot-sample-16-t3/p-4cd317afc6d0a284e509e755c80463f4.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "4a4a5bf53e3139dd8b4f827c04c0911a690082c8497801e616ff7d49d751c733"
+          },
+          "1432a693e6992bb623f33e35239defe3c61a43f643f2f61f15cd6e0dd06d9cc6",
+          1
+        ],
+        [
+          "sample-17-t0",
+          "saves/slot-sample-17-t0/p-0eb473f8330336eedfb62610f6608dd3.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "84cc923fbeaeefd212947825d8ad899e682b23389ec0ab164bdc0b8043fd29af"
+          },
+          "faf7b7268015170d42d50b2c4a86605f1d0cf427f2d416ab1af2e8abb76906c5",
+          1
+        ],
+        [
+          "sample-18-t1",
+          "saves/slot-sample-18-t1/p-9390dabeb7c9bcccad4f7c02974fac3e.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "49abfaabf130d7677352eb2fcf64a781cfe2b6445662882fc5a31210f84cf694"
+          },
+          "cfe26fc6fb07d9d7453310041fce378b945e7b24420d5c02a8b7a5daff979ef9",
+          1
+        ],
+        [
+          "sample-19-t2",
+          "saves/slot-sample-19-t2/p-4660eae499517105af031348f07f3798.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "2bada995b01edd28db216de44849771b53c8bf2c22b00bad95b7b0cc7ea928c3"
+          },
+          "639289a2111c906cf0e54c699226ff5fb6b7bf0626128e10f60621f7af8d6d33",
+          1
+        ],
+        [
+          "sample-20-t3",
+          "saves/slot-sample-20-t3/p-a982c06d00c3b9b125f2485dffdb086a.bin",
+          {
+            "bytes": 2208543,
+            "sha256": "f27366fd4cc476e86ca85a61f05196c392785f4d2895b200fbe3ce055df67b4f"
+          },
+          "1e18976eff0a6f697747074f85c94de0b6a14728e69f03cebc175c23186a38f1",
+          1
+        ]
+      ]
+    }
+  },
+  "texture_validation": {
+    "actual_imports": 24,
+    "untimed_setup_imports": 4,
+    "timed_imports": 20,
+    "actual_adoptions": 24,
+    "distinct_original_pngs": 4,
+    "packages": [
+      {
+        "state": "t0",
+        "source_name": "criminalMaleA.png",
+        "source_identity": {
+          "bytes": 35033,
+          "sha256": "e2f66e682c95253fbb45206ab44bdb4fe61b03af3481abbd0e4344a6958a0530"
+        },
+        "package_identity": {
+          "bytes": 5592876,
+          "sha256": "3bea97e80543def97a010c9dafb466dcf6db4bc89a289c8c51a06efce3ab21a5"
+        },
+        "base_rgba_identity": {
+          "bytes": 4194304,
+          "sha256": "cb13552140200e0f7c3efae9161b20e9d7cd45d601532133863434ddfaea87e8"
+        },
+        "base_rgba_exact": true,
+        "header_bytes": 456,
+        "binary_bytes": 5592404,
+        "native_import_fields": {
+          "asset": "3bea97e80543def97a010c9dafb466dcf6db4bc89a289c8c51a06efce3ab21a5",
+          "bytes": 5592876,
+          "color_space": "srgb",
+          "format": "poima.image.v1"
+        },
+        "mip_digests": [
+          "cb13552140200e0f7c3efae9161b20e9d7cd45d601532133863434ddfaea87e8",
+          "020d7d73c00137d969ed8cbb4bf2a7910849ced47e554448f0480a6fbcc4ad57",
+          "cbe4294b33828ed6fe2580040127af7fe03451e1e55c3c1f8b36a013c6856cde",
+          "827f78e31ddd2d41a674c5102aef10db0c9d7ab5712487a55153d7ff3d913680",
+          "796af2961bc12eb9a7f792dc47f660d9d6909400524efee84624cb399710e704",
+          "b83a3e2cdec0cc05a098cfcdea85d28a58067dfb4f77b2d23edb96fb72af4b0c",
+          "cea411f044c34b2117919938d43201a93f4b56534592d0fe477dcf2db10b2f37",
+          "a1dba7c096206663a84fcdd0a23ae2139baf5fe0c17f73367d1a5b3f3fe34226",
+          "3bb717553ce3427d404a90e719e034700b5d4b48b1eec1fba9830d6906396e8d",
+          "c10a1770e644b46c0ecc992c5808da011efda832866a180aeffc77fd97f897eb",
+          "8c99b7191801ff62d4844af11575261d4678da701f233cc17439939e5b95744f"
+        ]
+      },
+      {
+        "state": "t1",
+        "source_name": "cyborgFemaleA.png",
+        "source_identity": {
+          "bytes": 51570,
+          "sha256": "321b7ba2d81b8b6380d0b0320ebf1117341bfd61ad73711dd8bf9094c26e14d6"
+        },
+        "package_identity": {
+          "bytes": 5592876,
+          "sha256": "fb56b183c8951797ec8f2090cce6e711e2c54eb261b39b90f53750e379c85d79"
+        },
+        "base_rgba_identity": {
+          "bytes": 4194304,
+          "sha256": "3fd6838b15a1721ce88db29227c7c188d56937dbaf4008d0881a6d96d654c7ea"
+        },
+        "base_rgba_exact": true,
+        "header_bytes": 456,
+        "binary_bytes": 5592404,
+        "native_import_fields": {
+          "asset": "fb56b183c8951797ec8f2090cce6e711e2c54eb261b39b90f53750e379c85d79",
+          "bytes": 5592876,
+          "color_space": "srgb",
+          "format": "poima.image.v1"
+        },
+        "mip_digests": [
+          "3fd6838b15a1721ce88db29227c7c188d56937dbaf4008d0881a6d96d654c7ea",
+          "ece586c981e99d82227306679a0c07a9efcb520ed37d1fc3634aebee8ae5346f",
+          "902e42360342562f7401f10076f28e11ededc26a426aa432da32addd2ebfd77c",
+          "bdb93f59a4e91b3086013fc6cacd9cd411a2fc2fa7b440191e4f58f95cc76e61",
+          "9eabb187989fb3e36de42000f3110bca0f352a429d8a20b4b379ba36f42b131e",
+          "1e9ea3a22d6a89edb8a156846611b3f1bef9e10249e43150d9dfa157dd294848",
+          "3646557aec5bac2c04570d5aefacd84956982af487ef558d01bdc2b1f6bd2e2d",
+          "e30ef4c8204cdb29707bfdedb9a38ea65970d5a37d15ac414ba8ac79b184af07",
+          "bc6bab7b125813d3025ca6bb82fbfab71f3a0620e18274dbab918a77f7166474",
+          "f6eff5049a628a63975a34af5c34e520a4c8ef0dde4fc473120d44c6544fc434",
+          "4253b1ab79094352fa0d20066da57274ba10cee9993a7de5a4a0e3113229bed6"
+        ]
+      },
+      {
+        "state": "t2",
+        "source_name": "skaterMaleA.png",
+        "source_identity": {
+          "bytes": 41705,
+          "sha256": "cabeed9d1be58037cc1cf3e29fdb42a0cb6af15bebeed877c41a758a932d14f8"
+        },
+        "package_identity": {
+          "bytes": 5592876,
+          "sha256": "16f607a47f7899301b1df8dd7b4000c1e3e608deb73bf32cf9ba292f76a5f2c4"
+        },
+        "base_rgba_identity": {
+          "bytes": 4194304,
+          "sha256": "178110b7617a5f466cd364feb4789a254a73de8ba7a010c15839034b10f6c02d"
+        },
+        "base_rgba_exact": true,
+        "header_bytes": 456,
+        "binary_bytes": 5592404,
+        "native_import_fields": {
+          "asset": "16f607a47f7899301b1df8dd7b4000c1e3e608deb73bf32cf9ba292f76a5f2c4",
+          "bytes": 5592876,
+          "color_space": "srgb",
+          "format": "poima.image.v1"
+        },
+        "mip_digests": [
+          "178110b7617a5f466cd364feb4789a254a73de8ba7a010c15839034b10f6c02d",
+          "a402622643b9f07bf502151dcd68b4fc50fbe57ca87eb741d6fb70b555b0afb8",
+          "205fed61c906bdeb1af73ffc1c6b9f3a95a33462d34a1629f33dfe809765ec35",
+          "640c418de24d6ea90dd600a7975145e43c42f8bdef812d289b89caa7bfd447a9",
+          "fcdb6555c2ac2e733ab80a0646bb46a4e46f26f5b70bb9e68f38f81253fe19ec",
+          "2f76ebbc8a4aabf5136781d2c9276dc5e6f777aa8d1dff6a4e48503b6f332009",
+          "09fd95437109382e90f8de34375c126a256bc25a53d19a596bf0784a29af1feb",
+          "f4cd9615033c5ce643933a13580b4a2f66c9c318ff5093ccdeb2ebac4bc2b2db",
+          "c7b1f67e03584b793d34b93b4aeff183d4f921b522b23cbc360fe087ac381493",
+          "2396ddacb83398cf0cd04fb1bd29d025592cb8da583062bf93c02a2746a48698",
+          "bf7711871208f812492e8c8ef14782d28b29df7dbc65842e957209dfe0ccecf0"
+        ]
+      },
+      {
+        "state": "t3",
+        "source_name": "skaterFemaleA.png",
+        "source_identity": {
+          "bytes": 40073,
+          "sha256": "de575f5075a8991907a4807fea3ef291b8e57778c6c4f4ada990abe7582026df"
+        },
+        "package_identity": {
+          "bytes": 5592876,
+          "sha256": "e75e4c9f10eebc3dc371ac76092964cc1ea4ffaa2287bfb893d284a15e794e1c"
+        },
+        "base_rgba_identity": {
+          "bytes": 4194304,
+          "sha256": "13bfba390c68b2cfd12de485b546f9f04c5096aef2aeb544438fd4473b693747"
+        },
+        "base_rgba_exact": true,
+        "header_bytes": 456,
+        "binary_bytes": 5592404,
+        "native_import_fields": {
+          "asset": "e75e4c9f10eebc3dc371ac76092964cc1ea4ffaa2287bfb893d284a15e794e1c",
+          "bytes": 5592876,
+          "color_space": "srgb",
+          "format": "poima.image.v1"
+        },
+        "mip_digests": [
+          "13bfba390c68b2cfd12de485b546f9f04c5096aef2aeb544438fd4473b693747",
+          "231ad9a88d960645d341d71b60b1bff7fe1206a76b68714de8c6fd26ac9ef51d",
+          "7b918cb4d2b6602c47f6f8fc0d2cdfcc393de1475ebaa3e01f15b07a261b5b05",
+          "0bf4c84f3b57da4a9ad2fad1cd1cd6039016c85154d16b6c358d4ebf4751fa54",
+          "9bbc62d0bf1f03b089deefbe0cbbd83b443e78b99672fc40570081cd9b9ef58c",
+          "f69eb16c2910e9e405538aaafa4e46bbc4d4d386f526b79de2982f2125c511a9",
+          "b30f2b2ae1ca4ad153039a87f86d4b80a439b7e0cb0a463644b62028ad51c266",
+          "5e20bb3cfa9344ff9a63eb8a5223f0d336d1723ae5fa83afb320264bcb06a632",
+          "61226f5fc5358af92face037c1dec6a36743bc280a4c5b2122cddfbc7412c729",
+          "608236be28a313fbe81649d24c38722104d00fed43fabc1bcacd69682ac04df2",
+          "3521f9c968e2a76541c04d2fcaf8b3fb6d2b6fbbae04d6371ca5e2e100aaad49"
+        ]
+      }
+    ],
+    "shared_mip_layout": [
+      {
+        "bytes": 4194304,
+        "height": 1024,
+        "width": 1024
+      },
+      {
+        "bytes": 1048576,
+        "height": 512,
+        "width": 512
+      },
+      {
+        "bytes": 262144,
+        "height": 256,
+        "width": 256
+      },
+      {
+        "bytes": 65536,
+        "height": 128,
+        "width": 128
+      },
+      {
+        "bytes": 16384,
+        "height": 64,
+        "width": 64
+      },
+      {
+        "bytes": 4096,
+        "height": 32,
+        "width": 32
+      },
+      {
+        "bytes": 1024,
+        "height": 16,
+        "width": 16
+      },
+      {
+        "bytes": 256,
+        "height": 8,
+        "width": 8
+      },
+      {
+        "bytes": 64,
+        "height": 4,
+        "width": 4
+      },
+      {
+        "bytes": 16,
+        "height": 2,
+        "width": 2
+      },
+      {
+        "bytes": 4,
+        "height": 1,
+        "width": 1
+      }
+    ],
+    "mip_digest_index": "Each package.mip_digests index joins the same index in shared_mip_layout; its bytes/width/height are retained once because all four actual layouts are identical.",
+    "color_space": "srgb",
+    "width": 1024,
+    "height": 1024,
+    "mip_levels": 11,
+    "source_to_base_rgba": "Independent bounded original PNG decode/CRC verification and all4,194,304base-RGBA bytes equal the native cooked base mip for each source. Lower mip contents are retained by digest, not independently checked against a resampling oracle.",
+    "authored_selection": "Only24 PbrTextures base_color overrides plus native revision/transaction receipts; every other authored field/PbrMaterial scalar preserved.",
+    "samplers": {
+      "wrap_s": 10497,
+      "wrap_t": 10497,
+      "min_filter": 9987,
+      "mag_filter": 9729
+    },
+    "inheritance": "Omitted maps/strengths inherit the original immutable mesh; full runtime.texture.inspect and material.inspect rows are checked after each interval."
+  },
+  "full_native_state": {
+    "format": "poima.runtime-snapshot",
+    "version": 7,
+    "checkpoints": 21,
+    "comparisons": 20,
+    "payload_keys": [
+      "animation",
+      "authored_revision",
+      "cameras",
+      "components",
+      "content_sha256",
+      "control_sequence",
+      "entities",
+      "gameplay",
+      "gameplay_revision",
+      "sound",
+      "structure",
+      "tick",
+      "ui",
+      "world_id"
+    ],
+    "explicit_per_edit_changes": [
+      "authored_revision",
+      "content_sha256"
+    ],
+    "all_other_payload_data_typed_exact": true,
+    "gameplay_global_fields": {
+      "columns": [
+        "name",
+        "kind",
+        "offset",
+        "bytes"
+      ],
+      "rows": [
+        [
+          "Actor",
+          "entity",
+          8,
+          16
+        ],
+        [
+          "AnimatedVisual",
+          "entity",
+          24,
+          16
+        ],
+        [
+          "AnimationChanges",
+          "int32",
+          156,
+          4
+        ],
+        [
+          "AnimationClip",
+          "int32",
+          148,
+          4
+        ],
+        [
+          "AnimationLoop",
+          "int32",
+          152,
+          4
+        ],
+        [
+          "AnimationMode",
+          "int32",
+          144,
+          4
+        ],
+        [
+          "AnimationRate",
+          "float64",
+          232,
+          8
+        ],
+        [
+          "AnimationTransitions",
+          "int32",
+          160,
+          4
+        ],
+        [
+          "Arrivals",
+          "int32",
+          124,
+          4
+        ],
+        [
+          "CellOne",
+          "entity",
+          40,
+          16
+        ],
+        [
+          "CellThree",
+          "entity",
+          72,
+          16
+        ],
+        [
+          "CellTwo",
+          "entity",
+          56,
+          16
+        ],
+        [
+          "CheckpointVersion",
+          "int32",
+          0,
+          4
+        ],
+        [
+          "Collected",
+          "int32",
+          96,
+          4
+        ],
+        [
+          "DeferredRateUpdates",
+          "int32",
+          168,
+          4
+        ],
+        [
+          "GoalX",
+          "float64",
+          176,
+          8
+        ],
+        [
+          "GoalZ",
+          "float64",
+          184,
+          8
+        ],
+        [
+          "Initialized",
+          "int32",
+          88,
+          4
+        ],
+        [
+          "LastCornerCount",
+          "int32",
+          132,
+          4
+        ],
+        [
+          "LastDisplacement",
+          "float64",
+          208,
+          8
+        ],
+        [
+          "LastHorizontalSpeed",
+          "float64",
+          216,
+          8
+        ],
+        [
+          "LastPathStatus",
+          "int32",
+          128,
+          4
+        ],
+        [
+          "LastSaveError",
+          "int32",
+          272,
+          4
+        ],
+        [
+          "LastSaveGeneration",
+          "int64",
+          304,
+          8
+        ],
+        [
+          "LastSaveState",
+          "int32",
+          268,
+          4
+        ],
+        [
+          "LockedUses",
+          "int32",
+          104,
+          4
+        ],
+        [
+          "Moving",
+          "int32",
+          140,
+          4
+        ],
+        [
+          "ObservedEpochHigh",
+          "int64",
+          312,
+          8
+        ],
+        [
+          "ObservedEpochLow",
+          "int64",
+          320,
+          8
+        ],
+        [
+          "Phase",
+          "int32",
+          112,
+          4
+        ],
+        [
+          "Plans",
+          "int32",
+          120,
+          4
+        ],
+        [
+          "PreferenceNotice",
+          "int32",
+          328,
+          4
+        ],
+        [
+          "PreviousPositionValid",
+          "int32",
+          136,
+          4
+        ],
+        [
+          "PreviousSampleTick",
+          "int64",
+          240,
+          8
+        ],
+        [
+          "PreviousX",
+          "float64",
+          192,
+          8
+        ],
+        [
+          "PreviousZ",
+          "float64",
+          200,
+          8
+        ],
+        [
+          "RateChanges",
+          "int32",
+          164,
+          4
+        ],
+        [
+          "RequestedRunRate",
+          "float64",
+          224,
+          8
+        ],
+        [
+          "RouteValid",
+          "int32",
+          116,
+          4
+        ],
+        [
+          "SaveHigh",
+          "int64",
+          280,
+          8
+        ],
+        [
+          "SaveKind",
+          "int32",
+          264,
+          4
+        ],
+        [
+          "SaveLow",
+          "int64",
+          288,
+          8
+        ],
+        [
+          "SaveNotice",
+          "int32",
+          260,
+          4
+        ],
+        [
+          "SavePending",
+          "int32",
+          256,
+          4
+        ],
+        [
+          "SaveSequence",
+          "int64",
+          296,
+          8
+        ],
+        [
+          "SaveStatusKey",
+          "int32",
+          252,
+          4
+        ],
+        [
+          "Started",
+          "int32",
+          92,
+          4
+        ],
+        [
+          "StatusKey",
+          "int32",
+          248,
+          4
+        ],
+        [
+          "Ticks",
+          "int32",
+          108,
+          4
+        ],
+        [
+          "Won",
+          "int32",
+          100,
+          4
+        ]
+      ]
+    },
+    "global_count": 50,
+    "cameras": 2,
+    "full_save_checks_after_primary_interval": true
+  },
+  "pixels": {
+    "width": 1920,
+    "height": 1080,
+    "tolerance": 1,
+    "effect_threshold": 8,
+    "min_non_hud_changed_pixels": 100,
+    "mask_bytes": 259200,
+    "mask_encoding": "row-major bitset; pixel0=bit0 of byte0",
+    "non_hud_rectangles": [
+      [
+        0,
+        54,
+        952,
+        968
+      ],
+      [
+        984,
+        54,
+        1920,
+        968
+      ]
+    ],
+    "rectangle_policy": "Before any material edit: below native top controls+8px, above original bottom HUD+8px, excluding actual reticle column+8px; no pixel-dependent region choice.",
+    "reference_images": {
+      "t0": {
+        "file": "build/texture-iteration-0.0.159/prerequisite-1/run/ref-t0.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "df885f2f4da59b491fb1742c06e0d8203d3fb8be33c59df4d32844983f1ba861"
+        }
+      },
+      "t1": {
+        "file": "build/texture-iteration-0.0.159/prerequisite-1/run/ref-t1.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "287271ba49132e2c4cbc65e96c3043de331c83a79ed5a0687020e231da77a4db"
+        }
+      },
+      "t2": {
+        "file": "build/texture-iteration-0.0.159/prerequisite-1/run/ref-t2.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "b87f89ccdb343f215785d20d54f601835ae76a0d36ae2e287f8d9909b666266a"
+        }
+      },
+      "t3": {
+        "file": "build/texture-iteration-0.0.159/prerequisite-1/run/ref-t3.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "e00d46e7902c1f35d9cfebc115e27d12f5ef3ed803e7e7a1408a6b027831468e"
+        }
+      }
+    },
+    "actual_captures": 21,
+    "retained_masks": 40,
+    "mask_identities": {
+      "mask1": {
+        "bytes": 259200,
+        "sha256": "a69eb1db9d767bcd5f4dc30c1fe7f9b16eb8d4c87db33d67c6680d052bf69495"
+      },
+      "mask2": {
+        "bytes": 259200,
+        "sha256": "122cfa9d47bb66b726f0b3ac9421d91a23193e3181866114d0d0b2f6d77c1020"
+      },
+      "mask3": {
+        "bytes": 259200,
+        "sha256": "2f14a905624d440abad7e09845a734e125cc58c13f609eaa347e698a03bbb6cc"
+      },
+      "mask4": {
+        "bytes": 259200,
+        "sha256": "e4288953e4688282e203db86783e2802c0091880283b890ae9d7be68233e079e"
+      },
+      "mask5": {
+        "bytes": 259200,
+        "sha256": "4d55bcd40b5d0f0dcffa97a77822be3d3a00eb3e1f25ca1c856dd4878a10fd57"
+      },
+      "mask6": {
+        "bytes": 259200,
+        "sha256": "fdf9c31f85066514b9d0f0f6e95ff19d6a85ae33821bd14b54b2fdb9f418d511"
+      },
+      "mask7": {
+        "bytes": 259200,
+        "sha256": "a6e899541a9973e339e61e976a0cc7591b8903af1a09b62125a370f0f5a96487"
+      },
+      "mask8": {
+        "bytes": 259200,
+        "sha256": "8eb65764ae12c1f8b64e736a5f0a46881cb29da98dc6d6cf46592f089b4ab03a"
+      }
+    },
+    "samples": {
+      "columns": [
+        "label",
+        "reference",
+        "actual_file_proof",
+        "maximum_reference_delta",
+        "maximum_changed_delta",
+        "changed_pixels",
+        "non_hud_changed_pixels",
+        "changed_mask",
+        "non_hud_mask"
+      ],
+      "rows": [
+        [
+          "sample-01-t0",
+          "t0",
+          "complete_bmp_bytes_equal",
+          0,
+          138,
+          158479,
+          156460,
+          "mask1",
+          "mask2"
+        ],
+        [
+          "sample-02-t1",
+          "t1",
+          "complete_bmp_bytes_equal",
+          0,
+          142,
+          254610,
+          254604,
+          "mask3",
+          "mask4"
+        ],
+        [
+          "sample-03-t2",
+          "t2",
+          "complete_bmp_bytes_equal",
+          0,
+          139,
+          228452,
+          226442,
+          "mask5",
+          "mask6"
+        ],
+        [
+          "sample-04-t3",
+          "t3",
+          "complete_bmp_bytes_equal",
+          0,
+          134,
+          263105,
+          261483,
+          "mask7",
+          "mask8"
+        ],
+        [
+          "sample-05-t0",
+          "t0",
+          "complete_bmp_bytes_equal",
+          0,
+          138,
+          158479,
+          156460,
+          "mask1",
+          "mask2"
+        ],
+        [
+          "sample-06-t1",
+          "t1",
+          "complete_bmp_bytes_equal",
+          0,
+          142,
+          254610,
+          254604,
+          "mask3",
+          "mask4"
+        ],
+        [
+          "sample-07-t2",
+          "t2",
+          "complete_bmp_bytes_equal",
+          0,
+          139,
+          228452,
+          226442,
+          "mask5",
+          "mask6"
+        ],
+        [
+          "sample-08-t3",
+          "t3",
+          "complete_bmp_bytes_equal",
+          0,
+          134,
+          263105,
+          261483,
+          "mask7",
+          "mask8"
+        ],
+        [
+          "sample-09-t0",
+          "t0",
+          "complete_bmp_bytes_equal",
+          0,
+          138,
+          158479,
+          156460,
+          "mask1",
+          "mask2"
+        ],
+        [
+          "sample-10-t1",
+          "t1",
+          "complete_bmp_bytes_equal",
+          0,
+          142,
+          254610,
+          254604,
+          "mask3",
+          "mask4"
+        ],
+        [
+          "sample-11-t2",
+          "t2",
+          "complete_bmp_bytes_equal",
+          0,
+          139,
+          228452,
+          226442,
+          "mask5",
+          "mask6"
+        ],
+        [
+          "sample-12-t3",
+          "t3",
+          "complete_bmp_bytes_equal",
+          0,
+          134,
+          263105,
+          261483,
+          "mask7",
+          "mask8"
+        ],
+        [
+          "sample-13-t0",
+          "t0",
+          "complete_bmp_bytes_equal",
+          0,
+          138,
+          158479,
+          156460,
+          "mask1",
+          "mask2"
+        ],
+        [
+          "sample-14-t1",
+          "t1",
+          "complete_bmp_bytes_equal",
+          0,
+          142,
+          254610,
+          254604,
+          "mask3",
+          "mask4"
+        ],
+        [
+          "sample-15-t2",
+          "t2",
+          "complete_bmp_bytes_equal",
+          0,
+          139,
+          228452,
+          226442,
+          "mask5",
+          "mask6"
+        ],
+        [
+          "sample-16-t3",
+          "t3",
+          "complete_bmp_bytes_equal",
+          0,
+          134,
+          263105,
+          261483,
+          "mask7",
+          "mask8"
+        ],
+        [
+          "sample-17-t0",
+          "t0",
+          "complete_bmp_bytes_equal",
+          0,
+          138,
+          158479,
+          156460,
+          "mask1",
+          "mask2"
+        ],
+        [
+          "sample-18-t1",
+          "t1",
+          "complete_bmp_bytes_equal",
+          0,
+          142,
+          254610,
+          254604,
+          "mask3",
+          "mask4"
+        ],
+        [
+          "sample-19-t2",
+          "t2",
+          "complete_bmp_bytes_equal",
+          0,
+          139,
+          228452,
+          226442,
+          "mask5",
+          "mask6"
+        ],
+        [
+          "sample-20-t3",
+          "t3",
+          "complete_bmp_bytes_equal",
+          0,
+          134,
+          263105,
+          261483,
+          "mask7",
+          "mask8"
+        ]
+      ]
+    },
+    "mask_file_rule": "Within measured.retained_run_directory: <label>-changed_mask.bin and <label>-non_hud_changed_mask.bin, joined to each sample identity.",
+    "proof_policy": "Precomputed masks are used only when both actual fresh capture files first prove complete byte equality to the frozen real reference files; full actual RGB fallback remains inside the caller timer. All21 captured frames are strictly later than the earlier matching presented receipt; neither is physical scanout."
+  },
+  "prerequisite": {
+    "passed": true,
+    "rpc_pairs": 156,
+    "source_pins": 404,
+    "owner": {
+      "total_processes": 4,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 38.05789409996942
+    },
+    "imports": 8,
+    "adoptions": 8,
+    "actual_captures": 9,
+    "full_checkpoints": 10,
+    "successful_complete_native_pairs": 8,
+    "independent_masks": 14,
+    "reference_recurrences": 4,
+    "maximum_recurrence_rgb_delta": 0,
+    "failed_inactive_package_guard": {
+      "native_code": -32050,
+      "complete_native_snapshot_equal": true,
+      "payload_exceptions": [],
+      "restored_before_same_request_retry": true,
+      "operation": "Only newly imported inactiveT0 package renamed temporarily; original15assets untouched, bytes restored and holding directory empty."
+    },
+    "scope": "Independent prerequisite/current-cook/package/base-RGBA/full-state/pixel/frame-order audits passed; untimed, not a latency population."
+  },
+  "retention": {
+    "cap_bytes": 536870912,
+    "admitted_maximum_bytes": 479334293,
+    "admitted_headroom_bytes": 57536619,
+    "admitted_category_max_bytes": {
+      "png_and_license": 169080,
+      "managed_image_and_notices": 1670241,
+      "other_metadata_and_transport": 8496387,
+      "original_assets": 628363,
+      "world_current_previous_pending": 16777216,
+      "world_lock": 0,
+      "cooked_images": 27964380,
+      "captures": 174185298,
+      "masks": 10368000,
+      "save_payloads": 88080384,
+      "save_manifests_locks_temps": 4194304,
+      "evidence": 134217728,
+      "job_logs": 8388608,
+      "owner_metadata": 4194304,
+      "copied_engine_binaries": 0
+    },
+    "actual_before_owner_publication_bytes": 311396871,
+    "owner_receipt_bytes": 53353,
+    "reconstructed_final_regular_bytes": 311450224,
+    "terminal_categories": {
+      "other_metadata_and_transport": 108125,
+      "job_logs": 74,
+      "captures": 174185298,
+      "evidence": 47868895,
+      "masks": 10368000,
+      "save_manifests_locks_temps": 13713,
+      "save_payloads": 46379403,
+      "png_and_license": 169080,
+      "managed_image_and_notices": 1670241,
+      "world_current_previous_pending": 7634175,
+      "original_assets": 628363,
+      "cooked_images": 22371504,
+      "world_lock": 0
+    },
+    "actual_maximum_payload_bytes": 2208543,
+    "actual_maximum_authored_world_bytes": 3823359,
+    "actual_assets_bytes": 22999867,
+    "actual_assets": 19,
+    "world_publication_files_reserved": 4,
+    "external_reference_copies": 0,
+    "physical_new_packages": 4,
+    "sampling_overlap_package_reserve": 1,
+    "scope": "Complete stage/run/job/owner logical bytes including known publication temporaries;21fresh one-generation slots, no pruning. Externally pinned immutable originals/native authorities are not copied into this output. This is not RSS, VRAM, memory-growth, OS quota or general cold-storage evidence."
+  },
+  "independent_measured_audit": {
+    "status": "passed",
+    "passed": true,
+    "source_pins": 412,
+    "native_sources": 302,
+    "sealed_artifacts": 12,
+    "raw_rpc_pairs": 344,
+    "native_errors": 0,
+    "full_native_saves": 21,
+    "complete_pairs": 20,
+    "actual_captures": 21,
+    "independently_recomputed_masks": 40,
+    "independent_author_byteproofs": 24,
+    "seconds": 67.23469889198896,
+    "scope": "Pure retained-file audit; no additional native/GPU workload execution."
+  },
+  "frozen_helper_roles": {
+    "curator": {
+      "bytes": 20634,
+      "sha256": "256abe584bc95c683f2faf79574372745dd5c65845c4a8cdeb5aaddbea806d1c"
+    },
+    "qualification_owner": {
+      "bytes": 13244,
+      "sha256": "5d81896a459b328017929274cfc6d85c3ab1633ddf6fb9cfac52d1008f905bb7"
+    },
+    "qualification_worker": {
+      "bytes": 52767,
+      "sha256": "5cb44f1b9483d8e517048c06a1cfca61169001e923447004ef616d026a1aca88"
+    },
+    "retention_census": {
+      "bytes": 11612,
+      "sha256": "bef727e541d4dbf088f273a6102c411f47e9c57a42b9bfebbc313fac6f2246e5"
+    },
+    "pixel_proof": {
+      "bytes": 8930,
+      "sha256": "a27baef4d1efdef1eeda33e356772cd4194cea986c83a91994681a1b1d8429ae"
+    },
+    "original_png_cooked_base_audit": {
+      "bytes": 22564,
+      "sha256": "7d6e7aedd58917ff55c531ac27f5decce4e9c9ed8cd9d4acf9eaba3245bdd889"
+    },
+    "prerequisite_audit": {
+      "bytes": 9077,
+      "sha256": "4eb6c71794f6eaf490a5f47a9a709a9c78f20eb3f6ca43d9df710b8ba827083c"
+    },
+    "prerequisite_capture_order_audit": {
+      "bytes": 2815,
+      "sha256": "074a1925ee657ddf70591bac19a3fdac8a5b8f45a667cd7537452fe6d5635bbd"
+    },
+    "measured_audit": {
+      "bytes": 36760,
+      "sha256": "3e98c494970c869e1b7af7a225d2b2d3454ca0cc034becf14e5c4524b70fe1ae"
+    },
+    "measured_audit_reader": {
+      "bytes": 36850,
+      "sha256": "7776c6e76fe61b27817e6bab3913620801a6ec32d1a4f8f7b61878707a0ec195"
+    }
+  },
+  "raw_receipts": {
+    "build/texture-iteration-0.0.159/measured-1/owner.json": {
+      "bytes": 53353,
+      "sha256": "df40dcb53a83bebd0ef8fdb9a66e3e1cbf9abdfc95fdf1ae55beb52179cd857b"
+    },
+    "build/texture-iteration-0.0.159/measured-1/run/evidence.json": {
+      "bytes": 47868895,
+      "sha256": "2ecf24e77a5413b12f3baa72c0b7f1303ceef36af9263263ef57091e7323a860"
+    },
+    "build/texture-iteration-0.0.159/prerequisite-1/owner.json": {
+      "bytes": 32610,
+      "sha256": "62ff85885456c5ddd6ee31e4f35dbff11ca47959f29200516b804250119db36d"
+    },
+    "build/texture-iteration-0.0.159/prerequisite-1/run/evidence.json": {
+      "bytes": 24837377,
+      "sha256": "3bf7787360362180005507a84d6105947b8280375201768e00c9c494a09575ed"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/build-result.json": {
+      "bytes": 56160,
+      "sha256": "614d42f95866460351c05aef1c92773e294a48ccfab686ba8f7c1d3d1b9cb916"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/source-pins.json": {
+      "bytes": 45306,
+      "sha256": "784a7a81ddf2f8cdd833086724ad6082ecc10673996f1c05ece0ba5f2824dda7"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/sealed-artifacts.json": {
+      "bytes": 2109,
+      "sha256": "4b46eafb9b423dece48cafa51bdb39002b576fa4c2118c164a05d766a07f9254"
+    }
+  },
+  "limits": [
+    "One paused deterministic full-yard Windows/NVIDIA configuration and four original1024square RGBA8 source skins; no general format/size/filter/alpha-texture corpus promise.",
+    "Normal warm OS/filesystem/GPU caches. Every timed native import still reads/decodes/builds mips/cooks and validates the existing package; reference preparation and four setup imports/adoptions are outside the timer.",
+    "Complete map/scalar inspections and native save/document/payload comparisons happen after each primary interval. Preparation-inclusive p95 is1.4256265s; primary p95 is0.9092923s.",
+    "No isolated causal overall renderer improvement, general cold-upload or hitch-free real-time result follows from these twenty observations.",
+    "AMD, human foreground/physical input, listening, representative frame pacing/performance, memory residency/growth and whole Alpha gates remain open. No fresh-provider or clean-machine completion claim."
+  ]
+}

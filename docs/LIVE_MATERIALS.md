@@ -156,7 +156,8 @@ are disabled. Audio closure is checked; this is not a listening qualification.
 
 Each edit changes the complete scalar material on all 24 selected skins and
 then explicitly adopts it through `runtime.material.apply`. The primary timer
-starts before the first edit-specific file read. It includes authoring, guarded
+starts before the timed complete authored-byte verification read, after the
+separately recorded oracle preparation. It includes authoring, guarded
 adoption, observation of a matching presented receipt, a fresh guarded capture,
 complete image verification and retained difference masks. The first matching
 presentation observation has a separate timer; neither timer measures scanout.
