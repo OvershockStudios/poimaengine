@@ -1,0 +1,623 @@
+{
+  "format": "poima.fbx-scalar-maps-qualification.v1",
+  "checkpoint": "0.0.161",
+  "date": "2026-10-15",
+  "passed": true,
+  "windows_passed": true,
+  "linux": {
+    "passed": true,
+    "target": "Linux x86_64",
+    "configuration": "Fresh Debug -O0 -g0, two build workers, serial tests, offline dependencies; rendering, simulation, navigation, audio, UI and managed/native gameplay disabled.",
+    "seconds": 596.4575146349962,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "ctest_entries": 14,
+    "tests": [
+      {
+        "name": "fbx_fixture",
+        "seconds": "0.879247"
+      },
+      {
+        "name": "fbx_native",
+        "seconds": "0.717121"
+      },
+      {
+        "name": "animation_rotation_retarget_native",
+        "seconds": "0.734082"
+      },
+      {
+        "name": "animation_rotation_retarget_protocol",
+        "seconds": "11.7686"
+      },
+      {
+        "name": "fbx_native_binary",
+        "seconds": "0.995182"
+      },
+      {
+        "name": "fbx_scalar_fixture",
+        "seconds": "1.39431"
+      },
+      {
+        "name": "fbx_scalar_maps_native",
+        "seconds": "10.1092"
+      },
+      {
+        "name": "fbx_scalar_maps_contract",
+        "seconds": "15.4506"
+      },
+      {
+        "name": "fbx_contract",
+        "seconds": "19.9047"
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.86911"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.22272"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "47.6011"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.111399"
+      },
+      {
+        "name": "mutation-discovery-native",
+        "seconds": "0.0200003"
+      }
+    ],
+    "artifacts": {
+      "poima": {
+        "bytes": 18394624,
+        "sha256": "202eb932cf8473440a6f68a5112ca11d3a56f3ed9fdc9ad966033fa336c8b805"
+      },
+      "poima-fbx-scalar-maps-test": {
+        "bytes": 2953936,
+        "sha256": "02d19a93295abf7824f193f6f94e36dc420002e81d6e17cb3b7b18cf232877f9"
+      },
+      "poima-fbx-test": {
+        "bytes": 3536904,
+        "sha256": "bae70eadeee3547d0c955c18710579408c42986e55ba61b152fa19af0c2d57f4"
+      },
+      "poima-animation-rotation-retarget-test": {
+        "bytes": 3622408,
+        "sha256": "9d7f545a5eff8a5e1b766dad24a41bfde9c1f5760dd160ab00884ca7c87057c7"
+      },
+      "poima-world-schema-test": {
+        "bytes": 17771696,
+        "sha256": "078b2b48281d94d15c4725a872bec024e8e67b6def4c7ff2eb2cf00355438498"
+      },
+      "poima-mcp-test": {
+        "bytes": 2334288,
+        "sha256": "35b7bc66a6b9352ccd3fdb494b81aee0cbf12192656ba9fb3af280f4e34f00b5"
+      },
+      "poima-mutation-discovery-test": {
+        "bytes": 856168,
+        "sha256": "6c3653bc32ef86b03abc39945e6f7e94216c0ed2e56a7409d957710c6afc1216"
+      },
+      "library/libpoima_core.a": {
+        "bytes": 123099488,
+        "sha256": "2d549a1cbcf3770769c0e90cdcb9c5c2533e42e16de745c8061d5c206a8e9ec8"
+      }
+    },
+    "protocols": [
+      {
+        "name": "fbx_contract",
+        "tests": 9,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "rpc_rows": 358,
+        "native_owners": 12,
+        "evidence": {
+          "bytes": 340381,
+          "sha256": "43d197dacfb6ab1cb6c1b1b4c4a4ba35e68a2bb226d73bcddbe23daafd5c5284"
+        },
+        "raw_wire_retained": false
+      },
+      {
+        "name": "animation_rotation_retarget_protocol",
+        "tests": 8,
+        "skipped": 1,
+        "failures": 0,
+        "errors": 0,
+        "rpc_rows": 684,
+        "native_owners": 10,
+        "evidence": {
+          "bytes": 1419717,
+          "sha256": "764ca778866ab1ef8b91d0602738b3f57cb9b52c937912aefc5bb598e5b25289"
+        },
+        "raw_wire_retained": false
+      },
+      {
+        "name": "fbx_scalar_maps_contract",
+        "tests": 3,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "rpc_rows": 166,
+        "native_owners": 4,
+        "evidence": {
+          "bytes": 378673,
+          "sha256": "d6bb3f6b7d917d53672af0956ddc38489250fa466a7ea6331c0dbba138485793"
+        },
+        "raw_wire_retained": true,
+        "raw_wire_pairs": 166,
+        "groups": [
+          {
+            "name": "test_cold_source_absence_retains_full_cooked_pose",
+            "cold_source_absent": true,
+            "full_cooked_sections": [
+              "nodes",
+              "primitives",
+              "images",
+              "vertices"
+            ],
+            "passed": true
+          },
+          {
+            "name": "test_failures_are_atomic_then_exact_source_repairs",
+            "rejected_policies": 32,
+            "repaired_identical_requests": 2,
+            "passed": true
+          },
+          {
+            "name": "test_profiles_codecs_and_shared_inventory",
+            "profiles": 11,
+            "ascii_binary_pairs": 8,
+            "passed": true
+          }
+        ],
+        "retained_authored_state_observations": 47,
+        "retained_package_inventory_observations": 39
+      }
+    ],
+    "limitations": [
+      "One optional original-character retarget test is skipped on Linux and exercised on Windows. All nine legacy FBX and all three scalar tests execute with zero skips.",
+      "Headless content/authoring checks do not qualify Linux graphics or shipping performance."
+    ]
+  },
+  "scope": "Headless FBX scalar-map import, cooked data, analytic animation and authoring regressions. No renderer, foreground, physical-input, representative performance or Alpha qualification.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 86073,
+      "sha256": "fc09c0aef26f246d15cb6184f56bbc1427d91d65ac225fbcde54ddd1dbcbdf7f"
+    },
+    "src/fbx.cpp": {
+      "bytes": 39131,
+      "sha256": "799fc98e3cecc596ca5801c3f2c3b21208a22846f7fcfc92b3a4c826598a23a6"
+    },
+    "tests/fbx_scalar_fixture.py": {
+      "bytes": 10803,
+      "sha256": "481a0f0030129548b04ca45708259d65f1fb415f01877f2e84420de1904c4fc9"
+    },
+    "tests/fbx_scalar_maps.cpp": {
+      "bytes": 8978,
+      "sha256": "8ba9f90166a5f881fd86753a01a7a04c3d49d81434f970004aa1a7c4723b5ae1"
+    },
+    "tests/fbx_scalar_maps_contract.py": {
+      "bytes": 16574,
+      "sha256": "617137377b356c94cdc15c68b85041bdbcd20a95d57260a4f54176bf8fb3fd1a"
+    },
+    "tests/fbx_fixture.py": {
+      "bytes": 23219,
+      "sha256": "09762b8756ade1298ca5413794cf4a5649ca59fd09a90767b95853d8e202cfe7"
+    },
+    "tests/fbx_native.cpp": {
+      "bytes": 22803,
+      "sha256": "9ea9f148e844b9112e17abf557bd4c5700a7e21937d252173193209b6fbde223"
+    },
+    "tests/fbx_contract.py": {
+      "bytes": 23792,
+      "sha256": "e50f561f7f837f144a093c51baa34eaca4abaab40df84da445d99c6e17239235"
+    },
+    "tests/animation_rotation_retarget.cpp": {
+      "bytes": 31509,
+      "sha256": "9258287550697a88cd8bfc46b53098a95a6bf30b4211af7a48fef0cfd03a577d"
+    },
+    "tests/animation_rotation_retarget.py": {
+      "bytes": 41426,
+      "sha256": "70dd5c01a3a423c652188d959d4e6cb6fd6f9ec99b293dd2b43f4ca0aa57bb31"
+    }
+  },
+  "profile": {
+    "sources": "Enabled simple FILE roughness/metalness maps; existing confined PNG/JPEG and sole-UV-set admission.",
+    "pixels": "Opaque grayscale base pixels only; decode linear; both maps must share base extent and wrapping.",
+    "packing": "RGBA [255, roughness or255, metalness or255,255]; existing linear mip chain.",
+    "factors": "Separate multiplicative scalar constants; connected absent values default1; explicit0 retained; untextured defaults roughness1/metalness0 unchanged.",
+    "rejected": "Color, nonopaque alpha, unequal extents/wrap, unsupported UV/transform/shader graphs/vector factors, gloss conversion, advanced features and existing containment/budgets.",
+    "decoded_image_budget_bytes": 67108864,
+    "unique_image_objects_limit": 256,
+    "source_and_dependency_budget_bytes": 134217728,
+    "scope_of_disabled_maps": "Source-reviewed preservation of existing texture_enabled predicate; normalized disabled-map input was not externally expressible in these supported-class fixtures. Disconnected unused missing files are separately executed, not equivalent coverage."
+  },
+  "windows_build": {
+    "passed": true,
+    "seconds": 192.8732676890213,
+    "cache_generation": 26,
+    "at_run_source_rows": 306,
+    "sealed_artifacts": 11,
+    "desktop_backend_compiled": true,
+    "desktop_visual_qualified": false,
+    "images": {
+      "poima.exe": {
+        "bytes": 26058752,
+        "sha256": "7a89909108d6329ee75526a52c6d06c5cebaa2dcaadec3868816fbc5793ceed4"
+      },
+      "phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "poima_desktop.dll": {
+        "bytes": 298640384,
+        "sha256": "5b8131237868b062081c1e7cd718a89c19dab67228f84470c2944e7a1d57ce79"
+      },
+      "poima-fbx-scalar-maps-test.exe": {
+        "bytes": 2107904,
+        "sha256": "f50e21c892e89ab66c2e23cc571fc21dfac70115c2747c922762a736c56a64b0"
+      },
+      "poima-fbx-test.exe": {
+        "bytes": 2424832,
+        "sha256": "086ca5b945e5237db7a7d223b082a12f791a42c45f30a6519ffb3e31aeba7d48"
+      },
+      "poima-animation-rotation-retarget-test.exe": {
+        "bytes": 2498560,
+        "sha256": "f20becf703b107bb7220d9f583dbd25b59d3025a35d90e0451565639ae4b94eb"
+      },
+      "poima-world-schema-test.exe": {
+        "bytes": 24499200,
+        "sha256": "260fe4aa350bf6762e5d4937578bba8203e952488840cd4fb7f06f5687649514"
+      },
+      "poima-mutation-discovery-test.exe": {
+        "bytes": 1238016,
+        "sha256": "1e8de4164070f11b69144b40b81aba3dde905496442a76f683597143256124e7"
+      },
+      "poima-mcp-test.exe": {
+        "bytes": 15177728,
+        "sha256": "e6d8a9435b0d00bcbdbe81f521a32be9e5949aec3f26a725e5c88c1d83b97dc7"
+      }
+    }
+  },
+  "windows_cpu": {
+    "passed": true,
+    "executions": [
+      {
+        "name": "scalar_maps",
+        "binary": "poima-fbx-scalar-maps-test.exe",
+        "exit_code": 0,
+        "seconds": 1.4480594000197016,
+        "stdout": {
+          "bytes": 103,
+          "sha256": "3ca9777e3e283e6f695f8ea598929de916033693cbc1e10bd38634dad56c281f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "binary": "poima-world-schema-test.exe",
+        "exit_code": 0,
+        "seconds": 12.294928600022104,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "binary": "poima-mcp-test.exe",
+        "exit_code": 0,
+        "seconds": 0.08924880000995472,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      },
+      {
+        "name": "mutation_discovery",
+        "binary": "poima-mutation-discovery-test.exe",
+        "exit_code": 0,
+        "seconds": 0.06191930000204593,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "fbx_ascii",
+        "binary": "poima-fbx-test.exe",
+        "exit_code": 0,
+        "seconds": 0.10000929998932406,
+        "stdout": {
+          "bytes": 117,
+          "sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "fbx_binary",
+        "binary": "poima-fbx-test.exe",
+        "exit_code": 0,
+        "seconds": 0.13720210001338273,
+        "stdout": {
+          "bytes": 117,
+          "sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "rotation_retarget",
+        "binary": "poima-animation-rotation-retarget-test.exe",
+        "exit_code": 0,
+        "seconds": 0.16153189999749884,
+        "stdout": {
+          "bytes": 65,
+          "sha256": "017d7920d1b692060e3ea20c8e15a2aee4c6df6bc16e0d249eca3f7b4b169ff4"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "seconds": 29.510083900007885,
+    "closure": {
+      "forced_cleanup": false,
+      "total_processes": 10,
+      "active_processes": 0,
+      "terminated_processes": 0
+    }
+  },
+  "windows_protocol": {
+    "passed": true,
+    "tests": 18,
+    "stages": [
+      {
+        "name": "fbx",
+        "tests": 7,
+        "decoded_rpc_rows": 327,
+        "native_owners": 9,
+        "skipped": 0,
+        "seconds": 4.399253700044937,
+        "evidence": {
+          "bytes": 339121,
+          "sha256": "a50fb747660586ba3be6c18dd21f990829d8ebd5877aa12fd7b618b3e2b09ff1"
+        },
+        "raw_wire_joined": false,
+        "full_windows_suite_qualified": false,
+        "unexecuted_methods": [
+          "test_filesystem_diagnostics_preserve_owner_and_publication",
+          "test_publication_rejects_existing_stages_and_linked_store"
+        ]
+      },
+      {
+        "name": "retarget",
+        "tests": 8,
+        "decoded_rpc_rows": 1017,
+        "native_owners": 10,
+        "skipped": 0,
+        "seconds": 4.285850999993272,
+        "evidence": {
+          "bytes": 21398291,
+          "sha256": "5c9fc7dffead4303097adc50aaf597e7a4de33b39e697b7ebe41919d8717e67f"
+        },
+        "raw_wire_joined": false
+      },
+      {
+        "name": "scalar",
+        "tests": 3,
+        "decoded_rpc_rows": 166,
+        "native_owners": 4,
+        "skipped": 0,
+        "seconds": 2.3925359999993816,
+        "evidence": {
+          "bytes": 386010,
+          "sha256": "b512ab05cb69f06070fdb7ca6309753bff4884bff4ee5e0a238800f79040be1e"
+        },
+        "raw_wire_joined": true,
+        "raw_wire_pairs": 166,
+        "groups": [
+          {
+            "name": "test_cold_source_absence_retains_full_cooked_pose",
+            "cold_source_absent": true,
+            "full_cooked_sections": [
+              "nodes",
+              "primitives",
+              "images",
+              "vertices"
+            ],
+            "passed": true
+          },
+          {
+            "name": "test_failures_are_atomic_then_exact_source_repairs",
+            "rejected_policies": 32,
+            "repaired_identical_requests": 2,
+            "passed": true
+          },
+          {
+            "name": "test_profiles_codecs_and_shared_inventory",
+            "profiles": 11,
+            "ascii_binary_pairs": 8,
+            "passed": true
+          }
+        ],
+        "retained_authored_state_observations": 47,
+        "retained_package_inventory_observations": 39
+      }
+    ],
+    "seconds": 19.026557100005448,
+    "closure": {
+      "forced_cleanup": false,
+      "total_processes": 27,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "filesystem_scope": "Two complete legacy FBX filesystem methods not executed on Windows: arbitrary invalid UTF-8 filename bytes are POSIX-only; current Windows token cannot create symlinks (WinError1314). All nine legacy FBX methods are separately exercised on Linux."
+  },
+  "previous_cook_compatibility": {
+    "passed": true,
+    "baseline_engine": "0.0.158",
+    "candidate_engine": "0.0.161",
+    "total_cases": 84,
+    "accepted_cases": 26,
+    "distinct_cooked_packages": 12,
+    "rejected_cases": 58,
+    "accepted_ids_and_complete_packages_byte_exact": true,
+    "rejected_acceptance_and_codes_exact": true,
+    "raw_wire_retained": false,
+    "complete_before_document_independently_reconstructable": false,
+    "closure": {
+      "forced_cleanup": false,
+      "total_processes": 3,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "packages": {
+      "0d039dccd5ee5a82a00af9bf9e1cf2bb6b08989d439836d02ab275caea63b8e0.pmodel": {
+        "bytes": 2787,
+        "sha256": "0d039dccd5ee5a82a00af9bf9e1cf2bb6b08989d439836d02ab275caea63b8e0"
+      },
+      "151edc66e64d828dd49d14a6c00f610b52b5321b175b7049473b7b6e5a1cf786.pmodel": {
+        "bytes": 1207,
+        "sha256": "151edc66e64d828dd49d14a6c00f610b52b5321b175b7049473b7b6e5a1cf786"
+      },
+      "21c4a94b72459d78f2c927bdbe7b8d9e5f9dead12638011a229d3c82f206ed08.pmodel": {
+        "bytes": 913,
+        "sha256": "21c4a94b72459d78f2c927bdbe7b8d9e5f9dead12638011a229d3c82f206ed08"
+      },
+      "23adfcabfcc785da39e5ccf05a467ecae893dab4a0fa896c5cbf74773c6b5793.pmodel": {
+        "bytes": 926,
+        "sha256": "23adfcabfcc785da39e5ccf05a467ecae893dab4a0fa896c5cbf74773c6b5793"
+      },
+      "36bffd1f39b8dcdbacf53350fc00cbad99441803db22a5c8a3f4668696c84d53.pmodel": {
+        "bytes": 809,
+        "sha256": "36bffd1f39b8dcdbacf53350fc00cbad99441803db22a5c8a3f4668696c84d53"
+      },
+      "52b171397e422d5eb9cc7bb4efefc7dcb2ef1cff3cb2a7e37d87cf24a16983b7.pmodel": {
+        "bytes": 870,
+        "sha256": "52b171397e422d5eb9cc7bb4efefc7dcb2ef1cff3cb2a7e37d87cf24a16983b7"
+      },
+      "5cf80619d00e2002ecb51d13daa543a461743470942078a62bdf11103193c1f5.pmodel": {
+        "bytes": 1498,
+        "sha256": "5cf80619d00e2002ecb51d13daa543a461743470942078a62bdf11103193c1f5"
+      },
+      "6ee9f5ae985aca58f1aaeea6530134040a7875e7cdfb04736374005a0be53f56.pmodel": {
+        "bytes": 1439,
+        "sha256": "6ee9f5ae985aca58f1aaeea6530134040a7875e7cdfb04736374005a0be53f56"
+      },
+      "a2051f93c578be7b9aec6fee896df9e8de0bce56cb7c5da923bbce33d1161c40.pmodel": {
+        "bytes": 1498,
+        "sha256": "a2051f93c578be7b9aec6fee896df9e8de0bce56cb7c5da923bbce33d1161c40"
+      },
+      "bb850f43322f096e3a6d1cf612608e0b7b6a9d221ae5ab4a6105d7ba8ec77605.pmodel": {
+        "bytes": 1164,
+        "sha256": "bb850f43322f096e3a6d1cf612608e0b7b6a9d221ae5ab4a6105d7ba8ec77605"
+      },
+      "e88fd64e66396398f6fdc974b63302d8e00660347384bfc1eb6d2dcd3e01752c.pmodel": {
+        "bytes": 2818,
+        "sha256": "e88fd64e66396398f6fdc974b63302d8e00660347384bfc1eb6d2dcd3e01752c"
+      },
+      "fa2155ca07f3bdc73ffef8182d975007f60d0e649855d67952febbde51ed5823.pmodel": {
+        "bytes": 930,
+        "sha256": "fa2155ca07f3bdc73ffef8182d975007f60d0e649855d67952febbde51ed5823"
+      }
+    },
+    "complete_decoded_errors_exact": true
+  },
+  "retained_artifact_identities": {
+    "windows-build-result": {
+      "bytes": 55765,
+      "sha256": "ecf1f384a8bae434272221d12f33a7ef1223de0687235d5210d7819c6c47bdee"
+    },
+    "windows-source-manifest": {
+      "bytes": 45862,
+      "sha256": "e91372553669b5eb482f745cc1401376dea44287748945932351a17ce267bc20"
+    },
+    "windows-sealed-manifest": {
+      "bytes": 1936,
+      "sha256": "86337b161afa45f0a01c93a22fb0e16672bef58089ad6a3af9ca3a8ca54a517e"
+    },
+    "windows-cpu-qualification": {
+      "bytes": 1763,
+      "sha256": "67d0e27b402bfe11edae94d24a43b2059390f32e5012b3133e370aeff6246e81"
+    },
+    "windows-cpu-report": {
+      "bytes": 37394,
+      "sha256": "5ff173baa96ba51aae25d2937d7602f4e9bf87ec6a46ae126ecbb47b4dd3d8f5"
+    },
+    "windows-protocol-qualification": {
+      "bytes": 1638,
+      "sha256": "552aa0f248575dc68afe7535423efaa1fdd7f72525eb0ff2f60d7f7ff0d20245"
+    },
+    "windows-protocol-report": {
+      "bytes": 59102,
+      "sha256": "8387f8c060593d64fc4ba3afaa7b15938b9a1d365975436ee95354ad604b4e85"
+    },
+    "old-baseline-result": {
+      "bytes": 90531,
+      "sha256": "1d8d1e69e04ae58f249ed859e10bbf0b94bee72a8d0dff275d1c1e154927b232"
+    },
+    "old-candidate-result": {
+      "bytes": 90785,
+      "sha256": "f3ab0db194ad9b0f8a3dc220ffc8013755e6018e1b4dcca5c18c1328df05a788"
+    },
+    "linux-report": {
+      "bytes": 70084,
+      "sha256": "c228e54bc0e05ce4476bc3a72cc4d511b51e5efb9f9e2f4486e4744123f4e863"
+    },
+    "linux-junit": {
+      "bytes": 7619,
+      "sha256": "460c690d9f60d9f1cd20b88c1ab21aa5b26988beb1b7d7b9b00dd393cf47b131"
+    },
+    "linux-source-manifest": {
+      "bytes": 56889,
+      "sha256": "ed668da4cc657f6461fe943d19d84eb7b58ad0a8dbb68c72113686896c0e79a2"
+    },
+    "windows-independent-file-audit": {
+      "bytes": 1819,
+      "sha256": "e7273740fd013ad87ec264d43eab1cc02bb1db2cafad003f9e5899b2a429c174"
+    },
+    "previous-cook-independent-file-audit": {
+      "bytes": 8225,
+      "sha256": "04c42b5bef42103509e9091531f19b233d182c397af1163b6f7f92c457101ad2"
+    },
+    "linux-independent-file-audit": {
+      "bytes": 1799,
+      "sha256": "b6c3cc4d0d4c1eaf0ba35fe371ab218a1eebb7ba86f17b01e4612ac37fcb6813"
+    }
+  },
+  "qualification_limits": [
+    "Original analytic fixtures exercise the supported profile; this is not an external-exporter application certification.",
+    "New scalar protocol retains lossless raw request/reply envelopes. Legacy FBX/retarget and old-cook helpers retain SDK-decoded rows; do not label them raw-wire evidence.",
+    "Same-owner failed imports compare complete authored document, inspection, undo/redo history and package inventory. Cold reopen compares cooked sections/analytic vertices and persisted authored document; owner-local undo history is not a cold-state invariant.",
+    "The old-cook worker retains its before/after document-hash integrity flag and final document, not an independently retained before document. All26 accepted cases share12 distinct packages.",
+    "The preliminary baseline tooling attempt failed before import because its version check expected plaintext. It is retained and excluded; no native importer failure or result is inferred.",
+    "Decoded-image limits count both transient scalar inputs and packed output, not total process RAM. Budget admission precedes new scalar decode and packed allocation.",
+    "The supported shader mappings could not supply an enabled connection with normalized texture_enabled=false. That branch is source-reviewed only; executed disconnected-map fixtures are a distinct case."
+  ],
+  "engine_version": "0.0.161"
+}

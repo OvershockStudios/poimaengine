@@ -2,6 +2,7 @@
 #include "fbx.hpp"
 #include "poima/animation.hpp"
 #include <ufbx/ufbx.h>
+#include <stb/stb_image.h>
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -94,14 +95,31 @@ ufbx_allocator_opts allocator() {ufbx_allocator_opts a{};a.memory_limit=source_b
 struct Images {
     const std::filesystem::path root;ModelAsset& model;FbxNormalConvention normals;std::size_t read,decoded=0;
     std::map<std::tuple<const ufbx_texture*,bool,bool>,std::shared_ptr<const TextureImage>> cache;
-    TextureMap texture(const ufbx_texture* t,bool srgb,bool invert_green=false) {
+    // Source cache entries hold these identities for the converter's entire
+    // lifetime, including images not yet referenced by any retained map.
+    std::map<std::pair<const TextureImage*,const TextureImage*>,std::shared_ptr<const TextureImage>> packed_cache;
+    std::set<const TextureImage*> registered;
+    static std::size_t mip_bytes(std::uint32_t width,std::uint32_t height) {
+        std::size_t bytes=0;
+        for(;;) {
+            const auto size=std::size_t(width)*height*4;
+            require(size<=image_budget-bytes,"FBX decoded image exceeds budget.");bytes+=size;
+            if(width==1 && height==1)return bytes;
+            width=std::max(1u,width/2);height=std::max(1u,height/2);
+        }
+    }
+    void retain(const std::shared_ptr<const TextureImage>& image) {
+        if(registered.insert(image.get()).second)model.images.push_back(image);
+    }
+    void room() const {require(cache.size()+packed_cache.size()<256,"FBX image count exceeds 256.");}
+    TextureMap texture(const ufbx_texture* t,bool srgb,bool invert_green=false,bool retained=true) {
         require(!invert_green || !srgb,"FBX normal-map conversion requires a linear image.");
         require(t && t->type==UFBX_TEXTURE_FILE && !t->has_uv_transform,"FBX layered/procedural/transformed texture is unsupported.");
         require(t->uv_set.length<=256,"FBX texture UV set name is too long.");
         TextureMap result;require(t->wrap_u<=UFBX_WRAP_CLAMP && t->wrap_v<=UFBX_WRAP_CLAMP,"FBX texture wrap mode is unsupported.");
         result.wrap_s=t->wrap_u==UFBX_WRAP_REPEAT ? 10497 : 33071;result.wrap_t=t->wrap_v==UFBX_WRAP_REPEAT ? 10497 : 33071;
-        const auto key=std::tuple{t,srgb,invert_green};if(const auto it=cache.find(key);it!=cache.end()) {result.image=it->second;return result;}
-        require(model.images.size()<256,"FBX image count exceeds 256.");std::string bytes;
+        const auto key=std::tuple{t,srgb,invert_green};if(const auto it=cache.find(key);it!=cache.end()) {result.image=it->second;if(retained)retain(result.image);return result;}
+        room();std::string bytes;
         if(t->content.size) {
             require(t->content.size<=32*1024*1024 && t->content.size<=source_budget-read,"FBX embedded image exceeds byte budget.");
             bytes.assign(static_cast<const char*>(t->content.data),t->content.size);read+=bytes.size();
@@ -117,6 +135,14 @@ struct Images {
             const auto relative=path.lexically_relative(root);require(!relative.empty() && !relative.is_absolute() && *relative.begin()!="..","FBX texture escapes the source directory.");
             bytes=read_texture_file(path,std::min<std::size_t>(32*1024*1024,source_budget-read),text);read+=bytes.size();
         }
+        if(!retained) {
+            // New scalar inputs remain cached but are not necessarily retained
+            // in the model. Admit their entire mip chain before decoding it.
+            int width=0,height=0,channels=0;
+            require(stbi_info_from_memory(reinterpret_cast<const stbi_uc*>(bytes.data()),static_cast<int>(bytes.size()),&width,&height,&channels)!=0,"Invalid or unsupported PNG/JPEG image.");
+            require(width>0 && height>0 && width<=4096 && height<=4096 && std::size_t(width)*height<=4*1024*1024,"Image exceeds dimension/pixel budget.");
+            require(mip_bytes(static_cast<std::uint32_t>(width),static_cast<std::uint32_t>(height))<=image_budget-decoded,"FBX decoded images exceed 64 MiB.");
+        }
         result.image=decode_texture(std::as_bytes(std::span(bytes.data(),bytes.size())),srgb);
         if(invert_green) {
             auto converted=std::make_shared<TextureImage>();converted->srgb=false;
@@ -125,7 +151,34 @@ struct Images {
             converted->mips=texture_mips(std::move(base),false);result.image=std::move(converted);
         }
         std::size_t size=0;for(const auto& mip:result.image->mips) {require(mip.rgba.size()<=image_budget-size,"FBX decoded image exceeds budget.");size+=mip.rgba.size();}
-        require(size<=image_budget-decoded,"FBX decoded images exceed 64 MiB.");decoded+=size;model.images.push_back(result.image);cache.emplace(key,result.image);return result;
+        require(size<=image_budget-decoded,"FBX decoded images exceed 64 MiB.");decoded+=size;if(retained)retain(result.image);cache.emplace(key,result.image);return result;
+    }
+    TextureMap scalar_pair(const TextureMap& rough,const TextureMap& metal) {
+        const auto key=std::pair{rough.image.get(),metal.image.get()};
+        TextureMap result=rough.image ? rough : metal;
+        if(const auto it=packed_cache.find(key);it!=packed_cache.end()) {result.image=it->second;retain(result.image);return result;}
+        const auto& base=result.image->mips.front();
+        if(rough.image && metal.image) {
+            const auto& other=metal.image->mips.front();
+            require(base.width==other.width && base.height==other.height,"FBX scalar maps must share dimensions.");
+            require(rough.wrap_s==metal.wrap_s && rough.wrap_t==metal.wrap_t,"FBX scalar maps must share wrap modes.");
+        }
+        for(const auto* map:{&rough,&metal})if(map->image) {
+            const auto& rgba=map->image->mips.front().rgba;
+            for(std::size_t i=0;i<rgba.size();i+=4)
+                require(rgba[i]==rgba[i+1] && rgba[i]==rgba[i+2] && rgba[i+3]==255,"FBX scalar maps require opaque grayscale pixels.");
+        }
+        room();const auto size=mip_bytes(base.width,base.height);
+        require(size<=image_budget-decoded,"FBX decoded images exceed 64 MiB.");
+        // Both transient sources and this derived chain count toward the same
+        // budget. No packed base/mip allocation occurs before that admission.
+        TextureMip packed;packed.width=base.width;packed.height=base.height;packed.rgba.resize(base.rgba.size(),255);
+        for(std::size_t i=0;i<packed.rgba.size();i+=4) {
+            if(rough.image)packed.rgba[i+1]=rough.image->mips.front().rgba[i];
+            if(metal.image)packed.rgba[i+2]=metal.image->mips.front().rgba[i];
+        }
+        auto image=std::make_shared<TextureImage>();image->srgb=false;image->mips=texture_mips(std::move(packed),false);
+        decoded+=size;result.image=std::move(image);packed_cache.emplace(key,result.image);retain(result.image);return result;
     }
 };
 bool textured(const ufbx_material_map& map) {return map.texture && map.texture_enabled;}
@@ -133,13 +186,13 @@ double factor(const ufbx_material_map& map,double fallback) {return map.has_valu
 void no_texture(const ufbx_material_map& map) {require(!textured(map),"FBX material texture slot cannot be represented by the supported renderer.");}
 void inactive(const ufbx_material_map& map) {require(!textured(map) && (!map.has_value || map.value_real==0),"FBX advanced material feature is unsupported.");}
 void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* source,Images& images,ModelAsset& model) {
-    auto texture=[&](const ufbx_texture* t,bool srgb,bool normal_map=false) {
+    auto texture=[&](const ufbx_texture* t,bool srgb,bool normal_map=false,bool retained=true) {
         if(t && t->uv_set.length) {
             require(geometry.uv_sets.count==1,"FBX texture references a missing UV set.");
             const auto expected=geometry.uv_sets.data[0].name;
             require(std::string_view(t->uv_set.data,t->uv_set.length)==std::string_view(expected.data,expected.length),"FBX texture references an unsupported UV set.");
         }
-        return images.texture(t,srgb,normal_map && images.normals==FbxNormalConvention::opengl);
+        return images.texture(t,srgb,normal_map && images.normals==FbxNormalConvention::opengl,retained);
     };
     if(!source) {mesh.material.metallic=0;mesh.material.roughness=1;return;}
     const auto& p=source->pbr;const auto& f=source->fbx;
@@ -160,14 +213,26 @@ void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* sou
         const std::string diagnostic="Legacy FBX Lambert/Phong converted to matte metallic/roughness; legacy specular/ambient response is not reproduced.";
         if(std::find(model.diagnostics.begin(),model.diagnostics.end(),diagnostic)==model.diagnostics.end())model.diagnostics.push_back(diagnostic);
     }else {
-        no_texture(p.roughness);no_texture(p.metalness);no_texture(p.specular_factor);no_texture(p.specular_color);no_texture(p.glossiness);
+        no_texture(p.specular_factor);no_texture(p.specular_color);no_texture(p.glossiness);
         require(!source->features.roughness_as_glossiness.enabled && (!p.glossiness.has_value || p.glossiness.value_real==0),"FBX glossiness conversion is unsupported.");
         require(!p.specular_factor.has_value || p.specular_factor.value_real==1,"FBX custom PBR specular factor is unsupported.");
         if(p.specular_color.has_value)require(p.specular_color.value_vec3.x==1 && p.specular_color.value_vec3.y==1 && p.specular_color.value_vec3.z==1,"FBX custom PBR specular color is unsupported.");
         require(!p.specular_ior.has_value || p.specular_ior.value_real==1.5,"FBX custom PBR IOR is unsupported.");
         inactive(p.diffuse_roughness);inactive(p.specular_anisotropy);inactive(p.specular_rotation);
-        const auto rough=factor(p.roughness,1),metal=factor(p.metalness,0);require(rough>=0 && rough<=1 && metal>=0 && metal<=1 && std::isfinite(rough) && std::isfinite(metal),"FBX PBR factors exceed supported range.");
+        const bool rough_map=textured(p.roughness),metal_map=textured(p.metalness);
+        require(!rough_map || !p.roughness.has_value || p.roughness.value_components==1,"FBX roughness map factor must be scalar.");
+        require(!metal_map || !p.metalness.has_value || p.metalness.value_components==1,"FBX metalness map factor must be scalar.");
+        const auto rough=factor(p.roughness,1),metal=factor(p.metalness,metal_map ? 1:0);require(rough>=0 && rough<=1 && metal>=0 && metal<=1 && std::isfinite(rough) && std::isfinite(metal),"FBX PBR factors exceed supported range.");
         mesh.material.roughness=static_cast<float>(rough);mesh.material.metallic=static_cast<float>(metal);
+        if(rough_map || metal_map) {
+            auto scalar_texture=[&](const ufbx_texture* t) {
+                require(t && !t->shader,"FBX scalar-map shader graphs are unsupported.");
+                return texture(t,false,false,false);
+            };
+            const auto rough_texture=rough_map ? scalar_texture(p.roughness.texture) : TextureMap{};
+            const auto metal_texture=metal_map ? scalar_texture(p.metalness.texture) : TextureMap{};
+            mesh.textures[1]=images.scalar_pair(rough_texture,metal_texture);
+        }
     }
     const auto& emission=legacy ? f.emission_color : p.emission_color;const auto& emission_factor=legacy ? f.emission_factor : p.emission_factor;no_texture(emission_factor);
     const auto e=emission.has_value ? emission.value_vec3 : ufbx_zero_vec3;const auto ef=factor(emission_factor,1);
@@ -213,7 +278,7 @@ struct Converter {
     std::size_t vertices=0,indices=0,joints=0,color_values=0,color_indices=0;
     std::set<const ufbx_mesh*> neutral_color_meshes;
     std::map<const ufbx_node*,std::uint32_t> nodes;
-    explicit Converter(const ufbx_scene& s,ModelAsset& m,const std::filesystem::path& root,std::size_t bytes,FbxNormalConvention normals):scene(s),model(m),images{root,m,normals,bytes,0,{}} {}
+    explicit Converter(const ufbx_scene& s,ModelAsset& m,const std::filesystem::path& root,std::size_t bytes,FbxNormalConvention normals):scene(s),model(m),images{root,m,normals,bytes,0,{},{},{}} {}
     void hierarchy() {
         require(scene.nodes.count>0 && scene.nodes.count<=10000,"FBX exceeds 10,000 hierarchy nodes.");
         for(std::size_t i=0;i<scene.nodes.count;++i)nodes.emplace(scene.nodes.data[i],static_cast<std::uint32_t>(i));

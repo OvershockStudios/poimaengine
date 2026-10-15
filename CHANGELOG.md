@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.161
+
+- Import supported separate FBX roughness and metalness maps into linear packed channels with independent scalar factors, shared-image reuse and bounded transient/packed image storage. [Supported profile](docs/FBX_IMPORT.md#roughness-and-metallic-textures).
+- Pass seven Windows native executions, eighteen Windows protocol tests and fourteen Linux headless CTest entries. Verify exact packed data, rejection without partial edits, repaired imports and cooked reopening with sources absent; preserve 26 older accepted cases across 12 byte-identical packages and all 58 decoded errors. [Results and scope](docs/evidence/m2-fbx-scalar-maps.json).
+
 ## 0.0.160
 
 - Add opt-in process-memory query intervals and bounded reliability-harness phase recording in one shared integer clock. Preserve default sampling and native checks; retain partial errors and leave boundary-crossing queries unassigned. [Recording guide](docs/MEMORY_TIMELINE.md).

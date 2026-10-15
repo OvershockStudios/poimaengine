@@ -75,6 +75,59 @@ bijective direct-parent/root correspondence; missing or extra helper segments
 still reject. Inspect original takes and nodes through `asset.source.inspect`
 before selecting an animation-only donor.
 
+## Roughness and metallic textures
+
+Starting with 0.0.161, supported metallic/roughness shader models can supply
+separate scalar roughness and metalness maps. These are **linear, opaque
+grayscale** PNG/JPEG images: every decoded base pixel must have equal red,
+green and blue values and alpha 255. The maps must use the supported single
+UV set, have no texture transform or shader graph, and share dimensions and
+wrap modes when both are present.
+
+Import packs roughness into green and metalness into blue of the existing
+linear material texture. Red and alpha are 255. A missing map contributes
+255 in its channel; material factors remain separate multipliers. Connected
+maps with no specified factor use 1. Explicit connected factors must be scalar,
+finite and within `[0,1]`. Untextured defaults remain roughness 1 and metalness
+0. The importer generates the existing linear mip chain after packing; it does
+not resize maps, choose a channel from a colored image or invert glossiness.
+
+Inspect the result through `asset.inspect`, section `primitives`, including
+its scalar material factors and texture slot 1. Repair a colored/transparent
+source by supplying the intended opaque grayscale scalar data. Match image
+extents, wrap modes and UV binding in the source material rather than expecting
+automatic resampling. Missing external files use the structured
+[dependency error](#repair-an-external-texture-dependency).
+
+Transient input images and cached packed outputs share the existing 256-image
+and 64 MiB decoded-image budgets. Only referenced images enter the cooked
+model; packing does not serialize unused scalar inputs. Reusing a packed pair
+shares its image, and a scalar input also used by another retained map remains
+available. Existing image dimension/pixel limits, the 32 MiB cooked-image
+aggregate and 64 MiB model-package limit still apply. These limits describe
+decoded/cooked data, rather than total process memory.
+
+This profile follows the parser's normalized roughness/metalness properties.
+It does not support arbitrary source shader graphs or promise visual parity
+with a particular content application.
+
+Run the scalar-map checks after building with tests enabled:
+
+```sh
+ctest --test-dir build/headless -R '^fbx_scalar_' --output-on-failure
+```
+
+The native checks cover exact packed channels and mips, factors, shared images,
+animated geometry and image-budget boundaries in ASCII and binary FBX. The
+protocol checks retain rejected requests, verify unchanged authoring and
+packages, repair missing dependencies, and reopen cooked content in a fresh
+process with the original source path absent.
+
+The [0.0.161 results](evidence/m2-fbx-scalar-maps.json) record Windows native
+and Linux headless qualification, plus byte-identical cooked output for the
+previously accepted original fixtures. Application-specific exporter coverage
+and visual rendering remain separate checks.
+
 ## Repair an external texture dependency
 
 Starting with 0.0.155, `asset.import` and `asset.source.inspect` identify a
