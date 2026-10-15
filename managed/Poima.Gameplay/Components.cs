@@ -79,3 +79,17 @@ public readonly unsafe ref partial struct GameContext
         if(alive>1)throw new InvalidOperationException("Invalid native entity-liveness flag.");return alive!=0;
     }
 }
+
+/// <summary>Typed reads of committed native components at unchanged simulation time.
+/// Values and generated buffers are copies; lifecycle and component writes remain Tick-only.</summary>
+public readonly unsafe ref partial struct ControlContext
+{
+    /// <summary>Sorted published IDs after an exclusive cursor; destination capacity is 1..256 and the result may be zero.</summary>
+    public int Query<T>(Span<EntityId> destination,EntityId after=default) where T:unmanaged,IGameplayComponent<T> =>
+        context.Query<T>(destination,after);
+    /// <summary>False only for an existing entity without this component. Unknown entities throw.</summary>
+    public bool TryGet<T>(EntityId entity,out T value) where T:unmanaged,IGameplayComponent<T> =>
+        context.TryGet(entity,out value);
+    public T Get<T>(EntityId entity) where T:unmanaged,IGameplayComponent<T> => context.Get<T>(entity);
+    public bool IsAlive(EntityId entity) => context.IsAlive(entity);
+}

@@ -94,6 +94,14 @@ The service exposes `runtime.components`, `runtime.component.get`, `runtime.comp
 
 `desktop.inspect.components` exposes only `active`, `session_id`, `tick` and `revision`; polling does not serialize all component values. The editor's live type picker uses the frozen runtime registry, including after restoring a save whose membership differs from current authored content.
 
+## Reads in compiled controls
+
+`ControlContext` offers the same typed `Get<T>`, `TryGet<T>`, `Query<T>` and `IsAlive` reads as `GameContext`. A control sees committed native component state at its current owner boundary. Scalars and generated bounded buffers use the existing descriptor/fingerprint validation and codecs; returned values are copies. Changing a local copy does not mutate the world. No extra native services fields or schema changes are involved.
+
+`TryGet` returns false/default only for an existing entity without the requested component; unknown entities throw, and `Get` throws for either absence case. `IsAlive` is the explicit null/unknown/retired-handle check. Queries fill caller-owned spans of 1..256 IDs in sorted order after an exclusive cursor. Iterate until a short or empty page; an exact full page has no separate completion flag. Components changed between two controls are visible to the next control even at the same simulation Tick.
+
+Controls cannot stage component writes or spawn/despawn entities. Post ordinary intent in registered global state and settle lifecycle work during Tick, checking current authoritative membership. An unhandled read error uses existing callback rollback; catching an error in game code permits that callback to continue. Arbitrary managed side effects are outside native rollback.
+
 ## Reload, save and ship
 
 Schema fingerprints cover stable type/field IDs, kinds, canonical defaults and version. Labels, units and C# field order are excluded. Compatible code reload preserves native component storage. Changing a kind, default or field membership rejects replacement; general schema migration is not implemented. The loaded module must declare every instantiated component type, and its declared types must exist in the frozen runtime.

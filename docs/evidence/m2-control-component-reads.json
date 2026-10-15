@@ -1,0 +1,657 @@
+{
+  "format": "poima.control-component-reads-qualification.v1",
+  "checkpoint": "0.0.150",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Typed read-only ControlContext component access from a fresh Windows NativeAOT fixture on the retained native engine; unticked callbacks, complete saved native payload comparisons and callback rollback.",
+  "api": {
+    "added_methods": [
+      "ControlContext.Query<T>(Span<EntityId>, EntityId after = default)",
+      "ControlContext.TryGet<T>(EntityId, out T)",
+      "ControlContext.Get<T>(EntityId)",
+      "ControlContext.IsAlive(EntityId)"
+    ],
+    "reads": "Committed native state; structs and generated buffers are value copies.",
+    "mutations": "Component and lifecycle mutations remain Tick-only."
+  },
+  "lineage": {
+    "native_engine": "0.0.149",
+    "native_cache_generation": 20,
+    "cpp_engine_rebuilt": false,
+    "native_abi_changed": false,
+    "services_version": 7,
+    "minimum_services_bytes": 176,
+    "required_features": [
+      "baseline_v7",
+      "component_collections_v1"
+    ],
+    "native_binary": {
+      "bytes": 25985024,
+      "sha256": "b46006d9bd781ebf939b79c19ed5adbbed1c8f0773173fbc499f509306cd5469"
+    },
+    "qualified_native_producer": {
+      "bytes": 54996,
+      "sha256": "0058793dfb7a7624a92e9b15118a33a4086990dc3460acf947c1ddbb27ca6bd0"
+    },
+    "native_producer_source_inputs_unchanged": true,
+    "managed_source_change": "Four wrappers over existing GameContext/native read services."
+  },
+  "source_pins": {
+    "managed/Poima.Gameplay/Components.cs": {
+      "bytes": 5979,
+      "sha256": "4f18c906f1e616d5c9131ad3e2bdf8000d622b7c42b3c2a3e33068c776d65d08"
+    },
+    "tests/control_component_reads_gameplay/ControlReadGame.cs": {
+      "bytes": 8003,
+      "sha256": "84a3f9f9f26eb58a2208e67532e8eea478fa17d5b040d1b026485adf576a7b87"
+    },
+    "tests/control_component_reads_gameplay/Poima.ControlComponentReadGame.csproj": {
+      "bytes": 273,
+      "sha256": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc"
+    },
+    "tests/native_gameplay_owner.py": {
+      "bytes": 21305,
+      "sha256": "15854e4fb992cdabd3d81bd645c488e7884213814994cb7dc4c23d4c75f7afa2"
+    },
+    "tests/control_component_reads.py": {
+      "bytes": 16596,
+      "sha256": "ab5d8257df76cce9e53a0356b7c9eeb4a834558ef6b998744b72bf748c6b698c"
+    },
+    "tests/control_component_reads_contract_test.py": {
+      "bytes": 2592,
+      "sha256": "3141fab093d83cb01736ad1c596adb94a22b9f7a06ea892688f7ff5248a32756"
+    },
+    "tests/control_component_reads_gameplay/README.md": {
+      "bytes": 3321,
+      "sha256": "42774cbe1e6e890027ad40f257bcc35063f4072e22c9255ce0aafe0af5c379ea"
+    }
+  },
+  "compiled_source_closure": {
+    "files": 37,
+    "manifest": {
+      "bytes": 9604,
+      "sha256": "477a002e7ce7f80d1cb7e1a1bbcbc58ea20f3144a374bd7f9346ade3cd527676"
+    },
+    "source_originals_pinned_before_and_after_publication": true,
+    "limits": "Configured Windows toolchain, scoped private linker copies and warmed dependencies; not an immutable clean-machine toolchain closure."
+  },
+  "native_artifact": {
+    "descriptor": {
+      "bytes": 6663,
+      "sha256": "350aa7ad0448cec212b6566f425bf1abbb674a4a7fdb3958294834c1518e116b"
+    },
+    "library": {
+      "bytes": 1362432,
+      "sha256": "ea6c1ff4d63330405ed733dee2a649d4f962e9b54ec5b297210572feec9a655e"
+    },
+    "component_metadata": {
+      "bytes": 1692,
+      "sha256": "2cb77af7ab440929465bff088bfc52f9051d29057fbb63da875dc4aca1659da9"
+    },
+    "identity": "poima.test.control-component-reads",
+    "type": "Poima.Tests.ControlReadGame",
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "call_version": 1,
+    "call_bytes": 80,
+    "notice_files": 6,
+    "all_declared_artifact_payloads_verified": true
+  },
+  "publication": {
+    "owner": {
+      "bytes": 1511,
+      "sha256": "8babce4a2f481810749e91d5b9867c5b449d58f6899770fa63a973dec3162d3b"
+    },
+    "worker": {
+      "bytes": 12930,
+      "sha256": "ba54c33140462b5fc8fa14af68fbf3fc1595720aae643cc314c1543b433dec6c"
+    },
+    "supervising_job": {
+      "bytes": 1349,
+      "sha256": "d8c88a3066e6962c4521edc9d265652971052e06b1c4098f065a1950e8032780"
+    },
+    "ownership": {
+      "passed": true,
+      "exit_code": 0,
+      "job_assigned": true,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "at_child_exit": {
+        "total_processes": 32,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "after_cleanup": {
+        "total_processes": 32,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "publisher_exit_code": 0,
+    "publisher_stdout": {
+      "bytes": 5841,
+      "sha256": "96c3ccf7a4d97043c71d4b088a13d7d88dd0a0b2e743caacc36b205e2cf945cd"
+    },
+    "publisher_stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "native_qualification": {
+    "owner": {
+      "bytes": 2074,
+      "sha256": "0d9122f9d2876f896937866c78a819d3f968179e64c188af234c3674e17c59c9"
+    },
+    "report": {
+      "bytes": 1292110,
+      "sha256": "30d8fe61a3b6d67e2dcdfb4cf02167c3d17fd7b99bee978f18e1aeb3a65d0b4f"
+    },
+    "supervising_job": {
+      "bytes": 1460,
+      "sha256": "5ed7a26017ac14707bcc29c9781c834d6d48a6aac10e7933b977875c67a8a7c5"
+    },
+    "ownership": {
+      "passed": true,
+      "exit_code": 0,
+      "job_assigned": true,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "at_child_exit": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "after_cleanup": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "source_owners": 2,
+    "calls": 499,
+    "authoring_calls": 6,
+    "runtime_calls": 493,
+    "candidate_successes_validated": 488,
+    "stable19_selected_successes_validated": 485,
+    "successful_controls": 5,
+    "armed_rejected_controls": 3,
+    "historical_retries": 1,
+    "tick": 0,
+    "source_and_artifact_inputs_unchanged": true,
+    "transcripts": {
+      "authoring": {
+        "typed": {
+          "bytes": 19347,
+          "sha256": "de149f932a7b39eabda9f21ecca0d206d0a3344a354192c4965018b522fe0039"
+        },
+        "stdin": {
+          "bytes": 8035,
+          "sha256": "2576ae67e460f411251d901bfe6b19f130cf8c8f03f0ddbe3c9c925a364dc899"
+        },
+        "stdout": {
+          "bytes": 1553,
+          "sha256": "fa7dd064f4a8981f142e95d96b2ea37a0828b09330c89a06d46f3bbb22c45e71"
+        }
+      },
+      "runtime": {
+        "typed": {
+          "bytes": 2511144,
+          "sha256": "8e6cec3677eeb8abb4e9b759edf5fc8a29c4af095e7b3893b8a3602b1a243f45"
+        },
+        "stdin": {
+          "bytes": 91003,
+          "sha256": "6439dd403cd46aadb1ec625a9df0e615609182b0814be12a2cb5ab3b76d40e96"
+        },
+        "stdout": {
+          "bytes": 593233,
+          "sha256": "a61532c836999f6e9e268fc92eda4a64efc96228f232f45d4d66cfc04b9fad49"
+        }
+      }
+    }
+  },
+  "exercised_behavior": [
+    "Six authored entities: native capacity-four entity FIFO, four live320-byte components with all five scalar kinds and capacity-two arrays of all five element kinds, plus a live entity without that component.",
+    "Compiled reads check exact integer/extrema/finite-float/entity data, copied-value isolation and sorted exclusive query pages2+2+0, including a nonmember cursor.",
+    "Five successful logical controls at Tick0: read, full-queue refusal, missing/unknown distinction, read after a real guarded component edit, and read after errors.",
+    "A committed scalar edit7 to8 is visible on the next Control without advancing Tick; unknown/null liveness differs from a live entity missing a component.",
+    "Three armed unhandled read failures occur after staged registered globals/UI/save work. Each returns the actual -32040 marker and leaves the complete saved document, pending save state and existing save files unchanged.",
+    "Exact historical retry returns its retained receipt with replayed=true after intervening edits, without reentering Control or changing current saved state."
+  ],
+  "whole_payload_checks": {
+    "scope": "Every recorded saved document and all13 fields of its native snapshot payload are retained; successful controls allow only explicitly predicted registered-global/UI/control/gameplay-revision deltas. Armed failures and retry require whole saved-document equality.",
+    "document_version": 1,
+    "snapshot_version": 5,
+    "payload_keys": [
+      "animation",
+      "authored_revision",
+      "components",
+      "content_sha256",
+      "control_sequence",
+      "entities",
+      "gameplay",
+      "gameplay_revision",
+      "sound",
+      "structure",
+      "tick",
+      "ui",
+      "world_id"
+    ],
+    "checkpoint_pins": {
+      "initial": {
+        "document": {
+          "bytes": 14193,
+          "sha256": "6ddf746d21d2f4db11386e9bf40d1b25b66b489a9f80498b18c36ab4490703b3"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "747307151fcf7f431a414b44bbab5aaa50c9509fd03dac2f651871ce93d6c8b9",
+        "tick": 0,
+        "control_sequence": 0,
+        "gameplay_revision": 1,
+        "ui_revision": 0
+      },
+      "read": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "77fac48674b1b6af333eaf7fac3b870b3af4401434397b801f4edf9cb7e17b01"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "12c4abea1b765a38ecf5b493d69fa22f6313d0fd4a9c3645ea103089ee446763",
+        "tick": 0,
+        "control_sequence": 1,
+        "gameplay_revision": 2,
+        "ui_revision": 1
+      },
+      "refused": {
+        "document": {
+          "bytes": 14220,
+          "sha256": "a7d04206ce3e34dfa3f841ebb8ac92159032e37b01508534afeea83648cae3be"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "9c154a84f9ebd6f8fcc88679327d2a2641fadc11cbf40e592dc82c237a57cb0c",
+        "tick": 0,
+        "control_sequence": 2,
+        "gameplay_revision": 3,
+        "ui_revision": 2
+      },
+      "missing": {
+        "document": {
+          "bytes": 14237,
+          "sha256": "762609aad1b7b532fadbd0c4ba64cc6c800a2229077db3259a9d7e95a08934c2"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "93b7ea5b48393deb25260c94cc75156d986081d7a3c282549b56b9aeaae435ac",
+        "tick": 0,
+        "control_sequence": 3,
+        "gameplay_revision": 4,
+        "ui_revision": 3
+      },
+      "external-edit": {
+        "document": {
+          "bytes": 14237,
+          "sha256": "6f22f6f2964497e9350a99052e968d06b459893a00ecc7f89689cba4720e8d0d"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "4ce07aca4256117a0c11d4228d0ebeaf08ded1abcbfd56c3eaf9ad5d52d99371",
+        "tick": 0,
+        "control_sequence": 3,
+        "gameplay_revision": 4,
+        "ui_revision": 3
+      },
+      "read-current": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "5c0041eeee04f12685569877ba2c33700adaca9ffbc542ac6fa30c480d5a916a"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "dbec8d1a075aa2c6e65efba1b976300614816ccfad8becf75aef25f28124af8d",
+        "tick": 0,
+        "control_sequence": 4,
+        "gameplay_revision": 5,
+        "ui_revision": 4
+      },
+      "failure-0": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "5c0041eeee04f12685569877ba2c33700adaca9ffbc542ac6fa30c480d5a916a"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "dbec8d1a075aa2c6e65efba1b976300614816ccfad8becf75aef25f28124af8d",
+        "tick": 0,
+        "control_sequence": 4,
+        "gameplay_revision": 5,
+        "ui_revision": 4
+      },
+      "failure-1": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "5c0041eeee04f12685569877ba2c33700adaca9ffbc542ac6fa30c480d5a916a"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "dbec8d1a075aa2c6e65efba1b976300614816ccfad8becf75aef25f28124af8d",
+        "tick": 0,
+        "control_sequence": 4,
+        "gameplay_revision": 5,
+        "ui_revision": 4
+      },
+      "failure-2": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "5c0041eeee04f12685569877ba2c33700adaca9ffbc542ac6fa30c480d5a916a"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "dbec8d1a075aa2c6e65efba1b976300614816ccfad8becf75aef25f28124af8d",
+        "tick": 0,
+        "control_sequence": 4,
+        "gameplay_revision": 5,
+        "ui_revision": 4
+      },
+      "historical-retry": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "5c0041eeee04f12685569877ba2c33700adaca9ffbc542ac6fa30c480d5a916a"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "dbec8d1a075aa2c6e65efba1b976300614816ccfad8becf75aef25f28124af8d",
+        "tick": 0,
+        "control_sequence": 4,
+        "gameplay_revision": 5,
+        "ui_revision": 4
+      },
+      "after-errors": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "3cd21b4bb73488f1ff9e00c5d2b64c9fad75f2ea7c20e0c617b7d83b05a291e1"
+        },
+        "snapshot_version": 5,
+        "native_payload_sha256": "aece61f32562fd171a8afd100dd39c1872421496f84ea1d4df16ec2ca2aecb4f",
+        "tick": 0,
+        "control_sequence": 5,
+        "gameplay_revision": 6,
+        "ui_revision": 5
+      }
+    },
+    "exact_equal_to_read_current": [
+      "failure-0",
+      "failure-1",
+      "failure-2",
+      "historical-retry"
+    ],
+    "raw_native_payload_checksums_independently_checked": true
+  },
+  "preexecution_corrections": [
+    {
+      "kind": "Draft admission correction; not a failed native run",
+      "description": "Required an explicit37-file source closure before and after publication and the complete dynamically imported helper closure before native admission.",
+      "retained_preparation_record": {
+        "bytes": 2944,
+        "sha256": "88e09ae71cbe0a421d7bb4238fbb73c2086e112a4e25b58107ddb155226db035"
+      }
+    }
+  ],
+  "reproduction": {
+    "public_fixture": "tests/control_component_reads_gameplay",
+    "public_consumer": "tests/control_component_reads.py",
+    "public_contract_tests": "tests/control_component_reads_contract_test.py",
+    "public_consumer_passed": true,
+    "original_compiled_feature_run_passed": true,
+    "exact_exercise_and_prediction_ast_preserved": true,
+    "additional_native_calls": 499,
+    "same_compiled_artifact": true,
+    "scope": "Two source-owner runs of the same bounded exercise, not independent game workflows or a controlled success-rate experiment."
+  },
+  "limits": [
+    "Windows source-owner NativeAOT controls only; no exported-readonly or CoreCLR qualification from this run.",
+    "No genuine retired-handle case, all buffer capacities, runtime performance, rendering, physical input or complete Alpha claim.",
+    "Managed code can catch errors; callback rollback does not reverse arbitrary managed side effects outside registered native gameplay/UI/save state.",
+    "This SDK fixture does not repair or qualify a separate game workflow."
+  ],
+  "public_reproduction_qualification": {
+    "passed": true,
+    "qualification": {
+      "bytes": 2176,
+      "sha256": "1a5f89ffd06a00c60426076e6ef33fc9a37bc2d016b7c64f913f36827f68fa89"
+    },
+    "report": {
+      "bytes": 1292288,
+      "sha256": "837cf972d366122865cea926cc03b3656a998546f695a30b7f2e4403c2603e61"
+    },
+    "admission": {
+      "bytes": 7322,
+      "sha256": "c96c0c188b5ac5136a2411a1665054be8d7cac70e94684afcd6ea040221ab16c"
+    },
+    "job": {
+      "bytes": 1750,
+      "sha256": "d3d0539beca518ff804ce2aa32fae45c4079942abb62644c765b5bc4190fd3a4"
+    },
+    "seconds": 3.50058800005354,
+    "ownership": {
+      "exit_code": 0,
+      "job_assigned": true,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "at_child_exit": {
+        "user_time": 21562500,
+        "kernel_time": 11250000,
+        "period_user_time": 21562500,
+        "period_kernel_time": 11250000,
+        "page_faults": 24044,
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "after_cleanup": {
+        "user_time": 21562500,
+        "kernel_time": 11250000,
+        "period_user_time": 21562500,
+        "period_kernel_time": 11250000,
+        "page_faults": 24044,
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "calls": 499,
+    "authoring_calls": 6,
+    "runtime_calls": 493,
+    "stable19_selected_successes_validated": 485,
+    "candidate_successes_validated": 488,
+    "successful_controls": 5,
+    "armed_rejected_controls": 3,
+    "historical_retries": 1,
+    "tick": 0,
+    "input_and_artifact_pins_unchanged": true,
+    "transcripts": {
+      "authoring": {
+        "typed": {
+          "bytes": 19382,
+          "sha256": "2af439d97c898195a442c934ebb9cae7a772e0b4386438aa45fdde8b672c5b7a"
+        },
+        "stdin": {
+          "bytes": 8042,
+          "sha256": "b067d7a0f5c72377b2d79b25518047bf8f11ee41c3c9eb259c357e48337c25f5"
+        },
+        "stdout": {
+          "bytes": 1567,
+          "sha256": "bf54b8c6ff96092cb04c2f4a50b0eb0ca2c8ff2b5db487bb5fd01a209d36b8c8"
+        }
+      },
+      "runtime": {
+        "typed": {
+          "bytes": 2511767,
+          "sha256": "00a972ee156b5f0b04309acf64489ed20dc2e2179334ae0d454b9a2ae59fa84f"
+        },
+        "stdin": {
+          "bytes": 91010,
+          "sha256": "6a3bc6fd4dac4895ac187db370eef3d259071d67e64cb0cf1cad6f190d9c7570"
+        },
+        "stdout": {
+          "bytes": 593541,
+          "sha256": "1a8a42df8064e4dfaae29cb531255714e9d8fd661b14c9a58d85d040ef0ac112"
+        }
+      }
+    },
+    "checkpoints": {
+      "initial": {
+        "document": {
+          "bytes": 14193,
+          "sha256": "ea9d2a808a6e1cba330f00f1fcb56da188f2dc73ac5c33ec1dc44584ec4ffa9f"
+        },
+        "native_payload_sha256": "bf85df56ba3c9a32700f7f80547ab0784573cfa5a23cfa9fbb3c8aa2baf3e266",
+        "snapshot_version": 5
+      },
+      "read": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "f04d9e273975f0e90a48ff38223af68aea2f120cc9148e1634c23f61e1e4d771"
+        },
+        "native_payload_sha256": "7bf2a8af28f64cc6bd4252898a467bb79ce056d866313d052aac47db7806a65d",
+        "snapshot_version": 5
+      },
+      "refused": {
+        "document": {
+          "bytes": 14220,
+          "sha256": "f5dc08fe7e014209d8e025b7b0809722cdfab9a1c086bea254a8db4e8dd8caa5"
+        },
+        "native_payload_sha256": "ed0f7546b0ef2938bf396d3308862b28e629b562511b15d8fc70186be27ed1b4",
+        "snapshot_version": 5
+      },
+      "missing": {
+        "document": {
+          "bytes": 14237,
+          "sha256": "79dfae426142ff72020c9d8271c9076ca50745e2b873635e33ea0e43429682bf"
+        },
+        "native_payload_sha256": "8e9fe87e7e1f4f8bcd15c90fb30bdbed422580a0b7a74ec7cda439949d44fbd9",
+        "snapshot_version": 5
+      },
+      "external-edit": {
+        "document": {
+          "bytes": 14237,
+          "sha256": "2e7d8bd105c92c0d906b7b41f4ab4f80a25957726e9d383fc4fd1541f51d85d4"
+        },
+        "native_payload_sha256": "127a5547cfb6046734132d54373517e28343ab40cad16aac46bdbf44b4b05b21",
+        "snapshot_version": 5
+      },
+      "read-current": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "cf174557ca8bd0ea7936b2309c30e9b31bae4b0077f283adc83eca6a48b10e40"
+        },
+        "native_payload_sha256": "401edcc47d0a77fcb488f2bbec695eba8061f1099e217c5d693ca9c7240d0257",
+        "snapshot_version": 5
+      },
+      "failure-0": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "cf174557ca8bd0ea7936b2309c30e9b31bae4b0077f283adc83eca6a48b10e40"
+        },
+        "native_payload_sha256": "401edcc47d0a77fcb488f2bbec695eba8061f1099e217c5d693ca9c7240d0257",
+        "snapshot_version": 5
+      },
+      "failure-1": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "cf174557ca8bd0ea7936b2309c30e9b31bae4b0077f283adc83eca6a48b10e40"
+        },
+        "native_payload_sha256": "401edcc47d0a77fcb488f2bbec695eba8061f1099e217c5d693ca9c7240d0257",
+        "snapshot_version": 5
+      },
+      "failure-2": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "cf174557ca8bd0ea7936b2309c30e9b31bae4b0077f283adc83eca6a48b10e40"
+        },
+        "native_payload_sha256": "401edcc47d0a77fcb488f2bbec695eba8061f1099e217c5d693ca9c7240d0257",
+        "snapshot_version": 5
+      },
+      "historical-retry": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "cf174557ca8bd0ea7936b2309c30e9b31bae4b0077f283adc83eca6a48b10e40"
+        },
+        "native_payload_sha256": "401edcc47d0a77fcb488f2bbec695eba8061f1099e217c5d693ca9c7240d0257",
+        "snapshot_version": 5
+      },
+      "after-errors": {
+        "document": {
+          "bytes": 14218,
+          "sha256": "25ad75c92aa1f7f213f596e4f64675d36315a7324996a5ec8294b8ff04c22931"
+        },
+        "native_payload_sha256": "a0a28b7f1427d11b6cd405bffba9f3cde03361ced2f376cf5383ca23dbc3d0c6",
+        "snapshot_version": 5
+      }
+    }
+  },
+  "portable_checks": {
+    "test": "tests/control_component_reads_contract_test.py",
+    "linux": {
+      "passed": 4,
+      "skipped": 0,
+      "exit_code": 0,
+      "stdout": {
+        "file": "control-portable-linux-v1.stdout",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "file": "control-portable-linux-v1.stderr",
+        "bytes": 102,
+        "sha256": "56e03afda220e7ba78bbcecf9a2e53a0149cfc3e311fa10bbd01b25e8e5ba671"
+      }
+    },
+    "windows": {
+      "passed": 4,
+      "skipped": 0,
+      "exit_code": 0,
+      "stdout": {
+        "file": "control-portable-windows-v1.stdout",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "file": "control-portable-windows-v1.stderr",
+        "bytes": 107,
+        "sha256": "1b6f69157102cc03f5264c937d138171570f1a3f06ab9ba2d8345507e1df7261"
+      }
+    },
+    "test_source": {
+      "path": "tests/control_component_reads_contract_test.py",
+      "bytes": 2592,
+      "sha256": "3141fab093d83cb01736ad1c596adb94a22b9f7a06ea892688f7ff5248a32756"
+    },
+    "retained_receipt": {
+      "file": "control-portable-checks-v1.json",
+      "bytes": 1156,
+      "sha256": "a8328aa50ac6efc3e0c5404f5b7ac85ff90233f1bcb0f67f5dd2a54d3d8256fc"
+    }
+  },
+  "python_distribution": {
+    "version": "0.0.150",
+    "wheel": {
+      "file": "poima_client-0.0.150-py3-none-any.whl",
+      "bytes": 56792,
+      "sha256": "a2f043f5bdee350cff7ebe942d2609aeacad7af5f2d7232f72801717aec246d9"
+    },
+    "exact_package_files": 13,
+    "linux_isolated_smoke": {
+      "passed": true,
+      "platform": "linux",
+      "isolated_wheel_import": true,
+      "methods": 19,
+      "native_execution": false
+    },
+    "windows_isolated_smoke": {
+      "passed": true,
+      "platform": "win32",
+      "isolated_wheel_import": true,
+      "methods": 19,
+      "native_execution": false
+    },
+    "scope": "Version metadata/package-content and isolated import/resource checks; Python behavior unchanged by this C# addition."
+  },
+  "alpha_breadth": {
+    "management_workflow_qualified": false,
+    "original_candidate_repaired": false,
+    "finding": "A separate original management game deferred a settled full-queue refusal to Tick. Native observations confirmed a pending intent after its unticked Submit. That failed game requirement remains failed; this SDK fixture is separate.",
+    "broader_alpha_qualified": false
+  }
+}

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.150
+
+- Expose typed, read-only component and liveness queries through C# `ControlContext`, reusing existing native services. Keep component and lifecycle writes in Tick. [Control reads](docs/CUSTOM_COMPONENTS.md#reads-in-compiled-controls).
+- Add a compiled fixture for scalar/array reads, exclusive query pages, same-tick edits, immediate queue refusal, historical receipts and callback rollback. Retain the failed management-game requirement separately. [Results and scope](docs/evidence/m2-control-component-reads.json).
+
 ## 0.0.149
 
 - Release [runtime game-session v1](docs/RUNTIME_GAME_SESSION_V1.md), a selected 19-method boundary for runtime state, typed components, spatial queries, compiled logical controls and external saves. Add truthful discovery qualification, frozen request/result manifests, compatibility gates and opt-in packaged Python validation. Keep the existing authoring and prospective workflow contracts separate.
