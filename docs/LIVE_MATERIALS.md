@@ -139,3 +139,68 @@ sample download.
 Use the separate [texture API](LIVE_TEXTURES.md) for map, sampler and strength
 changes. Both operations share the same material revision and observation/save
 guards; scalar apply remains scalar-only.
+
+### Representative scalar iteration
+
+The [0.0.158 cohort](evidence/m2-live-material-iteration.json) meets the selected
+one-second scalar-edit budget on the laptop's RTX 4070: **0.574 s mean,
+0.660 s p95**, across all twenty edits. Nearest-rank p95 is sample 19 after
+sorting; no slow samples are removed. This is a paused Windows native player
+using the retained Performance Yard game, rather than an empty material fixture.
+
+The workload keeps 2,394 authored entities, 24 animated characters, 768 box
+props, 64 lights and 32 dynamic bodies. It uses the existing overview camera,
+1080p native rendering, deferred lighting, medium GTAO, one sample, two frames
+in flight and an enabled audio backend. Frame generation and reconstruction
+are disabled. Audio closure is checked; this is not a listening qualification.
+
+Each edit changes the complete scalar material on all 24 selected skins and
+then explicitly adopts it through `runtime.material.apply`. The primary timer
+starts before the first edit-specific file read. It includes authoring, guarded
+adoption, observation of a matching presented receipt, a fresh guarded capture,
+complete image verification and retained difference masks. The first matching
+presentation observation has a separate timer; neither timer measures scanout.
+
+Expected complete authoring bytes and reference-image masks prepare outside
+the primary interval. Authoring preparation has its own recorded timing: 0.431 s mean and 0.561 s
+p95. Including preparation, the separate preparation-start-to-verification-end
+measurement is 1.005 s mean and 1.209 s p95; it is not the primary gate. Every
+actual pre-edit world, previous-file backup and post-edit world must match its
+complete expected bytes; the native transaction receipt must match exactly.
+Unknown capture bytes take the full RGB comparison path inside the timer.
+Exact reference-byte matches permit reuse of independently verified masks.
+The original and changed references differ in 282,659 pixels outside the HUD
+at a minimum channel delta of eight. Every fresh image matches its selected
+reference bytes exactly.
+
+After each timed interval, a complete native checkpoint is compared with both
+the preceding checkpoint and the baseline. All version-7 payload fields remain
+exact except `authored_revision` and `content_sha256`, which identify the
+adopted material baseline. The frozen saved document is checked separately
+against the full expected content. Both cameras, all 50 gameplay values,
+physics, animation, components, sound, structure and UI remain present.
+The final edit restores the original material values without replacing the
+runtime or player.
+
+Exclusive BMP output now reserves a bounded frame-sized SDL memory chunk,
+avoiding repeated 1 KiB growth. Five isolated Windows CPU pairs produce
+identical complete BMP bytes with both allocation strategies. The fresh
+cohort also changes the verifier's authoring-byte preparation. Its earlier
+2.304 s p95 result remains a missed budget; the end-to-end results do not
+isolate either change's contribution.
+
+Reproduce the operation sequence using the
+[Performance Yard preparation](../examples/performance-yard/README.md), its
+compiled gameplay artifact, one shared player and the existing overview
+camera `00000000000000000000000000000066`. Initialize the game through its
+compiled New Game control, settle 60 ordinary ticks after the initial tick,
+then keep tick 61 paused. Freeze original and changed material references
+before timing; alternate those complete material values twenty times with
+fresh transaction/apply/capture IDs and exact current guards. Keep every
+capture, checkpoint, receipt, timing sample and failure. The recorded cohort
+uses the specific retained 0.0.94 artifact and pinned input identities in the
+evidence; rebuilding with other content or tooling is a separate cohort.
+
+This qualifies one scalar workload and device. Encoded PNG texture-import
+timing, other GPUs, advancing-game edits, physical input, general scene edits,
+frame performance and the broader Alpha gates remain separate.

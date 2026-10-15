@@ -104,8 +104,16 @@ void require(bool condition, const std::string& detail) {
 
 void save_bmp_exclusive(SDL_Surface* surface,const std::string& path) {
     require(!path.empty() && path.find('\0')==std::string::npos,"Invalid exclusive capture path.");
+    require(surface && surface->w>0 && surface->h>0,"Invalid BMP capture surface.");
+    constexpr std::uint64_t budget=512ull*1024*1024;
+    const auto pixels=std::uint64_t(surface->w)*std::uint64_t(surface->h);
+    require(pixels<=(budget-4096)/4,"BMP exceeds the 512 MiB capture budget.");
     std::unique_ptr<SDL_IOStream,decltype(&SDL_CloseIO)> memory(SDL_IOFromDynamicMem(),SDL_CloseIO);
     require(bool(memory),std::string("BMP memory stream: ")+SDL_GetError());
+    // SDL otherwise grows this stream in 1 KiB chunks as each row is written.
+    // Reserve a bounded full-frame chunk without changing the BMP serializer.
+    require(SDL_SetNumberProperty(SDL_GetIOProperties(memory.get()),SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER,
+        static_cast<Sint64>(pixels*4+4096)),std::string("BMP allocation chunk: ")+SDL_GetError());
     require(SDL_SaveBMP_IO(surface,memory.get(),false),std::string("BMP serialization: ")+SDL_GetError());
     const auto size=SDL_GetIOSize(memory.get());
     require(size>0 && size<=512*1024*1024,"BMP exceeds the 512 MiB capture budget.");

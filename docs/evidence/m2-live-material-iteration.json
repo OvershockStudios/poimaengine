@@ -1,0 +1,1985 @@
+{
+  "format": "poima.live-material-iteration.v1",
+  "checkpoint": "0.0.158",
+  "date": "2026-10-15",
+  "functional_passed": true,
+  "iteration_budget_passed": true,
+  "alpha_gate_closed": false,
+  "engine_source_base_commit": "55f0eebd802e105a118e9be9aa66e3481930ce97",
+  "measured_native_engine_version": "0.0.158",
+  "retained_gameplay_engine_metadata": "0.0.94",
+  "scope": "Twenty alternating scalar material edits on24 existing animated meshes in the full2394-entity Performance Yard. Paused Tick61, existing overview camera102,1920x1080 deferred GTAO, actual hardware capture and complete saved-state comparisons.",
+  "implementation": {
+    "engine": "Frame-sized bounded SDL dynamic stream allocation before existing complete BMP serialization/readback.",
+    "verifier": "Untimed immutable reference pair preparation and complete expected authored-document/receipt byte preparation; every timed fresh file is read and byte-proved, with full actual RGB fallback if exact-reference admission fails.",
+    "attribution": "Both engine serialization and verifier implementation changed. The overall cohort difference does not isolate either cause; CPU probe is a separate bounded serialization-only experiment."
+  },
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 84766,
+      "sha256": "eed05e8ee63b4d018cbe4069e3d244190d76751395b1d8c81f84a92fd411f09c"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 335392,
+      "sha256": "150acb4af501c5739ad0d74daf40699272cbc4f819640fd05be2a89d38902752"
+    }
+  },
+  "native_build": {
+    "passed": true,
+    "cache_generation": 25,
+    "source_files": 302,
+    "sealed_artifacts": 12,
+    "seconds": 211.96241720797843,
+    "forced_cleanup": false,
+    "artifacts": {
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima.exe": {
+        "bytes": 26053632,
+        "sha256": "36e8f4184b8abfb109fb5f2ca756d475aca6230ea65065af425fe151a96bd361"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima_desktop.dll": {
+        "bytes": 298481664,
+        "sha256": "37ebd4c2ab688dd0668837bf0321a867f72f134189905954748e66beb6f37816"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-poll-test.exe": {
+        "bytes": 1111552,
+        "sha256": "2236c5f8c76ea2624561057e7d02ef98554a1c0bd20eddd22db310261a79bc71"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-owner-poll-disabled-test.exe": {
+        "bytes": 1246720,
+        "sha256": "3ff89733817be6e7fd93f813d3456f64c0559c053803b84fd440af96bb23849e"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-window-test.exe": {
+        "bytes": 14589952,
+        "sha256": "f4354ee1e80875b5b9b92b76e3518bdad931fbde5f95ee8bdbf418e34fce5b20"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-player-replacement-test.exe": {
+        "bytes": 18504192,
+        "sha256": "0995f340bb2508366038b46f4367e08c6e8afb30debefdb7f03c06602f2417c6"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-world-session-test.exe": {
+        "bytes": 24928256,
+        "sha256": "3fb9033a008b73c5cb51fdc08ab6dbfddfce43660a7fcc683f20d387fecdae7a"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-local-session-test.exe": {
+        "bytes": 1283584,
+        "sha256": "8336eca06a1e4b8f45340afcd7e5b154741d6df1a6e65efe11495efcf84e15f4"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/poima-capture-image-test.exe": {
+        "bytes": 1318400,
+        "sha256": "e222146ae0fc652f89271ffcfd9b7f794f00ab8edc221769764d7eb1946ac68f"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/bin/phonon.dll": {
+        "bytes": 52950168,
+        "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/library/libpoima_core.a": {
+        "bytes": 226116218,
+        "sha256": "4ef39824c287a64f9e9d22481511da328d89b47332a1a2749e991728742f4bdb"
+      },
+      "build/native-snapshot-0.0.158/native-build-1/library/libpoima_desktop.dll.a": {
+        "bytes": 3876,
+        "sha256": "df4b5bac6f0aee22da2376eb1e9543a5eacc147dc4a84e2a0f3d88e72ecd24bb"
+      }
+    }
+  },
+  "regression": {
+    "windows_cpu_suites": 7,
+    "cpu_job": {
+      "user_time": 34062500,
+      "kernel_time": 9531250,
+      "period_user_time": 34062500,
+      "period_kernel_time": 9531250,
+      "page_faults": 198583,
+      "total_processes": 8,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "cooperative_gpu_groups": 3,
+    "gpu_index": 1,
+    "window_job": {
+      "user_time": 7187500,
+      "kernel_time": 10937500,
+      "period_user_time": 7187500,
+      "period_kernel_time": 10937500,
+      "page_faults": 111984,
+      "total_processes": 2,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "no_foreground_or_input_injection": true,
+    "linux_headless": "Not run for158: changed capture path is disabled in headless; prior156 Linux qualification remains separate."
+  },
+  "workload": {
+    "authored_entities": 2394,
+    "selected_skinned_meshes": 24,
+    "settle_ticks": 60,
+    "runtime_tick": 61,
+    "width": 1920,
+    "height": 1080,
+    "camera_id": "00000000000000000000000000000066",
+    "lighting_path": "deferred",
+    "ambient_occlusion": {
+      "mode": "gtao",
+      "quality": "medium",
+      "radius": 1
+    },
+    "reconstruction": "none",
+    "samples": 1,
+    "frames_in_flight": 2,
+    "audio_enabled": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "hardware": true,
+    "nvrhi_errors": 0,
+    "retained_module": {
+      "bytes": 1445888,
+      "sha256": "ba66e320bbe0375dca25b4934112e7c4bc487e03a5f8980a0618b5cd3b578f80"
+    },
+    "schema_bytes": 336
+  },
+  "measured_current": {
+    "native_version": "0.0.158",
+    "functional_passed": true,
+    "retained_run_directory": "build/material-iteration-0.0.158/scalar-byteproof-158-1/run",
+    "iteration_budget_passed": true,
+    "source_pin_count": 411,
+    "rpc_pairs": 291,
+    "worker_seconds": 49.22442719998071,
+    "owner": {
+      "total_processes": 4,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 56.95545500004664
+    },
+    "statistics": {
+      "edit_to_presented_observation_seconds": {
+        "count": 20,
+        "maximum": 0.4698184,
+        "mean": 0.41207460500000004,
+        "nearest_rank": 19,
+        "p95": 0.4677203
+      },
+      "edit_to_verified_visible_seconds": {
+        "count": 20,
+        "maximum": 0.6620063,
+        "mean": 0.574120675,
+        "nearest_rank": 19,
+        "p95": 0.6595682
+      }
+    },
+    "samples": {
+      "columns": [
+        "began_ns",
+        "edit_to_presented_observation_seconds",
+        "edit_to_verified_visible_seconds",
+        "label",
+        "oracle_preparation_ended_ns",
+        "oracle_preparation_seconds",
+        "oracle_preparation_started_ns",
+        "presented_observed_ns",
+        "sample",
+        "verified_visible_ns"
+      ],
+      "rows": [
+        [
+          483077727114800,
+          0.3765698,
+          0.5058265,
+          "b1",
+          483077727113900,
+          0.4149247,
+          483077312189200,
+          483078103684600,
+          1,
+          483078232941300
+        ],
+        [
+          483079590475000,
+          0.3522292,
+          0.4826744,
+          "a2",
+          483079590474100,
+          0.4354861,
+          483079154988000,
+          483079942704200,
+          2,
+          483080073149400
+        ],
+        [
+          483081376172000,
+          0.3584076,
+          0.4915755,
+          "b3",
+          483081376170800,
+          0.3853154,
+          483080990855400,
+          483081734579600,
+          3,
+          483081867747500
+        ],
+        [
+          483083187270300,
+          0.3657472,
+          0.5087769,
+          "a4",
+          483083187269500,
+          0.3843601,
+          483082802909400,
+          483083553017500,
+          4,
+          483083696047200
+        ],
+        [
+          483085077167400,
+          0.3852822,
+          0.5226739,
+          "b5",
+          483085077166800,
+          0.3895708,
+          483084687596000,
+          483085462449600,
+          5,
+          483085599841300
+        ],
+        [
+          483087008723700,
+          0.3876853,
+          0.522513,
+          "a6",
+          483087008722400,
+          0.4054887,
+          483086603233700,
+          483087396409000,
+          6,
+          483087531236700
+        ],
+        [
+          483088970009600,
+          0.4279623,
+          0.607509,
+          "b7",
+          483088970008300,
+          0.4002945,
+          483088569713800,
+          483089397971900,
+          7,
+          483089577518600
+        ],
+        [
+          483091051472200,
+          0.4168818,
+          0.5777248,
+          "a8",
+          483091051471100,
+          0.413863,
+          483090637608100,
+          483091468354000,
+          8,
+          483091629197000
+        ],
+        [
+          483093171102400,
+          0.4064045,
+          0.560365,
+          "b9",
+          483093171101800,
+          0.4540129,
+          483092717088900,
+          483093577506900,
+          9,
+          483093731467400
+        ],
+        [
+          483095186362800,
+          0.3897154,
+          0.5500212,
+          "a10",
+          483095186361000,
+          0.4167983,
+          483094769562700,
+          483095576078200,
+          10,
+          483095736384000
+        ],
+        [
+          483097219661800,
+          0.3954508,
+          0.5613028,
+          "b11",
+          483097219661100,
+          0.4086639,
+          483096810997200,
+          483097615112600,
+          11,
+          483097780964600
+        ],
+        [
+          483099296431400,
+          0.4226787,
+          0.5956079,
+          "a12",
+          483099296430800,
+          0.4551434,
+          483098841287400,
+          483099719110100,
+          12,
+          483099892039300
+        ],
+        [
+          483101427765200,
+          0.4239921,
+          0.5990856,
+          "b13",
+          483101427764300,
+          0.4228353,
+          483101004929000,
+          483101851757300,
+          13,
+          483102026850800
+        ],
+        [
+          483103551123700,
+          0.4393088,
+          0.6176549,
+          "a14",
+          483103551123000,
+          0.4147321,
+          483103136390900,
+          483103990432500,
+          14,
+          483104168778600
+        ],
+        [
+          483105662655200,
+          0.4266204,
+          0.6056398,
+          "b15",
+          483105662654100,
+          0.4179897,
+          483105244664400,
+          483106089275600,
+          15,
+          483106268295000
+        ],
+        [
+          483107788765500,
+          0.4149029,
+          0.5819092,
+          "a16",
+          483107788764800,
+          0.4098689,
+          483107378895900,
+          483108203668400,
+          16,
+          483108370674700
+        ],
+        [
+          483109931939200,
+          0.4505698,
+          0.6216457,
+          "b17",
+          483109931938300,
+          0.4251101,
+          483109506828200,
+          483110382509000,
+          17,
+          483110553584900
+        ],
+        [
+          483112140974600,
+          0.4635446,
+          0.6483329,
+          "a18",
+          483112140973500,
+          0.5608455,
+          483111580128000,
+          483112604519200,
+          18,
+          483112789307500
+        ],
+        [
+          483114407679000,
+          0.4698184,
+          0.6595682,
+          "b19",
+          483114407678000,
+          0.5729569,
+          483113834721100,
+          483114877497400,
+          19,
+          483115067247200
+        ],
+        [
+          483116514889000,
+          0.4677203,
+          0.6620063,
+          "a20",
+          483116514887900,
+          0.4280778,
+          483116086810100,
+          483116982609300,
+          20,
+          483117176895300
+        ]
+      ]
+    },
+    "captures": [
+      {
+        "label": "a0",
+        "file": "a0.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 11,
+        "material_revision": 0
+      },
+      {
+        "label": "b1",
+        "file": "b1.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 174,
+        "material_revision": 1
+      },
+      {
+        "label": "a2",
+        "file": "a2.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 227,
+        "material_revision": 2
+      },
+      {
+        "label": "b3",
+        "file": "b3.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 279,
+        "material_revision": 3
+      },
+      {
+        "label": "a4",
+        "file": "a4.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 333,
+        "material_revision": 4
+      },
+      {
+        "label": "b5",
+        "file": "b5.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 389,
+        "material_revision": 5
+      },
+      {
+        "label": "a6",
+        "file": "a6.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 446,
+        "material_revision": 6
+      },
+      {
+        "label": "b7",
+        "file": "b7.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 506,
+        "material_revision": 7
+      },
+      {
+        "label": "a8",
+        "file": "a8.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 568,
+        "material_revision": 8
+      },
+      {
+        "label": "b9",
+        "file": "b9.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 630,
+        "material_revision": 9
+      },
+      {
+        "label": "a10",
+        "file": "a10.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 691,
+        "material_revision": 10
+      },
+      {
+        "label": "b11",
+        "file": "b11.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 754,
+        "material_revision": 11
+      },
+      {
+        "label": "a12",
+        "file": "a12.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 819,
+        "material_revision": 12
+      },
+      {
+        "label": "b13",
+        "file": "b13.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 884,
+        "material_revision": 13
+      },
+      {
+        "label": "a14",
+        "file": "a14.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 950,
+        "material_revision": 14
+      },
+      {
+        "label": "b15",
+        "file": "b15.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1015,
+        "material_revision": 15
+      },
+      {
+        "label": "a16",
+        "file": "a16.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1080,
+        "material_revision": 16
+      },
+      {
+        "label": "b17",
+        "file": "b17.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1147,
+        "material_revision": 17
+      },
+      {
+        "label": "a18",
+        "file": "a18.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1215,
+        "material_revision": 18
+      },
+      {
+        "label": "b19",
+        "file": "b19.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1284,
+        "material_revision": 19
+      },
+      {
+        "label": "a20",
+        "file": "a20.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        },
+        "build_version": "0.0.158",
+        "width": 1920,
+        "height": 1080,
+        "frames_presented": 1348,
+        "material_revision": 20
+      }
+    ],
+    "checkpoints": [
+      {
+        "label": "a0",
+        "file": "saves/slot-a0/p-9afe9154e2ea6caa031eb343bc3f1c47.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "abeaeffb992ba285131d3135e35a50b07e975b027607ae9619f1186f00d4ac4b"
+        },
+        "native_payload_checksum": "9b595c1d1730aa2d1d6399c0f2bc14e3ff167bdcca6ac01cc71e93125d7b8cf6",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b1",
+        "file": "saves/slot-b1/p-f7c63104544b169b661cc75bfdac0582.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "ba35cefcca7e8af90c945193bbea6d055c3eeba1324ef428bbe5b16433fc36ed"
+        },
+        "native_payload_checksum": "2ebfd8f56de5548f7d1c95bb1a2f6c379b886fa7fff5629890c6ef7c9660bab5",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a2",
+        "file": "saves/slot-a2/p-16b9b035a0fa476c38aaca9bf001882a.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "d26a2473c8e0db17ea22787b35c90fbc23cb4e2a2614dc1e4826f527416c28d1"
+        },
+        "native_payload_checksum": "9abc9e4ebdf9a7eb7242bc6d4b149e88a545613a6da498b834344faa48ebca6c",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b3",
+        "file": "saves/slot-b3/p-6e8bc57cbfa5c07a40c287ded20f228a.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "c0a2cbfa8aeb8088d744e40d2bf8f4d8539e8db0b64bbf41558d3747bcc1a253"
+        },
+        "native_payload_checksum": "21829d83309570701287099e3808e15f419ed79d5f977fe81a727f8d4e93299b",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a4",
+        "file": "saves/slot-a4/p-cd230a7762cb8fdad991665ee389346e.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "2197e228845344b98246cee868bfd50a90add1e559c3cf0d52f3300056cb8c0d"
+        },
+        "native_payload_checksum": "ef08e1f3a13ab81d55745c8f8d8cb735c0fdde2a445797cd4a0faf8a6fe8f291",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b5",
+        "file": "saves/slot-b5/p-b46b887a582b12e52beb9ae96665d382.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "cfd494c00d9602ea3863fb592e288febab9f2883f0902ed104bfe29ff5d17005"
+        },
+        "native_payload_checksum": "7127667f2f73d80a6063bb40a69d6704710f2e257a3aee6528b4123a025ab58e",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a6",
+        "file": "saves/slot-a6/p-8ba9261b8c2fcd614026c09b2fa28aa0.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "77149a901fd180942b32cdfbe9bb470444d2f9c8758fb69bdd01de5652c31f23"
+        },
+        "native_payload_checksum": "5571538db427afb9163e6caba1bf4ef3514b0886fc61f17d71852e2b9d491cba",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b7",
+        "file": "saves/slot-b7/p-19dd0dd955a7d5e3e14238d226b9aaa1.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "585ba971aec6c64faeb0df47fc551186f60a58e2f8cf58927d0190e762547316"
+        },
+        "native_payload_checksum": "48777e1a55786e554db592ace677adb6ab546dd9279eeca060e708544cfe55ad",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a8",
+        "file": "saves/slot-a8/p-7eb46591c9a8cf5b0253e3cfb5d00e4e.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "a8b09bfe77b2cf762809f46968fe54998201950ff6b9474449dd7edc9128d6d9"
+        },
+        "native_payload_checksum": "ad37a4cddf409bb4748fb9f922cca81d9726541748fae49b7520a18ad76e177a",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b9",
+        "file": "saves/slot-b9/p-4906bf18d1d79a9b3e71bf183b650522.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "c427d8a50c936a01dbe15f189cfc96f0c6b5f160bf1c6b19a48ea23f8a750e3c"
+        },
+        "native_payload_checksum": "0780e811c6e06573b02db90f58122726e160d19af3734b08e6cf496af18b5b5e",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a10",
+        "file": "saves/slot-a10/p-851659dd80f3051a94c4b97ba52e290d.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "8ee3499761951e685308eba3608cc05d1105abd7502ab9fe9931820930e5ef2c"
+        },
+        "native_payload_checksum": "918aa132c3f80b15c9fab20ab067825ca3ddcb723034362f48faab4a8094ebfc",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b11",
+        "file": "saves/slot-b11/p-f587b20db9cd1090e0ca2dda200b0b58.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "cb0dac6798f20f237695ac004923cc40351acea4cded24868646ea3453e0c984"
+        },
+        "native_payload_checksum": "1c4a2935f049a403e0fd08fdc2a8cc1ee19bfb7d6c5f40e82873c87f5217dcae",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a12",
+        "file": "saves/slot-a12/p-8831bb8f9a46613075f82e46aadc15de.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "4510b0e4090b1a277c1ee14aa4dd5a741dd717e31b0eef132e4e59c71afb8215"
+        },
+        "native_payload_checksum": "1950d58ebd0275090b28eaf1e20eb09392bc445815d2dd3024d6dfdf48e6e02b",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b13",
+        "file": "saves/slot-b13/p-3ee61dbed95ca7f53234ff7dbe169b1a.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "3dd20eccbdf3290a4ff1a541d3ffd89cc830396b78c7a13e8db4d0ca613e0a28"
+        },
+        "native_payload_checksum": "0e94f2d8435bff57da62e126261450a2c367eff6b5a496a57178c015cf2e2966",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a14",
+        "file": "saves/slot-a14/p-af54480588f19fde4da4c8d72d03b6a1.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "15b16f4b7b94a65b9e754cf8a8c1abb76d50c62f6bcb9f9032290e1d80310811"
+        },
+        "native_payload_checksum": "0e30e572d8f8b746aeb7275887a23caaa521931c9ddba03099f86d8f7fba1981",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b15",
+        "file": "saves/slot-b15/p-b2aa682375484805257fb35002aee230.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "515208ff0466db8e994f45d9099da9951d333750c382896eac8290b85275442f"
+        },
+        "native_payload_checksum": "49a3a555e4c0ed0a0c73fec5913e6f62670f3ffe23f752b212cad00e334cc470",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a16",
+        "file": "saves/slot-a16/p-219e81dc01c7587e5b6c137f6148d976.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "2cffa338e952fb128988a9fa199033dbfa54dc96f4749cf65083ba5e3e8e579f"
+        },
+        "native_payload_checksum": "5c4e6fc606299b6f3881e6dc93c222ea26f67ac0e059a9e5a77d11d3a0248e88",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b17",
+        "file": "saves/slot-b17/p-39587e497232a125e8dcbe422e011e89.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "cd8963694c1f3f71771754eddbef3bfa2fbbab8617b0aaa88b6aa967d8baf97f"
+        },
+        "native_payload_checksum": "2c1c446a02164698ebf9387bb23a957144cdd6bb1da8012b1f1d1f9b29c6b99f",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a18",
+        "file": "saves/slot-a18/p-bc2aaebb8eaa182b617fb9f49da4ab88.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "96a861306cd744911e655c4c6a30f0327a20e0047cca9efef2af5795c6d67fdc"
+        },
+        "native_payload_checksum": "a6ad6ce4c07a174efac48bce96422636ec87fd4b56ad274c4eae6e49efe8d35b",
+        "bytes": 2204412,
+        "generation": 1
+      },
+      {
+        "label": "b19",
+        "file": "saves/slot-b19/p-14e0a1aa294b7953f9c4e43d8fbe1f29.bin",
+        "identity": {
+          "bytes": 2203620,
+          "sha256": "568a6744d37561bc3c26a645e9b496ac7373a2e231f16b4eacc31e9a45474305"
+        },
+        "native_payload_checksum": "8635f5dc07f4b74c98812c7bcbbb82d9479dbbabee69e571d67d198976cda11d",
+        "bytes": 2203620,
+        "generation": 1
+      },
+      {
+        "label": "a20",
+        "file": "saves/slot-a20/p-c9274a107be81cd01c9c84e12267f8d5.bin",
+        "identity": {
+          "bytes": 2204412,
+          "sha256": "5d2ac706fdf813b01cf6d4405c742b9921968cbe157d328426f7702a0d0fb30c"
+        },
+        "native_payload_checksum": "9f3650aa9865ca8c9ef315b632d75d5860b7dc7dcb0fbdab7c43cbeac93a7a6f",
+        "bytes": 2204412,
+        "generation": 1
+      }
+    ],
+    "complete_payload_pair_count": 20,
+    "preparation_start_to_verified_end_descriptive": {
+      "count": 20,
+      "mean": 1.0049385450000001,
+      "p95": 1.2091795,
+      "maximum": 1.2325261,
+      "nearest_rank": 19,
+      "scope": "Descriptive wall interval including oracle preparation; not the primary one-second gate."
+    },
+    "oracle_preparation_statistics": {
+      "count": 20,
+      "maximum": 0.5729569,
+      "mean": 0.430816905,
+      "nearest_rank": 19,
+      "p95": 0.5608455,
+      "scope": "Untimed next-document/complete-receipt/byte construction plus full pre-author semantics; separate from primary visibility interval."
+    },
+    "timing_contract": {
+      "author_proof": "Three complete actual reads: current equals verified prior bytes; previous equals actual prior bytes; new current equals prepared complete expected bytes. Actual native author response must typed-exact match the entire prepared five-field receipt. No full author JSON parse/dump/deepcopy inside interval.",
+      "budget_seconds": 1,
+      "comparison_scope": "Separate verifier implementation cohort; original cfd35370 cohort remains unchanged with missed budget. No causal native engine performance claim.",
+      "p95": "nearest rank19 of20",
+      "primary": "perf_counter_ns before first edit-specific complete pre-author byte read through author/apply, first matching presentation observation, fresh capture, fullRGB parity/effect, actual input fences and retained masks",
+      "samples": 20,
+      "secondary": "First matching presented receipt observed by caller; not first-ever frame or display scanout",
+      "untimed": "Module/window/audio initialization, fixed61Ticks, external A/B references, parameter/old-runtime guards, exact next author document/receipt/byte preparation and pre-author semantic check, full checkpoint plus post-author semantic comparison after each primary interval"
+    }
+  },
+  "earlier_measured_cohort": {
+    "native_version": "0.0.156",
+    "functional_passed": true,
+    "retained_run_directory": "build/material-iteration-0.0.158/scalar-measured-1/run",
+    "iteration_budget_passed": false,
+    "source_pin_count": 405,
+    "rpc_pairs": 291,
+    "worker_seconds": 67.38707479997538,
+    "owner": {
+      "total_processes": 4,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 74.96649969997816
+    },
+    "statistics": {
+      "edit_to_presented_observation_seconds": {
+        "count": 20,
+        "maximum": 1.2142866,
+        "mean": 1.0493154900000001,
+        "nearest_rank": 19,
+        "p95": 1.1943601
+      },
+      "edit_to_verified_visible_seconds": {
+        "count": 20,
+        "maximum": 2.3534152,
+        "mean": 2.0604940849999998,
+        "nearest_rank": 19,
+        "p95": 2.304253
+      }
+    },
+    "samples": {
+      "columns": [
+        "began_ns",
+        "edit_to_presented_observation_seconds",
+        "edit_to_verified_visible_seconds",
+        "label",
+        "presented_observed_ns",
+        "sample",
+        "verified_visible_ns"
+      ],
+      "rows": [
+        [
+          481607294170100,
+          0.9281289,
+          1.6440777,
+          "b1",
+          481608222299000,
+          1,
+          481608938247800
+        ],
+        [
+          481609663103100,
+          0.9536096,
+          1.6687008,
+          "a2",
+          481610616712700,
+          2,
+          481611331803900
+        ],
+        [
+          481612070159300,
+          0.9664536,
+          1.6898409,
+          "b3",
+          481613036612900,
+          3,
+          481613760000200
+        ],
+        [
+          481614503171200,
+          0.9691733,
+          1.9323801,
+          "a4",
+          481615472344500,
+          4,
+          481616435551300
+        ],
+        [
+          481617261616500,
+          0.9335858,
+          1.9066681,
+          "b5",
+          481618195202300,
+          5,
+          481619168284600
+        ],
+        [
+          481619993991600,
+          0.9548829,
+          1.9886829,
+          "a6",
+          481620948874500,
+          6,
+          481621982674500
+        ],
+        [
+          481622811124400,
+          0.9460378,
+          2.0969373,
+          "b7",
+          481623757162200,
+          7,
+          481624908061700
+        ],
+        [
+          481625755805100,
+          1.0023694,
+          2.1483067,
+          "a8",
+          481626758174500,
+          8,
+          481627904111800
+        ],
+        [
+          481628783383700,
+          0.9647674,
+          2.0201993,
+          "b9",
+          481629748151100,
+          9,
+          481630803583000
+        ],
+        [
+          481631729385100,
+          0.9727291,
+          2.0257171,
+          "a10",
+          481632702114200,
+          10,
+          481633755102200
+        ],
+        [
+          481634664025500,
+          1.0537058,
+          2.1841037,
+          "b11",
+          481635717731300,
+          11,
+          481636848129200
+        ],
+        [
+          481637746798800,
+          1.1437096,
+          2.3534152,
+          "a12",
+          481638890508400,
+          12,
+          481640100214000
+        ],
+        [
+          481640992167100,
+          1.1191519,
+          2.1707903,
+          "b13",
+          481642111319000,
+          13,
+          481643162957400
+        ],
+        [
+          481644039790000,
+          1.1332241,
+          2.2219877,
+          "a14",
+          481645173014100,
+          14,
+          481646261777700
+        ],
+        [
+          481647086009500,
+          1.1280438,
+          2.1117421,
+          "b15",
+          481648214053300,
+          15,
+          481649197751600
+        ],
+        [
+          481650016452500,
+          1.1538187,
+          2.171379,
+          "a16",
+          481651170271200,
+          16,
+          481652187831500
+        ],
+        [
+          481653043270000,
+          1.1792845,
+          2.2589634,
+          "b17",
+          481654222554500,
+          17,
+          481655302233400
+        ],
+        [
+          481656156681600,
+          1.2142866,
+          2.304253,
+          "a18",
+          481657370968200,
+          18,
+          481658460934600
+        ],
+        [
+          481659307302000,
+          1.1943601,
+          2.1476907,
+          "b19",
+          481660501662100,
+          19,
+          481661454992700
+        ],
+        [
+          481662447962300,
+          1.0749869,
+          2.1640457,
+          "a20",
+          481663522949200,
+          20,
+          481664612008000
+        ]
+      ]
+    },
+    "complete_payload_pair_count": 20,
+    "timing_contract": {
+      "budget_seconds": 1,
+      "p95": "nearest rank19 of20",
+      "primary": "perf_counter_ns before first edit-specific pre-author file read through author/apply, first matching presentation observation, fresh capture, fullRGB parity/effect, actual input fences and retained masks",
+      "samples": 20,
+      "secondary": "First matching presented receipt observed by caller; not first-ever frame or display scanout",
+      "untimed": "Module/window/audio initialization, fixed61Ticks, precomputed external A/B references, parameter/old-runtime guards, full checkpoint save/comparison after each primary interval"
+    },
+    "capture_count": 21,
+    "checkpoint_count": 21,
+    "retention": "All original twenty timing rows and distributions remain below; original capture/checkpoint bytes and full identities remain in the pinned earlier evidence, unmodified."
+  },
+  "untimed_reference_cohort": {
+    "passed": true,
+    "native_version": "0.0.156",
+    "edits": 4,
+    "captures": 5,
+    "rpc_pairs": 83,
+    "owner": {
+      "total_processes": 4,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 23.479568600014318
+    },
+    "references": {
+      "a": {
+        "file": "build/material-iteration-0.0.158/prerequisite-2/run/a0.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "fb1ec29d40735515ecd1f822a2d7193725fc58c3e6e473269a09e0694c5d3f1d"
+        }
+      },
+      "b": {
+        "file": "build/material-iteration-0.0.158/prerequisite-2/run/b1.bmp",
+        "identity": {
+          "bytes": 8294538,
+          "sha256": "1604189592d55546f55873a5c3d84b78d258d71b92ca9fba10ac8ca18472da3c"
+        }
+      }
+    }
+  },
+  "full_native_state": {
+    "format": "poima.runtime-snapshot",
+    "version": 7,
+    "checkpoints": 21,
+    "comparisons": 20,
+    "payload_keys": [
+      "animation",
+      "authored_revision",
+      "cameras",
+      "components",
+      "content_sha256",
+      "control_sequence",
+      "entities",
+      "gameplay",
+      "gameplay_revision",
+      "sound",
+      "structure",
+      "tick",
+      "ui",
+      "world_id"
+    ],
+    "explicit_per_edit_changes": [
+      "authored_revision",
+      "content_sha256"
+    ],
+    "all_other_payload_data_typed_exact": true,
+    "gameplay_global_fields": [
+      {
+        "name": "Actor",
+        "kind": "entity",
+        "offset": 8,
+        "bytes": 16
+      },
+      {
+        "name": "AnimatedVisual",
+        "kind": "entity",
+        "offset": 24,
+        "bytes": 16
+      },
+      {
+        "name": "AnimationChanges",
+        "kind": "int32",
+        "offset": 156,
+        "bytes": 4
+      },
+      {
+        "name": "AnimationClip",
+        "kind": "int32",
+        "offset": 148,
+        "bytes": 4
+      },
+      {
+        "name": "AnimationLoop",
+        "kind": "int32",
+        "offset": 152,
+        "bytes": 4
+      },
+      {
+        "name": "AnimationMode",
+        "kind": "int32",
+        "offset": 144,
+        "bytes": 4
+      },
+      {
+        "name": "AnimationRate",
+        "kind": "float64",
+        "offset": 232,
+        "bytes": 8
+      },
+      {
+        "name": "AnimationTransitions",
+        "kind": "int32",
+        "offset": 160,
+        "bytes": 4
+      },
+      {
+        "name": "Arrivals",
+        "kind": "int32",
+        "offset": 124,
+        "bytes": 4
+      },
+      {
+        "name": "CellOne",
+        "kind": "entity",
+        "offset": 40,
+        "bytes": 16
+      },
+      {
+        "name": "CellThree",
+        "kind": "entity",
+        "offset": 72,
+        "bytes": 16
+      },
+      {
+        "name": "CellTwo",
+        "kind": "entity",
+        "offset": 56,
+        "bytes": 16
+      },
+      {
+        "name": "CheckpointVersion",
+        "kind": "int32",
+        "offset": 0,
+        "bytes": 4
+      },
+      {
+        "name": "Collected",
+        "kind": "int32",
+        "offset": 96,
+        "bytes": 4
+      },
+      {
+        "name": "DeferredRateUpdates",
+        "kind": "int32",
+        "offset": 168,
+        "bytes": 4
+      },
+      {
+        "name": "GoalX",
+        "kind": "float64",
+        "offset": 176,
+        "bytes": 8
+      },
+      {
+        "name": "GoalZ",
+        "kind": "float64",
+        "offset": 184,
+        "bytes": 8
+      },
+      {
+        "name": "Initialized",
+        "kind": "int32",
+        "offset": 88,
+        "bytes": 4
+      },
+      {
+        "name": "LastCornerCount",
+        "kind": "int32",
+        "offset": 132,
+        "bytes": 4
+      },
+      {
+        "name": "LastDisplacement",
+        "kind": "float64",
+        "offset": 208,
+        "bytes": 8
+      },
+      {
+        "name": "LastHorizontalSpeed",
+        "kind": "float64",
+        "offset": 216,
+        "bytes": 8
+      },
+      {
+        "name": "LastPathStatus",
+        "kind": "int32",
+        "offset": 128,
+        "bytes": 4
+      },
+      {
+        "name": "LastSaveError",
+        "kind": "int32",
+        "offset": 272,
+        "bytes": 4
+      },
+      {
+        "name": "LastSaveGeneration",
+        "kind": "int64",
+        "offset": 304,
+        "bytes": 8
+      },
+      {
+        "name": "LastSaveState",
+        "kind": "int32",
+        "offset": 268,
+        "bytes": 4
+      },
+      {
+        "name": "LockedUses",
+        "kind": "int32",
+        "offset": 104,
+        "bytes": 4
+      },
+      {
+        "name": "Moving",
+        "kind": "int32",
+        "offset": 140,
+        "bytes": 4
+      },
+      {
+        "name": "ObservedEpochHigh",
+        "kind": "int64",
+        "offset": 312,
+        "bytes": 8
+      },
+      {
+        "name": "ObservedEpochLow",
+        "kind": "int64",
+        "offset": 320,
+        "bytes": 8
+      },
+      {
+        "name": "Phase",
+        "kind": "int32",
+        "offset": 112,
+        "bytes": 4
+      },
+      {
+        "name": "Plans",
+        "kind": "int32",
+        "offset": 120,
+        "bytes": 4
+      },
+      {
+        "name": "PreferenceNotice",
+        "kind": "int32",
+        "offset": 328,
+        "bytes": 4
+      },
+      {
+        "name": "PreviousPositionValid",
+        "kind": "int32",
+        "offset": 136,
+        "bytes": 4
+      },
+      {
+        "name": "PreviousSampleTick",
+        "kind": "int64",
+        "offset": 240,
+        "bytes": 8
+      },
+      {
+        "name": "PreviousX",
+        "kind": "float64",
+        "offset": 192,
+        "bytes": 8
+      },
+      {
+        "name": "PreviousZ",
+        "kind": "float64",
+        "offset": 200,
+        "bytes": 8
+      },
+      {
+        "name": "RateChanges",
+        "kind": "int32",
+        "offset": 164,
+        "bytes": 4
+      },
+      {
+        "name": "RequestedRunRate",
+        "kind": "float64",
+        "offset": 224,
+        "bytes": 8
+      },
+      {
+        "name": "RouteValid",
+        "kind": "int32",
+        "offset": 116,
+        "bytes": 4
+      },
+      {
+        "name": "SaveHigh",
+        "kind": "int64",
+        "offset": 280,
+        "bytes": 8
+      },
+      {
+        "name": "SaveKind",
+        "kind": "int32",
+        "offset": 264,
+        "bytes": 4
+      },
+      {
+        "name": "SaveLow",
+        "kind": "int64",
+        "offset": 288,
+        "bytes": 8
+      },
+      {
+        "name": "SaveNotice",
+        "kind": "int32",
+        "offset": 260,
+        "bytes": 4
+      },
+      {
+        "name": "SavePending",
+        "kind": "int32",
+        "offset": 256,
+        "bytes": 4
+      },
+      {
+        "name": "SaveSequence",
+        "kind": "int64",
+        "offset": 296,
+        "bytes": 8
+      },
+      {
+        "name": "SaveStatusKey",
+        "kind": "int32",
+        "offset": 252,
+        "bytes": 4
+      },
+      {
+        "name": "Started",
+        "kind": "int32",
+        "offset": 92,
+        "bytes": 4
+      },
+      {
+        "name": "StatusKey",
+        "kind": "int32",
+        "offset": 248,
+        "bytes": 4
+      },
+      {
+        "name": "Ticks",
+        "kind": "int32",
+        "offset": 108,
+        "bytes": 4
+      },
+      {
+        "name": "Won",
+        "kind": "int32",
+        "offset": 100,
+        "bytes": 4
+      }
+    ],
+    "global_count": 50,
+    "cameras": 2,
+    "complete_persisted_state_comparisons_outside_primary_timer": true
+  },
+  "pixel_proof": {
+    "width": 1920,
+    "height": 1080,
+    "tolerance": 1,
+    "effect_threshold": 8,
+    "min_non_hud_changed_pixels": 100,
+    "mask_bytes": 259200,
+    "mask_encoding": "row-major bitset; pixel0=bit0 of byte0",
+    "non_hud_rectangles": [
+      [
+        0,
+        54,
+        952,
+        968
+      ],
+      [
+        984,
+        54,
+        1920,
+        968
+      ]
+    ],
+    "rectangle_policy": "Before any material edit: below native top controls+8px, above original bottom HUD+8px, excluding actual reticle column+8px; no pixel-dependent region choice.",
+    "all21_captures_match_actual156_reference_complete_bytes": true,
+    "use_of_precomputation": "Only after both freshly read capture files prove complete byte equality to frozen real reference BMPs; actual fresh capture and all checks remain inside primary interval.",
+    "mask_identities": {
+      "mask1": {
+        "bytes": 259200,
+        "sha256": "11c11e9422527bb251d37370badf07f713dafd14ee66185e44488af52d57c499"
+      },
+      "mask2": {
+        "bytes": 259200,
+        "sha256": "d0fa996b42c8d5e0e9c3d89d786e049ac7686d04bd108250dd2d361271bc1f21"
+      }
+    },
+    "samples": [
+      {
+        "label": "b1",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a2",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b3",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a4",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b5",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a6",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b7",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a8",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b9",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a10",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b11",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a12",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b13",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a14",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b15",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a16",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b17",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a18",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      },
+      {
+        "label": "b19",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "b"
+      },
+      {
+        "label": "a20",
+        "maximum_rgb_delta": 103,
+        "changed_pixels": 284962,
+        "non_hud_changed_pixels": 282659,
+        "changed_mask": "mask1",
+        "non_hud_mask": "mask2",
+        "actual_file_proof": "complete_bmp_bytes_equal",
+        "reference": "a"
+      }
+    ]
+  },
+  "isolated_cpu_probe": {
+    "passed": true,
+    "pairs": 5,
+    "serializations": 10,
+    "rows": [
+      {
+        "pair": 1,
+        "input": 0,
+        "default_first": true,
+        "default_ns": 952119500,
+        "bounded_ns": 5737300,
+        "bytes": 8294538,
+        "complete_bytes_equal": true,
+        "logical_buffer_bound": 66367902
+      },
+      {
+        "pair": 2,
+        "input": 1,
+        "default_first": false,
+        "default_ns": 979392800,
+        "bounded_ns": 4436000,
+        "bytes": 8294538,
+        "complete_bytes_equal": true,
+        "logical_buffer_bound": 74662440
+      },
+      {
+        "pair": 3,
+        "input": 0,
+        "default_first": true,
+        "default_ns": 1012173500,
+        "bounded_ns": 10012900,
+        "bytes": 8294538,
+        "complete_bytes_equal": true,
+        "logical_buffer_bound": 74662440
+      },
+      {
+        "pair": 4,
+        "input": 1,
+        "default_first": false,
+        "default_ns": 1527842800,
+        "bounded_ns": 7571800,
+        "bytes": 8294538,
+        "complete_bytes_equal": true,
+        "logical_buffer_bound": 74662440
+      },
+      {
+        "pair": 5,
+        "input": 0,
+        "default_first": true,
+        "default_ns": 1323462600,
+        "bounded_ns": 6968600,
+        "bytes": 8294538,
+        "complete_bytes_equal": true,
+        "logical_buffer_bound": 74662440
+      }
+    ],
+    "all_complete_bytes_equal": true,
+    "default_chunk_bytes": 1024,
+    "frame_chunk_bytes": 8298496,
+    "mean_default_ms": 1158.99824,
+    "mean_frame_chunk_ms": 6.94532,
+    "whole_seconds": 5.866297,
+    "job_memory_commit_limit_bytes": 134217728,
+    "observed_peak_job_commit_bytes": 76673024,
+    "natural_job_processes": 2,
+    "scope": "CPU-only static-SDL serialization/readback/free of two retained1080p inputs. No image writes, renderer, window, GPU, audio initialization, RSS or capture-latency claim. Input/order populations are small, not a general benchmark."
+  },
+  "preserved_failure": {
+    "file": "build/material-iteration-0.0.158/prerequisite-1/owner.json",
+    "passed": false,
+    "forced_cleanup": false,
+    "cause": "Initial owner expected the staged inventory unchanged but native correctly created its empty world lock. Original owner failure is retained; successor explicitly admits the lock without changing original inputs."
+  },
+  "independent_actual_audit": {
+    "status": "passed",
+    "passed": true,
+    "sources_rehashed": 411,
+    "raw_rpc_pairs": 291,
+    "verified_saves": 21,
+    "verified_captures": 21,
+    "verified_masks": 40,
+    "scope": "Independent retained-file revalidation and recomputed pixels/timers; no additional native/GPU execution."
+  },
+  "frozen_helper_roles": {
+    "curator": {
+      "bytes": 18612,
+      "sha256": "d13fc4428b7524e8afd0c45ab8013216c90ddb7122b2cc7f9edf24be0f7cf381"
+    },
+    "pixel_proof": {
+      "bytes": 8930,
+      "sha256": "a27baef4d1efdef1eeda33e356772cd4194cea986c83a91994681a1b1d8429ae"
+    },
+    "pixel_proof_tests": {
+      "bytes": 8220,
+      "sha256": "22aa53f87e6ecb4e8cbad752ea1d437fca88eebf5c2b540dd9c99d4cbd149383"
+    },
+    "current_worker": {
+      "bytes": 45673,
+      "sha256": "5f99983b75d0b4cb1d4d1266aab4b2b81ca9b631104813c2cb9a4dfbe1d365a6"
+    },
+    "cpu_probe_source": {
+      "bytes": 8300,
+      "sha256": "f40a612df8ebdb1ff8f36fd1cda623c6fb00680bfc7fd3613895f760a332b707"
+    },
+    "cpu_probe_result": {
+      "bytes": 4447,
+      "sha256": "00e2bd8f68d68182f7085f09c9e142c5b8a76733acbf20ae159edcb6e73e3378"
+    },
+    "cpu_probe_owner": {
+      "bytes": 2043,
+      "sha256": "357a386ebd25b82c7c9302388b23775894e032d9559e044f4c3e3a4252814d74"
+    },
+    "independent_actual_audit": {
+      "bytes": 32477,
+      "sha256": "f1a03f95423b67ebd14c44a1b7b980c4633b8a59fa9272c738cca673ff51c1c3"
+    },
+    "independent_actual_audit_reader": {
+      "bytes": 26581,
+      "sha256": "8b609723e7385324f65c3f91ef8dcdddd787d1511c95293de0b5de45502a3817"
+    }
+  },
+  "raw_receipts": {
+    "build/material-iteration-0.0.158/scalar-byteproof-158-1/owner.json": {
+      "bytes": 27539,
+      "sha256": "c849675bba218ac4ce9f18de2a5cb2c32c01e1c3e48c19f12ff0ffdb1f371277"
+    },
+    "build/material-iteration-0.0.158/scalar-byteproof-158-1/run/evidence.json": {
+      "bytes": 44967141,
+      "sha256": "44df6872ac133236192de7700403c406e641242d8061427f54625627839b5cec"
+    },
+    "build/material-iteration-0.0.158/scalar-measured-1/owner.json": {
+      "bytes": 27390,
+      "sha256": "5676699214cf4b1e0f53c3e0d36fa588845fcfced404496f93464dbdd4f3d136"
+    },
+    "build/material-iteration-0.0.158/scalar-measured-1/run/evidence.json": {
+      "bytes": 44937249,
+      "sha256": "36b6400bcdffd2f6183e4f98579d0b8b4164822328618148880cede58ee80e6c"
+    },
+    "build/material-iteration-0.0.158/prerequisite-2/owner.json": {
+      "bytes": 12588,
+      "sha256": "6f2082743fa659049c3a6f513d71f0137afd8667bf852d557baeb1ba88dd11bb"
+    },
+    "build/material-iteration-0.0.158/prerequisite-2/run/evidence.json": {
+      "bytes": 15086185,
+      "sha256": "2bdd9f3bd4b05d16a39f87b5dae7bf4c575ae7c39171b9e35e39b96915300183"
+    },
+    "build/material-iteration-0.0.158/prerequisite-1/owner.json": {
+      "bytes": 3372,
+      "sha256": "cf1494a755344118218639bc43fc16a3c341557b3cac7a730bb56d9c323398be"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/build-result.json": {
+      "bytes": 56160,
+      "sha256": "614d42f95866460351c05aef1c92773e294a48ccfab686ba8f7c1d3d1b9cb916"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/source-pins.json": {
+      "bytes": 45306,
+      "sha256": "784a7a81ddf2f8cdd833086724ad6082ecc10673996f1c05ece0ba5f2824dda7"
+    },
+    "build/native-snapshot-0.0.158/native-build-1/sealed-artifacts.json": {
+      "bytes": 2109,
+      "sha256": "4b46eafb9b423dece48cafa51bdb39002b576fa4c2118c164a05d766a07f9254"
+    },
+    "build/material-capture-0.0.158/windows-cpu-1/qualification.json": {
+      "bytes": 1748,
+      "sha256": "13efc22b38352ce694281512bb191de3b9d9b0f12d0f1ef3be17a9a02309b1b1"
+    },
+    "build/material-capture-0.0.158/windows-cpu-1/report.json": {
+      "bytes": 11618,
+      "sha256": "d856524bff901b40ea6a950e9ccf0b8d0fcc454b75e557851de1926d0e44c5a6"
+    },
+    "build/material-capture-0.0.158/windows-window-1/qualification.json": {
+      "bytes": 1748,
+      "sha256": "c40fd6ca65d3c6120dfcfc05f182e93c76ce26a69aa5c1cb82b7736e99df7856"
+    },
+    "build/material-capture-0.0.158/windows-window-1/report.json": {
+      "bytes": 10933,
+      "sha256": "3b487a4b872a6a0141d8712f967b2975685d4df16babdacb0dc925c6ab6ef837"
+    }
+  },
+  "limits": [
+    "Scalar material edits only; encoded PNG import/decode/cook plus texture application is not qualified here.",
+    "One Windows NVIDIA hardware configuration and paused deterministic scene. AMD, continuous real-time workload, foreground activation, physical input and representative frame-performance gates remain open.",
+    "Secondary endpoint is first matching presented receipt observed by the caller, not first-ever rendered frame or physical display scanout.",
+    "Primary excludes separately reported expected-document/oracle preparation and complete native save checks; no end-to-end task wall-time promise.",
+    "CPU Job commit is not RSS, resident VRAM, GPU heap usage or memory-growth qualification. No new whole-Alpha, clean-machine or fresh-provider completion claim."
+  ]
+}

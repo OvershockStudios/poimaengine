@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.158
+
+- Reserve a bounded full-frame buffer for exclusive BMP captures, avoiding SDL's repeated small reallocations while preserving the serializer, exclusive creation and durable writes.
+- Qualify twenty live scalar-material edits in the full Performance Yard at **0.660 s p95**, with exact rendered references and complete saved-state preservation. Pass seven Windows native executions and three cooperative Vulkan window groups. Keep the earlier missed timing budget and report verifier preparation separately. Texture timing and broader Alpha gates remain open. [Results and scope](docs/evidence/m2-live-material-iteration.json).
+
 ## 0.0.157
 
 - Qualify twenty real compatible C# edits through the first changed gameplay tick at **2.206 s p95**, meeting the selected three-second warm-iteration target. Preserve all 50 gameplay values and complete current native save state through every reload.
