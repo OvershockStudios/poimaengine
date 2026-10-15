@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Create, adopt and export the compiled ComponentGame qualification fixture.
+"""Create, adopt and export a compiled component qualification fixture.
 
-Supply an already published trusted tests/components_gameplay artifact and a
+Supply an already published trusted scalar or collection fixture artifact and a
 matching installed runtime. This runs native commands, not a C# compiler.
 On Windows, execute inside a supervising Job (see the fixture guide).
 """
@@ -79,6 +79,8 @@ def main():
     parser.add_argument('--artifact', required=True, type=Path)
     parser.add_argument('--runtime', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--fixture', choices=('scalar', 'collections'), default='scalar',
+                        help='Trusted fixture profile; scalar retains the original ComponentGame workflow')
     args = parser.parse_args()
     windows_job()
     require(not sys.flags.optimize, 'Run without Python optimization')
@@ -87,9 +89,11 @@ def main():
     descriptor = descriptor.resolve(strict=True)
     require(descriptor.name == 'native-gameplay.json', 'Expected a Native AOT descriptor')
     artifact_spec = json.loads(descriptor.read_bytes())
-    require(artifact_spec.get('identity') == 'poima.test.components'
-            and artifact_spec.get('type') == 'Poima.Tests.ComponentGame',
-            'Supply the published original ComponentGame fixture')
+    identity, game_type = (('poima.test.components', 'Poima.Tests.ComponentGame')
+                           if args.fixture == 'scalar' else
+                           ('poima.test.collection-wire', 'Poima.Tests.CollectionWireGame'))
+    require(artifact_spec.get('identity') == identity and artifact_spec.get('type') == game_type,
+            'Supply the published original fixture selected by --fixture')
     component_manifest = descriptor.parent/'game.poima-components.json'
     pin(component_manifest)
     runtime = args.runtime.resolve(strict=True)
@@ -101,7 +105,7 @@ def main():
     output.mkdir(parents=True)
     started = time.monotonic()
     report = dict(passed=False, binary=pin(binary), artifact=pin(descriptor),
-                  harness=pin(Path(__file__)), commands=[], calls=[])
+                  harness=pin(Path(__file__)), fixture=args.fixture, commands=[], calls=[])
     try:
         def cli(command, name):
             result = subprocess.run([str(p) for p in command], capture_output=True, timeout=60,
@@ -129,10 +133,23 @@ def main():
                 base_revision=revision, manifest=json.loads(component_manifest.read_bytes())))
             ids = [f'{value:032x}' for value in (1, 2, 3)]
             fields = [f'{value:032x}' for value in (1, 2, 3)]
-            ops = [dict(op='component.set', id=identity, type='game:'+'1'*32,
-                value={fields[0]:100, fields[1]:100, fields[2]:str(-(2**63))}) for identity in ids]
-            ops.append(dict(op='component.set', id=ids[0], type='game:'+'2'*32,
-                            value={fields[0]:ids[1], fields[1]:.125}))
+            if args.fixture == 'scalar':
+                ops = [dict(op='component.set', id=identity, type='game:'+'1'*32,
+                    value={fields[0]:100, fields[1]:100, fields[2]:str(-(2**63))}) for identity in ids]
+                ops.append(dict(op='component.set', id=ids[0], type='game:'+'2'*32,
+                                value={fields[0]:ids[1], fields[1]:.125}))
+            else:
+                component_document = json.loads(component_manifest.read_bytes())
+                require(len(component_document['schemas']) == 1, 'Expected one generated collection schema')
+                schema = component_document['schemas'][0]
+                arrays = [field for field in schema['fields'] if field['kind'] == 'array']
+                require(schema['version'] == 2 and len(arrays) == 5
+                        and {field['element_kind'] for field in arrays}
+                            == {'int32','int64','float32','float64','entity'}
+                        and all(field['capacity'] == 2 and field['default'] == [] for field in arrays),
+                        'Collection profile requires all five generated capacity-two buffers')
+                ops = [dict(op='component.set', id=identity, type='game:'+schema['id'],
+                            value={field['id']:field['default'] for field in schema['fields']}) for identity in ids]
             call('world.transact', dict(request_id=uuid.uuid4().hex,
                                        base_revision=imported['revision'], ops=ops))
         require(client.cleanup_error is None and client.transport.returncode == 0,

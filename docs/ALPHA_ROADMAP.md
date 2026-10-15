@@ -105,3 +105,9 @@ fresh Native AOT publication and typed scalar component consumption through the
 actual exported executable, including save/load, cold continuation and compiled
 callback rollback. Its selected observations and expected errors strengthen the
 contract gate; the broader Alpha release criteria remain open.
+
+The 0.0.145 [collection workflow](COMPONENT_GAME_WORKFLOW.md#bounded-collection-profile)
+extends compiled readonly consumer evidence to all five capacity-two array kinds,
+length changes, guarded edits, rollback and exact selected save continuation.
+The original scalar consumer also passes. This closes that bounded consumer gap,
+while the wider contract, performance, interaction and delivery gates remain open.

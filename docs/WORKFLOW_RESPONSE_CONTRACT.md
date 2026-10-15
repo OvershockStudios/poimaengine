@@ -114,3 +114,11 @@ It observes queued ticket globals at the save boundary and completed/expired
 tickets in their respective owners. It does not qualify every transient ticket
 state, readonly arrays, general upgrades or complete internal save equality.
 [Additional execution evidence](evidence/m2-compiled-component-workflow.json).
+
+The [0.0.145 collection consumer](COMPONENT_GAME_WORKFLOW.md#bounded-collection-profile)
+adds actual readonly capacity-two arrays for all five supported element kinds,
+length changes, rejected edits and exact selected restore/continuation checks.
+It uses unchanged opt-in result validation and the actual prior canonical schema
+context. Arbitrary capacities, all generated buffer operations, hidden padding,
+recovering/upgrading saves and full contract stability remain separate.
+[Collection evidence](evidence/m2-collection-workflow.json).

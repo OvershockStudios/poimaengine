@@ -8,6 +8,15 @@ Windows Native AOT is qualified in 0.0.52 for the same capacity-four entity/int3
 
 These results establish bounded component behavior, not all supported scalar kinds, a complete inventory game, clean-machine deployment or game-scale performance. Global-state collections, nested buffers, arbitrary managed arrays and capacity migration remain unqualified or unsupported as described below.
 
+The [all-five-kind source/export workflow](COMPONENT_GAME_WORKFLOW.md#bounded-collection-profile)
+adds a freshly compiled Native AOT consumer for capacity-two int32/int64/float32/
+float64/entity buffers using native 0.0.142. It checks full, shortened, empty and
+refilled arrays, guarded edits, historical receipts, genuine native rejections,
+compiled rollback and exact selected same-owner/cold save continuation through
+the actual bundled executable. This is separate from the older two-kind checks
+and does not establish all generated buffer operations or complete internal
+snapshot equivalence. [Recorded qualification](evidence/m2-collection-workflow.json).
+
 ## Declare and use a buffer
 
 Declare the buffer and its component in the same game assembly, with the component source generator enabled:

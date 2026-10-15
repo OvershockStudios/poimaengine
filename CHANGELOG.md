@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.145
+
+- Add the compiled collection fixture and an explicit collection preparation profile, preserving the original scalar workflow. Exercise all five supported capacity-two array element kinds through the actual exported executable. [Workflow](docs/COMPONENT_GAME_WORKFLOW.md#bounded-collection-profile).
+- Qualify length changes, typed edits, historical retries, rejected writes, compiled rollback and same-owner/cold restoration over 1,299 native calls. Re-run the original 742-call scalar consumer and preserve the failed pre-compiler publisher attempt. [Evidence and limits](docs/evidence/m2-collection-workflow.json).
+
 ## 0.0.144
 
 - Add a reproducible compiled-component workflow: publish the original C# fixture, prepare its typed source project, adopt gameplay and export, then launch the actual bundled executable. [Guide](docs/COMPONENT_GAME_WORKFLOW.md).

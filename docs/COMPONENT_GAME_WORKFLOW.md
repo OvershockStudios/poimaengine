@@ -202,3 +202,45 @@ audio listening and representative performance remain separate checks. Source,
 compiler and generic tools may remain available: this is neither source-absence
 nor clean-machine qualification, and it does not release a complete stable
 runtime API or a broader native ABI guarantee.
+
+## Bounded collection profile
+
+The [CollectionWireGame fixture](../tests/collection_wire_gameplay/README.md)
+uses generated capacity-two buffers for `int32`, decimal-text `int64`,
+`float32`, `float64` and entity handles, plus one scalar revision field.
+The native component wire payload is 256 bytes. Schema version 2 and
+`component_collections_v1` are required; global managed collections and capacity
+migration are separate features.
+
+Using the same matching tools, runtime and supervising wrapper above, select a
+fresh collection work directory and publish the collection module:
+
+```powershell
+$CollectionWork = Join-Path (Get-Location) "build/collection-workflow-1"
+New-Item -ItemType Directory -Path $CollectionWork -ErrorAction Stop | Out-Null
+& $Python build/run-component-owned.py --job "$CollectionWork/publish-job" --timeout 930 `
+  scripts/publish_native_gameplay.py `
+  --project tests/collection_wire_gameplay/Poima.CollectionWireGame.csproj `
+  --type Poima.Tests.CollectionWireGame --rid win-x64 --dotnet $Dotnet `
+  --engine-version $Version --output "$CollectionWork/artifact" --work "$CollectionWork/publish-work"
+if ($LASTEXITCODE -ne 0) { throw "Collection publication failed" }
+& $Python build/run-component-owned.py --job "$CollectionWork/prepare-job" --timeout 210 `
+  scripts/prepare_component_workflow.py --binary $Binary `
+  --artifact "$CollectionWork/artifact" --runtime $Runtime `
+  --output "$CollectionWork/fixture" --fixture collections
+if ($LASTEXITCODE -ne 0) { throw "Collection preparation failed" }
+& $Python build/run-component-owned.py --job "$CollectionWork/verify-job" --timeout 240 `
+  tests/workflow_collection_game_service.py --binary $Binary `
+  --source "$CollectionWork/fixture/source-project" --game "$CollectionWork/fixture/game" `
+  --output "$CollectionWork/verification" --timeout 180
+if ($LASTEXITCODE -ne 0) { throw "Collection verification failed" }
+```
+
+`--fixture scalar` remains the preparation default. Selecting `collections`
+requires its original collection module identity and all five generated
+capacity-two arrays. Preparation assigns empty arrays and the generated scalar
+defaults to the three starter entities, then adopts initial `Mode=0`.
+The dedicated consumer checks actual compiled publication, typed array reads,
+complete component edits, exact save restoration and rejected writes in source
+and readonly owners. The readonly service uses its declared bundled executable.
+[Qualification and limits](evidence/m2-collection-workflow.json).
