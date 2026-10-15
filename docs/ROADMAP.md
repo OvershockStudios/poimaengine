@@ -58,10 +58,14 @@ services and community adoption are not release gates.
 
 ### 1. Complete the first usable game workflow
 
-Build a complete small 3D game from a fresh project using Codex or Claude,
-compiled C# gameplay and imported content. Exercise menus, input, settings,
-save/load, failure recovery and game completion, then export and run it from a
-different location. Humans must be able to inspect and change the same project.
+Qualify three compact 3D games from fresh projects: combat, puzzle/adventure and
+simulation/management. Both Codex and Claude complete qualifying workflows
+across the three games, using compiled C# gameplay and supported content.
+Exercise menus, input, settings, save/load, failure recovery and game completion,
+then export and run from a different location. Humans must be able to inspect
+and change the same projects. The [Alpha matrix](ALPHA_ROADMAP.md#qualification-target)
+defines each family's required composition; one fixed representative game
+remains the common performance workload.
 
 Close native character intake and separate animation-clip composition, practical
 UI/input/audio/lifecycle blockers, supported save evolution, clean installation

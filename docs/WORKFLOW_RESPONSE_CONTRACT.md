@@ -122,3 +122,12 @@ It uses unchanged opt-in result validation and the actual prior canonical schema
 context. Arbitrary capacities, all generated buffer operations, hidden padding,
 recovering/upgrading saves and full contract stability remain separate.
 [Collection evidence](evidence/m2-collection-workflow.json).
+
+The [0.0.146 compiled failure consumer](COMPONENT_GAME_WORKFLOW.md#save-failure-and-recovery)
+adds actual failed-ticket replies for missing loads and stale generation writes,
+including a write outside retained durable history. Repeated queries and
+historical step retries preserve selected state and files. Supported successful
+save/load and cold continuation work after the failures. This covers the named
+terminal conditions; unknown-outcome resolving tickets, owner-ledger eviction,
+general recovery/upgrades and broader error/behavior stability remain separate.
+[Execution evidence](evidence/m2-save-publication-rejection.json).

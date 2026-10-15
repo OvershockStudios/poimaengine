@@ -103,6 +103,13 @@ struct GameplaySaveWriter::Pending {
             succeed(written.committed.generation);
         } catch(const std::exception& error) {
             if(!entered_write) { fail(error_code(error),error.what());return; }
+            const auto* storage=dynamic_cast<const saves::Error*>(&error);
+            // This owner enters Store::write once; subsequent work resolves
+            // receipts only. A marked rejection therefore has no earlier
+            // uncertain write for this request to preserve.
+            if(storage && storage->write_publication==saves::WritePublication::rejected_before_publication) {
+                fail(-32009,error.what());return;
+            }
             write_error=error_code(error);
             gameplay_save_diagnostic(write_diagnostic,error.what());
             resolve();

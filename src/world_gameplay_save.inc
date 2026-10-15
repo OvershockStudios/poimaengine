@@ -107,6 +107,13 @@
                     completion.succeeded=true;completion.generation=written.committed.generation;
                 }catch(const std::exception& error) {
                     const auto* storage=dynamic_cast<const saves::Error*>(&error);
+                    // This is the request's only Store::write invocation;
+                    // retained requests resolve receipts without writing again.
+                    if(storage && storage->write_publication==saves::WritePublication::rejected_before_publication) {
+                        completion.error_code=-32009;
+                        gameplay_save_diagnostic(completion.diagnostic,error.what());
+                        finish_gameplay_save(request,completion);return true;
+                    }
                     pending_gameplay_write_->error_code=storage && storage->kind==saves::ErrorKind::conflict ? -32009 : -32070;
                     gameplay_save_diagnostic(pending_gameplay_write_->diagnostic,error.what());
                     resolve_gameplay_write(request);return true;

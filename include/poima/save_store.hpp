@@ -10,10 +10,17 @@
 namespace poima::saves {
 inline constexpr std::uint64_t maximum_checkpoint_bytes=64ULL*1024*1024;
 enum class ErrorKind { invalid, conflict, reused_id, busy, corrupt, io, recovery_required };
+// Evidence about this Store::write invocation only. Rejection precedes
+// pruning, payload writes and manifest publication; it cannot rule out a
+// prior uncertain invocation with the same operation ID having committed.
+// ErrorKind alone never establishes publication status, including in FaultHook.
+enum class WritePublication { unknown, rejected_before_publication };
 class Error : public std::runtime_error {
 public:
     ErrorKind kind;
-    Error(ErrorKind value,const std::string& message):std::runtime_error(message),kind(value) {}
+    WritePublication write_publication;
+    Error(ErrorKind value,const std::string& message,WritePublication publication=WritePublication::unknown)
+        :std::runtime_error(message),kind(value),write_publication(publication) {}
 };
 struct Generation {
     std::uint64_t generation=0,bytes=0;

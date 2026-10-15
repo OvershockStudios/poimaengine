@@ -203,6 +203,52 @@ compiler and generic tools may remain available: this is neither source-absence
 nor clean-machine qualification, and it does not release a complete stable
 runtime API or a broader native ABI guarantee.
 
+## Save failure and recovery
+
+Use the same prepared scalar fixture and a separate fresh output to exercise
+failed storage operations through compiled callbacks:
+
+```powershell
+& $Python build/run-component-owned.py --job "$Work/failure-job" --timeout 300 `
+  tests/workflow_save_failures.py --binary $Binary `
+  --source "$Work/fixture/source-project" --game "$Work/fixture/game" `
+  --output "$Work/failure-verification" --timeout 240
+if ($LASTEXITCODE -ne 0) { throw "Failure checks failed; inspect failure-verification/report.json" }
+```
+
+The fixture must start with `Mode=0`; the verifier creates its own source copy
+and fresh external storage. It checks a compiled load before the slot exists,
+one successful compiled save, and a fresh save requesting the stale generation
+zero. It then performs 32 legitimate guarded external writes, reaching generation
+33 with receipts 2 through 33, and repeats the compiled stale request. No stored
+receipt or payload is rewritten to manufacture an outcome.
+
+Both stale requests must finish as failed state `4` with error `-32009`, rather
+than remaining unresolved. The missing load reports failed state `4` with error
+`-32070`. Each callback's Tick and intended Health/Score/global changes remain
+committed; the failed storage operation must leave the slot and files unchanged.
+The next callback observes the failure without requesting again. These checks
+verify the specified committed changes, not equality of all fields across a
+legitimate gameplay Tick.
+
+Repeated result queries, malformed/unknown ticket queries and historical step
+retries preserve complete selected observations, routing, queues and save files.
+The owner retains its earlier terminal results after durable receipts roll over;
+its 64-result ledger is a different history from the store's 32 write receipts.
+A later external save in a new slot restores exact selected state in the same
+owner and a fresh exported-game process. The compiled callback advances and
+reads the restored Health/Score; its full selected continuation agrees with
+the retained same-owner continuation. Saved ticket globals remain exact, while
+the cold owner's query correctly expires a prior owner's ticket.
+
+The [0.0.146 qualification](evidence/m2-save-publication-rejection.json) uses
+new native 0.0.146 source and bundled executables with the retained ComponentGame
+artifact from the earlier fixture. That artifact's descriptor declares engine
+version 0.0.142; it was not relabelled or recompiled for this check. Background
+World tests use a separate newly compiled 0.0.146 SaveProbe. Unknown publication,
+corrupt-slot recovery, save upgrades, full internal snapshots, source absence,
+clean installation, rendering and physical input are outside this consumer.
+
 ## Bounded collection profile
 
 The [CollectionWireGame fixture](../tests/collection_wire_gameplay/README.md)

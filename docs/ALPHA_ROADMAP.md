@@ -38,6 +38,31 @@ The [0.0.139 second fresh workflow](evidence/m2-agent-switchback-fresh-repeat.js
 
 ### Qualification target
 
+Alpha 1 needs three compact games with different gameplay structures, rather
+than one reference game alone. Use the following acceptance matrix:
+
+| Game family | Required composition |
+| --- | --- |
+| Combat | Movement, imported animation, aiming, damage, death/retry and checkpoints. |
+| Puzzle/adventure | Interactions, inventory, UI and saved world changes. |
+| Simulation/management | Multiple entities, bounded collections, spawning and retained progress across a supported save-schema update. |
+
+Each game starts from a fresh project and reaches a playable standalone Windows
+export. Across the three workflows, both Codex and Claude must complete at least
+one qualifying run. Freeze each task's functional requirements, assets, budgets
+and allowed assistance before its run; do not supply its game implementation.
+Independently verify gameplay, save/load and fresh-process continuation in the
+source project and relocated export. Preserve unsuccessful attempts and separate
+fresh-workflow results from assisted recovery and later source rebuilds.
+
+These are small usability demonstrations, not three commercial games or a claim
+of complete genre support. Existing fixtures may contribute only where their
+actual recorded scope meets the selected requirements. They do not close this
+matrix automatically. Keep one fixed representative game for comparable frame,
+memory and reliability measurements; the three-game matrix separately checks
+that the authoring workflow generalizes. The cross-engine benchmark is later
+work and does not block this engine qualification.
+
 The initial alpha matrix is Windows native editor/player/rendering and Linux
 native CLI authoring/simulation. Each needs a fresh-project regression and
 source-independent cooked-content reopen. Linux desktop rendering, browser and

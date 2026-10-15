@@ -80,7 +80,20 @@ If any later tick in that batch fails, gameplay state, ticket allocation and the
 
 Automatic editor playback and the standalone player use one-tick commits. A save requested at tick zero therefore snapshots committed tick one, even when the editor poll has more catch-up ticks to run. A later automatic tick failure cannot undo that earlier committed save. Explicit multi-tick `runtime.step` still defers servicing until its entire batch succeeds. A successful load ends the editor’s remaining catch-up work and opens the restored session paused with old input released.
 
-Writes use retained operation identities and durable receipts. If storage reports an error after publication, the same receipt is checked before deciding success or failure. When storage cannot be inspected, or the relevant receipt has fallen outside retained history, the request stays `Resolving`; gameplay must not interpret this as permission to issue a fresh write. Synchronous unresolved work blocks another simulation batch. An owner-dispatched background save permits ordinary `Tick` and non-saving `Control` callbacks while keeping the captured request and its original committed tick unchanged. Another save or load remains `Busy`. Pending work also prevents reconfiguring storage, external writes/replacement, stopping, code reload, external structural changes and external field/UI edits.
+Writes use retained operation identities and durable receipts. An explicitly
+confirmed generation-guard rejection before publication completes as `Failed`,
+even when the expected generation predates the 32 retained durable receipts.
+This evidence applies only to the owner's first write invocation; an error kind
+alone cannot establish whether a write committed. If publication is uncertain,
+the same receipt is checked before deciding success or failure. When storage
+cannot be inspected, or the required receipt has fallen outside retained
+history, the uncertain request stays `Resolving`; gameplay must not interpret
+this as permission to issue a fresh write. Synchronous unresolved work blocks
+another simulation batch. An owner-dispatched background save permits ordinary
+`Tick` and non-saving `Control` callbacks while keeping the captured request and
+its original committed tick unchanged. Another save or load remains `Busy`.
+Pending work also prevents reconfiguring storage, external writes/replacement,
+stopping, code reload, external structural changes and external field/UI edits.
 
 In background mode the owner captures one immutable checkpoint after the complete
 successful batch. A background worker inspects the slot, selects the generation,
@@ -160,6 +173,22 @@ fixture because the host lacks that privilege. These are CPU correctness
 checks, without a native player window, save-latency measurement or power-loss
 qualification. [Background-save evidence](evidence/m2-background-gameplay-saves.json).
 The historical evidence below describes the synchronous checkpoint.
+
+The [0.0.146 save-failure checks](evidence/m2-save-publication-rejection.json)
+add a freshly compiled Native AOT SaveProbe to the Windows background World
+tests. Separate Store/Writer regressions on Windows and Linux verify an explicit
+generation rejection after durable-receipt rollover, unchanged stored bytes,
+subsequent writes and a typed error after actual publication that still resolves
+its matching receipt. The Linux configuration does not enable simulation and
+does not qualify the World runtime path.
+
+The [compiled failure consumer](COMPONENT_GAME_WORKFLOW.md#save-failure-and-recovery)
+separately exercises synchronous source and actual exported Windows games with
+the retained scalar ComponentGame image. Missing loads and stale writes become
+terminal failures without undoing the committed Tick. Repeated queries and
+historical retries retain their results; a later valid save restores and
+continues in a fresh process. These selected-state checks do not establish
+general unknown-outcome resolution or a complete stable runtime contract.
 
 ## Qualification
 

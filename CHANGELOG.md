@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.146
+
+- Finish explicitly rejected stale-generation saves as failed even after durable receipt history rolls over, allowing gameplay to continue. Keep receipt resolution for uncertain publication. [Save behavior](docs/GAMEPLAY_SAVES.md#commit-and-rollback).
+- Add compiled missing-load/stale-write checks through the source and actual exported game, including repeated queries, historical retries and subsequent save/restore continuation. Qualify the native repair on Windows and Linux, retain the original defect reproduction and failed preflight. [Results](docs/evidence/m2-save-publication-rejection.json).
+- Define Alpha 1 acceptance across three compact game families and both agent clients, with a separate fixed performance workload. [Alpha criteria](docs/ALPHA_ROADMAP.md#qualification-target).
+
 ## 0.0.145
 
 - Add the compiled collection fixture and an explicit collection preparation profile, preserving the original scalar workflow. Exercise all five supported capacity-two array element kinds through the actual exported executable. [Workflow](docs/COMPONENT_GAME_WORKFLOW.md#bounded-collection-profile).

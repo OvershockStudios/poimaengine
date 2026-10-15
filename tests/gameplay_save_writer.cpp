@@ -174,7 +174,53 @@ void errors_and_receipts(const fs::path& root) {
         check(bool(receipt)==durable && (!durable || result.completion.generation==receipt->committed.generation),
               "Writer result differs from actual receipt history.");writer.clear();
     }
+    {
+        const auto path=root/"typed-conflict-after-publication";
+        saves::Store(path).write(0,id(1),"original");std::atomic<unsigned> injected=0;
+        const saves::Error failure(saves::ErrorKind::conflict,"typed conflict after actual publication");
+        check(failure.write_publication==saves::WritePublication::unknown,
+              "Two-argument storage errors invented a publication observation.");
+        GameplaySaveWriter writer(pool,[&](saves::Boundary point) {
+            if(point==saves::Boundary::manifest_replaced) {
+                ++injected;
+                throw failure;
+            }
+        });
+        const auto value=input(path);writer.submit(value);const auto result=await(writer);
+        const auto receipt=saves::Store(path).lookup(result.operation,result.hash);
+        check(injected==1 && result.state==GameplaySaveState::succeeded && result.completion.succeeded &&
+              result.completion.generation==2 && receipt && receipt->committed.generation==2 &&
+              saves::Store(path).read().bytes==value.bytes,
+              "Typed conflict after publication bypassed its matching durable receipt.");
+        writer.clear();
+    }
     clean(pool);
+}
+void stale_generation_outside_history(const fs::path& root) {
+    const auto path=root/"stale-outside-history";saves::Store store(path);
+    for(unsigned generation=0;generation<33;++generation)
+        store.write(generation,id(generation+1),"history-"+std::to_string(generation+1));
+    replace(path/("p-"+id(800)+".bin"),"unpublished orphan retained by CAS rejection");
+    const auto window=store.observe_receipt(id(400),hash("never written"));
+    check(!window.receipt && window.current_generation==33 && window.oldest_retained_generation==2,
+          "Stale-generation fixture did not evict the first possible receipt.");
+    const auto before=files(path);auto pool=executor();GameplaySaveWriter writer(pool);
+    auto stale=input(path);stale.request.has_expected_generation=true;stale.request.expected_generation=0;
+    writer.submit(stale);const auto result=await(writer);
+    check(result.state==GameplaySaveState::failed && !result.completion.succeeded &&
+          result.completion.error_code==-32009 && result.started && result.generation_chosen &&
+          result.expected_generation==0,
+          "Fresh CAS rejection outside retained history remained resolving instead of terminal failed.");
+    check(files(path)==before && store.read().status.generation==33 &&
+          !store.lookup(result.operation,result.hash),
+          "Rejected stale write changed slot bytes or fabricated its durable receipt.");
+    writer.clear();check(!writer.busy(),"Definitively rejected stale write could not release admission.");
+    auto next=input(path,2);next.request.has_expected_generation=true;next.request.expected_generation=33;
+    next.bytes="accepted after stale rejection";writer.submit(next);const auto accepted=await(writer);
+    check(accepted.state==GameplaySaveState::succeeded && accepted.completion.generation==34 &&
+          store.read().bytes==next.bytes,
+          "A definitive stale rejection blocked the next valid write.");
+    writer.clear();clean(pool);
 }
 void retained_resolution(const fs::path& root) {
     const auto path=root/"resolution";saves::Store(path).write(0,id(1),"original");
@@ -345,6 +391,7 @@ int main() {
     try {
         Workspace workspace;
         rejected_admission(workspace.path);gated_capture(workspace.path);errors_and_receipts(workspace.path);
+        stale_generation_outside_history(workspace.path);
         retained_resolution(workspace.path);cancellation(workspace.path,false);cancellation(workspace.path,true);
         destructor_group_boundary(workspace.path);
         std::cout<<"gameplay_save_writer: admission, capture, faults, receipts, cancellation and owner boundaries pass\n";

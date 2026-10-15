@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <random>
 #include <stdexcept>
 #ifdef _WIN32
@@ -27,6 +28,12 @@ std::string id(unsigned n) { std::string result(32,'0');for(unsigned i=0;n;++i,n
 std::string hash(const std::string& bytes) { return poima::sha256(std::as_bytes(std::span(bytes.data(),bytes.size()))); }
 std::string read_file(const fs::path& path) { std::ifstream in(path,std::ios::binary);check(bool(in),"Cannot read fixture file.");return {std::istreambuf_iterator<char>(in),{}}; }
 void overwrite(const fs::path& path,const std::string& value) { std::ofstream out(path,std::ios::binary|std::ios::trunc);out.write(value.data(),static_cast<std::streamsize>(value.size()));out.close();check(out.good(),"Cannot corrupt test-owned fixture."); }
+std::map<std::string,std::string> files(const fs::path& path) {
+    std::map<std::string,std::string> result;
+    for(const auto& file:fs::directory_iterator(path))if(file.is_regular_file())
+        result.emplace(file.path().filename().string(),read_file(file.path()));
+    return result;
+}
 template<class F> void rejects(F action,ErrorKind kind) {
     bool failed=false;try { action(); }catch(const Error& error) { failed=error.kind==kind;if(!failed)std::cerr<<"Unexpected error kind: "<<error.what()<<'\n'; }
     check(failed,"Expected typed save store rejection was absent.");
@@ -81,6 +88,40 @@ void failure_boundary(const fs::path& path,Boundary boundary,bool crash) {
     const auto result=reopened.write(2,id(3),"C");
     check(result.committed.generation==3 && result.replayed==committed,"Interrupted retry lost or duplicated its commit.");
     reopened.write(3,id(4),"D");check(payloads(path)==2 && reopened.read().bytes=="D","Post-crash repair did not retain exactly two generations.");
+}
+void rejected_invocation(const fs::path& path) {
+    Store store(path);
+    for(unsigned generation=0;generation<33;++generation)
+        store.write(generation,id(generation+1),"history-"+std::to_string(generation+1));
+    // A CAS rejection must precede even orphan pruning, not just publication.
+    overwrite(path/("p-"+id(800)+".bin"),"test-owned unpublished payload");
+    const auto before=files(path);bool rejected=false,reached_boundary=false;
+    Store faulted(path,[&](Boundary) {reached_boundary=true;});
+    try { faulted.write(0,id(400),"stale candidate"); }
+    catch(const Error& error) {
+        rejected=error.kind==ErrorKind::conflict &&
+            error.write_publication==WritePublication::rejected_before_publication;
+    }
+    const auto observed=store.observe_receipt(id(400),hash("stale candidate"));
+    check(rejected && !reached_boundary && files(path)==before && !observed.receipt &&
+          observed.current_generation==33 && observed.oldest_retained_generation==2,
+          "Stale CAS did not report this invocation's rejection before all write effects.");
+    check(store.write(33,id(401),"next accepted").committed.generation==34 &&
+          store.read().bytes=="next accepted",
+          "Marked CAS rejection blocked the next correctly guarded save.");
+    const Error failure(ErrorKind::conflict,"test conflict after manifest publication");
+    check(failure.write_publication==WritePublication::unknown,
+          "Legacy typed errors invented publication evidence.");
+    bool unknown=false;
+    Store typed_fault(path,[&](Boundary boundary) {if(boundary==Boundary::manifest_replaced)throw failure;});
+    try { typed_fault.write(34,id(402),"published despite conflict"); }
+    catch(const Error& error) {
+        unknown=error.kind==ErrorKind::conflict && error.write_publication==WritePublication::unknown;
+    }
+    const auto receipt=store.lookup(id(402),hash("published despite conflict"));
+    check(unknown && receipt && receipt->committed.generation==35 &&
+          store.read().bytes=="published despite conflict",
+          "Post-publication typed conflict lost its unknown marker or matching receipt.");
 }
 }
 int main(int argc,char** argv) {
@@ -153,6 +194,8 @@ int main(int argc,char** argv) {
         rejects([&]{receipt_store.write(0,id(1),"0");},ErrorKind::conflict);
         check(receipt_store.lookup(id(4),hash("3"))->committed.generation==4 && payloads(receipt_path)==2,"Bounded receipt tail or payload retention differs.");
         rejects([&]{receipt_store.write(35,id(36),std::string(maximum_checkpoint_bytes+1,'x'));},ErrorKind::invalid);
+
+        rejected_invocation(workspace.root/"rejected-invocation");
 
         const auto busy_path=workspace.root/"busy";Store busy(busy_path,[&](Boundary boundary) {
             if(boundary==Boundary::payload_flushed)rejects([&]{Store other(busy_path);other.inspect();},ErrorKind::busy);

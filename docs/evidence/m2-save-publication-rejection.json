@@ -1,0 +1,1042 @@
+{
+  "format": "poima.save-publication-rejection-qualification.v1",
+  "checkpoint": "0.0.146",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Explicit prepublication generation-CAS rejection versus uncertain publication; native Windows/Linux storage/writer regression and compiled source/export failure, retry and later successful restore. Not a stable runtime/Alpha release.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "e5f6fc63accd055873c450f23e133d8e6d140da17fa11b3a2964e4e9bd28f8c6"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 539,
+      "sha256": "f4a7599d6fbaf9a36b27c9b1e9d54ae85c208a01f794b978b2018a2f5163bed9"
+    },
+    "include/poima/save_store.hpp": {
+      "bytes": 4105,
+      "sha256": "ecceef18b62de5d2f28f423ee4ee653c24e703044fde5bdc74acb59df236a537"
+    },
+    "src/save_store.cpp": {
+      "bytes": 29777,
+      "sha256": "41241b16b251a517b8d3e700c39258eb00cac15e34ab7a85ebc8646aa8ee2391"
+    },
+    "src/gameplay_save_writer.cpp": {
+      "bytes": 8952,
+      "sha256": "3df9a5c45846b960618cee3208ffee69c2bc6819d1f87facfe6d14dbb99f9e32"
+    },
+    "src/world_gameplay_save.inc": {
+      "bytes": 14353,
+      "sha256": "9cb90580b47400ec3bfe2044855b6173496c3850443308328c53de712180353d"
+    },
+    "tests/save_store_native.cpp": {
+      "bytes": 17813,
+      "sha256": "fd504c38e52d0cc6e9075182c7441eb1d803b06e7851200d6cc835261965ee48"
+    },
+    "tests/gameplay_save_writer.cpp": {
+      "bytes": 23632,
+      "sha256": "e43f11313a898cf62dd94d8fb58f90d8f161a77ff4e75914c9325b975d5b9377"
+    },
+    "tests/workflow_save_failures.py": {
+      "bytes": 25163,
+      "sha256": "a2aad5fa4363f57b0444682df296d92e542302393d9a65313fb11f29d741934e"
+    },
+    "tests/workflow_components_game_service.py": {
+      "bytes": 32919,
+      "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+    },
+    "tests/workflow_collection_game_service.py": {
+      "bytes": 25916,
+      "sha256": "113c8bc2ae39e6a2fae42ca3e0182bb9cf3491636bb73363cfda84cb1b179e9f"
+    },
+    "scripts/prepare_component_workflow.py": {
+      "bytes": 10055,
+      "sha256": "37d2782337350d25f9a13bcf194226116c14c024326286a32a82d4c6fbee9fc4"
+    },
+    "tools/python/poima_client/workflow_responses.py": {
+      "bytes": 47219,
+      "sha256": "b838da0d0681e2ee25a27756f4b47f02748eb3e9b09d7690b82b7f4185c5c473"
+    },
+    "docs/contracts/runtime-save-responses-v1.candidate.json": {
+      "bytes": 63224,
+      "sha256": "cc9a5267b81221dd2326c21cf705b36608322a00d15fbe4b76b0c3c733cc1a2f"
+    },
+    "docs/GAMEPLAY_SAVES.md": {
+      "bytes": 17332,
+      "sha256": "a65eb78f2d3f814822b096ff14cd5dc07e7c50ef8131c8c330be4f9b0093c07f"
+    },
+    "docs/COMPONENT_GAME_WORKFLOW.md": {
+      "bytes": 16037,
+      "sha256": "bb2b236800f0652125ca4173f6591f4634bb0d0362e3f2a7a36e371a67ec8cf4"
+    },
+    "docs/WORKFLOW_RESPONSE_CONTRACT.md": {
+      "bytes": 8279,
+      "sha256": "2511821729c763b5cebaddc42d92d9021903d32178027a5fce95e68fe173dcb7"
+    },
+    "docs/ALPHA_ROADMAP.md": {
+      "bytes": 15645,
+      "sha256": "aaae0437a640f9598dcae3e9fe5ebf5fd8f0da865c124b7814b50866e921b494"
+    },
+    "docs/ROADMAP.md": {
+      "bytes": 20883,
+      "sha256": "b74777df572935254d9478f753ecc4ed0754c35ba03c7b4aab645aa11a6196d8"
+    }
+  },
+  "lineage": {
+    "native_windows": "0.0.146, incremental cache generation18; unchanged vendor dependencies not rebuilt",
+    "source_binary": {
+      "bytes": 25973760,
+      "sha256": "53ab0876abfe3f1c6153405cf8a9312665100897247c45069e533bbbaac1ac1a"
+    },
+    "bundled_binary": {
+      "path": "runtime/bin/poima.exe",
+      "bytes": 22218240,
+      "sha256": "c6ad1c7e3bfcfabdbefaf88909e3861415f9c7be3328d933b82f49a811f1e222"
+    },
+    "component_descriptor": {
+      "bytes": 5525,
+      "sha256": "1178c3698804af921b8715d185df1a13d07a4fdb7f3ec73ef816f9322d7fc214"
+    },
+    "component_descriptor_engine_version": "0.0.142",
+    "component_artifact": "Retained original scalar ComponentGame image from earlier qualification; freshly adopted/exported, not recompiled or relabelled.",
+    "fresh_save_probe_descriptor": {
+      "bytes": 4919,
+      "sha256": "683c0ab40eeceb565e90fd85c42d5cd8a536c06a24fa345b131040bb6748a32d"
+    },
+    "fresh_save_probe_library": {
+      "bytes": 1337856,
+      "sha256": "09049254c1c6f4d2f349826cdedf43cb053d34560b508a02d1e543b36ad8195e"
+    },
+    "csharp_c_abi_changed": false,
+    "native_cpp_error": "Internal C++ Error gains publication evidence; native binaries must be rebuilt together."
+  },
+  "native_windows": {
+    "producer_seconds": 300.5632652520144,
+    "source_inputs": 296,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "suites": [
+      {
+        "name": "store",
+        "exit_code": 0,
+        "seconds": 4.3975183999864385,
+        "stdout": {
+          "bytes": 339,
+          "sha256": "45c24aed0308d69fa62191c54896f86621310764a1fcf58fdd74ec5aed264c78"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "writer",
+        "exit_code": 0,
+        "seconds": 1.3603748000459746,
+        "stdout": {
+          "bytes": 100,
+          "sha256": "4a44351b6eb60b2e01710caa40e092e2818b574c0c586cb77984200d9d74049d"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "world_background",
+        "exit_code": 0,
+        "seconds": 0.33923899999354035,
+        "stdout": {
+          "bytes": 193,
+          "sha256": "ff78d3d98719b9d3c086cadc7085cf06728394c45d91c6c3bdc400733501f9f4"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "world_save",
+        "exit_code": 0,
+        "seconds": 0.21315030002733693,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "runtime_save",
+        "exit_code": 0,
+        "seconds": 0.15121380001073703,
+        "stdout": {
+          "bytes": 324,
+          "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "exit_code": 0,
+        "seconds": 13.366646000009496,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "exit_code": 0,
+        "seconds": 0.08915940002771094,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      }
+    ],
+    "owner": {
+      "passed": true,
+      "seconds": 21.087779599998612,
+      "processes": 17,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "world_background": "Three groups using separately published current-SDK146 NativeAOT SaveProbe; worker queue/receipt behavior separate from synchronous exported consumer.",
+    "store_faults": {
+      "exception_boundaries": 9,
+      "process_exit_boundaries": 9,
+      "symlink_case": "Skipped: Windows privilege unavailable."
+    }
+  },
+  "runtime_install": {
+    "files": 49,
+    "bytes": 97026317,
+    "seconds": 86.75757721401169,
+    "natural_group_closure": true,
+    "forced_cleanup": false,
+    "images_code_data_equivalent": true,
+    "nontransformed_files_exact": true,
+    "source_executable": {
+      "bytes": 25973760,
+      "sha256": "53ab0876abfe3f1c6153405cf8a9312665100897247c45069e533bbbaac1ac1a"
+    },
+    "bundled_executable": {
+      "bytes": 22218240,
+      "sha256": "c6ad1c7e3bfcfabdbefaf88909e3861415f9c7be3328d933b82f49a811f1e222"
+    }
+  },
+  "fresh_probe_publisher": {
+    "owner": {
+      "passed": true,
+      "seconds": 23.46803910000017,
+      "processes": 30,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "descriptor_engine_version": "0.0.146",
+    "artifact_files": 8,
+    "scope": "One fresh current-SDK GameplaySaveProbe NativeAOT publication; no C++ engine build, GPU, player or full toolchain reproducibility claim"
+  },
+  "preparation": [
+    {
+      "fixture": "scalar",
+      "owner": {
+        "passed": true,
+        "seconds": 6.164927800011355,
+        "processes": 5,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "helper": {
+        "bytes": 10055,
+        "sha256": "37d2782337350d25f9a13bcf194226116c14c024326286a32a82d4c6fbee9fc4"
+      },
+      "source_files": 16,
+      "bundle_files": 62,
+      "whole_typed_export_matches": true,
+      "original_inputs_unchanged": true
+    },
+    {
+      "fixture": "collections",
+      "owner": {
+        "passed": true,
+        "seconds": 6.020269799977541,
+        "processes": 5,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "helper": {
+        "bytes": 10055,
+        "sha256": "37d2782337350d25f9a13bcf194226116c14c024326286a32a82d4c6fbee9fc4"
+      },
+      "source_files": 16,
+      "bundle_files": 62,
+      "whole_typed_export_matches": true,
+      "original_inputs_unchanged": true
+    }
+  ],
+  "compiled_failure_consumer": {
+    "owner": {
+      "passed": true,
+      "seconds": 15.00131560000591,
+      "processes": 6,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "harness": {
+      "bytes": 25163,
+      "sha256": "a2aad5fa4363f57b0444682df296d92e542302393d9a65313fb11f29d741934e"
+    },
+    "owners": [
+      {
+        "name": "source-standalone",
+        "calls": 1145,
+        "validated_successes": 1133,
+        "returncode": 0,
+        "host_returncode": null,
+        "native_errors": 6,
+        "error_codes": {
+          "-32602": 6
+        },
+        "other_successes": 6
+      },
+      {
+        "name": "readonly-shared",
+        "calls": 1141,
+        "validated_successes": 1129,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 6,
+        "error_codes": {
+          "-32602": 6
+        },
+        "other_successes": 6
+      },
+      {
+        "name": "readonly-cold",
+        "calls": 69,
+        "validated_successes": 68,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 0,
+        "error_codes": {},
+        "other_successes": 1
+      }
+    ],
+    "native_calls": 2355,
+    "candidate_validated_successes": 2330,
+    "native_errors": 12,
+    "other_successes": 13,
+    "original_inputs_unchanged": true,
+    "initial_cross_owner_typed_pairs": 1,
+    "same_owner_restore_typed_pairs": 2,
+    "cold_restore_continuation_typed_pairs": 2,
+    "scope": "Synchronous source standalone and actual bundled readonly service, plus cold exported owner; complete selected observations for query/retry/restore comparisons. Committed Tick checks cover specified Health/Score/global deltas and unchanged storage, not unchanged whole runtime.",
+    "conditions": [
+      "missing_load_failed_32070",
+      "stale_generation_failed_32009",
+      "stale_generation_outside_durable_history_failed_32009",
+      "terminal_results_survive_durable_receipt_rollover",
+      "repeated_query_nonconsumption",
+      "malformed_query_invalid_params_32602",
+      "unknown_ticket_expired",
+      "historical_step_receipt_without_resubmission",
+      "later_save_load_and_compiled_tick_continuation"
+    ]
+  },
+  "scalar_regression": {
+    "owner": {
+      "passed": true,
+      "seconds": 7.404623800015543,
+      "processes": 6,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "harness": {
+      "bytes": 32919,
+      "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+    },
+    "owners": [
+      {
+        "name": "source-standalone",
+        "calls": 347,
+        "validated_successes": 334,
+        "returncode": 0,
+        "host_returncode": null,
+        "native_errors": 6,
+        "error_codes": {
+          "-32602": 3,
+          "-32040": 2,
+          "-32009": 1
+        },
+        "other_successes": 7
+      },
+      {
+        "name": "readonly-shared",
+        "calls": 343,
+        "validated_successes": 330,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 6,
+        "error_codes": {
+          "-32602": 3,
+          "-32040": 2,
+          "-32009": 1
+        },
+        "other_successes": 7
+      },
+      {
+        "name": "readonly-cold",
+        "calls": 52,
+        "validated_successes": 51,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 0,
+        "error_codes": {},
+        "other_successes": 1
+      }
+    ],
+    "native_calls": 742,
+    "candidate_validated_successes": 715,
+    "native_errors": 12,
+    "other_successes": 15,
+    "original_inputs_unchanged": true
+  },
+  "collection_regression": {
+    "owner": {
+      "passed": true,
+      "seconds": 8.40963330003433,
+      "processes": 6,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "harness": {
+      "bytes": 25916,
+      "sha256": "113c8bc2ae39e6a2fae42ca3e0182bb9cf3491636bb73363cfda84cb1b179e9f"
+    },
+    "owners": [
+      {
+        "name": "source-standalone",
+        "calls": 625,
+        "validated_successes": 606,
+        "returncode": 0,
+        "host_returncode": null,
+        "native_errors": 9,
+        "error_codes": {
+          "-32602": 6,
+          "-32040": 2,
+          "-32009": 1
+        },
+        "other_successes": 10
+      },
+      {
+        "name": "readonly-shared",
+        "calls": 621,
+        "validated_successes": 602,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 9,
+        "error_codes": {
+          "-32602": 6,
+          "-32040": 2,
+          "-32009": 1
+        },
+        "other_successes": 10
+      },
+      {
+        "name": "readonly-cold",
+        "calls": 53,
+        "validated_successes": 52,
+        "returncode": 0,
+        "host_returncode": 0,
+        "native_errors": 0,
+        "error_codes": {},
+        "other_successes": 1
+      }
+    ],
+    "native_calls": 1299,
+    "candidate_validated_successes": 1260,
+    "native_errors": 18,
+    "other_successes": 21,
+    "original_inputs_unchanged": true
+  },
+  "native_linux": {
+    "seconds": 629.2496322730149,
+    "tests": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.67854"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.24554"
+      },
+      {
+        "name": "save_store_native",
+        "seconds": "21.1138"
+      },
+      {
+        "name": "gameplay_save_queue",
+        "seconds": "0.0122748"
+      },
+      {
+        "name": "gameplay_save_writer",
+        "seconds": "6.2839"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "47.2018"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.112531"
+      }
+    ],
+    "configuration": "Fresh Debug -O0 -g0, assertions enabled, download-triggering features disabled; simulation/render/audio/managed/native-gameplay disabled; two compiler workers. No network-isolation claim.",
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "sealed_artifacts": {
+      "poima": {
+        "bytes": 18231544,
+        "sha256": "dbe89744efd82e0e9fae1682d4c47941224ad9ff2eecfeba4eff95e81b6faf01"
+      },
+      "poima-save-store-test": {
+        "bytes": 1245896,
+        "sha256": "231951bd193ca7010b40072c8b94984a0fdb4ca0e4b3bc21f44d0a095af2deed"
+      },
+      "poima-gameplay-save-writer-test": {
+        "bytes": 1605824,
+        "sha256": "17bcd8b2c36da3262ce27565652cb93f41ff6ac7bc29b495230ba9ecb255038e"
+      },
+      "poima-gameplay-save-test": {
+        "bytes": 84824,
+        "sha256": "23ad94fa028b328698cb94b4490991fcbae6a74cbd8c8978b6abeb94c7e093a4"
+      },
+      "poima-world-schema-test": {
+        "bytes": 17603400,
+        "sha256": "96797c08cc85e20b1ab818881a443a6465d87e9561cca63117e94a4f3b1089d5"
+      },
+      "poima-mcp-test": {
+        "bytes": 2230216,
+        "sha256": "9bbfa4e30334b8740fd7c24af06a6cf42e2cd2baec3fd8b9609ad1c504f30e2b"
+      },
+      "library/libpoima_core.a": {
+        "bytes": 120803030,
+        "sha256": "153cde256d4f4015d98ce047a334fd3ed386d3e28adf31811da029f03bcb96d2"
+      }
+    },
+    "scope": "Linux146 native Store/Writer/queue plus authoring-only; simulation/rendering disabled",
+    "qualification_limits": [
+      "Native Linux Store, background Writer and queue tests include the exact new C++ publication marker and generation33 regression; simulation-off does not exercise World runtime save integration.",
+      "Authoring-only CLI/schema/MCP plus two authoring-core consumers; no Linux renderer, CoreCLR/NativeAOT load, real compiled gameplay, runtime save/restore, physical input or GPU claim.",
+      "Debug -O0 -g0 with assertions enabled, no performance or optimized/shipping configuration claim.",
+      "At-run tools/generated graph and source closure must be recorded; compiler front-end pins alone are not complete toolchain/libc/sysroot authority.",
+      "No historical cache, old qualified image, source or artifact is overwritten. Fresh cache only; no thin archives, shared dependency cache or network FetchContent downloads."
+    ]
+  },
+  "old_native_diagnostic": {
+    "binary": {
+      "bytes": 25973248,
+      "sha256": "43143b08d4f1c9318426d7075f09001aa0c681ecb5d4913983ba375ac904f2ab"
+    },
+    "window": {
+      "generation": 33,
+      "receipts": 32,
+      "oldest": 2
+    },
+    "calls": 146,
+    "selected_validated_successes": 143,
+    "observed_state": "Resolving2 despite no publication; subsequent Tick blocked/-32070",
+    "stored_files_unchanged": true,
+    "owner": {
+      "passed": true,
+      "seconds": 2.16559300001245,
+      "processes": 2,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "closure_scope": "Session shutdown abandons the observed unresolved operation; it is not a terminal operation completion.",
+    "not_task_success": true
+  },
+  "independent_reviews": [
+    {
+      "path": ".cache/alpha-contract-next/save146/independent-actual-review-v1.json",
+      "identity": {
+        "bytes": 11405,
+        "sha256": "46dcfec03488b46d26779d003109251b7c0e9e69d650421f156fda187be44155"
+      }
+    },
+    {
+      "path": ".cache/alpha-contract-next/save146/independent-linux-review-v1.json",
+      "identity": {
+        "bytes": 9072,
+        "sha256": "4332cce458cd0d653fb81485f66f857b8b6e84eb461ad4cc5ed9ed4c0e523bb7"
+      }
+    }
+  ],
+  "review_scope": "Agent source/artifact/log inspections performed separately from root execution; patch and preparation authors also participate. Not external certification or additional native execution.",
+  "retained_failed_attempts": [
+    {
+      "attempt": "native-checks-1",
+      "passed": false,
+      "tests_executed": 0,
+      "reason": "Preflight rejected the unstripped desktop DLL against an inherited 256MiB input cap. A reviewed native-artifact hash bound admits the actual build. No legacy incompatible gameplay image was loaded."
+    }
+  ],
+  "superseded_passing_consumers": [
+    {
+      "attempt": "save-failures-1",
+      "passed": true,
+      "scope": "Earlier passing consumer with weaker assertions, superseded by run3; not an additional independent workflow."
+    },
+    {
+      "attempt": "save-failures-2",
+      "passed": true,
+      "scope": "Earlier passing consumer with weaker assertions, superseded by run3; not an additional independent workflow."
+    }
+  ],
+  "limits": [
+    "Missing-load and generation-CAS terminal failures, including32 legitimate writes reachinggeneration33/oldestreceipt2; no unknown-outcome resolving, gameplay-ledger eviction, corrupted recovery/upgrades or arbitrary filesystem fault proof.",
+    "Full selected scalar component/gameplay/entity/UI states, not complete internal snapshot equivalence; random saved ticket globals retained exactly.",
+    "No renderer/GPU, physical input, listening, performance, source-absence/clean-machine or broader stable API/ABI release.",
+    "Native error markers identify these fixture conditions; natural closure requires the supervising Job receipt, not a global census.",
+    "No new provider session, cross-engine benchmark, graphical editor/player qualification, source-unavailability or clean-machine result.",
+    "Unknown outcomes retain receipt resolution; native controlled fault tests are distinct from an actual RPC Resolving recovery campaign.",
+    "No owner terminal-ledger eviction, general corrupted-slot recovery/upgrades, arbitrary collection capacity or broader API/ABI promise.",
+    "At-run source/tool/graph identities do not establish an immutable complete compiler/cache/sysroot closure."
+  ],
+  "raw_receipts": [
+    {
+      "path": "build/native-snapshot-0.0.146/native-build-1/build-result.json",
+      "bytes": 55361,
+      "sha256": "5c68a4bba884b1d44f989f2f50cc24b68d703958b6a018eab6b49a3a6df0b09c"
+    },
+    {
+      "path": "build/native-snapshot-0.0.146/native-build-1/source-pins.json",
+      "bytes": 44380,
+      "sha256": "c63365595ab6527a025a3bb12fc0f129046b26559d0a9aa9bcf26252ffdd150a"
+    },
+    {
+      "path": "build/native-snapshot-0.0.146/native-build-1/sealed-artifacts.json",
+      "bytes": 2101,
+      "sha256": "a75b51c36679dc668bf8757b83a3a7a5596a937f6ebabbdcec7aa1ccbc2bbe40"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/runtime-1/owner.json",
+      "bytes": 23415,
+      "sha256": "1dee4f00960727eb107cce19bd415108ea30d0a632391383cb6de1d1f22a13ce"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/report.json",
+      "bytes": 4759,
+      "sha256": "ab1922c5b4cb60d109cc23d23dd62ca51ce7241c3c50967f7cdde3e5031bacdf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/qualification.json",
+      "bytes": 1330,
+      "sha256": "2b15e1dbdf21cb1d87639a452683777b0378f24f6eb313c488a5f64838f97694"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/store-stdout.txt",
+      "bytes": 339,
+      "sha256": "45c24aed0308d69fa62191c54896f86621310764a1fcf58fdd74ec5aed264c78"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/store-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/writer-stdout.txt",
+      "bytes": 100,
+      "sha256": "4a44351b6eb60b2e01710caa40e092e2818b574c0c586cb77984200d9d74049d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/writer-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/world_background-stdout.txt",
+      "bytes": 193,
+      "sha256": "ff78d3d98719b9d3c086cadc7085cf06728394c45d91c6c3bdc400733501f9f4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/world_background-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/world_save-stdout.txt",
+      "bytes": 82,
+      "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/world_save-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/runtime_save-stdout.txt",
+      "bytes": 324,
+      "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/runtime_save-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/schema-stdout.txt",
+      "bytes": 110,
+      "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/schema-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/mcp-stdout.txt",
+      "bytes": 148,
+      "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-2/mcp-stderr.txt",
+      "bytes": 684,
+      "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-probe-aot-1/owner.json",
+      "bytes": 1496,
+      "sha256": "1e897bbe3d888c2b6be3502f159f1043a99414bc82215c0dfe459a2e8d07b5d5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-probe-aot-1/worker.json",
+      "bytes": 10738,
+      "sha256": "b05dbb4e2cc04aca1afd00e240d46111d101edd372b563d966503a0cb38953f1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-probe-aot-1/source-pins.json",
+      "bytes": 9284,
+      "sha256": "fefc02a514b54c52066ea9153f3fb6d1d97ee1ae676c7e4ffb73b732f4bf6fec"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-probe-aot-1/private-linker-pins.json",
+      "bytes": 2566,
+      "sha256": "d284ea65377c899d5dc6ffb4492397fcdf81996886c8e1ed61065caeeb8cda9c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/prepare-1/qualification.json",
+      "bytes": 4269,
+      "sha256": "a187b17b58b998d3c841791051f78f514d0bb01899974290f894d0d85a293455"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/prepare-1/scalar/report.json",
+      "bytes": 20039,
+      "sha256": "f9c8ec7bbd646629a1707b60e99c0513799a2973af7e5f13398d170affd3f09c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/prepare-1/collections/report.json",
+      "bytes": 20415,
+      "sha256": "8bc716b4e1f9f73d8864b5638fc978b9d18bec44dd3cccc8e4b123e60b8dbd93"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/report.json",
+      "bytes": 3071557,
+      "sha256": "218dc528c351a2ae9f377a599f7468c5bea678907ad93500c2fc44910daeb20d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/qualification.json",
+      "bytes": 1722,
+      "sha256": "ff4340d7102b3c3f8496a7abc67b7df1fa37f388672f8707ab60644b14f27f51"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/source-standalone/transcript.json",
+      "bytes": 4252568,
+      "sha256": "2831791b260ca9f0032c88cfbb99cb18f75200967bc32c656651aecbe2590e79"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/source-standalone/connect-stdin.ndjson",
+      "bytes": 233267,
+      "sha256": "6ad97590e54e08586a182fecafccf7885a831d5b84fafeb53b818a9237f55ece"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/source-standalone/connect-stdout.ndjson",
+      "bytes": 991802,
+      "sha256": "1af1439e1d86aa339445e35004f32d84cccb5d380c75a9413a443b876a2598c8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-shared/transcript.json",
+      "bytes": 4229826,
+      "sha256": "6135ac3bd69316cf7fd72bcb79c1ecd5e8b0d8ed0fc660733f134cbb6293ad51"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-shared/connect-stdin.ndjson",
+      "bytes": 232414,
+      "sha256": "be284e9892559bd59e8191748f4ba6988a91967e3a9ab9ec49e4b0ab6c75785f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-shared/connect-stdout.ndjson",
+      "bytes": 984823,
+      "sha256": "b2e856e38c526e093654ea3786992b92739c8e4ab23887b9bf1b72a4964c99d0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-cold/transcript.json",
+      "bytes": 265115,
+      "sha256": "29f47cecde9d6ff09166adbd8c137bef663cb4ed709c981051cd505e46845fca"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 14230,
+      "sha256": "d8df68847a031374088bc370cd2c13a00054a5335d48d979a571201ffb4f51e6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-3/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 61444,
+      "sha256": "a120b01cbf560acde66f152be7665c4601e36711bed9044160279467ee74088f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/report.json",
+      "bytes": 1003847,
+      "sha256": "85b1116113ad8683db44b7a915ecd6f5d1aed6ce8d4eca20dc12d435fbd0fcdf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/qualification.json",
+      "bytes": 1731,
+      "sha256": "5911266a56a3cbd0b0a58e5932138f1af7fdc4668ca857629e8f5040d5cbad15"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/source-standalone/transcript.json",
+      "bytes": 1484970,
+      "sha256": "ed417e5ad51b5f3bc6bff554d4ce20797a711599f42e3bf71b3165854bb7737c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/source-standalone/connect-stdin.ndjson",
+      "bytes": 72090,
+      "sha256": "41816f19a691f403f8f2ee33d74e97b0009f1f23cc87d76ec20dbcc825c54f00"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/source-standalone/connect-stdout.ndjson",
+      "bytes": 342085,
+      "sha256": "befdae2f0525314fcb513c04ea1f629a34144c2fa139d3f909668a3eef23a7fa"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-shared/transcript.json",
+      "bytes": 1465792,
+      "sha256": "38bf6f191ccb3542f395b9033b97fb5e7bad67ccb59b6d1ee1ded3d9baf66d62"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-shared/connect-stdin.ndjson",
+      "bytes": 71245,
+      "sha256": "8297cfc1c14052fa9830f6e082b2176b3f6061145725aa3d78d62384f7db5d22"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-shared/connect-stdout.ndjson",
+      "bytes": 336886,
+      "sha256": "2345e808a3fd6b3cd858d2887d8217fee791aabf03c954dd8f192e7f7ae2e77b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-cold/transcript.json",
+      "bytes": 198657,
+      "sha256": "855ae29de0509141492c708b912013eb6d10251d4ef1d34f5db3555b5c2e0a5c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 10320,
+      "sha256": "1b9705987a817b586c3d0448d2d490b15e87f9bb6eac80b356e726f847dde73a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 46201,
+      "sha256": "a9b2e502b0b0cd7641773322ae32d07cd438e335d4f5880c82690a1241febf0c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/report.json",
+      "bytes": 2762981,
+      "sha256": "6697c0d37f959243023722c2514e2ab5e8f5bb16eed865d6314871c78cbcf73f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/qualification.json",
+      "bytes": 1743,
+      "sha256": "a809bf9bbd3260d5ce7d89eec2f591dfd994ff6da16ba75538a96feefa83e37b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/source-standalone/transcript.json",
+      "bytes": 3012133,
+      "sha256": "7519142e35bbb865e7831b46e73dab9dbc204a99d2c45829954fb645ce48aceb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/source-standalone/connect-stdin.ndjson",
+      "bytes": 129584,
+      "sha256": "7e0804a4768218e6259078356167d77ede33461408008caafe2947fc1c9456f1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/source-standalone/connect-stdout.ndjson",
+      "bytes": 681822,
+      "sha256": "a6c02949da97e16eae28135e359c4953205b3dd4a5c515dbe62b8f1019503ce9"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-shared/transcript.json",
+      "bytes": 2995737,
+      "sha256": "c4b32ef9b8cfa894060c4b8f348b1688c37329455b5905cb3e1b7ca060682abb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-shared/connect-stdin.ndjson",
+      "bytes": 128731,
+      "sha256": "bb6deb4eebf66cfb2c343bd763ab13fe6e7c8a7f8b1d20b0c8c0508a61fcd628"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-shared/connect-stdout.ndjson",
+      "bytes": 676729,
+      "sha256": "a435bf52455f7843f9067c81575807fb25f31d16b12396d53f3e9ce650d985e9"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-cold/transcript.json",
+      "bytes": 253778,
+      "sha256": "5fd40df5b6d57ea2bf7c4ce54876ca7c79fd6b64960e21b56e797ea638e45aaa"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 10493,
+      "sha256": "73fb72d9f3475d5ff25efb273f479041fc1a6256dbe5b76aa4407e34a1df8e89"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 57629,
+      "sha256": "66ef7460bddd0603bd8010e89a2b1bca428c3eaaf406c795d0ee1260a184a7a3"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/report.json",
+      "bytes": 62904,
+      "sha256": "e0abaefdc204f7ad34f1fdd6639648715b8a4ba42e6dd4dd21801b866764053a"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/source-pins.json",
+      "bytes": 53664,
+      "sha256": "8b1e42c852591c4b83250e826d801df0f4a62ff76703abb0c57b5305eeae82ca"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/ctest-results.xml",
+      "bytes": 3828,
+      "sha256": "25c9b126bd6ddd5698ff5a4688135d95a876793869d5006ea52c3018cf0b362e"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/configure-receipt.json",
+      "bytes": 1320,
+      "sha256": "91fdad18a5c400bfad831901c3b109c26893cc759163ed14c70063a46fa7a392"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/build-receipt.json",
+      "bytes": 675,
+      "sha256": "50c7e8de703b6ef63f94de1c087ae6abec26554c8bf854de1c8df73efd59a011"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/ctest-receipt.json",
+      "bytes": 836,
+      "sha256": "c00b5344e67e3ca37c9ebe45cedfae0a4452201030442ad1791388c0da865b65"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/configure/stdout.txt",
+      "bytes": 915,
+      "sha256": "655d65dcfbb03eae2b0e05f50f4b75f9879740edaea45a47682a16a532cb7bc8"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/configure/stderr.txt",
+      "bytes": 115,
+      "sha256": "a33a33a776407d1c90c9e3a2066352f15075f2b5829ac298cb028d6d4bfb9c77"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/build/stdout.txt",
+      "bytes": 17644,
+      "sha256": "ef2d99b3de4cdcc4a9a6e620cd20ee9d3cb9be03900cda272dc8e51b1e7b561e"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/build/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/ctest/stdout.txt",
+      "bytes": 884,
+      "sha256": "46811274b3e99f87ab8a71ff5d57dd297287a4953c1fa3bba9e162cf58806414"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/ctest/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/version/stdout.txt",
+      "bytes": 211,
+      "sha256": "621e8f86095312ef69aaada72e08c3da1cde5c2d51bc81c0355787dca5c5eeda"
+    },
+    {
+      "path": "build/save-core-0.0.146/linux-1/version/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/retention142-repro-1/report.json",
+      "bytes": 2769,
+      "sha256": "6650677fa56b71cfb79982223f1e43ef16427d7cf8bc74e1ce52bc9a4b8ee1b8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/retention142-repro-1/qualification.json",
+      "bytes": 1318,
+      "sha256": "732686872c2d0505df4e523beb7d85910710519cda1cd2e12a10da03a56835bc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-1/report.json",
+      "bytes": 1333,
+      "sha256": "5433924ac131bbaa4c14aa3c29546622489fb40637c779e85fab0ef22af9ec85"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/native-checks-1/qualification.json",
+      "bytes": 1795,
+      "sha256": "e630a7012a74cf6e8722ab3b876614e8da58fbeba4917bac5ffd599d02f4c060"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-1/verification/report.json",
+      "bytes": 3071527,
+      "sha256": "accbf624ea51dd46deff46301a7793db8d642f9d0e63189330c5c704f42f3784"
+    },
+    {
+      "path": "build/alpha-contract-0.0.146/save-failures-2/verification/report.json",
+      "bytes": 3071557,
+      "sha256": "f5cef6bae85422ab4c5ed8238c2a512272ab931af027e6bc654d44450d8ba0b9"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save146/independent-actual-review-v1.json",
+      "bytes": 11405,
+      "sha256": "46dcfec03488b46d26779d003109251b7c0e9e69d650421f156fda187be44155"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save146/independent-linux-review-v1.json",
+      "bytes": 9072,
+      "sha256": "4332cce458cd0d653fb81485f66f857b8b6e84eb461ad4cc5ed9ed4c0e523bb7"
+    }
+  ]
+}

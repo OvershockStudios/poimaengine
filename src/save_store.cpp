@@ -349,7 +349,8 @@ WriteResult Store::write(std::uint64_t expected_generation,const std::string& op
                 ErrorKind::reused_id,"Save operation ID was reused with different request/payload data.");return replay(state,*item);
     }
     require(!state.status.manifest_recovered,ErrorKind::recovery_required,"Recovered manifest is read-only; use a new slot/manual repair to preserve unknown receipt history.");
-    require(expected_generation==state.status.generation,ErrorKind::conflict,"Save generation changed; inspect before writing.");
+    if(expected_generation!=state.status.generation)
+        throw Error(ErrorKind::conflict,"Save generation changed; inspect before writing.",WritePublication::rejected_before_publication);
     require(!state.status.recovered || acknowledge_recovery,ErrorKind::recovery_required,"Newest payload is corrupt; explicitly acknowledge using the verified prior generation.");
     require(!state.status.recovered || !state.status.quarantined,ErrorKind::recovery_required,"A failed generation is already quarantined; use a new slot/manual archive before another recovery write.");
     std::set<std::string> retained;Json previous=nullptr,quarantine=nullptr;
