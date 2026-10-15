@@ -22,6 +22,37 @@ template<class F> void rejects(F&& callback,const char* label) {
     bool rejected=false;try {callback();}catch(const std::exception&) {rejected=true;}
     check(rejected,std::string("Unsupported FBX/composition accepted: ")+label);
 }
+void texture_dependency(const std::filesystem::path& source,FbxTextureDependencyReason reason,
+    const std::string& relative_path,std::optional<std::uint64_t> file_bytes) {
+    bool rejected=false;
+    try {import_fbx(source);}
+    catch(const FbxTextureDependencyError& error) {
+        rejected=true;const auto& diagnostic=error.diagnostic();
+        check(diagnostic.reason==reason,"Wrong external texture dependency reason.");
+        check(diagnostic.relative_path==relative_path,"External dependency path must preserve the slash-normalized input.");
+        check(diagnostic.file_bytes==file_bytes,"Wrong known external texture byte count.");
+        check(diagnostic.byte_limit==32u*1024*1024,"External texture byte limit changed.");
+        check(!diagnostic.donor_index,"Direct FBX conversion must not invent a donor index.");
+        const std::string message=error.what();
+        check(message.size()<=128 && message.find(source.string())==std::string::npos &&
+              std::all_of(message.begin(),message.end(),[](unsigned char c){return c>=32 && c<127;}),
+              "External dependency message must be bounded ASCII without a source path.");
+        const char* expected=reason==FbxTextureDependencyReason::unavailable ? "unavailable" :
+            reason==FbxTextureDependencyReason::empty ? "empty" :
+            reason==FbxTextureDependencyReason::byte_budget ? "byte_budget" : "read_failed";
+        check(std::string(fbx_texture_dependency_reason_name(diagnostic.reason))==expected,
+              "External dependency reason label changed.");
+        check(message.find(expected)!=std::string::npos,"External dependency message lost its reason.");
+    }
+    check(rejected,"Expected a typed external texture dependency rejection: "+source.filename().string());
+}
+template<class F> void ordinary_rejection(F&& callback,const char* label) {
+    bool rejected=false;
+    try {callback();}
+    catch(const FbxTextureDependencyError&) {throw std::runtime_error(std::string("Unsafe path/decode/base failure incorrectly classified as a texture read failure: ")+label);}
+    catch(const std::exception&) {rejected=true;}
+    check(rejected,std::string("Expected an ordinary rejection: ")+label);
+}
 std::uint32_t node(const ModelAsset& model,const std::string& name) {
     for(std::size_t i=0;i<model.nodes.size();++i)if(model.nodes[i].name==name)return static_cast<std::uint32_t>(i);
     throw std::runtime_error("Missing imported node "+name);
@@ -179,9 +210,19 @@ int main(int argc,char** argv) {
                 "inactive_normal","active_normal_response","duplicate_object_id","truncated_materials",
                 "collapsed_uv","mapped_collapsed_uv",
                 "rest_mismatch","dual_quaternion","influence_overflow","blend_shape","node_overflow",
-                "position_overflow","truncated","texture","normal_map","shared_normal_map","missing_texture","escaping_texture","uv_transform"})
+                "position_overflow","truncated","texture","normal_map","shared_normal_map","missing_texture","missing_texture_donor","empty_texture","overbudget_texture","invalid_texture",
+                "nested_missing_texture","unicode_missing_texture","escaping_texture","uv_transform"})
             check(std::filesystem::is_regular_file(root/(std::string(name)+".fbx")),std::string("Missing fixture: ")+name);
         auto load=[&](const char* name){return import_fbx(root/(std::string(name)+".fbx"));};
+        texture_dependency(root/"missing_texture.fbx",FbxTextureDependencyReason::unavailable,"absent.png",std::nullopt);
+        texture_dependency(root/"missing_texture_donor.fbx",FbxTextureDependencyReason::unavailable,"absent.png",std::nullopt);
+        texture_dependency(root/"empty_texture.fbx",FbxTextureDependencyReason::empty,"empty.png",0);
+        texture_dependency(root/"overbudget_texture.fbx",FbxTextureDependencyReason::byte_budget,"overbudget.png",32u*1024*1024+1);
+        texture_dependency(root/"nested_missing_texture.fbx",FbxTextureDependencyReason::unavailable,"textures/absent.png",std::nullopt);
+        texture_dependency(root/"unicode_missing_texture.fbx",FbxTextureDependencyReason::unavailable,"textures/caf\xc3\xa9.png",std::nullopt);
+        ordinary_rejection([&]{load("escaping_texture");},"escaping external texture");
+        ordinary_rejection([&]{load("invalid_texture");},"external texture image decode");
+        ordinary_rejection([&]{import_fbx(root/"absent-base.fbx");},"missing base FBX");
         points(vertices(*load("static")),{{1,2,3},{2,2,3},{1,3,3}});
         identity_white(*load("static"),*load("white_color"));
         const auto inactive_normal=load("inactive_normal");

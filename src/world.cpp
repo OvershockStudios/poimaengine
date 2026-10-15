@@ -1882,6 +1882,20 @@ public:
         while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
         text.resize(length);return text;
     }
+    static Error fbx_texture_dependency_error(const FbxTextureDependencyError& error,bool inspection=false) {
+        const auto& diagnostic=error.diagnostic();
+        // Only the already-confined relative texture reference is reported,
+        // never the resolved source directory or an OS exception's path.
+        const auto relative=Json::parse(Json(diagnostic.relative_path).dump(-1,' ',false,Json::error_handler_t::replace));
+        return Error(-32050,asset_diagnostic(error.what()),{
+            {"type","fbx_texture_dependency"},{"version",1},
+            {"reason",fbx_texture_dependency_reason_name(diagnostic.reason)},
+            {"relative_path",relative},
+            {"file_bytes",diagnostic.file_bytes ? Json(*diagnostic.file_bytes) : Json(nullptr)},
+            {"byte_limit",diagnostic.byte_limit},
+            {"source_role",inspection ? "inspection" : diagnostic.donor_index ? "animation_donor" : "base"},
+            {"donor_index",!inspection && diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)}});
+    }
     Json source_model_inspection(const Json& params) const {
         fields(params,{"source","fbx_normal_map","section","offset","limit","pose","expected_model_sha256"},{"source"});
         const auto& path=params.at("source");
@@ -1952,7 +1966,9 @@ public:
                 out["next_offset"]=end<total ? Json(end) : Json(nullptr);
             }
             return out;
-        }catch(const Error&) {throw;}catch(const std::exception& error) {throw Error(-32050,asset_diagnostic(error.what()));}
+        }catch(const Error&) {throw;}
+        catch(const FbxTextureDependencyError& error) {throw fbx_texture_dependency_error(error,true);}
+        catch(const std::exception& error) {throw Error(-32050,asset_diagnostic(error.what()));}
     }
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.animation.capture")return capture(params,false,true);
@@ -2032,6 +2048,7 @@ public:
             }
             return result;
         } catch(const Error&) { throw; }
+        catch(const FbxTextureDependencyError& error) { throw fbx_texture_dependency_error(error); }
         catch(const AnimationCompositionError& error) {
             const auto& report=error.report();
             Json issues=Json::array();

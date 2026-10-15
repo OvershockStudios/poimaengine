@@ -1,0 +1,489 @@
+{
+  "format": "poima.fbx-texture-dependencies-qualification.v1",
+  "engine_version": "0.0.155",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Actionable contained external-FBX-texture read errors and same-request repair, with unchanged import admission and selected native/headless regressions.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 84365,
+      "sha256": "cd10bb60e258bc382912ae8f2d5c992495c5b6503e723f963a500e3f4cdbfb31"
+    },
+    "src/fbx.hpp": {
+      "bytes": 1422,
+      "sha256": "d9b20d5fc7127869fe4243d75f1bac28815e7da4b08b2ecac021b579fc2e1daf"
+    },
+    "src/fbx.cpp": {
+      "bytes": 34537,
+      "sha256": "626e331c766348cc09d763a8525fccd3f9747192e7e6154e59d41ac4bce358ca"
+    },
+    "src/asset_store.hpp": {
+      "bytes": 15282,
+      "sha256": "24301ca524b0b034c41ae029ffa19d3051253cf28b5189f963a49bbfe4e11d3e"
+    },
+    "src/world.cpp": {
+      "bytes": 323747,
+      "sha256": "8dd7c9fe76db0f508004671b69f3e0577d5419e6c1d95ebb7bc9d06921fdff7a"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 110574,
+      "sha256": "c5fc5ad08ff48e8136662d88b6fc3d207facc1ce9514890064fc396a919333f4"
+    },
+    "tests/fbx_native.cpp": {
+      "bytes": 22803,
+      "sha256": "9ea9f148e844b9112e17abf557bd4c5700a7e21937d252173193209b6fbde223"
+    },
+    "tests/fbx_fixture.py": {
+      "bytes": 23219,
+      "sha256": "09762b8756ade1298ca5413794cf4a5649ca59fd09a90767b95853d8e202cfe7"
+    },
+    "tests/fbx_contract.py": {
+      "bytes": 23792,
+      "sha256": "e50f561f7f837f144a093c51baa34eaca4abaab40df84da445d99c6e17239235"
+    }
+  },
+  "diagnostic": {
+    "type": "fbx_texture_dependency",
+    "version": 1,
+    "rpc_error_code": -32050,
+    "fields": [
+      "type",
+      "version",
+      "reason",
+      "relative_path",
+      "file_bytes",
+      "byte_limit",
+      "source_role",
+      "donor_index"
+    ],
+    "native_exercised_reasons": [
+      "unavailable",
+      "empty",
+      "byte_budget"
+    ],
+    "source_review_only_reasons": [
+      "read_failed"
+    ],
+    "roles": [
+      "base",
+      "animation_donor",
+      "inspection"
+    ],
+    "native_formats": [
+      "ASCII FBX",
+      "binary FBX"
+    ],
+    "case_coverage": [
+      "Missing contained texture",
+      "Empty texture",
+      "Texture one byte above32MiB cap",
+      "Nested slash-normalized dependency",
+      "Unicode dependency",
+      "Second animation donor index1 after a valid first donor",
+      "Unsafe path and invalid image retain ordinary errors"
+    ]
+  },
+  "invariants": [
+    "Every new rejected protocol request compares full same-owner world inspection, undo history and document bytes, plus cooked-package file hashes.",
+    "Restoring the original deterministic PNG repairs base import, donor composition and source inspection with the same request inputs.",
+    "ASCII and binary recovered packages share identities and sampled Move poses satisfy independently authored expected vertices.",
+    "After source directory removal, a fresh owner reopens both cooked packages and samples the same pose; document/revision and package hashes remain equal. Owner-local undo history is not a cross-process invariant.",
+    "Canonical path confinement, external32MiB/effective128MiB source budgets, decoded-image limits and material/skeleton admission remain unchanged.",
+    "Focused discovery exposes the same eight-field closed diagnostic schema for both methods; this evolving asset surface remains outside selected authoring-core/runtime-game-session v1."
+  ],
+  "windows_build": {
+    "passed": true,
+    "target": "Windows x86_64",
+    "cache_generation": 23,
+    "seconds": 387.85709396601305,
+    "source_files": 305,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "policy": "Two-worker incremental Ninja build; independently sealed artifacts, previous152 cohort preserved. Not a clean-toolchain build.",
+    "cli": {
+      "bytes": 26050560,
+      "sha256": "e114c5bdbac6b3960cd5b6ceb0c47a08779643d9222b2acb0f5f32974cba8c1d"
+    },
+    "desktop_bridge": {
+      "bytes": 298461696,
+      "sha256": "66fb2b630a8c3d88cccc6c26045839a6daccd7b9ab5de520ba1dd2a7b8fc9b08"
+    },
+    "receipts": [
+      {
+        "path": "build/native-snapshot-0.0.155/native-build-1/build-result.json",
+        "bytes": 55763,
+        "sha256": "6697eba4e0efc34ba332dfc9a9b082dd89dd0adfbe4da9b9570f608135c923b9"
+      },
+      {
+        "path": "build/native-snapshot-0.0.155/native-build-1/source-pins.json",
+        "bytes": 45693,
+        "sha256": "790d3f6b2451ecd8cf6b03ccc0fca85879ae363a73a0edc094d2e4623c43dba8"
+      },
+      {
+        "path": "build/native-snapshot-0.0.155/native-build-1/sealed-artifacts.json",
+        "bytes": 1935,
+        "sha256": "d8a604bc9507378aa7cdf5d62458a87d6266e6b6c28e916ff7a5110079cd917f"
+      }
+    ]
+  },
+  "windows_native": {
+    "passed": true,
+    "executions": 7,
+    "unique_test_executables": 6,
+    "seconds": 19.0363037000061,
+    "stages": [
+      {
+        "name": "world_session",
+        "binary": "poima-world-session-test.exe",
+        "exit_code": 0,
+        "seconds": 3.4077690999838524,
+        "stdout": {
+          "bytes": 147,
+          "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "binary": "poima-world-schema-test.exe",
+        "exit_code": 0,
+        "seconds": 12.326916999998502,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "binary": "poima-mcp-test.exe",
+        "exit_code": 0,
+        "seconds": 0.09785780002130195,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      },
+      {
+        "name": "mutation_discovery",
+        "binary": "poima-mutation-discovery-test.exe",
+        "exit_code": 0,
+        "seconds": 0.05308620003052056,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "fbx_ascii",
+        "binary": "poima-fbx-test.exe",
+        "exit_code": 0,
+        "seconds": 0.1173424999578856,
+        "stdout": {
+          "bytes": 117,
+          "sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "fbx_binary",
+        "binary": "poima-fbx-test.exe",
+        "exit_code": 0,
+        "seconds": 0.39728570001898333,
+        "stdout": {
+          "bytes": 117,
+          "sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "rotation_retarget",
+        "binary": "poima-animation-rotation-retarget-test.exe",
+        "exit_code": 0,
+        "seconds": 0.16833519999636337,
+        "stdout": {
+          "bytes": 65,
+          "sha256": "017d7920d1b692060e3ea20c8e15a2aee4c6df6bc16e0d249eca3f7b4b169ff4"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "natural_job_closure": true,
+    "receipts": [
+      {
+        "path": "build/fbx-dependencies-0.0.155/windows-cpu-1/report.json",
+        "bytes": 12087,
+        "sha256": "baa3158e66c801048c178b451d2bb41b7141b76aa533ce1bccad221bb14c25fc"
+      },
+      {
+        "path": "build/fbx-dependencies-0.0.155/windows-cpu-1/qualification.json",
+        "bytes": 1763,
+        "sha256": "203cce2b549f88797134244d9f89a0a964a90190339a2f6d45eec82ff6fd7764"
+      }
+    ]
+  },
+  "windows_protocols": {
+    "passed": true,
+    "seconds": 10.756117999961134,
+    "natural_job_closure": true,
+    "fbx": {
+      "passed": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "calls": 327,
+      "owners": 9,
+      "all_owners_exit_zero": true,
+      "binary_sha256": "e114c5bdbac6b3960cd5b6ceb0c47a08779643d9222b2acb0f5f32974cba8c1d",
+      "protocol_source_sha256": "e50f561f7f837f144a093c51baa34eaca4abaab40df84da445d99c6e17239235",
+      "fixture_sha256": "09762b8756ade1298ca5413794cf4a5649ca59fd09a90767b95853d8e202cfe7",
+      "selected_new_cases": [
+        {
+          "test": "test_external_texture_failures_identify_dependencies_without_publication",
+          "calls": 120,
+          "expected_rejections": 38,
+          "typed_errors": 30,
+          "reasons": {
+            "unavailable": 18,
+            "empty": 6,
+            "byte_budget": 6
+          },
+          "source_roles": {
+            "inspection": 10,
+            "base": 10,
+            "animation_donor": 10
+          }
+        },
+        {
+          "test": "test_repaired_texture_recovers_base_donor_and_source_free_reopen",
+          "calls": 44,
+          "expected_rejections": 6,
+          "typed_errors": 6,
+          "reasons": {
+            "unavailable": 6
+          },
+          "source_roles": {
+            "base": 2,
+            "animation_donor": 2,
+            "inspection": 2
+          }
+        }
+      ],
+      "evidence": {
+        "path": "build/fbx-dependencies-0.0.155/windows-protocol-1/fbx/evidence.json",
+        "bytes": 340061,
+        "sha256": "26a8885c311dbe6304f7652e8cb65045511d3f863ffd669bff396418e201b879"
+      }
+    },
+    "fbx_not_executed": {
+      "test_filesystem_diagnostics_preserve_owner_and_publication": "Arbitrary invalid UTF-8 filename bytes are a POSIX boundary.",
+      "test_publication_rejects_existing_stages_and_linked_store": "Actual Windows symlink preflight failed with WinError1314; full test remains required on Linux."
+    },
+    "full_windows_fbx_suite_qualified": false,
+    "retarget": {
+      "passed": true,
+      "tests": 8,
+      "skipped": 0,
+      "calls": 1017,
+      "owners": 10,
+      "all_owners_exit_zero": true,
+      "original_source_qualification_present": true,
+      "source_hashes_unchanged": true,
+      "evidence": {
+        "path": "build/fbx-dependencies-0.0.155/windows-protocol-1/retarget/evidence.json",
+        "bytes": 21399698,
+        "sha256": "54387540a0319fc88870e874736251bf405a003ba5f94ea7b6be0858fa9ebb9a"
+      }
+    },
+    "receipts": [
+      {
+        "path": "build/fbx-dependencies-0.0.155/windows-protocol-1/report.json",
+        "bytes": 26228,
+        "sha256": "75a22063cc52154a746837e3bde05db32449793f114be33c3ab2492aeaab1fb1"
+      },
+      {
+        "path": "build/fbx-dependencies-0.0.155/windows-protocol-1/qualification.json",
+        "bytes": 1639,
+        "sha256": "5967e69b2a9636e094406448063a69bac8523d484d590a6d8c02136beb00c50c"
+      }
+    ]
+  },
+  "linux_headless": {
+    "passed": true,
+    "seconds": 565.8294310249912,
+    "fresh_cache": true,
+    "build_jobs": 2,
+    "ctest_jobs": 1,
+    "configuration": "Debug -O0 -g0; offline; rendering, simulation, navigation, audio, game UI, managed/native gameplay and desktop disabled",
+    "selected_ctests": [
+      {
+        "name": "fbx_fixture",
+        "seconds": "0.836058"
+      },
+      {
+        "name": "fbx_native",
+        "seconds": "0.748064"
+      },
+      {
+        "name": "animation_rotation_retarget_native",
+        "seconds": "0.756725"
+      },
+      {
+        "name": "animation_rotation_retarget_protocol",
+        "seconds": "11.773"
+      },
+      {
+        "name": "fbx_native_binary",
+        "seconds": "0.980496"
+      },
+      {
+        "name": "fbx_contract",
+        "seconds": "19.4537"
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.53065"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.24178"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "47.2771"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.111525"
+      },
+      {
+        "name": "mutation-discovery-native",
+        "seconds": "0.0193735"
+      }
+    ],
+    "ctest_skips": 0,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "fbx": {
+      "passed": true,
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "calls": 358,
+      "owners": 12,
+      "all_owners_exit_zero": true,
+      "binary_sha256": "56c5c3186355cf8a9fe96f9e2d3353cc8cc51ddfb46910d0fff8c52671e188ad",
+      "protocol_source_sha256": "e50f561f7f837f144a093c51baa34eaca4abaab40df84da445d99c6e17239235",
+      "fixture_sha256": "09762b8756ade1298ca5413794cf4a5649ca59fd09a90767b95853d8e202cfe7",
+      "selected_new_cases": [
+        {
+          "test": "test_external_texture_failures_identify_dependencies_without_publication",
+          "calls": 120,
+          "expected_rejections": 38,
+          "typed_errors": 30,
+          "reasons": {
+            "unavailable": 18,
+            "empty": 6,
+            "byte_budget": 6
+          },
+          "source_roles": {
+            "inspection": 10,
+            "base": 10,
+            "animation_donor": 10
+          }
+        },
+        {
+          "test": "test_repaired_texture_recovers_base_donor_and_source_free_reopen",
+          "calls": 44,
+          "expected_rejections": 6,
+          "typed_errors": 6,
+          "reasons": {
+            "unavailable": 6
+          },
+          "source_roles": {
+            "base": 2,
+            "animation_donor": 2,
+            "inspection": 2
+          }
+        }
+      ],
+      "evidence": {
+        "path": "build/fbx-contract-890fc21437da4336bd3668d2f0ae3b2f/evidence.json",
+        "bytes": 340381,
+        "sha256": "4b275d6b277b0c31d0cdd43a096a57b76320a84370937af93a5a9676cbace17f"
+      }
+    },
+    "retarget": {
+      "tests": 8,
+      "skipped": 1,
+      "scope": "Default analytic protocol; optional original-character source case not supplied. Windows separately executes that case.",
+      "evidence": {
+        "path": "build/animation-rotation-retarget-contract/2151c83ab95e4731b528e8774da086bd/evidence.json",
+        "bytes": 1419717,
+        "sha256": "1dcae9a89a1d9337eefc2c0b96940f7283218fb559101b800ee4141128721e38"
+      }
+    },
+    "receipts": [
+      {
+        "path": "build/fbx-dependencies-0.0.155/linux-1/report.json",
+        "bytes": 68024,
+        "sha256": "94464ac4bda1e2b16ca7b0b906667c543fa7d0bc7fce07b2025ddc77505b1b58"
+      },
+      {
+        "path": "build/fbx-dependencies-0.0.155/linux-1/ctest-results.xml",
+        "bytes": 6549,
+        "sha256": "56788651cf13060277d644676ca2fa64ba4363970d2a583f94a037dce65b7712"
+      }
+    ]
+  },
+  "prelaunch_findings": [
+    {
+      "finding": "CPU fixture input fence originally omitted its transitive gltf helper and running interpreter identity.",
+      "resolution": "Corrected and source-reviewed before qualifier execution."
+    },
+    {
+      "finding": "Cold reopen test draft compared owner-local undo history across owners.",
+      "resolution": "Corrected before native build/admission: fresh-owner document/revision/package/pose equality; full undo comparison retained within each owner."
+    },
+    {
+      "finding": "Initial standalone schema syntax command omitted an existing game-UI build definition.",
+      "resolution": "Command failed before native execution; corrected syntax command and actual selected Windows build both pass."
+    },
+    {
+      "finding": "Actual Windows symlink capability preflight returns WinError1314.",
+      "resolution": "Two full methods explicitly unexecuted on Windows; full unchanged nine-method FBX protocol passes on Linux."
+    }
+  ],
+  "limitations": [
+    "read_failed is implemented and source-reviewed; no deterministic actual short-read/open-race qualification.",
+    "No new external exporter, character pack, rendering, physical input, performance or Alpha qualification.",
+    "Decoded Python request/result logs are retained, not independent exact raw-wire NDJSON transcripts.",
+    "Log/output size checks are terminal checks; no continuously bounded capture-buffer or complete OS sandbox claim.",
+    "New asset diagnostics do not freeze every engine API or change gameplay ABI/save compatibility."
+  ]
+}

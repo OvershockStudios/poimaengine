@@ -75,6 +75,60 @@ bijective direct-parent/root correspondence; missing or extra helper segments
 still reject. Inspect original takes and nodes through `asset.source.inspect`
 before selecting an animation-only donor.
 
+## Repair an external texture dependency
+
+Starting with 0.0.155, `asset.import` and `asset.source.inspect` identify a
+contained external FBX texture that could not be read. The error remains
+`-32050`; its `data` has `type: "fbx_texture_dependency"` and `version: 1`:
+
+```json
+{
+  "type": "fbx_texture_dependency",
+  "version": 1,
+  "reason": "unavailable",
+  "relative_path": "textures/cloth_base.png",
+  "file_bytes": null,
+  "byte_limit": 33554432,
+  "source_role": "base",
+  "donor_index": null
+}
+```
+
+`relative_path` is the original texture reference with backslashes converted
+to slashes. The input reference is limited to 4,096 bytes; JSON output repairs
+invalid UTF-8. Resolve it relative to the FBX file,
+including when that file is an animation donor. It never supplies the resolved
+source directory or an absolute OS path. The existing canonical containment
+check runs before this diagnostic; unsafe references retain their rejection.
+
+| Reason | Meaning |
+| --- | --- |
+| `unavailable` | File-size metadata could not be read, for example because the dependency is missing or inaccessible. `file_bytes` is null. |
+| `empty` | The dependency has zero bytes. |
+| `byte_budget` | The known file size exceeds the reported effective limit. |
+| `read_failed` | File-size metadata was available, but opening or completely reading the file failed. |
+
+Sizes and limits are integer bytes. The limit is the smaller of 32 MiB per
+external image and the remaining existing 128 MiB source/dependency budget
+for that FBX.
+The decoded-image budgets and supported PNG/JPEG formats are unchanged.
+`source_role` is `base`, `animation_donor`, or `inspection`; only
+`animation_donor` has a non-null, zero-based `donor_index` into the request's
+`animations` array. The same data schema appears under
+`x-error-data.fbx_texture_dependency` in focused discovery for each method.
+
+Restore the intended image at the listed relative path, or correct the FBX
+reference and submit the import again. An oversized image needs to fit the
+reported budget as well as the existing decode/material profile. Retrying the
+same unavailable dependency does not repair it. No basename search, absolute
+path fallback, skipped donor materials, or partial model publication occurs.
+Rejection preserves the authored document, owner history and cooked packages.
+
+Other errors, including unsafe paths, embedded images, unsupported material
+features and decoding failures, can have no structured dependency data. Check
+the data type/version before using these fields; the Python client's
+`RpcError.data` and MCP error result preserve them.
+
 ## Inspect a composition failure
 
 An incompatible skeleton still returns `-32050`. In 0.0.72, that rejection also
@@ -207,6 +261,16 @@ exporter or a general character retargeting workflow.
 
 [Checkpoint evidence](evidence/m2-fbx-import.json) records the native Windows/Linux
 checks and original-fixture Windows Vulkan captures with their source hashes.
+
+The [0.0.155 dependency checks](evidence/m2-fbx-texture-dependencies.json)
+verify missing, empty and oversized external textures, nested and Unicode
+paths, donor indexing, unchanged authoring/publication on rejection, and repair
+followed by source-independent cooked reopening. All nine FBX protocol tests
+pass on Linux. Seven execute on Windows; invalid-byte POSIX filenames and the
+whole linked-store/staging test are unexecuted there because of platform and
+symlink-privilege limits. `read_failed` is source-reviewed, without a
+deterministic short-read/open-race test. These checks do not qualify new
+rendering or general exporter compatibility.
 
 ## Check and recover
 

@@ -9,8 +9,21 @@
 #include <set>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 
 namespace poima {
+const char* fbx_texture_dependency_reason_name(FbxTextureDependencyReason reason) noexcept {
+    switch(reason) {
+    case FbxTextureDependencyReason::unavailable:return "unavailable";
+    case FbxTextureDependencyReason::empty:return "empty";
+    case FbxTextureDependencyReason::byte_budget:return "byte_budget";
+    case FbxTextureDependencyReason::read_failed:return "read_failed";
+    }
+    return "unknown";
+}
+FbxTextureDependencyError::FbxTextureDependencyError(FbxTextureDependencyDiagnostic diagnostic)
+    : std::runtime_error(std::string("FBX external texture dependency rejected (")+
+        fbx_texture_dependency_reason_name(diagnostic.reason)+")."),diagnostic_(std::move(diagnostic)) {}
 namespace {
 constexpr std::size_t source_budget=128*1024*1024, image_budget=64*1024*1024;
 constexpr std::size_t max_vertices=1000000,max_indices=3000000;
@@ -64,6 +77,19 @@ std::string read_file(const std::filesystem::path& path,std::size_t cap) {
     std::string bytes(static_cast<std::size_t>(size),'\0');std::ifstream input(path,std::ios::binary);
     require(bool(input.read(bytes.data(),static_cast<std::streamsize>(bytes.size()))),"Cannot read FBX input/dependency.");return bytes;
 }
+std::string read_texture_file(const std::filesystem::path& path,std::size_t cap,const std::string& relative_path) {
+    auto reject=[&](FbxTextureDependencyReason reason,std::optional<std::uint64_t> bytes) {
+        throw FbxTextureDependencyError({relative_path,reason,bytes,static_cast<std::uint64_t>(cap)});
+    };
+    std::error_code error;const auto size=std::filesystem::file_size(path,error);
+    if(error)reject(FbxTextureDependencyReason::unavailable,std::nullopt);
+    if(size==0)reject(FbxTextureDependencyReason::empty,0);
+    if(size>cap)reject(FbxTextureDependencyReason::byte_budget,static_cast<std::uint64_t>(size));
+    std::string bytes(static_cast<std::size_t>(size),'\0');std::ifstream input(path,std::ios::binary);
+    if(!input || !input.read(bytes.data(),static_cast<std::streamsize>(bytes.size())))
+        reject(FbxTextureDependencyReason::read_failed,static_cast<std::uint64_t>(size));
+    return bytes;
+}
 ufbx_allocator_opts allocator() {ufbx_allocator_opts a{};a.memory_limit=source_budget;a.allocation_limit=1000000;return a;}
 struct Images {
     const std::filesystem::path root;ModelAsset& model;FbxNormalConvention normals;std::size_t read,decoded=0;
@@ -89,7 +115,7 @@ struct Images {
             require(!local.is_absolute(),"FBX texture path must be relative.");std::error_code error;
             const auto path=std::filesystem::weakly_canonical(root/local,error);require(!error,"FBX texture path is unavailable.");
             const auto relative=path.lexically_relative(root);require(!relative.empty() && !relative.is_absolute() && *relative.begin()!="..","FBX texture escapes the source directory.");
-            bytes=read_file(path,std::min<std::size_t>(32*1024*1024,source_budget-read));read+=bytes.size();
+            bytes=read_texture_file(path,std::min<std::size_t>(32*1024*1024,source_budget-read),text);read+=bytes.size();
         }
         result.image=decode_texture(std::as_bytes(std::span(bytes.data(),bytes.size())),srgb);
         if(invert_green) {

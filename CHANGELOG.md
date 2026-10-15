@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.155
+
+- Identify contained external FBX texture-read failures through structured import and source-inspection diagnostics: relative dependency, failure reason, actual size when available, effective byte limit and animation-donor index. Preserve existing path confinement, image budgets and decoding rules. [FBX diagnostics](docs/FBX_IMPORT.md#repair-an-external-texture-dependency).
+- Cover missing, empty and oversized dependencies, unchanged authoring/publication on rejection, repair with the original fixture PNG and source-independent cooked-model reopen. Keep unsupported materials, unsafe paths and decode failures under their existing admission rules.
+
 ## 0.0.154
 
 - Add opt-in GPU-memory recording to the Performance Yard reliability harness using existing player reports, without extra native requests or changes to gameplay, focus, frame-time and save checks. [Recording guide](docs/PERFORMANCE_YARD_RELIABILITY.md#optional-gpu-memory-recording).

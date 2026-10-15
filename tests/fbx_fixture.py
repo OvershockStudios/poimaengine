@@ -309,8 +309,8 @@ Video: {identity+1}, "Video::{name}", "Clip" {{
 '''
 
 
-def textured(*, color='color.png', normal=False, transformed=False, normal_filename='normal.png'):
-    text = scene()
+def textured(*, color='color.png', normal=False, transformed=False, normal_filename='normal.png', skin=False, takes=()):
+    text = scene(skin=skin, takes=takes)
     layers = '''LayerElementUV: 0 {
 Version: 101
 Name: "UVMap"
@@ -418,11 +418,23 @@ def write_fixtures(directory):
     normal = png(2, 2, [128,204,230,255]*4)
     (directory / 'color.png').write_bytes(color)
     (directory / 'normal.png').write_bytes(normal)
+    (directory / 'empty.png').write_bytes(b'')
+    (directory / 'invalid.png').write_bytes(b'not a PNG or JPEG')
+    # Oversize is rejected by file metadata before allocation or image decode.
+    # Truncation keeps fixture generation bounded without a 32 MiB Python blob.
+    with (directory / 'overbudget.png').open('wb') as stream:
+        stream.truncate(32 * 1024 * 1024 + 1)
     (directory.parent / 'outside.png').write_bytes(color)
     for name, options in {
         'texture': {}, 'normal_map': dict(normal=True),
         'shared_normal_map': dict(normal=True, normal_filename='color.png'),
         'missing_texture': dict(color='absent.png'),
+        'missing_texture_donor': dict(color='absent.png', skin=True, takes=('Move',)),
+        'empty_texture': dict(color='empty.png'),
+        'overbudget_texture': dict(color='overbudget.png'),
+        'invalid_texture': dict(color='invalid.png'),
+        'nested_missing_texture': dict(color='textures\\absent.png'),
+        'unicode_missing_texture': dict(color='textures/caf\u00e9.png'),
         'escaping_texture': dict(color='../outside.png'),
         'uv_transform': dict(transformed=True),
     }.items():
@@ -450,6 +462,10 @@ def write_fixtures(directory):
     binary = directory / 'binary'; binary.mkdir(exist_ok=True)
     (binary / 'color.png').write_bytes(color)
     (binary / 'normal.png').write_bytes(normal)
+    (binary / 'empty.png').write_bytes(b'')
+    (binary / 'invalid.png').write_bytes(b'not a PNG or JPEG')
+    with (binary / 'overbudget.png').open('wb') as stream:
+        stream.truncate(32 * 1024 * 1024 + 1)
     (directory / 'outside.png').write_bytes(color)
     for source in sorted(directory.glob('*.fbx')):
         content = source.read_bytes()

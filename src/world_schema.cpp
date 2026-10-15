@@ -546,6 +546,23 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",{{"required",Json::array({"section"})},{"properties",{{"section",{{"const","nodes"}}}}}}}}});
     source_inspect["description"]="Inspect normalized original glTF/GLB/FBX data without publishing a cooked asset or changing the world. Geometryless animation donors are supported. Page node/default/clip/skin metadata and optionally sample an original node pose without looping or out-of-duration clamping. model_sha256 identifies the original parsed model; use expected_model_sha256 across pages and the retarget source/base guards. Diagnostics retain complete counts and at most 64 bounded records. This evolving read-only method is outside authoring-core v1.";
     methods["asset.source.inspect"]=source_inspect;
+    auto texture_dependency_error=object_schema({
+        {"type",{{"const","fbx_texture_dependency"}}},{"version",{{"const",1}}},
+        {"reason",{{"enum",{"unavailable","empty","byte_budget","read_failed"}}}},
+        {"relative_path",{{"type","string"},{"minLength",1},{"maxLength",4096}}},
+        {"file_bytes",{{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0}},Json{{"type","null"}}})}}},
+        {"byte_limit",{{"type","integer"},{"minimum",0},{"maximum",32*1024*1024}}},
+        {"source_role",{{"enum",{"base","animation_donor","inspection"}}}},
+        {"donor_index",{{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",31}},Json{{"type","null"}}})}}}},
+        {"type","version","reason","relative_path","file_bytes","byte_limit","source_role","donor_index"});
+    texture_dependency_error["description"]="A contained external FBX texture file could not be read. relative_path is the slash-normalized source reference, never a resolved OS path. Limits and file sizes are bytes; unavailable metadata is null. Validation, decoding, embedded images and unsafe paths retain their existing errors.";
+    texture_dependency_error["allOf"]=Json::array({Json{
+        {"if",{{"properties",{{"source_role",{{"const","animation_donor"}}}}}}},
+        {"then",{{"properties",{{"donor_index",{{"type","integer"},{"minimum",0},{"maximum",31}}}}}}},
+        {"else",{{"properties",{{"donor_index",{{"type","null"}}}}}}}}});
+    methods["asset.import"]["x-error-data"]["fbx_texture_dependency"]=texture_dependency_error;
+    methods["asset.source.inspect"]["x-error-data"]["fbx_texture_dependency"]=texture_dependency_error;
+    result["invariants"].push_back("Contained external FBX texture read failures return error -32050 with versioned fbx_texture_dependency data, relative dependency identity, reason and effective byte limit. Animation donor failures identify the zero-based donor index. Source inspection and rejected imports do not publish partial models or mutate authored state; no texture search or admission relaxation is performed.");
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});

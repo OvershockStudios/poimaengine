@@ -72,7 +72,7 @@ class FbxContract(unittest.TestCase):
         try:
             result = self.client.call(method, params, timeout=60)
         except RpcError as failure:
-            row['error'] = dict(code=failure.code, message=str(failure))
+            row['error'] = dict(code=failure.code, message=str(failure), data=failure.data)
             self.assertIsNotNone(error)
             self.assertEqual(failure.code, error)
             return
@@ -204,6 +204,98 @@ class FbxContract(unittest.TestCase):
         self.assertEqual(self.call('asset.inspect', dict(asset=inactive['asset'], section='primitives'))['items'], a)
         self.assertEqual(self.imported('binary/inactive_normal')['asset'], inactive['asset'])
         self.assertEqual(self.state(), before)
+
+    def test_external_texture_failures_identify_dependencies_without_publication(self):
+        self.imported('static')
+        before, packages = self.state(), self.package_tree()
+        expected_fields = {'type', 'version', 'reason', 'relative_path', 'file_bytes',
+                           'byte_limit', 'source_role', 'donor_index'}
+        schemas = []
+        for method in ('asset.import', 'asset.source.inspect'):
+            scoped = self.call('world.describe', dict(view='method', name=method))
+            schema = scoped['methods'][method]['x-error-data']['fbx_texture_dependency']
+            self.assertEqual(set(schema['required']), expected_fields)
+            self.assertIs(schema['additionalProperties'], False)
+            self.assertEqual(set(schema['properties']['reason']['enum']),
+                             {'unavailable', 'empty', 'byte_budget', 'read_failed'})
+            schemas.append(schema)
+        self.assertEqual(schemas[0], schemas[1])
+        cases = [('missing_texture', 'absent.png', 'unavailable', None),
+                 ('empty_texture', 'empty.png', 'empty', 0),
+                 ('overbudget_texture', 'overbudget.png', 'byte_budget', 32*1024*1024+1),
+                 ('nested_missing_texture', 'textures/absent.png', 'unavailable', None),
+                 ('unicode_missing_texture', 'textures/caf\u00e9.png', 'unavailable', None)]
+        for prefix in ('', 'binary/'):
+            for fixture, dependency, reason, file_bytes in cases:
+                source = native(self.fixtures / (prefix+fixture+'.fbx'))
+                actions = [('asset.source.inspect', dict(source=source), 'inspection', None),
+                           ('asset.import', dict(source=source), 'base', None),
+                           ('asset.import', dict(source=native(self.fixtures/(prefix+'skin.fbx')),
+                                animations=[native(self.fixtures/(prefix+'turn_donor.fbx')), source]),
+                            'animation_donor', 1)]
+                for method, params, role, donor_index in actions:
+                    with self.subTest(format=prefix, fixture=fixture, method=method, role=role):
+                        self.call(method, params, error=-32050)
+                        failure = CALLS[-1]['error']
+                        self.assertEqual(failure['data'], dict(type='fbx_texture_dependency', version=1,
+                            reason=reason, relative_path=dependency, file_bytes=file_bytes,
+                            byte_limit=32*1024*1024, source_role=role, donor_index=donor_index))
+                        self.assertNotIn(str(self.directory), failure['message'])
+                        self.assertNotIn(str(self.directory), json.dumps(failure['data']))
+                        self.assertEqual(self.state(), before)
+                        self.assertEqual(self.package_tree(), packages)
+            # Confinement and decode failures retain their original admission
+            # and are not mislabeled as a contained dependency read failure.
+            for fixture in ('escaping_texture', 'invalid_texture'):
+                for method in ('asset.import', 'asset.source.inspect'):
+                    self.call(method, dict(source=native(self.fixtures/(prefix+fixture+'.fbx'))), error=-32050)
+                    self.assertIsNone(CALLS[-1]['error']['data'])
+                    self.assertEqual(self.state(), before)
+                    self.assertEqual(self.package_tree(), packages)
+
+    def test_repaired_texture_recovers_base_donor_and_source_free_reopen(self):
+        self.imported('static')
+        before, packages = self.state(), self.package_tree()
+        recovered = []
+        for prefix in ('', 'binary/'):
+            directory = self.fixtures / prefix
+            base = dict(source=native(directory/'missing_texture.fbx'))
+            donor = dict(source=native(directory/'skin.fbx'), animations=[
+                native(directory/'turn_donor.fbx'), native(directory/'missing_texture_donor.fbx')])
+            for method, params in [('asset.import', base), ('asset.import', donor),
+                                   ('asset.source.inspect', dict(source=native(directory/'missing_texture_donor.fbx')))]:
+                self.call(method, params, error=-32050)
+                self.assertEqual(CALLS[-1]['error']['data']['reason'], 'unavailable')
+                self.assertEqual(self.state(), before)
+                self.assertEqual(self.package_tree(), packages)
+            # Restore the original deterministic fixture PNG, without editing
+            # either FBX or retrying with relaxed texture/skeleton admission.
+            shutil.copyfile(directory/'color.png', directory/'absent.png')
+            inspected = self.call('asset.source.inspect', dict(source=native(directory/'missing_texture_donor.fbx')))
+            self.assertIs(inspected['published'], False)
+            self.assertEqual((inspected['images'], inspected['animations']), (1, 1))
+            self.assertEqual(self.package_tree(), packages)
+            textured = self.call('asset.import', base)
+            self.assertEqual((textured['images'], textured['triangles']), (1, 1))
+            composed = self.call('asset.import', donor)
+            self.assertEqual((composed['skins'], composed['animations']), (1, 2))
+            pose = self.pose(composed['asset'], t=.375)
+            self.assertEqual(self.state(), before)
+            recovered.append((textured['asset'], composed['asset'], pose))
+            packages = self.package_tree()
+        self.assertEqual(recovered[0], recovered[1])
+        self.close()
+        shutil.rmtree(self.fixtures)
+        self.open()
+        self.assertEqual(self.call('asset.inspect', dict(asset=recovered[0][0]))['images'], 1)
+        self.assertEqual(self.pose(recovered[0][1], t=.375), recovered[0][2])
+        cold = self.state()
+        # Authoring undo/redo belongs to an owner, not the cooked asset or
+        # persisted document. The failed imports above compare full same-owner
+        # history; this fresh owner must retain the document/revision and model.
+        self.assertEqual(cold[0], before[0])
+        self.assertEqual(cold[2], before[2])
+        self.assertEqual(self.package_tree(), packages)
 
     def test_filesystem_diagnostics_preserve_owner_and_publication(self):
         if ARGS.windows_interop or os.name != 'posix':
