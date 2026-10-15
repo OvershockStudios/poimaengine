@@ -179,7 +179,7 @@ MyRoom-game\runtime\bin\poima.exe game run MyRoom-game\game.json
 
 On Linux use `./MyRoom-game/launch.sh`. The convenience launchers locate their own bundle; direct CLI paths follow the ordinary process working directory. `game inspect` can inspect a foreign-target bundle, and a Linux host can export an installed Windows runtime without executing it. `game run` requires the executable's OS and architecture to match the bundle and requires its simulation/Vulkan player capabilities.
 
-The player reads the bundled world and profile without writer sidecars. Runtime state stays in memory; running does not persist edits into the bundle. The existing player supports keyboard/mouse, the configured gamepad profile and window resizing. [Game saves](GAMEPLAY_SAVES.md) use separate external storage through `--save-root`; [player preferences](PLAYER_SETTINGS.md) use external `.poima-settings.json` profiles.
+The player reads the bundled world and profile without writer sidecars. Runtime state stays in memory; running does not persist edits into the bundle. The existing player supports keyboard/mouse, the configured gamepad profile and window resizing. The Windows launcher enables [game saves](GAMEPLAY_SAVES.md) under `%LOCALAPPDATA%\Poima\Games\<project_id>\Saves` and forwards command-line arguments. Supply `--save-root` to select a different existing external directory. The project ID keeps the default location stable across exports and relocation; ordinary save-image compatibility rules still apply. Direct native launches and the Linux launcher require explicit storage setup. [Player preferences](PLAYER_SETTINGS.md) use external `.poima-settings.json` profiles.
 
 | Option | Behavior |
 | --- | --- |
@@ -188,6 +188,9 @@ The player reads the bundled world and profile without writer sidecars. Runtime 
 | `--replay PATH` | JSON array of semantic input segments; mutually exclusive with `--frames`. |
 | `--capture PATH` | Final BMP at an external, previously absent path. |
 | `--report PATH` | Native result JSON at an external, previously absent path. |
+| `--save-root PATH` | Existing external save directory; overrides default storage. |
+| `--default-save-root true\|false` | Windows `game run` opt-in for per-user, per-project storage; direct CLI default is false. The generated Windows launcher supplies true. |
+| `--save-write-mode synchronous\|background` | Gameplay write mode; requires an explicit or enabled default save root. [Storage behavior](GAMEPLAY_SAVES.md#configure-storage). |
 | `--width N`, `--height N` | Each 128–4096; defaults 960×540. |
 | `--samples N` | 1 or 4; default 4 when no preference supplies it. An explicit flag overrides stored/session settings. |
 | `--frames-in-flight N` | 1 or 2; explicit graphics submission limit, overriding stored/session settings. |

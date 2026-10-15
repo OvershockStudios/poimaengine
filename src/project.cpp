@@ -512,7 +512,7 @@ VerifiedGame verify_game(const std::string& filename) {
     require(read(result.manifest,4*1024*1024)==manifest_bytes,"Game manifest changed during verification.");
     for(const auto& [path,item]:inventory) { const auto bytes=read(contained(root,path));require(bytes.size()==item.at("size") && hash(bytes)==item.at("sha256").get<std::string>(),"Bundle changed during validation: "+path); }
     require(file_tree(root)==actual,"Bundle file set changed during validation.");
-    auto& game=result.definition;game.root=text(root);game.world=text(world);game.camera=spec.at("entry").at("camera");game.controller=spec.at("entry").at("controller");game.name=spec.at("name");game.target_os=engine.at("target_os");game.target_arch=engine.at("target_arch");game.revision=revision;game.audio=spec.at("audio");return result;
+    auto& game=result.definition;game.root=text(root);game.world=text(world);game.camera=spec.at("entry").at("camera");game.controller=spec.at("entry").at("controller");game.name=spec.at("name");game.project_id=spec.at("project_id");game.target_os=engine.at("target_os");game.target_arch=engine.at("target_arch");game.revision=revision;game.audio=spec.at("audio");return result;
 }
 #include "project_gameplay_adoption.inc"
 } // namespace
@@ -601,7 +601,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
             }
         }
         const bool windows=runtime.at("target_os")=="Windows";
-        if(windows)inventory.add("launch.cmd","@echo off\r\nsetlocal DisableDelayedExpansion\r\n\"%~dp0runtime\\bin\\poima.exe\" game run \"%~dp0game.json\"\r\nexit /b %errorlevel%\r\n","launcher");
+        if(windows)inventory.add("launch.cmd","@echo off\r\nsetlocal DisableDelayedExpansion\r\n\"%~dp0runtime\\bin\\poima.exe\" game run \"%~dp0game.json\" --default-save-root true %*\r\nexit /b %errorlevel%\r\n","launcher");
         else inventory.add("launch.sh","#!/bin/sh\nset -eu\nroot=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\nexec \"$root/runtime/bin/poima\" game run \"$root/game.json\"\n","launcher",fs::perms::owner_all|fs::perms::group_read|fs::perms::group_exec|fs::perms::others_read|fs::perms::others_exec);
         inventory.sort();Json spec={{"format","poima.game"},{"version",1},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"engine",{{"version",runtime.at("engine_version")},{"target_os",runtime.at("target_os")},{"target_arch",runtime.at("target_arch")},{"executable","runtime/"+runtime.at("executable").get<std::string>()}}},{"entry",{{"world","content/world.json"},{"camera",p.spec.at("entry").at("camera")},{"controller",p.spec.at("entry").at("controller")}}},{"audio",p.spec.value("audio",false)},{"source",{{"revision",p.content.revision},{"world_sha256",hash(p.world_bytes)}}},{"files",inventory.files}};
         if(!p.profile.empty())spec["input_profile"]="content/default.poima-input.json";

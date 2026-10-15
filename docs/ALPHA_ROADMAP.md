@@ -155,3 +155,10 @@ postcallback comparison explicitly checks the three owner-observation globals
 against native save status and keeps all other selected/native payload fields
 exact. This closes the named consumer gap; additional game families, a released
 runtime contract and the broader Alpha gates remain open.
+
+The 0.0.151 [Windows launcher save check](evidence/m2-default-launcher-saves.json)
+qualifies per-user storage without a manually supplied root, including actual
+generated-launcher saves, cold loads, relocation and explicit overrides.
+This addresses a standalone setup gap; the management-game workflow,
+representative performance, physical interaction and fresh-install gates remain
+open.

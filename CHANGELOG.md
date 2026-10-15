@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.151
+
+- Give the generated Windows launcher a native per-user save location keyed by the project identity, with explicit storage overrides and forwarded launch arguments. Keep direct/service launches explicit. [Game saves](docs/GAMEPLAY_SAVES.md).
+- Validate the default location before creating its directories and preserve immutable game bundles across play and relocation. Save-image compatibility and explicit upgrade rules remain unchanged.
+
 ## 0.0.150
 
 - Expose typed, read-only component and liveness queries through C# `ControlContext`, reusing existing native services. Keep component and lifecycle writes in Tick. [Control reads](docs/CUSTOM_COMPONENTS.md#reads-in-compiled-controls).

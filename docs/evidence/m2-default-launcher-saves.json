@@ -1,0 +1,696 @@
+{
+  "format": "poima.default-launcher-saves-qualification.v1",
+  "checkpoint": "0.0.151",
+  "date": "2026-10-15",
+  "passed": true,
+  "status": "qualified",
+  "scope": "Windows per-user default launcher save-root, explicit overrides and forwarded launch arguments, with actual compiled save/restore, native CLI regression and matched runtime packaging. Separate Linux headless and isolated Python wheel checks pass.",
+  "implementation": {
+    "default_storage": "Opt-in game run --default-save-root true; explicit save root takes precedence. game serve retains explicit external storage configuration.",
+    "invalid_override": "An explicitly supplied empty --save-root is rejected rather than falling back to personal default storage.",
+    "qualification_status": "Actual generated launchers and focused native CLI admission pass. An empty explicit root already rejected before this checkpoint; added regression cases preserve that behavior."
+  },
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "7fa5763f61f938806deb6c2b13b2b2e80b5e432f1084c79952865337c38e6a33"
+    },
+    "include/poima/game_launch.hpp": {
+      "bytes": 1004,
+      "sha256": "8eecee01e127731dc5700f71fcea8a8fbe0ea90f7dd34bac392d817072381de3"
+    },
+    "include/poima/project.hpp": {
+      "bytes": 1195,
+      "sha256": "d3260e8c07390c2bf7419d1a0421c12c303cf6c3dc438b00dff8c7f36dfcf1fb"
+    },
+    "src/main.cpp": {
+      "bytes": 22331,
+      "sha256": "3bccea0969857168fa45ff9cc2217ef559585cd73ef2bc168f798bb06fd02572"
+    },
+    "src/game_launch.cpp": {
+      "bytes": 15714,
+      "sha256": "f50891bb9a282e200090bbd7d86c60068ad6fb4b72428ad9051a36faf445099c"
+    },
+    "src/project.cpp": {
+      "bytes": 62438,
+      "sha256": "fc5a7ba990b12add3623966909e5ccdacd7093108763ceb11062153ef8c3fe5b"
+    },
+    "src/core.cpp": {
+      "bytes": 19816,
+      "sha256": "baca7536999efc9e48a9a7f138fdcf7d644db3c6ab3da7fa1c7da0e9e35a99a7"
+    },
+    "tests/game_save_write_mode_cli.py": {
+      "bytes": 17290,
+      "sha256": "8917a3bc3ccacc58b481371083a2ec200486d34b98e1cf65a41f5e0160ec507d"
+    },
+    "tests/launcher_save_workflow.py": {
+      "bytes": 25084,
+      "sha256": "01bbe635d772375f4466483e949fa06fadc0f4fa0861a74aa69e1735ef457a4a"
+    }
+  },
+  "native_build": {
+    "passed": true,
+    "engine_version": "0.0.151",
+    "target": "Windows x86_64",
+    "cache_generation": 21,
+    "policy": "Incremental Ninja cache, two workers; source/configuration pinned before and after, independently sealed artifacts. Not a clean-machine or complete toolchain rebuild.",
+    "seconds": 235.62633063897374,
+    "forced_cleanup": false,
+    "source_inputs_unchanged": true,
+    "changed_inputs": [],
+    "commands": [
+      {
+        "phase": "configure",
+        "exit_code": 0,
+        "seconds": 72.64599508797983,
+        "stdout": {
+          "bytes": 6717,
+          "sha256": "b2ae594ea09c4048b8a3fa7b2ae51f7668b7dd5c965e328192045971e7cd95c3"
+        },
+        "stderr": {
+          "bytes": 609,
+          "sha256": "82caaf95fdeebe4fe08134c4da27a9c1092ae1a9b9999cae5cecfe375e5df21a"
+        }
+      },
+      {
+        "phase": "build",
+        "exit_code": 0,
+        "seconds": 97.98100162597257,
+        "stdout": {
+          "bytes": 875,
+          "sha256": "bbd1cb7aa0da4946200ae0d47ab9caa3cf99c6bd2b18fe7ca8aa80d4c9c8d705"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "receipts": [
+      {
+        "path": "build/native-snapshot-0.0.151/native-build-1/build-result.json",
+        "bytes": 55766,
+        "sha256": "c8bfd9080812ab714f83ac5f9d81558fa3ba16c29db96a3c2d8d81bfd5a618bf"
+      },
+      {
+        "path": "build/native-snapshot-0.0.151/native-build-1/source-pins.json",
+        "bytes": 44198,
+        "sha256": "7af5bba017abcf101b0ca8042f4b87647807f38a3234b0727b8fa7d52b294683"
+      },
+      {
+        "path": "build/native-snapshot-0.0.151/native-build-1/sealed-artifacts.json",
+        "bytes": 1938,
+        "sha256": "d5ea4be671e23ed4f026657ef97e7cbb668324386cc57b17592a6359f70c733f"
+      }
+    ],
+    "cli": {
+      "path": "build/native-snapshot-0.0.151/native-build-1/bin/poima.exe",
+      "bytes": 25998336,
+      "sha256": "2d4a599f2e99e517f5915d3f01ef86db5f9460b04e49a3b7f7116150a6fd7105"
+    },
+    "preserved_native149": {
+      "exact_before_after": true,
+      "sealed_files": 11,
+      "policy": "Prior sealed149 artifacts retained without overwrite; historical verdicts unchanged."
+    }
+  },
+  "native_suites": {
+    "passed": true,
+    "target": "Windows x86_64",
+    "report": {
+      "path": "build/alpha-contract-0.0.151/native-checks-1/report.json",
+      "bytes": 3723,
+      "sha256": "c81c59bfab53de47699b110bb53c2ea19d19aeae518bead223248b7411d2fd8c"
+    },
+    "owner": {
+      "path": "build/alpha-contract-0.0.151/native-checks-1/qualification.json",
+      "bytes": 1332,
+      "sha256": "ab29b3097439c30b96a39904b7edae0f4109fa5e30622b554069face1678f6cd"
+    },
+    "seconds": 16.389684699999634,
+    "job_assigned": true,
+    "forced_cleanup": false,
+    "exit_code": 0,
+    "recorded_job_processes": 7,
+    "active_at_child_exit": 0,
+    "active_after_cleanup": 0,
+    "terminated_after_cleanup": 0,
+    "stages": [
+      {
+        "name": "world_session",
+        "exit_code": 0,
+        "seconds": 3.2483736000140198,
+        "stdout": {
+          "bytes": 147,
+          "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "exit_code": 0,
+        "seconds": 12.06762800004799,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "exit_code": 0,
+        "seconds": 0.09387479996075854,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      },
+      {
+        "name": "hit_regions",
+        "exit_code": 0,
+        "seconds": 0.09732300002360716,
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mesh",
+        "exit_code": 0,
+        "seconds": 0.17331099999137223,
+        "stdout": {
+          "bytes": 132,
+          "sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mutation_discovery",
+        "exit_code": 0,
+        "seconds": 0.05241119995480403,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "scope": "Matched Windows151 native full/focused identity across owner/mode contexts, schema/MCP, hit regions and mesh; no GPU or full platform/performance qualification."
+  },
+  "runtime_package": {
+    "passed": true,
+    "owner": {
+      "path": "build/alpha-contract-0.0.151/runtime-1/owner.json",
+      "bytes": 23415,
+      "sha256": "962d1f59c9c14ada3085c145c50970df5428df04cc6d605c5387d1771246a792"
+    },
+    "engine_version": "0.0.151",
+    "source_checkpoint": "0.0.151",
+    "cache_generation": 21,
+    "seconds": 82.21246723702643,
+    "file_count": 49,
+    "bytes": 97062157,
+    "natural_process_group_closure": true,
+    "forced_cleanup": false,
+    "source_inputs_unchanged": true,
+    "cache_generation_unchanged": true,
+    "cache_configuration_unchanged": true,
+    "notice_directory_memberships_unchanged": true,
+    "nontransformed_files_exact": 47,
+    "stripped_images": {
+      "poima.exe": {
+        "passed": true,
+        "source": {
+          "bytes": 25998336,
+          "sha256": "2d4a599f2e99e517f5915d3f01ef86db5f9460b04e49a3b7f7116150a6fd7105"
+        },
+        "shipping": {
+          "bytes": 22241792,
+          "sha256": "7eedf9b3b99483c2f257d92df0869a1afd235a149b69a7e73f6e4318e83e891a"
+        },
+        "method": "Exact retained non-debug section bytes, RVA/length/access flags and PE loader semantics; symbol/debug removal only."
+      },
+      "poima_desktop.dll": {
+        "passed": true,
+        "source": {
+          "bytes": 296931328,
+          "sha256": "91a31047525cf5dc55a7b92cb98cb083546eaa1fa71ea850f3ff91026ee74846"
+        },
+        "shipping": {
+          "bytes": 21258240,
+          "sha256": "56959eba702fc2dc0d5b8bf26d033e41750b6945054ff3d11eaa3df967b3ccef"
+        },
+        "method": "Exact retained non-debug section bytes, RVA/length/access flags and PE loader semantics; symbol/debug removal only."
+      }
+    },
+    "runtime_descriptor": {
+      "path": "build/alpha-contract-0.0.151/runtime-1/runtime/runtime.json",
+      "bytes": 890,
+      "sha256": "00591a7e18624c1b7f2570492230b4057b00bfef0676bc83ab38597e0d46a98a"
+    },
+    "top_level_notices": {
+      "share/poima/LICENSE": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "share/poima/THIRD_PARTY_NOTICES.md": {
+        "bytes": 21435,
+        "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+      },
+      "share/poima/TRADEMARKS.md": {
+        "bytes": 512,
+        "sha256": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      }
+    },
+    "license_files": 41,
+    "limits": "Packaging/code-data equivalence only; not game execution, graphics or clean-machine qualification."
+  },
+  "history": {
+    "prebuild_source_freeze": "The first151 preparation included a Python CLI fixture; a second retained preparation selected the six native fixtures and qualified the final build. The Python fixture remains separately pinned for CLI qualification. No failed producer was relabeled.",
+    "scope": "Original launcher and CLI qualification failures remain failed; corrected runs are separate records. All selected151 checks listed here are complete."
+  },
+  "limits": [
+    "No fresh-agent workflow, full Alpha, renderer quality, physical input, audio-listening or performance claim.",
+    "Linux qualification is headless only; Windows packaging does not establish Linux graphics or console support.",
+    "No complete SDK/ABI or all-gameplay stability claim from these selected suites."
+  ],
+  "cli_regression": {
+    "passed": true,
+    "report": {
+      "path": "build/alpha-contract-0.0.151/cli-admission-2/report.json",
+      "bytes": 24966,
+      "sha256": "337dfd5751695a067b4f9a54008e6e4cce0489085c93b717c6c7a7a6d0e12456"
+    },
+    "owner": {
+      "path": "build/alpha-contract-0.0.151/cli-admission-2/qualification.json",
+      "bytes": 1943,
+      "sha256": "71b117911213a98cd3ffc112fbd638def3e2d0d2d6ec5fda282ec95f17bdaaac"
+    },
+    "child_evidence": {
+      "path": "build/alpha-contract-0.0.151/cli-admission-2/cli-results/evidence.json",
+      "bytes": 102417,
+      "sha256": "f45307df25971be18a0ff3ab1770a433d600e8aee66966492b2ec7fd6806f72f"
+    },
+    "seconds": 27.13373880001018,
+    "cli_commands": 50,
+    "rpc_calls": 20,
+    "original_inputs_unchanged": true,
+    "job_assigned": true,
+    "forced_cleanup": false,
+    "recorded_job_processes": 58,
+    "active_at_child_exit": 0,
+    "active_after_cleanup": 0,
+    "terminated_after_cleanup": 0,
+    "skips": [
+      "Profile symlink test: Windows privilege unavailable"
+    ],
+    "scope": "Fresh primitive export plus native CLI admission/forwarding; no compiler, player, GPU or gameplay ticks.",
+    "limit": "One profile-symlink case was skipped because Windows symlink privilege was unavailable. The separate launcher qualification owns actual NTFS junction coverage; it is not inferred from this CLI run.",
+    "prior_attempt": {
+      "passed": false,
+      "report": {
+        "path": "build/alpha-contract-0.0.151/cli-admission-1/report.json",
+        "bytes": 3540,
+        "sha256": "b79a53943839912eb9634524ced62f741793b33c976e8f3ee67c33efcbb32917"
+      },
+      "owner": {
+        "path": "build/alpha-contract-0.0.151/cli-admission-1/qualification.json",
+        "bytes": 3286,
+        "sha256": "485337db2c58f40bdb40b5b3d0619b8d144bedf2413218d9f73bfac0aa12080d"
+      },
+      "child_evidence": {
+        "path": "build/alpha-contract-0.0.151/cli-admission-1/cli-results/evidence.json",
+        "bytes": 102413,
+        "sha256": "7f10613df9316be346f4f87648e7693bf9830460f50245ac4d076147762ad390"
+      },
+      "reason": "Final source-pin checks detected a wrapper source change during execution. The child completed its 50 CLI commands and 20 RPC checks, but the original overall qualification remains failed.",
+      "forced_cleanup": false,
+      "recorded_job_processes": 58,
+      "active_after_cleanup": 0,
+      "terminated_after_cleanup": 0
+    }
+  },
+  "python_wheel": {
+    "passed": true,
+    "build_report": {
+      "path": "build/alpha-contract-0.0.151/wheel-1/build-report.json",
+      "bytes": 2349,
+      "sha256": "005265773e098d30853e36c8b42772eae57127b958392d1862760f43a1676641"
+    },
+    "qualification": {
+      "path": "build/alpha-contract-0.0.151/wheel-1/qualification.json",
+      "bytes": 955,
+      "sha256": "f77e206133cdf8cb3173d462f5c37a0e4e9d3f68ce3161267f1ed891e6835e81"
+    },
+    "wheel": {
+      "path": "build/alpha-contract-0.0.151/wheel-1/poima_client-0.0.151-py3-none-any.whl",
+      "bytes": 56792,
+      "sha256": "260b6e130999fde901e03c58ab32fef2ace81e35450937a2c9ce69605eeb8ed2"
+    },
+    "backend": "setuptools 78.1.1",
+    "native_execution": false,
+    "exact_package_files": 13,
+    "exact_package_unchanged_from": "0.0.150",
+    "isolated_smokes": [
+      {
+        "platform": "linux",
+        "exit_code": 0,
+        "isolated_wheel_import": true,
+        "methods": 19,
+        "version": "0.0.151"
+      },
+      {
+        "platform": "win32",
+        "exit_code": 0,
+        "isolated_wheel_import": true,
+        "methods": 19,
+        "version": "0.0.151"
+      }
+    ],
+    "smoke_source": {
+      "path": "build/alpha-contract-0.0.151/wheel-1/smoke.py",
+      "bytes": 1267,
+      "sha256": "97cf1f15574854bd71362f93d07fa3cc5b16f6b6c08c6a59a3aac3bc7b89a9bc"
+    },
+    "prior_preflight": {
+      "passed": false,
+      "exit_code": 1,
+      "reason": "Selected virtual-environment interpreter had no setuptools.",
+      "before_output_creation": true,
+      "resolution": "A configured interpreter with setuptools built the new wheel; original preflight failure is retained in the qualification receipt."
+    },
+    "limits": "Isolated import/resource/API-count smoke only; no engine process or network installation was executed by these wheel checks."
+  },
+  "launcher": {
+    "passed": true,
+    "qualification": {
+      "path": "build/alpha-contract-0.0.151/launcher-2/qualification.json",
+      "bytes": 2293,
+      "sha256": "7b53809079d9d16aa6d98eae3a05986db4f2cb9e77ba985e3bdd1de9eed67096"
+    },
+    "consumer": {
+      "path": "build/alpha-contract-0.0.151/launcher-2/consumer/report.json",
+      "bytes": 336788,
+      "sha256": "1819368e56791b17a5258d9bd30e109882be954cda90af98617043af81e617b2"
+    },
+    "seconds": 29.717336900008377,
+    "job_assigned": true,
+    "forced_cleanup": false,
+    "recorded_processes": 22,
+    "active_at_child_exit": 0,
+    "active_after_cleanup": 0,
+    "terminated_after_cleanup": 0,
+    "generated_launcher_runs": [
+      {
+        "name": "default-save",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 3,
+        "stop_reason": "replay_complete"
+      },
+      {
+        "name": "cold-load",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 1,
+        "stop_reason": "runtime_replaced"
+      },
+      {
+        "name": "relocated-load",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 1,
+        "stop_reason": "runtime_replaced"
+      },
+      {
+        "name": "explicit-save",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 3,
+        "stop_reason": "replay_complete"
+      },
+      {
+        "name": "explicit-precedence",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 3,
+        "stop_reason": "replay_complete"
+      }
+    ],
+    "checks": {
+      "default_path": "Owned LOCALAPPDATA/Poima/Games/<verified project_id>/Saves; committed quick slot generation1 at tick1.",
+      "cold_and_relocated_load": "Two fresh actual generated-cmd launches restore all24 fixture globals and two complete entry entity rows at the replacement boundary. Each session identity is checked separately.",
+      "complete_checkpoint": "A separate readonly bundled owner loads the same stored slot and compares the complete saved document/payload/checksum before any restored callback.",
+      "continued_callback": "One subsequent callback predicts all24 globals using the actual epoch/restore metadata, including signed64 halves and expired saved ticket.",
+      "explicit_override": "Actual generated launchers save with absent LOCALAPPDATA and an alternative owned profile. The Poima default namespace remains absent; unrelated AMD driver cache files are retained.",
+      "junction": "An actual owned NTFS junction is rejected as a reparse point before writing its empty target.",
+      "immutable_inputs": "Complete runtime49, fixture artifact8, complete exported trees and admitted helpers remain exact before/after."
+    },
+    "readonly": {
+      "calls": 64,
+      "stable19_selected_validated": 63,
+      "source": "Actual native owner transcript, not synthesized replies."
+    },
+    "original_failure": {
+      "passed": false,
+      "qualification": {
+        "path": "build/alpha-contract-0.0.151/launcher-1/qualification.json",
+        "bytes": 3443,
+        "sha256": "18b1311a036c91765aabbb6161e19f66a6c601ba994583494fa1a1991eabc21a"
+      },
+      "consumer": {
+        "path": "build/alpha-contract-0.0.151/launcher-1/consumer/report.json",
+        "bytes": 334701,
+        "sha256": "fa3b32ca8bda247dffa813ddcff28c8f1d66a4d0650f0a55da3013796e80c9f9"
+      },
+      "seconds": 29.06479330000002,
+      "forced_cleanup": false,
+      "recorded_processes": 20,
+      "reason": "The test required the entire alternative LOCALAPPDATA profile to stay empty; AMD created two84-byte driver cache files. The corrected check rejects any Poima namespace while retaining the actual launcher record and unrelated file inventory.",
+      "native_code_changed_for_correction": false,
+      "original_verdict_preserved": true
+    },
+    "limits": [
+      "Actual generated-cmd reports compare complete fixture globals and selected entry rows; complete hidden native checkpoint equality is established separately through the readonly service.",
+      "Five finite512x288 NVIDIA replay launches are functional evidence, not physical-input, visual-quality, throughput or latency qualification.",
+      "No new gameplay compilation, cross-image save upgrade, clean-machine or crash/power-loss claim."
+    ],
+    "compiled_fixture": {
+      "type": "Poima.Tests.GameplaySaveProbe",
+      "engine_version_declared": "0.0.146",
+      "target_os": "Windows",
+      "target_arch": "x86_64",
+      "services_version": 7,
+      "minimum_services_bytes": 176,
+      "required_features": [
+        "baseline_v7"
+      ],
+      "descriptor": {
+        "bytes": 4919,
+        "sha256": "683c0ab40eeceb565e90fd85c42d5cd8a536c06a24fa345b131040bb6748a32d"
+      },
+      "library": {
+        "bytes": 1337856,
+        "sha256": "09049254c1c6f4d2f349826cdedf43cb053d34560b508a02d1e543b36ad8195e"
+      },
+      "complete_artifact_files": {
+        "native-gameplay.json": {
+          "bytes": 4919,
+          "sha256": "683c0ab40eeceb565e90fd85c42d5cd8a536c06a24fa345b131040bb6748a32d"
+        },
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": {
+          "bytes": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": {
+          "bytes": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": {
+          "bytes": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": {
+          "bytes": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        "notices/POIMA-LICENSE.txt": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": {
+          "bytes": 21435,
+          "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+        },
+        "Poima.NativeGame.dll": {
+          "bytes": 1337856,
+          "sha256": "09049254c1c6f4d2f349826cdedf43cb053d34560b508a02d1e543b36ad8195e"
+        }
+      },
+      "source": {
+        "bytes": 3284,
+        "sha256": "b7b8e17d7efc7a7c4ddf3363c1ba54852b1123a6e5e120eef25d67b196e6834b"
+      },
+      "producer_evidence": "m2-save-publication-rejection.json",
+      "qualification_scope": "Unchanged, previously qualified146image runs under native151; this checkpoint performs no new gameplay publication."
+    },
+    "terminal_commands": 14
+  },
+  "linux_headless": {
+    "passed": true,
+    "engine_version": "0.0.151",
+    "target": "Linux x86_64",
+    "report": {
+      "path": "build/alpha-contract-0.0.151/linux-1/report.json",
+      "bytes": 64440,
+      "sha256": "de1352378949f334be2c97a849834bf874f07c724872ce69b15c4ceb290c2741"
+    },
+    "source_pins": {
+      "path": "build/alpha-contract-0.0.151/linux-1/source-pins.json",
+      "bytes": 54840,
+      "sha256": "7c9962485a1b61066f43f4c55ec01f2982a04aeade15cc27382fec3151fb326b"
+    },
+    "ctest_results": {
+      "path": "build/alpha-contract-0.0.151/linux-1/ctest-results.xml",
+      "bytes": 3829,
+      "sha256": "284c6adf563a5c9bbf4d227a499c89c385109d50fd9b36d409e77519a5c5eca9"
+    },
+    "seconds": 542.785783994972,
+    "forced_cleanup": false,
+    "source_inputs_unchanged": true,
+    "changed_inputs": [],
+    "configuration": "Fresh Debug Ninja cache; assertions enabled, O0/g0, FetchContent fully disconnected, nice10, two build workers and serial CTest. Simulation, rendering, audio, navigation, game UI and managed/native gameplay disabled.",
+    "tests": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.59513"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.24345"
+      },
+      {
+        "name": "save_store_native",
+        "seconds": "20.7661"
+      },
+      {
+        "name": "gameplay_save_queue",
+        "seconds": "0.0115815"
+      },
+      {
+        "name": "gameplay_save_writer",
+        "seconds": "6.23804"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "47.3411"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.110972"
+      }
+    ],
+    "test_count": 7,
+    "skipped": 0,
+    "sealed_artifacts": {
+      "poima": {
+        "bytes": 18244072,
+        "sha256": "f4c8398fc6fa6c898eff0e6142bc057227f6eda3893eaf5ea5713a6ddaf92a6b"
+      },
+      "poima-save-store-test": {
+        "bytes": 1245896,
+        "sha256": "231951bd193ca7010b40072c8b94984a0fdb4ca0e4b3bc21f44d0a095af2deed"
+      },
+      "poima-gameplay-save-writer-test": {
+        "bytes": 1605824,
+        "sha256": "17bcd8b2c36da3262ce27565652cb93f41ff6ac7bc29b495230ba9ecb255038e"
+      },
+      "poima-gameplay-save-test": {
+        "bytes": 84824,
+        "sha256": "23ad94fa028b328698cb94b4490991fcbae6a74cbd8c8978b6abeb94c7e093a4"
+      },
+      "poima-world-schema-test": {
+        "bytes": 17615808,
+        "sha256": "4b9cbc129b93fc9aef0b3e803861c1b8c9c77832acfa7f4e6fa7c6bc6252dc06"
+      },
+      "poima-mcp-test": {
+        "bytes": 2230216,
+        "sha256": "7782ad01730798c93eca36c83a5f24c4ef4e4eafb2e060b53dc5a65441a0b070"
+      },
+      "library/libpoima_core.a": {
+        "bytes": 120871476,
+        "sha256": "08ed8c0dbade3fc2b3d3c12d33d42e2a71f09a17c76f764d0771f31b6ceb4c96"
+      }
+    },
+    "phases": [
+      {
+        "name": "configure",
+        "exit_code": 0,
+        "seconds": 17.032380897988332,
+        "stdout": {
+          "bytes": 920,
+          "sha256": "f5daf5759afae460dc94f24a767ec11f8cd71868bb6efee51c75f62a092e45ea"
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "a33a33a776407d1c90c9e3a2066352f15075f2b5829ac298cb028d6d4bfb9c77"
+        }
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "seconds": 412.5796304369869,
+        "stdout": {
+          "bytes": 17644,
+          "sha256": "bdb72f2e9df3ebbd3351ed5e2e5c23288da2960eaa27621917071d05528e96ca"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "ctest",
+        "exit_code": 0,
+        "seconds": 77.54645420098677,
+        "stdout": {
+          "bytes": 889,
+          "sha256": "4dfbf192921a3ad28ed469d2d791e00ee3267db049458f7d1302a182a165528d"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "version",
+        "exit_code": 0,
+        "seconds": 0.06010948802577332,
+        "stdout": {
+          "bytes": 211,
+          "sha256": "e5588bb7fce2bb5d21d5e056b855cca93c1ecd3dd4ccb4fb98204455a9f95f73"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "limits": "Native headless storage/writer/queue/schema/MCP and authoring contracts only; no Linux graphical player or runtime gameplay qualification."
+  }
+}

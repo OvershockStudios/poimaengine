@@ -69,10 +69,56 @@ void validate_game_host(const GameDefinition& game) {
     require(Runtime::available(),"Game launch requires simulation in this executable.");
     require(!game.audio || POIMA_AUDIO,"Game audio is unavailable in this executable.");
 }
-void validate_save_launch(const std::string& save_root,const std::optional<std::string>& write_mode) {
+void validate_save_launch(const std::string& save_root,const std::optional<std::string>& write_mode,bool default_root=false) {
     if(!write_mode)return;
     require(*write_mode=="synchronous" || *write_mode=="background","Save write mode must be synchronous or background.");
-    require(!save_root.empty(),"Save write mode requires --save-root.");
+    require(!save_root.empty() || default_root,"Save write mode requires --save-root.");
+}
+// Exported Windows launchers opt in here. Explicit roots keep
+// their existing validation and are never created here. Ordinary ancestry checks
+// assume a trusted environment with no concurrent hostile filesystem changes.
+std::string launch_save_root(const GameLaunchOptions& options,const GameDefinition& game) {
+    if(!options.save_root.empty() || !options.default_save_root)return options.save_root;
+#ifdef _WIN32
+    const auto length=GetEnvironmentVariableW(L"LOCALAPPDATA",nullptr,0);
+    require(length>1 && length<=4097,"Default saves require a nonempty LOCALAPPDATA path.");
+    std::wstring buffer(length,L'\0');
+    const auto count=GetEnvironmentVariableW(L"LOCALAPPDATA",buffer.data(),length);
+    require(count>0 && count<length,"LOCALAPPDATA changed or could not be read.");buffer.resize(count);
+    const fs::path base(buffer);
+    require(base.is_absolute(),"Default saves require an absolute LOCALAPPDATA path.");
+    for(const auto& component:base.relative_path())require(component!="." && component!="..","LOCALAPPDATA cannot contain dot path components.");
+    require(game.project_id.size()==32 && game.project_id.find_first_not_of("0123456789abcdef")==std::string::npos,"Default saves require a verified project ID.");
+    const auto root=base/"Poima"/"Games"/game.project_id/"Saves";
+    require(text_of(root).size()<=4096,"Default save root exceeds the save path limit.");
+    auto ordinary=[](const fs::path& at,bool missing_allowed) {
+        std::error_code error;const auto status=fs::symlink_status(at,error);
+        if(status.type()==fs::file_type::not_found && (!error || error==std::errc::no_such_file_or_directory)) {
+            require(missing_allowed,"LOCALAPPDATA must be an existing ordinary directory.");return false;
+        }
+        require(!error && fs::is_directory(status) && !fs::is_symlink(status),"Default save root requires ordinary directories without symbolic links.");
+        const auto attributes=GetFileAttributesW(at.c_str());
+        require(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Default save root cannot contain a reparse point.");return true;
+    };
+    auto ancestry=[&](const fs::path& path,bool missing_allowed) {
+        auto at=path.root_path();ordinary(at,false);
+        for(const auto& component:path.relative_path()) { at/=component;if(!ordinary(at,missing_allowed))break; }
+    };
+    // Validate every existing prefix before canonicalization or any mkdir.
+    ancestry(base,false);ancestry(root,true);
+    const auto resolved=fs::weakly_canonical(root);
+    require(!inside(resolved,normalized(game.root)),"Default save root must be outside the immutable game bundle.");
+    require(!inside(resolved,normalized(game.world+".assets")),"Default save root cannot be inside the immutable asset store.");
+    auto at=base;
+    for(const auto& part:{std::string("Poima"),std::string("Games"),game.project_id,std::string("Saves")}) {
+        at/=part;std::error_code error;fs::create_directory(at,error);
+        require(!error,"Could not create default save directory.");ordinary(at,false);
+    }
+    ancestry(root,false);return text_of(root);
+#else
+    (void)game;
+    throw std::runtime_error("Default save roots are supported only on Windows; provide --save-root.");
+#endif
 }
 std::string prepare_game(WorldSession& world,const GameDefinition& game,const std::string& save_root,
     const std::optional<std::string>& write_mode) {
@@ -112,7 +158,7 @@ Reply run_game(const GameLaunchOptions& options) {
     Json result=nullptr,diagnostics=Json::array();bool success=false;
     try {
         require(options.replay.empty() || !options.lens_interpolation,"Lens interpolation is interactive only.");
-        validate_save_launch(options.save_root,options.save_write_mode);
+        validate_save_launch(options.save_root,options.save_write_mode,options.default_save_root);
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         require(POIMA_RENDER_SMOKE,"Game launch requires the Vulkan player in this executable.");
@@ -122,7 +168,8 @@ Reply run_game(const GameLaunchOptions& options) {
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
-        const auto session=prepare_game(world,game,options.save_root,options.save_write_mode);
+        const auto save_root=launch_save_root(options,game);
+        const auto session=prepare_game(world,game,save_root,options.save_write_mode);
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};

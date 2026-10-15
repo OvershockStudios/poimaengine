@@ -81,11 +81,14 @@ def main():
             process.kill()
         process.wait(timeout=3)
 
-    def terminal_cli(arguments, code, workers='2'):
+    def terminal_cli(arguments, code, workers='2', environment=None):
         row = dict(command=[str(binary), *arguments], expected_exit=code)
         evidence['commands'].append(row)
         prefix = output / ('rejection-' + str(len(evidence['commands'])))
         env = dict(os.environ, POIMA_JOB_WORKERS=workers)
+        if environment is not None:
+            row['environment_overrides'] = dict(environment)
+            env.update(environment)
         with prefix.with_suffix('.stdout').open('wb') as stdout, prefix.with_suffix('.stderr').open('wb') as stderr:
             process = subprocess.Popen(row['command'], stdout=stdout, stderr=stderr, env=env, cwd=output)
             row['process_id'] = process.pid
@@ -102,8 +105,8 @@ def main():
              reply['status'] == ('ok' if code == 0 else 'error'), row)
         return reply
 
-    def rejected(arguments, code, message, workers='2'):
-        reply = terminal_cli(arguments, code, workers)
+    def rejected(arguments, code, message, workers='2', environment=None):
+        reply = terminal_cli(arguments, code, workers, environment)
         need(any(message in d['message'] for d in reply['diagnostics']), reply)
         if code == 2:
             need(any(d['code'] == 'invalid_arguments' for d in reply['diagnostics']), reply)
@@ -178,11 +181,13 @@ def main():
         schema = terminal_cli(['schema', 'game'], 0)['result']
         option = schema['properties']['save_write_mode']
         need(option['enum'] == ['synchronous', 'background'] and option['default'] == 'synchronous' and
-             schema['dependentRequired']['save_write_mode'] == ['save_root'],
+             schema['properties']['default_save_root']['type'] == 'boolean' and
+             schema['properties']['default_save_root']['default'] is False,
              'Native CLI discovery omits the exact save-mode contract')
         help_result = terminal_cli(['help'], 0)['result']
         usage = next(row['arguments'] for row in help_result['commands'] if row['name'] == 'game')
-        need(usage.count('--save-write-mode synchronous|background') == 2,
+        need(usage.count('--save-write-mode synchronous|background') == 2 and
+             usage.count('--default-save-root true|false') == 1,
              'Both launch forms must expose save mode in native help')
         missing = output / 'missing-game.json'
         external = output / 'parser-root'
@@ -201,6 +206,66 @@ def main():
                               '--save-write-mode', 'background'], 2,
                      'repeated' if action == 'run' else 'Game serve accepts')
             rejected(base + ['--save-root', str(external), '--save-write-mode'], 2, '')
+        run_missing = ['game', 'run', str(missing)]
+        for value in ('True', '1', 'null', ''):
+            rejected(run_missing + ['--default-save-root', value], 2, 'expects true or false')
+        rejected(run_missing + ['--default-save-root'], 2, 'Missing')
+        rejected(run_missing + ['--default-save-root', 'true', '--default-save-root', 'false'], 2, 'repeated')
+        rejected(run_missing + ['--save-root', ''], 2, 'nonempty')
+        rejected(run_missing + ['--default-save-root', 'true', '--save-root', ''], 2, 'nonempty')
+        rejected(['game', 'serve', str(missing), '--endpoint', 'save-mode-no-default',
+                  '--default-save-root', 'false'], 2, 'Game serve accepts')
+        for mode in ('synchronous', 'background'):
+            rejected(run_missing + ['--default-save-root', 'false', '--save-write-mode', mode], 2, 'requires --save-root')
+            # Valid default selection reaches bundle admission, not the missing-root usage error.
+            rejected(run_missing + ['--default-save-root', 'true', '--save-write-mode', mode], 4, '')
+        features = terminal_cli(['capabilities'], 0)['result']['features']
+        if features['render_smoke']:
+            run = ['game', 'run', str(game), '--default-save-root', 'true',
+                   '--save-write-mode', 'background']
+            # All accepted-directory probes stop at worker admission before player/window work.
+            if os.name == 'nt':
+                rejected(run, 4, 'nonempty LOCALAPPDATA', workers='0', environment={'LOCALAPPDATA': ''})
+                rejected(run, 4, 'absolute LOCALAPPDATA', workers='0', environment={'LOCALAPPDATA': 'relative-profile'})
+                profile = output / 'Owned profile & (wine) ! % ^ café'
+                profile.mkdir()
+                default_root = profile / 'Poima' / 'Games' / fixture['project_id'] / 'Saves'
+                for _ in range(2):
+                    rejected(run, 4, 'at least one job worker', workers='0', environment={'LOCALAPPDATA': str(profile)})
+                    need(default_root.is_dir() and not list(default_root.iterdir()),
+                         'Default root selection wrote unexpected payloads or changed on reuse')
+                override_profile = output / 'unused-profile'
+                override_profile.mkdir()
+                rejected(run + ['--save-root', str(external)], 4, 'at least one job worker', workers='0',
+                         environment={'LOCALAPPDATA': str(override_profile)})
+                need(not list(override_profile.iterdir()), 'Explicit root still created a default directory')
+                rejected(run + ['--save-root', str(external)], 4, 'at least one job worker', workers='0',
+                         environment={'LOCALAPPDATA': ''})
+                rejected(run, 4, 'immutable game bundle', workers='0', environment={'LOCALAPPDATA': str(game.parent)})
+                missing_profile = output / 'absent-profile'
+                rejected(run, 4, 'existing ordinary directory', workers='0', environment={'LOCALAPPDATA': str(missing_profile)})
+                need(not missing_profile.exists(), 'Default launch created the profile base itself')
+                collision = output / 'file-collision-profile'
+                collision.mkdir(); (collision / 'Poima').write_bytes(b'owned collision')
+                collision_before = inventory(collision)
+                rejected(run, 4, 'ordinary directories', workers='0', environment={'LOCALAPPDATA': str(collision)})
+                need(inventory(collision) == collision_before, 'Default rejection changed collision bytes')
+                linked = output / 'linked-profile'
+                linked_target = output / 'link-target'
+                linked_target.mkdir()
+                try:
+                    linked.symlink_to(linked_target, target_is_directory=True)
+                except OSError as error:
+                    if getattr(error, 'winerror', None) != 1314:
+                        raise
+                    evidence.setdefault('skipped', []).append('Profile symlink test: Windows privilege unavailable')
+                else:
+                    rejected(run, 4, 'ordinary directories', workers='0', environment={'LOCALAPPDATA': str(linked)})
+                    need(not list(linked_target.iterdir()), 'Default rejection followed a linked profile')
+            else:
+                rejected(run, 4, 'supported only on Windows', workers='0')
+        else:
+            evidence.setdefault('skipped', []).append('Default-directory run admission requires a renderer-enabled executable; no rendering is performed')
         for mode in (None, 'synchronous', 'background'):
             forwarded(mode)
         forwarded(None, with_root=False)

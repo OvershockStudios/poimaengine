@@ -19,7 +19,27 @@ poima game run path/to/game.json --save-root path/to/saves
 poima game run path/to/game.json --save-root path/to/saves --save-write-mode background
 ```
 
-Relative launch paths resolve from the launch directory. Storage must be outside the immutable bundle and asset store. Omit the option to disable gameplay saving. Games receive slot names and operation tickets; they cannot select filesystem or executable paths through this API. Native `Runtime` instances outside a configured owner also start with saving disabled.
+The exported Windows `launch.cmd` opts into `--default-save-root true` and forwards
+its caller's arguments. With no explicit root, the native player creates
+`%LOCALAPPDATA%\Poima\Games\<project_id>\Saves`, outside the bundle. The project ID
+is preserved across exports, renames and relocation, so the directory survives
+content/image updates. This does not grant save-image compatibility or load a
+checkpoint automatically: normal exact-image and explicit-upgrade rules remain.
+An explicit `--save-root` overrides the default and must already exist. It also
+works when LOCALAPPDATA is unavailable. Default-path errors fail visibly; the
+player never falls back to its working directory or bundled content.
+
+Direct `game run` defaults `--default-save-root` to false. Omit both root options
+to disable saving, or invoke the bundled executable directly to bypass the
+launcher's opt-in. `game serve`, authoring owners and the Linux launcher retain
+explicit storage setup. Missing/relative LOCALAPPDATA, linked/reparse ancestry,
+protected bundle/asset locations and non-directory collisions are rejected.
+Ordinary validation assumes a trusted environment without adversarial concurrent
+filesystem changes. Empty default directories can remain if a later launch stage
+fails; no slot is created until gameplay requests a save.
+
+Relative explicit launch paths resolve from the launch directory. Storage must
+be outside the immutable bundle and asset store. Games receive slot names and operation tickets; they cannot select filesystem or executable paths through this API. Native `Runtime` instances outside a configured owner also start with saving disabled.
 
 `save.configure` accepts `write_mode: "synchronous" | "background"`; omission selects
 `synchronous`. `save.status` reports the selected mode alongside the root and
@@ -35,7 +55,8 @@ Background mode requires at least one [native job worker](JOBS.md);
 `POIMA_JOB_WORKERS=0` rejects that configuration. The standalone `--save-root`
 option keeps the synchronous default; `game run` and `game serve` accept
 `--save-write-mode background` or explicit `synchronous` when `--save-root` is
-provided. Unknown, repeated or missing mode values reject before bundle opening.
+provided; `game run` also accepts a true default-save-root opt-in in place of an
+explicit root. Unknown, repeated or missing mode values reject before bundle opening.
 Background mode changes gameplay save
 requests only; gameplay loads and external `save.write` remain synchronous.
 The managed API and negotiated services prefix are unchanged.
@@ -191,6 +212,31 @@ continues in a fresh process. These selected-state checks do not establish
 general unknown-outcome resolution or a complete stable runtime contract.
 
 ## Qualification
+
+### Reproduce the Windows launcher check
+
+Use a Windows x86_64 engine and installed runtime built from the same checkpoint,
+a Vulkan-capable GPU, and native Windows Python 3.12 or later. Publish
+[GameplaySaveProbe](../tests/gameplay-save/SaveRequests.cs) using the
+[supervised Native AOT workflow](NATIVE_GAMEPLAY.md#publish), with project
+`tests/gameplay-save/Poima.GameplaySaveProbe.csproj` and type
+`Poima.Tests.GameplaySaveProbe`. Keep its complete `native-gameplay.json` artifact
+directory. The launcher test does not compile or repair that artifact.
+
+```powershell
+python -I -B tests/launcher_save_workflow.py --engine path/to/poima.exe --runtime path/to/installed-runtime --artifact path/to/native-gameplay.json --output build/launcher-save-check --gpu 1 --seconds 420
+```
+
+Choose the actual GPU index for your machine and a new output directory. The
+test owns its native descendants in a bounded Windows Job, creates and exports
+a temporary project, invokes the generated `launch.cmd`, and keeps reports and
+save files. It checks default storage, cold and relocated loads, explicit-root
+precedence and rejection of an owned NTFS junction. Complete checkpoint equality
+before callbacks is checked through a separate readonly native owner; actual
+launcher reports compare all 24 fixture globals and the two entry entities.
+One subsequent callback checks the complete global-state forecast. This does
+not measure physical input, save latency or cross-image migration.
+[0.0.151 results and limits](evidence/m2-default-launcher-saves.json).
 
 The [0.0.103 evidence](evidence/m2-standalone-save-mode.json) records four
 Windows native checks, three Linux disabled-backend groups, and a freshly
