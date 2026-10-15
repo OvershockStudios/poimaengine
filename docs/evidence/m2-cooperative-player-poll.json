@@ -1,0 +1,1606 @@
+{
+  "format": "poima.cooperative-player-poll-qualification.v1",
+  "engine_version": "0.0.156",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Request-interruptible shared CLI idle pacing, actual player ownership/capture/stop behavior and one small paused Windows UI request-latency comparison; separate Linux headless regression.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 84766,
+      "sha256": "e592c8ec32faff88fc51d124428bcf17d43b91bb600f0a3bc2cf7e650d87c1c9"
+    },
+    "include/poima/player_poll.hpp": {
+      "bytes": 1289,
+      "sha256": "f90b4981310e13fe3f43ad0bcaaefa7238059cc7465f7ed4b743dec088935957"
+    },
+    "include/poima/player.hpp": {
+      "bytes": 12527,
+      "sha256": "643ca8faa6d72a78ccd6297d9db352841ea9313aee630ce073ee1beeefc6e85a"
+    },
+    "include/poima/world.hpp": {
+      "bytes": 6658,
+      "sha256": "3071bd33459fa5080604f7dd1d01ed50b38bd5cc22275e41bb4922a0dbaa2c4d"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 334730,
+      "sha256": "a9aafb918458c478e80162608bc48ff4363c3031fe05b14fbfdadbccae20c4da"
+    },
+    "src/render_smoke_disabled.cpp": {
+      "bytes": 5498,
+      "sha256": "cbe75035e89da8b50561b3eb5dbacf158fa8a0c457f774687bfd241fba27d9e8"
+    },
+    "src/shared_session.cpp": {
+      "bytes": 4008,
+      "sha256": "f3a4face57b15e49f35f693f3de5a5684d31f654cb4f8a1847ed8a05a4feb2e6"
+    },
+    "src/world.cpp": {
+      "bytes": 323999,
+      "sha256": "dfbf7d637d1d5e20f4551cb3b1bfa7e1ace7734dbe321c52f75475d8ec851ab8"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 62242,
+      "sha256": "d9589cef54b7867d577c88af4fcd546302973329271fae0642d59e64983f53b6"
+    },
+    "tests/player_poll_native.cpp": {
+      "bytes": 2176,
+      "sha256": "ee8cfdb506308cbfac24f841d90eab0943a40e0cf9570e3265512d3e14560b97"
+    },
+    "tests/player_owner_poll_disabled.cpp": {
+      "bytes": 8567,
+      "sha256": "9a630eb6f4fc0fb44ec2909bd2bdfa832f015eb6287febcaf3847faf5f21c9f0"
+    },
+    "tests/player_window_native.cpp": {
+      "bytes": 45126,
+      "sha256": "a57b03fc763cc7ed7b8ebc8e66534fba17f188e5f0861cc38fad0fe0257e3f8b"
+    }
+  },
+  "implementation": [
+    "Shared CLI hosts wait on local transport readiness until the existing voluntary idle-frame deadline. Reads do not restart that deadline.",
+    "Deferred actual window polls invalidate prepared capture leases and run owner maintenance; unchanged owners do not extract scenes or simulate or create frame receipts.",
+    "Maintenance changes publish the current owner boundary and clear the deadline for a fresh poll. Pause, synchronize and stop reset admission.",
+    "Default standalone/desktop paths remain separate. Failed-rebuild default timing-accounting behavior is retained. Synchronous graphics/device/audio/storage work can still block."
+  ],
+  "windows_build": {
+    "passed": true,
+    "seconds": 435.39006287400844,
+    "cache_generation": 24,
+    "source_files": 302,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "sealed_artifacts": 12,
+    "cli": {
+      "bytes": 26053120,
+      "sha256": "245e2c42a72964304c4fdefad720dd413c76f8000d8c4a5ab539338b68961079"
+    },
+    "desktop_bridge": {
+      "bytes": 298476544,
+      "sha256": "86e0e71bc4564175ef9e6a10ece491fd7b9f00c0dec12c69f29fd4fc03868aa4"
+    },
+    "policy": "Incremental Ninja build with two workers; independently sealed outputs; preserved 0.0.155 artifacts, not a clean toolchain rebuild.",
+    "receipts": [
+      {
+        "path": "build/native-snapshot-0.0.156/native-build-1/build-result.json",
+        "bytes": 56162,
+        "sha256": "46831dc79cd5d382b7ddde66ccebcbb30ba36b18a98dcaa102bd36ee7f366c34"
+      },
+      {
+        "path": "build/native-snapshot-0.0.156/native-build-1/source-pins.json",
+        "bytes": 45312,
+        "sha256": "e45abbe6e9e66e9e0052eb0dbe06ee9b0956cd5913413ffe93e660d85cf64492"
+      },
+      {
+        "path": "build/native-snapshot-0.0.156/native-build-1/sealed-artifacts.json",
+        "bytes": 2109,
+        "sha256": "a45b1ef821ddb23fe3db682bc65a9e5d878cdf018dccc1baeba1ac821113bbad"
+      }
+    ]
+  },
+  "windows_native": {
+    "passed": true,
+    "executions": 7,
+    "seconds": 12.412917700014077,
+    "stages": [
+      {
+        "name": "deadline",
+        "binary": "poima-player-poll-test.exe",
+        "exit_code": 0,
+        "seconds": 0.0543214000063017,
+        "stdout": {
+          "bytes": 65,
+          "sha256": "355bf9b15f1faf42c5b311b418b72559fcd33bfae83b6f6bdef263ffc2fdf7ea"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "disabled_owner",
+        "binary": "poima-player-owner-poll-disabled-test.exe",
+        "exit_code": 0,
+        "seconds": 0.04854310001246631,
+        "stdout": {
+          "bytes": 159,
+          "sha256": "f2791420d167531ff4d7e53dc105d8b97aa8fb18abbc1637a07c8ebea6962c2f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "window_basic",
+        "binary": "poima-player-window-test.exe",
+        "exit_code": 0,
+        "seconds": 0.07770179997896776,
+        "stdout": {
+          "bytes": 351,
+          "sha256": "4584d09d7ee1f50cd4fee6e447af18bf2541d4bceddb5b1d75408c827827aded"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "replacement",
+        "binary": "poima-player-replacement-test.exe",
+        "exit_code": 0,
+        "seconds": 0.06303029996342957,
+        "stdout": {
+          "bytes": 97,
+          "sha256": "614478e4dc8e39e25edd0da689f34aa924926590c8c239a8bc83528da90a63e8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "world_session",
+        "binary": "poima-world-session-test.exe",
+        "exit_code": 0,
+        "seconds": 3.1326919000130147,
+        "stdout": {
+          "bytes": 147,
+          "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "local_session",
+        "binary": "poima-local-session-test.exe",
+        "exit_code": 0,
+        "seconds": 7.647399399953429,
+        "stdout": {
+          "bytes": 39,
+          "sha256": "d3179596d62abfa02aa007494d8fe400436078b0ec9d14ac8b13b3077cbddea3"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "capture_image",
+        "binary": "poima-capture-image-test.exe",
+        "exit_code": 0,
+        "seconds": 0.054224499966949224,
+        "stdout": {
+          "bytes": 91,
+          "sha256": "2b11fb9269c2559da1af3afbb0f9338f95ec6e9a8490163fdc93f7a074314b2f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "natural_job_closure": true,
+    "receipts": [
+      {
+        "path": "build/cooperative-player-0.0.156/windows-cpu-1/report.json",
+        "bytes": 11625,
+        "sha256": "741f629cc1ab7139280beb84e23a11f530949d74a4eb29f3aea695c53e45c039"
+      },
+      {
+        "path": "build/cooperative-player-0.0.156/windows-cpu-1/qualification.json",
+        "bytes": 1752,
+        "sha256": "659a4fd4be3a4a5aef3e50ea58bf0bb28c9e8bb8504843d7e6a9a46396f050e7"
+      }
+    ]
+  },
+  "windows_actual_window": {
+    "passed": true,
+    "seconds": 3.2009678999893367,
+    "selected_gpu_index": 1,
+    "native_result": {
+      "passed": true,
+      "basic_groups": 5,
+      "graphics_groups": 0,
+      "lens_admission_groups": 1,
+      "lens_capture_token_groups": 0,
+      "lens_catchup_groups": 0,
+      "cooperative_groups": 3,
+      "cooperative_lease_attempts": 1,
+      "cooperative_tick_attempts": 1,
+      "cooperative_replacement_attempts": 1,
+      "sdl_gain_groups": 0,
+      "audible_qualification": false,
+      "physical_input": false,
+      "physics_oracle": false
+    },
+    "capture": {
+      "identity": {
+        "bytes": 307338,
+        "sha256": "02a061afb2f561bb1cba9e8d63ba187a0979a34457e05a1e9d163ff405556db8"
+      },
+      "width": 320,
+      "height": 240
+    },
+    "natural_job_closure": true,
+    "scope": "Counted routing owner with actual SDL/Vulkan PlayerWindow. Owner counters are a routing/lifetime oracle, not a physics or save-writer implementation.",
+    "receipts": [
+      {
+        "path": "build/cooperative-player-0.0.156/windows-window-1/report.json",
+        "bytes": 10941,
+        "sha256": "c536ab908df5f816cea776828164cbf04097c726c2fdfae76d9b5aeaaf7cf3b3"
+      },
+      {
+        "path": "build/cooperative-player-0.0.156/windows-window-1/qualification.json",
+        "bytes": 1751,
+        "sha256": "aa390c9f25fc1cc11f250d59ffd69040c5ca52f9709b8e24680affcff62d6a31"
+      }
+    ]
+  },
+  "comparison": {
+    "passed": true,
+    "baseline": {
+      "engine_version": "0.0.155",
+      "passed": true,
+      "seconds": 13.668867900036275,
+      "rpc_count": 468,
+      "natural_native_owners": 3,
+      "job_processes": 4,
+      "job_active_after": 0,
+      "job_terminated": 0,
+      "forced_cleanup": false,
+      "cli": {
+        "bytes": 26050560,
+        "sha256": "e114c5bdbac6b3960cd5b6ceb0c47a08779643d9222b2acb0f5f32974cba8c1d"
+      },
+      "source_authority": {
+        "bytes": 45693,
+        "sha256": "790d3f6b2451ecd8cf6b03ccc0fca85879ae363a73a0edc094d2e4623c43dba8"
+      },
+      "authored_world": {
+        "bytes": 7011,
+        "sha256": "1f16f1b73ac2a900f652bab8d44926a093a34de22dd5de6f5183587ef9dd938a"
+      },
+      "initial_world": {
+        "bytes": 188,
+        "sha256": "e269b883e44dae5ef4285bf0856061100a0a74b5294c18b5cd94b4369c5f0dc0"
+      },
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "requested_options": {
+        "width": 640,
+        "height": 480,
+        "samples": 1,
+        "frames_in_flight": 1,
+        "mode": "interactive",
+        "initially_paused": true,
+        "gamepad": {
+          "mode": "disabled"
+        }
+      },
+      "read_population": {
+        "methods": [
+          "world.inspect",
+          "player.inspect",
+          "runtime.gameplay.inspect"
+        ],
+        "per_method": 128,
+        "total": 384,
+        "samples_ns": {
+          "world.inspect": [
+            16205300,
+            16573500,
+            15897400,
+            16364500,
+            15899300,
+            15409400,
+            15656400,
+            15397500,
+            15621100,
+            15643600,
+            16253300,
+            15633400,
+            14779300,
+            15679600,
+            15659700,
+            15613200,
+            15369800,
+            15269200,
+            16045100,
+            16094000,
+            15151300,
+            14915400,
+            15402700,
+            16597600,
+            15855400,
+            15406700,
+            15820000,
+            15887300,
+            15522500,
+            15300800,
+            15490300,
+            16510000,
+            15028000,
+            16359900,
+            15287200,
+            15708700,
+            15877200,
+            14714500,
+            15517900,
+            15047600,
+            15639900,
+            15273500,
+            14807500,
+            15368200,
+            14993600,
+            15929900,
+            15216600,
+            15634900,
+            15235000,
+            16029100,
+            15608700,
+            15664900,
+            15336300,
+            15263300,
+            15350100,
+            16080700,
+            14657200,
+            15657000,
+            15363600,
+            15687200,
+            15812700,
+            15461200,
+            15912500,
+            15874900,
+            16228900,
+            15064500,
+            15703800,
+            15536900,
+            14892200,
+            15995000,
+            14801200,
+            15389200,
+            15238000,
+            14948000,
+            15779400,
+            14983700,
+            15541900,
+            15305200,
+            15944500,
+            15148500,
+            16021300,
+            15513900,
+            15263300,
+            16307400,
+            14430400,
+            15165800,
+            15525800,
+            16216300,
+            15455400,
+            16508000,
+            14784400,
+            15208000,
+            14654900,
+            15159000,
+            14798200,
+            15526500,
+            14753100,
+            15027900,
+            15322200,
+            14575600,
+            15664600,
+            15939300,
+            15509600,
+            15960500,
+            16352200,
+            15289400,
+            15248400,
+            15800200,
+            15577700,
+            15315400,
+            15223800,
+            15479100,
+            15702900,
+            14883100,
+            15590800,
+            15246200,
+            14979500,
+            15614700,
+            14666500,
+            15293000,
+            15207500,
+            15561600,
+            15125100,
+            15154200,
+            15593300,
+            15425900,
+            15873500,
+            15092100
+          ],
+          "player.inspect": [
+            17165800,
+            16814200,
+            16793300,
+            16399300,
+            16790000,
+            15764700,
+            15632600,
+            15588400,
+            16541400,
+            16417700,
+            16663600,
+            16382800,
+            15790400,
+            15563600,
+            17064600,
+            15395000,
+            16479200,
+            16822800,
+            16373100,
+            16288500,
+            15510400,
+            15202900,
+            16042500,
+            14840900,
+            17595500,
+            15579400,
+            15444900,
+            15918800,
+            16436500,
+            16183600,
+            16527300,
+            16136800,
+            16177800,
+            16473600,
+            15192100,
+            16161900,
+            15543500,
+            16523100,
+            16918700,
+            16843200,
+            16016700,
+            16114200,
+            15943400,
+            15697300,
+            16835300,
+            16324900,
+            16311900,
+            15394600,
+            16157300,
+            15603600,
+            15921700,
+            16703200,
+            15711600,
+            16051500,
+            15833600,
+            16152300,
+            16167400,
+            15837200,
+            15666300,
+            15728100,
+            15897900,
+            16287500,
+            16113500,
+            15515400,
+            15950900,
+            16360600,
+            15542700,
+            15822100,
+            15683600,
+            15969400,
+            16217700,
+            15798400,
+            15783100,
+            16571500,
+            16346600,
+            16177600,
+            15799700,
+            16937900,
+            15782600,
+            16158000,
+            16147200,
+            15929900,
+            16247800,
+            16137000,
+            15562700,
+            15763300,
+            15236900,
+            15764100,
+            15695700,
+            16314100,
+            15792000,
+            16373400,
+            16231500,
+            15993700,
+            16516100,
+            15186800,
+            16767700,
+            15718800,
+            15286000,
+            16180900,
+            16712000,
+            15828400,
+            15869400,
+            16886100,
+            16083400,
+            16382600,
+            16908000,
+            15070800,
+            15913400,
+            17562300,
+            17323600,
+            15513700,
+            15986300,
+            16611200,
+            15524700,
+            16948300,
+            16415100,
+            16800500,
+            16473900,
+            15394200,
+            16183400,
+            15614900,
+            17022900,
+            15170700,
+            16235000,
+            15352700,
+            15678900,
+            15397400
+          ],
+          "runtime.gameplay.inspect": [
+            15629100,
+            16371500,
+            15833000,
+            16186900,
+            16269900,
+            15450700,
+            15459700,
+            14676300,
+            15499800,
+            14959800,
+            14925800,
+            16156600,
+            15147500,
+            15170200,
+            14942900,
+            15630100,
+            15827700,
+            14803800,
+            15638200,
+            15724500,
+            14725600,
+            14556600,
+            15452800,
+            15481200,
+            15503000,
+            15425300,
+            14971900,
+            15138100,
+            13742600,
+            14823600,
+            14741200,
+            14517800,
+            14905800,
+            14753300,
+            15022400,
+            14767500,
+            16168000,
+            14956100,
+            14674100,
+            14017900,
+            14602000,
+            15483700,
+            15097000,
+            15991100,
+            15139800,
+            14676100,
+            14565900,
+            15762700,
+            15104300,
+            14603900,
+            14719400,
+            14801600,
+            15122300,
+            15480200,
+            15758000,
+            15690100,
+            14920100,
+            15997900,
+            15304500,
+            15466700,
+            14990100,
+            15062400,
+            15286300,
+            14617100,
+            14924800,
+            15114400,
+            15390700,
+            14893700,
+            16050700,
+            14325700,
+            15174900,
+            15209600,
+            15369300,
+            14638500,
+            14689800,
+            14988800,
+            15896300,
+            15188600,
+            14724200,
+            14853300,
+            15179800,
+            14740300,
+            15357500,
+            15437400,
+            14573600,
+            14915600,
+            16705600,
+            15481100,
+            15295400,
+            15270800,
+            15260000,
+            15497100,
+            15625400,
+            14480900,
+            15328500,
+            15103800,
+            16191300,
+            14929000,
+            14772800,
+            15145900,
+            14921700,
+            15284000,
+            15552600,
+            14661300,
+            15860500,
+            15082600,
+            15511000,
+            15444400,
+            15132700,
+            14850800,
+            14379800,
+            15234200,
+            16115900,
+            14498400,
+            15891800,
+            15200100,
+            14459100,
+            14794500,
+            14908100,
+            15235700,
+            15274400,
+            14725600,
+            14685900,
+            15554100,
+            14580000,
+            14684800,
+            15824300,
+            15159500
+          ]
+        },
+        "summary_ns": {
+          "world.inspect": {
+            "count": 128,
+            "mean": 15495410.15625,
+            "median": 15499950.0,
+            "p95": 16352200,
+            "maximum": 16597600
+          },
+          "player.inspect": {
+            "count": 128,
+            "mean": 16098301.5625,
+            "median": 16113850.0,
+            "p95": 16948300,
+            "maximum": 17595500
+          },
+          "runtime.gameplay.inspect": {
+            "count": 128,
+            "mean": 15180663.28125,
+            "median": 15142850.0,
+            "p95": 16156600,
+            "maximum": 16705600
+          }
+        },
+        "elapsed_ns": 6832792400,
+        "host_cpu_ns": 796875000,
+        "frames_presented": 385
+      },
+      "quiet": {
+        "requested_seconds": 2,
+        "elapsed_ns": 2000115700,
+        "host_cpu_ns": 125000000,
+        "frames_presented": 102
+      },
+      "saved_payloads": {
+        "reads-before": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-reads-before/p-6b9a8c567896819bb4762c9d59787eb4.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "reads-after": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-reads-after/p-cd19bc85c29fa2bbdd400f0d4ed42aef.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "quiet-after": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-quiet-after/p-4fa61cc2d7e13c5af05258b71f351cc6.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "captures-before": {
+          "identity": {
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-captures-before/p-d3324a5c339707320960b6d251aaece6.bin",
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          }
+        },
+        "captures-after": {
+          "identity": {
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-captures-after/p-9ca25b4fd137e8bca7b487983fc1148a.bin",
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          }
+        },
+        "stale-before": {
+          "identity": {
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-stale-before/p-297e16e3d41fa0a1007e7fd147d849b9.bin",
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          }
+        },
+        "stale-after": {
+          "identity": {
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-stale-after/p-4facc91b2558f0749d8bb9e3477efe55.bin",
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          }
+        },
+        "load-after": {
+          "identity": {
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/baseline155-2/saves/slot-load-after/p-0f115d10791217c321833458c68b18b9.bin",
+            "bytes": 4471,
+            "sha256": "ccbfb627e87c61ceb569c01fa3aa3ba069bd8002247f02d7440093fcdc939afb"
+          }
+        }
+      },
+      "background_save": {
+        "states": [
+          1,
+          1,
+          3
+        ],
+        "queued_observed": true,
+        "durable_generation": 1,
+        "retry_verified": true
+      },
+      "captures": [
+        {
+          "method": "player.capture",
+          "image": {
+            "sha256": "75fd5cc5c0253e354bed217d76fd810ab72c3138c24673ab9143d88e13c7d936",
+            "bytes": 1228938,
+            "width": 640,
+            "height": 480
+          }
+        },
+        {
+          "method": "player.capture_current",
+          "image": {
+            "sha256": "75fd5cc5c0253e354bed217d76fd810ab72c3138c24673ab9143d88e13c7d936",
+            "bytes": 1228938,
+            "width": 640,
+            "height": 480
+          }
+        }
+      ],
+      "full_saved_payload_equal_after_load": true,
+      "same_player_after_load": true,
+      "receipts": [
+        {
+          "path": "build/cooperative-player-0.0.156/baseline155-2/evidence.json",
+          "bytes": 7918974,
+          "sha256": "61dda8048aead185f043ce4e30e32b72b49e15d5d8dd4e0b467cf500f7f20f8b"
+        },
+        {
+          "path": "build/cooperative-player-0.0.156/baseline155-2/result.json",
+          "bytes": 420,
+          "sha256": "b55eca6d3002afe7898514f17b7224ec26c8c01b72bc7f7e61156dcc68b8ef9f"
+        },
+        {
+          "path": "build/cooperative-player-0.0.156/baseline155-2/job/owner.json",
+          "bytes": 1487,
+          "sha256": "3156746de64a414c59ef56aaa0babc80fa1231196792ff959dd4146a0197de74"
+        }
+      ]
+    },
+    "candidate": {
+      "engine_version": "0.0.156",
+      "passed": true,
+      "seconds": 6.566875200020149,
+      "rpc_count": 470,
+      "natural_native_owners": 3,
+      "job_processes": 4,
+      "job_active_after": 0,
+      "job_terminated": 0,
+      "forced_cleanup": false,
+      "cli": {
+        "bytes": 26053120,
+        "sha256": "245e2c42a72964304c4fdefad720dd413c76f8000d8c4a5ab539338b68961079"
+      },
+      "source_authority": {
+        "bytes": 45312,
+        "sha256": "e45abbe6e9e66e9e0052eb0dbe06ee9b0956cd5913413ffe93e660d85cf64492"
+      },
+      "authored_world": {
+        "bytes": 7011,
+        "sha256": "1f16f1b73ac2a900f652bab8d44926a093a34de22dd5de6f5183587ef9dd938a"
+      },
+      "initial_world": {
+        "bytes": 188,
+        "sha256": "e269b883e44dae5ef4285bf0856061100a0a74b5294c18b5cd94b4369c5f0dc0"
+      },
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "requested_options": {
+        "width": 640,
+        "height": 480,
+        "samples": 1,
+        "frames_in_flight": 1,
+        "mode": "interactive",
+        "initially_paused": true,
+        "gamepad": {
+          "mode": "disabled"
+        }
+      },
+      "read_population": {
+        "methods": [
+          "world.inspect",
+          "player.inspect",
+          "runtime.gameplay.inspect"
+        ],
+        "per_method": 128,
+        "total": 384,
+        "samples_ns": {
+          "world.inspect": [
+            199700,
+            596200,
+            214000,
+            195100,
+            186500,
+            235100,
+            190200,
+            189300,
+            235900,
+            223200,
+            201900,
+            214500,
+            320200,
+            159200,
+            212600,
+            196900,
+            155100,
+            179400,
+            195400,
+            197200,
+            177500,
+            212400,
+            195100,
+            193000,
+            184900,
+            193900,
+            170400,
+            164100,
+            214400,
+            216000,
+            205700,
+            204600,
+            210900,
+            213600,
+            190300,
+            221000,
+            187700,
+            191900,
+            156000,
+            191700,
+            262400,
+            205900,
+            186200,
+            219700,
+            214600,
+            155200,
+            196100,
+            246400,
+            200800,
+            232000,
+            240500,
+            179700,
+            173700,
+            187000,
+            286700,
+            177200,
+            195200,
+            244800,
+            165600,
+            197700,
+            183100,
+            204700,
+            239600,
+            193600,
+            178900,
+            198800,
+            180200,
+            208100,
+            198500,
+            197800,
+            187200,
+            208000,
+            200200,
+            178100,
+            179700,
+            222900,
+            1452800,
+            211700,
+            180200,
+            176200,
+            207800,
+            175800,
+            205900,
+            183300,
+            178500,
+            208100,
+            179300,
+            195000,
+            210300,
+            174300,
+            218800,
+            191800,
+            214700,
+            401200,
+            205900,
+            220500,
+            215000,
+            207900,
+            250500,
+            177300,
+            182300,
+            197900,
+            179900,
+            209300,
+            174900,
+            183000,
+            238200,
+            201600,
+            192400,
+            191200,
+            210300,
+            190100,
+            177600,
+            190800,
+            180800,
+            171600,
+            239800,
+            189400,
+            192200,
+            196000,
+            245800,
+            179000,
+            233100,
+            240100,
+            339700,
+            231100,
+            206200,
+            252100
+          ],
+          "player.inspect": [
+            665300,
+            666800,
+            617700,
+            670900,
+            694700,
+            570400,
+            686700,
+            772500,
+            2184300,
+            708500,
+            604300,
+            753700,
+            701600,
+            687900,
+            659700,
+            696600,
+            617300,
+            890200,
+            713000,
+            675600,
+            649700,
+            667700,
+            679900,
+            637100,
+            629500,
+            616400,
+            734800,
+            695200,
+            1332900,
+            662800,
+            671900,
+            627200,
+            559500,
+            587400,
+            652700,
+            777300,
+            696200,
+            816800,
+            697800,
+            714000,
+            699200,
+            691200,
+            773300,
+            733900,
+            715500,
+            603900,
+            585500,
+            722900,
+            520400,
+            702300,
+            596600,
+            534800,
+            608900,
+            623700,
+            575600,
+            751300,
+            691600,
+            741900,
+            681800,
+            584300,
+            725700,
+            680300,
+            640100,
+            582500,
+            625600,
+            609800,
+            560900,
+            620000,
+            679600,
+            1025200,
+            697700,
+            585000,
+            781500,
+            702500,
+            693600,
+            742900,
+            602600,
+            641700,
+            671700,
+            737200,
+            662000,
+            655900,
+            665100,
+            641600,
+            589700,
+            632500,
+            590500,
+            757000,
+            690400,
+            665800,
+            770200,
+            686400,
+            643100,
+            563800,
+            689100,
+            605400,
+            522600,
+            606800,
+            640000,
+            702500,
+            591300,
+            743700,
+            655000,
+            684000,
+            688600,
+            700100,
+            752200,
+            655600,
+            593000,
+            685800,
+            1173600,
+            636900,
+            553400,
+            693200,
+            606500,
+            631400,
+            727700,
+            738500,
+            730600,
+            725800,
+            724300,
+            699000,
+            756800,
+            832400,
+            879400,
+            748900,
+            777900,
+            797500
+          ],
+          "runtime.gameplay.inspect": [
+            264400,
+            345900,
+            284600,
+            298700,
+            1118300,
+            222400,
+            263900,
+            324700,
+            285100,
+            291100,
+            296500,
+            318800,
+            272300,
+            302100,
+            315300,
+            281400,
+            243700,
+            252800,
+            296900,
+            285200,
+            293200,
+            294200,
+            269900,
+            282000,
+            296700,
+            272300,
+            279700,
+            300600,
+            271300,
+            277500,
+            291000,
+            304300,
+            262900,
+            302500,
+            311200,
+            293100,
+            265800,
+            258200,
+            294500,
+            271600,
+            284300,
+            277800,
+            1680300,
+            301300,
+            232900,
+            268200,
+            307100,
+            244800,
+            300100,
+            232600,
+            278200,
+            260800,
+            261600,
+            309900,
+            321600,
+            299200,
+            260300,
+            281400,
+            250800,
+            275700,
+            315100,
+            266800,
+            260300,
+            254700,
+            280500,
+            254900,
+            299000,
+            273600,
+            266800,
+            268700,
+            288000,
+            257700,
+            266700,
+            287900,
+            284000,
+            274500,
+            270200,
+            259800,
+            231900,
+            276000,
+            267500,
+            285500,
+            293900,
+            272000,
+            286000,
+            316500,
+            305200,
+            279900,
+            278700,
+            370400,
+            257400,
+            331900,
+            315200,
+            303300,
+            290900,
+            281100,
+            262700,
+            291000,
+            344200,
+            301300,
+            286200,
+            280900,
+            301200,
+            325600,
+            258500,
+            240400,
+            338900,
+            249600,
+            237200,
+            271600,
+            302700,
+            232000,
+            245200,
+            274400,
+            257700,
+            304800,
+            300500,
+            310500,
+            305500,
+            295000,
+            282900,
+            439100,
+            329200,
+            328900,
+            334500,
+            1512900,
+            345400,
+            300000
+          ]
+        },
+        "summary_ns": {
+          "world.inspect": {
+            "count": 128,
+            "mean": 217021.09375,
+            "median": 197750.0,
+            "p95": 262400,
+            "maximum": 1452800
+          },
+          "player.inspect": {
+            "count": 128,
+            "mean": 697286.71875,
+            "median": 681050.0,
+            "p95": 832400,
+            "maximum": 2184300
+          },
+          "runtime.gameplay.inspect": {
+            "count": 128,
+            "mean": 312878.90625,
+            "median": 284450.0,
+            "p95": 345400,
+            "maximum": 1680300
+          }
+        },
+        "elapsed_ns": 645562200,
+        "host_cpu_ns": 234375000,
+        "frames_presented": 36
+      },
+      "quiet": {
+        "requested_seconds": 2,
+        "elapsed_ns": 2000115500,
+        "host_cpu_ns": 203125000,
+        "frames_presented": 110
+      },
+      "saved_payloads": {
+        "reads-before": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-reads-before/p-0c452fa2077e22a0ac7b7f798c88e2cc.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "reads-after": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-reads-after/p-af432b4a3d23775339b5e3974b8432b2.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "quiet-after": {
+          "identity": {
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-quiet-after/p-6a148758922a166ece5d23b9b8c49d85.bin",
+            "bytes": 4428,
+            "sha256": "e60ea77d3a307f8d04bc10bb5e6a3d47440781c8ee086a5731a7f1212eea93df"
+          }
+        },
+        "captures-before": {
+          "identity": {
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-captures-before/p-1cff4c581e3846a55e7317e1d8179e6f.bin",
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          }
+        },
+        "captures-after": {
+          "identity": {
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-captures-after/p-3dac7f7468255820f5b924c9ccc2c938.bin",
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          }
+        },
+        "stale-before": {
+          "identity": {
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-stale-before/p-08e339b4b874aee0b38c492f434949db.bin",
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          }
+        },
+        "stale-after": {
+          "identity": {
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-stale-after/p-c53b992845b02f9b4ebc47f3127c450e.bin",
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          }
+        },
+        "load-after": {
+          "identity": {
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          },
+          "evidence": {
+            "path": "build/cooperative-player-0.0.156/candidate156-2/saves/slot-load-after/p-f873429939a555ff7b13d4c6847b5d98.bin",
+            "bytes": 4472,
+            "sha256": "449fe27c152225607bf2fd6c60353b6c4f8017236000a0a00ccb45129a728982"
+          }
+        }
+      },
+      "background_save": {
+        "states": [
+          1,
+          1,
+          1,
+          1,
+          3
+        ],
+        "queued_observed": true,
+        "durable_generation": 1,
+        "retry_verified": true
+      },
+      "captures": [
+        {
+          "method": "player.capture",
+          "image": {
+            "sha256": "75fd5cc5c0253e354bed217d76fd810ab72c3138c24673ab9143d88e13c7d936",
+            "bytes": 1228938,
+            "width": 640,
+            "height": 480
+          }
+        },
+        {
+          "method": "player.capture_current",
+          "image": {
+            "sha256": "75fd5cc5c0253e354bed217d76fd810ab72c3138c24673ab9143d88e13c7d936",
+            "bytes": 1228938,
+            "width": 640,
+            "height": 480
+          }
+        }
+      ],
+      "full_saved_payload_equal_after_load": true,
+      "same_player_after_load": true,
+      "receipts": [
+        {
+          "path": "build/cooperative-player-0.0.156/candidate156-2/evidence.json",
+          "bytes": 7917084,
+          "sha256": "a1fd6ef2549f390c8a808bdeb5561aaf51b7cd3a5860d97fbd1f965c83e65801"
+        },
+        {
+          "path": "build/cooperative-player-0.0.156/candidate156-2/result.json",
+          "bytes": 421,
+          "sha256": "b28c7e27138e1ab5de2392ff36c353c6914795925f710de30e40c50313dccb65"
+        },
+        {
+          "path": "build/cooperative-player-0.0.156/candidate156-2/job/owner.json",
+          "bytes": 1487,
+          "sha256": "3ec4141bf61ae1593c3219a83be00305640c7421f22616b1328fc588216f07fc"
+        }
+      ]
+    },
+    "fairness": [
+      "Identical authored world (7,011 bytes), explicit seed world/transaction IDs, fixed camera/UI recipe, exact retained Native AOT artifact and requested settings. Fresh isolated hosts/players/stores; owner/runtime/ticket identities remain local.",
+      "Six warm rounds, 128 sequential calls per method and a quiet phase lasting two seconds on each version. Baseline then candidate, one qualifying run each, no randomized repeated experiment.",
+      "Request samples cover client preparation through parsed and ID-checked replies. Method-specific invariants and durable snapshots are separate checks. Other readiness/save probes lie outside the fixed sample population.",
+      "All saved payloads are actual durable files joined to native checksums; raw payload bytes compare around reads, quiet, captures, stale guard and same-window Load. No field normalization.",
+      "Background save completion is observed during shared service, but dispatch also pumps the writer; direct native window tests separately check its owner hook.",
+      "Present counts and host-process CPU are reported separately; different numbers of rendered frames are part of this scheduling change. Quiet frame endpoint observations slightly enclose the CPU/wall sample."
+    ],
+    "hardware_scope": "One RTX 4070 Laptop GPU on Windows, at 640 by 480 pixels with a camera and logical UI, no mesh scene or representative game load.",
+    "timing_limit": "The candidate quiet sample uses more host CPU (203.125 ms versus 125 ms over about two seconds), with 110 versus 102 presents. No idle CPU reduction or causal explanation is qualified. No representative FPS, input/scanout, focused interaction, whole-engine speedup or the target of three seconds for 20 compiled gameplay edits.",
+    "retained_gameplay": {
+      "identity": "poima.test.managed-ui",
+      "type": "Poima.Tests.ManagedUiGame",
+      "services_version": 7,
+      "descriptor": {
+        "bytes": 3439,
+        "sha256": "f4ef1ff96bb2208568a27359a7e7e450374bfbaa7277a82eb5fdd6e044dd8ee3"
+      },
+      "native_library": {
+        "bytes": 1311232,
+        "sha256": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b"
+      },
+      "scope": "Unchanged retained legacy Native AOT UI fixture; no new SDK/Native AOT compilation or synthesized descriptor features."
+    }
+  },
+  "linux_headless": {
+    "passed": true,
+    "seconds": 475.6276631820074,
+    "fresh_cache": true,
+    "build_jobs": 2,
+    "ctest_jobs": 1,
+    "tests": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": "1.59707"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": "1.20861"
+      },
+      {
+        "name": "build_metadata_contract",
+        "seconds": "0.786746"
+      },
+      {
+        "name": "player_poll_native",
+        "seconds": "0.00986706"
+      },
+      {
+        "name": "player_owner_poll_disabled",
+        "seconds": "0.0147624"
+      },
+      {
+        "name": "world_session_native",
+        "seconds": "14.9925"
+      },
+      {
+        "name": "local_session_native",
+        "seconds": "4.16068"
+      },
+      {
+        "name": "shared_session_contract",
+        "seconds": "1.74892"
+      }
+    ],
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "configuration": "Debug -O0 -g0; offline; graphics, simulation, navigation, audio, UI, managed/native gameplay and desktop disabled",
+    "receipts": [
+      {
+        "path": "build/cooperative-0.0.156/linux-1/report.json",
+        "bytes": 65718,
+        "sha256": "151d99db58847d64ec0c4090dcbcc417ff397efe91d8d6b7881689635e29b535"
+      },
+      {
+        "path": "build/cooperative-0.0.156/linux-1/ctest-results.xml",
+        "bytes": 4539,
+        "sha256": "09718e8aab72f81d361e3fa2511cad732388653390e7b20b7fe5207fcebdddec"
+      }
+    ]
+  },
+  "retained_failure": {
+    "passed": false,
+    "attempt": "Original baseline155-1",
+    "inner_host_forced_cleanup": true,
+    "outer_job_forced_cleanup": false,
+    "cause": "Qualification driver accessed report.success on the deliberately null Stop acknowledgement report after successful completion of its timed/state/capture/restore checks. Actual terminal reports require player.inspect.",
+    "cleanup": "The driver exception preceded host.shutdown; its own timeout cleanup forcibly terminated that host. This run stays failed and is excluded from qualified comparison.",
+    "correction": "New reviewed driver retains Stop acceptance and all original predicates, then obtains an actual same-owner terminal inspection before checking its report. New isolated outputs2 for both versions; no engine change or reused old timings.",
+    "receipts": [
+      {
+        "path": "build/cooperative-player-0.0.156/baseline155-1/evidence.json",
+        "bytes": 7839124,
+        "sha256": "c2440b2481e0da40e29ee92d17aa829f94a1721817dbe962a886ecc6baaec0cb"
+      },
+      {
+        "path": "build/cooperative-player-0.0.156/baseline155-1/result.json",
+        "bytes": 814,
+        "sha256": "ab2b8440f1a15152e8eff614fabe7bd4273c6be12a744dd3ba2072d3c071fb2d"
+      },
+      {
+        "path": "build/cooperative-player-0.0.156/baseline155-1/job/owner.json",
+        "bytes": 1971,
+        "sha256": "6c490833923ce324a3e2255486a61963f22e7e00f72452ea5b0da65bfb01561e"
+      }
+    ]
+  },
+  "prelaunch_corrections": [
+    "Corrected unchanged Job trampoline argument position before native execution.",
+    "Added required active-UI save guards, explicit inactive facts, full persisted same-window Load comparison, exact even median and narrow temporary-file disappearance handling before native execution.",
+    "Fixed world/transaction seed identities before the first original native run to match authored input bytes."
+  ],
+  "limitations": [
+    "Quiet CPU increased in this single pair; this does not qualify an idle-power improvement or a busy-spin diagnosis.",
+    "Old foreground-dependent GPU, audio and physical-input test groups were explicitly unexecuted in the cooperative-only selection. The previous 0.0.152 foreground setup was not retried.",
+    "Retained request/result text and decoded objects are not an independent byte-exact wire transcript.",
+    "Actual direct SDL deferral cases all occurred on their first bounded attempt; scheduler behavior on other OS/hardware remains unqualified.",
+    "No full Alpha gate, broad gameplay ABI, new exporter or production graphics qualification."
+  ]
+}

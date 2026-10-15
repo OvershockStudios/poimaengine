@@ -57,9 +57,16 @@ PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,b
 }
 PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
+    return poll_impl(false);
+}
+bool PlayerWindow::poll_impl(bool) {
     impl_->check_thread();impl_->session.owner_poll();if(impl_->done)return false;
     impl_->observe();
     impl_->done=true;impl_->result.stop_reason=impl_->stopping ? "requested_stop" : "unavailable";return false;
+}
+PlayerPollResult PlayerWindow::poll_cooperative() {
+    impl_->check_thread();const bool attempted=!impl_->done;const bool active=poll_impl(true);
+    return {active,attempted,active ? 0u:100u};
 }
 void PlayerWindow::pause(bool value) {
     impl_->check_thread();if(impl_->done)throw std::runtime_error("Player window is finished.");impl_->is_paused=value;

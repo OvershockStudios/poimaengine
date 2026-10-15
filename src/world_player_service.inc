@@ -275,6 +275,13 @@
         if(!player_active())return false;
         player_owner_->window->poll();reconcile_player();return player_active();
     }
+    PlayerPollResult poll_player_cooperative() {
+        pump_gameplay_save_writer();
+        if(!player_active())return {};
+        auto result=player_owner_->window->poll_cooperative();reconcile_player();
+        result.active=player_active();if(!result.active)result.wait_ms=100;
+        return result;
+    }
     void stop_player() {
         if(!player_active())return;
         player_owner_->window->request_stop();player_owner_->window->poll();reconcile_player();

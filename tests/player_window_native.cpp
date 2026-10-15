@@ -42,7 +42,17 @@ public:
     std::optional<SceneLens> viewmodel_lens;
     std::optional<double> authored_fov;
     bool animate_lenses=false;
-    void owner_poll() noexcept override {++owner_polls;}
+    // One-shot maintenance changes exercise real PlayerWindow routing only;
+    // they do not stand in for a Runtime, save writer or compiled callback.
+    bool maintenance_tick=false,maintenance_replace=false;
+    std::string maintenance_session;
+    void owner_poll() noexcept override {
+        ++owner_polls;
+        if(maintenance_tick) {maintenance_tick=false;++current_tick;}
+        if(maintenance_replace) {
+            maintenance_replace=false;session.swap(maintenance_session);current_tick=2;
+        }
+    }
     std::string identity() const override {return session;}
     std::uint64_t tick() const override {return current_tick;}
     bool controller_valid(const std::string& id) const override {return id=="controller";}
@@ -434,10 +444,144 @@ void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
         // this is neither an audible listening test nor an offline DSP test.
     }
 }
+struct CooperativeEvidence {
+    unsigned lease_attempts=0,tick_attempts=0,replacement_attempts=0;
+};
+CooperativeEvidence cooperative_graphics(int gpu,const std::filesystem::path& output) {
+    CooperativeEvidence evidence;
+    auto launch=options();launch.render.gpu=gpu;launch.player_generation=51;
+    {
+        Owner owner;PlayerWindow window(launch,owner,true);
+        // Real SDL time and the production deadline decide whether to defer.
+        // No sleeps, injected focus/events or parallel scheduler establish it.
+        auto full=[&] {
+            window.pause(true);
+            const auto maintenance=owner.owner_polls;
+            const auto result=window.poll_cooperative();
+            check_player(result.active && result.frame_polled && window.ready() && window.paused(),window,
+                "Cooperative paused full poll failed");
+            check(owner.owner_polls==maintenance+1 && owner.advances==0 && result.wait_ms<=26,
+                "Cooperative full poll duplicated maintenance, advanced or returned excessive pacing");
+            return result;
+        };
+        auto pending_full=[&] {
+            for(unsigned attempt=0;attempt<32;++attempt)if(full().wait_ms>0)return;
+            check(false,"No pending real idle deadline observed in 32 full polls");
+        };
+        full();
+        bool deferred=false;
+        for(unsigned attempt=1;attempt<=32 && !deferred;++attempt) {
+            full();
+            auto stale=window.capture_snapshot();
+            const auto snapshots=owner.snapshots,lenses=owner.lens_samples,maintenance=owner.owner_polls;
+            const auto tick=owner.current_tick;const auto before=window.report();
+            const auto result=window.poll_cooperative();
+            check_player(result.active,window,"Cooperative lease observation terminated");
+            check(owner.owner_polls==maintenance+1,"Cooperative poll omitted or duplicated owner maintenance");
+            if(result.frame_polled)continue;
+            deferred=true;evidence.lease_attempts=attempt;
+            const auto after=window.report();
+            check(window.ready() && owner.snapshots==snapshots && owner.lens_samples==lenses &&
+                  owner.current_tick==tick && owner.advances==0 && after.final_session==before.final_session &&
+                  after.final_tick==before.final_tick && after.render.frames_presented==before.render.frames_presented &&
+                  after.materials.observed==before.materials.observed && after.materials.submitted==before.materials.submitted &&
+                  after.materials.presented==before.materials.presented && result.wait_ms<=26,
+                  "Deferred unchanged-owner poll performed scene/Tick/frame work or changed receipts");
+            const auto denied=output/"cooperative-stale.bmp";
+            rejects([&]{window.capture(utf8(denied),stale);},"Deferred real poll retained a stale capture lease");
+            check(!std::filesystem::exists(denied),"Deferred stale lease published an artifact");
+        }
+        check(deferred,"No genuine deferred lease poll observed in 32 attempts");
+        auto frozen=window.capture_snapshot();const auto snapshots=owner.snapshots;
+        const auto capture=window.capture(utf8(output/"cooperative-current.bmp"),frozen);
+        check(capture.success && capture.hardware && capture.capture_written && capture.validation_errors==0 &&
+              capture.diagnostics.scene_presented && capture.diagnostics.scene_submitted &&
+              *capture.diagnostics.scene_presented==*capture.diagnostics.scene_submitted &&
+              same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(frozen.snapshot())) &&
+              owner.snapshots==snapshots && owner.advances==0,
+              "Atomic cooperative capture resampled/advanced or presented another scene");
+        const auto image=bytes(output/"cooperative-current.bmp");
+        check(image.size()>54 && image[0]=='B' && image[1]=='M',"Cooperative capture is not a BMP");
+
+        // Public pause and synchronize must bypass any cached idle deadline.
+        pending_full();window.pause(true);
+        auto maintenance=owner.owner_polls;auto result=window.poll_cooperative();
+        check_player(result.active && result.frame_polled && window.ready(),window,"Pause did not reset cooperative admission");
+        check(owner.owner_polls==maintenance+1,"Pause reset poll duplicated maintenance");
+        pending_full();window.synchronize();maintenance=owner.owner_polls;result=window.poll_cooperative();
+        check_player(result.active && result.frame_polled && window.ready(),window,"Synchronize did not reset cooperative admission");
+        check(owner.owner_polls==maintenance+1 && owner.advances==0,"Synchronize reset poll duplicated maintenance or advanced");
+
+        for(const bool replacement:{false,true}) {
+            bool observed=false;
+            for(unsigned attempt=1;attempt<=32 && !observed;++attempt) {
+                full();
+                const auto tick=owner.current_tick;const auto before=window.report();
+                if(replacement) {
+                    owner.maintenance_session="maintenance-"+std::to_string(attempt);
+                    owner.maintenance_replace=true;
+                }else owner.maintenance_tick=true;
+                maintenance=owner.owner_polls;result=window.poll_cooperative();
+                check_player(result.active,window,"Cooperative owner-maintenance observation terminated");
+                check(owner.owner_polls==maintenance+1 && owner.advances==0 &&
+                      !owner.maintenance_tick && !owner.maintenance_replace,
+                      "Maintenance change was omitted, duplicated or treated as gameplay");
+                const auto after=window.report();
+                check(after.final_tick==owner.current_tick && after.final_session==owner.session &&
+                      (replacement ? after.runtime_replacements==before.runtime_replacements+1 : owner.current_tick==tick+1),
+                      "Maintenance failed to publish the actual owner boundary");
+                if(result.frame_polled)continue;
+                observed=true;
+                (replacement ? evidence.replacement_attempts : evidence.tick_attempts)=attempt;
+                check(result.wait_ms==0 && window.paused() && !window.ready() &&
+                      after.render.frames_presented==before.render.frames_presented &&
+                      after.materials.submitted==before.materials.submitted && after.materials.presented==before.materials.presented,
+                      "Deferred maintenance forged presentation or retained its deadline/readiness");
+                maintenance=owner.owner_polls;result=window.poll_cooperative();
+                check_player(result.active && result.frame_polled && window.ready(),window,
+                    "Changed owner was not eligible for the next full poll");
+                check(owner.owner_polls==maintenance+1 && owner.advances==0,"Changed-owner redraw duplicated maintenance or advanced");
+            }
+            check(observed,"No genuine deferred owner change observed in 32 attempts");
+        }
+        pending_full();
+        maintenance=owner.owner_polls;const auto tick=owner.current_tick;
+        window.request_stop();result=window.poll_cooperative();
+        check(!result.active && result.frame_polled && result.wait_ms==100 && window.finished() &&
+              owner.owner_polls==maintenance+1 && owner.current_tick==tick && owner.advances==0 &&
+              window.report().stop_reason=="requested_stop" && window.report().render.success,
+              "Stop behind a real deadline failed to terminate naturally without gameplay");
+        maintenance=owner.owner_polls;result=window.poll_cooperative();
+        check(!result.active && !result.frame_polled && result.wait_ms==100 && owner.owner_polls==maintenance+1,
+              "Terminal cooperative poll resumed or omitted maintenance");
+    }
+    {
+        Owner owner;auto replay=launch;replay.replay=true;
+        PlayerSegment segment;segment.ticks=3;segment.input.entity="controller";replay.sequence.push_back(segment);
+        PlayerWindow window(replay,owner,true);
+        for(unsigned i=0;i<6;++i) {
+            if(i==3)window.pause(false);
+            const auto maintenance=owner.owner_polls,advances=owner.advances;
+            const auto frames=window.report().render.frames_presented;
+            const auto result=window.poll_cooperative();
+            check_player(result.active && result.frame_polled && result.wait_ms==0 && window.ready(),window,
+                "Drawable cooperative replay deferred or failed to present");
+            check(owner.owner_polls==maintenance+1 && owner.advances==advances+(i>=3 ? 1u : 0u) &&
+                  window.report().render.frames_presented==frames+1,
+                  "Cooperative replay omitted a drawable frame or changed its one-Tick cadence");
+        }
+        const auto maintenance=owner.owner_polls;const auto result=window.poll_cooperative();
+        check(!result.active && result.frame_polled && result.wait_ms==100 && window.finished() &&
+              owner.owner_polls==maintenance+1 && owner.advances==3 && owner.current_tick==10 &&
+              window.report().stop_reason=="replay_complete" && window.report().render.success,
+              "Cooperative replay did not stop naturally at exactly three Ticks");
+    }
+    return evidence;
+}
 }
 int main(int argc,char** argv) {
     try {
-        int gpu=-1;std::filesystem::path output;bool check_audio=false;
+        int gpu=-1;std::filesystem::path output;bool check_audio=false,cooperative_only=false;
         for(int i=1;i<argc;++i) {
             const std::string_view key=argv[i];check(i+1<argc,"Missing argument value");
             const std::string_view value=argv[++i];
@@ -449,20 +593,31 @@ int main(int argc,char** argv) {
                 check(output.empty(),"Repeated output argument");output=std::filesystem::u8path(std::string(value));
             }else if(key=="--audio") {
                 check(value=="0" || value=="1","Audio check expects 0 or 1");check_audio=value=="1";
+            }else if(key=="--cooperative-only") {
+                check(value=="0" || value=="1","Cooperative-only check expects 0 or 1");cooperative_only=value=="1";
             }else check(false,"Unknown argument");
         }
         check((gpu<0)==output.empty(),"GPU check requires both --gpu and new --output");
         check(!check_audio || gpu>=0,"Audio check requires an actual graphics owner");
+        check(!cooperative_only || (gpu>=0 && !check_audio),"Cooperative-only requires a GPU and excludes the separate audio group");
         basic();preferences_without_window();lens_admission_without_window();
+        CooperativeEvidence cooperative;
         if(gpu>=0) {
             check(!std::filesystem::exists(output),"Output directory must be new");
             check(std::filesystem::create_directories(output),"Cannot create owned output directory");
-            graphics(gpu,output,check_audio);
-            lens_capture_graphics(gpu,output);
+            if(!cooperative_only) {
+                graphics(gpu,output,check_audio);
+                lens_capture_graphics(gpu,output);
+            }
+            cooperative=cooperative_graphics(gpu,output);
         }
-        std::cout<<"{\"passed\":true,\"basic_groups\":5,\"graphics_groups\":"<<(gpu>=0 ? 4 : 0)
-                 <<",\"lens_admission_groups\":1,\"lens_capture_token_groups\":"<<(gpu>=0 ? 1 : 0)
-                 <<",\"lens_catchup_groups\":"<<(gpu>=0 ? 1 : 0)
+        std::cout<<"{\"passed\":true,\"basic_groups\":5,\"graphics_groups\":"<<(gpu>=0 && !cooperative_only ? 4 : 0)
+                 <<",\"lens_admission_groups\":1,\"lens_capture_token_groups\":"<<(gpu>=0 && !cooperative_only ? 1 : 0)
+                 <<",\"lens_catchup_groups\":"<<(gpu>=0 && !cooperative_only ? 1 : 0)
+                 <<",\"cooperative_groups\":"<<(gpu>=0 ? 3 : 0)
+                 <<",\"cooperative_lease_attempts\":"<<cooperative.lease_attempts
+                 <<",\"cooperative_tick_attempts\":"<<cooperative.tick_attempts
+                 <<",\"cooperative_replacement_attempts\":"<<cooperative.replacement_attempts
                  <<",\"sdl_gain_groups\":"<<(check_audio ? 1 : 0)
                  <<",\"audible_qualification\":false,\"physical_input\":false,\"physics_oracle\":false}\n";
         return 0;

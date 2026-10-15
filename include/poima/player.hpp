@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/core.hpp"
+#include "poima/player_poll.hpp"
 #include "poima/runtime.hpp"
 #include "poima/gamepad.hpp"
 #include "poima/player_diagnostics.hpp"
@@ -196,12 +197,17 @@ public:
 class PlayerWindow {
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    bool poll_impl(bool cooperative);
 public:
     PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused=false);
     ~PlayerWindow();
     PlayerWindow(const PlayerWindow&)=delete;
     PlayerWindow& operator=(const PlayerWindow&)=delete;
     bool poll(); // False once terminal; terminal report survives until destruction.
+    // Explicit shared-host path: defer ONLY idle pacing, never device/storage
+    // work. Skipped frames still invalidate captures and run owner maintenance.
+    // Wait on transport readiness for wait_ms; do not busy-poll this result.
+    PlayerPollResult poll_cooperative();
     void pause(bool paused);
     void request_stop();
     // Reconcile owner replacement/edits before another host command. No tick is

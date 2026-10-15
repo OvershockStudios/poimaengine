@@ -73,6 +73,7 @@ void reject_foreign_calls(PlayerWindow& window,Owner& owner) {
             catch(...) {incorrect_exception=true;}
         };
         expect([&] {(void)window.poll();});
+        expect([&] {(void)window.poll_cooperative();});
         expect([&] {window.pause(true);});
         expect([&] {window.request_stop();});
         expect([&] {window.synchronize();});
@@ -83,7 +84,7 @@ void reject_foreign_calls(PlayerWindow& window,Owner& owner) {
         expect([&] {(void)window.diagnostics();});
     });
     foreign.join();
-    check(rejected==9 && !incorrect_exception,"Foreign player calls were not rejected at the owner boundary.");
+    check(rejected==10 && !incorrect_exception,"Foreign player calls were not rejected at the owner boundary.");
     check(owner.polls==before,"Foreign poll invoked maintenance before thread rejection.");
     owner.unchanged();
 }
@@ -144,6 +145,27 @@ void stopped_replay() {
     check(owner.polls==2,"Stopped destruction invoked maintenance.");
 }
 
+
+void cooperative_disabled() {
+    for(bool stopped:{false,true}) {
+        Owner owner;PlayerOptions options;options.replay=stopped;
+        PlayerWindow window(options,owner,true);
+        reject_foreign_calls(window,owner);
+        if(stopped)window.request_stop();
+        const auto first=window.poll_cooperative();
+        check(!first.active && first.frame_polled && first.wait_ms==100 &&
+              window.finished() && owner.polls==1,
+              "Cooperative disabled poll lost terminal/attempt/maintenance facts.");
+        report_unchanged(window.report(),owner,stopped ? "requested_stop" : "unavailable");
+        for(unsigned index=0;index<4;++index) {
+            const auto terminal=window.poll_cooperative();
+            check(!terminal.active && !terminal.frame_polled && terminal.wait_ms==100 &&
+                  owner.polls==index+2,"Cooperative terminal poll resumed or skipped maintenance.");
+        }
+        reject_foreign_calls(window,owner);owner.unchanged();
+    }
+}
+
 void blocking_disabled() {
     Owner owner;
     const auto report=run_player(PlayerOptions{},owner);
@@ -154,8 +176,8 @@ void blocking_disabled() {
 
 int main() {
     try {
-        paused_and_terminal();stopped_replay();blocking_disabled();
-        std::cout<<"Disabled player owner polling: three groups passed (paused/terminal, stopped replay, blocking wrapper); no Tick, Control or device work.\n";
+        paused_and_terminal();stopped_replay();blocking_disabled();cooperative_disabled();
+        std::cout<<"Disabled player owner polling: four groups passed (paused/terminal, stopped replay, blocking wrapper, cooperative terminal); no Tick, Control or device work.\n";
     }catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n';return 1;
     }

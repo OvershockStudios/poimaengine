@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include "poima/profiler.hpp"
+#include "poima/player_poll.hpp"
 #include "poima/runtime.hpp"
 #include <memory>
 #include <string>
@@ -86,6 +87,8 @@ public:
     // Shared-headless owner pump only: one frame per poll, no worker calls or
     // borrowed Runtime lifetime. The driver pumps after its complete RPC batch.
     bool poll_player();
+    // Shared CLI owner only; wait_ms is interruptible by transport readiness.
+    PlayerPollResult poll_player_cooperative();
     bool player_active() const;
     // Owner terminal report/teardown before host shutdown; never disconnect alone.
     void stop_player();

@@ -3608,6 +3608,11 @@ bool WorldSession::poll_player() {
     profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);
     return impl_->world.poll_player();
 }
+PlayerPollResult WorldSession::poll_player_cooperative() {
+    require(!closed(),"World session is closed.",-32001);
+    profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);
+    return impl_->world.poll_player_cooperative();
+}
 bool WorldSession::player_active() const {
     return !closed() && impl_->world.player_active();
 }

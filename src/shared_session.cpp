@@ -34,8 +34,13 @@ int run_shared_session(WorldSession& session,LocalSessionServer& host,const std:
         // Requests and graphics share one owner thread. Finish each accepted
         // batch before advancing one player frame; never recursively dispatch
         // requests from inside a simulation tick or a graphics operation.
-        if(!stopping && !session.closed())session.poll_player();
-        if(!stopping && !session.closed())host.wait(session.player_active() ? 1 : 100);
+        if(!stopping && !session.closed()) {
+            const auto player=session.poll_player_cooperative();
+            // Transport readiness interrupts the remaining idle-frame delay.
+            // A quiet inactive window still receives its finite pacing wait;
+            // active/replay polling retains the existing1ms host yield.
+            host.wait(player.active ? std::max(1u,player.wait_ms):100u);
+        }
     }
     if(!session.closed()) {
         // A signal closes presentation before releasing its runtime/session.

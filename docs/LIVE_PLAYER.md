@@ -15,6 +15,55 @@ For verified exported content and automatic native gameplay loading, use the
 [exported game service](GAME_SERVICE.md). This guide supplies the shared player
 operations used by both authored-world and packaged-game hosts.
 
+## Shared idle scheduling
+
+Starting with 0.0.156, shared CLI hosts defer the next ordinary player poll when
+its previous frame requested idle pacing. Incoming local requests wake the host
+without waiting for that voluntary delay. Reads do not restart the deadline.
+A quiet paused or inactive window still waits between ordinary polls instead of
+spinning in response to a shorter host timer. Active play and replay retain the
+existing short transport yield.
+
+A deferred poll invalidates prepared capture leases and runs owner maintenance.
+It does not simulate a tick or create a frame receipt. If maintenance changes
+the owner session or tick, synchronization publishes that boundary and permits
+a fresh ordinary poll. Pause, stop and synchronized mutations clear the pending
+idle deadline. Window events are processed by the next ordinary poll; a request
+wakeup alone is not a new input-focus observation or presented frame.
+
+Native C++ hosts can use `PlayerWindow::poll_cooperative()` or the corresponding
+`WorldSession` method. The result's `active` means a live player owner,
+`frame_polled` means a full poll was attempted, and `wait_ms` is the remaining
+voluntary interval. Wait on real transport readiness for that interval rather
+than repeatedly polling it. An attempted poll can fail or produce no drawable
+frame; use existing reports and capture metadata to establish presentation.
+The shared CLI driver applies this policy automatically. Standalone players
+and desktop viewports retain their separate polling paths.
+
+This removes voluntary idle sleeps from the shared request owner. Graphics
+acquisition/presentation, device setup, audio and storage can still block it.
+Transport idle time is outside the per-frame `pacing_wait_ns` measurement;
+a smaller frame sample does not prove faster rendering. Measure complete
+request/reply latency and rendered workload separately.
+
+One matched Windows check used the same paused 640×480 camera/UI fixture,
+retained compiled gameplay and RTX 4070 Laptop GPU on each version. After six
+warm rounds, each method received 128 sequential requests:
+
+| Method | 0.0.155 median | 0.0.156 median |
+| --- | ---: | ---: |
+| `world.inspect` | 15.50 ms | 0.20 ms |
+| `player.inspect` | 16.11 ms | 0.68 ms |
+| `runtime.gameplay.inspect` | 15.14 ms | 0.28 ms |
+
+Complete saved payloads remain byte-identical across reads, quiet observation,
+captures and stale-request rejection; same-window Load restores the actual
+saved payload. The read phase presented 385 versus 36 frames. In the separate
+two-second quiet samples, host CPU increased from 125 to 203.125 ms, with 102
+versus 110 presents. This single ordered pair establishes neither lower idle
+CPU use nor representative game performance. It also does not measure the
+20-edit compiled-gameplay target. [Samples, checks and limits](evidence/m2-cooperative-player-poll.json).
+
 ## Prerequisites and discovery
 
 Use a Windows native build with `POIMA_ENABLE_SIMULATION=ON` and
@@ -421,6 +470,26 @@ automatic frame pump. Public `advance_tick()` observes the same player ownership
 guards as RPC stepping. These C++ interfaces do not establish a binary plugin ABI.
 
 ## Verification and limits
+
+The [0.0.156 record](evidence/m2-cooperative-player-poll.json) covers seven
+Windows native executions, three real SDL/Vulkan cooperative-window groups,
+the matched shared-host comparison above and eight Linux headless CTest entries.
+Run the portable deadline and rendering-disabled owner checks with:
+
+```bash
+cmake --preset headless
+cmake --build --preset headless --target poima-player-poll-test poima-player-owner-poll-disabled-test
+ctest --preset headless -R '^(player_poll_native|player_owner_poll_disabled)$' --output-on-failure
+```
+
+In a rendering/simulation build, run `poima-player-window-test` with
+`--gpu INDEX --output NEW_DIRECTORY --cooperative-only 1` for the bounded
+cooperative cases. These exercise actual window deferral, capture leases,
+maintenance-driven owner changes, pause/synchronization, stop and replay.
+They use a counted routing owner rather than a physics/save implementation.
+The selection omits older foreground-dependent GPU and audio groups; it does
+not acquire focus or qualify physical input. The ordinary GPU invocation
+retains those older groups alongside the cooperative cases.
 
 The [0.0.77 qualification record](evidence/m2-live-player.json) includes the
 observation recipe above, actual shared-player captures on both laptop GPUs and

@@ -42,12 +42,16 @@ and completion separately. Clients can pause, inspect guarded runtime state,
 edit a paused interactive game and capture its existing graphics context.
 See the [complete task and lifecycle contract](LIVE_PLAYER.md).
 
-The host finishes each accepted request batch before one player frame. Every
-request and frame runs on the same owner thread, without recursive dispatch
-inside simulation. Idle transport waits remain 100 ms; an attached player uses
-a short transport wait between frames. GPU/audio/storage work can still stall
-all clients. Stop the player before stopping/replacing its runtime or shutting
-down the host. Disconnecting a client leaves presentation running.
+The host finishes each accepted request batch before considering at most one
+player frame. Every request and frame runs on the same owner thread, without
+recursive dispatch inside simulation. With no player, the transport waits up to
+100 ms. A paused or inactive player uses a paced idle-frame deadline that new
+requests can interrupt; servicing a read does not postpone that deadline.
+Owner maintenance still runs when presentation is deferred. Active play and
+replay retain their short transport yield. [Idle scheduling](LIVE_PLAYER.md#shared-idle-scheduling)
+describes the boundary and diagnostic limits. GPU/audio/storage work can still
+stall all clients. Stop the player before stopping/replacing its runtime or
+shutting down the host. Disconnecting a client leaves presentation running.
 
 ## Exported game sessions
 

@@ -3447,6 +3447,9 @@ struct PlayerWindow::Impl {
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
+    PlayerIdlePacing idle_pacing;
+    bool cooperative_poll=false;
+    std::uint32_t cooperative_delay_ms=0;
     PlayerLensHistory lens_history;
     std::uint64_t snapshot_token=0;
     const std::shared_ptr<const void> capture_owner=std::make_shared<const int>(0);
@@ -3763,6 +3766,13 @@ struct PlayerWindow::Impl {
         }
         result.final_tick=session.tick();
     }
+    void pace_idle(std::uint32_t milliseconds,bool measured=true) {
+        if(cooperative_poll)cooperative_delay_ms+=milliseconds;
+        else if(measured) {
+            PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);
+            SDL_Delay(milliseconds);
+        }else SDL_Delay(milliseconds);
+    }
     void frame() {
         std::uint64_t events_started=context.performance_cpu?fp::Recorder::now_ns():0;
         apply_preferences();
@@ -3853,7 +3863,7 @@ struct PlayerWindow::Impl {
         // Occluded FIFO swapchains can return immediately. Keep an idle
         // editor/player from spinning at thousands of frames per second.
         if(!options.replay && !(focused && active)) {
-            PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(16);
+            pace_idle(16);
         }
         int width=0,height=0;
         require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
@@ -3861,12 +3871,12 @@ struct PlayerWindow::Impl {
         const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
         const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
         last_drawable=drawable;last_drawable_size=std::array<std::int32_t,2>{width,height};
-        if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);reset_lenses("not_drawable");PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(10);return;}
+        if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);reset_lenses("not_drawable");pace_idle(10);return;}
         require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
         if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
             intervention(fp::Flag::resize);auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
             const auto rebuilt=[&] {PerformanceWallScope resize_wall(diagnostic_sample?&diagnostic_sample->resize_ns:nullptr);return context.rebuild(resized);}();
-            if(!rebuilt) { clock.advance(0,false);reset_lenses("not_drawable");SDL_Delay(10);return; }
+            if(!rebuilt) { clock.advance(0,false);reset_lenses("not_drawable");pace_idle(10,false);return; }
             ++result.swapchain_rebuilds;reset_lenses("resized");
         }
         {
@@ -3959,8 +3969,11 @@ PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,b
     impl_=std::make_unique<Impl>(options,session,initially_paused);
 }
 PlayerWindow::~PlayerWindow()=default;
-bool PlayerWindow::poll() {
+bool PlayerWindow::poll() { return poll_impl(false); }
+bool PlayerWindow::poll_impl(bool cooperative) {
     auto& state=*impl_;state.check_thread();
+    state.cooperative_poll=cooperative;state.cooperative_delay_ms=0;
+    if(!cooperative)state.idle_pacing.reset();
     if(state.done) {state.session.owner_poll();return false;}
     state.invalidate_capture();
     profiling::SourceScope source(profiling::Source::player);
@@ -4010,17 +4023,49 @@ bool PlayerWindow::poll() {
         if(token)state.performance_interventions=0;
     }
     state.context.performance=nullptr;state.context.performance_token={};state.context.performance_cpu=nullptr;
+    if(cooperative && !state.done)state.idle_pacing.defer(SDL_GetTicksNS(),state.cooperative_delay_ms);
+    else state.idle_pacing.reset();
     return !state.done;
 }
+PlayerPollResult PlayerWindow::poll_cooperative() {
+    auto& state=*impl_;state.check_thread();
+    profiling::SourceScope source(profiling::Source::player);
+    // Only cached idle pacing can defer a poll. Startup, termination, replay and
+    // authoritative owner changes immediately take the existing full path.
+    bool defer=false;
+    try {
+        defer=state.initialized && !state.done && !state.quit && !state.options.replay &&
+            state.idle_pacing.remaining_ms(SDL_GetTicksNS()) &&
+            state.session.identity()==state.result.final_session && state.session.tick()==state.result.final_tick;
+    }catch(const std::exception& error) {
+        state.invalidate_capture();state.session.owner_poll();state.intervention(fp::Flag::error);state.fail(error);
+        state.idle_pacing.reset();return {false,false,100};
+    }
+    if(defer) {
+        state.invalidate_capture();state.session.owner_poll();
+        try {
+            // A background save can replace the runtime in maintenance. Publish
+            // that boundary now and request a fresh frame on the next pump;
+            // never execute the accepted save/load or gameplay operation twice.
+            if(state.session.identity()!=state.result.final_session || state.session.tick()!=state.result.final_tick) {
+                state.synchronize();state.refresh_report();state.idle_pacing.reset();
+            }
+        }catch(const std::exception& error) {state.intervention(fp::Flag::error);state.fail(error);state.idle_pacing.reset();}
+        return {!state.done,false,state.done ? 100u:state.idle_pacing.remaining_ms(SDL_GetTicksNS())};
+    }
+    const bool attempted=!state.done;
+    const bool active=poll_impl(true);
+    return {active,attempted,active ? state.idle_pacing.remaining_ms(SDL_GetTicksNS()):100u};
+}
 void PlayerWindow::pause(bool paused) {
-    auto& state=*impl_;state.check_thread();require(!state.done,"Player window is finished.");state.pause(paused);state.refresh_report();
+    auto& state=*impl_;state.check_thread();require(!state.done,"Player window is finished.");state.idle_pacing.reset();state.pause(paused);state.refresh_report();
 }
 void PlayerWindow::request_stop() {
-    auto& state=*impl_;state.check_thread();if(state.done || state.quit)return;
+    auto& state=*impl_;state.check_thread();state.idle_pacing.reset();if(state.done || state.quit)return;
     state.quit=true;state.result.stop_reason="requested_stop";
 }
 void PlayerWindow::synchronize() {
-    auto& state=*impl_;state.check_thread();if(state.done)return;
+    auto& state=*impl_;state.check_thread();state.idle_pacing.reset();if(state.done)return;
     try {state.synchronize();if(state.quit)state.finish();else state.refresh_report();}
     catch(const std::exception& error) {state.fail(error);}
 }
