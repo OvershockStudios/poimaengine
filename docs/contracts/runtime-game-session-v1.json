@@ -1,0 +1,1759 @@
+{
+  "format": "poima.runtime-game-session-requests.v1",
+  "id": "poima.runtime-game-session",
+  "version": 1,
+  "scope": "Complete selected request schemas and explicit normative context only; no behavioral, response, ABI, platform or release-qualification inference.",
+  "methods": {
+    "runtime.component.get": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "pattern": "^(?!0{32}$)[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "id",
+        "type"
+      ],
+      "type": "object"
+    },
+    "runtime.component.query": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "limit": {
+          "default": 64,
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "pattern": "^(?!0{32}$)[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "type"
+      ],
+      "type": "object"
+    },
+    "runtime.components": {
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id"
+      ],
+      "type": "object"
+    },
+    "runtime.entity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "id"
+      ],
+      "type": "object"
+    },
+    "runtime.gameplay.inspect": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 128,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "include_schema": {
+          "default": false,
+          "type": "boolean"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id"
+      ],
+      "type": "object"
+    },
+    "runtime.hit_test": {
+      "additionalProperties": false,
+      "description": "Read-only closest committed-pose collider/HitRegion query. Enabled region owners suppress only their own physics proxy; ignored owners suppress their regions, ignored attachments suppress that region. Exact ties prefer world geometry then region owner/name/attachment. Hit includes nullable region_entity and region; entity is damage owner for regions. Exact session/tick required, no tick advance.",
+      "properties": {
+        "direction": {
+          "items": {
+            "maximum": 1000000.0,
+            "minimum": -1000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "distance": {
+          "maximum": 10000,
+          "minimum": 0.001,
+          "type": "number"
+        },
+        "ignore": {
+          "items": {
+            "pattern": "^[0-9a-f]{32}$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "origin": {
+          "items": {
+            "maximum": 1000000.0,
+            "minimum": -1000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "origin",
+        "direction",
+        "distance"
+      ],
+      "type": "object"
+    },
+    "runtime.inspect": {
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id"
+      ],
+      "type": "object"
+    },
+    "runtime.observe": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "query": {
+                "required": [
+                  "after"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "required": [
+              "structure_revision",
+              "component_revision"
+            ]
+          }
+        }
+      ],
+      "anyOf": [
+        {
+          "properties": {
+            "ids": {
+              "minItems": 1
+            }
+          },
+          "required": [
+            "ids"
+          ]
+        },
+        {
+          "required": [
+            "query"
+          ]
+        }
+      ],
+      "properties": {
+        "component_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "components": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "fields": {
+                "items": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "type": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "control_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "entity_fields": {
+          "default": [
+            "world_matrix",
+            "layout",
+            "velocity",
+            "has_body",
+            "is_character",
+            "ground",
+            "yaw",
+            "pitch"
+          ],
+          "items": {
+            "enum": [
+              "world_matrix",
+              "layout",
+              "local_transform",
+              "animation",
+              "motion",
+              "kinematic_target",
+              "motion_remaining_ticks",
+              "velocity",
+              "has_body",
+              "is_character",
+              "ground",
+              "yaw",
+              "pitch"
+            ]
+          },
+          "maxItems": 13,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "gameplay_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ids": {
+          "items": {
+            "pattern": "^[0-9a-f]{32}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "include_schemas": {
+          "default": false,
+          "type": "boolean"
+        },
+        "query": {
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "pattern": "^[0-9a-f]{32}$",
+              "type": "string"
+            },
+            "limit": {
+              "default": 32,
+              "maximum": 64,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "type": {
+              "pattern": "^[0-9a-f]{32}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ui_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick"
+      ],
+      "type": "object"
+    },
+    "runtime.raycast": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "items": {
+            "maximum": 1000000.0,
+            "minimum": -1000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "distance": {
+          "maximum": 10000,
+          "minimum": 0.001,
+          "type": "number"
+        },
+        "ignore": {
+          "items": {
+            "pattern": "^[0-9a-f]{32}$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "origin": {
+          "items": {
+            "maximum": 1000000.0,
+            "minimum": -1000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "origin",
+        "direction",
+        "distance"
+      ],
+      "type": "object"
+    },
+    "runtime.save.result": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "epoch",
+        "sequence"
+      ],
+      "type": "object"
+    },
+    "runtime.save.status": {
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id"
+      ],
+      "type": "object"
+    },
+    "runtime.status": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "runtime.step": {
+      "additionalProperties": false,
+      "properties": {
+        "animations": {
+          "items": {
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "blend_ticks": {
+                    "default": 0,
+                    "maximum": 3600,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "clip": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "maximum": 255,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "entity": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "loop": {
+                    "type": "boolean"
+                  },
+                  "playing": {
+                    "type": "boolean"
+                  },
+                  "speed": {
+                    "maximum": 8,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "time": {
+                    "maximum": 1000000000.0,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "transition_mode": {
+                    "default": "crossfade",
+                    "enum": [
+                      "crossfade",
+                      "inertial"
+                    ]
+                  }
+                },
+                "required": [
+                  "entity",
+                  "clip",
+                  "time",
+                  "speed",
+                  "loop",
+                  "playing"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "blend_ticks": {
+                    "default": 0,
+                    "maximum": 3600,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "clip": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "maximum": 255,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "entity": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "layer": {
+                    "maximum": 4,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "loop": {
+                    "type": "boolean"
+                  },
+                  "playing": {
+                    "type": "boolean"
+                  },
+                  "speed": {
+                    "maximum": 8,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "time": {
+                    "maximum": 1000000000.0,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "transition_mode": {
+                    "default": "crossfade",
+                    "enum": [
+                      "crossfade",
+                      "inertial"
+                    ]
+                  },
+                  "weight": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "weight_blend_ticks": {
+                    "default": 0,
+                    "maximum": 3600,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "entity",
+                  "layer",
+                  "clip",
+                  "time",
+                  "speed",
+                  "loop",
+                  "playing",
+                  "weight"
+                ],
+                "type": "object"
+              }
+            ],
+            "properties": {
+              "blend_ticks": {
+                "default": 0,
+                "maximum": 3600,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "clip": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "maximum": 255,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                ]
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
+              "layer": {
+                "maximum": 4,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "loop": {
+                "type": "boolean"
+              },
+              "playing": {
+                "type": "boolean"
+              },
+              "speed": {
+                "maximum": 8,
+                "minimum": 0,
+                "type": "number"
+              },
+              "time": {
+                "maximum": 1000000000.0,
+                "minimum": 0,
+                "type": "number"
+              },
+              "transition_mode": {
+                "default": "crossfade",
+                "enum": [
+                  "crossfade",
+                  "inertial"
+                ]
+              },
+              "weight": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              "weight_blend_ticks": {
+                "default": 0,
+                "maximum": 3600,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "entity",
+              "clip",
+              "time",
+              "speed",
+              "loop",
+              "playing"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "camera_lenses": {
+          "items": {
+            "additionalProperties": false,
+            "anyOf": [
+              {
+                "required": [
+                  "world"
+                ]
+              },
+              {
+                "required": [
+                  "viewmodel"
+                ]
+              }
+            ],
+            "properties": {
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
+              "viewmodel": {
+                "additionalProperties": false,
+                "properties": {
+                  "far": {
+                    "maximum": 10000000.0,
+                    "type": "number"
+                  },
+                  "near": {
+                    "minimum": 0.001,
+                    "type": "number"
+                  },
+                  "vertical_fov": {
+                    "maximum": 150,
+                    "minimum": 5,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "vertical_fov",
+                  "near",
+                  "far"
+                ],
+                "type": "object"
+              },
+              "world": {
+                "additionalProperties": false,
+                "properties": {
+                  "far": {
+                    "maximum": 10000000.0,
+                    "type": "number"
+                  },
+                  "near": {
+                    "minimum": 0.001,
+                    "type": "number"
+                  },
+                  "vertical_fov": {
+                    "maximum": 150,
+                    "minimum": 5,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "vertical_fov",
+                  "near",
+                  "far"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "entity"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "character_stances": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "crouch": {
+                "type": "boolean"
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "entity",
+              "crouch"
+            ],
+            "type": "object"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "expected_structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ik": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "default": true,
+                "type": "boolean"
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
+              "pole": {
+                "items": {
+                  "maximum": 1000000.0,
+                  "minimum": -1000000.0,
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "slot": {
+                "maximum": 8,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "space": {
+                "default": "world",
+                "enum": [
+                  "world",
+                  "rig"
+                ]
+              },
+              "target": {
+                "items": {
+                  "maximum": 1000000.0,
+                  "minimum": -1000000.0,
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "weight": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "entity",
+              "slot",
+              "target",
+              "pole"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "inputs": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "actions": {
+                "description": "Names must be sorted and unique. Held state repeats through a tick batch; pressed/released apply on its first tick only.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "held": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+                      "type": "string"
+                    },
+                    "pressed": {
+                      "type": "boolean"
+                    },
+                    "released": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "held",
+                    "pressed",
+                    "released"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
+              "jump": {
+                "type": "boolean"
+              },
+              "look": {
+                "items": {
+                  "maximum": 180,
+                  "minimum": -180,
+                  "type": "number"
+                },
+                "maxItems": 2,
+                "minItems": 2,
+                "type": "array"
+              },
+              "move": {
+                "items": {
+                  "maximum": 1,
+                  "minimum": -1,
+                  "type": "number"
+                },
+                "maxItems": 2,
+                "minItems": 2,
+                "type": "array"
+              },
+              "use": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "entity"
+            ],
+            "type": "object"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "motions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "duration_ticks": {
+                "maximum": 36000,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
+              "position": {
+                "items": {
+                  "maximum": 1000000.0,
+                  "minimum": -1000000.0,
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "rotation": {
+                "items": {
+                  "maximum": 1,
+                  "minimum": -1,
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
+              }
+            },
+            "required": [
+              "entity",
+              "position",
+              "rotation",
+              "duration_ticks"
+            ],
+            "type": "object"
+          },
+          "maxItems": 128,
+          "type": "array"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "root_motion": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "default": true,
+                "type": "boolean"
+              },
+              "entity": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "entity"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "sounds": {
+          "items": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "emitter": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "gain": {
+                    "default": 1,
+                    "maximum": 4,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "op": {
+                    "const": "play"
+                  }
+                },
+                "required": [
+                  "op",
+                  "emitter"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "op": {
+                    "const": "stop"
+                  },
+                  "voice": {
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "op",
+                  "voice"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "ticks": {
+          "maximum": 600,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "request_id",
+        "expected_tick",
+        "ticks"
+      ],
+      "type": "object"
+    },
+    "runtime.ui.activate": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_control_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_gameplay_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_ui_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^(?!0{32}$)[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "request_id",
+        "expected_tick",
+        "expected_ui_revision",
+        "expected_control_sequence",
+        "expected_gameplay_revision",
+        "id"
+      ],
+      "type": "object"
+    },
+    "runtime.ui.inspect": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "pattern": "^(?!0{32}$)[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "limit": {
+          "default": 64,
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ui_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick"
+      ],
+      "type": "object"
+    },
+    "save.inspect": {
+      "additionalProperties": false,
+      "properties": {
+        "slot": {
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot"
+      ],
+      "type": "object"
+    },
+    "save.load": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_recovery": {
+          "default": false,
+          "type": "boolean"
+        },
+        "configuration_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_component_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_control_sequence": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_gameplay_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_material_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_session_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_structure_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_tick": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_ui_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gameplay": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "assembly": {
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "bridge": {
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "hostfxr": {
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": {
+                  "maxLength": 512,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "hostfxr",
+                "bridge",
+                "assembly",
+                "type"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "descriptor": {
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "expected_descriptor_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "descriptor"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new_session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "slot": {
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "type": "string"
+        },
+        "upgrade": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "path": {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "expected_sha256"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "request_id",
+        "configuration_generation",
+        "slot",
+        "expected_generation",
+        "revision",
+        "expected_session_id",
+        "expected_tick",
+        "expected_gameplay_revision",
+        "new_session_id"
+      ],
+      "type": "object"
+    },
+    "save.status": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "save.write": {
+      "additionalProperties": false,
+      "properties": {
+        "acknowledge_recovery": {
+          "default": false,
+          "type": "boolean"
+        },
+        "configuration_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_component_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_control_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_gameplay_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_material_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_structure_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_tick": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "expected_ui_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "session_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "slot": {
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "configuration_generation",
+        "slot",
+        "expected_generation",
+        "session_id",
+        "expected_tick",
+        "expected_gameplay_revision"
+      ],
+      "type": "object"
+    }
+  },
+  "profiles": {
+    "source_world": {
+      "context": {
+        "mode": "authoring",
+        "read_only": false,
+        "session_scope": {
+          "present": false
+        }
+      },
+      "reference_context": null
+    },
+    "source_shared_player": {
+      "context": {
+        "mode": "authoring",
+        "read_only": false,
+        "session_scope": {
+          "present": true,
+          "value": "shared_headless"
+        }
+      },
+      "reference_context": null
+    },
+    "readonly_game": {
+      "context": {
+        "mode": "read_only_runtime",
+        "read_only": true,
+        "session_scope": {
+          "present": true,
+          "value": "shared_headless"
+        }
+      },
+      "reference_context": null
+    }
+  },
+  "normative_context": [
+    {
+      "path": [
+        "custom_components",
+        "max_fields"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 32
+    },
+    {
+      "path": [
+        "custom_components",
+        "max_instances"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 32768
+    },
+    {
+      "path": [
+        "custom_components",
+        "max_payload_bytes"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 16777216
+    },
+    {
+      "path": [
+        "custom_components",
+        "max_types"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 64
+    },
+    {
+      "path": [
+        "custom_components",
+        "type_prefix"
+      ],
+      "comparison": "exact",
+      "value": "game:"
+    },
+    {
+      "path": [
+        "gameplay_saves",
+        "kinds"
+      ],
+      "comparison": "exact",
+      "value": {
+        "load": 2,
+        "none": 0,
+        "save": 1
+      }
+    },
+    {
+      "path": [
+        "gameplay_saves",
+        "request_rejections"
+      ],
+      "comparison": "exact",
+      "value": {
+        "busy": 2,
+        "disabled": 1,
+        "exhausted": 4,
+        "invalid": 3,
+        "none": 0
+      }
+    },
+    {
+      "path": [
+        "gameplay_saves",
+        "states"
+      ],
+      "comparison": "exact",
+      "value": {
+        "expired": 0,
+        "failed": 4,
+        "queued": 1,
+        "resolving": 2,
+        "succeeded": 3
+      }
+    },
+    {
+      "path": [
+        "input_actions",
+        "maximum_actions_per_controller"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 32
+    },
+    {
+      "path": [
+        "input_actions",
+        "maximum_controllers"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 32
+    },
+    {
+      "path": [
+        "input_actions",
+        "name_pattern"
+      ],
+      "comparison": "exact",
+      "value": "^[a-z][a-z0-9_.-]{0,63}$"
+    },
+    {
+      "path": [
+        "limits",
+        "json_depth"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 64
+    },
+    {
+      "path": [
+        "limits",
+        "request_bytes"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 1048576
+    },
+    {
+      "path": [
+        "protocol_version"
+      ],
+      "comparison": "exact",
+      "value": 1
+    },
+    {
+      "path": [
+        "runtime_available"
+      ],
+      "comparison": "exact",
+      "value": true
+    },
+    {
+      "path": [
+        "ui",
+        "max_depth"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 32
+    },
+    {
+      "path": [
+        "ui",
+        "max_elements"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 256
+    },
+    {
+      "path": [
+        "ui",
+        "max_text_bytes"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 16384
+    },
+    {
+      "path": [
+        "ui",
+        "max_total_text_bytes"
+      ],
+      "comparison": "capacity-at-least",
+      "value": 1048576
+    }
+  ],
+  "experimental_branches": [
+    {
+      "method": "runtime.step",
+      "parameter": "camera_lenses",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "character_stances",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "ik",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "root_motion",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "save.load",
+      "parameter": "upgrade",
+      "when": "present"
+    }
+  ],
+  "provenance": {
+    "schema_revision": 98,
+    "discovery_native_version": "0.0.142",
+    "captures": {
+      "source_world": {
+        "file": "build/alpha-contract-next/discovery142-2/standalone-authoring.json",
+        "bytes": 832378,
+        "sha256": "95c1f5050232caa54b8dae55659cf185493fc01d3b7542ee6bda1519bdfbe209",
+        "native_engine_version": "0.0.142",
+        "schema_revision": 98
+      },
+      "source_shared_player": {
+        "file": "build/alpha-contract-next/discovery142-2/shared-authoring.json",
+        "bytes": 854173,
+        "sha256": "a0e1e9b4131b1783efba73d914f9a85526c11f72cd294f587c29f19fc78fbb46",
+        "native_engine_version": "0.0.142",
+        "schema_revision": 98
+      },
+      "readonly_game": {
+        "file": "build/alpha-contract-next/discovery142-2/shared-readonly-game.json",
+        "bytes": 430885,
+        "sha256": "db8d53d0e7e4c94faa93713e612cd47265a02a83afb01e1dec65986bd390e1b7",
+        "native_engine_version": "0.0.142",
+        "schema_revision": 98
+      }
+    },
+    "evidence": "docs/evidence/m2-workflow-request-compatibility.json",
+    "behavioral_cohorts": [
+      "0.0.142",
+      "0.0.146"
+    ],
+    "behavioral_evidence": [
+      "docs/evidence/m2-save-publication-rejection.json",
+      "docs/evidence/m2-agent-pumphouse.json"
+    ],
+    "limitation": "Captured request schemas are native142. Behavioral native146 records are separate; no native149 discovery or release qualification is claimed by this baseline."
+  }
+}

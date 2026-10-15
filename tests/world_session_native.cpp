@@ -3,6 +3,8 @@
 #include "poima/runtime.hpp"
 #include "poima/assets.hpp"
 #include "poima/audio.hpp"
+#include "poima/build_metadata.hpp"
+#include "poima/gameplay.hpp"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <algorithm>
@@ -45,8 +47,34 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
         {"availability",{{"mode",read_only ? "read_only_runtime" : "authoring"},{"mutations",!read_only}}}};
     check(full.at("authoring_contract")==identity,"Authoring contract identity or availability differs.");
     check(full.at("mode")==identity.at("availability").at("mode"),"Contract availability differs from discovery mode.");
+    const auto& game_contract=full.at("runtime_game_session_contract");
+    const Json game_methods={"runtime.component.get","runtime.component.query","runtime.components","runtime.entity",
+        "runtime.gameplay.inspect","runtime.hit_test","runtime.inspect","runtime.observe","runtime.raycast",
+        "runtime.save.result","runtime.save.status","runtime.status","runtime.step","runtime.ui.activate",
+        "runtime.ui.inspect","save.inspect","save.load","save.status","save.write"};
+    check(game_contract.at("id")=="poima.runtime-game-session" && game_contract.at("version")==1 &&
+          game_contract.at("status")=="stable" && game_contract.at("scope")=="runtime-game-session" &&
+          game_contract.at("request_baseline")=="runtime-game-session-v1.json" &&
+          game_contract.at("response_baseline")=="runtime-game-session-responses-v1.json" &&
+          game_contract.at("methods")==game_methods,"Runtime game-session contract identity differs.");
+    const auto& build=poima::build_metadata();
+    const bool implemented=poima::Runtime::available() && (poima::Gameplay::native_available() || poima::Gameplay::available());
+    const bool target=std::string(build.target_os)=="Windows" && std::string(build.target_arch)=="x86_64";
+    Json profile=nullptr;
+    if(scope==poima::WorldRequestScope::standalone && !read_only)profile="source_world";
+    else if(scope==poima::WorldRequestScope::shared_headless)profile=read_only ? "readonly_game" : "source_shared_player";
+    const auto& availability=game_contract.at("availability");
+    const bool profile_backend=!read_only || poima::Gameplay::native_available();
+    check(availability.at("implemented")==implemented && availability.at("qualified")==bool(implemented&&target&&!profile.is_null()&&profile_backend) &&
+          availability.at("profile")==profile && availability.at("mode")==full.at("mode") &&
+          availability.at("target")==Json{{"os",build.target_os},{"arch",build.target_arch}} &&
+          availability.at("backends")==Json{{"simulation",poima::Runtime::available()},
+              {"native_gameplay",poima::Gameplay::native_available()},{"coreclr_gameplay",poima::Gameplay::available()}},
+          "Runtime game-session availability differs from actual build or scope.");
+    const char* reason=!implemented ? "required_backend_not_built" : !target ? "unqualified_target" : profile.is_null() ? "unqualified_context" : !profile_backend ? "required_profile_backend_not_built" : "qualified_profile";
+    check(availability.at("reason")==reason,"Runtime qualification reason differs.");
     Json metadata=Json::object();
-    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract"})
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract","runtime_game_session_contract"})
         if(full.contains(key))metadata[key]=full.at(key);
     Json methods=Json::array(),components=Json::array(),sections=Json::array();
     for(const auto& [key,value]:full.at("methods").items()){(void)value;methods.push_back(key);}
@@ -56,6 +84,8 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
     check(result({{"view","catalog"}})==expected,"Scoped discovery catalog leaked names or lost metadata.");
     check(request({{"view","section"},{"name","authoring_contract"}})["error"]["code"]==-32602,
           "Contract metadata was exposed as a selectable contract section.");
+    check(request({{"view","section"},{"name","runtime_game_session_contract"}})["error"]["code"]==-32602,
+          "Runtime contract metadata was exposed as a selectable section.");
     for(const auto* view:{"method","component","section"}) {
         const auto key=std::string(view)=="method" ? "methods" : std::string(view)=="component" ? "components" : "sections";
         const auto& names=std::string(view)=="method" ? methods : std::string(view)=="component" ? components : sections;
@@ -82,15 +112,26 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
     const Json selection={{"operation","component.set"},{"type","Transform"}};
     if(full.at("methods").contains("world.transact")) {
         auto projected=full.at("methods").at("world.transact");
-        auto branches=Json::array();
+        auto branches=Json::array();bool has_conditional=false;
         for(const auto& branch:projected.at("properties").at("ops").at("items").at("oneOf")) {
             const auto& properties=branch.at("properties");
+            if(properties.contains("value") && properties.at("value").contains("properties")) {
+                const auto& fields=properties.at("value").at("properties");
+                if(fields.contains("root_motion")) {
+                    const auto& root_motion=fields.at("root_motion");
+                    has_conditional=has_conditional || (root_motion.contains("if") && root_motion.contains("then") && root_motion.contains("else"));
+                }
+            }
             if(properties.at("op").value("const",std::string())=="component.set" &&
                properties.contains("type") && properties.at("type").value("const",std::string())=="Transform")
                 branches.push_back(branch);
         }
         check(branches.size()==1,"Missing Transform discovery fixture branch.");
-        projected["properties"]["ops"]["items"]["oneOf"]=branches;
+        // The rich native schema contains conditional root-motion semantics.
+        // Unknown keywords prohibit pruning the enclosing union; the selected
+        // plain Transform witness still has to exist. Synthetic discovery tests
+        // separately exercise pruning of completely recognized schemas.
+        check(has_conditional,"Rich discovery fixture no longer has its conditional-preservation witness.");
         expected=metadata;expected["partial"]=true;expected["view"]="mutation";
         expected["selection"]=selection;expected["methods"]={{"world.transact",projected}};
         check(result({{"view","mutation"},{"operation","component.set"},{"type","Transform"}})==expected,

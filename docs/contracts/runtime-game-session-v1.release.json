@@ -1,0 +1,133 @@
+{
+  "format": "poima.runtime-game-session-release.v1",
+  "id": "poima.runtime-game-session",
+  "version": 1,
+  "status": "stable",
+  "introduced_in": "0.0.149",
+  "scope": "runtime-game-session",
+  "request_baseline": {
+    "file": "runtime-game-session-v1.json",
+    "sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+    "source_schema_revision": 98
+  },
+  "response_baseline": {
+    "file": "runtime-game-session-responses-v1.json",
+    "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+  },
+  "methods": [
+    "runtime.component.get",
+    "runtime.component.query",
+    "runtime.components",
+    "runtime.entity",
+    "runtime.gameplay.inspect",
+    "runtime.hit_test",
+    "runtime.inspect",
+    "runtime.observe",
+    "runtime.raycast",
+    "runtime.save.result",
+    "runtime.save.status",
+    "runtime.status",
+    "runtime.step",
+    "runtime.ui.activate",
+    "runtime.ui.inspect",
+    "save.inspect",
+    "save.load",
+    "save.status",
+    "save.write"
+  ],
+  "profiles": [
+    "source_world",
+    "source_shared_player",
+    "readonly_game"
+  ],
+  "qualified_targets": [
+    {
+      "os": "Windows",
+      "arch": "x86_64"
+    }
+  ],
+  "behavioral_contract": "../RUNTIME_GAME_SESSION_V1.md",
+  "request_compatibility": "Preserve accepted old requests, omission behavior, declared defaults and selected native constraints; complete schemas include explicitly experimental branches.",
+  "response_compatibility": "Preserve required fields/types/bounds/meaning and the transitive definition closure. Exact selected maps stay exact; permitted additive diagnostics preserve meaning. New enum values require compatibility review and explicit negotiation or a new major.",
+  "experimental_branches": [
+    {
+      "method": "runtime.step",
+      "parameter": "camera_lenses",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "character_stances",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "ik",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "runtime.step",
+      "parameter": "root_motion",
+      "when": "nonempty-array"
+    },
+    {
+      "method": "save.load",
+      "parameter": "upgrade",
+      "when": "present"
+    }
+  ],
+  "defaults": {
+    "runtime.component.query.limit": 64,
+    "runtime.ui.inspect.limit": 64,
+    "save.load.allow_recovery": false,
+    "save.write.acknowledge_recovery": false
+  },
+  "retention_minima": {
+    "runtime.step": {
+      "count": 32,
+      "lifetime": "owner-local",
+      "outcomes": "accepted advances"
+    },
+    "runtime.ui.activate": {
+      "count": 32,
+      "lifetime": "owner-local",
+      "outcomes": "accepted controls"
+    },
+    "save.load": {
+      "count": 32,
+      "lifetime": "owner-local-shared-outcome-pool",
+      "shared_with": [
+        "save.configure"
+      ]
+    },
+    "save.write": {
+      "count": 32,
+      "lifetime": "durable-per-slot",
+      "outcomes": "committed writes only"
+    },
+    "gameplay_terminal_ledger": {
+      "count": 64,
+      "lifetime": "owner-local"
+    }
+  },
+  "error_codes": {
+    "malformed_parameters": -32602,
+    "unsupported_build": -32003,
+    "missing_runtime_entity": -32004,
+    "stale_tick_revision_or_save_CAS": -32009,
+    "changed_retained_operation": -32010,
+    "runtime_session_mismatch": -32030,
+    "callback_failure_or_ineligible_control": -32040,
+    "storage_restore_or_recovery": -32070,
+    "player_or_replay_scope": -32080
+  },
+  "excluded": [
+    "unselected operations and discovery catalog contents",
+    "experimental request branches explicitly listed above",
+    "C# source compatibility, native binary ABI and private file formats",
+    "arbitrary content/schema/module upgrades and general disk fault recovery",
+    "physical input, rendering quality, installation and representative performance",
+    "shared-editor scope and targets not in qualified_targets"
+  ],
+  "qualification_evidence": "../evidence/m2-runtime-game-session-v1.json"
+}

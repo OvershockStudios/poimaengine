@@ -10,6 +10,10 @@ behavior, C# source compatibility and binary ABI require separate gates.
 The [gameplay/content/save profile](ALPHA_GAMEPLAY_PROFILE.md) defines those
 boundaries. Existing authoring-core v1 remains unchanged.
 
+[Runtime game-session v1](RUNTIME_GAME_SESSION_V1.md) is a separate released
+19-method boundary. It has frozen artifacts and distinct gates; this historical
+21-method candidate and its prospective-only checks remain unchanged.
+
 ## Selected surface
 
 The candidate covers runtime start/status/inspect/stop/step; entity and joined

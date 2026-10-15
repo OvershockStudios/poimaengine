@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.148.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.149.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -46,7 +46,7 @@ A fresh Claude session built [Pump House](docs/evidence/fixtures/agent-pumphouse
 
 *Agent-authored Workshop Relay, captured through Vulkan after completion. Primitive geometry; this is a rendered checkpoint, not a live authoring video.*
 
-The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits, with separate request and response compatibility gates and native behavioral checks. The [Python automation client](docs/PYTHON_CLIENT.md) adds guarded editing and revision-pinned queries over the native service. The [gameplay, content and save profile](docs/ALPHA_GAMEPLAY_PROFILE.md) defines the wider boundary. A [prospective runtime/save request checker](docs/WORKFLOW_API_COMPATIBILITY.md) tracks 21 selected methods across authoring and exported-game scopes; broader API stability remains unfinished.
+The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits. [Runtime game-session v1](docs/RUNTIME_GAME_SESSION_V1.md) adds a separate 19-method boundary for running games: typed state, spatial queries, logical controls and external saves. Both have request/result compatibility gates and native behavioral checks. The [Python client](docs/PYTHON_CLIENT.md) provides guarded authoring and opt-in frozen result validation. The [gameplay, content and save profile](docs/ALPHA_GAMEPLAY_PROFILE.md) distinguishes these selected promises from experimental APIs and native binary compatibility.
 
 A [native reliability check](docs/evidence/m2-performance-yard-reliability.json) passes 40 checkpoint cycles, 1,801 cumulative unpaused seconds and fresh-process continuation on the retained 0.0.97 engine. A separate [0.0.106 development comparison](docs/evidence/m2-iteration-comparison.json) verifies twenty compatible edits per cohort with preserved game state and changed behavior. With the owned compiler, batching state reads lowers measured edit-to-first-verified-tick p95 from 7.732 to 3.759 seconds. Compiler reuse alone improves the mean while worsening p95 against isolated builds. The three-second target and broader Alpha gate remain open.
 

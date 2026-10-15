@@ -9,6 +9,10 @@ is **opt-in**. It checks the original result against consumer requirements and
 the initiating request; it neither sends calls nor changes their results.
 Existing authoring-core v1 remains unchanged.
 
+For the released running-game boundary, use the separate
+[runtime game-session v1 validator](RUNTIME_GAME_SESSION_V1.md#validation-and-compatibility).
+Its frozen resource does not follow future changes to this candidate.
+
 This is a prospective contract, not a broader stable runtime API. Result
 validation does not establish that a method is available, an operation completed
 correctly, a rejection preserved state, or a native process closed normally.

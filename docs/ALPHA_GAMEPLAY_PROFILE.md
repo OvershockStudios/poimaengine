@@ -12,17 +12,18 @@ separate completed evidence from remaining release work.
 | Boundary | What a consumer may depend on | What it must not infer |
 | --- | --- | --- |
 | Authored editing | [Authoring-core v1](AUTHORING_API_COMPATIBILITY.md) releases selected world/entity reads, atomic edits, Transform data, guards and receipts. Its request, response and native behavioral gates are separate. | Every mutation exposed by `world.describe` is stable, or authored edits patch the running simulation. |
+| Running game sessions | [Runtime game-session v1](RUNTIME_GAME_SESSION_V1.md) selects 19 runtime, typed-state, spatial, logical-UI and external-save methods in three qualified Windows contexts. | Bootstrap, the gameplay binary ABI, every experimental command branch or all engine APIs are stable. |
 | Native gameplay | Call ABI 1/80 and services epoch 7 negotiate named features and readable prefixes. A consumer declares its exact requirements and the host checks availability. | A larger service allocation grants undeclared operations, or arbitrary SDK/bridge versions can be mixed. |
 | Content | Documented intake profiles produce hashed cooked assets with explicit bindings and provenance. Export verifies the declared dependency closure and runtime/artifact requirements. | Every exporter, FBX rig or material works, or rebuilding an importer preserves existing cooked bytes. |
 | Checkpoints | Ordinary restores bind the saved backend, trusted compiled image/type and complete schema. Supported updates need an explicit source-to-target upgrade plan. | Compatible development reload authorizes loading old saves, or a version number replaces image/schema identities. |
 
-Only the selected authoring contract currently carries the released stability
-promise. Gameplay and content compatibility must be evaluated at their declared
+The selected authoring and runtime-session contracts carry separate stability
+promises. Gameplay and content compatibility must be evaluated at their declared
 boundary and against retained consumers. Broader API stabilization remains an
 alpha gate. Never relabel an experimental operation as stable because a sample
-uses it successfully. The [prospective runtime/save request gate](WORKFLOW_API_COMPATIBILITY.md)
-tracks a selected candidate surface; response, behavioral, SDK and ABI guarantees
-remain separate.
+uses it successfully. The earlier [prospective runtime/save request gate](WORKFLOW_API_COMPATIBILITY.md)
+continues to track its original 21-method candidate surface; it is not a
+promotion of bootstrap, SDK or ABI guarantees.
 
 ## Compile and select gameplay
 

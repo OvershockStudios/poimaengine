@@ -1,0 +1,2590 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0",
+  "format": "poima.runtime-game-session-responses.v1",
+  "status": "stable",
+  "contract_version": 1,
+  "source_cohort": "Frozen v1 result shapes derived from native schema98 and the qualified142-148 consumer cohorts; release availability is declared separately.",
+  "profiles": [
+    "source_world",
+    "source_shared_player",
+    "readonly_game"
+  ],
+  "context_keys": [
+    "profile",
+    "component_schemas",
+    "gameplay_schema"
+  ],
+  "scope": "Opt-in runtime-game-session v1 selected successful-result shapes and supported request/context joins. Native errors, availability, effects and retention require the separate release behavioral contract.",
+  "limits": {
+    "depth": 64,
+    "nodes": 100000,
+    "encoded_bytes": 16777216
+  },
+  "unchecked": [
+    "JSON-RPC envelopes/errors",
+    "native liveness and unchanged-state behavior",
+    "cryptographic derivation of component fingerprints",
+    "semantic completeness of additive diagnostics",
+    "full UI layout/style and gameplay persistence/upgrade schemas",
+    "compact gameplay/component values without caller-supplied schema"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "[0-9a-f]{32}"
+    },
+    "integer": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "component_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "[0-9a-f]{64}"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "[0-9a-f]{32}"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "int32",
+                  "int64",
+                  "float32",
+                  "float64",
+                  "entity",
+                  "array"
+                ]
+              },
+              "default": {},
+              "unit": {
+                "type": "string"
+              },
+              "element_kind": {
+                "type": "string",
+                "enum": [
+                  "int32",
+                  "int64",
+                  "float32",
+                  "float64",
+                  "entity"
+                ]
+              },
+              "capacity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "default",
+              "unit"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version",
+        "fingerprint",
+        "fields"
+      ],
+      "additionalProperties": true
+    },
+    "component_declaration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "[0-9a-f]{64}"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "[0-9a-f]{32}"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "int32",
+                  "int64",
+                  "float32",
+                  "float64",
+                  "entity",
+                  "array"
+                ]
+              },
+              "default": {},
+              "unit": {
+                "type": "string"
+              },
+              "element_kind": {
+                "type": "string",
+                "enum": [
+                  "int32",
+                  "int64",
+                  "float32",
+                  "float64",
+                  "entity"
+                ]
+              },
+              "capacity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "default"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version",
+        "fields"
+      ],
+      "additionalProperties": true
+    },
+    "gameplay_schema": {
+      "type": "object",
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "int32",
+                  "int64",
+                  "float32",
+                  "float64",
+                  "entity"
+                ]
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 4,
+                "maximum": 16
+              }
+            },
+            "required": [
+              "name",
+              "kind",
+              "offset",
+              "bytes"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 1,
+          "maxItems": 128
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component_declaration"
+          },
+          "minItems": 0,
+          "maxItems": 64
+        },
+        "persistent": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "identity",
+        "bytes",
+        "fields"
+      ],
+      "additionalProperties": true
+    },
+    "animation": {
+      "type": "object",
+      "properties": {
+        "clip": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "time": {
+          "type": "number"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "loop": {
+          "type": "boolean"
+        },
+        "playing": {
+          "type": "boolean"
+        },
+        "duration": {
+          "type": "number"
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start_tick": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "duration_ticks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "elapsed_ticks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "source_frozen": {
+                  "type": "boolean"
+                },
+                "source_clip": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_time": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_speed": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_loop": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_playing": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "inertial"
+                  ]
+                }
+              },
+              "required": [
+                "start_tick",
+                "duration_ticks",
+                "elapsed_ticks",
+                "weight",
+                "source_frozen",
+                "source_clip",
+                "source_time",
+                "source_speed",
+                "source_loop",
+                "source_playing"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/animation_layer"
+          },
+          "minItems": 0,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "clip",
+        "time",
+        "speed",
+        "loop",
+        "playing",
+        "duration",
+        "transition"
+      ],
+      "additionalProperties": true
+    },
+    "animation_layer": {
+      "type": "object",
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "override",
+            "additive"
+          ]
+        },
+        "weight": {
+          "type": "number"
+        },
+        "target_weight": {
+          "type": "number"
+        },
+        "weight_transition": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start_tick": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "duration_ticks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "elapsed_ticks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "source": {
+                  "type": "number"
+                },
+                "target": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "start_tick",
+                "duration_ticks",
+                "elapsed_ticks",
+                "source",
+                "target"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mask_nodes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "minItems": 0,
+          "maxItems": 65536
+        },
+        "playback": {
+          "$ref": "#/$defs/animation"
+        }
+      },
+      "required": [
+        "slot",
+        "mode",
+        "weight",
+        "target_weight",
+        "weight_transition",
+        "mask_nodes",
+        "playback"
+      ],
+      "additionalProperties": true
+    },
+    "save_ticket": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "kind": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "state": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "requested_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "committed_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "recovered": {
+          "type": "boolean"
+        },
+        "error_code": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "diagnostic": {
+          "type": "string"
+        },
+        "restored_epoch": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "[0-9a-f]{32}"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "restored_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "epoch",
+        "sequence",
+        "kind",
+        "state",
+        "requested_tick",
+        "committed_tick",
+        "generation",
+        "recovered",
+        "error_code",
+        "diagnostic",
+        "restored_epoch",
+        "restored_tick"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "methods": {
+    "runtime.component.get": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "component_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "schema": {
+          "$ref": "#/$defs/component_schema"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "component_revision",
+        "structure_revision",
+        "id",
+        "type",
+        "schema",
+        "values"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.component.query": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "component_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "type": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "[0-9a-f]{32}"
+          },
+          "minItems": 0,
+          "maxItems": 256
+        },
+        "next_after": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "[0-9a-f]{32}"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "component_revision",
+        "structure_revision",
+        "type",
+        "entities",
+        "next_after"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.components": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "component_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "schemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component_schema"
+          },
+          "minItems": 0,
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "component_revision",
+        "structure_revision",
+        "schemas"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.entity": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "world_matrix": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 16,
+          "maxItems": 16
+        },
+        "layout": {
+          "const": "column_major"
+        },
+        "local_transform": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "rotation": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "scale": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "position",
+            "rotation",
+            "scale"
+          ],
+          "additionalProperties": true
+        },
+        "animation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/animation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "motion": {
+          "type": "string",
+          "enum": [
+            "none",
+            "static",
+            "dynamic",
+            "kinematic",
+            "character"
+          ]
+        },
+        "kinematic_target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "entity": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{32}"
+                },
+                "position": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "rotation": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "duration_ticks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "entity",
+                "position",
+                "rotation",
+                "duration_ticks"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "motion_remaining_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "velocity": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "has_body": {
+          "type": "boolean"
+        },
+        "is_character": {
+          "type": "boolean"
+        },
+        "ground": {
+          "type": "string",
+          "enum": [
+            "",
+            "on_ground",
+            "steep_ground",
+            "not_supported",
+            "in_air",
+            "unknown"
+          ]
+        },
+        "yaw": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "locomotion": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "const": "virtual-v1"
+            },
+            "profile": {
+              "type": "object",
+              "properties": {
+                "step_height": {
+                  "type": "number"
+                },
+                "ground_snap": {
+                  "type": "number"
+                },
+                "max_slope_degrees": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "step_height",
+                "ground_snap",
+                "max_slope_degrees"
+              ],
+              "additionalProperties": true
+            },
+            "ground_normal": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "ground_velocity": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "mode",
+            "profile",
+            "ground_normal",
+            "ground_velocity"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "structure_revision",
+        "id",
+        "world_matrix",
+        "layout",
+        "local_transform",
+        "animation",
+        "motion",
+        "kinematic_target",
+        "motion_remaining_ticks",
+        "velocity",
+        "has_body",
+        "is_character",
+        "ground",
+        "yaw",
+        "pitch"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.gameplay.inspect": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "module": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "backend": {
+                  "type": "string",
+                  "enum": [
+                    "coreclr",
+                    "native_aot"
+                  ]
+                },
+                "native_library": {
+                  "type": "string"
+                },
+                "native_diagnostics": {
+                  "type": "object"
+                },
+                "assembly": {
+                  "type": "string"
+                },
+                "assembly_sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "schema": {
+                  "$ref": "#/$defs/gameplay_schema"
+                },
+                "migration": {
+                  "anyOf": [
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "values": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "backend",
+                "native_library",
+                "native_diagnostics",
+                "assembly",
+                "assembly_sha256",
+                "type",
+                "schema",
+                "migration",
+                "values"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "object",
+              "properties": {
+                "identity": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "assembly_sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "values": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "identity",
+                "assembly_sha256",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "revision",
+        "structure_revision",
+        "module"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.hit_test": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/id"
+        },
+        "tick": {
+          "$ref": "#/$defs/integer"
+        },
+        "hit": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "entity": {
+                  "$ref": "#/$defs/id"
+                },
+                "fraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "distance": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                "position": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "normal": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "triangle": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4294967295
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "region_entity": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "region": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "[a-z][a-z0-9_.-]{0,63}"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "entity",
+                "fraction",
+                "distance",
+                "position",
+                "normal",
+                "triangle",
+                "region_entity",
+                "region"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "hit"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.inspect": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_stale": {
+          "type": "boolean"
+        },
+        "world_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "material_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "[0-9a-f]{64}"
+        },
+        "fixed_dt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "entities": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "bodies": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "characters": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "scheduler": {
+          "type": "string"
+        },
+        "physics": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "authored_revision",
+        "current_authored_revision",
+        "source_stale",
+        "world_id",
+        "structure_revision",
+        "material_revision",
+        "ui_revision",
+        "control_sequence",
+        "content_sha256",
+        "fixed_dt",
+        "entities",
+        "bodies",
+        "characters",
+        "scheduler",
+        "physics"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.observe": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "component_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_stale": {
+          "type": "boolean"
+        },
+        "gameplay_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "[0-9a-f]{32}"
+              },
+              "state": {
+                "type": "object",
+                "properties": {
+                  "world_matrix": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 16,
+                    "maxItems": 16
+                  },
+                  "layout": {
+                    "const": "column_major"
+                  },
+                  "local_transform": {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "rotation": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      },
+                      "scale": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "rotation",
+                      "scale"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "animation": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/animation"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "motion": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "static",
+                      "dynamic",
+                      "kinematic",
+                      "character"
+                    ]
+                  },
+                  "kinematic_target": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "entity": {
+                            "type": "string",
+                            "pattern": "[0-9a-f]{32}"
+                          },
+                          "position": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "rotation": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 4,
+                            "maxItems": 4
+                          },
+                          "duration_ticks": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "entity",
+                          "position",
+                          "rotation",
+                          "duration_ticks"
+                        ],
+                        "additionalProperties": true
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "motion_remaining_ticks": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "velocity": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "has_body": {
+                    "type": "boolean"
+                  },
+                  "is_character": {
+                    "type": "boolean"
+                  },
+                  "ground": {
+                    "type": "string",
+                    "enum": [
+                      "",
+                      "on_ground",
+                      "steep_ground",
+                      "not_supported",
+                      "in_air",
+                      "unknown"
+                    ]
+                  },
+                  "yaw": {
+                    "type": "number"
+                  },
+                  "pitch": {
+                    "type": "number"
+                  }
+                }
+              },
+              "components": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "state",
+              "components"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 0,
+          "maxItems": 96
+        },
+        "component_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "pattern": "[0-9a-f]{32}"
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "[0-9a-f]{64}"
+              },
+              "schema": {
+                "$ref": "#/$defs/component_schema"
+              }
+            },
+            "required": [
+              "type",
+              "fingerprint"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 0,
+          "maxItems": 4
+        },
+        "query": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{32}"
+                },
+                "entities": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "[0-9a-f]{32}"
+                  },
+                  "minItems": 0,
+                  "maxItems": 64
+                },
+                "next_after": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "[0-9a-f]{32}"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "type",
+                "entities",
+                "next_after"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "component_revision",
+        "structure_revision",
+        "authored_revision",
+        "current_authored_revision",
+        "source_stale",
+        "gameplay_revision",
+        "ui_revision",
+        "control_sequence",
+        "entities",
+        "component_types",
+        "query"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.raycast": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/id"
+        },
+        "tick": {
+          "$ref": "#/$defs/integer"
+        },
+        "hit": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "entity": {
+                  "$ref": "#/$defs/id"
+                },
+                "fraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "distance": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                "position": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "normal": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "triangle": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4294967295
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "entity",
+                "fraction",
+                "distance",
+                "position",
+                "normal",
+                "triangle"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "hit"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.save.result": {
+      "$ref": "#/$defs/save_ticket"
+    },
+    "runtime.save.status": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "configuration_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "pending": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/save_ticket"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_restore": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "initiating_epoch": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{32}"
+                },
+                "initiating_sequence": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "source_tick": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "restored_tick": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "generation": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "recovered": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "initiating_epoch",
+                "initiating_sequence",
+                "source_tick",
+                "restored_tick",
+                "generation",
+                "recovered"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "epoch",
+        "enabled",
+        "configuration_generation",
+        "pending",
+        "last_restore"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.status": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "[0-9a-f]{32}"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tick": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "structure_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "material_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ui_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "control_sequence": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "authored_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "available",
+        "active",
+        "session_id",
+        "tick",
+        "structure_revision",
+        "material_revision",
+        "ui_revision",
+        "control_sequence",
+        "authored_revision"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.step": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "current_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runtime_replaced": {
+          "type": "boolean"
+        },
+        "save_serviced": {
+          "type": "boolean"
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "save_operation": {
+          "$ref": "#/$defs/save_ticket"
+        },
+        "previous_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "stepped": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "sound_events": {
+          "type": "object",
+          "properties": {
+            "first_voice": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "next_voice": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "first_voice",
+            "next_voice"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "current_session_id",
+        "current_tick",
+        "runtime_replaced",
+        "save_serviced",
+        "replayed",
+        "previous_tick",
+        "stepped",
+        "sound_events"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.ui.activate": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "current_tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runtime_replaced": {
+          "type": "boolean"
+        },
+        "save_serviced": {
+          "type": "boolean"
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "save_operation": {
+          "$ref": "#/$defs/save_ticket"
+        },
+        "control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "intent": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "current_session_id",
+        "current_tick",
+        "runtime_replaced",
+        "save_serviced",
+        "replayed",
+        "control_sequence",
+        "ui_revision",
+        "current_control_sequence",
+        "current_ui_revision",
+        "intent"
+      ],
+      "additionalProperties": true
+    },
+    "runtime.ui.inspect": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "modal": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "[0-9a-f]{32}"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "[0-9a-f]{32}"
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "[0-9a-f]{32}"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "panel",
+                  "label",
+                  "button"
+                ]
+              },
+              "action": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "text": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "effective_visible": {
+                "type": "boolean"
+              },
+              "effective_enabled": {
+                "type": "boolean"
+              },
+              "eligible": {
+                "type": "boolean"
+              },
+              "layout": {
+                "type": "object"
+              },
+              "style": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "parent",
+              "name",
+              "kind",
+              "action",
+              "text",
+              "visible",
+              "enabled",
+              "effective_visible",
+              "effective_enabled",
+              "eligible"
+            ],
+            "additionalProperties": true
+          },
+          "minItems": 0,
+          "maxItems": 256
+        },
+        "next_after": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "[0-9a-f]{32}"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "ui_revision",
+        "control_sequence",
+        "modal",
+        "elements",
+        "next_after"
+      ],
+      "additionalProperties": true
+    },
+    "save.inspect": {
+      "type": "object",
+      "properties": {
+        "configuration_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "slot": {
+          "type": "string"
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "generation": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "generation",
+                "sha256",
+                "bytes",
+                "verified"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "previous": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "generation": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "generation",
+                "sha256",
+                "bytes",
+                "verified"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "generation": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "generation",
+                "sha256",
+                "bytes",
+                "verified"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quarantined": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "generation": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "[0-9a-f]{64}"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "generation",
+                "sha256",
+                "bytes",
+                "verified"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recovered": {
+          "type": "boolean"
+        },
+        "manifest_recovered": {
+          "type": "boolean"
+        },
+        "recovery_reason": {
+          "type": "string"
+        },
+        "orphan_files": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "configuration_generation",
+        "slot",
+        "exists",
+        "generation",
+        "current",
+        "previous",
+        "selected",
+        "quarantined",
+        "recovered",
+        "manifest_recovered",
+        "recovery_reason",
+        "orphan_files"
+      ],
+      "additionalProperties": true
+    },
+    "save.load": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "current_authored_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_stale": {
+          "type": "boolean"
+        },
+        "structure_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ui_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "control_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "slot": {
+          "type": "string"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "selected_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "recovered": {
+          "type": "boolean"
+        },
+        "recovery_reason": {
+          "type": "string"
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "upgrade": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "session_id",
+        "tick",
+        "authored_revision",
+        "current_authored_revision",
+        "source_stale",
+        "structure_revision",
+        "ui_revision",
+        "control_sequence",
+        "slot",
+        "generation",
+        "selected_generation",
+        "recovered",
+        "recovery_reason",
+        "replayed"
+      ],
+      "additionalProperties": true
+    },
+    "save.status": {
+      "type": "object",
+      "properties": {
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "write_mode": {
+          "type": "string",
+          "enum": [
+            "synchronous",
+            "background"
+          ]
+        }
+      },
+      "required": [
+        "generation",
+        "root",
+        "write_mode"
+      ],
+      "additionalProperties": true
+    },
+    "save.write": {
+      "type": "object",
+      "properties": {
+        "configuration_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "slot": {
+          "type": "string"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "[0-9a-f]{64}"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "recovered": {
+          "type": "boolean"
+        },
+        "cleanup_pending": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "configuration_generation",
+        "slot",
+        "generation",
+        "sha256",
+        "bytes",
+        "replayed",
+        "recovered",
+        "cleanup_pending"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "id": "poima.runtime-game-session",
+  "query_checks": {
+    "input": "Strict session/tick, bounded finite vectors and normalized nonzero direction, segment distance/endpoint, unique ignored IDs.",
+    "result": "Nullable hit; region identity pair and no region triangle; ignored identities excluded; request distance/fraction and ray-position joins.",
+    "position_tolerance": "Eight float32 epsilons times max(1, abs(origin coordinate), abs(normalized segment coordinate)); accounts for native float32 ray/delta arithmetic, not collision accuracy.",
+    "distance_tolerance": "Relative1e-12 or absolute1e-9 for returned fraction times original distance.",
+    "unchecked": [
+      "Closest-hit geometry, exact tie ordering and active ignored-ID membership cannot be established from a successful reply alone.",
+      "Surface-normal direction and mesh triangle identity require native geometry evidence."
+    ]
+  }
+}

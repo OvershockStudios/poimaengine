@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.149
+
+- Release [runtime game-session v1](docs/RUNTIME_GAME_SESSION_V1.md), a selected 19-method boundary for runtime state, typed components, spatial queries, compiled logical controls and external saves. Add truthful discovery qualification, frozen request/result manifests, compatibility gates and opt-in packaged Python validation. Keep the existing authoring and prospective workflow contracts separate.
+- Qualify unchanged scalar/collection consumers against new source and exported runtimes, three actual discovery contexts, six Windows native suites and 174 portable tests on each OS. Add focused paging, eligibility, recovery-consent and cross-owner retry checks; preserve failed attempts and the supported limits. [Results](docs/evidence/m2-runtime-game-session-v1.json).
+
 ## 0.0.148
 
 - Record a fresh Claude-authored repair adventure through native publication, adoption and Windows export; preserve the interrupted earlier trial and all repair attempts. [Original source and task](docs/evidence/fixtures/agent-pumphouse/README.md).

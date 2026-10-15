@@ -101,11 +101,40 @@ Json authoring_contract_identity(bool read_only) {
         {"mutations",{"component.set","entity.create","entity.delete","entity.rename","entity.reparent"}},
         {"availability",{{"mode",read_only ? "read_only_runtime" : "authoring"},{"mutations",!read_only}}}};
 }
+Json runtime_game_session_contract_identity(bool read_only,WorldRequestScope scope) {
+    const auto& build=build_metadata();
+    const bool simulation=Runtime::available();
+    const bool native_gameplay=Gameplay::native_available(),managed_gameplay=Gameplay::available();
+    const bool implemented=simulation && (native_gameplay || managed_gameplay);
+    const bool target=std::string_view(build.target_os)=="Windows" && std::string_view(build.target_arch)=="x86_64";
+    Json profile=nullptr;
+    if(scope==WorldRequestScope::standalone && !read_only)profile="source_world";
+    else if(scope==WorldRequestScope::shared_headless)profile=read_only ? "readonly_game" : "source_shared_player";
+    // The exported-game profile admits Native AOT images. A CoreCLR-only
+    // source host must not imply qualification of that deployment context.
+    const bool profile_backend=!read_only || native_gameplay;
+    const bool qualified=implemented && target && !profile.is_null() && profile_backend;
+    const char* reason=!implemented ? "required_backend_not_built" : !target ? "unqualified_target" : profile.is_null() ? "unqualified_context" : !profile_backend ? "required_profile_backend_not_built" : "qualified_profile";
+    return {{"id","poima.runtime-game-session"},{"version",1},{"status","stable"},
+        {"scope","runtime-game-session"},{"request_baseline","runtime-game-session-v1.json"},
+        {"response_baseline","runtime-game-session-responses-v1.json"},
+        {"methods",{"runtime.component.get","runtime.component.query","runtime.components","runtime.entity",
+            "runtime.gameplay.inspect","runtime.hit_test","runtime.inspect","runtime.observe","runtime.raycast",
+            "runtime.save.result","runtime.save.status","runtime.status","runtime.step","runtime.ui.activate",
+            "runtime.ui.inspect","save.inspect","save.load","save.status","save.write"}},
+        {"availability",{{"implemented",implemented},{"qualified",qualified},{"reason",reason},
+            {"mode",read_only ? "read_only_runtime" : "authoring"},{"profile",std::move(profile)},
+            {"target",{{"os",build.target_os},{"arch",build.target_arch}}},
+            {"backends",{{"simulation",simulation},{"native_gameplay",native_gameplay},{"coreclr_gameplay",managed_gameplay}}},
+            {"prerequisites",{"active_runtime_for_runtime_reads","trusted_gameplay_for_compiled_controls",
+                "registered_schema_for_component_reads","configured_external_save_storage",
+                "paused_or_no_player_for_mutations"}}}}};
+}
 Json project_discovery(Json description,const Json& params,const std::function<void(const std::string&)>& registered_type) {
     const auto view=discovery_view(params);
     if(view=="full")return description;
     Json result={{"partial",true},{"view",view}};
-    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract"})
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract","runtime_game_session_contract"})
         if(description.contains(key)) { result[key]=std::move(description[key]);description.erase(key); }
     auto methods=std::move(description.at("methods"));description.erase("methods");
     auto components=std::move(description.at("components"));description.erase("components");
@@ -3680,8 +3709,13 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             for(const auto* name:{"player.start","player.control","player.capture","player.capture_current","player.settings.transact"})result["methods"].erase(name);
         // Project only after scope restrictions, so focused discovery cannot
         // advertise an operation hidden from the full session descriptor.
-        if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()),
-            [&](const std::string& type){impl_->world.require_registered_custom_type(type);});
+        if(method=="world.describe") {
+            // Resolve the real owner scope before preserving this reserved header
+            // in full and focused discovery. Qualification is not call readiness.
+            result["runtime_game_session_contract"]=runtime_game_session_contract_identity(result.at("read_only").get<bool>(),scope);
+            result=project_discovery(std::move(result),request.value("params",Json::object()),
+                [&](const std::string& type){impl_->world.require_registered_custom_type(type);});
+        }
         response={{"jsonrpc","2.0"},{"id",id},{"result",result}};
         if(method=="session.close" || method=="host.shutdown")impl_->closed=true;
     }catch(const Error& error) {

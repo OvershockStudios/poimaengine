@@ -1,0 +1,3487 @@
+{
+  "format": "poima.runtime-game-session-release-qualification.v1",
+  "checkpoint": "0.0.149",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Selected19 running-game request/result/behavior boundary, Windows x86_64 three owner contexts; distinct authoring-core/candidate21/ABI/Alpha boundaries.",
+  "contract": {
+    "id": "poima.runtime-game-session",
+    "version": 1,
+    "methods": [
+      "runtime.component.get",
+      "runtime.component.query",
+      "runtime.components",
+      "runtime.entity",
+      "runtime.gameplay.inspect",
+      "runtime.hit_test",
+      "runtime.inspect",
+      "runtime.observe",
+      "runtime.raycast",
+      "runtime.save.result",
+      "runtime.save.status",
+      "runtime.status",
+      "runtime.step",
+      "runtime.ui.activate",
+      "runtime.ui.inspect",
+      "save.inspect",
+      "save.load",
+      "save.status",
+      "save.write"
+    ],
+    "release": {
+      "bytes": 4044,
+      "sha256": "070fae3b29c03ed9ef2eb7907fc7de9a0a910be64ff5f7b6286d3710454c98ed"
+    },
+    "request": {
+      "bytes": 44150,
+      "sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf"
+    },
+    "response": {
+      "bytes": 65252,
+      "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+    }
+  },
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "1c912308be7ce82e0a8d98957a2e7d98607ee16612477f832d4e742a280ef1db"
+    },
+    "src/world.cpp": {
+      "bytes": 322380,
+      "sha256": "60d0c4e877ecc99c8454a7fd2101c71ca5701870c8328b43510596f5598417c5"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 108496,
+      "sha256": "dd52f8d803d233ced8c31caae915fd51a2dd383c28461c4f6f9ef94d6d8f33f5"
+    },
+    "tests/world_session_native.cpp": {
+      "bytes": 80967,
+      "sha256": "0b3b5dfc9e3702c46789a92b1a475af35e909262c64cdf88a9447f0789e0295f"
+    },
+    "tests/game_session_api_projection.py": {
+      "bytes": 24382,
+      "sha256": "6019e94c17833baab24e90966ff198dc7320068d1fd5c5cb47c90f9126ee9c5a"
+    },
+    "tests/game_session_contract_artifacts.py": {
+      "bytes": 16367,
+      "sha256": "03ed601c0c60ee09a15e3ffa6f35627b9bfe25ab16936492faeb1cc78d573763"
+    },
+    "tests/python_game_session_responses.py": {
+      "bytes": 16852,
+      "sha256": "1b00b1d060835857549008ca99a2b0ba7bfafd3a6d1a18181f479cdf17a1903e"
+    },
+    "tests/workflow_response_contract.py": {
+      "bytes": 6687,
+      "sha256": "c22678c34a13706cf78f36d50f9ae6598743fbacfd1e3a863edbc89b8ed333af"
+    },
+    "scripts/project_game_session_api.py": {
+      "bytes": 16601,
+      "sha256": "fc12bc677853ace4fbc1000aa46e7d0b443ac6dca4e7b7212e4b0c7575522f20"
+    },
+    "scripts/check_game_session_api.py": {
+      "bytes": 3494,
+      "sha256": "023c28a2a1c50535771ebcec59de85b6b63e3c8cfbe64127c80458e8f1710a39"
+    },
+    "scripts/check_game_session_responses.py": {
+      "bytes": 8939,
+      "sha256": "2f97d51234f45c1f7410c623ce0db13cd03a976547d628bc17aeccc2ca199b4c"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "8baaeedc9dc01deaf1b970ab4d777af0bc47370d30f3ca258ad1b4fbf2be897b"
+    },
+    "docs/RUNTIME_GAME_SESSION_V1.md": {
+      "bytes": 11144,
+      "sha256": "fa1f7da2fa29943df3127b7d2ef06982503b5a8b73f7ec845b1e43364ccc1ecd"
+    },
+    "docs/contracts/runtime-game-session-v1.json": {
+      "bytes": 44150,
+      "sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf"
+    },
+    "docs/contracts/runtime-game-session-v1.release.json": {
+      "bytes": 4044,
+      "sha256": "070fae3b29c03ed9ef2eb7907fc7de9a0a910be64ff5f7b6286d3710454c98ed"
+    },
+    "docs/contracts/runtime-game-session-responses-v1.json": {
+      "bytes": 65252,
+      "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+    },
+    "tools/python/poima_client/client.py": {
+      "bytes": 17888,
+      "sha256": "75bfaad03fee51892965ae7f873ef37bf270f2c6530cd953cf22cfc8509cadb8"
+    },
+    "tools/python/poima_client/core_responses.v1.candidate.json": {
+      "bytes": 25153,
+      "sha256": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90"
+    },
+    "tools/python/poima_client/core_responses.v1.json": {
+      "bytes": 25150,
+      "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+    },
+    "tools/python/poima_client/development.py": {
+      "bytes": 3633,
+      "sha256": "00cb5f5339ab6f1cd64eb6f6b99fc797b28343182b76a7c55d807059412011c9"
+    },
+    "tools/python/poima_client/errors.py": {
+      "bytes": 1455,
+      "sha256": "7578e3055e5997f7e83831afc2e366563582c3d2ef289cc6882095de3fd3f1c3"
+    },
+    "tools/python/poima_client/game_session_responses.py": {
+      "bytes": 1291,
+      "sha256": "df040ee3b046628dcfb43f83a4f16cb7b8da9a52596a555f1a83785b25229138"
+    },
+    "tools/python/poima_client/observation.py": {
+      "bytes": 9608,
+      "sha256": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c"
+    },
+    "tools/python/poima_client/responses.py": {
+      "bytes": 14658,
+      "sha256": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593"
+    },
+    "tools/python/poima_client/runtime_game_session_responses.v1.json": {
+      "bytes": 65252,
+      "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+    },
+    "tools/python/poima_client/runtime_response_checks_v1.py": {
+      "bytes": 42456,
+      "sha256": "4440b3446edf5688b3e678fd402615974bd708abfdb87a4ab5d0c1fb880fd58a"
+    },
+    "tools/python/poima_client/transport.py": {
+      "bytes": 19179,
+      "sha256": "5be09fdc801ca2302c587b7e0dd2579350c196435183204d3c05e57b43f13792"
+    },
+    "tools/python/poima_client/workflow_responses.py": {
+      "bytes": 14734,
+      "sha256": "e0d5e6af6c88338448454381faac0f9b4831b69eea52e59b2c1e0726cafc3459"
+    },
+    "tools/python/poima_client/__init__.py": {
+      "bytes": 847,
+      "sha256": "7bbec83d2f5ca3c11d2c238d1cfa6cb61b3ab795cff164a44dcc9e3827a5b2db"
+    }
+  },
+  "historical_contracts_unchanged": {
+    "docs/contracts/runtime-save-workflow-v1.candidate.json": {
+      "bytes": 3863,
+      "sha256": "e8a10bb730d7d95037e8d00898103db15f1ea6c59f7269976702a01cb90f4b68"
+    },
+    "docs/contracts/runtime-save-responses-v1.candidate.json": {
+      "bytes": 63224,
+      "sha256": "cc9a5267b81221dd2326c21cf705b36608322a00d15fbe4b76b0c3c733cc1a2f"
+    },
+    "docs/contracts/authoring-core-v1.json": {
+      "bytes": 11131,
+      "sha256": "7bf80048877b263cee56605687f5ec614688759583b1c710d239b84a2498bfa8"
+    },
+    "docs/contracts/authoring-core-responses-v1.json": {
+      "bytes": 25150,
+      "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+    },
+    "docs/contracts/authoring-core-v1.release.json": {
+      "bytes": 2020,
+      "sha256": "11715e11601b6d660736c0d5162bd657e7291545aab882503abdf118c444f70e"
+    }
+  },
+  "native_windows": {
+    "engine_version": "0.0.149",
+    "schema_revision": 99,
+    "cache_generation": 20,
+    "producer_seconds": 251.2056633150205,
+    "source_input_count": 295,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "source_executable": {
+      "bytes": 25985024,
+      "sha256": "b46006d9bd781ebf939b79c19ed5adbbed1c8f0773173fbc499f509306cd5469"
+    },
+    "suites": [
+      {
+        "name": "world_session",
+        "exit_code": 0,
+        "seconds": 3.587338700017426,
+        "stdout": {
+          "bytes": 147,
+          "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "schema",
+        "exit_code": 0,
+        "seconds": 13.042716299998574,
+        "stdout": {
+          "bytes": 110,
+          "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mcp",
+        "exit_code": 0,
+        "seconds": 0.0855345000163652,
+        "stdout": {
+          "bytes": 148,
+          "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+        },
+        "stderr": {
+          "bytes": 684,
+          "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+        }
+      },
+      {
+        "name": "hit_regions",
+        "exit_code": 0,
+        "seconds": 0.0948293000110425,
+        "stdout": {
+          "bytes": 42,
+          "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mesh",
+        "exit_code": 0,
+        "seconds": 0.17615749995457008,
+        "stdout": {
+          "bytes": 132,
+          "sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "mutation_discovery",
+        "exit_code": 0,
+        "seconds": 0.04902360000414774,
+        "stdout": {
+          "bytes": 82,
+          "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "natural_job": {
+      "user_time": 158125000,
+      "kernel_time": 11093750,
+      "period_user_time": 158125000,
+      "period_kernel_time": 11093750,
+      "page_faults": 353723,
+      "total_processes": 7,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "scope": "Frozen repository native inputs, selected fixtures and scoped at-run build tools/configuration; full selected target build in the existing incremental Ninja cache, sealed independent artifact copies; no full vendor rebuild claim"
+  },
+  "runtime_install": {
+    "files": 49,
+    "bytes": 97049357,
+    "seconds": 83.35434951301431,
+    "natural_group_closure": true,
+    "images_code_data_equivalent": true
+  },
+  "discovery": {
+    "source_world": {
+      "schema_revision": 99,
+      "identity": {
+        "availability": {
+          "backends": {
+            "coreclr_gameplay": true,
+            "native_gameplay": true,
+            "simulation": true
+          },
+          "implemented": true,
+          "mode": "authoring",
+          "prerequisites": [
+            "active_runtime_for_runtime_reads",
+            "trusted_gameplay_for_compiled_controls",
+            "registered_schema_for_component_reads",
+            "configured_external_save_storage",
+            "paused_or_no_player_for_mutations"
+          ],
+          "profile": "source_world",
+          "qualified": true,
+          "reason": "qualified_profile",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "id": "poima.runtime-game-session",
+        "methods": [
+          "runtime.component.get",
+          "runtime.component.query",
+          "runtime.components",
+          "runtime.entity",
+          "runtime.gameplay.inspect",
+          "runtime.hit_test",
+          "runtime.inspect",
+          "runtime.observe",
+          "runtime.raycast",
+          "runtime.save.result",
+          "runtime.save.status",
+          "runtime.status",
+          "runtime.step",
+          "runtime.ui.activate",
+          "runtime.ui.inspect",
+          "save.inspect",
+          "save.load",
+          "save.status",
+          "save.write"
+        ],
+        "request_baseline": "runtime-game-session-v1.json",
+        "response_baseline": "runtime-game-session-responses-v1.json",
+        "scope": "runtime-game-session",
+        "status": "stable",
+        "version": 1
+      },
+      "discovery": {
+        "bytes": 833872,
+        "sha256": "73da29d1aebca3da1386f3c944a816c0b194463d7920eeb7c5cb55976505f846"
+      },
+      "request_gate": {
+        "format": "poima.runtime-game-session-request-check.v1",
+        "passed": true,
+        "scope": "Complete selected request schemas and explicit normative context only; no behavioral, response, ABI, platform or release-qualification inference.",
+        "release_verification": {
+          "id": "poima.runtime-game-session",
+          "version": 1,
+          "status": "stable",
+          "request_baseline_sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+          "profile": "source_world",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "profile_id": "source_world",
+        "findings": []
+      }
+    },
+    "source_shared_player": {
+      "schema_revision": 99,
+      "identity": {
+        "availability": {
+          "backends": {
+            "coreclr_gameplay": true,
+            "native_gameplay": true,
+            "simulation": true
+          },
+          "implemented": true,
+          "mode": "authoring",
+          "prerequisites": [
+            "active_runtime_for_runtime_reads",
+            "trusted_gameplay_for_compiled_controls",
+            "registered_schema_for_component_reads",
+            "configured_external_save_storage",
+            "paused_or_no_player_for_mutations"
+          ],
+          "profile": "source_shared_player",
+          "qualified": true,
+          "reason": "qualified_profile",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "id": "poima.runtime-game-session",
+        "methods": [
+          "runtime.component.get",
+          "runtime.component.query",
+          "runtime.components",
+          "runtime.entity",
+          "runtime.gameplay.inspect",
+          "runtime.hit_test",
+          "runtime.inspect",
+          "runtime.observe",
+          "runtime.raycast",
+          "runtime.save.result",
+          "runtime.save.status",
+          "runtime.status",
+          "runtime.step",
+          "runtime.ui.activate",
+          "runtime.ui.inspect",
+          "save.inspect",
+          "save.load",
+          "save.status",
+          "save.write"
+        ],
+        "request_baseline": "runtime-game-session-v1.json",
+        "response_baseline": "runtime-game-session-responses-v1.json",
+        "scope": "runtime-game-session",
+        "status": "stable",
+        "version": 1
+      },
+      "discovery": {
+        "bytes": 855675,
+        "sha256": "86c480d942a6e2b723167172148d06ba957299af6d920f9b90c90da74fbe3d51"
+      },
+      "request_gate": {
+        "format": "poima.runtime-game-session-request-check.v1",
+        "passed": true,
+        "scope": "Complete selected request schemas and explicit normative context only; no behavioral, response, ABI, platform or release-qualification inference.",
+        "release_verification": {
+          "id": "poima.runtime-game-session",
+          "version": 1,
+          "status": "stable",
+          "request_baseline_sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+          "profile": "source_shared_player",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "profile_id": "source_shared_player",
+        "findings": []
+      }
+    },
+    "readonly_game": {
+      "schema_revision": 99,
+      "identity": {
+        "availability": {
+          "backends": {
+            "coreclr_gameplay": true,
+            "native_gameplay": true,
+            "simulation": true
+          },
+          "implemented": true,
+          "mode": "read_only_runtime",
+          "prerequisites": [
+            "active_runtime_for_runtime_reads",
+            "trusted_gameplay_for_compiled_controls",
+            "registered_schema_for_component_reads",
+            "configured_external_save_storage",
+            "paused_or_no_player_for_mutations"
+          ],
+          "profile": "readonly_game",
+          "qualified": true,
+          "reason": "qualified_profile",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "id": "poima.runtime-game-session",
+        "methods": [
+          "runtime.component.get",
+          "runtime.component.query",
+          "runtime.components",
+          "runtime.entity",
+          "runtime.gameplay.inspect",
+          "runtime.hit_test",
+          "runtime.inspect",
+          "runtime.observe",
+          "runtime.raycast",
+          "runtime.save.result",
+          "runtime.save.status",
+          "runtime.status",
+          "runtime.step",
+          "runtime.ui.activate",
+          "runtime.ui.inspect",
+          "save.inspect",
+          "save.load",
+          "save.status",
+          "save.write"
+        ],
+        "request_baseline": "runtime-game-session-v1.json",
+        "response_baseline": "runtime-game-session-responses-v1.json",
+        "scope": "runtime-game-session",
+        "status": "stable",
+        "version": 1
+      },
+      "discovery": {
+        "bytes": 432388,
+        "sha256": "7de4b2f153ee0993decde72a89b069da8917d46e3c972ecc58b5f7cd75707bac"
+      },
+      "request_gate": {
+        "format": "poima.runtime-game-session-request-check.v1",
+        "passed": true,
+        "scope": "Complete selected request schemas and explicit normative context only; no behavioral, response, ABI, platform or release-qualification inference.",
+        "release_verification": {
+          "id": "poima.runtime-game-session",
+          "version": 1,
+          "status": "stable",
+          "request_baseline_sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+          "profile": "readonly_game",
+          "target": {
+            "arch": "x86_64",
+            "os": "Windows"
+          }
+        },
+        "profile_id": "readonly_game",
+        "findings": []
+      }
+    }
+  },
+  "retained_consumers": {
+    "scalar": {
+      "passed": true,
+      "native_calls": 742,
+      "candidate21_validated_successes": 715,
+      "harness": {
+        "bytes": 32919,
+        "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+      },
+      "owners": [
+        {
+          "name": "source-standalone",
+          "calls": 347,
+          "validated_successes": 334,
+          "returncode": 0,
+          "host_returncode": null
+        },
+        {
+          "name": "readonly-shared",
+          "calls": 343,
+          "validated_successes": 330,
+          "returncode": 0,
+          "host_returncode": 0
+        },
+        {
+          "name": "readonly-cold",
+          "calls": 52,
+          "validated_successes": 51,
+          "returncode": 0,
+          "host_returncode": 0
+        }
+      ],
+      "source_readonly_typed_pairs": 3,
+      "same_owner_save_restore_typed_pairs": 2,
+      "cold_pairs": 1,
+      "bundled_binary": {
+        "path": "runtime/bin/poima.exe",
+        "bytes": 22229504,
+        "sha256": "4f5d1a222614834120e1fd76013a9f833791a7168a27d637e6c95871604f6a44"
+      },
+      "natural_job": {
+        "user_time": 34062500,
+        "kernel_time": 22031250,
+        "period_user_time": 34062500,
+        "period_kernel_time": 22031250,
+        "page_faults": 139826,
+        "total_processes": 6,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "scope": [
+        "Selected full entity/component/gameplay/UI observations; no claim of complete internal version9 snapshot comparison.",
+        "Actual Job closure must be joined to the supervising ownership receipt; no inferred global process census.",
+        "No rendering, physical input, audio listening, performance or complete21method/ABI/stability qualification.",
+        "This fixture has scalar Health/Interaction fields; readonly bounded arrays remain a separate consumer gate.",
+        "Source, compiler and generic checkout/toolchain paths may remain available; no source-absence or clean-machine claim."
+      ]
+    },
+    "collections": {
+      "passed": true,
+      "native_calls": 1299,
+      "candidate21_validated_successes": 1260,
+      "harness": {
+        "bytes": 25916,
+        "sha256": "113c8bc2ae39e6a2fae42ca3e0182bb9cf3491636bb73363cfda84cb1b179e9f"
+      },
+      "owners": [
+        {
+          "name": "source-standalone",
+          "calls": 625,
+          "validated_successes": 606,
+          "returncode": 0,
+          "host_returncode": null
+        },
+        {
+          "name": "readonly-shared",
+          "calls": 621,
+          "validated_successes": 602,
+          "returncode": 0,
+          "host_returncode": 0
+        },
+        {
+          "name": "readonly-cold",
+          "calls": 53,
+          "validated_successes": 52,
+          "returncode": 0,
+          "host_returncode": 0
+        }
+      ],
+      "source_readonly_typed_pairs": 10,
+      "same_owner_save_restore_typed_pairs": 2,
+      "cold_pairs": 2,
+      "bundled_binary": {
+        "path": "runtime/bin/poima.exe",
+        "bytes": 22229504,
+        "sha256": "4f5d1a222614834120e1fd76013a9f833791a7168a27d637e6c95871604f6a44"
+      },
+      "natural_job": {
+        "user_time": 41562500,
+        "kernel_time": 35937500,
+        "period_user_time": 41562500,
+        "period_kernel_time": 35937500,
+        "page_faults": 151067,
+        "total_processes": 6,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "scope": [
+        "All five supported capacity2 array kinds plus one scalar, with JSON length2/1/0/refill reads; no invisible wire-padding or generated Clear/RemoveAt/TryAdd-full claim, arbitrary capacities, nesting or global buffers.",
+        "Full selected entity/component/gameplay/UI observations, not complete internal snapshot equivalence.",
+        "No renderer/GPU, physical input, audio listening, representative performance, clean-machine/source-absence, complete ABI or Alpha release.",
+        "Native errors identify fixture conditions; no general error-message stability promise. Join final natural closure with supervising Job receipt."
+      ]
+    }
+  },
+  "focused_behavior": {
+    "native_engine_version": "0.0.146",
+    "native_calls": 873,
+    "candidate21_validated_successes": 831,
+    "stable19_validated_successes": 821,
+    "owners": [
+      {
+        "name": "pages-standalone",
+        "calls": 626,
+        "validated": 600
+      },
+      {
+        "name": "durable-new-owner",
+        "calls": 10,
+        "validated": 10
+      },
+      {
+        "name": "pages-shared",
+        "calls": 190,
+        "validated": 179
+      },
+      {
+        "name": "control-shared",
+        "calls": 47,
+        "validated": 42
+      }
+    ],
+    "recomputed_selected_assertions": 35,
+    "finite_predicates": [
+      {
+        "id": "query-default64-at65",
+        "method": "runtime.component.query",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 10,
+            "request_line_sha256": "0fd007a68399a5fd7eddfbe7e2820c9b6643ed4c3ac1f01362368bd312ceb4f9",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 10,
+            "response_line_sha256": "e1900fdbef224f0c9371daa49000b0841adbe6cb2b1006d6afd9c05453c85113",
+            "rpc_id": 10,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 10,
+            "request_line_sha256": "9c70284dfa0a3a5cf378787c64f8cde4ed54354349dc2092bab7a56cd315943a",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 10,
+            "response_line_sha256": "feaf3e06ff5a29001d8ca329aa993b2f578c0392067133c0eef258e76b9f0f18",
+            "rpc_id": 10,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "query-exclusive-tail",
+        "method": "runtime.component.query",
+        "matches": 4,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 12,
+            "request_line_sha256": "96f4ccf2a61f919f2567d551d662bc236f824c4ae2d69b16554af7e04c8f2159",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 12,
+            "response_line_sha256": "286d5aee7945f1d7e781fa04886996c888314b91c4fedb455fbce1453a3a649f",
+            "rpc_id": 12,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 13,
+            "request_line_sha256": "e3edae72e91756417b7d9a247949104ac0dc96319f55e2ff0ea9fa47cab5edfc",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 13,
+            "response_line_sha256": "7af30a2ae58b2b50e21014c4bd827e167d7458dc56f04ff30f2908d38acfc89d",
+            "rpc_id": 13,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 12,
+            "request_line_sha256": "528b5fd0bd98fe8c91c5b5dc4fb2aeb3efe2b18422204036ce5caf963e937969",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 12,
+            "response_line_sha256": "add2e7171509fee21fdbb666c1d9c27a3d7ca4a19c79bab3d07e58d5680f139b",
+            "rpc_id": 12,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "ui-default64-at65",
+        "method": "runtime.ui.inspect",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 33,
+            "request_line_sha256": "95a02e5c8e1e08d7a689d5c6ae4ceb3eb34043e753c4dfb83b21a5b1d8800fbd",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 33,
+            "response_line_sha256": "58be95116745c469508295f3df58d16d01f932834b465592bc83b866646b8826",
+            "rpc_id": 33,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 33,
+            "request_line_sha256": "9afa1df9db95b0883bb97fb677c2f3c62d9c675b288e5973e614adecc459ada9",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 33,
+            "response_line_sha256": "225b22de4ec9ed43b0360415865c55da1192c72dc7fde0a475348f92dc774819",
+            "rpc_id": 33,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "ui-exclusive-tail",
+        "method": "runtime.ui.inspect",
+        "matches": 4,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 35,
+            "request_line_sha256": "961c6f30f946e27008e844c1e1f595d6224b38ed5cabb6bf70fd48533b7b544b",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 35,
+            "response_line_sha256": "347254890a37416016ecc90feac7dfb557f1157356ef93561f401017b8639353",
+            "rpc_id": 35,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 36,
+            "request_line_sha256": "4060f6c2ad7dbe73ea8191072251c9c2006dc52a1e059310bd78f54e0e649887",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 36,
+            "response_line_sha256": "eec1867477bcf5e74cca9a80e4f6cecfa842db44c299bcf56d47c990be30b4cf",
+            "rpc_id": 36,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 35,
+            "request_line_sha256": "5c24a1a630c1d98a45bacc7efa2555cf879d4d4ef64ba96e0d4f5006acbabfe9",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 35,
+            "response_line_sha256": "a95962d07d61d433b57aa2ba9d96255d10456f0b58a71dea56b8d46e6bd34204",
+            "rpc_id": 35,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "strict-Boolean-load-consent",
+        "method": "save.load",
+        "matches": 7,
+        "profiles": [
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 251,
+            "request_line_sha256": "e4d204b828f6d901ac4a851d29a8b0356c288b6483af395c22f45b7aa974bfa3",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 251,
+            "response_line_sha256": "946a5161effb5fab17d3d40d6fe3b6021737822d848608cfab390144ba243d24",
+            "rpc_id": 251,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 270,
+            "request_line_sha256": "242b81b69c476a868a9e7469e31ce411323fb4529e404e5a3c568f00e0e23340",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 270,
+            "response_line_sha256": "1f30ea21ab4313cfe25b90dad2beb10694b0d5474630a22c1b12d7d2925c6809",
+            "rpc_id": 270,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 289,
+            "request_line_sha256": "bf450c67cc31f7181319ddcfce7f387c97bfbacbd3afec9649be00c6c6dbe373",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 289,
+            "response_line_sha256": "f990f81e740e086d28d03337cf095681711964e4794f70dda6b3ebdb5d211539",
+            "rpc_id": 289,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "strict-Boolean-write-ack",
+        "method": "save.write",
+        "matches": 7,
+        "profiles": [
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 482,
+            "request_line_sha256": "42b3f1c736ee3a70d4bc9dd3b81c1fd60b6d1f8f2bb8a4fbea304adb034544b0",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 482,
+            "response_line_sha256": "097f2ec4966fa295f8eadc02c4ae2ff077da42f122fe0a814476da4fba8926ee",
+            "rpc_id": 482,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 501,
+            "request_line_sha256": "7ba693dead8bed58a614ebbef111d3b5f02a8c3eb6b5eeced2c1bbc7e4d9cfe5",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 501,
+            "response_line_sha256": "ad011a1df3afdef139d363147b3747477ecbc7fd234d460163d11950ea362160",
+            "rpc_id": 501,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 520,
+            "request_line_sha256": "069b71388d64f0d91e80d68a3cf4a82c30b719cf825d81d443705ad0a1f68ee9",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 520,
+            "response_line_sha256": "409de83df3a98f83e3ae75993b583a53697f5ca6b38b624f4f55c0049a3a186f",
+            "rpc_id": 520,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "acknowledged-healthy3",
+        "method": "save.write",
+        "matches": 1,
+        "profiles": [
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 615,
+            "request_line_sha256": "d0ddbc06ab7c094bcac0af3c6df0b632fee908d5613ec18d65cec2851c2d82b5",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 615,
+            "response_line_sha256": "0060ff8b0bf4e4597f81d546ad1f434bc41a965d258f4540c481ba24470e583f",
+            "rpc_id": 615,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "ineligible-Control",
+        "method": "runtime.ui.activate",
+        "matches": 1,
+        "profiles": [
+          "source_shared_player"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdin.ndjson",
+            "request_line": 25,
+            "request_line_sha256": "be8aea4fdbc6b2831ea02a7061fe21016d7cc5a44df6bd6dc4e5b2b1b2c4728d",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdout.ndjson",
+            "response_line": 25,
+            "response_line_sha256": "97946358833028bd9dd9b4cac496639f21b02c4454e0390c55482dbbac68f791",
+            "rpc_id": 25,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "eligible-Control-no-tick",
+        "method": "runtime.ui.activate",
+        "matches": 1,
+        "profiles": [
+          "source_shared_player"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdin.ndjson",
+            "request_line": 39,
+            "request_line_sha256": "ab3bb2367138759628570b7c9fff3466d4282a8affcfd16525afb11ae0160984",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdout.ndjson",
+            "response_line": 39,
+            "response_line_sha256": "028954632bb7beea4c71f19bd3de82b1f51206ce645e2554fb9faecebc799f77",
+            "rpc_id": 39,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.raycast:miss",
+        "method": "runtime.raycast",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 84,
+            "request_line_sha256": "1f1552db9a03c20b3201a4b96dd042ae8fc607b59c05cc932d360ec3d6f09a83",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 84,
+            "response_line_sha256": "bffbc8113fa621e247c149a73f3e55bf4952c5c6ce6760093fe5a454df9e6436",
+            "rpc_id": 84,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 84,
+            "request_line_sha256": "6de17daac3e5ac4bb28c46ac0f252a761c8f63dd29e22bb6a3f35ceeb704028b",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 84,
+            "response_line_sha256": "d0cbfaee1e9465a0a126d99f906d92a612867cb66909e715e780d1a1cfcc4303",
+            "rpc_id": 84,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.raycast:invalid-direction",
+        "method": "runtime.raycast",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 103,
+            "request_line_sha256": "28b3704857f38b9d555876cb6227ee0d237753e3097dce3473baf3f18f5d059d",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 103,
+            "response_line_sha256": "dc39107c7ba423a4db77c3b489e5c27a5a6c694aea18dd8029275ff0cfbd2143",
+            "rpc_id": 103,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 103,
+            "request_line_sha256": "8c2768b0ca76e6dd3fcbfd1fe77e2441f57982b64a4c28a164c1af29ccb17c13",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 103,
+            "response_line_sha256": "dc39107c7ba423a4db77c3b489e5c27a5a6c694aea18dd8029275ff0cfbd2143",
+            "rpc_id": 103,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.raycast:stale-tick",
+        "method": "runtime.raycast",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 122,
+            "request_line_sha256": "e5283b9b4c006b4a362a3e23c796649a3f41fdaf5012512cf62eb553ea781488",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 122,
+            "response_line_sha256": "e5988fe28c4f345d823535b672abcbae649b902f310f41d5b09ac143f844d943",
+            "rpc_id": 122,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 122,
+            "request_line_sha256": "5c9bdc53052aada9db8cf71365110ba20cf7e64735ef3d034c6f30911d4b388a",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 122,
+            "response_line_sha256": "e5988fe28c4f345d823535b672abcbae649b902f310f41d5b09ac143f844d943",
+            "rpc_id": 122,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.hit_test:miss",
+        "method": "runtime.hit_test",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 141,
+            "request_line_sha256": "54595f73c72611e51b78f493160b1a7d185e64d20f4c8330980579e19622edd7",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 141,
+            "response_line_sha256": "acae962d1cd4031ad93390389760d22de4bc6f7d6977fa1289ef88ab998704fa",
+            "rpc_id": 141,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 141,
+            "request_line_sha256": "9da12f0e231465c64b47444bbaccda774614db97d03ca6fb1ca68c7f53f537c3",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 141,
+            "response_line_sha256": "a4aeb943cbb5fc648ec6fea340b49e18d725581451da4c1994911e8652fba277",
+            "rpc_id": 141,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.hit_test:invalid-direction",
+        "method": "runtime.hit_test",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 160,
+            "request_line_sha256": "ea5ecbb4044ee3219051bbfe0aa260932c5df6a5be6c41e4248e6ad322c8f87f",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 160,
+            "response_line_sha256": "c23504f75fab31076178a3ada109080d585cf75b74358a4e1dc612b9b3eeb6ab",
+            "rpc_id": 160,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 160,
+            "request_line_sha256": "8153293141c63706bc4cb644aa066489f3a9ba615cd273ad682b65133d18984f",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 160,
+            "response_line_sha256": "c23504f75fab31076178a3ada109080d585cf75b74358a4e1dc612b9b3eeb6ab",
+            "rpc_id": 160,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      },
+      {
+        "id": "runtime.hit_test:stale-tick",
+        "method": "runtime.hit_test",
+        "matches": 2,
+        "profiles": [
+          "source_shared_player",
+          "source_world"
+        ],
+        "examples": [
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+            "request_line": 179,
+            "request_line_sha256": "717863683c04fecc8a63bbde283851a269912ce1199e8dbc2aa9472219068dd9",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+            "response_line": 179,
+            "response_line_sha256": "059e901580661b31376d6013251cac060ddb25608116a26e0e434fea032325da",
+            "rpc_id": 179,
+            "profile": "source_world",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          },
+          {
+            "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+            "request_line": 179,
+            "request_line_sha256": "ad309cc060b7e899e4a20bfb0b19d673eb75ee3282e4fdecb365cd79b526149b",
+            "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+            "response_line": 179,
+            "response_line_sha256": "059e901580661b31376d6013251cac060ddb25608116a26e0e434fea032325da",
+            "rpc_id": 179,
+            "profile": "source_shared_player",
+            "native_engine_version": "0.0.146",
+            "origin": "focused2"
+          }
+        ]
+      }
+    ],
+    "durable_replay_joins": [
+      {
+        "original": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+          "request_line": 199,
+          "request_line_sha256": "80338b0712079945980bafa81963d5c418fe4ca2a5815694539701f59e94544a",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+          "response_line": 199,
+          "response_line_sha256": "51f83d4bad5b906cf098cd2443db9aea7be34b831a1dd3f007a0b0e59a3370d3",
+          "rpc_id": 199,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "replay": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+          "request_line": 209,
+          "request_line_sha256": "dbfc53739ab06a4e64b96b35ea4ee57912d84d4e371b698e30a599eec89642f0",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+          "response_line": 209,
+          "response_line_sha256": "22b7cfa0948778c6ec9469aea4d7d0d8b23890be3f700e688a4481702622f1cf",
+          "rpc_id": 209,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "changed_routing": false,
+        "distinct_owner": false,
+        "original_commitment_preserved": true
+      },
+      {
+        "original": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+          "request_line": 199,
+          "request_line_sha256": "80338b0712079945980bafa81963d5c418fe4ca2a5815694539701f59e94544a",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+          "response_line": 199,
+          "response_line_sha256": "51f83d4bad5b906cf098cd2443db9aea7be34b831a1dd3f007a0b0e59a3370d3",
+          "rpc_id": 199,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "replay": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+          "request_line": 232,
+          "request_line_sha256": "fdc749efe45f53b72b0590575c80de064c4ddb945aa7913f79bbc37860897232",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+          "response_line": 232,
+          "response_line_sha256": "e2a73be61c75a9a478419d67053edd35316d90a9ed09a22f7b38cf103fb3df3f",
+          "rpc_id": 232,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "changed_routing": true,
+        "distinct_owner": false,
+        "original_commitment_preserved": true
+      },
+      {
+        "original": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+          "request_line": 199,
+          "request_line_sha256": "80338b0712079945980bafa81963d5c418fe4ca2a5815694539701f59e94544a",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+          "response_line": 199,
+          "response_line_sha256": "51f83d4bad5b906cf098cd2443db9aea7be34b831a1dd3f007a0b0e59a3370d3",
+          "rpc_id": 199,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "replay": {
+          "request_file": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/connect-stdin.ndjson",
+          "request_line": 8,
+          "request_line_sha256": "3dfa21e69ba6c593ac7706e1851550263c499710251b49c0d2c64a3cf9fe5f8c",
+          "response_file": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/connect-stdout.ndjson",
+          "response_line": 8,
+          "response_line_sha256": "4aaedf22de74140f765c5bb476f2267f96f3a9c9f82be6e3368dd0ff3f4acf9b",
+          "rpc_id": 8,
+          "profile": "source_world",
+          "native_engine_version": "0.0.146",
+          "origin": "focused2"
+        },
+        "changed_routing": true,
+        "distinct_owner": true,
+        "original_commitment_preserved": true
+      }
+    ],
+    "natural_job": {
+      "user_time": 16562500,
+      "kernel_time": 17031250,
+      "period_user_time": 16562500,
+      "period_kernel_time": 17031250,
+      "page_faults": 54574,
+      "total_processes": 7,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "scope": [
+      "default/explicit64 component and UI pages in two authored scopes",
+      "cursor guards and exact selected-state/file preservation on rejection",
+      "strict native Boolean load consent plus three healthy selectors",
+      "owned newest-payload damage, denied write consent and acknowledged healthy generation3",
+      "durable replay after routing refresh and genuinely new inactive owner",
+      "shared-authoring ineligible compiled Control and eligible no-tick activation",
+      "truthful null misses and invalid/stale rays per method per authored scope"
+    ],
+    "compiled_control_artifact": {
+      "identity": "poima.test.managed-ui",
+      "descriptor_engine_version": "0.0.91",
+      "descriptor": {
+        "bytes": 3545,
+        "sha256": "932ec0c112727952308795544312a810192c0c5d91c1ddf7ed20e890d209e81e"
+      },
+      "library": {
+        "bytes": 1339392,
+        "sha256": "0f3431361b2a6332471cb6f394184645e7691b93645e5cb07da6287f8a785282"
+      },
+      "scope": "Retained original ManagedUiGame; admitted to native146. No new compilation or ABI certification."
+    }
+  },
+  "earlier_retained_results": {
+    "validated_successes": 9034,
+    "method_totals": {
+      "runtime.component.get": 645,
+      "runtime.component.query": 20,
+      "runtime.components": 120,
+      "runtime.entity": 2970,
+      "runtime.gameplay.inspect": 513,
+      "runtime.hit_test": 1704,
+      "runtime.inspect": 966,
+      "runtime.observe": 131,
+      "runtime.raycast": 48,
+      "runtime.save.result": 7,
+      "runtime.save.status": 165,
+      "runtime.status": 106,
+      "runtime.step": 1262,
+      "runtime.ui.activate": 67,
+      "runtime.ui.inspect": 200,
+      "save.inspect": 23,
+      "save.load": 6,
+      "save.status": 69,
+      "save.write": 12
+    },
+    "groups": [
+      {
+        "label": "build/alpha-puzzle-0.0.148/source-check-2/consumer/warm/connect-stdin.ndjson",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.components": 5,
+          "runtime.entity": 661,
+          "runtime.gameplay.inspect": 82,
+          "runtime.inspect": 323,
+          "runtime.observe": 3,
+          "runtime.raycast": 18,
+          "runtime.save.result": 1,
+          "runtime.save.status": 4,
+          "runtime.status": 1,
+          "runtime.step": 307,
+          "runtime.ui.activate": 11,
+          "runtime.ui.inspect": 15,
+          "save.inspect": 2,
+          "save.status": 2,
+          "save.write": 2
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 631,
+          "with_component_schema_context": 806
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-puzzle-0.0.148/source-check-2/consumer/cold/connect-stdin.ndjson",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.components": 4,
+          "runtime.entity": 220,
+          "runtime.gameplay.inspect": 32,
+          "runtime.inspect": 110,
+          "runtime.observe": 2,
+          "runtime.raycast": 6,
+          "runtime.save.status": 3,
+          "runtime.status": 1,
+          "runtime.step": 101,
+          "runtime.ui.activate": 5,
+          "runtime.ui.inspect": 8,
+          "save.status": 2,
+          "save.write": 2
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 14,
+          "with_component_schema_context": 482
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-puzzle-0.0.148/relocated-check-1/consumer/warm/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.components": 5,
+          "runtime.entity": 661,
+          "runtime.gameplay.inspect": 82,
+          "runtime.inspect": 323,
+          "runtime.observe": 3,
+          "runtime.raycast": 18,
+          "runtime.save.result": 1,
+          "runtime.save.status": 4,
+          "runtime.status": 1,
+          "runtime.step": 307,
+          "runtime.ui.activate": 11,
+          "runtime.ui.inspect": 18,
+          "save.inspect": 2,
+          "save.status": 1,
+          "save.write": 2
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 631,
+          "with_component_schema_context": 808
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-puzzle-0.0.148/relocated-check-1/consumer/cold/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.components": 4,
+          "runtime.entity": 220,
+          "runtime.gameplay.inspect": 32,
+          "runtime.inspect": 110,
+          "runtime.observe": 2,
+          "runtime.raycast": 6,
+          "runtime.save.status": 3,
+          "runtime.status": 1,
+          "runtime.step": 101,
+          "runtime.ui.activate": 5,
+          "runtime.ui.inspect": 8,
+          "save.status": 1,
+          "save.write": 2
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 13,
+          "with_component_schema_context": 482
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/02a3bc028088487b8f5a01c349f4a316",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/123798aa23a74a51ab40d5ada882465d",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/19ff4d2757c54c8689246ca05f6d4dca",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/273930449b3c407eb8c54857fefbc93e",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/305060c7e7194d2a92a8a24936b797fb",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/3b826b51f59f4173ab31483110a869e4",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 132,
+          "runtime.gameplay.inspect": 32,
+          "runtime.status": 25,
+          "runtime.step": 81,
+          "runtime.ui.activate": 7,
+          "runtime.ui.inspect": 10,
+          "save.inspect": 3
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 290,
+          "compact_gameplay_without_prior_schema": 32
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/3ef62fb32ddd4c5aaf03eaa0a44bf658",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/40cede2a0786425ba2258e3ea79439f0",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/451a51da7706478f8bf29b210c654fd1",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/47c9dd70537b469c96f1eb4b7d57531e",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/4d16bebab32d407a9fc09ace71b0fe6f",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/8724487c534847f9bde38261a1b77047",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 162,
+          "runtime.gameplay.inspect": 32,
+          "runtime.status": 15,
+          "runtime.step": 90,
+          "runtime.ui.activate": 7,
+          "runtime.ui.inspect": 10,
+          "save.inspect": 3,
+          "save.status": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 320,
+          "compact_gameplay_with_observed_schema": 32
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/8acb63cf6e36461a87f64f21fbed0697",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/b1b83e98024149f2acb36a4508494cab",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 123,
+          "runtime.gameplay.inspect": 32,
+          "runtime.status": 15,
+          "runtime.step": 77,
+          "runtime.ui.activate": 7,
+          "runtime.ui.inspect": 10,
+          "save.inspect": 3,
+          "save.status": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 268,
+          "compact_gameplay_with_observed_schema": 32
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/bb81c8c53b71483081d5d0ef24f018d7",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/bbf78f3d053a45578242def96adacdca",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/c2219f4d730844a2a0cfdf293e395ef3",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 132,
+          "runtime.gameplay.inspect": 32,
+          "runtime.status": 25,
+          "runtime.step": 81,
+          "runtime.ui.activate": 7,
+          "runtime.ui.inspect": 10,
+          "save.inspect": 3
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 290,
+          "compact_gameplay_without_prior_schema": 32
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/ccb800c38d434472b6177b8ac277659b",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 2,
+          "runtime.gameplay.inspect": 1,
+          "runtime.status": 1,
+          "runtime.step": 1,
+          "runtime.ui.inspect": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 6,
+          "compact_gameplay_with_observed_schema": 1
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/e4c896f12112441f92efa6f75e2a1acd",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/f0cbc35ccabb4773a168f9f0c08798e9",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {},
+        "selected_error_observations": [],
+        "context_coverage": {},
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-puzzle-0.0.148/fresh-attempt-2/native-receipts/fe2dec6ceca74132947a2661ae55f4c6",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.entity": 162,
+          "runtime.gameplay.inspect": 32,
+          "runtime.status": 15,
+          "runtime.step": 90,
+          "runtime.ui.activate": 7,
+          "runtime.ui.inspect": 10,
+          "save.inspect": 3,
+          "save.status": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 320,
+          "compact_gameplay_with_observed_schema": 32
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/scalar-game-1/verification/source-standalone/connect-stdin.ndjson",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 140,
+          "runtime.component.query": 4,
+          "runtime.components": 15,
+          "runtime.entity": 70,
+          "runtime.gameplay.inspect": 22,
+          "runtime.inspect": 14,
+          "runtime.observe": 17,
+          "runtime.save.result": 2,
+          "runtime.save.status": 18,
+          "runtime.status": 1,
+          "runtime.step": 7,
+          "runtime.ui.inspect": 14,
+          "save.inspect": 1,
+          "save.status": 6
+        },
+        "selected_error_observations": [
+          {
+            "method": "runtime.component.get",
+            "code": -32602,
+            "count": 1
+          },
+          {
+            "method": "runtime.component.get",
+            "code": -32009,
+            "count": 1
+          },
+          {
+            "method": "runtime.observe",
+            "code": -32602,
+            "count": 2
+          },
+          {
+            "method": "runtime.step",
+            "code": -32040,
+            "count": 2
+          }
+        ],
+        "context_coverage": {
+          "without_component_schema_context": 5,
+          "with_component_schema_context": 326
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-shared/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 140,
+          "runtime.component.query": 4,
+          "runtime.components": 15,
+          "runtime.entity": 70,
+          "runtime.gameplay.inspect": 22,
+          "runtime.inspect": 14,
+          "runtime.observe": 17,
+          "runtime.save.result": 2,
+          "runtime.save.status": 18,
+          "runtime.status": 1,
+          "runtime.step": 7,
+          "runtime.ui.inspect": 14,
+          "save.inspect": 1,
+          "save.status": 5
+        },
+        "selected_error_observations": [
+          {
+            "method": "runtime.component.get",
+            "code": -32602,
+            "count": 1
+          },
+          {
+            "method": "runtime.component.get",
+            "code": -32009,
+            "count": 1
+          },
+          {
+            "method": "runtime.observe",
+            "code": -32602,
+            "count": 2
+          },
+          {
+            "method": "runtime.step",
+            "code": -32040,
+            "count": 2
+          }
+        ],
+        "context_coverage": {
+          "without_component_schema_context": 4,
+          "with_component_schema_context": 326
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/scalar-game-1/verification/readonly-cold/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 20,
+          "runtime.components": 3,
+          "runtime.entity": 10,
+          "runtime.gameplay.inspect": 3,
+          "runtime.inspect": 3,
+          "runtime.observe": 2,
+          "runtime.save.result": 1,
+          "runtime.save.status": 2,
+          "runtime.status": 1,
+          "runtime.step": 1,
+          "runtime.ui.inspect": 3,
+          "save.load": 1,
+          "save.status": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 5,
+          "with_component_schema_context": 46
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/collection-game-1/verification/source-standalone/connect-stdin.ndjson",
+        "profile": "source_world",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 165,
+          "runtime.component.query": 6,
+          "runtime.components": 33,
+          "runtime.entity": 165,
+          "runtime.gameplay.inspect": 37,
+          "runtime.inspect": 33,
+          "runtime.observe": 41,
+          "runtime.save.status": 55,
+          "runtime.status": 1,
+          "runtime.step": 5,
+          "runtime.ui.inspect": 33,
+          "save.inspect": 1,
+          "save.load": 2,
+          "save.status": 24,
+          "save.write": 2
+        },
+        "selected_error_observations": [
+          {
+            "method": "runtime.step",
+            "code": -32040,
+            "count": 2
+          }
+        ],
+        "context_coverage": {
+          "without_component_schema_context": 5,
+          "with_component_schema_context": 598
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-shared/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 165,
+          "runtime.component.query": 6,
+          "runtime.components": 33,
+          "runtime.entity": 165,
+          "runtime.gameplay.inspect": 37,
+          "runtime.inspect": 33,
+          "runtime.observe": 41,
+          "runtime.save.status": 55,
+          "runtime.status": 1,
+          "runtime.step": 5,
+          "runtime.ui.inspect": 33,
+          "save.inspect": 1,
+          "save.load": 2,
+          "save.status": 23,
+          "save.write": 2
+        },
+        "selected_error_observations": [
+          {
+            "method": "runtime.step",
+            "code": -32040,
+            "count": 2
+          }
+        ],
+        "context_coverage": {
+          "without_component_schema_context": 4,
+          "with_component_schema_context": 598
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/alpha-contract-0.0.146/collection-game-1/verification/readonly-cold/connect-stdin.ndjson",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.146",
+        "selected_validated": {
+          "runtime.component.get": 15,
+          "runtime.components": 3,
+          "runtime.entity": 15,
+          "runtime.gameplay.inspect": 3,
+          "runtime.inspect": 3,
+          "runtime.observe": 3,
+          "runtime.save.status": 3,
+          "runtime.status": 1,
+          "runtime.step": 1,
+          "runtime.ui.inspect": 3,
+          "save.load": 1,
+          "save.status": 1
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 4,
+          "with_component_schema_context": 48
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/positive-rpc.json",
+        "profile": "source_world",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 450
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 450
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/cold-reference-rpc.json",
+        "profile": "source_world",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 6
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 6
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/cold-fresh-rpc.json",
+        "profile": "source_world",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 206
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 206
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/source-1/negative-rpc.json",
+        "profile": "source_world",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 190
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 190
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/positive-rpc.json",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 450
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 450
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/cold-reference-rpc.json",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 6
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 6
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/cold-fresh-rpc.json",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 206
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 206
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      },
+      {
+        "label": "build/agent-switchback-0.0.139/independent-evaluation-1/relocated-1/negative-rpc.json",
+        "profile": "readonly_game",
+        "native_engine_version": "0.0.134",
+        "selected_validated": {
+          "runtime.hit_test": 190
+        },
+        "selected_error_observations": [],
+        "context_coverage": {
+          "without_component_schema_context": 190
+        },
+        "limitation": "Context comes only from earlier observed schema-bearing replies in this owner. No dynamic typing is claimed for compact replies without such context."
+      }
+    ],
+    "limitations": [
+      "Index scanners were not re-executed; only selected original stream files are checked against retained index hashes.",
+      "Result validation cannot establish parser rejection, rollback, default capacities, receipt eviction, build/platform availability or every spatial-quality predicate.",
+      "The139 cohort uses native134;148 and146 scalar/collections use native146. Neither is a new149 native execution.",
+      "Schemas are observed from original successful schema-bearing native replies. Context is never fabricated from a future/current response or stripped to force acceptance."
+    ],
+    "related_public_evidence": [
+      "m2-workflow-response-contract.json",
+      "m2-compiled-component-workflow.json",
+      "m2-collection-workflow.json",
+      "m2-save-publication-rejection.json",
+      "m2-retained-save-recovery-upgrade.json",
+      "m2-agent-pumphouse.json",
+      "m2-agent-switchback-fresh-repeat.json"
+    ]
+  },
+  "portable_tests": {
+    "linux": {
+      "passed": true,
+      "tests": 174,
+      "stages": 8,
+      "native_execution": false,
+      "skipped": 0,
+      "python": "3.14.7 (main, Sep  5 2026, 05:55:41) [GCC 16.2.0]"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 174,
+      "stages": 8,
+      "native_execution": false,
+      "skipped": 0,
+      "python": "3.14.8 (tags/v3.14.8:8e6e75d, Sep 30 2026, 18:19:33) [MSC v.1944 64 bit (AMD64)]",
+      "owner": {
+        "user_time": 23437500,
+        "kernel_time": 16406250,
+        "period_user_time": 23437500,
+        "period_kernel_time": 16406250,
+        "page_faults": 317299,
+        "total_processes": 15,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    }
+  },
+  "distribution": {
+    "version": "0.0.149",
+    "wheel": {
+      "file": "poima_client-0.0.149-py3-none-any.whl",
+      "bytes": 56792,
+      "sha256": "bc37e6823daaac9dd1c2c285afd2f9939fc74ecf02e546bca36850e505305f70"
+    },
+    "backend": "setuptools 78.1.1",
+    "exact_package_files": {
+      "poima_client/client.py": {
+        "bytes": 17888,
+        "sha256": "75bfaad03fee51892965ae7f873ef37bf270f2c6530cd953cf22cfc8509cadb8"
+      },
+      "poima_client/core_responses.v1.candidate.json": {
+        "bytes": 25153,
+        "sha256": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90"
+      },
+      "poima_client/core_responses.v1.json": {
+        "bytes": 25150,
+        "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+      },
+      "poima_client/development.py": {
+        "bytes": 3633,
+        "sha256": "00cb5f5339ab6f1cd64eb6f6b99fc797b28343182b76a7c55d807059412011c9"
+      },
+      "poima_client/errors.py": {
+        "bytes": 1455,
+        "sha256": "7578e3055e5997f7e83831afc2e366563582c3d2ef289cc6882095de3fd3f1c3"
+      },
+      "poima_client/game_session_responses.py": {
+        "bytes": 1291,
+        "sha256": "df040ee3b046628dcfb43f83a4f16cb7b8da9a52596a555f1a83785b25229138"
+      },
+      "poima_client/observation.py": {
+        "bytes": 9608,
+        "sha256": "4b44e757bac5a97f4540879b9c1938a386fd3f61e431e6ac4e9a28aa0846020c"
+      },
+      "poima_client/responses.py": {
+        "bytes": 14658,
+        "sha256": "4ba1e345bb164c8e6936f79afdf1f87a3fc7fe0be1d22535f5fc6ff44091b593"
+      },
+      "poima_client/runtime_game_session_responses.v1.json": {
+        "bytes": 65252,
+        "sha256": "1015a8eca7334a691e7890b22d7b5c93182785c0bc39c1f984a768ea0148369a"
+      },
+      "poima_client/runtime_response_checks_v1.py": {
+        "bytes": 42456,
+        "sha256": "4440b3446edf5688b3e678fd402615974bd708abfdb87a4ab5d0c1fb880fd58a"
+      },
+      "poima_client/transport.py": {
+        "bytes": 19179,
+        "sha256": "5be09fdc801ca2302c587b7e0dd2579350c196435183204d3c05e57b43f13792"
+      },
+      "poima_client/workflow_responses.py": {
+        "bytes": 14734,
+        "sha256": "e0d5e6af6c88338448454381faac0f9b4831b69eea52e59b2c1e0726cafc3459"
+      },
+      "poima_client/__init__.py": {
+        "bytes": 847,
+        "sha256": "7bbec83d2f5ca3c11d2c238d1cfa6cb61b3ab795cff164a44dcc9e3827a5b2db"
+      }
+    },
+    "isolated_wheel_smoke": [
+      "Linux",
+      "Windows"
+    ],
+    "native_execution": false
+  },
+  "preserved_failed_attempts": [
+    {
+      "attempt": "native-checks-1",
+      "passed": false,
+      "reason": "Before any native suite: unrelated unstripped editor DLL exceeded the inherited consumer file cap. Subsequent native suite admission selects actual CLI/test dependencies.",
+      "report": {
+        "bytes": 1156,
+        "sha256": "9839b79aa86e8e328cd5452e2766477a84972249c18a17c996e648b8d13b29bc"
+      },
+      "owner": {
+        "bytes": 1798,
+        "sha256": "ba40d4cb86d82d6d344b2069ab0b36baa22c39799f49bb00ebca844195a976ff"
+      }
+    },
+    {
+      "attempt": "native-checks-2",
+      "passed": false,
+      "reason": "World-session test expected pruning despite already-present conditional schemas. Production conservatively preserved the complete union. Corrected the test to require that complete schema and its plain witness; separate recognized-schema pruning tests still run.",
+      "report": {
+        "bytes": 2215,
+        "sha256": "e563b18c6b7abdc0410ce4d3b07f19586d12da22b5b35ff94034d1d46e9de3c7"
+      },
+      "owner": {
+        "bytes": 1800,
+        "sha256": "865d80bbc1057a19e077d8e0a11351ccd3b2104a16a2f07d821ce6ed718d4148"
+      }
+    },
+    {
+      "attempt": "focused-native-1",
+      "passed": false,
+      "reason": "Three earlier owners completed, then the verifier attempted reading the native exclusive world lock. Follow-up hashes all content/backup files and complete membership while comparing only explicit lock metadata; no general permission-error suppression.",
+      "report": {
+        "bytes": 3012,
+        "sha256": "38405eec2b6f9582677c0acf0c0c5fe8658c660718f4b03f5851cba6d6c5d5cb"
+      },
+      "owner": {
+        "bytes": 2226,
+        "sha256": "5cf52df1a499c7771d116e3356b0ef7790231ecabc1ab03977691723ba72f6f2"
+      }
+    }
+  ],
+  "limits": [
+    "Only the named methods/base behavior and qualified Windows contexts are stable; experimental branches/bootstrap remain discoverable under separate policy.",
+    "Native149 qualification is Windows only. Linux here has portable client/schema/artifact tests, not a new Linux native runtime cohort.",
+    "Successful-result validation without prior observed dynamic schema is weaker; earlier compact results explicitly retain that limit.",
+    "Retained scalar/collection oracles compare complete selected state, not every internal version9 native snapshot. Existing148 full native snapshot/document comparisons remain their own evidence.",
+    "Original game images and consumers stay byte-identical; preparation, runtime, bundles and Python SDK are new cohort inputs. No whole SDK/binary ABI guarantee or compiler reproducibility claim.",
+    "Known resolving/expired tickets retain their meanings. No blanket unknown-outcome retry, unbounded receipts, general upgrades or broad disk-fault cross-product is promised.",
+    "No provider, renderer, player, physical input, clean-machine install, listening or representative performance run occurs in this checkpoint. Broader Alpha and full engine work remain open."
+  ],
+  "raw_receipts": [
+    {
+      "path": "build/native-snapshot-0.0.149/native-build-2/build-result.json",
+      "bytes": 54996,
+      "sha256": "0058793dfb7a7624a92e9b15118a33a4086990dc3460acf947c1ddbb27ca6bd0"
+    },
+    {
+      "path": "build/native-snapshot-0.0.149/native-build-2/source-pins.json",
+      "bytes": 44196,
+      "sha256": "be4908c7622792b2f12d55b866ce285a6e7dd2e894046f3bc14d4975445bb44e"
+    },
+    {
+      "path": "build/native-snapshot-0.0.149/native-build-2/sealed-artifacts.json",
+      "bytes": 1938,
+      "sha256": "9089407314e4281c4209aaac189f13bae9a8a273f7db7c334c9f69f032d7a152"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/runtime-1/owner.json",
+      "bytes": 23415,
+      "sha256": "f27b8d3e49c6da58ba3bc126d8e02361a767f3b84c22fe5f43d5b160dec9111e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/report.json",
+      "bytes": 3721,
+      "sha256": "e834b544c64a65730bfedcdbad795be2b0768e0e1c91dbe910468a79ef5c212c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/qualification.json",
+      "bytes": 1332,
+      "sha256": "908ae4dfee8c4f4efb0f9a552a32615a472e9ffc6ae79a483544a00d9128e581"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/world_session-stdout.txt",
+      "bytes": 147,
+      "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/world_session-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/schema-stdout.txt",
+      "bytes": 110,
+      "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/schema-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mcp-stdout.txt",
+      "bytes": 148,
+      "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mcp-stderr.txt",
+      "bytes": 684,
+      "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/hit_regions-stdout.txt",
+      "bytes": 42,
+      "sha256": "31dcda1efb9b9b4f232e518ff3d69b841b442900818932a43a2093d2f76b5357"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/hit_regions-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mesh-stdout.txt",
+      "bytes": 132,
+      "sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mesh-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mutation_discovery-stdout.txt",
+      "bytes": 82,
+      "sha256": "be6554c8e5ab6cb9a075f2a4d9dc5b9a88ebf76ffb11440949aee8ff5d51a65a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-3/mutation_discovery-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring.json",
+      "bytes": 833872,
+      "sha256": "73da29d1aebca3da1386f3c944a816c0b194463d7920eeb7c5cb55976505f846"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring-focused.json",
+      "bytes": 93481,
+      "sha256": "f2197454ce2bf79f951e29d8345c053e58ae97ff671b1d93b7de1727839f4a15"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/request-gates-1/source_world.json",
+      "bytes": 603,
+      "sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring/connect-stdin.ndjson",
+      "bytes": 2176,
+      "sha256": "07cafa7508ce98be5142a04383fba3f2a0f059a74ca5277bb43bea69c42f5faa"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring/connect-stdout.ndjson",
+      "bytes": 341456,
+      "sha256": "d4459a386217a0734b7cf114a607ac9a7fe96d0dcc8669a9addb8c158ed5b397"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/standalone-authoring/transcript.json",
+      "bytes": 2165109,
+      "sha256": "1e8bd388398e3049b4ea66d52c4e30b4e33b5347e6957dbb2e8d7e26da5a7d7c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring.json",
+      "bytes": 855675,
+      "sha256": "86c480d942a6e2b723167172148d06ba957299af6d920f9b90c90da74fbe3d51"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring-focused.json",
+      "bytes": 94412,
+      "sha256": "2bc1dbec402603fec35cadd570655e6342346ecc0a98efe4c5b6ae29c59dffdd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/request-gates-1/source_shared_player.json",
+      "bytes": 619,
+      "sha256": "ab3d2121b33e9c6b92b472050600795a7c52a44fa5bb5ba81191be7fc274c82f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/connect-stdin.ndjson",
+      "bytes": 2303,
+      "sha256": "6e30732484e39bfc483dc0f97a6ded4f260e26dd0ec64ac5aa91af8ad22a81ed"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/connect-stdout.ndjson",
+      "bytes": 353222,
+      "sha256": "84f89ff966866f832d38b22a66ca08e810aabb09b3f8e4ac1d95cbb78da0c9a7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/host-stderr.txt",
+      "bytes": 78,
+      "sha256": "7f7ceee4bfd257c9a7d86578d37603d21c5b43146611f80d2eea3a965719532b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-authoring/transcript.json",
+      "bytes": 2221217,
+      "sha256": "a1dd31e596dff99bde87357d00aa108b9afd1e6921e698646425337a217be959"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game.json",
+      "bytes": 432388,
+      "sha256": "7de4b2f153ee0993decde72a89b069da8917d46e3c972ecc58b5f7cd75707bac"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game-focused.json",
+      "bytes": 110410,
+      "sha256": "1e1b6634b51091e5056241b4753bb6294387fae09b13b05d73798011efae3b75"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/request-gates-1/readonly_game.json",
+      "bytes": 605,
+      "sha256": "0609ca588173ff5ced8336897e0d90b8a3c403db5d31038c0494ec69c8db219e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/connect-stdin.ndjson",
+      "bytes": 2303,
+      "sha256": "6e30732484e39bfc483dc0f97a6ded4f260e26dd0ec64ac5aa91af8ad22a81ed"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/connect-stdout.ndjson",
+      "bytes": 254936,
+      "sha256": "afe499677fc3cc57d31c56027ea8f8c4091dc2f541f77713b42c74cabbc46e8e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/host-stderr.txt",
+      "bytes": 78,
+      "sha256": "f5100892cbef12b64f64f45be16d6ff96700213e56b0640f04223d64b59fe928"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/shared-readonly-game/transcript.json",
+      "bytes": 1288203,
+      "sha256": "19ecb03d70100f7b97d191e12f68f5e0bb6889d8acacb44e0108b813f79fb3b1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-scalar-1/qualification.json",
+      "bytes": 2764,
+      "sha256": "45159cbd9fe0277067e392e28f0a3e68a5c62e06a5c40a23f94948d451bd6a9d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-scalar-1/fixture/report.json",
+      "bytes": 20039,
+      "sha256": "7c28cfd1f3d9d0d3fc6733c1dd21fdb255a230e5b2733fc608b7b062961fc5c7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-scalar-1/job/owner.json",
+      "bytes": 1705,
+      "sha256": "1b18439bde445ecc889495ce716186570d2c9ad7a792e9e91217ebb3fc16ce77"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-scalar-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-scalar-1/job/stdout.txt",
+      "bytes": 63,
+      "sha256": "16b1498476b5c04b3800d73d57066a360b07230de3a5b15c2151308d106db400"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/qualification.json",
+      "bytes": 17098,
+      "sha256": "e45779507a3a008d0f7283ac5afd27829a229ef3251b2e13061edf5f8951d934"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/job/owner.json",
+      "bytes": 1736,
+      "sha256": "fc503f1e3b4fd70522c993044e56881dd29b636a0d663270d3d2e99ff3b376ce"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/job/stdout.txt",
+      "bytes": 61,
+      "sha256": "69dc8e7f85c38864739b1967e2369b9cbc03c729b9057dc58db93c4b09b75c47"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/report.json",
+      "bytes": 1003811,
+      "sha256": "2cf4d22d0ba82af5459351881187dd5da82b503b4d70d44e048ae8a14ac6a9d8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 10320,
+      "sha256": "7ec44fde8808d5c6054b0630eb954ff05ec4e298d87c20c00b08a8f5ccaa8446"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 46222,
+      "sha256": "b623ebb068d2cfdc67f2cebd9b1c590889af7fa678d2ac342ce6e9e7d9dcb6d1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "b2c95394b772b5a9d35c0dbed65081f7f9dfbd3622499c918ae503d8959bf809"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-cold/transcript.json",
+      "bytes": 198699,
+      "sha256": "d4d6d8cde142026f4dae700b984fd9b46c688280d279ae0dd6982ea99274372f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/connect-stdin.ndjson",
+      "bytes": 71245,
+      "sha256": "9e27898363dc7baf3b76b96c41990977fa56b1994e26b520a50db242ecb95bcd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/connect-stdout.ndjson",
+      "bytes": 337092,
+      "sha256": "325b098793621b5387179e5b841e1675b9ff02d9860baa78f537cb05da985f52"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "67f5f352e9c202e75b99ea8f6afc41f965b1f8178030cf840a888feb08368d79"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared/transcript.json",
+      "bytes": 1466204,
+      "sha256": "bd638297fce150c144983b2316ecd173e2b235018e2a01c07c7336cbfd3989fb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/project.json",
+      "bytes": 509,
+      "sha256": "5b586c4b8468c435a123931164dbda5b829d198c7a45c6ad4b42ff2336034c66"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/world.json",
+      "bytes": 18014,
+      "sha256": "84ffb8d6f054632f3ab876b2d328f32c9cb832208670d37d2f29e9428292b022"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-standalone/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-standalone/connect-stdin.ndjson",
+      "bytes": 72080,
+      "sha256": "3834a4164f65dff4c980fe9a5623d3acd9f891214be4f9031bd8323057a2566e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-standalone/connect-stdout.ndjson",
+      "bytes": 341910,
+      "sha256": "4873c245e8f1acb15f65eee9f3919fd6814ec87bbaa9b760e0aecf90634e904a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-standalone/transcript.json",
+      "bytes": 1484610,
+      "sha256": "410f9f0092733820ece7aa2595ba20cb17e65187c3995146581b18a1eb167fb5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-standalone-saves/slot-components-game/current.json",
+      "bytes": 647,
+      "sha256": "dcab21e5b8c54b70deccfaa70f80bd02d86ee2e314271c6ada79486fd7f627f4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/.poima-gameplay-adoptions/1a7e08fa556a41d3a7b970afb3a7f35d.json",
+      "bytes": 4856,
+      "sha256": "e5c5b05ab199fb8911c13c3378b163e2d389969a130b384ebd0c4248d4053538"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/settings/default.poima-input.json",
+      "bytes": 1520,
+      "sha256": "415ce8794d6942a2bb07efeeeb3db360856e6c8fe304bb28464f2b61e34776ad"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/game.poima-components.json",
+      "bytes": 925,
+      "sha256": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/native-gameplay.json",
+      "bytes": 5525,
+      "sha256": "1178c3698804af921b8715d185df1a13d07a4fdb7f3ec73ef816f9322d7fc214"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+      "bytes": 1139,
+      "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+      "bytes": 78041,
+      "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+      "bytes": 1139,
+      "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+      "bytes": 78041,
+      "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/notices/POIMA-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/scalar-1/verification/readonly-shared-saves/slot-components-game/current.json",
+      "bytes": 647,
+      "sha256": "133c9ded1a9efb06cd79c7d2a4924d46ab07ba9296cd16b16ade534f19ec490d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-collections-1/qualification.json",
+      "bytes": 2792,
+      "sha256": "d24feb9a12f6dff7b1bb10250cebadd22fd9ff4e83f16a3e77c6bd5987d429fd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-collections-1/fixture/report.json",
+      "bytes": 20414,
+      "sha256": "7d9d6f681030b4ae3309933338bf06a0345da1a0da7db2ac87dcc08ee20a1d45"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-collections-1/job/owner.json",
+      "bytes": 1717,
+      "sha256": "b0c793dca24373994de2649295462e8a7603ecde895b8492d1849c23df5a79ac"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-collections-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/prepare-collections-1/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "f9c184abe899c56128c9535147c4dd98502ad92cf6d9449ebec356e2d07f2b7f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/qualification.json",
+      "bytes": 17135,
+      "sha256": "983cd150a54367f8e7f21b2e8f6d8f437c75e95a96850a94009f3df5cdad697f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/job/owner.json",
+      "bytes": 1751,
+      "sha256": "73cf04f50d28820da9df4db65c555266de5953076012eb36da7d6dc48bc8e706"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "c5a47708505d5b3ad6a58dee1e59d540d4e83539953e34d9c5ea2cd6f0b4502f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/report.json",
+      "bytes": 2762837,
+      "sha256": "68031e77349e8b60381475df96d6cef0f6723e2e9c83c876dffbcad75ed3e8cd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 10493,
+      "sha256": "a8595a2f3ae1bac7556d6e3b3ef19950a6126fd8c7ee98677063ea690079d447"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 57649,
+      "sha256": "a50dc3eb443d7522e3eff4cf27469c512e882bf7fe5ba9ccdfd8eb64fd097214"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "d6c3812d481ab4b29df9f3f746ad5d0bebdc83f8f8b7ab09792836232d540f46"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-cold/transcript.json",
+      "bytes": 253818,
+      "sha256": "6bfd95accd576b9c143a85e145e69cb5e4e7f56cdd5baad1a943ba24ccc569b0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/connect-stdin.ndjson",
+      "bytes": 128731,
+      "sha256": "803e7830e21d04ac5dd08938e4b3c5e43c171b42ccd96419c2513705801a2739"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/connect-stdout.ndjson",
+      "bytes": 676965,
+      "sha256": "07cef36b7b54004859002492c7497c153745e9b2ff0ab1b15ff08106c221b21e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "6494be66e186744f609bf2b1ea70a2e1a1c3bb89f593ea7e1fea2b9bae28de82"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared/transcript.json",
+      "bytes": 2996209,
+      "sha256": "8129456b73ef331410b8679101d186f3bfbfc67e6fe253b7d6edfc3af6edd90b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/project.json",
+      "bytes": 509,
+      "sha256": "6b5815a161404ca49a80b04c451336f7ecd5020ee5452e927a8837ecbcaedbc4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/world.json",
+      "bytes": 18658,
+      "sha256": "18edba4f2905331084ea347162c5cf3b2d85f103e17ee189b096c20117f39847"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-standalone/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-standalone/connect-stdin.ndjson",
+      "bytes": 129576,
+      "sha256": "c82c4206377f5b522d65782a7573e8ba8af36db43e6802facefa27c55c96fedc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-standalone/connect-stdout.ndjson",
+      "bytes": 681558,
+      "sha256": "0d9005d89380d710bfac5214b8b3ce385ccdea987faa7020ce6b2317ef7531ec"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-standalone/transcript.json",
+      "bytes": 3011597,
+      "sha256": "a651536e641dfbd84b4add0052903ed1dac949ae7e4770fc658ced6c259fe576"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-standalone-saves/slot-collection-wire/current.json",
+      "bytes": 647,
+      "sha256": "5b0c175c6754b9ba5f48f4f68f977c15b4bc01a92237d8a9468b0b15aab89a37"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/.poima-gameplay-adoptions/07e94e8421e14df391babbcab4d82bde.json",
+      "bytes": 4858,
+      "sha256": "4f50f8632384710275888ed0513a029895f9eea03fe428cbb63850d4a906e78b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/settings/default.poima-input.json",
+      "bytes": 1520,
+      "sha256": "8ac3faba158ffa644b802812924fa930073c3da28ea6971b266c9bc6153f39e5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/game.poima-components.json",
+      "bytes": 1009,
+      "sha256": "43e1072d8bf06abc7bb3cd5e9f538e73804f6b80d4feaf1a170073441847a8bf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/native-gameplay.json",
+      "bytes": 4530,
+      "sha256": "3bb39d24c77c7dc75bca58c06a764ad59e28ee7d8b35e8a7ad91fd36cb3b9df6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+      "bytes": 1139,
+      "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+      "bytes": 78041,
+      "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+      "bytes": 1139,
+      "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+      "bytes": 78041,
+      "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/notices/POIMA-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/collections-1/verification/readonly-shared-saves/slot-collection-wire/current.json",
+      "bytes": 647,
+      "sha256": "7c85805df8d864a39c00b22e5ecfcfebcc69bef40ea46430b25ba7c65e9c372f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/qualification.json",
+      "bytes": 1740,
+      "sha256": "d0210d5a5d3103f325086bcb3fdb110c872e441cd0805760edd858a96a4e6e26"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves-corruption.json",
+      "bytes": 3110,
+      "sha256": "f3d3b39d537003ab51457f3c200d5d3c34f2362012db7e17335458759473689b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves-generation2-original.bin",
+      "bytes": 46722,
+      "sha256": "a5f43ca9b488fbf499da8f717e288e5c639bba8821c84cb724197c29d9998eaf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/report.json",
+      "bytes": 2654,
+      "sha256": "749b121a8cc4150a2552fa2ca059bedb75fa64d2bb8a05ed2b520d4fc923b5bb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/job/owner.json",
+      "bytes": 1539,
+      "sha256": "c59d9f9ad5baaf5a622ba0c90e03671d46970415af70b2d89764beac4413f512"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/job/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/assertions.json",
+      "bytes": 13360,
+      "sha256": "348c2dc54d61030f88690d022059b5161eafc7fa2af02735e9a2a713773e8e32"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/authored-closure.json",
+      "bytes": 1129,
+      "sha256": "0d7c2f654bd5cdc39d66af6d7b1da33fa03c6b2736029bc92302d853cff82ce3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdin.ndjson",
+      "bytes": 6748,
+      "sha256": "3c6dde502e635c4bef8944e407ff042dd2af6da2a027e319a646740c3f30f72a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/connect-stdout.ndjson",
+      "bytes": 23742,
+      "sha256": "bf77a883b232d1258ae734426a2739146fd73b21332a9a8d7c71a1b98f6fb9db"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/host-stderr.txt",
+      "bytes": 78,
+      "sha256": "db290a7f1129d7e192b9bc3f7bd9b5a805e4862f596bde618303c6f7b8280e81"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-shared/transcript.json",
+      "bytes": 100253,
+      "sha256": "017641907ab9d41649f5a87e870bce656388a81649617f4dc15521422da35f00"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/control-source/world.json",
+      "bytes": 1975,
+      "sha256": "f018042133e572cdf85081c9263f8760587769aaa9c753a070ade5cc987c9e42"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/assertions.json",
+      "bytes": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/connect-stdin.ndjson",
+      "bytes": 1334,
+      "sha256": "b71789c3a2cbfe0f0444e5675ed12b99e2e3185f458ce6d193a573d9e4f60862"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/connect-stdout.ndjson",
+      "bytes": 1955,
+      "sha256": "73f2834064218564c5b2cc6c9620d3c61262e2546cad419033bf7b4e35c3278c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/durable-new-owner/transcript.json",
+      "bytes": 7463,
+      "sha256": "d919162a532330e7822f931c0a284af1ba7344f31d780b19921b186f2f65eff4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/assertions.json",
+      "bytes": 937874,
+      "sha256": "dd469ff4d3660b6230269c4af6fb8dadafdba31871e963f0a4a31bdbbd3b81bc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdin.ndjson",
+      "bytes": 97974,
+      "sha256": "80f04de0eb25463b0a3f44afa473afcaee355557b138867c2fdedec9086f26a8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/connect-stdout.ndjson",
+      "bytes": 533206,
+      "sha256": "d8d77050deb504df311a086b9264e7c26fcc932bd6fbc2f7c257855b3a775e08"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/host-stderr.txt",
+      "bytes": 78,
+      "sha256": "a2869555de5fc3872d0d62aa97ac172e7ea8b853c591427a0e6aec0c393eb3cf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared/transcript.json",
+      "bytes": 2124989,
+      "sha256": "1521b91f386facdfd28a952771cc80317ddb648ac2913807b66e56fa73519f56"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-shared-source/world.json",
+      "bytes": 106594,
+      "sha256": "b96f254ad5ee00e877f3b346d552adb1f4ce9e5831f52e4b0708dc741c33577c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/assertions.json",
+      "bytes": 2641921,
+      "sha256": "ac6dde29dfa71281ba350db9e432c0d32815be6f5bb061bcceb753021c6c1a69"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdin.ndjson",
+      "bytes": 275179,
+      "sha256": "d51de35ab87f4a3167aec7c39d3b7eccc8100aab2ea2ee48c10191b3cab74b23"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/connect-stdout.ndjson",
+      "bytes": 1769425,
+      "sha256": "55b249b284e19530eee393d15225f4b2ec4714815c46782bfed58462c74b249e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone/transcript.json",
+      "bytes": 6963869,
+      "sha256": "4c921194491d63365e70045a6287ba8f06356b5bc696b1d3b040ef100b369c91"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-source/world.json",
+      "bytes": 106594,
+      "sha256": "1d1b9086d44c59a48a2cc28d7f1c91e1bebded05924fc30905adff850565c385"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-consent/current.json",
+      "bytes": 1536,
+      "sha256": "c1e51dd106f7c5f2b529d585f725b9f070c27f44cf02582d41fe3e417ce0588b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-consent/p-8b569261f54ae9945f2c0c277e1d5b5c.bin",
+      "bytes": 46722,
+      "sha256": "81dbc91ed20136625d639d8ab33a54fd0752cb244368cafc038e57a6e771fe90"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-consent/p-c3faaf75f992409c70bf9d65916857c8.bin",
+      "bytes": 46722,
+      "sha256": "a5f43ca9b488fbf499da8f717e288e5c639bba8821c84cb724197c29d9998eaf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-consent/p-c54c3d62b47cccbd2068cba5312bbdae.bin",
+      "bytes": 46722,
+      "sha256": "a5f43ca9b488fbf499da8f717e288e5c639bba8821c84cb724197c29d9998eaf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-consent/previous.json",
+      "bytes": 1093,
+      "sha256": "026c9e46c7f27f4b10eeec836292c27191b9acbce63a6531ba5e9df8c1189230"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-finite/current.json",
+      "bytes": 649,
+      "sha256": "9d344366abdb50e9d5590af2de5e15aab3fb6286219a35a0fd2770be16a6d4fe"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-2/capture/pages-standalone-saves/slot-finite/p-d544b6f2ac7e759bb0e750a33deab845.bin",
+      "bytes": 46722,
+      "sha256": "a5f43ca9b488fbf499da8f717e288e5c639bba8821c84cb724197c29d9998eaf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/requests-stderr.txt",
+      "bytes": 132,
+      "sha256": "efc59cba875265e65e088c74627ca90598a9488ec9de6837e23a54442bc7895d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/requests-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/stable_results-stderr.txt",
+      "bytes": 114,
+      "sha256": "9e78db269090c3f7d68f2a2022b44e618b1570f23b9071149cf3ea1c6d2df83c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/stable_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/isolated_schemas-stderr.txt",
+      "bytes": 104,
+      "sha256": "c57bdec5f19166a93690118c71d5c3ee68b3bfc2827da2e950a0cdc421d4bd4f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/isolated_schemas-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/artifacts-stderr.txt",
+      "bytes": 113,
+      "sha256": "b63bbb837bf3eed204efe8ef5b08b3616bd221f628654a31e2c1ec367360fa1b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/artifacts-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/candidate_requests-stderr.txt",
+      "bytes": 135,
+      "sha256": "8d5636073fa4f7d53d348656dcf1edf56a3f042b7bdbbd8f228460a7c78c2431"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/candidate_requests-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/candidate_results-stderr.txt",
+      "bytes": 133,
+      "sha256": "653436459ef6642d734f97faa41f9ae538272f16968acbe700ed73ba217e71a6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/candidate_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/authoring_results-stderr.txt",
+      "bytes": 118,
+      "sha256": "679ecf88c90edf8f774a1ab2b1663d9eb2b45f39a9f71a647b4177e1ba0747cd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/authoring_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/observation-stderr.txt",
+      "bytes": 2534,
+      "sha256": "6c4e1e90c55fcca4d9a68e16cdce4d7a9797a2a967ed44770ebac7960eed0a0c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/observation-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-2/report.json",
+      "bytes": 9345,
+      "sha256": "c50e41a0d586520087e04e90b2810c481b105eb1a835a0ef9a50ece454596b52"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/requests-stderr.txt",
+      "bytes": 137,
+      "sha256": "7894b65712194f9f238ecb601dd1f84d90adbfab5c89fb1f87b45c7040bf256b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/requests-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/stable_results-stderr.txt",
+      "bytes": 119,
+      "sha256": "5e8b7ff44264fdaf8a152429d489eb78a458a32e0292295c976e6db3295b3799"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/stable_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/isolated_schemas-stderr.txt",
+      "bytes": 109,
+      "sha256": "8343114fbe4419b97ad307f4f5148f2cbdb31250581b1400123962320a08e965"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/isolated_schemas-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/artifacts-stderr.txt",
+      "bytes": 118,
+      "sha256": "1d0e8cafedc6703c13c8c641a494dc3c6d055b71ddd10952fa45a0511db34e09"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/artifacts-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/candidate_requests-stderr.txt",
+      "bytes": 140,
+      "sha256": "bc135954988a6c596ae0b4101a157a331ab1392419c91e6b65980361d321b280"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/candidate_requests-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/candidate_results-stderr.txt",
+      "bytes": 138,
+      "sha256": "60b5630eedf10ffad598b3dbbd67c7b823b0d4589cac33b5906bd26e5e784213"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/candidate_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/authoring_results-stderr.txt",
+      "bytes": 123,
+      "sha256": "9eda2db608c1f4bc247909d30a025644c25bdecc2714eb986657ab9f2f01140c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/authoring_results-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/observation-stderr.txt",
+      "bytes": 2556,
+      "sha256": "6d8f08cb8a74de69b6dd8482c539a2ff515fb88524d4a89add0b52bd18ed0f99"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/observation-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/report.json",
+      "bytes": 9720,
+      "sha256": "1a75f8b60b256b851304853d547f52a54aad8a2d34756d92d50a9e08aaa8316e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-2/qualification.json",
+      "bytes": 1330,
+      "sha256": "c2123e162924ec442202d77a1aba7ad025b4cc2736c81eb9bd6a5a1ae30f8bec"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/wheel-1/linux-smoke.json",
+      "bytes": 111,
+      "sha256": "f55937a9b6670d75f16e2ca741f6bd884e0aeb54e582cb958b0046e7b1b08047"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/wheel-1/windows-smoke.json",
+      "bytes": 112,
+      "sha256": "87cd711770589a035d9a56c213d7f03993c202277cfc70fc5907965b89914500"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/wheel-1/build-report.json",
+      "bytes": 2349,
+      "sha256": "03589117c06bffb5ff043a98abb577ba23fc5b64e54f4356895db82b660239c7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/wheel-1/build-stdout.txt",
+      "bytes": 4877,
+      "sha256": "a5b3224efcc6651cf6c5595222d9d135cd3166be404bcc3f3fb02e14c26c4d84"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/wheel-1/smoke.py",
+      "bytes": 1186,
+      "sha256": "fcbcf86a349e52829193092fb8b99470ce3e6141b45d73e3343b96cc046725d3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/qualification.json",
+      "bytes": 13736,
+      "sha256": "ee11c5fd7d9a0718b1272c235bd97315830eb6a1357a9a7d4c9e0a3c6336f898"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/discovery-1/capture/report.json",
+      "bytes": 1739,
+      "sha256": "1b4765483b1c8ebdef9f987e1f0118769fac61d90dfdbc89370521c27c0a8b63"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/request-gates-1/report.json",
+      "bytes": 315,
+      "sha256": "283ceff16f8df21b4626705c8ec929eb8c3b3e5281d6964df03d22a2a7d4689a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/request-gates-1/responses.json",
+      "bytes": 436,
+      "sha256": "dd726111c520481415cb3644cb849ae15c13254ad56c6cdd81d5a70b6171c86a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-1/report.json",
+      "bytes": 1156,
+      "sha256": "9839b79aa86e8e328cd5452e2766477a84972249c18a17c996e648b8d13b29bc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-1/qualification.json",
+      "bytes": 1798,
+      "sha256": "ba40d4cb86d82d6d344b2069ab0b36baa22c39799f49bb00ebca844195a976ff"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-2/report.json",
+      "bytes": 2215,
+      "sha256": "e563b18c6b7abdc0410ce4d3b07f19586d12da22b5b35ff94034d1d46e9de3c7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/native-checks-2/qualification.json",
+      "bytes": 1800,
+      "sha256": "865d80bbc1057a19e077d8e0a11351ccd3b2104a16a2f07d821ce6ed718d4148"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-1/capture/report.json",
+      "bytes": 3012,
+      "sha256": "38405eec2b6f9582677c0acf0c0c5fe8658c660718f4b03f5851cba6d6c5d5cb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/focused-native-1/qualification.json",
+      "bytes": 2226,
+      "sha256": "5cf52df1a499c7771d116e3356b0ef7790231ecabc1ab03977691723ba72f6f2"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-1/report.json",
+      "bytes": 9347,
+      "sha256": "d404279a519ec56915f80e03aeae2076fbf89a53f4c7684d1ebf9060d1873d9f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-linux-1/candidate_requests-stderr.txt",
+      "bytes": 147,
+      "sha256": "7b3397ce9748777244160559735274c64cc102f4f16bfbffe69d8535945b2eac"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-1/report.json",
+      "bytes": 9721,
+      "sha256": "b7f75aabef72d6962abbd6c90e3b1d2db8461acb1e43fcc46ec3e45b2a0ecb84"
+    },
+    {
+      "path": "build/alpha-contract-0.0.149/portable-windows-1/candidate_requests-stderr.txt",
+      "bytes": 152,
+      "sha256": "f60a7d90cf033bc334572022324c269ccb4af74ee4a93498677c478abea930dd"
+    }
+  ],
+  "changed_host_result_validation": {
+    "passed": true,
+    "validated_successes": 1969,
+    "method_totals": {
+      "runtime.component.get": 645,
+      "runtime.component.query": 20,
+      "runtime.components": 102,
+      "runtime.entity": 495,
+      "runtime.gameplay.inspect": 124,
+      "runtime.inspect": 100,
+      "runtime.observe": 121,
+      "runtime.save.result": 5,
+      "runtime.save.status": 151,
+      "runtime.status": 6,
+      "runtime.step": 26,
+      "runtime.ui.inspect": 100,
+      "save.inspect": 4,
+      "save.load": 6,
+      "save.status": 60,
+      "save.write": 4
+    },
+    "cohorts": [
+      {
+        "fixture": "scalar",
+        "old_report": "build/alpha-contract-0.0.146/scalar-game-1/verification/report.json",
+        "new_report": "build/alpha-contract-0.0.149/scalar-1/verification/report.json",
+        "old_native_version": "0.0.146",
+        "new_native_version": "0.0.149",
+        "unchanged_harness": {
+          "bytes": 32919,
+          "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+        },
+        "original_gameplay_library": {
+          "bytes": 1364480,
+          "sha256": "20efe9ecb5646b759b44d530ca1ccdc0c1df9f924790e8e7aa8ec63917495405"
+        },
+        "module_joins": [
+          {
+            "scope": "source",
+            "library": "build/alpha-contract-0.0.149/prepare-scalar-1/fixture/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/Poima.NativeGame.dll",
+            "descriptor": "build/alpha-contract-0.0.149/prepare-scalar-1/fixture/source-project/gameplay/adopt-1a7e08fa556a41d3a7b970afb3a7f35d/native-gameplay.json",
+            "original_library_identity": {
+              "bytes": 1364480,
+              "sha256": "20efe9ecb5646b759b44d530ca1ccdc0c1df9f924790e8e7aa8ec63917495405"
+            },
+            "descriptor_engine_version": "0.0.142"
+          },
+          {
+            "scope": "game",
+            "library": "build/alpha-contract-0.0.149/prepare-scalar-1/fixture/game/gameplay/Poima.NativeGame.dll",
+            "descriptor": "build/alpha-contract-0.0.149/prepare-scalar-1/fixture/game/gameplay/native-gameplay.json",
+            "original_library_identity": {
+              "bytes": 1364480,
+              "sha256": "20efe9ecb5646b759b44d530ca1ccdc0c1df9f924790e8e7aa8ec63917495405"
+            },
+            "descriptor_engine_version": "0.0.142"
+          }
+        ],
+        "original_calls": 742,
+        "new_calls": 742,
+        "old_source_binary": {
+          "bytes": 25973760,
+          "sha256": "53ab0876abfe3f1c6153405cf8a9312665100897247c45069e533bbbaac1ac1a"
+        },
+        "new_source_binary": {
+          "bytes": 25985024,
+          "sha256": "b46006d9bd781ebf939b79c19ed5adbbed1c8f0773173fbc499f509306cd5469"
+        },
+        "old_bundled_binary": {
+          "path": "runtime/bin/poima.exe",
+          "bytes": 22218240,
+          "sha256": "c6ad1c7e3bfcfabdbefaf88909e3861415f9c7be3328d933b82f49a811f1e222"
+        },
+        "new_bundled_binary": {
+          "path": "runtime/bin/poima.exe",
+          "bytes": 22229504,
+          "sha256": "4f5d1a222614834120e1fd76013a9f833791a7168a27d637e6c95871604f6a44"
+        },
+        "local_typed_assertions": {
+          "source_readonly_typed_pairs": 3,
+          "same_owner_save_restore_typed_pairs": 2,
+          "compiled_callback_rollback_checks": {
+            "total": 4,
+            "scopes": [
+              "source-standalone",
+              "readonly-shared"
+            ],
+            "cases": [
+              "duplicate_staged_write",
+              "later_tick_exception"
+            ],
+            "assertion": "Strict typed equality of complete selected entity/component/gameplay/UI checkpoint, actual owner save routing/queue and external save-file inventory before/after native -32040. No failed-command receipt or complete internal snapshot claim."
+          },
+          "cold_readonly_save_restore_typed_pairs": 1
+        },
+        "scope": "Same frozen consumer and original module bytes against changed native host, with fresh prepared/adopted/exported projects. No cross-host random-ID/snapshot normalization or full-state byte-equality claim."
+      },
+      {
+        "fixture": "collections",
+        "old_report": "build/alpha-contract-0.0.146/collection-game-1/verification/report.json",
+        "new_report": "build/alpha-contract-0.0.149/collections-1/verification/report.json",
+        "old_native_version": "0.0.146",
+        "new_native_version": "0.0.149",
+        "unchanged_harness": {
+          "bytes": 25916,
+          "sha256": "113c8bc2ae39e6a2fae42ca3e0182bb9cf3491636bb73363cfda84cb1b179e9f"
+        },
+        "original_gameplay_library": {
+          "bytes": 1351680,
+          "sha256": "6136f28cb3290b0b1f8d48a2106579a8e1ddaf96e77f66ecddfdb18b3b308ccd"
+        },
+        "module_joins": [
+          {
+            "scope": "source",
+            "library": "build/alpha-contract-0.0.149/prepare-collections-1/fixture/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/Poima.NativeGame.dll",
+            "descriptor": "build/alpha-contract-0.0.149/prepare-collections-1/fixture/source-project/gameplay/adopt-07e94e8421e14df391babbcab4d82bde/native-gameplay.json",
+            "original_library_identity": {
+              "bytes": 1351680,
+              "sha256": "6136f28cb3290b0b1f8d48a2106579a8e1ddaf96e77f66ecddfdb18b3b308ccd"
+            },
+            "descriptor_engine_version": "0.0.142"
+          },
+          {
+            "scope": "game",
+            "library": "build/alpha-contract-0.0.149/prepare-collections-1/fixture/game/gameplay/Poima.NativeGame.dll",
+            "descriptor": "build/alpha-contract-0.0.149/prepare-collections-1/fixture/game/gameplay/native-gameplay.json",
+            "original_library_identity": {
+              "bytes": 1351680,
+              "sha256": "6136f28cb3290b0b1f8d48a2106579a8e1ddaf96e77f66ecddfdb18b3b308ccd"
+            },
+            "descriptor_engine_version": "0.0.142"
+          }
+        ],
+        "original_calls": 1299,
+        "new_calls": 1299,
+        "old_source_binary": {
+          "bytes": 25973760,
+          "sha256": "53ab0876abfe3f1c6153405cf8a9312665100897247c45069e533bbbaac1ac1a"
+        },
+        "new_source_binary": {
+          "bytes": 25985024,
+          "sha256": "b46006d9bd781ebf939b79c19ed5adbbed1c8f0773173fbc499f509306cd5469"
+        },
+        "old_bundled_binary": {
+          "path": "runtime/bin/poima.exe",
+          "bytes": 22218240,
+          "sha256": "c6ad1c7e3bfcfabdbefaf88909e3861415f9c7be3328d933b82f49a811f1e222"
+        },
+        "new_bundled_binary": {
+          "path": "runtime/bin/poima.exe",
+          "bytes": 22229504,
+          "sha256": "4f5d1a222614834120e1fd76013a9f833791a7168a27d637e6c95871604f6a44"
+        },
+        "local_typed_assertions": {
+          "source_readonly_typed_pairs": 10,
+          "same_owner_save_restore_typed_pairs": 2,
+          "cold_readonly_restore_continuation_typed_pairs": 2
+        },
+        "scope": "Same frozen consumer and original module bytes against changed native host, with fresh prepared/adopted/exported projects. No cross-host random-ID/snapshot normalization or full-state byte-equality claim."
+      }
+    ],
+    "sdk_validator_evolution": {
+      "old146_workflow_validator": {
+        "bytes": 47219,
+        "sha256": "b838da0d0681e2ee25a27756f4b47f02748eb3e9b09d7690b82b7f4185c5c473"
+      },
+      "current149_workflow_validator": {
+        "bytes": 14734,
+        "sha256": "e0d5e6af6c88338448454381faac0f9b4831b69eea52e59b2c1e0726cafc3459"
+      },
+      "equal": false,
+      "stable19_validator_pins_unchanged_from_retained_offline_check": true
+    },
+    "limitations": [
+      "No native run repeated. Natural original execution and artifact/typed-response joins are inspected offline.",
+      "Same old harness and module image do not imply unchanged fullSDK, publisher, package, C++ABI, C#source compatibility, artifact rebuild reproducibility or all optional branches.",
+      "The current149 Python validation implementation is recorded separately from old146; no claim that old/current fullvalidator imports stayed byte-identical.",
+      "Prepared source/adoption metadata and native runtime images legitimately change. No old random owner IDs or epochs are stripped to create cross-host equality.",
+      "The original142 request schema baseline is retained; actual149 discovery has source schema99 and new truthful qualified identity headers.",
+      "A result-validator pass is not parser rejection/rollback/platform/physical-input/graphics or fullAlpha certification."
+    ]
+  },
+  "earlier_portable_cohort": {
+    "tests_run_per_os": 174,
+    "passed_cases_per_os": 173,
+    "skipped_per_os": 1,
+    "reason": "Original unchanged candidate21 native-discovery integration is opt-in. Matrix2 supplies actual149 and retained142 captures and passes all174 with zero skips; matrix1 outputs remain retained, never relabelled."
+  },
+  "offline_audit_identities": {
+    "retained-stable19-validation-v1.json": {
+      "bytes": 362302,
+      "sha256": "b08aeb4c3f258fb071d132e74f3573b3bf64e5eb86744d7368529724afce4e0a"
+    },
+    "focused2-stable19-validation-v1.json": {
+      "bytes": 238033,
+      "sha256": "db1a1b9f4b547a35d047910bd51a393381b86c82af33686b6a912a6eebd43753"
+    },
+    "changed-host149-stable19-validation-v1.json": {
+      "bytes": 203755,
+      "sha256": "cbd5f05c2f9c6272971e15bff041811f96081c8dca639bbc6e7a2adba2390f8b"
+    }
+  },
+  "raw_receipts_availability": "Hashes identify original locally retained execution records. These raw build outputs and private audit reports are not included in a repository clone; public fixtures, schemas and verification tools are separate."
+}

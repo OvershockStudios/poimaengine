@@ -8,6 +8,13 @@ carry one observation boundary across all pages. It never retries mutations auto
 Build-job helpers inspect one accepted job and wait under a finite budget, using
 compact progress reads by default while preserving native terminal outcomes.
 
+Opt-in runtime game-session v1 result checks use a frozen packaged manifest for
+19 runtime/state/query/UI/save methods. Import `validate_game_session_result`
+and `game_session_response_contract` from `poima_client`; pass the original
+request and trusted component/gameplay schema context for contextual checks.
+The host's discovery identity separately reports qualified target and scope.
+The prospective 21-method workflow validator remains a different boundary.
+
 From the engine checkout: `python -m pip install ./tools/python`.
 An existing Poima executable is required; this package does not install the
 engine or provider credentials. Python is external automation tooling; engine

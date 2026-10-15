@@ -417,3 +417,15 @@ requests and optional trusted schema context. It returns the original result or
 raises `ResponseContractError`; normal `WorldClient.call` behavior remains
 unchanged. This is a candidate surface, not an extension of the released stable
 authoring-core contract. See [usage, distinctions and qualification](WORKFLOW_RESPONSE_CONTRACT.md).
+
+## Stable runtime-session result checks
+
+`poima_client.game_session_responses` supplies
+`game_session_response_contract()` and `validate_game_session_result(...)` for
+the separate [19-method runtime game-session v1](RUNTIME_GAME_SESSION_V1.md).
+Both are also exported from `poima_client`. Its frozen packaged schema is
+independent of the prospective workflow validator. Original request guards and
+trusted dynamic schema context enable stronger checks; validation never fetches
+schemas, retries operations or modifies normal `WorldClient.call` behavior.
+Check the actual host's qualified contract identity before relying on that
+release boundary.

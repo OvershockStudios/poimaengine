@@ -7,6 +7,8 @@ development. A stable authoring contract does not make the engine alpha-ready.
 The [prospective workflow request gate](WORKFLOW_API_COMPATIBILITY.md) separately
 tracks selected runtime/save schemas and discovery context. It does not extend
 this released v1 stability promise or replace native response/behavior checks.
+The separately released [runtime game-session v1](RUNTIME_GAME_SESSION_V1.md)
+selects 19 running-game operations with its own scope and qualification.
 
 ## Scope and discovery
 
