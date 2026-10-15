@@ -1,0 +1,175 @@
+{
+  "format": "poima.memory-timeline-qualification.v1",
+  "checkpoint": "0.0.160",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "Portable sampler/phase/soak-glue checks on Windows and Linux, plus an actual Windows self-process counter probe. No engine, GUI or GPU workload; integrated game recording and memory-growth qualification remain open.",
+  "source_pins": {
+    "tools/performance/windows_process_memory.py": {
+      "bytes": 17489,
+      "sha256": "975e1d3f55d1e9f129691aafe38862a93688e2708553216b105c953dad286b65"
+    },
+    "tools/performance/memory_phases.py": {
+      "bytes": 13217,
+      "sha256": "88983bef8957e1bb6062bbaf785303668154a8e3910991d1bb63fa044d55d2eb"
+    },
+    "tests/windows_process_memory.py": {
+      "bytes": 27698,
+      "sha256": "ddd69046c6ce5b497e2f0d5319a8a2d5396593f0d05c1cc198c6dfc000ddc6a6"
+    },
+    "tests/memory_phases.py": {
+      "bytes": 18459,
+      "sha256": "a810a97c30394b4bf3692612e64dada4f69830601f60ae0d6fe5e86196c192cf"
+    },
+    "tests/performance_yard_soak.py": {
+      "bytes": 61187,
+      "sha256": "4dda9d9e43572360f38a031cab67a852c2728e0daf6d12235823fe7c64b99ba7"
+    },
+    "tests/performance_yard_memory_timeline.py": {
+      "bytes": 17190,
+      "sha256": "7168a91ec4b137a34aee3e5b5157bf3a6b204950ab39d7b318845d8f960beab1"
+    },
+    "tests/performance_yard_reliability_diagnostics.py": {
+      "bytes": 23469,
+      "sha256": "3e58dcec96edcfb17e9b0055a26db928dabe9e86bc0dbbd541b98e7e2958fc0f"
+    },
+    "tests/windows_memory_timeline_smoke.py": {
+      "bytes": 4114,
+      "sha256": "e29296e5644af164ae672be32053d163c209c3a8ebc8d6f36c09f7689ed0f636"
+    },
+    "CMakeLists.txt": {
+      "bytes": 85058,
+      "sha256": "b6cb2e0db902a5c968b002b67d1ccacdb3817864f03571df95a43a9c94686553"
+    }
+  },
+  "recording": {
+    "option": "--record-memory-timeline",
+    "enabled_by_default": false,
+    "new_native_requests": 0,
+    "new_sampling_threads": 0,
+    "existing_soak_interval_seconds": 1,
+    "phase_limit_events": 4096,
+    "phase_limit_canonical_utf8_bytes": 1048576,
+    "owner_limit": 2,
+    "retained_error_limit": 16,
+    "evidence_limit_bytes": 16777216,
+    "evidence_budget": "Pretty UTF-8 JSON memory_timeline object with its enclosing field/object, plus actual referenced RAM report file bytes.",
+    "error_policy": "Retain valid partial data and original native error/cleanup; requested recording failure also fails the overall result.",
+    "assignment_policy": "Only whole query intervals within one phase and closed horizon with exact shared clock and observed owner PID/creation identity. Boundary overlaps remain unassigned; no elapsed-float reconstruction.",
+    "legacy": "Default version-1 report and existing scheduling retained; legacy reports have unsupported phase association."
+  },
+  "portable_tests": {
+    "linux": {
+      "passed": true,
+      "tests": 97,
+      "suites": [
+        {
+          "suite": "tests/windows_process_memory.py",
+          "tests": 35,
+          "test_seconds": 0.009,
+          "exit_code": 0,
+          "source_sha256": "ddd69046c6ce5b497e2f0d5319a8a2d5396593f0d05c1cc198c6dfc000ddc6a6"
+        },
+        {
+          "suite": "tests/memory_phases.py",
+          "tests": 20,
+          "test_seconds": 0.005,
+          "exit_code": 0,
+          "source_sha256": "a810a97c30394b4bf3692612e64dada4f69830601f60ae0d6fe5e86196c192cf"
+        },
+        {
+          "suite": "tests/performance_yard_memory_timeline.py",
+          "tests": 13,
+          "test_seconds": 0.038,
+          "exit_code": 0,
+          "source_sha256": "7168a91ec4b137a34aee3e5b5157bf3a6b204950ab39d7b318845d8f960beab1"
+        },
+        {
+          "suite": "tests/gpu_memory_observations.py",
+          "tests": 29,
+          "test_seconds": 0.009,
+          "exit_code": 0,
+          "source_sha256": "9909863fb4263df6c4841ff4974ba44af711d34c090d1dfc3c2488714a4aad09"
+        }
+      ],
+      "no_os_provider_engine_or_gpu_workload": true
+    },
+    "windows": {
+      "passed": true,
+      "tests": 97,
+      "suites": [
+        {
+          "suite": "tests/windows_process_memory.py",
+          "tests": 35,
+          "test_seconds": 0.035,
+          "exit_code": 0,
+          "source_sha256": "ddd69046c6ce5b497e2f0d5319a8a2d5396593f0d05c1cc198c6dfc000ddc6a6"
+        },
+        {
+          "suite": "tests/memory_phases.py",
+          "tests": 20,
+          "test_seconds": 0.005,
+          "exit_code": 0,
+          "source_sha256": "a810a97c30394b4bf3692612e64dada4f69830601f60ae0d6fe5e86196c192cf"
+        },
+        {
+          "suite": "tests/performance_yard_memory_timeline.py",
+          "tests": 13,
+          "test_seconds": 0.071,
+          "exit_code": 0,
+          "source_sha256": "7168a91ec4b137a34aee3e5b5157bf3a6b204950ab39d7b318845d8f960beab1"
+        },
+        {
+          "suite": "tests/gpu_memory_observations.py",
+          "tests": 29,
+          "test_seconds": 0.009,
+          "exit_code": 0,
+          "source_sha256": "9909863fb4263df6c4841ff4974ba44af711d34c090d1dfc3c2488714a4aad09"
+        }
+      ],
+      "no_os_provider_engine_or_gpu_workload": true
+    }
+  },
+  "source_preservation": {
+    "original_sampler_test_methods_byte_exact": 18,
+    "soak_class_old_operations_ast_identical": {
+      "rpc": 28,
+      "guards": 41,
+      "focus": 9,
+      "legacy_clock_sleep": 10
+    },
+    "wrapper": "Optional phase forwarded through the existing diagnostic snapshot override; actual inherited method covered with pure stubs.",
+    "existing_native_gates_weakened": false,
+    "changelog_original_preamble_and_entries_byte_exact": true
+  },
+  "native_windows_self_probe": {
+    "passed": true,
+    "artifact": "docs/evidence/memory-timeline-windows-native.json",
+    "bytes": 8349,
+    "sha256": "4f741490b19bf1be0c4818015ab8c425a5279e813ada8af2304a2479dcc5997d",
+    "source_pins_unchanged": true,
+    "exit_code": 0,
+    "natural_terminal": true,
+    "wall_seconds": 1.3409988689999999,
+    "actual_os_queries": 7,
+    "assigned": 5,
+    "deliberately_crossed_queries_unassigned": 2,
+    "stop_reason": "sample_limit",
+    "phase_labels": "Probe test labels; no actual engine gameplay.",
+    "process_scope": "The one native Windows Python process samples itself; no child processes, engine, window or GPU work."
+  },
+  "coverage": [
+    "Exact shared origins and unsigned integer clock/order validation; full provider query brackets and slow-query spans.",
+    "Legacy full-report equality with no new clock reads; pre-provider option rejection; identity reuse and handle cleanup.",
+    "API/clock/close failure precedence, interruption and valid partial row retention without admitting invalid counters.",
+    "Phase containment, touched/tied boundaries, horizon, owner/creation mismatch, malformed partial schemas and declared byte/event bounds.",
+    "Default soak no-op, exact sampler origin delegation, actual portable helper/fake-provider joins for two owners and current-tick/session pairing.",
+    "Fresh-start unknown identities, one-row recording rejection with row retention, missing files, evidence caps and original-error preservation.",
+    "Existing optional GPU-memory recorder regression checks; no actual GPU execution."
+  ],
+  "open_qualification": [
+    "Integrated memory-timeline recording during actual representative Windows game play.",
+    "Recording overhead, representative frame/RAM/VRAM budgets and cause of retained historical private-commit growth.",
+    "Mixed save/load, compatible reload and authored-edit reliability; physical input, editor and clean-install Alpha gates."
+  ]
+}

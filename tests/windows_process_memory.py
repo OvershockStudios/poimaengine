@@ -256,5 +256,236 @@ class Contracts(unittest.TestCase):
             self.assertEqual(caught.exception.code, 2)
 
 
+class QueryTimingContracts(unittest.TestCase):
+    """Independent integer clocks; no Windows calls or subprocesses."""
+    def timed(self, rows, ns_values, *, origin=0, options=None, close_error=None):
+        provider, clock, reads = Provider(rows, close_error), Clock(), []
+        values = iter(ns_values)
+        def ns():
+            value = next(values)
+            reads.append(value)
+            return value
+        report = sampler.collect(options or sampler.Options(42, duration=.2, query_timing=True),
+            provider_factory=lambda _: provider, monotonic=clock.monotonic,
+            sleep=clock.sleep, monotonic_ns=ns, clock_origin_ns=origin)
+        self.assertEqual(provider.closed, 1)
+        return report, provider, clock, reads
+
+    def test_legacy_exact_report_and_no_new_clock_calls(self):
+        provider, clock = Provider([counters(11, 22)]), Clock()
+        float_reads = []
+        def old_clock():
+            float_reads.append(clock.now)
+            return clock.now
+        def forbidden():
+            self.fail('Default version1 must never query the nanosecond clock.')
+        report = sampler.collect(sampler.Options(42, .4, .2, 1, False, None),
+            provider_factory=lambda _: provider, monotonic=old_clock,
+            sleep=clock.sleep, monotonic_ns=forbidden)
+        expected = dict(format='poima.windows-process-memory', version=1,
+            completed=True, stop_reason='sample_limit',
+            process=dict(pid=42, creation_filetime_100ns=str(provider.creation_filetime)),
+            requested=dict(duration_seconds=.4, interval_seconds=.2, maximum_samples=1, system_ram=False),
+            units=dict(memory='bytes', elapsed='seconds', creation_filetime='100ns since 1601-01-01 UTC'),
+            metrics=dict(working_set='Resident process working set; may include shared pages.',
+                private_commit='PROCESS_MEMORY_COUNTERS_EX.PrivateUsage; private committed memory, not resident bytes.'),
+            gpu=dict(qualified=False, reason='WDDM residency and dedicated/shared GPU memory are not measured.'),
+            samples=[dict(elapsed_seconds=0., working_set_bytes=11, private_commit_bytes=22)],
+            limitations=['Single process only; excludes child-process memory.',
+                'Observed sample extrema are not lifetime peaks or time-weighted averages.'],
+            sample_count=1,
+            summary={name:dict(samples=1, minimum=value, maximum=value, first=value, last=value, median=value)
+                for name,value in [('working_set_bytes',11),('private_commit_bytes',22)]})
+        self.assertEqual(report, expected)
+        self.assertEqual(float_reads, [0., 0.])
+        self.assertEqual(provider.closed, 1)
+
+    def test_shared_origin_and_exact_provider_brackets(self):
+        report, provider, clock, reads = self.timed([counters(1,2), counters(3,4)],
+            [2000,2100,2500,4000,4300], origin=1000)
+        self.assertTrue(report['completed'])
+        self.assertEqual(report['version'], 2)
+        self.assertEqual(report['clock'], dict(domain='python.time.monotonic_ns',
+            collector_pid=sampler.os.getpid(), origin_ns=1000))
+        self.assertEqual(report['sampler_started_ns'], 2000)
+        self.assertEqual([(r['query_begin_ns'],r['query_end_ns']) for r in report['samples']],
+            [(2100,2500),(4000,4300)])
+        self.assertEqual([r['elapsed_seconds'] for r in report['samples']], [0.,.2])
+        self.assertEqual(report['last_query'], dict(query_begin_ns=4000,query_end_ns=4300,status='sampled'))
+        self.assertEqual(reads, [2000,2100,2500,4000,4300])
+        self.assertEqual((provider.calls, clock.sleeps), (2,[.2]))
+
+    def test_omitted_origin_uses_single_actual_start_clock_read(self):
+        report, _, _, reads = self.timed([counters()], [900,1000,1200], origin=None,
+            options=sampler.Options(42,max_samples=1,query_timing=True))
+        self.assertEqual(report['clock']['origin_ns'], 900)
+        self.assertEqual(report['sampler_started_ns'], 900)
+        self.assertEqual(reads,[900,1000,1200])
+
+    def test_slow_complete_query_keeps_float_schedule_without_catchup(self):
+        clock=Clock();ns=[10_000_000_000]
+        class Slow(Provider):
+            def sample(self):
+                # Represents all provider calls, including identity/system RAM.
+                value=super().sample();clock.now+=.35;ns[0]+=350_000_000
+                return value
+        provider=Slow([counters()]*3)
+        report=sampler.collect(sampler.Options(42,duration=1,max_samples=3,query_timing=True),
+            provider_factory=lambda _:provider,monotonic=clock.monotonic,sleep=clock.sleep,
+            monotonic_ns=lambda:ns[0],clock_origin_ns=2_000_000_000)
+        self.assertEqual([(r['query_begin_ns'],r['query_end_ns']) for r in report['samples']],
+            [(10_000_000_000,10_350_000_000),(10_350_000_000,10_700_000_000),
+             (10_700_000_000,11_050_000_000)])
+        self.assertEqual([r['elapsed_seconds'] for r in report['samples']],[0.,.35,.7])
+        self.assertEqual(clock.sleeps,[])
+        self.assertEqual((provider.calls,provider.closed),(3,1))
+
+    def test_duration_does_not_stretch_to_finish_a_later_query(self):
+        clock=Clock();ns=[100]
+        class Slow(Provider):
+            def sample(self):
+                value=super().sample();clock.now+=.3;ns[0]+=300
+                return value
+        provider=Slow([counters()]*2)
+        report=sampler.collect(sampler.Options(42,duration=.4,query_timing=True),
+            provider_factory=lambda _:provider,monotonic=clock.monotonic,sleep=clock.sleep,
+            monotonic_ns=lambda:ns[0],clock_origin_ns=0)
+        self.assertTrue(report['completed'])
+        self.assertEqual(report['stop_reason'],'duration_complete')
+        self.assertEqual(provider.calls,2)
+        self.assertEqual([r['elapsed_seconds'] for r in report['samples']],[0.,.3])
+        self.assertEqual(report['samples'][-1]['query_end_ns'],700)
+        self.assertEqual(provider.closed,1)
+
+    def test_failed_api_attempt_keeps_bracket_but_not_counter_row(self):
+        report,provider,_,_=self.timed([counters(11,22),sampler.ProbeError('GetProcessMemoryInfo',5)],
+            [100,110,120,130,150])
+        self.assertEqual(report['error'],dict(operation='GetProcessMemoryInfo',win32_error=5))
+        self.assertEqual(report['sample_count'],1)
+        self.assertEqual(report['last_query'],dict(query_begin_ns=130,query_end_ns=150,status='error'))
+        self.assertFalse(report['completed'])
+        self.assertEqual(provider.calls,2)
+
+    def test_exit_and_interrupt_keep_final_attempt_without_admitting_it(self):
+        for failure,reason in [(sampler.ProcessEnded(),'process_ended'),(KeyboardInterrupt(),'interrupted')]:
+            with self.subTest(reason=reason):
+                report,_,_,_=self.timed([counters(),failure],[100,110,120,130,150])
+                self.assertEqual(report['stop_reason'],reason)
+                self.assertEqual(report['last_query'],dict(query_begin_ns=130,query_end_ns=150,status=reason))
+                self.assertEqual(report['sample_count'],1)
+                self.assertFalse(report['completed'])
+
+    def test_invalid_counters_retain_attempt_timing_and_only_valid_partial(self):
+        report,_,_,_=self.timed([counters(),counters(-1)],[100,110,120,130,150])
+        self.assertEqual(report['sample_count'],1)
+        self.assertEqual(report['last_query'],dict(query_begin_ns=130,query_end_ns=150,status='invalid_sample'))
+        self.assertFalse(report['completed'])
+        json.dumps(report,allow_nan=False)
+
+    def test_identity_change_does_not_admit_a_replacement_sample(self):
+        class Changed(Provider):
+            def sample(self):
+                value=super().sample()
+                if self.calls==2:value['creation_filetime']+=1
+                return value
+        provider=Changed([counters(1,2),counters(999,999)]);clock=Clock();ns=iter([100,110,120,130,150])
+        report=sampler.collect(sampler.Options(42,duration=.2,query_timing=True),provider_factory=lambda _:provider,
+            monotonic=clock.monotonic,sleep=clock.sleep,monotonic_ns=lambda:next(ns),clock_origin_ns=0)
+        self.assertEqual(report['error']['operation'],'process_identity_changed')
+        self.assertEqual(report['sample_count'],1)
+        self.assertEqual(report['summary']['working_set_bytes']['maximum'],1)
+        self.assertEqual(report['last_query']['query_end_ns'],150)
+        self.assertEqual(provider.closed,1)
+
+    def test_bad_options_and_shared_origin_reject_before_opening(self):
+        for origin in (True,-1,2**64,1.0,float('nan'),'100'):
+            with self.subTest(origin=origin):
+                opened=[]
+                with self.assertRaises(ValueError):
+                    sampler.collect(sampler.Options(42,query_timing=True),clock_origin_ns=origin,
+                        provider_factory=lambda _:opened.append(True),monotonic_ns=lambda:self.fail('Invalid origin read clock'))
+                self.assertEqual(opened,[])
+        for options,origin in [(sampler.Options(42),0),(sampler.Options(42,query_timing=1),None)]:
+            opened=[]
+            with self.assertRaises(ValueError):
+                sampler.collect(options,clock_origin_ns=origin,provider_factory=lambda _:opened.append(True))
+            self.assertEqual(opened,[])
+
+    def test_invalid_start_clock_never_opens_or_leaks_private_exception(self):
+        for value in (True,-1,2**64,1.0,float('nan'),float('inf')):
+            with self.subTest(value=value):
+                opened=[]
+                report=sampler.collect(sampler.Options(42,query_timing=True),clock_origin_ns=0,
+                    provider_factory=lambda _:opened.append(True),monotonic_ns=lambda:value)
+                self.assertFalse(report['completed']);self.assertEqual(report['sample_count'],0)
+                self.assertEqual(opened,[]);json.dumps(report,allow_nan=False)
+
+    def test_query_clock_regression_retains_only_valid_intervals(self):
+        for clocks,count,calls in [([100,99],0,0),([100,110,109],0,1),
+                                   ([100,110,120,119],1,1)]:
+            with self.subTest(clocks=clocks):
+                provider=Provider([counters()]*3);clock=Clock();values=iter(clocks)
+                report=sampler.collect(sampler.Options(42,duration=.4,query_timing=True),
+                    provider_factory=lambda _:provider,monotonic=clock.monotonic,sleep=clock.sleep,
+                    monotonic_ns=lambda:next(values),clock_origin_ns=0)
+                self.assertFalse(report['completed']);self.assertEqual(report['sample_count'],count)
+                self.assertEqual((provider.calls,provider.closed),(calls,1))
+                json.dumps(report,allow_nan=False)
+
+    def test_primary_api_error_survives_invalid_end_clock_and_close_failure(self):
+        report,_,_,_=self.timed([sampler.ProbeError('GetProcessMemoryInfo',5)],
+            [100,110,-1],close_error=sampler.ProbeError('CloseHandle',6))
+        self.assertEqual(report['error'],dict(operation='GetProcessMemoryInfo',win32_error=5))
+        self.assertEqual(report['close_error'],dict(operation='CloseHandle',win32_error=6))
+        self.assertIn('query_clock_error',report)
+        self.assertEqual(report['last_query']['query_begin_ns'],110)
+        self.assertIsNone(report['last_query']['query_end_ns'])
+        self.assertEqual(report['sample_count'],0)
+        json.dumps(report,allow_nan=False)
+
+    def test_close_failure_preserves_last_valid_interval(self):
+        report,_,_,_=self.timed([counters()],[100,110,120],
+            options=sampler.Options(42,max_samples=1,query_timing=True),close_error=sampler.ProbeError('CloseHandle',6))
+        self.assertFalse(report['completed']);self.assertEqual(report['sample_count'],1)
+        self.assertEqual(report['last_query'],dict(query_begin_ns=110,query_end_ns=120,status='sampled'))
+        self.assertEqual(report['close_error'],dict(operation='CloseHandle',win32_error=6))
+
+    def test_identity_guard_precedes_queries_and_shared_origin_cannot_be_future(self):
+        for identity,origin,ns_values in [(7,0,[100]),(None,101,[100])]:
+            with self.subTest(identity=identity,origin=origin):
+                provider=Provider([]);opened=[];values=iter(ns_values)
+                def factory(_):opened.append(True);return provider
+                report=sampler.collect(sampler.Options(42,query_timing=True,expected_creation_filetime=identity),
+                    provider_factory=factory,monotonic=lambda:0.,monotonic_ns=lambda:next(values),clock_origin_ns=origin)
+                self.assertFalse(report['completed']);self.assertEqual(provider.calls,0)
+                self.assertIsNone(report['last_query'])
+                self.assertEqual(provider.closed,1 if identity is not None else 0)
+                self.assertEqual(opened,[True] if identity is not None else [])
+
+    def test_clock_exception_is_bounded_and_uint64_endpoint_is_supported(self):
+        opened=[]
+        def failed():raise OSError('private-user-path')
+        report=sampler.collect(sampler.Options(42,query_timing=True),provider_factory=lambda _:opened.append(True),
+            monotonic_ns=failed,clock_origin_ns=0)
+        self.assertFalse(report['completed']);self.assertEqual(opened,[])
+        self.assertNotIn('private-user-path',json.dumps(report,allow_nan=False))
+        report,_,_,_=self.timed([counters()],[2**64-1]*3,origin=2**64-1,
+            options=sampler.Options(42,max_samples=1,query_timing=True))
+        self.assertTrue(report['completed'])
+        self.assertEqual(report['samples'][0]['query_end_ns'],2**64-1)
+
+    def test_cli_timing_is_explicit_and_requires_valid_origin_pair(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)/'memory.json'
+            with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit) as caught:
+                sampler.main(['--pid','42','--clock-origin-ns','0','--output',str(output)])
+            self.assertEqual(caught.exception.code,2);self.assertFalse(output.exists())
+            with patch.object(sampler,'native_windows',return_value=False),contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(sampler.main(['--pid','42','--query-timing','--clock-origin-ns','0','--output',str(output)]),1)
+            report=json.loads(output.read_bytes())
+            self.assertEqual(report['version'],2);self.assertEqual(report['clock']['origin_ns'],0)
+            self.assertEqual(report['sample_count'],0);self.assertEqual(report['error']['operation'],'native_windows_required')
+
+
 if __name__ == '__main__':
     unittest.main()

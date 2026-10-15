@@ -66,6 +66,23 @@ checks and offline ingestion of retained native reports qualify the recorder,
 not a new foreground, frame-rate or reliability run.
 [Results and limits](evidence/m2-gpu-memory-observations.json).
 
+## Optional process-memory timeline
+
+Add `--record-memory-timeline` to record each actual Windows memory-query
+interval alongside bounded harness phase marks in one shared integer clock.
+The option is off by default and also works through the diagnostic wrapper.
+It adds no native request or sampling thread and preserves the existing
+sampling interval and gameplay, focus, save, clock and cleanup checks.
+
+The final `evidence.json.memory_timeline` links each owner RAM report to its
+conservative phase associations. Queries crossing boundaries remain
+unassigned. A requested recording error preserves the original native error
+and cleanup, but fails the recording and overall result. The phase trace is
+bounded to 4,096 marks/1 MiB, with a 16 MiB combined timeline/RAM-report budget.
+These observations do not diagnose allocation causes or qualify growth,
+residency or representative recording overhead.
+[Clock, bounds, recovery and verification](MEMORY_TIMELINE.md).
+
 ## What it checks
 
 The full run warms up for 60 seconds, then performs 40 Save/Load cycles. Each

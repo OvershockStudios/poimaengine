@@ -308,8 +308,8 @@ class DiagnosticReliability(soak.Soak):
             state['errors'].append(dict(where='first-failure-before-cleanup',error=str(error), failure=failure))
             # Never replace the original failure with an observation failure.
 
-    def snapshot(self):
-        value = super().snapshot()
+    def snapshot(self, phase='snapshot'):
+        value = super().snapshot(phase=phase)
         key = self.label,self.replacements
         selected = (self.label == 'fresh' and self.replacements == 1 or
                     self.label == 'soak' and self.replacements in self.selected)

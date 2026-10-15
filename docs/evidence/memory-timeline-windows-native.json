@@ -1,0 +1,285 @@
+{
+  "format": "poima.windows-memory-timeline-smoke",
+  "version": 1,
+  "passed": true,
+  "scope": "Actual Windows self-process counters and query/phase alignment; test phase labels only. No engine, GPU, gameplay, memory-growth or performance qualification.",
+  "source_sha256": {
+    "tests/windows_memory_timeline_smoke.py": "e29296e5644af164ae672be32053d163c209c3a8ebc8d6f36c09f7689ed0f636",
+    "tools/performance/memory_phases.py": "88983bef8957e1bb6062bbaf785303668154a8e3910991d1bb63fa044d55d2eb",
+    "tools/performance/windows_process_memory.py": "975e1d3f55d1e9f129691aafe38862a93688e2708553216b105c953dad286b65"
+  },
+  "source_unchanged": true,
+  "memory_report": {
+    "format": "poima.windows-process-memory",
+    "version": 2,
+    "completed": true,
+    "process": {
+      "pid": 20996,
+      "creation_filetime_100ns": "134365686111879884"
+    },
+    "requested": {
+      "duration_seconds": 2,
+      "interval_seconds": 0.2,
+      "maximum_samples": 7,
+      "system_ram": true
+    },
+    "units": {
+      "memory": "bytes",
+      "elapsed": "seconds",
+      "creation_filetime": "100ns since 1601-01-01 UTC"
+    },
+    "metrics": {
+      "working_set": "Resident process working set; may include shared pages.",
+      "private_commit": "PROCESS_MEMORY_COUNTERS_EX.PrivateUsage; private committed memory, not resident bytes."
+    },
+    "gpu": {
+      "qualified": false,
+      "reason": "WDDM residency and dedicated/shared GPU memory are not measured."
+    },
+    "samples": [
+      {
+        "elapsed_seconds": 0.0004886999959126115,
+        "working_set_bytes": 23937024,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2041262080,
+        "query_begin_ns": 486675592918400,
+        "query_end_ns": 486675592973000
+      },
+      {
+        "elapsed_seconds": 0.20100599998841062,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2033278976,
+        "query_begin_ns": 486675793448200,
+        "query_end_ns": 486675793567900
+      },
+      {
+        "elapsed_seconds": 0.40148290002252907,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2033274880,
+        "query_begin_ns": 486675993923100,
+        "query_end_ns": 486675994024700
+      },
+      {
+        "elapsed_seconds": 0.6016908999881707,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2030788608,
+        "query_begin_ns": 486676194130200,
+        "query_end_ns": 486676194239900
+      },
+      {
+        "elapsed_seconds": 0.8018234000192024,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2031673344,
+        "query_begin_ns": 486676394260900,
+        "query_end_ns": 486676394396100
+      },
+      {
+        "elapsed_seconds": 1.0022813000250608,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2036310016,
+        "query_begin_ns": 486676594715700,
+        "query_end_ns": 486676594788000
+      },
+      {
+        "elapsed_seconds": 1.2024377000052482,
+        "working_set_bytes": 23945216,
+        "private_commit_bytes": 15634432,
+        "system_total_physical_bytes": 16440479744,
+        "system_available_physical_bytes": 2036527104,
+        "query_begin_ns": 486676794876400,
+        "query_end_ns": 486676794975500
+      }
+    ],
+    "limitations": [
+      "Single process only; excludes child-process memory.",
+      "Observed sample extrema are not lifetime peaks or time-weighted averages."
+    ],
+    "clock": {
+      "domain": "python.time.monotonic_ns",
+      "collector_pid": 20996,
+      "origin_ns": 486675592380800
+    },
+    "sampler_started_ns": 486675592428000,
+    "last_query": {
+      "query_begin_ns": 486676794876400,
+      "query_end_ns": 486676794975500,
+      "status": "sampled"
+    },
+    "stop_reason": "sample_limit",
+    "summary": {
+      "working_set_bytes": {
+        "samples": 7,
+        "minimum": 23937024,
+        "maximum": 23945216,
+        "first": 23937024,
+        "last": 23945216,
+        "median": 23945216
+      },
+      "private_commit_bytes": {
+        "samples": 7,
+        "minimum": 15634432,
+        "maximum": 15634432,
+        "first": 15634432,
+        "last": 15634432,
+        "median": 15634432
+      },
+      "system_total_physical_bytes": {
+        "samples": 7,
+        "minimum": 16440479744,
+        "maximum": 16440479744,
+        "first": 16440479744,
+        "last": 16440479744,
+        "median": 16440479744
+      },
+      "system_available_physical_bytes": {
+        "samples": 7,
+        "minimum": 2030788608,
+        "maximum": 2041262080,
+        "first": 2041262080,
+        "last": 2036527104,
+        "median": 2033278976
+      }
+    },
+    "sample_count": 7
+  },
+  "phase_report": {
+    "format": "poima.memory-phases",
+    "version": 1,
+    "clock": {
+      "domain": "python.time.monotonic_ns",
+      "collector_pid": 20996,
+      "origin_ns": 486675592380800
+    },
+    "completed": true,
+    "closed_ns": 486676795140600,
+    "event_count": 4,
+    "events": [
+      {
+        "sequence": 1,
+        "at_ns": 486675592754700,
+        "phase": "startup",
+        "owner": "probe",
+        "pid": 20996,
+        "creation_filetime_100ns": "134365686111879884",
+        "player_id": null,
+        "generation": null,
+        "session_id": null,
+        "tick": null,
+        "runtime_replacements": null,
+        "cycle": null
+      },
+      {
+        "sequence": 2,
+        "at_ns": 486675592922400,
+        "phase": "play",
+        "owner": "probe",
+        "pid": 20996,
+        "creation_filetime_100ns": "134365686111879884",
+        "player_id": null,
+        "generation": null,
+        "session_id": null,
+        "tick": null,
+        "runtime_replacements": null,
+        "cycle": null
+      },
+      {
+        "sequence": 3,
+        "at_ns": 486676394278600,
+        "phase": "pause",
+        "owner": "probe",
+        "pid": 20996,
+        "creation_filetime_100ns": "134365686111879884",
+        "player_id": null,
+        "generation": null,
+        "session_id": null,
+        "tick": null,
+        "runtime_replacements": null,
+        "cycle": null
+      },
+      {
+        "sequence": 4,
+        "at_ns": 486676795058700,
+        "phase": "cleanup",
+        "owner": "probe",
+        "pid": 20996,
+        "creation_filetime_100ns": "134365686111879884",
+        "player_id": null,
+        "generation": null,
+        "session_id": null,
+        "tick": null,
+        "runtime_replacements": null,
+        "cycle": null
+      }
+    ],
+    "limits": {
+      "maximum_events": 4096,
+      "maximum_bytes": 1048576,
+      "byte_encoding": "canonical compact UTF-8 JSON"
+    },
+    "rejected_events": 0,
+    "error": null
+  },
+  "association": {
+    "format": "poima.memory-phase-association",
+    "version": 1,
+    "supported": true,
+    "sample_count": 7,
+    "assigned_count": 5,
+    "unassigned_count": 2,
+    "assignments": [
+      {
+        "sample": 0,
+        "phase_sequence": null,
+        "phase": null,
+        "reason": "crosses_phase_boundary"
+      },
+      {
+        "sample": 1,
+        "phase_sequence": 2,
+        "phase": "play",
+        "reason": "within_phase"
+      },
+      {
+        "sample": 2,
+        "phase_sequence": 2,
+        "phase": "play",
+        "reason": "within_phase"
+      },
+      {
+        "sample": 3,
+        "phase_sequence": 2,
+        "phase": "play",
+        "reason": "within_phase"
+      },
+      {
+        "sample": 4,
+        "phase_sequence": null,
+        "phase": null,
+        "reason": "crosses_phase_boundary"
+      },
+      {
+        "sample": 5,
+        "phase_sequence": 3,
+        "phase": "pause",
+        "reason": "within_phase"
+      },
+      {
+        "sample": 6,
+        "phase_sequence": 3,
+        "phase": "pause",
+        "reason": "within_phase"
+      }
+    ]
+  }
+}

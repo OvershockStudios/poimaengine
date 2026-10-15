@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.160
+
+- Add opt-in process-memory query intervals and bounded reliability-harness phase recording in one shared integer clock. Preserve default sampling and native checks; retain partial errors and leave boundary-crossing queries unassigned. [Recording guide](docs/MEMORY_TIMELINE.md).
+- Verify typed clocks, identities, limits, legacy behavior and failure handling with portable checks; pass seven actual Windows self-process queries with five assigned intervals and two deliberately crossed boundaries. Game-memory growth and integrated recording overhead remain separate qualification work. [Results](docs/evidence/m2-memory-timeline.json).
+
 ## 0.0.159
 
 - Qualify twenty live PNG texture edits at **0.909 s p95**, including native decoding, mip cooking, adoption and fresh rendered verification on the full Performance Yard. Report verifier preparation separately; the preparation-through-verification p95 is 1.426 s.

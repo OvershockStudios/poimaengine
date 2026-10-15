@@ -45,6 +45,7 @@ class Options:
     max_samples: int = MAX_SAMPLES
     system_ram: bool = False
     expected_creation_filetime: int | None = None
+    query_timing: bool = False
 
     def validate(self):
         if type(self.pid) is not int or not 1 <= self.pid <= 0xffffffff:
@@ -60,6 +61,8 @@ class Options:
             raise ValueError('Max samples must be an integer in 1..18001.')
         if type(self.system_ram) is not bool:
             raise ValueError('System RAM selection must be boolean.')
+        if type(self.query_timing) is not bool:
+            raise ValueError('Query timing selection must be boolean.')
         value = self.expected_creation_filetime
         if value is not None and (type(value) is not int or not 1 <= value <= 0xffffffffffffffff):
             raise ValueError('Expected creation FILETIME must be a positive unsigned 64-bit integer.')
@@ -187,8 +190,12 @@ def diagnostic(error):
     return dict(operation='sampler_exception', exception_type=type(error).__name__)
 
 
-def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monotonic, sleep=time.sleep):
+def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monotonic, sleep=time.sleep,
+            monotonic_ns=time.monotonic_ns, clock_origin_ns=None):
     options.validate()
+    if clock_origin_ns is not None and (not options.query_timing or type(clock_origin_ns) is not int or
+                                       not 0 <= clock_origin_ns <= 0xffffffffffffffff):
+        raise ValueError('Clock origin requires query timing and an unsigned 64-bit integer.')
     report = dict(format='poima.windows-process-memory', version=1, completed=False,
         process=dict(pid=options.pid, creation_filetime_100ns=None),
         requested=dict(duration_seconds=options.duration, interval_seconds=options.interval,
@@ -200,11 +207,59 @@ def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monoton
         samples=[], limitations=['Single process only; excludes child-process memory.',
             'Observed sample extrema are not lifetime peaks or time-weighted averages.'])
     provider = None
+    if options.query_timing:
+        report.update(version=2,
+            clock=dict(domain='python.time.monotonic_ns', collector_pid=os.getpid(), origin_ns=clock_origin_ns),
+            sampler_started_ns=None, last_query=None)
+    previous_query_end = None
+
+    def query_time(lower):
+        try:
+            value = monotonic_ns()
+            if type(value) is not int or not 0 <= value <= 0xffffffffffffffff or value < lower:
+                raise ProbeError('invalid_query_clock')
+            return value
+        except BaseException as error:
+            # Never serialize the invalid clock value or arbitrary exception text.
+            report['query_clock_error'] = diagnostic(error)
+            raise
+
+    def timed_query():
+        nonlocal previous_query_end
+        begin = query_time(previous_query_end)
+        last = dict(query_begin_ns=begin, query_end_ns=None, status='pending')
+        report['last_query'] = last
+        primary = None
+        try:
+            row = provider.sample()
+        except BaseException as error:
+            primary = error
+            last['status'] = ('process_ended' if isinstance(error, ProcessEnded) else
+                              'interrupted' if isinstance(error, KeyboardInterrupt) else 'error')
+        try:
+            end = query_time(begin)
+            last['query_end_ns'] = end
+            previous_query_end = end
+        except BaseException:
+            if primary is None:
+                last['status'] = 'invalid_clock'
+                raise
+            # A secondary clock failure must not replace the actual API failure.
+        if primary is not None:
+            raise primary
+        last['status'] = 'returned'
+        return row
+
     try:
         started = monotonic()
         if not math.isfinite(started):
             raise ProbeError('invalid_monotonic_clock')
         previous = started
+        if options.query_timing:
+            previous_query_end = query_time(0 if clock_origin_ns is None else clock_origin_ns)
+            report['sampler_started_ns'] = previous_query_end
+            if clock_origin_ns is None:
+                report['clock']['origin_ns'] = previous_query_end
         provider = provider_factory(options)
         identity = provider.creation_filetime
         if type(identity) is not int or not 1 <= identity <= 0xffffffffffffffff:
@@ -224,7 +279,7 @@ def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monoton
             if now < due:
                 sleep(min(due-now, options.duration-(now-started)))
                 continue
-            row = provider.sample()
+            row = timed_query() if options.query_timing else provider.sample()
             if type(row.get('creation_filetime')) is not int or row['creation_filetime'] != identity:
                 raise ProbeError('process_identity_changed')
             required = {'creation_filetime', 'working_set_bytes', 'private_commit_bytes'}
@@ -236,6 +291,10 @@ def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monoton
             summarize([sample])
             if options.system_ram and sample['system_available_physical_bytes'] > sample['system_total_physical_bytes']:
                 raise ProbeError('invalid_system_ram')
+            if options.query_timing:
+                report['last_query']['status'] = 'sampled'
+                sample.update(query_begin_ns=report['last_query']['query_begin_ns'],
+                              query_end_ns=report['last_query']['query_end_ns'])
             report['samples'].append(sample)
             # No catch-up burst after a slow probe/scheduler stall; at most 5 Hz.
             due = now+options.interval
@@ -249,6 +308,8 @@ def collect(options, *, provider_factory=WindowsProvider, monotonic=time.monoton
     except KeyboardInterrupt:
         report['stop_reason'] = 'interrupted'
     except Exception as error:
+        if options.query_timing and report['last_query'] is not None and report['last_query']['status'] == 'returned':
+            report['last_query']['status'] = 'invalid_sample'
         report.update(stop_reason='error', error=diagnostic(error))
     finally:
         if provider is not None:
@@ -269,17 +330,22 @@ def main(argv=None):
     parser.add_argument('--max-samples', type=int, default=MAX_SAMPLES)
     parser.add_argument('--system-ram', action='store_true')
     parser.add_argument('--expected-creation-filetime', type=int)
+    parser.add_argument('--query-timing', action='store_true')
+    parser.add_argument('--clock-origin-ns', type=int)
     parser.add_argument('--output', type=Path, required=True, help='New JSON file in an existing directory.')
     args = parser.parse_args(argv)
     options = Options(args.pid, args.duration, args.interval, args.max_samples,
-                      args.system_ram, args.expected_creation_filetime)
+                      args.system_ram, args.expected_creation_filetime, args.query_timing)
     try:
         options.validate()
+        if args.clock_origin_ns is not None and (not args.query_timing or
+                not 0 <= args.clock_origin_ns <= 0xffffffffffffffff):
+            raise ValueError('Clock origin requires query timing and an unsigned 64-bit integer.')
     except ValueError as error:
         parser.error(str(error))
     if args.output.exists() or args.output.is_symlink() or not args.output.parent.is_dir():
         parser.error('Output must be a new file in an existing directory.')
-    report = collect(options)
+    report = collect(options, clock_origin_ns=args.clock_origin_ns)
     # Exclusive creation prevents overwriting a result that appeared during the
     # measurement. No process/account identifiers beyond PID/creation FILETIME.
     with args.output.open('x', encoding='utf-8') as stream:

@@ -40,6 +40,7 @@ FIELDS = ['world_matrix', 'layout', 'local_transform', 'animation', 'motion',
           'kinematic_target', 'motion_remaining_ticks', 'velocity', 'has_body',
           'is_character', 'ground', 'yaw', 'pitch']
 MAX_RPC_BYTES = 512 * 1024 * 1024
+MAX_TIMELINE_BYTES = 16 * 1024 * 1024
 
 
 def need(condition, text):
@@ -134,8 +135,139 @@ class RpcLog:
             self.file.close()
 
 
+class MemoryTimeline:
+    """Opt-in diagnostics; errors never interrupt native work or its cleanup."""
+    def __init__(self, origin_ns):
+        self.origin_ns, self.phases, self.api = origin_ns, None, None
+        self.samplers, self.errors, self.error_count = [], [], 0
+        try:
+            import memory_phases
+            self.api = memory_phases
+            self.phases = memory_phases.PhaseLog(origin_ns)
+        except Exception as error:
+            self.error('initialize', error)
+
+    def error(self, operation, error):
+        self.error_count += 1
+        if len(self.errors) < 16:
+            self.errors.append(dict(operation=operation, exception=type(error).__name__))
+
+    def mark(self, phase, **tags):
+        if self.phases is not None:
+            try:
+                self.phases.mark(phase, **tags)
+            except Exception as error:
+                self.error('mark', error)
+
+    def attach(self, owner, sampler):
+        if len(self.samplers) == 2:
+            self.error('owner_limit', ValueError())
+            return
+        self.samplers.append((owner, sampler))
+
+    def finish(self):
+        # Only after the existing sampler/owner cleanup; never add a join,
+        # query, thread or timestamp reconstructed from elapsed_seconds.
+        report = dict(format='poima.soak-memory-timeline', version=1,
+            recording_passed=False, phase_report=None, owners=[],
+            limits=dict(maximum_phase_bytes=1048576, maximum_evidence_bytes=MAX_TIMELINE_BYTES,
+                encoding='Pretty UTF-8 JSON memory_timeline wrapper plus referenced RAM report file bytes',
+                phase_encoding='Canonical compact UTF-8 JSON', maximum_errors=16),
+            omissions=[])
+        if self.phases is not None:
+            try:
+                self.phases.close()
+            except Exception as error:
+                self.error('close', error)
+            try:
+                report['phase_report'] = self.phases.snapshot()
+                need(report['phase_report']['completed'], 'Incomplete phase trace')
+                need(len(encoded(report['phase_report'])) <= 1048576, 'Phase report exceeds byte bound')
+            except Exception as error:
+                self.error('phase_report', error)
+        ram_bytes = 0
+        for owner, sampler in self.samplers:
+            entry = dict(owner=owner, memory_report=None, association=None)
+            report['owners'].append(entry)
+            try:
+                need(not sampler.thread.is_alive() and sampler.result is not None,
+                     'Memory sampler has no finished report')
+                result = sampler.result
+                if sampler.path.is_file():
+                    size = sampler.path.stat().st_size
+                    ram_bytes += size
+                    entry['memory_report'] = dict(file=sampler.path.name, bytes=size)
+                    need(size <= MAX_TIMELINE_BYTES, 'RAM report exceeds evidence byte bound')
+                    entry['memory_report']['sha256'] = shared.sha(sampler.path)
+                else:
+                    # Preserve valid partial samples if the existing finish
+                    # failed while publishing its file; do not invent a file.
+                    entry['partial_memory_report'] = result
+                    report['omissions'].append(dict(owner=owner, reason='ram_report_file_unavailable'))
+                    self.error('memory_report_file', ValueError())
+                if (result['process']['creation_filetime_100ns'] != str(sampler.identity)
+                        or result.get('stop_reason') != 'interrupted' or 'error' in result
+                        or 'close_error' in result or len(result['samples']) < 2):
+                    self.error('memory_recorder', ValueError())
+                need(self.api is not None and report['phase_report'] is not None,
+                     'Phase report unavailable')
+                entry['association'] = self.api.classify_samples(result, report['phase_report'], owner=owner)
+                need(entry['association']['supported'], 'Phase association unsupported')
+            except Exception as error:
+                self.error('associate', error)
+        if not self.samplers:
+            self.error('no_memory_reports', ValueError())
+        report['referenced_memory_report_bytes'] = ram_bytes
+        report['recording_passed'] = self.error_count == 0
+        report['error_count'], report['errors'] = self.error_count, list(self.errors)
+        report['errors_omitted'] = self.error_count-len(self.errors)
+        size = len((json.dumps({'memory_timeline':report}, indent=2, allow_nan=False)+'\n').encode('utf-8'))
+        if size+ram_bytes > MAX_TIMELINE_BYTES:
+            self.error('evidence_byte_limit', ValueError())
+            # Existing RAM files remain intact; retain their identities and
+            # the bounded phase trace, with explicit omission of associations.
+            for entry in report['owners']:
+                entry.pop('partial_memory_report', None)
+                entry['association'] = None
+            report['omissions'].append(dict(owner=None, reason='association_or_partial_report_byte_limit'))
+            report['recording_passed'] = False
+            report['error_count'], report['errors'] = self.error_count, list(self.errors)
+            report['errors_omitted'] = self.error_count-len(self.errors)
+        report['serialized_evidence_bytes'] = 0
+        report['within_evidence_byte_limit'] = False
+        # Include the accounting fields and evidence nesting itself (with a
+        # conservative JSON object wrapper). These bounded finalization
+        # passes never serialize a growing report during measured heartbeats.
+        for _ in range(5):
+            size = len((json.dumps({'memory_timeline':report}, indent=2, allow_nan=False)+'\n').encode('utf-8'))
+            within = size+ram_bytes <= MAX_TIMELINE_BYTES
+            passed = self.error_count == 0 and within
+            if (size, within, passed) == (report['serialized_evidence_bytes'],
+                    report['within_evidence_byte_limit'], report['recording_passed']):
+                break
+            report['serialized_evidence_bytes'] = size
+            report['within_evidence_byte_limit'], report['recording_passed'] = within, passed
+        return report
+
+
+def finalize_memory_timeline(record, timeline):
+    if timeline is None:
+        return
+    try:
+        record['memory_timeline'] = timeline.finish()
+    except Exception as error:
+        # Keep the original native/cleanup error and fail this requested
+        # diagnostic honestly even if final report serialization failed.
+        timeline.error('finalize', error)
+        record['memory_timeline'] = dict(recording_passed=False,
+            error_count=timeline.error_count, errors=list(timeline.errors))
+    record['passed'] &= record['memory_timeline']['recording_passed']
+    record['functional_reliability_passed'] &= record['passed']
+    record['harness_rehearsal_passed'] &= record['passed']
+
+
 class Sampler:
-    def __init__(self, owner, path, deadline):
+    def __init__(self, owner, path, deadline, clock_origin_ns=None):
         probe = memory.WindowsProvider(memory.Options(owner.process.pid))
         self.identity = probe.creation_filetime
         probe.close()
@@ -147,9 +279,15 @@ class Sampler:
                 raise KeyboardInterrupt  # collect retains partial rows.
 
         def sample():
-            self.result = memory.collect(memory.Options(owner.process.pid,
-                duration=min(3599, max(1, deadline-time.monotonic())), interval=1,
-                system_ram=True, expected_creation_filetime=self.identity), sleep=sleep)
+            if clock_origin_ns is None:
+                self.result = memory.collect(memory.Options(owner.process.pid,
+                    duration=min(3599, max(1, deadline-time.monotonic())), interval=1,
+                    system_ram=True, expected_creation_filetime=self.identity), sleep=sleep)
+            else:
+                self.result = memory.collect(memory.Options(owner.process.pid,
+                    duration=min(3599, max(1, deadline-time.monotonic())), interval=1,
+                    system_ram=True, expected_creation_filetime=self.identity, query_timing=True),
+                    sleep=sleep, clock_origin_ns=clock_origin_ns)
 
         self.thread = threading.Thread(target=sample, daemon=True)
         self.thread.start()
@@ -185,6 +323,30 @@ class Soak:
         self.u.SetForegroundWindow.restype = w.BOOL
         self.u.GetClientRect.argtypes = [w.HWND, ctypes.POINTER(w.RECT)]
 
+    def memory_phase(self, phase, *, cycle=None, observed=None):
+        timeline = getattr(self, 'memory_timeline', None)
+        if timeline is None:
+            return
+        try:
+            row = observed if observed is not None else {}
+            # Held owner identity is useful between observations. A cached
+            # tick is never asserted current at a later request boundary.
+            host = self.host
+            creation = getattr(self, 'memory_creation', None) if host else None
+            known = creation is not None
+            # A new host can fail before player.start/Sampler admission. Do
+            # not pair its PID with a prior player's IDs or a requested epoch.
+            timeline.mark(phase, owner=self.label, pid=host.process.pid if host else None,
+                creation_filetime_100ns=creation,
+                player_id=row.get('player_id', self.player_id if known else None),
+                generation=row.get('generation', self.generation if known else None),
+                session_id=row.get('current_session_id', row.get('session_id', self.sid if known else None)),
+                tick=row.get('current_tick', row.get('tick')),
+                runtime_replacements=self.replacements if known else None,
+                cycle=cycle if cycle is not None else getattr(self, 'memory_cycle', None))
+        except Exception as error:
+            timeline.error('observe_tags', error)
+
     def rpc(self, method, params=None):
         need(time.monotonic() < self.deadline, 'Whole-cohort deadline expired')
         need(self.host is None or self.host.process.poll() is None, 'Owned native host exited unexpectedly')
@@ -215,6 +377,7 @@ class Soak:
             time.monotonic()-self.record['started_monotonic'])
 
     def pause(self):
+        self.memory_phase('pause')
         state = self.player()
         if not state['paused']:
             self.rpc('player.control', shared.control_parameters(state, 'pause'))
@@ -249,6 +412,8 @@ class Soak:
             expected_ui_revision=runtime['ui_revision'], expected_control_sequence=runtime['control_sequence'],
             expected_gameplay_revision=module['revision'], expected_structure_revision=runtime['structure_revision'],
             id=rows[0]['id'])
+        if action in ('save', 'load'):
+            self.memory_phase(action, observed=state)
         result = self.rpc('runtime.ui.activate', params)
         self.sid = result['current_session_id']
         if result['runtime_replaced']:
@@ -266,12 +431,14 @@ class Soak:
         self.record.setdefault('controls', []).append(dict(owner=self.label, action=action,
             params=params, result=result, elapsed=time.monotonic()-self.record['started_monotonic']))
         if action in ('save', 'load'):
+            self.memory_phase(action, observed=result)
             need(result['save_serviced'] and result['save_operation']['state'] == 3,
                  'Compiled save/load did not commit the real configured store')
         return result, params
 
-    def snapshot(self):
+    def snapshot(self, phase='snapshot'):
         state = self.pause()
+        self.memory_phase(phase, observed=state)
         tick = state['tick']
         runtime, module, ui = self.runtime(), self.module(tick), self.ui(tick)
         need(runtime['tick'] == tick and not runtime['source_stale'], 'Snapshot runtime is not the frozen source')
@@ -335,6 +502,9 @@ class Soak:
 
     def start(self, label):
         self.label, self.replacements, self.previous_capture = label, 0, None
+        if getattr(self, 'memory_timeline', None) is not None:
+            self.memory_creation, self.memory_cycle = None, None
+        self.memory_phase('startup')
         endpoint = 'performance-soak-'+fresh()
         self.host = shared.ProcessOwner([str(self.args.binary), 'serve', str(self.world), '--endpoint', endpoint],
                                        label+'-host', endpoint, 'serve')
@@ -362,10 +532,19 @@ class Soak:
         shared.await_state(self.client, lambda row: row['ready'] and row['paused'], label+'-ready')
         self.record.setdefault('window_observations', []).append(dict(owner=label, **self.focus()))
         self.module(1)
-        self.sampler = Sampler(self.host, self.args.output/(label+'-memory.json'), self.deadline)
+        timeline = getattr(self, 'memory_timeline', None)
+        if timeline is None:
+            self.sampler = Sampler(self.host, self.args.output/(label+'-memory.json'), self.deadline)
+        else:
+            self.sampler = Sampler(self.host, self.args.output/(label+'-memory.json'), self.deadline,
+                                   clock_origin_ns=timeline.origin_ns)
+            timeline.attach(label, self.sampler)
+            self.memory_creation = str(self.sampler.identity)
+            self.memory_phase('startup', observed=response)
 
     def capture(self, label):
         state = self.pause()
+        self.memory_phase('capture', observed=state)
         path = self.args.output/(label+'.bmp')
         result = self.rpc('player.capture', dict(player_id=self.player_id, request_id=fresh(),
             expected_control_revision=state['control_revision'], session_id=self.sid, tick=state['tick'],
@@ -381,6 +560,7 @@ class Soak:
             scope='Actual native readback and submission receipt; no full-image reference or physical input claim'))
 
     def collect_frames(self, capture_id):
+        self.memory_phase('frame_paging')
         result = verify_capture(self.client, capture_id)
         summary, rows = result['summary'], result['rows']
         need(not summary['full'] and summary['frames_dropped'] == 0 and summary['frames_rejected'] == 0,
@@ -407,6 +587,8 @@ class Soak:
         before = self.player()
         need(not before['paused'], 'Real-clock segment must begin with an observed running owner')
         need(self.u.GetForegroundWindow() == self.hwnd, 'Actual focus lost before running segment')
+        self.memory_phase('warmup' if label == 'warmup' else
+                          'discarded_play' if 'discarded-play' in label else 'play', observed=before)
         began = time.monotonic()
         until, capture_id, frozen_capture = began+seconds, None, None
         if frame_window:
@@ -475,6 +657,7 @@ class Soak:
         return duration, route
 
     def close(self):
+        self.memory_phase('cleanup')
         if self.sampler:
             sampler, self.sampler = self.sampler, None
             result = sampler.finish()
@@ -526,6 +709,8 @@ def main():
     parser.add_argument('--rehearsal', action='store_true', help='Short harness check; never a reliability qualification')
     parser.add_argument('--record-gpu-memory', action='store_true',
         help='Retain bounded heap estimates from existing player reports; not peak/resident VRAM')
+    parser.add_argument('--record-memory-timeline', action='store_true',
+        help='Retain bounded monotonic query/phase associations; no memory-growth qualification')
     parser.add_argument('--cycles',type=int,default=40)
     parser.add_argument('--warmup',type=float,default=60)
     parser.add_argument('--before-save-seconds',type=float,default=35)
@@ -566,6 +751,7 @@ def main():
             'Present-return cadence is not scanout FPS or click-to-photon latency; no frame generation.',
             'Memory is one owning process working set/private commit; no WDDM VRAM or editor combined budget.',
             'Memory growth must be reviewed separately; this check does not equate bounded samples with absence of leaks.'])
+    memory_timeline = MemoryTimeline(time.monotonic_ns()) if args.record_memory_timeline else None
     gpu_memory_collector = gpu_memory_observations.Collector() if args.record_gpu_memory else None
     log = RpcLog(args.output/'rpc.jsonl.gz');record['calls'] = log
     shared.ARGS, shared.RECORD = args, record
@@ -616,6 +802,9 @@ def main():
         record['source_sha256'] = {str(path.relative_to(ROOT)).replace('\\','/'):shared.sha(path)
             for path in (Path(__file__),ROOT/'tests/performance_yard.py',ROOT/'tests/player_service_contract.py',
                          ROOT/'tests/player_performance.py',ROOT/'tools/performance/windows_process_memory.py')}
+        if args.record_memory_timeline:
+            record['source_sha256']['tools/performance/memory_phases.py'] = shared.sha(
+                ROOT/'tools/performance/memory_phases.py')
         if args.record_gpu_memory:
             record['source_sha256']['tools/performance/gpu_memory_observations.py'] = shared.sha(
                 ROOT/'tools/performance/gpu_memory_observations.py')
@@ -626,6 +815,8 @@ def main():
         u.SetThreadDpiAwarenessContext.argtypes=[ctypes.c_void_p];u.SetThreadDpiAwarenessContext.restype=ctypes.c_void_p
         need(u.SetThreadDpiAwarenessContext(ctypes.c_void_p(-4)), 'Cannot establish per-monitor DPI context')
         game = Soak(args,record,world,descriptor,manifest,deadline,owned)
+        if memory_timeline is not None:
+            game.memory_timeline = memory_timeline
         if gpu_memory_collector is not None:
             game.gpu_memory_collector = gpu_memory_collector
         game.start('soak')
@@ -636,6 +827,8 @@ def main():
         initial_route = game.route()
         saved, save_pins, saved_pin = None,None,None
         for cycle in range(args.cycles):
+            if memory_timeline is not None:
+                game.memory_cycle = cycle+1
             # Refresh reconciles the restored save ticket against the CURRENT
             # configured store before Close starts actual native-clock play.
             if cycle:
@@ -661,6 +854,7 @@ def main():
             gzip_write(snapshot_path,saved)
             # Retry only retained immediate receipts; never rely on ancient
             # history after >32 load/save turns.
+            game.memory_phase('save_retry')
             retry = game.rpc('runtime.ui.activate',copy.deepcopy(save_params))
             need(retry==dict(save_reply,replayed=True) and inventory(args.output/'saves')==save_pins and game.snapshot()==saved,
                  'Immediate Save retry invoked callback or changed durable bytes')
@@ -677,16 +871,17 @@ def main():
             load_reply, load_params = game.control('load')
             # First post-load domain read: no Refresh, Control or Tick may
             # change the restored checkpoint before exact observation.
-            actual = game.snapshot()
+            actual = game.snapshot(phase='restore_check')
             need(actual==saved, 'Same-window complete exact state restoration differs')
             need(inventory(args.output/'saves')==save_pins and
                  preference_identity(game.preferences())==preference_identity(current_preferences),
                  'Load changed durable checkpoint or current independent preferences')
             need(game.player()['report']['runtime_replacements']==cycle+1 and game.player_id==first_identity,
                  'Same-window load did not retain owner through the replacement seam')
+            game.memory_phase('load_retry')
             replay = game.rpc('runtime.ui.activate',copy.deepcopy(load_params))
             need(replay==dict(load_reply,replayed=True) and game.replacements==cycle+1 and
-                 game.snapshot()==saved and inventory(args.output/'saves')==save_pins,
+                 game.snapshot(phase='restore_check')==saved and inventory(args.output/'saves')==save_pins,
                  'Immediate Load retry repeated replacement or changed committed state')
             record['cycles'].append(dict(cycle=cycle+1,checkpoint=snapshot_path.name,
                 checkpoint_sha256=shared.sha(snapshot_path),saved=saved_pin,exact_restore=True,
@@ -721,7 +916,7 @@ def main():
         for key,value in {'camera.vertical_fov':60,'ui.scale':1,'audio.master_gain':1}.items():
             need(fresh_preferences['settings']['values'][key]==value, 'Fresh owner defaults differ')
         game.control('load')  # Eligible Welcome Load reflects the same compiled action.
-        need(game.snapshot()==saved and preference_identity(game.preferences())==preference_identity(fresh_preferences) and
+        need(game.snapshot(phase='restore_check')==saved and preference_identity(game.preferences())==preference_identity(fresh_preferences) and
              inventory(args.output/'saves')==save_pins,
              'Fresh actual process did not restore exact checkpoint/current preference separation')
         game.capture('fresh-exact-restore')
@@ -806,6 +1001,7 @@ def main():
         record['harness_rehearsal_passed'] &= record['passed']
         if gpu_memory_collector is not None:
             record['gpu_memory_observations'] = gpu_memory_collector.snapshot()
+        finalize_memory_timeline(record, memory_timeline)
         json_write(args.output/'evidence.json',record)
         print(json.dumps(dict(passed=record['passed'],output=str(args.output),error=record.get('error'))),flush=True)
     return 0 if record['passed'] else 1

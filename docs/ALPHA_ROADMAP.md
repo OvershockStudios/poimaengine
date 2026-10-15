@@ -112,6 +112,11 @@ exercise the shipped small game and its imported content; an empty scene or
 deliberately undersized fixture cannot substitute for it. Budget changes need
 an explicit technical reason and updated acceptance criteria.
 
+Opt-in [process-memory timelines](MEMORY_TIMELINE.md) provide query intervals
+and conservative phase association for further memory investigation. Their
+instrumentation checks do not close representative memory-growth, VRAM,
+reliability or recording-overhead gates.
+
 ## Implementation order
 
 1. Extend the qualified character/content consumer to representative imported
