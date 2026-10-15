@@ -136,3 +136,11 @@ extends compiled readonly consumer evidence to all five capacity-two array kinds
 length changes, guarded edits, rollback and exact selected save continuation.
 The original scalar consumer also passes. This closes that bounded consumer gap,
 while the wider contract, performance, interaction and delivery gates remain open.
+
+The 0.0.147 [retained-game consumer](evidence/m2-retained-save-recovery-upgrade.json)
+adds verified previous-payload recovery, a 49-preserved/one-default global upgrade,
+actual pickup and full cold restoration through the bundled executable. Its
+postcallback comparison explicitly checks the three owner-observation globals
+against native save status and keeps all other selected/native payload fields
+exact. This closes the named consumer gap; additional game families, a released
+runtime contract and the broader Alpha gates remain open.

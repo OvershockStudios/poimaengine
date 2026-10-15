@@ -568,6 +568,10 @@ def _request_joins(method, result, params):
         _need(result['configuration_generation'] == params['configuration_generation'] and result['generation'] == params['expected_generation'] + 1,
               'Save write routing/committed generation mismatch')
     if method == 'save.load':
+        if 'allow_recovery' in params:
+            _need(type(params['allow_recovery']) is bool, 'Recovery consent must be Boolean')
+        _need(not result['recovered'] or params.get('allow_recovery') is True,
+              'Recovered restore requires explicit allow_recovery:true in the original request')
         _need(result['session_id'] == params['new_session_id'], 'Restored session differs from original requested new session')
         _need(result['generation'] == params['expected_generation'], 'Save load storage-generation mismatch')
         if not result['replayed']:

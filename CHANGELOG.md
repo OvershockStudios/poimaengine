@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.147
+
+- Require explicit Boolean recovery consent when joining a recovered `save.load` result to its original request in the opt-in Python validator. Preserve response-only checks and historical receipt semantics. [Result contract](docs/WORKFLOW_RESPONSE_CONTRACT.md#request-dependent-results).
+- Qualify one genuine retained-game recovery and global-state upgrade through source and actual exported executables, including denied loads, absent-plan retries, an actual pickup and cold continuation. Keep original failed attempts and distinguish exact restoration from checked owner-lifecycle updates after callbacks. [Workflow and evidence](examples/relay-yard/UPGRADING.md#focused-recovery-and-exported-game-consumer).
+
 ## 0.0.146
 
 - Finish explicitly rejected stale-generation saves as failed even after durable receipt history rolls over, allowing gameplay to continue. Keep receipt resolution for uncertain publication. [Save behavior](docs/GAMEPLAY_SAVES.md#commit-and-rollback).

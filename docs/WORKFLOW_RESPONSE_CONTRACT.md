@@ -60,6 +60,20 @@ They do not compensate for missing required fields. Projected field sets and
 compact gameplay modules are deliberately exact so an unexpected large schema
 or unrelated value cannot silently enter a compact observation.
 
+For `save.load`, a supplied `allow_recovery` must be a JSON Boolean. If the
+successful result reports `recovered:true`, the supplied original request must
+contain literal `allow_recovery:true`; omission, `false`, numeric `1` and a
+similarly named field do not grant consent. A healthy load permits omission,
+`false` or `true`. With `params=None`, validation remains response-only and
+cannot establish whether recovery was authorized. `save.inspect` observes a
+slot without granting recovery consent.
+
+The same join applies to historical load receipts using their **original**
+request. Do not substitute replacement-session guards or the latest runtime's
+status. Nested `upgrade` report contents remain outside the generic validator's
+semantic checks; an upgrade consumer must verify its exact plan digests,
+approved mapping and resulting state separately.
+
 ## Trusted schema context
 
 Optional context accepts:
@@ -131,3 +145,15 @@ save/load and cold continuation work after the failures. This covers the named
 terminal conditions; unknown-outcome resolving tickets, owner-ledger eviction,
 general recovery/upgrades and broader error/behavior stability remain separate.
 [Execution evidence](evidence/m2-save-publication-rejection.json).
+
+The [focused retained Relay consumer](../examples/relay-yard/UPGRADING.md#focused-recovery-and-exported-game-consumer)
+adds a reproducible path for previous-payload recovery, explicit global-state
+upgrade and cold continuation through the actual bundled executable. The
+[0.0.147 qualification](evidence/m2-retained-save-recovery-upgrade.json) passes
+694 calls through four naturally closed owners using native 0.0.146 and the
+original 0.0.85/0.0.86 Native AOT images. It distinguishes full native comparisons
+before callbacks from selected denial checks and explicitly predicted
+owner-observation fields after cold continuation. It preserves the failed
+preparation and verifier attempts. This qualifies the named retained edge and
+previous-payload recovery, not arbitrary upgrades, other recovery modes or a
+stable runtime contract.

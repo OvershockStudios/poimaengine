@@ -1,0 +1,1173 @@
+{
+  "format": "poima.retained-save-recovery-upgrade-qualification.v1",
+  "checkpoint": "0.0.147",
+  "date": "2026-10-15",
+  "passed": true,
+  "scope": "One genuine retained Relay Yard 0.0.85 to 0.0.86 Native AOT global-only upgrade, verified previous-payload recovery and actual bundled cold continuation with native 0.0.146. Not a stable runtime or Alpha release.",
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 83757,
+      "sha256": "889b1c576371537735d7ae960a0e92cbe6e3c783dd621398b2cba19ce4ec5538"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 539,
+      "sha256": "856b4546fe270520eac7e60c618a84a47faa40aec0528842144cc3448ead2867"
+    },
+    "tools/python/poima_client/workflow_responses.py": {
+      "bytes": 47528,
+      "sha256": "ad2b1f2d6ceaa52b7edb5908e9bc6d4dcfe5dc315558d587971bd97cc129f548"
+    },
+    "tests/python_workflow_responses.py": {
+      "bytes": 27493,
+      "sha256": "9f8e982f267a7bb78324784905c276b1712f46e59085594afb43e5326d58edc6"
+    },
+    "tests/workflow_save_upgrade.py": {
+      "bytes": 45643,
+      "sha256": "fa2c6cc87ee01fd84539a7a21a69a88f7b836f0800cca93f92df89bc3493de8b"
+    },
+    "tests/workflow_components_game_service.py": {
+      "bytes": 32919,
+      "sha256": "6d7e0ae04b7dc5ee6009fbfe0b197b33c62715f3d99b4f1a21eed1220036865b"
+    },
+    "tests/workflow_response_native.py": {
+      "bytes": 20143,
+      "sha256": "73c997ab54629e135104eb8f19148aca28a80fdcd0cb8365382c4ca3b7db29fc"
+    },
+    "tests/relay_yard_upgrade.py": {
+      "bytes": 29621,
+      "sha256": "db0f5cc3371f1eb88141a8f4da820af902f451c81b16e5a082c17480f6e12cd7"
+    },
+    "tests/relay_yard_contract.py": {
+      "bytes": 42471,
+      "sha256": "7e48857c259958f0c9b449dc15f284af2bab351494a82a6b3c9db5e26270a6a4"
+    },
+    "tests/switchback_ownership.py": {
+      "bytes": 8658,
+      "sha256": "f6a44c6de87a03010de4f13ef569648acd01027eedd1e7a0a93cc729ee824233"
+    },
+    "docs/contracts/runtime-save-responses-v1.candidate.json": {
+      "bytes": 63224,
+      "sha256": "cc9a5267b81221dd2326c21cf705b36608322a00d15fbe4b76b0c3c733cc1a2f"
+    },
+    "docs/WORKFLOW_RESPONSE_CONTRACT.md": {
+      "bytes": 9970,
+      "sha256": "3812d4ce78146fac8b9baad39a0e80e3227fb6e971dbd75701b757c8635eb23c"
+    },
+    "examples/relay-yard/UPGRADING.md": {
+      "bytes": 10340,
+      "sha256": "9b05ec15ab8bf81d1aa37b1404d6f129f090e56877a31c7bd9731f6397d9d18f"
+    },
+    "docs/IMPLEMENTATION_STATUS.md": {
+      "bytes": 222523,
+      "sha256": "ff278c8d452b1e06df8131e37c858c896cf824cbd785fabc351cdfa912872dd1"
+    },
+    "docs/ALPHA_ROADMAP.md": {
+      "bytes": 16186,
+      "sha256": "c20b95ff8a1f3eaf11fc8f331d99dbe2b762f05c314c94c656424bf43d90b843"
+    }
+  },
+  "native_inputs": {
+    "native_version": "0.0.146",
+    "source_binary": {
+      "bytes": 25973760,
+      "sha256": "53ab0876abfe3f1c6153405cf8a9312665100897247c45069e533bbbaac1ac1a"
+    },
+    "bundled_binary": {
+      "path": "runtime/bin/poima.exe",
+      "bytes": 22218240,
+      "sha256": "c6ad1c7e3bfcfabdbefaf88909e3861415f9c7be3328d933b82f49a811f1e222"
+    },
+    "retained_tick": 567,
+    "retained_snapshot_version": 5,
+    "current_snapshot_version": 7,
+    "source_checkpoint": {
+      "bytes": 103327,
+      "sha256": "0a501d85ed24df7a21609b1da3c48ec8d6e79708ec7daca1c2a0c443ab0ff199"
+    },
+    "source_image_sha256": "205a81821a441f885a1c1791a800ad327f0dcbdfb6f403061162f17bede9e8ed",
+    "target_image_sha256": "f5d62a59ccd66f07ca77743d1da5b50ea4002bbb9134a72a883c1b4b618b9657",
+    "recompiled_gameplay": false,
+    "recompiled_native": false
+  },
+  "portable_tests": {
+    "linux": {
+      "command": "python -B tests/python_workflow_responses.py",
+      "count": 34,
+      "passed": true,
+      "seconds": 0.139
+    },
+    "windows": {
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 0.659887740999693,
+      "tests": 34,
+      "scope": "Windows Python portable response validation; no engine process or runtime behavior qualification",
+      "source_pins": {
+        "tools/python/poima_client/workflow_responses.py": {
+          "bytes": 47528,
+          "sha256": "ad2b1f2d6ceaa52b7edb5908e9bc6d4dcfe5dc315558d587971bd97cc129f548"
+        },
+        "tests/python_workflow_responses.py": {
+          "bytes": 27493,
+          "sha256": "9f8e982f267a7bb78324784905c276b1712f46e59085594afb43e5326d58edc6"
+        }
+      }
+    },
+    "scope": "Opt-in response/request validation only. Recovered success requires literal allow_recovery:true when original request is supplied; response-only validation remains available. No manifest or native request changes."
+  },
+  "preparation": {
+    "admission": {
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 1.2974973000236787,
+      "processes": 2,
+      "forced_cleanup": false,
+      "natural_closure": true
+    },
+    "export": {
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 8.134138699970208,
+      "processes": 5,
+      "forced_cleanup": false,
+      "natural_closure": true
+    },
+    "scope": "Original retained artifact/restoration plus native project create/inspect/adopt/build; original inputs unchanged; no compiler or GPU."
+  },
+  "consumer": {
+    "job": {
+      "passed": true,
+      "exit_code": 0,
+      "seconds": 11.567097400024068,
+      "processes": 7,
+      "forced_cleanup": false,
+      "natural_closure": true
+    },
+    "seconds": 10.746792599966284,
+    "native_calls": 694,
+    "candidate_validated_successes": 675,
+    "owners": [
+      {
+        "name": "retained-source",
+        "calls": 73,
+        "validated_successes": 70,
+        "returncode": 0,
+        "host_returncode": null
+      },
+      {
+        "name": "recovered-source",
+        "calls": 65,
+        "validated_successes": 64,
+        "returncode": 0,
+        "host_returncode": null
+      },
+      {
+        "name": "readonly-target",
+        "calls": 477,
+        "validated_successes": 464,
+        "returncode": 0,
+        "host_returncode": 0
+      },
+      {
+        "name": "readonly-cold",
+        "calls": 79,
+        "validated_successes": 77,
+        "returncode": 0,
+        "host_returncode": 0
+      }
+    ],
+    "expected_errors": 7,
+    "rejections": {
+      "recovery-consent-source": {
+        "code": -32070,
+        "message": "Save recovery requires allow_recovery:true after inspection.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      },
+      "recovery-consent-target-plan": {
+        "code": -32070,
+        "message": "Save recovery requires allow_recovery:true after inspection.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      },
+      "exact-changed-image": {
+        "code": -32070,
+        "message": "Snapshot gameplay module/schema differs from the trusted module.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      },
+      "wrong-plan-hash": {
+        "code": -32070,
+        "message": "Save upgrade plan byte hash differs.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      },
+      "stale-typed-guard": {
+        "code": -32009,
+        "message": "Runtime replacement clock/revision conflict.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      },
+      "altered-request-id-reuse": {
+        "code": -32010,
+        "message": "Save request ID reused with different parameters.",
+        "selected_state_queue_routing_authored_and_store_unchanged": true
+      }
+    },
+    "legacy_reconstruction": {
+      "source_version": 5,
+      "observed_version": 7,
+      "preserved_original_fields": true,
+      "additions": [
+        "payload.cameras from frozen Camera components",
+        "payload.structure.spawned[*].nodes singleton template/root maps"
+      ],
+      "scope": "Explicit current-format reconstruction; original v5 and observed v7 remain verbatim in evidence."
+    },
+    "native_snapshot_names": [
+      "cold-continuation",
+      "cold-restored",
+      "ordinary-target-metadata",
+      "recovered-source-before-callback",
+      "retained-source-current-format",
+      "upgraded-before-callback",
+      "warm-continuation"
+    ],
+    "upgrade": {
+      "preserved_globals": 49,
+      "defaulted_globals": 1,
+      "retired_globals": 0,
+      "components": [],
+      "plan": {
+        "bytes": 7911,
+        "sha256": "62ee5ed309f81ecc04003eb455766ceaa9dd1d33fa46ade4ee5f0021d89922fc"
+      },
+      "receipt": {
+        "authored_revision": 5,
+        "control_sequence": 6,
+        "current_authored_revision": 5,
+        "generation": 3,
+        "recovered": true,
+        "recovery_reason": "Newest payload is unreadable; using verified prior generation.",
+        "replayed": false,
+        "selected_generation": 2,
+        "session_id": "1f5cd614eb9248caae622edf61f49eba",
+        "slot": "relay-yard",
+        "source_stale": false,
+        "structure_revision": 2,
+        "tick": 567,
+        "ui_revision": 9,
+        "upgrade": {
+          "authored_components": [],
+          "components": [],
+          "defaulted_globals": 1,
+          "plan_id": "317eb5cc975d48b4a8c52a526509235b",
+          "plan_sha256": "62ee5ed309f81ecc04003eb455766ceaa9dd1d33fa46ade4ee5f0021d89922fc",
+          "preserved_globals": 49,
+          "retired_globals": 0,
+          "source_content_sha256": "d84e1eab4e45bc18df206f523b8e2d87733119d3ece2a4f02bf43e17ea6cc9cf",
+          "source_image_sha256": "205a81821a441f885a1c1791a800ad327f0dcbdfb6f403061162f17bede9e8ed",
+          "source_schema_sha256": "f09d550898336c4f23ec6d9e09f7aa7db2cbb7f3522827f4f76fbec6ad522055",
+          "target_content_sha256": "d84e1eab4e45bc18df206f523b8e2d87733119d3ece2a4f02bf43e17ea6cc9cf",
+          "target_image_sha256": "f5d62a59ccd66f07ca77743d1da5b50ea4002bbb9134a72a883c1b4b618b9657",
+          "target_schema_sha256": "9769066f338a3864dfb1daa5df9f5d27ae882d713e2203ba8b2a7440e5f85d00"
+        }
+      }
+    },
+    "actual_pickup": {
+      "target": "00000000000000000000000000000006",
+      "remaining_live_entities": 73,
+      "scope": "Real semantic controller movement, actual camera ray and compiled Use; no synthetic alive:false RPC."
+    },
+    "cold_restore_and_continuation": true,
+    "original_inputs_unchanged": true,
+    "corrupt_recovery_slot_unchanged": true,
+    "postcallback_owner_lifecycle": {
+      "warm_expected": {
+        "ObservedEpochHigh": "-2603732534973522441",
+        "ObservedEpochLow": "2131370539393941238",
+        "LastSaveGeneration": "2"
+      },
+      "cold_expected": {
+        "ObservedEpochHigh": "6626420325842343388",
+        "ObservedEpochLow": "-2379307073091756959",
+        "LastSaveGeneration": "1"
+      },
+      "scope": "Exact typed comparison after replacing only ObservedEpochHigh, ObservedEpochLow and LastSaveGeneration in untouched warm copies from actual cold runtime.save.status. Original warm/cold values remain retained; each raw native payload checksum was independently verified by stored(). Precallback cold restore remains full exact.",
+      "before_callback_cold_restore_full_exact": true,
+      "other_selected_and_native_payload_fields_exact": true
+    }
+  },
+  "failed_attempts": [
+    {
+      "stage": "export",
+      "attempt": 1,
+      "outcome": "failed",
+      "reason": "Root selected overview camera102 instead of controller100 configured child camera101. Native inspection correctly rejected the setup before adoption/export.",
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 1.0639187999768183,
+        "processes": 3,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    },
+    {
+      "stage": "consumer",
+      "attempt": 1,
+      "outcome": "failed",
+      "reason": "Verifier attempted to hash actively Windows-locked world.json.lock. Narrow fix records only exact regular zero-byte single-link sidecar without opening; all other content remains hashed, closed tree including sidecar checked.",
+      "native_calls": 30,
+      "candidate_validated_successes": 29,
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 1.8648540999856777,
+        "processes": 2,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    },
+    {
+      "stage": "consumer",
+      "attempt": 2,
+      "outcome": "failed",
+      "reason": "Verifier shadowed original checkpoint entry while iterating exported files, then compared selected checkpoint SHA to an unrelated export-member SHA. Actual native recovery selected correct generation2. Distinct variable names fix the oracle.",
+      "native_calls": 36,
+      "candidate_validated_successes": 35,
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 1.9121390000218526,
+        "processes": 2,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    },
+    {
+      "stage": "consumer",
+      "attempt": 3,
+      "outcome": "failed",
+      "reason": "Verifier inherited a scalar fixture step helper without the required structure guard for this retained structurally changed world. Native correctly rejected it. Relay override obtains actual structure revision before stepping.",
+      "native_calls": 103,
+      "candidate_validated_successes": 98,
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 2.45225540001411,
+        "processes": 3,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    },
+    {
+      "stage": "consumer",
+      "attempt": 4,
+      "outcome": "failed",
+      "reason": "Verifier assumed restored menu was closed and attempted an ineligible menu-open control. Retained checkpoint correctly restored modal menu920; adapter now reads actual logical modal and uses eligible refresh/close before continuation.",
+      "native_calls": 394,
+      "candidate_validated_successes": 378,
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 7.015013700001873,
+        "processes": 5,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    },
+    {
+      "stage": "consumer",
+      "attempt": 5,
+      "outcome": "failed",
+      "reason": "Verifier assumed postcallback equality of owner-observation globals across distinct restore contexts. Exact cold restore and actual pickup passed. Native save polling correctly changes the two ObservedEpoch int64 fields and LastSaveGeneration to this owner epoch/restore generation. Explicit expected-value checks bind these three fields to native status; all other payload/selected fields remain exact.",
+      "native_calls": 688,
+      "candidate_validated_successes": 669,
+      "job": {
+        "passed": false,
+        "exit_code": 1,
+        "seconds": 11.13582129997667,
+        "processes": 7,
+        "forced_cleanup": false,
+        "natural_closure": true
+      }
+    }
+  ],
+  "limits": [
+    "One retained85->86 NativeAOT global-only edge:49 preserved/default1/retired0, one owned current-payload corruption and verified previous-payload recovery. No manifest recovery, acknowledged recovery write, quarantine, hierarchical/array/new-type upgrade or universal compatibility claim.",
+    "Legacy v5 to current v7 reconstruction is an explicit frozen-camera and singleton spawned-node addition oracle, not full byte equality across snapshot versions. Current source/target native snapshots are compared fully except the approved gameplay image/schema/default map.",
+    "Complete bounded retained live membership/components/entity/UI selection and queue/routing/storage invariance for denial/retry checks. Save ledger epochs are compared only within the same owner, never erased recursively.",
+    "Cold before-callback restore is full exact. Postcallback cold/warm equality allows exactly three Relay Restored globals independently derived from each actual owner epoch/restore generation: ObservedEpochHigh/Low signed-int64 decimal strings and LastSaveGeneration. Raw values/checksums remain intact; every other selected/native payload field is type-exact.",
+    "During active source ownership only the exact regular non-link zero-byte world.json.lock is represented by existence/type/size without opening its exclusively held handle. Every authored content/store file retains byte/hash checks; the full owned source tree, including sidecar bytes/hash, is read after source owners close.",
+    "Bounded real Relay movement, actual camera ray/Use and one remaining pickup, plus Control/Tick and native animation-rate observations; not the prior full courier/terminal completion campaign.",
+    "No compiler/provider/publisher/GPU/render/audio listening/performance/clean-machine/source-absence qualification; natural closure requires the separate supervising Job receipt.",
+    "Active authored comparisons describe only exact world.json.lock existence/type/size/link count without opening its exclusive handle. Other authored/store files retain byte hashes; full closed authored tree is retained.",
+    "Independent agent reviews are source/log/artifact review, including author participation, not external certification. Partial startup closure depends on the supervising Job, not only successful owner construction.",
+    "No new Linux-native execution. Portable validator passed on Linux and Windows. No browser, console, multiplayer, graphics, physical input or performance qualification."
+  ],
+  "reviews": [
+    {
+      "path": ".cache/alpha-contract-next/save147/preparation-audit-v1.json",
+      "bytes": 11196,
+      "sha256": "c8246928018805e95efbd5b169e1c58db594a6a56763310ad5506db1adf3d0bc"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/independent-consumer-source-v1.json",
+      "bytes": 3744,
+      "sha256": "bb9794b1ccd906de8f679db52d58eb559a265f67001715cc9fd5de597ede835a"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/active-authored-inventory-fix-v1.json",
+      "bytes": 1173,
+      "sha256": "7530aaf66e03d006e86417c79c051d876179108325178c4ade95908730ee26b4"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/checkpoint-entry-shadow-fix-v1.json",
+      "bytes": 1118,
+      "sha256": "d492d1b20300afdc5fd03d162c5b92402d7012f4001227fa2677d2e57a102152"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/structure-step-adapter-fix-v1.json",
+      "bytes": 1203,
+      "sha256": "ba393322bf2a1d61a07f2a43f29a7cd97a9efc994ac6a8231eaeefe3463f85b5"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/logical-modal-adapter-fix-v1.json",
+      "bytes": 1124,
+      "sha256": "712928528c3bb0e90f2c748978d6fd9fcce5f1c7c39a668e5444d5d383507d84"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/lifecycle-oracle-fix-v1.json",
+      "bytes": 1613,
+      "sha256": "d3efdb917a9042894f387fdfdf130278ce3cb2b722d0b7fd55db1382f2731382"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/lifecycle-independent-review-v1.json",
+      "bytes": 3038,
+      "sha256": "9b65eb48e0f245228cd3d4b600fcaa1cf2939de14003d215774253cafa32cdf9"
+    },
+    {
+      "path": ".cache/alpha-contract-next/save147/actual-consumer-review-v1.json",
+      "bytes": 18272,
+      "sha256": "5c92b17c32edfb93945756537a6c6be0f9cbd1e786ad61c86914420da307155c"
+    }
+  ],
+  "retained_raw_receipts": [
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/job/owner.json",
+      "bytes": 1435,
+      "sha256": "cbb674392d71e3c6925b19626215a5a7f79cc2fc3c1e39368fd66a50852c7a6d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/job/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/qualification.json",
+      "bytes": 1435,
+      "sha256": "cbb674392d71e3c6925b19626215a5a7f79cc2fc3c1e39368fd66a50852c7a6d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/current-native-probe.json",
+      "bytes": 103733,
+      "sha256": "a7f1308ecd0faf145f1dd51e830be7fc07ae4fc24afda445573fabb436d7fbb0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/original-native-v5.json",
+      "bytes": 103327,
+      "sha256": "0a501d85ed24df7a21609b1da3c48ec8d6e79708ec7daca1c2a0c443ab0ff199"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/report.json",
+      "bytes": 55647,
+      "sha256": "c0513940181933caa6acfab9d0fc5197c31135d3f46a71702d81ef725ea60ddb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/source-owner/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/source-owner/connect-stdin.ndjson",
+      "bytes": 2132,
+      "sha256": "a21bfcaa713f625ab835eba8e72d806ce66695d74302e02c1ec6811c6f9ff84f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/source-owner/connect-stdout.ndjson",
+      "bytes": 29214,
+      "sha256": "c93ed3f6c5c31e7f690b025f94a74f9bd0da4867b3acdb5b83631fba0a6a5a9e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay85-admission-1/run/source-owner/transcript.json",
+      "bytes": 127505,
+      "sha256": "de7808d10f9465de8c752309e658bf5a8f026cd6b2b45eecb43afc3e0070d0ba"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/job/owner.json",
+      "bytes": 1911,
+      "sha256": "9af5244fa3fbc60f8ed7967d10057f4b9e76866ca5f45522b84c3885bf40b0eb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/job/stderr.txt",
+      "bytes": 1212,
+      "sha256": "7787df916d50a4f9f5d8d81e1584cf93fb55783e69c95487871d26906339ad83"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/job/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/qualification.json",
+      "bytes": 1911,
+      "sha256": "9af5244fa3fbc60f8ed7967d10057f4b9e76866ca5f45522b84c3885bf40b0eb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/create-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/create-stdout.txt",
+      "bytes": 472,
+      "sha256": "707cdeee71c6188fde9898fba4aeeec463af1729658b0ad74595604b4449df58"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/inspect-retained-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/inspect-retained-stdout.txt",
+      "bytes": 236,
+      "sha256": "98d10a27c33aca0b17c8bc7a1f57319c6258cafb55f6ec457bf93a71e36ae98a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/report.json",
+      "bytes": 4554,
+      "sha256": "9cfb45c49afae1cbe4106da15c4c2b579b5769b68a36d989a139528135716baf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/retained-native-starter/project-created.json",
+      "bytes": 357,
+      "sha256": "1d44cabfd14e94e84297267a3256b946f2b7dc58afc2d306c187a7e02797e264"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-1/run/retained-native-starter/world.json",
+      "bytes": 11245,
+      "sha256": "5e0a4ca9799925b437c20b89cab7af7f0b75c0c60726df4d8f35dc0d700ade6c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/job/owner.json",
+      "bytes": 1436,
+      "sha256": "664d94b52ec53b77ed3e27d47d699ceaf2cd4f6cf91c9e527a9a094e09e1f63a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/job/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/qualification.json",
+      "bytes": 1436,
+      "sha256": "664d94b52ec53b77ed3e27d47d699ceaf2cd4f6cf91c9e527a9a094e09e1f63a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/adopt-request.json",
+      "bytes": 272,
+      "sha256": "05e5928da4097ce0b5441e4d81a39948b696e5882d6df66dc4222cb26a1769ce"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/adopt-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/adopt-stdout.txt",
+      "bytes": 962,
+      "sha256": "3a9a94f6c1e7653ab817f261f07dc138e707355c97887a6c75b57e911bd49146"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/create-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/create-stdout.txt",
+      "bytes": 472,
+      "sha256": "399159d197d184a15f0420755df42644fe2f6432f7c801eb46d0fad525d5fd3c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/export-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/export-stdout.txt",
+      "bytes": 465,
+      "sha256": "7091c0276a7864b58847f5348bfbe5093f59156ab62aa05fc89d269712349dea"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/inspect-retained-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/inspect-retained-stdout.txt",
+      "bytes": 1456,
+      "sha256": "e8cc0a56437d77e11f9241665a14e5adb24414f8389ad750a37f604149a5a7ea"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/report.json",
+      "bytes": 25670,
+      "sha256": "36283161c866fc7af3ae8bfb4c27e032c693745071c001ea882dd24da33bbee5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/retained-native-starter/project-created.json",
+      "bytes": 357,
+      "sha256": "0a62283764ef54f7400417b2f6203db7ea1e2217d5da00d0271db38ed9ddf3be"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/relay86-export-2/run/retained-native-starter/world.json",
+      "bytes": 11245,
+      "sha256": "30dfa18b02dff73a40364aec8ba32c2abd2f15a801d84f9f790f47217b53d900"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/portable-windows-1/report.json",
+      "bytes": 545,
+      "sha256": "0e6cec225718bf9e33766bb0a4cc3a90618ec400b85e7c0e418c04a6202b50ee"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/portable-windows-1/stderr.txt",
+      "bytes": 138,
+      "sha256": "198eed6f432ba3ed86f3bce3443618ae3077480ea02fabc83c1e5588a8b17b97"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/portable-windows-1/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/job/owner.json",
+      "bytes": 2379,
+      "sha256": "da0f0e0d9056554246f9ef909af4591f69b82b94ba9e2f4e5d1e2bcbff5f0945"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "8ac4abe7a76640d181dda99922c2160d1df449bfa95e35481e00b3be23f053d3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/qualification.json",
+      "bytes": 2379,
+      "sha256": "da0f0e0d9056554246f9ef909af4591f69b82b94ba9e2f4e5d1e2bcbff5f0945"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/verification/report.json",
+      "bytes": 397243,
+      "sha256": "7237279f006014cf71dc46e6ef66a90387f728a7f2fb75f27608d7f6673c6030"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 8785,
+      "sha256": "680ed39bfea2f1d93ee304e58c5d02b7ab0afb399ff7cb29e625c7a02c690675"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 126009,
+      "sha256": "4c75b52b9bd88b141febb9077269e665162a13b8394642717fff18823ee836f3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-1/verification/retained-source/transcript.json",
+      "bytes": 576278,
+      "sha256": "ff29bee832ba6f0f582ea6850cd663bf2116d7920447f959049c8a7e05e915a8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/job/owner.json",
+      "bytes": 2378,
+      "sha256": "4c403885ee40b77193454ed19d19fc307841d4c02ada500bbe679f1105fa8ff5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "6265332617223db9c26d78ad1a1422fd13e01b164c4eeefee91e214bb9c3c7a6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/qualification.json",
+      "bytes": 2378,
+      "sha256": "4c403885ee40b77193454ed19d19fc307841d4c02ada500bbe679f1105fa8ff5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/verification/report.json",
+      "bytes": 762341,
+      "sha256": "bbccca540b68e4cfa0b832f7b15a4de1586973e250c41788e7b02835cb3c08a3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 9788,
+      "sha256": "131568e3c9b897e4fc8827e5a10d479bb69cf1c7ae036cc3ef00bb4c36e69442"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 137124,
+      "sha256": "40de6e986f17f1338ca439352160c86b52ff96c7e7ab01ddc01470468cddf993"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-2/verification/retained-source/transcript.json",
+      "bytes": 624780,
+      "sha256": "91612eb1a70879aa36385ab5f2e95ddcbaf4da3ab71500ad5e58b026d2bd0df3"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/job/owner.json",
+      "bytes": 2381,
+      "sha256": "ac75ad6ce36de661d0cfada9f55327697f2a22d9e74159f952191b34d09cbd08"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "2ac69975b4d293562cf7d95608bf97cf9660630ee1a791ddc599c5ef3c4d157e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/qualification.json",
+      "bytes": 2381,
+      "sha256": "ac75ad6ce36de661d0cfada9f55327697f2a22d9e74159f952191b34d09cbd08"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/recovered-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/recovered-source/connect-stdin.ndjson",
+      "bytes": 8840,
+      "sha256": "a0bae1f7eef6796d90637b205b00e00bce006b46992a119c3d7cd7f1f6bb8e3d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/recovered-source/connect-stdout.ndjson",
+      "bytes": 119003,
+      "sha256": "e858a589a8de3f70b8d047907d271977b0fed2ebd5c4e2b789aa591a660faebc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/recovered-source/transcript.json",
+      "bytes": 543249,
+      "sha256": "7b42220446c17aa01feb0dc4d1fb745b52168c0ee5ba705b9c256517e323d2d8"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/report.json",
+      "bytes": 2125697,
+      "sha256": "9dd7eb3e47ed665a5edc1557b5cdeffe6b6a836d954ec775b3ece75a62db4215"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 23391,
+      "sha256": "2ab8afbaf716b333fde75ac1a41135a29bc2bba7c90fa9ab94812230eedc4dee"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 346238,
+      "sha256": "2158a164aa56e44049e1b6c6e4ca64e48648fd38da6e9ab3824a6e9f7e702a1a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-3/verification/retained-source/transcript.json",
+      "bytes": 1581594,
+      "sha256": "cdef0519a4bad3b282f763813834b579c76f11e05487b49ad67a29d8a7261d20"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/job/owner.json",
+      "bytes": 2388,
+      "sha256": "18c067defc8b76766aee26b8fa825022b0915ab3a86dcef77ebcc9fec4b9da6e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "bb65263c4fe5575ae7165d70771263d8f39f27fa4c1d6ef908fe98f2c3ff32bb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/qualification.json",
+      "bytes": 2388,
+      "sha256": "18c067defc8b76766aee26b8fa825022b0915ab3a86dcef77ebcc9fec4b9da6e"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/approved-upgrade.retained.json",
+      "bytes": 7911,
+      "sha256": "dcc1683af192b9949a55acb230042672c958bf779965a065c93c43fe89a9eca7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/connect-stdin.ndjson",
+      "bytes": 92183,
+      "sha256": "d25ffe621df6d375abf9a750fc73d7764f0a58da1dc57e9952747da4c8b2c129"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/connect-stdout.ndjson",
+      "bytes": 1510229,
+      "sha256": "502323db856eb8b2f5123b3c4771632f66f13c483705c5e1b35f2e24df1af756"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "4c71cafe23e77af0adf863e1538beb0489bc69e40ddd541cce7a4ef3861ed029"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/readonly-target/transcript.json",
+      "bytes": 6914688,
+      "sha256": "be903c735b6b264177b3e7d51ad2614c435ee7182f0e9d98b90657eccf40add5"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/recovered-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/recovered-source/connect-stdin.ndjson",
+      "bytes": 22314,
+      "sha256": "2ae67fba3b50fe3fc1c313edfc1d95e2ba12e02209d497396cc03c08ec7293fa"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/recovered-source/connect-stdout.ndjson",
+      "bytes": 326141,
+      "sha256": "9c32b15bb956500f1a85b87bf90006b6cee0e661c901157f1b31df215c3fa112"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/recovered-source/transcript.json",
+      "bytes": 1492157,
+      "sha256": "bc5a214630a63c8dbe927116020004f4832cce5b2b9e90ef747e245f81fc25cd"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/report.json",
+      "bytes": 6988702,
+      "sha256": "04305b3eeb2516521321171f64501c081e3381a2490816d46c75d13a841bf260"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 23391,
+      "sha256": "6881f5734d54d9b80fcf880b5871ea98a7a6905c9ef58bde1ffc471667e9fdd6"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 346238,
+      "sha256": "0394148b86d86e42f5404d8566e6fefddad2db14cc02ad6f56b03df146993701"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-4/verification/retained-source/transcript.json",
+      "bytes": 1581594,
+      "sha256": "d20320254928d6bb5d86c719c82c69c71d5f06e35563014af5d15fb832f2dfbc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/job/owner.json",
+      "bytes": 2388,
+      "sha256": "550dd81571b8f0c311b2510b8ad6ebe838ae6bd946decb83e6967ed23e7fb16b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/job/stdout.txt",
+      "bytes": 63,
+      "sha256": "bd8175d3e77296abd590c70f1ed9482cf8f1c5d3615075394216ad91c86505d1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/qualification.json",
+      "bytes": 2388,
+      "sha256": "550dd81571b8f0c311b2510b8ad6ebe838ae6bd946decb83e6967ed23e7fb16b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/approved-upgrade.retained.json",
+      "bytes": 7911,
+      "sha256": "6cae3261c43ebd1be9f070c85b49d694cc4f3e78d4f365ee62b7f2996bb37855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 20309,
+      "sha256": "d02108aa46df50f53d13ba10cf61c825b03d31db8243b786a4db5faa0dc3c890"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 448581,
+      "sha256": "437e4aa4d23dfdc3af01e855f4ac74de8d6a381c5a65904b64ed1e9b74ec9895"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "caa3ebc77b9334ba10cb7fa2eeb322f1e6bc7710ab5f70241221b0ce2392ea15"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-cold/transcript.json",
+      "bytes": 2023474,
+      "sha256": "dd3f41936680112aca6cd3ef9bff5786898f627a98ba2e777eb50c5bdd175dd4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/connect-stdin.ndjson",
+      "bytes": 144775,
+      "sha256": "9bbd3aa6d81caf0facf00a55f3774c89512f8dddd6088e1fd6b2bf9d61a1cbcc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/connect-stdout.ndjson",
+      "bytes": 2572697,
+      "sha256": "cf4ebd643c560f8600355eb7dca4ca13e3e3cddcaa9057896937c5e3d14d4b88"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "71d21e256c928f86c817617c477903fc7f4f1e64d9a646d406ade24e04e43b81"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/readonly-target/transcript.json",
+      "bytes": 11724883,
+      "sha256": "93e5f90b10b33728ccb551fb97631383f8f61f460e07a73f2150549c3f99e1c1"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/recovered-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/recovered-source/connect-stdin.ndjson",
+      "bytes": 22314,
+      "sha256": "23e21f49be9d1054c93a5fd718b9c34b9aac6480312718acb0033ff935b53a4b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/recovered-source/connect-stdout.ndjson",
+      "bytes": 326144,
+      "sha256": "2158dd796dba6c26810b8daab690b71e8819357c3ccd5c43fcafab5ed7fec2da"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/recovered-source/transcript.json",
+      "bytes": 1492163,
+      "sha256": "482198a88af8936c3740ec48877466179c78a6c8f61a160d35b04036eea3d3d0"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/report.json",
+      "bytes": 7729486,
+      "sha256": "eeebd4bc77b450fdf352ff574e03212c32999bdc79915dc8c6f11e42c51a4e73"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 23391,
+      "sha256": "7b91f68484f615f080904a43b6bd03c73f021aa7eb63a7d718fde654d79bbe82"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 346238,
+      "sha256": "45446bb354dbb83987ab7dbe0c808acbfc4bcb964ab73765153c5a461604187b"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-5/verification/retained-source/transcript.json",
+      "bytes": 1581594,
+      "sha256": "ff8565fe32fbba41446dbcb28c5d8d92d72610bf7f40eb7a6d06cebe818919a4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/job/owner.json",
+      "bytes": 1908,
+      "sha256": "bf101596e5d8befb9d2bde58e0f0bf24a2192c3016ae0e5e7b817b9df63ce33d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/job/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/job/stdout.txt",
+      "bytes": 62,
+      "sha256": "a3006f2318d895cd2709eec5775c372839c8563ef571de85846da932bbadc298"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/qualification.json",
+      "bytes": 1908,
+      "sha256": "bf101596e5d8befb9d2bde58e0f0bf24a2192c3016ae0e5e7b817b9df63ce33d"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/approved-upgrade.retained.json",
+      "bytes": 7911,
+      "sha256": "62ee5ed309f81ecc04003eb455766ceaa9dd1d33fa46ade4ee5f0021d89922fc"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/connect-stdin.ndjson",
+      "bytes": 20541,
+      "sha256": "93b27806812096c4fb4b20d101baa76fbec8ed2b45c802fda5c900e0f0f1bbe7"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/connect-stdout.ndjson",
+      "bytes": 449189,
+      "sha256": "bcbbc439cffcd19161d28b9c84f0a82ed6be4cfddebe6971b6c3bffe6a226aeb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "8a47df7a69b29b3c3c075aed223e24ee2b33bdb19642e01b938ba230d29e634f"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-cold/transcript.json",
+      "bytes": 2025650,
+      "sha256": "3f049aa7aa254292339b561b0c6db8dbbc1cd31cef09bbfd62215997dcd883eb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/connect-stdin.ndjson",
+      "bytes": 145243,
+      "sha256": "929d081d94877d34a962be72b4464f1d48ef1815037c7a46dc488246f28d8c3c"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/connect-stdout.ndjson",
+      "bytes": 2573913,
+      "sha256": "483e46481aeccf60bbfcf6e3312bae7a0a6431ae0955ae95a4688a6a5402e9fb"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/host-stderr.txt",
+      "bytes": 80,
+      "sha256": "dc6ccff9ad1fe97062c1f9c44031b72f8c45ec29635d8bf8bee38c721af89800"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/host-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/readonly-target/transcript.json",
+      "bytes": 11729235,
+      "sha256": "dc6f28eb7006b1e05f0399889b25e05086cfb867ef8308f1ef7f20dc7f04feae"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/recovered-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/recovered-source/connect-stdin.ndjson",
+      "bytes": 22314,
+      "sha256": "c3a48738d0706484df4374901a90d7064a7c58671553d2e915b823977a179fdf"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/recovered-source/connect-stdout.ndjson",
+      "bytes": 326138,
+      "sha256": "4b2d7a06d4a5b54f062b64ce38d63e1d051a0f8138417824e866df4ce794e2a4"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/recovered-source/transcript.json",
+      "bytes": 1492151,
+      "sha256": "09ce7a1fe6a458f43bb38d5042dcf61505a47f6bd8068105a7af6e1484dc81da"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/report.json",
+      "bytes": 8259472,
+      "sha256": "d9e63367f3f37776976bd4e32c6efc3a7ecf7dc1655044cbb4480a2a5c9f3e61"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/retained-source/connect-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/retained-source/connect-stdin.ndjson",
+      "bytes": 23391,
+      "sha256": "c6d4790c465aa9611b908b06b74faa83ae26aac517e1bebb5cb1b4dfcd876cca"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/retained-source/connect-stdout.ndjson",
+      "bytes": 346238,
+      "sha256": "05fcfa1b522c1622c3c244eff78e6ed2cbc0f30bcf778568bcb247ebb3ad4f0a"
+    },
+    {
+      "path": "build/alpha-contract-0.0.147/save-upgrade-6/verification/retained-source/transcript.json",
+      "bytes": 1581594,
+      "sha256": "a4e12dc5f56a7fc754f28fad4a1ebb1fbda6630bd69ccab5591eaeebf980fc17"
+    }
+  ]
+}

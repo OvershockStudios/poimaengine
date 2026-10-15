@@ -91,6 +91,15 @@ def samples():
     }
 
 
+def recovered_load():
+    result = dict(samples()['save.load'], generation=2, selected_generation=1,
+                  recovered=True, recovery_reason='Newest payload is unreadable; using verified prior generation.')
+    params = dict(request_id=OTHER, configuration_generation=1, slot='slot', expected_generation=2,
+                  revision=4, expected_session_id=SESSION, expected_tick=12,
+                  expected_gameplay_revision=2, new_session_id=CURRENT)
+    return result, params
+
+
 class WorkflowResponses(unittest.TestCase):
     def reject(self, method, value, params=None, context=None):
         before = repr(value)
@@ -399,6 +408,37 @@ class WorkflowResponses(unittest.TestCase):
         self.reject('save.load', result, dict(params, new_session_id=SESSION))
         result['source_stale'] = False
         self.reject('save.load', result, params)
+
+    def test_recovered_load_requires_explicit_literal_consent(self):
+        result, params = recovered_load()
+        for changes in ({}, {'recovery': True}, *({'allow_recovery': value}
+                        for value in (False, 1, 0, 'true', None, [], {}))):
+            with self.subTest(changes=changes):
+                self.reject('save.load', result, dict(params, **changes))
+        request = dict(params, allow_recovery=True)
+        before = copy.deepcopy((result, request))
+        self.assertIs(validate('save.load', result, request), result)
+        self.assertEqual((result, request), before)
+
+    def test_healthy_load_does_not_require_recovery_but_rejects_mistyped_consent(self):
+        result, params = recovered_load()
+        result.update(recovered=False, selected_generation=2, recovery_reason='')
+        for changes in ({}, {'allow_recovery': False}, {'allow_recovery': True}):
+            self.assertIs(validate('save.load', result, dict(params, **changes)), result)
+        for value in (1, 0, 'false', None):
+            self.reject('save.load', result, dict(params, allow_recovery=value))
+
+    def test_recovery_consent_is_optional_without_request_and_retained_on_retry(self):
+        result, params = recovered_load()
+        self.assertIs(validate('save.load', result), result)
+        result['replayed'] = True
+        request = dict(params, allow_recovery=True)
+        context = {'profile': 'readonly_game'}
+        before = copy.deepcopy((result, request, context))
+        self.assertIs(validate('save.load', result, request, context), result)
+        self.assertEqual((result, request, context), before)
+        self.reject('save.load', result, dict(params, allow_recovery=False), context)
+        self.assertIs(validate('save.load', result, context=context), result)
 
 
 if __name__ == '__main__':

@@ -88,6 +88,80 @@ tick. Keep the old slot and source artifact so recovery remains possible. Exact
 retry of an accepted upgrade must return its receipt without activating again,
 even if the plan file is temporarily absent; altered reuse must reject.
 
+## Focused recovery and exported-game consumer
+
+[`tests/workflow_save_upgrade.py`](../../tests/workflow_save_upgrade.py) checks
+one retained Windows Native AOT 0.0.85-to-0.0.86 edge, including recovery of the
+previous payload and continuation through an actual exported target executable.
+It complements the complete-course verifier above. The
+[0.0.147 qualification](../../docs/evidence/m2-retained-save-recovery-upgrade.json)
+passes with native 0.0.146, the original retained images and a newly prepared
+target export: 694 calls through four naturally closed owners. The record also
+preserves the failed export setup and five failed verifier attempts.
+
+Supply these inputs unchanged:
+
+- The complete passing 0.0.85 contract directory described above, including its
+  original `evidence.json`, world, cooked assets and both durable generations.
+- The exact source Native AOT artifact and the retained 0.0.86 target artifact.
+  This target preserves all 49 globals and adds only `CheckpointVersion=2`.
+  Recompiling a replacement source does not establish retained compatibility.
+- A matching Windows engine with simulation/native gameplay and an actual
+  [exported project](../../docs/PROJECTS.md#install-a-runtime-and-export) using
+  that exact target artifact. Export the retained world and complete cooked
+  closure with the player camera selected; the fixture's player is entity 100
+  and its child camera is 101. Use an installed runtime matching the host build,
+  not a raw build directory or a bundle from the old source game.
+- Windows Python 3.11+ and a supervising Windows Job. No compiler, original FBX,
+  GPU or provider is used by this verifier. Retained artifacts are caller inputs;
+  they are not supplied by a fresh source checkout.
+
+From the repository root, use the [standard-library supervising wrapper](../../docs/COMPONENT_GAME_WORKFLOW.md#supervise-each-command).
+Both output directories must be new, outside every supplied input:
+
+```powershell
+python build/run-component-owned.py `
+  --job build/relay-recovery-job-1 --timeout 360 `
+  tests/workflow_save_upgrade.py `
+  --binary path/to/matching/poima.exe `
+  --baseline retained/relay-yard-85/contract `
+  --source-artifact retained/relay-yard-85/artifact/native-gameplay.json `
+  --target-artifact retained/relay-yard-86/artifact/native-gameplay.json `
+  --game build/relay-target-export/game.json `
+  --output build/relay-recovery-check-1 --timeout 300
+if ($LASTEXITCODE -ne 0) { throw "Retained recovery/upgrade verification failed" }
+```
+
+The consumer first verifies ordinary restoration of the genuine generation-2,
+tick-567 checkpoint. On its own storage copy it legitimately writes generation 3,
+then deliberately damages only that newest payload. Recovery must select verified
+generation 2 without rewriting the damaged slot. Recovery consent remains
+independent of upgrade authorization: `allow_recovery:true` and an explicit,
+hash-bound target plan are both required for the combined load.
+
+Checks cover denied loads preserving selected state and storage, all 49 original
+values and the single new default before callbacks, exact historical retries
+with the plan absent, actual controller/camera-ray collection of one remaining
+cell, and a new healthy target save. A fresh process uses the declared bundled
+executable to restore that save and continue the same compiled callbacks.
+Original inputs and the copied corrupt slot must remain unchanged.
+
+The report retains original requests/replies, native snapshots and failures;
+natural closure also requires the supervising Job receipt. Legacy version-5 to
+version-7 reconstruction permits only the explicitly checked camera records and
+singleton spawned-node maps. Other native payload changes must match the approved
+gameplay image/schema/default map before target callbacks. The fresh target save
+restores fully and exactly before callbacks. After continuation, the game's
+`ObservedEpochHigh`, `ObservedEpochLow` and `LastSaveGeneration` must match that
+owner's actual native save status; every other selected and native payload field
+remains type-exact. Original values and independently verified payload checksums
+are retained. Denial checks compare complete selected
+entity/component/gameplay/UI observations, queue/routing and storage, rather than
+claiming complete internal snapshot equality after every rejection. This slice
+does not repeat full courier/terminal completion or qualify manifest recovery,
+acknowledged recovery writes, arbitrary upgrades, rendering, performance or a
+clean-machine installation.
+
 ## Boundaries
 
 The host selects upgrades through [guarded `save.load`](../../docs/SAVE_UPGRADES.md#loading).
