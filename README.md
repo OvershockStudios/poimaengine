@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.161.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.162.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -22,7 +22,7 @@ Poima makes engine operations directly available to tools. External agents such 
 - **Run and observe.** Exercise gameplay with scripted input, [inspect readiness, pause and capture a live native game](docs/LIVE_PLAYER.md) through a shared headless host, inspect simulation state and profiling data, and read [displayed UI bounds and clipping](docs/PLAYER_UI_OBSERVATION.md).
 - **Recover and repeat.** Bounded authoring undo/redo, runtime rollback and input replay support reproducible checks within their documented contracts.
 
-The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows. Optional [owned Windows compiler sessions](docs/DEVELOPMENT_JOBS.md#optional-owned-windows-compiler) reuse a private compiler across MSBuild jobs and expose actual-use evidence.
+The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows. [Installed authoring tools](docs/AUTHORING_TOOLS.md) let external C# projects use the compiled SDK, component analyzer and native publisher without an engine source checkout. Optional [owned Windows compiler sessions](docs/DEVELOPMENT_JOBS.md#optional-owned-windows-compiler) reuse a private compiler across MSBuild jobs and expose actual-use evidence.
 
 Explicit [live material editing](docs/LIVE_MATERIALS.md) applies authored color, emission, metallic and roughness changes while the game continues. [Live texture editing](docs/LIVE_TEXTURES.md) also adopts all five PBR maps, sampler settings and map strengths while preserving gameplay and save state. Separate acceptance, submission and presentation receipts let tools check which snapshot reached rendering.
 

@@ -180,6 +180,14 @@ void Service::configure(std::vector<Profile> profiles) {
         configured_path(profile.project_root,true);configured_path(profile.output_root,true);
         if(!profile.runtime_root.empty())configured_path(profile.runtime_root,true);
         for(const auto* path:{&profile.python,&profile.publisher,&profile.dotnet,&profile.exporter})if(!path->empty())configured_path(*path,false);
+        const bool installed=!profile.authoring_pack.empty();
+        need(installed==!profile.authoring_manifest_sha256.empty(),"Authoring pack directory and manifest guard must be configured together.");
+        if(installed) {
+            need(publish,"An authoring pack requires an enabled publish operation.");configured_path(profile.authoring_pack,true);
+            need(profile.authoring_manifest_sha256.size()==64 && std::all_of(profile.authoring_manifest_sha256.begin(),profile.authoring_manifest_sha256.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');}),"Authoring pack manifest guard requires lowercase SHA256.");
+            need(profile.publisher==profile.authoring_pack/"tools/publish_native_gameplay.py","Publisher must select the inventoried authoring pack resource.");
+            need(!overlap(profile.output_root,profile.authoring_pack),"Profile output root overlaps its authoring pack.");
+        }
         need(!overlap(profile.output_root,profile.project_root) && (profile.runtime_root.empty() || !overlap(profile.output_root,profile.runtime_root)),"Profile output root overlaps its inputs.");
         for(const auto* path:{&profile.python,&profile.publisher,&profile.dotnet,&profile.exporter})
             if(!path->empty())need(!overlap(profile.output_root,path->parent_path()),"Profile output root overlaps tools or publisher resources.");
@@ -193,6 +201,7 @@ void Service::configure(std::vector<Profile> profiles) {
     for(const auto& [unused,a]:selected)for(const auto& [also_unused,b]:selected) {
         (void)unused;(void)also_unused;
         need(!overlap(a.output_root,b.project_root) && (b.runtime_root.empty() || !overlap(a.output_root,b.runtime_root)),"Profile output root overlaps configured inputs.");
+        need(b.authoring_pack.empty() || !overlap(a.output_root,b.authoring_pack),"Profile output root overlaps a configured authoring pack.");
         for(const auto* tool:{&b.python,&b.publisher,&b.dotnet,&b.exporter})if(!tool->empty())
             need(!overlap(a.output_root,tool->parent_path()),"Profile output root overlaps configured tools.");
     }
@@ -300,6 +309,7 @@ Json Service::dispatch(const std::string& method,const Json& p) {
             request.working_directory=profile->project_root;request.environment=profile->environment;reservation=output;
             if(publish) {
                 request.executable=profile->python;request.arguments={utf8(profile->publisher),"--project",utf8(project),"--type",type,"--output",utf8(output),"--dotnet",utf8(profile->dotnet),"--rid",profile->target_rid};
+                if(!profile->authoring_pack.empty())request.arguments.insert(request.arguments.end(),{"--authoring-pack",utf8(profile->authoring_pack),"--authoring-sha256",profile->authoring_manifest_sha256});
                 request.verify_success=[verify=profile->verify_publish,output,type] {return verified_result(verify(output,type));};
             }else {
                 request.executable=profile->exporter;request.arguments={"project","build",utf8(project),"--output",utf8(output),"--runtime",utf8(profile->runtime_root)};

@@ -183,3 +183,9 @@ allocation estimates and budgets, with sampling/lifetime checks on both laptop
 GPUs and exact saved-state invariance. This supplies a measurement prerequisite;
 it does not close the representative performance, peak-memory or reliability
 gates. [Evidence](evidence/m2-gpu-memory.json).
+
+The 0.0.162 [installed authoring workflow](AUTHORING_TOOLS.md#qualification)
+qualifies binary SDK/analyzer/generator publication, native component callbacks,
+full save continuation and relocated export on the development computer while
+the original checkout pathname is unavailable. This closes the engine-checkout dependency for that NativeAOT path; CoreCLR bridge packaging, clean-machine setup,
+physical interaction and the other Alpha delivery gates remain open.

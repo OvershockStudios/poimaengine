@@ -9,6 +9,10 @@
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
+#include <map>
+#include <optional>
+#include <regex>
 #include <set>
 #include <stdexcept>
 #ifdef _WIN32
@@ -73,6 +77,81 @@ using Pins=std::vector<std::pair<fs::path,std::string>>;
 void unchanged(const Pins& pins) {
     for(const auto& [file,digest]:pins)need(hash(read(file,256ULL*1024*1024))==digest,"Selected development tool changed during the job.");
 }
+const std::map<std::string,std::string>& authoring_files() {
+    static const std::map<std::string,std::string> value={
+        {"sdk/Poima.Gameplay.dll","sdk"},
+        {"analyzers/Poima.Components.Generator.dll","analyzer"},
+        {"tools/native-generator/Poima.NativeGame.Generator.dll","generator"},
+        {"tools/native-generator/Poima.NativeGame.Generator.deps.json","generator"},
+        {"tools/native-generator/Poima.NativeGame.Generator.runtimeconfig.json","generator"},
+        {"tools/native-generator/Poima.Gameplay.dll","sdk"},
+        {"native/Entry.cs","source"},{"build/Poima.Gameplay.props","build"},
+        {"build/Poima.Components.targets","build"},
+        {"tools/publish_native_gameplay.py","publisher"},{"tools/authoring_pack.py","validator"},
+        {"notices/POIMA-LICENSE.txt","notice"},{"notices/POIMA-THIRD-PARTY-NOTICES.md","notice"}};
+    return value;
+}
+bool authoring_digest(const std::string& value) {
+    return value.size()==64 && std::all_of(value.begin(),value.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');});
+}
+void authoring_kind(const fs::path& value,bool directory) {
+    const auto status=fs::symlink_status(value);
+    need(!fs::is_symlink(status) && (directory ? fs::is_directory(status):fs::is_regular_file(status)),"Authoring pack contains a link or wrong file kind.");
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(value.c_str());
+    need(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Authoring pack contains a reparse point.");
+#endif
+    if(!directory)need(fs::hard_link_count(value)==1,"Authoring pack files cannot be hardlinked.");
+}
+struct AuthoringPack {
+    fs::path root;
+    std::string manifest_sha256;
+    Json policy;
+};
+AuthoringPack authoring_pack(const fs::path& root,const std::string& expected={}) {
+    // Revalidate ancestors as well as enumerated entries on every verification.
+    need(path(Json(text(root)),true)==root,"Authoring pack root must remain canonical.");
+    authoring_kind(root,true);authoring_kind(root/"authoring.json",false);
+    const auto bytes=read(root/"authoring.json",65536);const auto digest=hash(bytes);
+    need(!bytes.starts_with("\xEF\xBB\xBF"),"Authoring pack manifest must be UTF-8 JSON without a BOM.");
+    need(expected.empty() || digest==expected,"Authoring pack manifest changed after configuration.");
+    const auto doc=parse(bytes);fields(doc,{"format","version","engine_version","framework","language","files"});
+    need(doc.at("format")=="poima.authoring-tools" && doc.at("version").is_number_integer() && doc.at("version")==1,
+         "Unsupported authoring pack format.");
+    const auto version=string(doc.at("engine_version"),128);
+    need(std::regex_match(version,std::regex("[0-9]+\\.[0-9]+\\.[0-9]+")),"Authoring pack engine version must be numeric major.minor.patch.");
+    need(doc.at("framework")=="net10.0" && doc.at("language")=="14.0","Unsupported authoring pack framework/language.");
+    const auto& rows=doc.at("files");need(rows.is_array() && rows.size()==authoring_files().size(),"Authoring pack requires the fixed thirteen resources.");
+    std::set<std::string> expected_entries{"authoring.json"};std::uint64_t total=0;std::string previous;
+    for(const auto& entry:rows) {
+        fields(entry,{"path","size","sha256","role"});const auto name=string(entry.at("path"),1024),role=string(entry.at("role"),32),sha=string(entry.at("sha256"),64);
+        const auto known=authoring_files().find(name);
+        need(known!=authoring_files().end() && known->second==role && (previous.empty() || previous<name),"Authoring pack resource path/role/order differs from the fixed inventory.");
+        previous=name;need(authoring_digest(sha),"Authoring pack resource digest must be lowercase SHA256.");
+        const auto& size=entry.at("size");need(size.is_number_integer() && size>=1 && size<=16*1024*1024,"Authoring pack resource size must be an integer in 1..16 MiB.");
+        const auto count=size.get<std::uint64_t>();need(count<=64ULL*1024*1024-total,"Authoring pack payload exceeds 64 MiB.");total+=count;
+        const auto selected=root/fs::path(name);
+        need(path(Json(text(selected)),false)==selected,"Authoring pack resource path must remain canonical.");authoring_kind(selected,false);
+        const auto payload=read(selected,16*1024*1024);
+        need(payload.size()==count && hash(payload)==sha,"Authoring pack payload size/hash differs from its inventory.");
+        expected_entries.insert(name);for(auto parent=fs::path(name).parent_path();!parent.empty();parent=parent.parent_path())expected_entries.insert(text(parent));
+    }
+    // Do not follow links, tolerate unknown entries, or trust a supplied table
+    // to hide extra executable/build resources from the selected authority.
+    std::set<std::string> actual;std::size_t count=0;
+    for(fs::recursive_directory_iterator it(root),end;it!=end;++it) {
+        need(++count<=64 && it.depth()<4,"Authoring pack directory closure exceeds its bounds.");
+        const auto name=text(it->path().lexically_relative(root));
+        need(expected_entries.contains(name),"Authoring pack contains an uninventoried entry.");
+        const bool directory=!authoring_files().contains(name) && name!="authoring.json";
+        authoring_kind(it->path(),directory);need(actual.insert(name).second,"Authoring pack path alias.");
+    }
+    need(actual==expected_entries,"Authoring pack resource closure is incomplete.");
+    const auto sdk=std::find_if(rows.begin(),rows.end(),[](const auto& row){return row.at("path")=="sdk/Poima.Gameplay.dll";});
+    const auto duplicate=std::find_if(rows.begin(),rows.end(),[](const auto& row){return row.at("path")=="tools/native-generator/Poima.Gameplay.dll";});
+    need(sdk->at("size")==duplicate->at("size") && sdk->at("sha256")==duplicate->at("sha256"),"Authoring pack SDK copies have different identities.");
+    return {root,digest,Json{{"manifest_sha256",digest},{"engine_version",version},{"files",rows}}};
+}
 std::string project_result(const Reply& reply) {
     need(reply.json.size()<=4ULL*1024*1024,"Project operation result exceeds its byte limit.");
     const auto value=parse(reply.json);
@@ -105,7 +184,9 @@ std::vector<Profile> load_profiles(const std::string& filename) {
     const auto& items=doc.at("profiles");need(items.is_array() && items.size()<=16,"Development profiles must contain at most 16 entries.");
     std::vector<Profile> result;
     for(const auto& item:items) {
-        fields(item,{"name","project_root","output_root","python","publisher","dotnet","exporter","runtime_root","target_rid","environment"});
+        const bool installed=item.is_object() && item.contains("authoring_pack");
+        if(installed)fields(item,{"name","project_root","output_root","python","publisher","dotnet","exporter","runtime_root","target_rid","environment","authoring_pack"});
+        else fields(item,{"name","project_root","output_root","python","publisher","dotnet","exporter","runtime_root","target_rid","environment"});
         Profile profile;profile.name=string(item.at("name"),64);
         profile.project_root=path(item.at("project_root"),true);profile.output_root=path(item.at("output_root"),true);
         profile.python=path(item.at("python"),false);profile.publisher=path(item.at("publisher"),false);
@@ -122,7 +203,12 @@ std::vector<Profile> load_profiles(const std::string& filename) {
             need(pair.is_array() && pair.size()==2 && pair[0].is_string() && pair[1].is_string(),"Development environment entries must be name/value pairs.");
             profile.environment.emplace_back(pair[0].get<std::string>(),pair[1].get<std::string>());
         }
-        Pins pins;Json policy=item;
+        Pins pins;Json policy=item;std::optional<AuthoringPack> pack;
+        if(installed) {
+            profile.authoring_pack=path(item.at("authoring_pack"),true);pack=authoring_pack(profile.authoring_pack);
+            need(profile.publisher==profile.authoring_pack/"tools/publish_native_gameplay.py","Profile publisher must be the inventoried authoring pack publisher.");
+            profile.authoring_manifest_sha256=pack->manifest_sha256;policy["authoring_pack_inventory"]=pack->policy;
+        }
         for(const auto& [name,selected]:std::vector<std::pair<std::string,fs::path>>{
                 {"python",profile.python},{"publisher",profile.publisher},{"dotnet",profile.dotnet},{"exporter",profile.exporter},
                 {"runtime_descriptor",profile.runtime_root/"runtime.json"}}) {
@@ -130,7 +216,8 @@ std::vector<Profile> load_profiles(const std::string& filename) {
             policy["selected_tools"][name]={{"path",text(selected)},{"sha256",digest}};
         }
         profile.fingerprint=hash(policy.dump());
-        profile.verify_publish=[pins,rid=profile.target_rid](const fs::path& output,const std::string& type) {
+        profile.verify_publish=[pins,rid=profile.target_rid,pack](const fs::path& output,const std::string& type) {
+            if(pack)authoring_pack(pack->root,pack->manifest_sha256);
             const auto artifact=load_native_gameplay_artifact(text(output/"native-gameplay.json"));
             need(artifact.type==type,"Published gameplay type differs from the requested type.");
             need(artifact.target_os==(rid=="win-x64" ? "Windows":"Linux"),"Published gameplay target differs from the host profile.");

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.162
+
+- Package the binary C# SDK, component analyzer, binding generator and NativeAOT publisher as relocatable [authoring tools](docs/AUTHORING_TOOLS.md). Native build profiles pin and revalidate the complete pack while preserving existing checkout workflows and retries.
+- Qualify an external component game through actual compilation, native callbacks, full save continuation and relocated export with the original checkout path unavailable: 894 calls, eighteen checkpoints and 32 naturally closed processes. Pass Windows/Linux policy checks; preserve earlier failed attempts and unchanged production binaries through the fixture correction. [Results and limits](docs/evidence/m2-installed-authoring-tools.json).
+
 ## 0.0.161
 
 - Import supported separate FBX roughness and metalness maps into linear packed channels with independent scalar factors, shared-image reuse and bounded transient/packed image storage. [Supported profile](docs/FBX_IMPORT.md#roughness-and-metallic-textures).

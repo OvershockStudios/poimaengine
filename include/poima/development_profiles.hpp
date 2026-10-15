@@ -17,6 +17,10 @@ struct Profile {
     std::function<std::string(const std::filesystem::path&)> verify_export;
     std::function<std::string(const std::filesystem::path&)> inspect_project;
     std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> adopt_gameplay;
+    // Optional installed NativeAOT authoring authority. Host configuration only;
+    // the manifest guard is forwarded to the publisher, never selected by RPC.
+    std::filesystem::path authoring_pack;
+    std::string authoring_manifest_sha256;
 };
 // Owner-side loader supplies canonical paths, explicit environment, content
 // fingerprints and native result verifiers. No tool discovery or installation.

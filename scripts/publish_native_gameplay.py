@@ -61,13 +61,48 @@ def run(command, cwd, *, capture=False):
     return result.stdout.strip() if capture else None
 
 
-def build(dotnet, operation, *arguments, capture=False):
+def build(dotnet, operation, *arguments, capture=False, cwd=None):
     # A supervised job owns its compiler processes. Do not connect to shared
     # compiler/MSBuild servers that outlive or escape that job's process tree.
     options = ['-nodeReuse:false', '-p:UseSharedCompilation=false']
     if operation in ('build', 'publish'):
         options.append('--disable-build-servers')
-    return run([dotnet, operation, *arguments, *options], ROOT, capture=capture)
+    return run([dotnet, operation, *arguments, *options], ROOT if cwd is None else cwd, capture=capture)
+
+
+def pack_isolation(pack, project, output, work):
+    """Boundary checks, not a sandbox for the selected trusted MSBuild project."""
+    def overlaps(a, b):
+        return a.is_relative_to(b) or b.is_relative_to(a)
+    for path in (output, work):
+        if overlaps(path, pack.root) or overlaps(path, project.parent):
+            raise ValueError('Installed publication output/work must be outside the pack and project directory.')
+    if overlaps(output, work):
+        raise ValueError('Installed publication output and work must not overlap.')
+
+
+def pack_sdk_matches(sdk, pack):
+    expected = pack.resource('sdk/Poima.Gameplay.dll')
+    def identity(path):
+        limit = 16 * 1024 * 1024
+        size = path.stat().st_size
+        if not 1 <= size <= limit:
+            raise ValueError('Installed gameplay SDK exceeds its byte bounds.')
+        count, digest = 0, hashlib.sha256()
+        with path.open('rb') as stream:
+            while True:
+                block = stream.read(min(1024 * 1024, limit + 1 - count))
+                if not block:
+                    break
+                count += len(block)
+                if count > limit:
+                    raise ValueError('Installed gameplay SDK grew beyond its byte bounds.')
+                digest.update(block)
+        if count != size:
+            raise ValueError('Installed gameplay SDK changed while reading.')
+        return size, digest.digest()
+    if identity(sdk) != identity(expected):
+        raise ValueError('Built Poima.Gameplay.dll must exactly match the installed authoring SDK.')
 
 
 def main():
@@ -78,10 +113,20 @@ def main():
     parser.add_argument('--dotnet', default='dotnet')
     parser.add_argument('--rid', choices=['linux-x64', 'win-x64'])
     parser.add_argument('--engine-version')
+    parser.add_argument('--authoring-pack', type=Path, help='Inventoried installed NativeAOT authoring tools.')
+    parser.add_argument('--authoring-sha256', help='Expected authoring.json identity (requires --authoring-pack).')
     parser.add_argument('--work', type=Path, help='New directory for retained build intermediates (default: temporary directory).')
     args = parser.parse_args()
+    if args.authoring_sha256 is not None and args.authoring_pack is None:
+        raise ValueError('--authoring-sha256 requires --authoring-pack.')
+    pack = None
+    if args.authoring_pack is not None:
+        from authoring_pack import load_pack
+        pack = load_pack(args.authoring_pack, expected_sha256=args.authoring_sha256)
     project = args.project.resolve(strict=True)
-    output = args.output.absolute()
+    if pack is not None and (args.output.is_symlink() or getattr(args.output, 'is_junction', lambda: False)()):
+        raise ValueError('Output already exists as a linked path.')
+    output = args.output.resolve() if pack is not None else args.output.absolute()
     if output.exists():
         raise ValueError('Output already exists; artifacts are published into a new directory.')
     rid = args.rid or ('win-x64' if os.name == 'nt' else 'linux-x64')
@@ -90,31 +135,58 @@ def main():
     dotnet = str(Path(args.dotnet).resolve()) if Path(args.dotnet).is_file() else args.dotnet
     version = args.engine_version
     if not version:
-        version = re.search(r'project\(poima\s+VERSION\s+([^\s)]+)', (ROOT / 'CMakeLists.txt').read_text(), re.I).group(1)
+        version = pack.engine_version if pack is not None else re.search(r'project\(poima\s+VERSION\s+([^\s)]+)', (ROOT / 'CMakeLists.txt').read_text(), re.I).group(1)
     if len(version)>128 or not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('Engine version must use numeric major.minor.patch.')
     temporary = None
     if args.work:
-        work = args.work.absolute()
+        work = args.work.resolve() if pack is not None else args.work.absolute()
+        if pack is not None:
+            pack_isolation(pack, project, output, work)
         work.mkdir(parents=True, exist_ok=False)
     else:
+        if pack is not None:
+            # Refuse a temporary parent inside either immutable input before
+            # creating even an empty build directory there.
+            parent = Path(tempfile.gettempdir()).resolve()
+            if parent.is_relative_to(pack.root) or parent.is_relative_to(project.parent):
+                raise ValueError('Temporary build work must be outside the pack and project directory.')
         temporary = tempfile.TemporaryDirectory(prefix='poima-native-game-')
         work = Path(temporary.name)
+        if pack is not None:
+            pack_isolation(pack, project, output, work.resolve())
     # The generated project lives outside repo Directory.Build.props, so every
     # compilation contract is explicit and independent of ambient working paths.
     built = work / 'game'
-    build(dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo')
-    name = build(dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo', capture=True)
+    if pack is None:
+        build(dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo')
+        name = build(dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo', capture=True)
+    else:
+        pack.verify()
+        build(dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo',
+              '--artifacts-path', work / 'game-artifacts', cwd=project.parent)
+        name = build(dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo',
+                     '-p:ArtifactsPath='+str(work / 'game-artifacts'), '-p:UseArtifactsOutput=true',
+                     '-p:Configuration=Release',
+                     capture=True, cwd=project.parent)
     assembly = built / (name + '.dll')
     if not assembly.is_file():
         raise ValueError('Selected project produced no game assembly: ' + str(assembly))
     sdk = built / 'Poima.Gameplay.dll'
     if not sdk.is_file():
         raise ValueError('Selected project must copy its Poima.Gameplay SDK dependency to the build output: ' + str(sdk))
-    generator = ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj'
-    build(dotnet, 'build', generator, '-c', 'Release', '-o', work / 'generator', '--nologo')
     generated = work / 'generated'
-    run([dotnet, work / 'generator/Poima.NativeGame.Generator.dll', assembly, args.game_type, generated], ROOT)
+    if pack is None:
+        generator = ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj'
+        build(dotnet, 'build', generator, '-c', 'Release', '-o', work / 'generator', '--nologo')
+        run([dotnet, work / 'generator/Poima.NativeGame.Generator.dll', assembly, args.game_type, generated], ROOT)
+        entry = ROOT / 'managed/Poima.NativeGame/Entry.cs'
+    else:
+        pack.verify()
+        pack_sdk_matches(sdk, pack)
+        run([dotnet, pack.resource('tools/native-generator/Poima.NativeGame.Generator.dll'),
+             assembly, args.game_type, generated], project.parent)
+        entry = pack.resource('native/Entry.cs')
     schema = json.loads((generated / 'schema.json').read_text())
     requirements = generated_requirements(generated / 'requirements.json')
     # Referencing the original project preserves source and dependency semantics;
@@ -132,14 +204,28 @@ def main():
   <ItemGroup>
     <ProjectReference Include="{escape(str(project), {chr(34): "&quot;"})}" />
     <Reference Include="Poima.Gameplay"><HintPath>{escape(str(sdk))}</HintPath></Reference>
-    <Compile Include="{escape(str(ROOT / 'managed/Poima.NativeGame/Entry.cs'), {chr(34): '&quot;'})}" Link="Entry.cs" />
+    <Compile Include="{escape(str(entry), {chr(34): '&quot;'})}" Link="Entry.cs" />
   </ItemGroup>
 </Project>
 '''
     generated_project = generated / 'Poima.NativeGame.csproj'
     generated_project.write_text(project_xml, encoding='utf-8')
     published = work / 'publish'
-    build(dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo')
+    if pack is None:
+        build(dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo')
+        assets_path = generated / 'obj/project.assets.json'
+    else:
+        pack.verify()
+        build(dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo',
+              '--artifacts-path', work / 'publish-artifacts', cwd=project.parent)
+        pack.verify()
+        selected_assets = build(dotnet, 'msbuild', generated_project, '-getProperty:ProjectAssetsFile', '-nologo',
+            '-p:ArtifactsPath='+str(work / 'publish-artifacts'), '-p:UseArtifactsOutput=true',
+            '-p:Configuration=Release', '-p:RuntimeIdentifier='+rid,
+            capture=True, cwd=project.parent)
+        assets_path = Path(selected_assets)
+        if not assets_path.is_absolute() or not assets_path.resolve(strict=True).is_relative_to(work):
+            raise ValueError('Resolved NativeAOT assets must be inside installed publication work.')
     library_name = 'Poima.NativeGame.dll' if rid == 'win-x64' else 'Poima.NativeGame.so'
     library = published / library_name
     if not library.is_file():
@@ -150,6 +236,8 @@ def main():
     unexpected = [p.name for p in published.iterdir() if p.name not in allowed and p.suffix.lower() not in ('.pdb', '.dbg')]
     if unexpected:
         raise ValueError('Additional publish payloads require explicit dependency packaging: ' + ', '.join(unexpected))
+    if pack is not None:
+        pack.verify()
     output.parent.mkdir(parents=True, exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix='.' + output.name + '-', dir=output.parent))
     try:
@@ -158,11 +246,11 @@ def main():
             shutil.copy2(generated / "game.poima-components.json", stage / "game.poima-components.json")
         notices = stage / 'notices'
         notices.mkdir()
-        shutil.copy2(ROOT / 'LICENSE', notices / 'POIMA-LICENSE.txt')
-        shutil.copy2(ROOT / 'THIRD_PARTY_NOTICES.md', notices / 'POIMA-THIRD-PARTY-NOTICES.md')
+        shutil.copy2(pack.resource('notices/POIMA-LICENSE.txt') if pack is not None else ROOT / 'LICENSE', notices / 'POIMA-LICENSE.txt')
+        shutil.copy2(pack.resource('notices/POIMA-THIRD-PARTY-NOTICES.md') if pack is not None else ROOT / 'THIRD_PARTY_NOTICES.md', notices / 'POIMA-THIRD-PARTY-NOTICES.md')
         # NativeAOT incorporates .NET runtime code; retain official SDK runtime
         # license and third-party notices, not only the engine's notices.
-        assets = json.loads((generated / 'obj/project.assets.json').read_text())
+        assets = json.loads(assets_path.read_text())
         package_roots = [Path(path) for path in assets['packageFolders']]
         downloads = assets['project']['frameworks']['net10.0']['downloadDependencies']
         for package, label in [('Microsoft.NETCore.App.Runtime.' + rid, 'DOTNET-RUNTIME'),
@@ -200,6 +288,8 @@ def main():
         # Reserve a new destination atomically. POSIX rename would replace an
         # empty directory racing the final check; mkdir never does. The marker
         # and manifest-last policy make incomplete publication uninspectable.
+        if pack is not None:
+            pack.verify()
         output.mkdir(exist_ok=False)
         marker = output / '.poima-publishing'
         with marker.open('x', encoding='utf-8') as handle:
@@ -212,6 +302,8 @@ def main():
             with source.open('rb') as incoming, (output / source.relative_to(stage)).open('xb') as outgoing:
                 shutil.copyfileobj(incoming, outgoing)
         # Removing this marker is the only step that exposes a valid artifact.
+        if pack is not None:
+            pack.verify()
         marker.unlink()
     finally:
         # Cleanup must neither replace an earlier failure nor report a failed

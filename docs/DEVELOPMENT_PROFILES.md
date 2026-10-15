@@ -58,6 +58,23 @@ selected C++ toolchain's `PATH`, `INCLUDE`, `LIB` and `LIBPATH`. See the
 [environment contract](DEVELOPMENT_JOBS.md#per-job-environments). Poima does not
 discover, install or activate a toolchain automatically.
 
+For an [installed NativeAOT authoring pack](AUTHORING_TOOLS.md), add the optional
+host-only `authoring_pack` directory and select its inventoried publisher:
+
+```json
+"authoring_pack": "/absolute/authoring",
+"publisher": "/absolute/authoring/tools/publish_native_gameplay.py"
+```
+
+These are fields in the profile object; all other required fields above remain.
+The pack is separate from `runtime_root`. Configuration validates its exact
+thirteen-resource inventory, payload identities and SDK copies, then records
+the manifest hash in the profile fingerprint. Publication passes
+`--authoring-pack` and that expected `--authoring-sha256` automatically; neither
+is an RPC-supplied authority override. Do not add a manifest-hash field to the
+profile JSON. Keep outputs outside every configured pack as well as the other
+input/tool roots.
+
 The output root must be separate from all configured project, runtime and tool
 directories. Paths supplied by requests are portable relative paths: traversal,
 absolute paths, symlinks, reparse points, reserved device names and ambiguous
@@ -96,9 +113,13 @@ configuration are omitted.
 
 Publication generates a fixed Python publisher argument vector with the
 profile's .NET SDK and matching-host RID. It executes the selected original
-project and produces an inventoried native gameplay artifact. Publisher and
-generator resources currently come from an explicitly selected source checkout;
-an installed, source-independent authoring-tool distribution is not qualified.
+project and produces an inventoried native gameplay artifact. With
+`authoring_pack`, the publisher uses the admitted prebuilt generator, binary
+SDK, Entry source and notices. It does not build Poima's internal managed
+projects. Without that field, the existing checkout publisher and generator
+build path remains available. See [installed authoring tools](AUTHORING_TOOLS.md)
+for project references, intermediate ownership and the separate qualification
+requirements.
 
 ```json
 {"jsonrpc":"2.0","id":2,"method":"development.export","params":{"request_id":"22222222222222222222222222222222","profile":"native","project":"MyGame/project.json","output":"game-build-1"}}
@@ -127,7 +148,9 @@ The existing 128-receipt/4,096-ID session budget is shared with compilation.
 A zero process exit is insufficient. Native verification checks the full
 artifact or bundle inventory, hashes, format and expected target. Gameplay also
 checks the requested compiled type. A changed directly selected tool or runtime
-descriptor rejects verification. Results include descriptor/manifest and inventory
+descriptor rejects verification. Installed publication additionally revalidates
+the complete admitted pack, including closure and file kinds, before success;
+a zero exit cannot excuse changed or added pack resources. Results include descriptor/manifest and inventory
 hashes, file/byte counts and target/identity information. They do not execute game
 code to test gameplay behavior.
 
@@ -138,9 +161,11 @@ Successful results identify bytes verified at completion, rather than leasing
 or protecting them against later edits. Revalidate before activation or delivery.
 
 Fingerprints cover configured policy and the directly selected Python, publisher,
-.NET executable, exporter and runtime descriptor. They are not complete SDK,
-package or transitive publisher-resource fingerprints. Publication builds live
-trusted sources; it does not yet capture a coherent immutable source closure.
+.NET executable, exporter and runtime descriptor. An installed pack adds its
+manifest identity, version and full fixed payload inventory. The checkout path
+does not acquire that extra resource inventory. Neither path fingerprints the
+complete external .NET/native toolchain or package cache. Publication builds live
+trusted game sources; it does not capture a coherent immutable project/dependency closure.
 The exporter retains its existing source-change checks. These development
 operations are outside the stable authored-world v1 contract.
 
@@ -175,3 +200,15 @@ platform scope separately from a Windows full publish/export run.
 The [0.0.91 qualification record](evidence/m2-development-profiles.json) reports
 Windows publication/export and Linux publication separately, with retained failed
 attempts and native/shared-host regression scope.
+
+The new installed-pack path has portable admission and publisher-plan tests in
+[authoring pack checks](../tests/authoring_pack.py) and
+[publisher checks](../tests/publisher_authoring_pack.py), plus a
+[native profile fixture](../tests/authoring_pack_profiles.cpp). The
+[installed workflow reproducer](../tests/authoring_tools_workflow.py) requires a
+matching installed Windows runtime, pack, .NET SDK/linker environment and an
+enclosing Windows Job. The [0.0.162 installed workflow](evidence/m2-installed-authoring-tools.json)
+qualifies actual Windows compilation, original-checkout path unavailability,
+native component/Control callbacks, full save continuation and relocated export.
+The earlier failed fixture attempt remains recorded; CoreCLR pack distribution,
+clean-machine setup and rendering remain separate.

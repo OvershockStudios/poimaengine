@@ -12,6 +12,10 @@ The preference tail preserves all earlier layouts and uses three copied, bounded
 
 ## Publish
 
+For an external project, use the binary SDK and prebuilt tools in an
+[inventoried authoring pack](AUTHORING_TOOLS.md). The checkout commands below
+remain available when building directly from source.
+
 Publishing needs a matching x64 operating system, a .NET 10 SDK and its supported native linker toolchain. On Windows this requires Visual Studio 2022 or later C++ build tools and a compatible Windows SDK; the recorded build used MSVC 14.44 and Windows SDK 10.0.26100.0. The engine can still be cross-built separately with LLVM-MinGW. See Microsoft's [Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/) and [native shared-library limitations](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/libraries). The Python script is build tooling; the engine does not invoke it when playing a game.
 
 ```sh
