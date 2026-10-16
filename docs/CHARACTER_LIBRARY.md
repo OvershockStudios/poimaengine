@@ -152,3 +152,13 @@ cooked mip identities/dimensions are checked; this verifier does not independent
 validate every decoded texel or reproduce mip filtering. Rendered appearance,
 contacts and broader source families need separate evidence. The compiled-game
 workflow above records runtime locomotion separately from these intake checks.
+
+## Reuse the headless workflow
+
+[Locomotion Yard's public headless command](../examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window)
+composes this original library with a compatible compiled courier game. Choose
+`author`, `verify` or `export`; retain raw SDK traces and complete checkpoints
+without opening a player. The default Kenney profile remains separate.
+[Recorded public-command results](evidence/m2-headless-character-workflow.json)
+distinguish complete immediate restoration from selected later continuation
+observations.

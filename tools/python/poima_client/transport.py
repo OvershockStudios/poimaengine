@@ -19,7 +19,56 @@ from .errors import OutcomeUnknown, RpcError, TransportError
 REQUEST_LIMIT = 1024 * 1024
 RESPONSE_LIMIT = 16 * 1024 * 1024
 STDERR_LIMIT = 65536
+TRACE_LIMIT = 32 * 1024 * 1024
+TRACE_MAXIMUM = 128 * 1024 * 1024
 _MISSING = object()
+
+
+class _TraceError(OSError):
+    pass
+
+
+class _RawTrace:
+    """One writer per stream; close only after all transport writers retire."""
+
+    def __init__(self, directory, limit):
+        self.files = {}
+        self.counts = dict(stdin=0, stdout=0, stderr=0)
+        self.limit = limit
+        os.mkdir(directory)
+        try:
+            for role, name in (("stdin", "stdin.ndjson"), ("stdout", "stdout.ndjson"),
+                               ("stderr", "stderr.log")):
+                self.files[role] = open(os.path.join(directory, name), "xb", buffering=0)
+        except BaseException:
+            self.close()
+            raise
+
+    def append(self, role, chunk):
+        available = self.limit - self.counts[role]
+        view = memoryview(chunk)[:available]
+        overflow = len(chunk) > available
+        try:
+            while view:
+                written = self.files[role].write(view)
+                if type(written) is not int or not 0 < written <= len(view):
+                    raise OSError("Trace file did not accept bytes")
+                self.counts[role] += written
+                view = view[written:]
+        except Exception as error:
+            raise _TraceError(role + " trace write failed: " + str(error)) from error
+        if overflow:
+            raise _TraceError(role + " trace exceeds its per-stream byte limit")
+
+    def close(self):
+        failure = None
+        for stream in self.files.values():
+            try:
+                stream.close()
+            except Exception as error:
+                if failure is None:
+                    failure = error
+        return failure
 
 
 class _Pending:
@@ -90,10 +139,15 @@ class JsonRpcProcess:
     through the first request or the process/diagnostic properties. ``close``
     is bounded and idempotent and reaps the directly owned subprocess; there is
     no generic Windows descendant-tree cleanup guarantee.
+
+    ``trace_directory`` opts into original stdio bytes in a fresh directory
+    beneath an existing parent. Each stream has its own ``trace_limit_bytes``
+    bound (1 byte through 128 MiB). Trace failure disconnects the channel and
+    is also reported by ``close``; a partial trace is never silently complete.
     """
 
     def __init__(self, argv, *, cwd=None, max_pending=32, stderr_limit=STDERR_LIMIT,
-                 close_timeout=10.0):
+                 close_timeout=10.0, trace_directory=None, trace_limit_bytes=TRACE_LIMIT):
         if isinstance(argv, (str, bytes)) or not isinstance(argv, (list, tuple)) or not argv:
             raise ValueError("argv must be a nonempty explicit list or tuple")
         if any(not isinstance(value, str) or "\0" in value for value in argv) or not argv[0]:
@@ -103,6 +157,16 @@ class JsonRpcProcess:
         if isinstance(stderr_limit, bool) or not isinstance(stderr_limit, int) or not 1 <= stderr_limit <= STDERR_LIMIT:
             raise ValueError("stderr_limit must be between 1 and 65536")
         self._close_timeout = _finite_positive(close_timeout, "close_timeout")
+        if type(trace_limit_bytes) is not int or not 1 <= trace_limit_bytes <= TRACE_MAXIMUM:
+            raise ValueError("trace_limit_bytes must be between 1 and 134217728")
+        trace_path = None
+        if trace_directory is not None:
+            try:
+                trace_path = os.fspath(trace_directory)
+            except TypeError as error:
+                raise ValueError("trace_directory must be a filesystem path") from error
+            if not isinstance(trace_path, str) or not trace_path or "\0" in trace_path:
+                raise ValueError("trace_directory must be a nonempty string path without NUL")
         self._limit = max_pending
         self._stderr_limit = stderr_limit
         self._condition = threading.Condition()
@@ -120,6 +184,13 @@ class JsonRpcProcess:
         self._threads = []
         self._thread_by_role = {}
         self._writer_active = False
+        self._trace = None
+        self._trace_failure = None
+        if trace_path is not None:
+            try:
+                self._trace = _RawTrace(trace_path, trace_limit_bytes)
+            except OSError as error:
+                raise TransportError("Cannot create raw stdio trace: " + str(error)) from error
         options = dict(stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        cwd=cwd, shell=False, bufsize=0)
         if os.name == "posix":
@@ -127,6 +198,8 @@ class JsonRpcProcess:
         try:
             self._process = subprocess.Popen(list(argv), **options)
         except (OSError, ValueError) as error:
+            if self._trace is not None:
+                self._trace.close()
             raise TransportError("Cannot launch native process: " + str(error)) from error
         try:
             for name, target in (("stdout", self._read_stdout), ("stderr", self._read_stderr),
@@ -229,9 +302,31 @@ class JsonRpcProcess:
                 timed_out = not pending.event.is_set()
             if timed_out:
                 self._disconnect("Request deadline expired; transport disconnected")
+        if self._trace is not None and (pending.error is None or isinstance(pending.error, RpcError)):
+            with self._condition:
+                trace_failure = self._trace_failure
+            if trace_failure is not None:
+                error = OutcomeUnknown(trace_failure)
+                error.rpc_id = pending.request_id
+                error.method = pending.method
+                error.params_json = pending.params_json
+                raise error
         if pending.error is not None:
             raise pending.error
         return pending.result
+
+    def _trace_bytes(self, role, chunk):
+        if self._trace is None:
+            return
+        try:
+            self._trace.append(role, chunk)
+        except _TraceError as error:
+            reason = "Raw stdio trace failed: " + str(error)
+            with self._condition:
+                if self._trace_failure is None:
+                    self._trace_failure = reason
+            self._disconnect(reason)
+            raise
 
     def _write_requests(self):
         try:
@@ -256,11 +351,14 @@ class JsonRpcProcess:
                     written = self._process.stdin.write(view)
                     if written is None or written <= 0:
                         raise OSError("Native stdin did not accept request bytes")
+                    self._trace_bytes("stdin", view[:written])
                     view = view[written:]
                 with self._condition:
                     self._writer_active = False
                     if pending.state != "completed":
                         pending.state = "written"
+                    if self._trace is not None:
+                        self._condition.notify_all()
                 pending.payload = b""
         except Exception as error:
             self._disconnect("Native request write failed: " + str(error))
@@ -279,6 +377,7 @@ class JsonRpcProcess:
                         reason = "Native process closed stdout with an unterminated response"
                     self._disconnect(reason)
                     return
+                self._trace_bytes("stdout", chunk)
                 buffer.extend(chunk)
                 while True:
                     newline = buffer.find(b"\n")
@@ -313,6 +412,15 @@ class JsonRpcProcess:
             rpc_error = RpcError(error["code"], error["message"], error.get("data"))
         with self._condition:
             pending = self._pending.get(request_id)
+            # The child may answer inside the final stdin write. With tracing
+            # enabled, do not publish that answer before every accepted request
+            # byte has been recorded or the writer has failed closed.
+            while self._trace is not None and pending is not None and pending.state == "writing" and not self._closed:
+                remaining = pending.deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ValueError("Response arrived before request trace completed by its deadline")
+                self._condition.wait(remaining)
+                pending = self._pending.get(request_id)
             if pending is None or pending.state not in ("writing", "written"):
                 raise ValueError("Response id is unknown, duplicated, or not yet sent")
             if rpc_error is not None:
@@ -337,6 +445,7 @@ class JsonRpcProcess:
                 chunk = self._process.stderr.read(4096)
                 if not chunk:
                     return
+                self._trace_bytes("stderr", chunk)
                 with self._condition:
                     self._stderr.extend(chunk)
                     overflow = max(0, len(self._stderr) - self._stderr_limit)
@@ -409,6 +518,18 @@ class JsonRpcProcess:
                     stream.close()
                 except OSError:
                     pass
+            if self._trace is not None:
+                active = [thread for thread in self._threads
+                          if thread.ident is not None and thread.is_alive()]
+                if active:
+                    # Keep close bounded with its existing cleanup error, but
+                    # retain trace ownership until actual writers have stopped.
+                    self._cleanup_done.set()
+                    for thread in active:
+                        thread.join()
+                failure = self._trace.close()
+                if failure is not None and self._cleanup_error is None:
+                    self._cleanup_error = failure
             self._cleanup_done.set()
 
     def close(self):
@@ -418,6 +539,8 @@ class JsonRpcProcess:
                 raise TransportError("Owned process cleanup exceeded its bounded deadline")
             if self._cleanup_error is not None:
                 raise TransportError("Owned process cleanup failed: " + str(self._cleanup_error))
+            if self._trace_failure is not None:
+                raise TransportError(self._trace_failure)
         except TransportError as error:
             with self._condition:
                 self._close_error = error

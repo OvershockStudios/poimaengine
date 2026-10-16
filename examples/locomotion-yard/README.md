@@ -119,6 +119,58 @@ and idle timing, stations, nominal run speed and slowdown distance.
 component. The launcher imports these generated schemas and authors their
 values. [Custom component reference](../../docs/CUSTOM_COMPONENTS.md#import-and-author).
 
+## Author, playtest and export without a window
+
+Use `headless.py` with a published Native AOT artifact and its generated
+component manifest. It performs the same native authoring operations as the
+interactive launcher, adopts a complete copy of gameplay into an ordinary
+project, and drives fixed simulation ticks without a renderer or CoreCLR.
+It performs no downloads or compilation.
+
+```powershell
+python examples/locomotion-yard/headless.py `
+  --binary build/windows-runtime/bin/poima.exe `
+  --source-profile kaykit-knight-original-glb-v1 `
+  --source-directory build/knight-source `
+  --manifest build/locomotion-yard/native-win/game.poima-components.json `
+  --descriptor build/locomotion-yard/native-win/native-gameplay.json `
+  --guard-sources --stage export `
+  --runtime build/locomotion-yard/runtime-windows `
+  --output build/locomotion-yard/headless-01
+```
+
+Run with paths native to Python and the engine; this entrypoint has no WSL path
+translation. Omit `--source-profile` to use the original Kenney inputs.
+`--guard-sources` needs schema revision 105 or later and defaults to off.
+The supplied descriptor must satisfy the actual engine's call, service-prefix,
+feature and schema requirements; a matching version label alone is insufficient.
+
+| Stage | Result |
+| --- | --- |
+| `author` | Import the selected sources, author the yard, inspect its project and adopt the compiled artifact with hash guards. |
+| `verify` (default) | Also run Idle → moving Run → delivery → Idle, retain a moving-fade checkpoint, compare complete immediate warm/fresh-owner restores, and continue after relocating the project and its admitted sources. |
+| `export` | Also export through `project build`, relocate the bundle, and complete the saved route through its own bundled read-only game service using an external save store. Requires `--runtime`. |
+
+Every run needs a fresh output directory. `evidence.json` records outcomes,
+original input identities, native CLI logs, process closure and checkpoint
+receipts. `traces/` contains the SDK's original input, output and diagnostic
+streams; `checkpoints/` retains complete native v7 save files. Later continuation
+checks selected gameplay observations and retains complete files; it does not
+claim complete cross-owner equality after callbacks update host-specific state.
+
+The default whole-run budget is 600 seconds, with ten seconds reserved for
+cleanup; `--timeout` accepts 60–1800 seconds. RPCs, continuation ticks, trace/log
+sizes and total output have bounds. An unknown outcome stops the workflow without
+retrying mutations. Failed runs retain their records: diagnose the original
+failure and use a new output directory for a deliberate follow-up. The script
+owns its direct children; it does not sandbox arbitrary native gameplay or
+establish general descendant ownership.
+
+This workflow opens no player or editor. It does not qualify rendered poses,
+physical input, contact/IK or representative performance. Use the interactive
+launcher below to inspect the same character and the dedicated verifiers for
+their additional documented scopes.
+
 ## Launch on Windows
 
 With Windows-native Python and a matching Windows CoreCLR installation:
@@ -274,7 +326,7 @@ cmake --preset windows-runtime \
   -DPOIMA_ENABLE_NATIVE_GAMEPLAY=ON -DPOIMA_ENABLE_MANAGED_GAMEPLAY=OFF \
   -DPOIMA_ENABLE_NAVIGATION=ON -DPOIMA_ENABLE_GAME_UI=ON
 cmake --build --preset windows-runtime
-cmake --install build/windows-runtime --prefix build/locomotion-yard/runtime-windows
+cmake --install build/windows-runtime --strip --prefix build/locomotion-yard/runtime-windows
 ```
 
 Build all configured install targets before installing and use a new prefix.
@@ -365,3 +417,19 @@ unavailable; the original consumer records and caller sources remain preserved.
 separate intake, warm/cold consumption and standalone service execution.
 Rendering, physical input, foot contact/IK, broader exporters, clean-machine
 installation and performance remain separate qualification scopes.
+
+## Recorded public headless commands
+
+Checkpoint 0.0.177 executes the public entrypoint on qualified native 0.0.176
+with the unchanged 0.0.75 Native AOT artifact. Guarded Knight export retains
+749 original request/reply pairs, seven complete v7 checkpoints and three
+whole-byte immediate restores. Warm, cold and bundled-service continuations
+finish delivery at tick 536 after loading the moving fade at tick 172.
+The default, unguarded Kenney verification separately retains 607 pairs, five
+complete checkpoints and two immediate restores.
+
+Both commands close their owned game processes naturally. Original raw streams,
+CLI logs, unchanged input inventories and full saves are independently reviewed.
+These are public workflow checks, separate from the earlier source-pose oracle,
+rendering, physical input and performance qualification.
+[Results, failures and scope](../../docs/evidence/m2-headless-character-workflow.json).

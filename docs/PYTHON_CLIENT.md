@@ -46,6 +46,37 @@ with WorldClient.open(binary, world) as engine:
 Startup errors can surface on the first call; there is no implicit handshake or
 discovery request. Context-manager exit closes and reaps the owned CLI process.
 
+## Retain the original RPC streams
+
+Opt into raw traces when a workflow needs records independent of decoded
+results:
+
+```python
+with WorldClient.open(binary, world,
+                      trace_directory=Path("build/run-01-wire"),
+                      trace_limit_bytes=32 * 1024 * 1024) as engine:
+    print(engine.inspect())
+```
+
+The trace directory must be new, with an existing parent. It receives
+`stdin.ndjson`, `stdout.ndjson` and `stderr.log`. The input trace contains bytes
+accepted by successful native pipe writes; output and error traces capture raw
+chunks before parsing or diagnostic-tail truncation. Invalid or unterminated
+output remains intact. These files can contain project data and local paths;
+choose their storage and publication deliberately.
+
+`trace_limit_bytes` caps each stream independently; the default is 32 MiB.
+An I/O or cap failure disconnects the transport and preserves recorded prefixes.
+It does not retry a request. A sent request can have an unknown outcome even
+when its complete input was not recorded. Inspect the original error and
+reconcile with the authoritative owner before taking another action.
+
+Without `trace_directory`, the client creates no trace files. Trace files close
+after their corresponding I/O threads retire; `close()` still reports bounded
+cleanup failures. Tracing does not establish descendant-process ownership or
+prove that a shared host exited. [Locomotion Yard's headless workflow](../examples/locomotion-yard/README.md)
+uses these records alongside native CLI logs and complete checkpoint files.
+
 ## Share an editor or headless host
 
 Use the endpoint of an existing [shared session](SHARED_SESSIONS.md):

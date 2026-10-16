@@ -459,6 +459,7 @@ class RpcDiagnosticsContract(unittest.TestCase):
         transport = object.__new__(JsonRpcProcess)
         transport._condition = threading.Condition()
         transport._closed = False
+        transport._trace = None  # This isolated response fixture bypasses __init__.
         transport._pending = {}
         for rpc_id, method, params in requests:
             serialized = json.dumps(params, ensure_ascii=False, separators=(",", ":"))

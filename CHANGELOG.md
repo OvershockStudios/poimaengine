@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.177
+
+- Add public headless author, verify and export stages for Locomotion Yard, with project-owned Native AOT gameplay, complete immediate checkpoint restoration, fresh-owner continuation and a relocated bundled game service. [Workflow](examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window).
+- Add opt-in bounded raw RPC traces to the Python client, preserving original pipe bytes and failing explicitly on capture errors. Verify the new transport cases and both public character profiles. [Results and scope](docs/evidence/m2-headless-character-workflow.json).
+
 ## 0.0.176
 
 - Guard base and animation-donor imports with optional inspected-model fingerprints, returning structured stale-source diagnostics before publication while preserving legacy requests and cooked bytes. [Contract and recovery](docs/ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models).

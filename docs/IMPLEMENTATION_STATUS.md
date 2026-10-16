@@ -1,8 +1,40 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.176**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.177**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.177 adds a public [headless Locomotion Yard workflow](../examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window):
+author a project, adopt compiled gameplay, verify moving-fade checkpoints and
+continue in a relocated standalone export. The Python client can retain original
+stdin/stdout/stderr bytes through opt-in bounded traces. Capture failure remains
+explicit, including during shutdown; default tracing is off.
+
+Actual public Windows commands pass for guarded Knight export and default,
+unguarded Kenney verification: 749 and 607 request/reply pairs, respectively.
+Seven Knight and five Kenney complete v7 checkpoints retain all 45 typed globals;
+three and two immediate restore comparisons retain every byte. Both fresh
+owners finish their routes. Knight's 65-file relocated bundle runs its own
+read-only service and completes the saved game. Later continuation checks
+selected gameplay observations and retains complete saves; it does not claim
+complete cross-owner equality after callbacks.
+
+These runs use the unchanged 0.0.75 Native AOT artifact and qualified native
+0.0.176, with actual artifact/schema/feature checks. A link-only Desktop supplement
+produces the matching 49-file installed runtime without recompiling the core.
+All owned game processes close naturally; no renderer, physical input, CoreCLR,
+clean-machine, representative performance or broader Alpha gate is qualified here.
+
+Fifteen new in-memory transport tests pass on Windows and Linux. The existing
+49-test client suite passes on both, including actual native calls. Its first
+Windows run remains failed because an isolated fixture bypassed initialization
+and lacked the new disabled trace field; the fixture now initializes it without
+changing assertions. A first Linux invocation used the wrong executable path
+and remains a separate failed launch check. Knight's public command and Job
+passed, while its outer metadata wrapper failed on a final path-indexing typo.
+An independent file-only reader verifies the omitted caller-source check and
+all raw workflow records; that wrapper is not regraded or the game rerun.
+[Evidence and reproduction](evidence/m2-headless-character-workflow.json).
 
 Version 0.0.176 adds optional original-model fingerprint guards to base and
 animation-donor imports. Malformed values reject before importer I/O; stale

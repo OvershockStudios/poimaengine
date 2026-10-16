@@ -1,0 +1,285 @@
+{
+  "format": "poima.headless-character-workflow-evidence",
+  "version": 1,
+  "source_checkpoint": "0.0.177",
+  "date": "2026-10-16",
+  "summary": "Public Native AOT character author/verify/export workflow and opt-in raw Python SDK transport traces.",
+  "scope": {
+    "native_engine_version": "0.0.176",
+    "gameplay_artifact_engine_version": "0.0.75",
+    "gameplay_backend": "native_aot",
+    "operating_system": "Windows",
+    "architecture": "x86_64",
+    "renderer_initialized": false,
+    "gameplay_compiler_invoked": false,
+    "coreclr_loaded": false,
+    "whole_immediate_restore_comparisons": true,
+    "whole_later_cross_owner_equality_claimed": false,
+    "alpha_gate_closed": false
+  },
+  "implementation": {
+    "entrypoint": "examples/locomotion-yard/headless.py",
+    "stages": [
+      "author",
+      "verify",
+      "export"
+    ],
+    "default_stage": "verify",
+    "default_profile": "kenney-fbx",
+    "optional_source_guards": true,
+    "project_owned_gameplay": true,
+    "trace_api": {
+      "trace_directory": "Fresh directory beneath an existing parent; omitted by default.",
+      "trace_limit_bytes_default": 33554432,
+      "trace_limit_bytes_bounds": [
+        1,
+        134217728
+      ],
+      "files": [
+        "stdin.ndjson",
+        "stdout.ndjson",
+        "stderr.log"
+      ],
+      "failure": "Retain recorded prefixes and disconnect without retry; sent outcome may be unknown; sticky capture failure surfaces at close.",
+      "capture": "Successfully accepted native input write prefixes and original output/error chunks before parsing or stderr-tail truncation."
+    },
+    "limits": {
+      "default_seconds": 600,
+      "allowed_seconds": [
+        60,
+        1800
+      ],
+      "cleanup_reserve_seconds": 10,
+      "rpcs": 4096,
+      "output_files": 4096,
+      "output_bytes": 536870912,
+      "trace_bytes_per_stream": 33554432,
+      "cli_log_bytes_per_command": 16777216,
+      "continuation_ticks_per_owner": 1024
+    }
+  },
+  "knight_export": {
+    "public_command_passed": true,
+    "guard_sources": true,
+    "original_takes": 76,
+    "original_channels": 8712,
+    "original_nodes": 57,
+    "clients": 4,
+    "native_request_reply_pairs": 749,
+    "client_pair_counts": {
+      "author": 14,
+      "warm": 416,
+      "cold": 156,
+      "export": 163
+    },
+    "native_cli_commands": 5,
+    "complete_v7_checkpoints": 7,
+    "whole_byte_and_typed_immediate_restores": 3,
+    "all_typed_gameplay_globals": 45,
+    "canonical_component_schemas": 2,
+    "saved_moving_fade_tick": 172,
+    "delivery_tick_by_owner": {
+      "warm": 536,
+      "cold": 536,
+      "export": 536
+    },
+    "bundle_files": 65,
+    "bundle_bytes": 107670839,
+    "bundle_unchanged": true,
+    "project_and_bundle_original_paths_unavailable": true,
+    "caller_originals_preserved": true,
+    "standalone_host": {
+      "bundled_executable": true,
+      "unrelated_working_directory": true,
+      "minimal_path": true,
+      "external_saves": true,
+      "shutdown_acknowledged": true,
+      "natural_exit_code": 0
+    },
+    "owned_job": {
+      "passed": true,
+      "seconds": 13.923623099923134,
+      "total_processes": 11,
+      "active_after": 0,
+      "terminated_after": 0,
+      "forced_cleanup": false
+    },
+    "public_command_seconds": 13.571138500003144,
+    "original_report": {
+      "bytes": 4307197,
+      "sha256": "f65bfba0926a55275b5a9322ef39ffafd23ee79128f1c138bb06125e5724675a"
+    }
+  },
+  "kenney_verify": {
+    "public_command_passed": true,
+    "source_profile_argument_omitted": true,
+    "guard_sources_argument_omitted": true,
+    "source_profile": "kenney-fbx",
+    "clients": 3,
+    "native_request_reply_pairs": 607,
+    "client_pair_counts": {
+      "author": 35,
+      "warm": 416,
+      "cold": 156
+    },
+    "native_cli_commands": 2,
+    "complete_v7_checkpoints": 5,
+    "whole_byte_and_typed_immediate_restores": 2,
+    "all_typed_gameplay_globals": 45,
+    "canonical_component_schemas": 2,
+    "saved_moving_fade_tick": 172,
+    "delivery_tick_by_owner": {
+      "warm": 536,
+      "cold": 536
+    },
+    "owned_job": {
+      "passed": true,
+      "seconds": 2.655659700045362,
+      "total_processes": 6,
+      "active_after": 0,
+      "terminated_after": 0,
+      "forced_cleanup": false
+    },
+    "public_command_seconds": 2.3413214000174776,
+    "original_report": {
+      "bytes": 4612975,
+      "sha256": "1140b20c749c74b528cb925d05b4b2a612466f4896c83df1897544e83a43ae6e"
+    }
+  },
+  "runtime_prerequisite": {
+    "engine_version": "0.0.176",
+    "actual_desktop_compiles": 0,
+    "actual_desktop_links": 1,
+    "core_recompiled": false,
+    "configured_generation": 38,
+    "immutable_native_seals": 10,
+    "native_cpp_configuration_inputs": 297,
+    "installed_files": 49,
+    "installed_bytes": 97527053,
+    "loader_code_data_stripping_equivalence": true,
+    "natural_unforced_process_groups": 2,
+    "original_report": {
+      "bytes": 60485,
+      "sha256": "dda8263cd643b220d2c310eb16659f4e086407a01419a8a9653aa3c41d392a0e"
+    },
+    "independent_file_audit": {
+      "bytes": 108796,
+      "sha256": "027e2abcf0d0972c993befc0afe36ca4f13667e23584a76bdb740af222b2f226"
+    }
+  },
+  "sdk_checks": {
+    "new_in_memory_tests": {
+      "windows": {
+        "passed": 15,
+        "failed": 0
+      },
+      "linux": {
+        "passed": 15,
+        "failed": 0
+      },
+      "native_processes_launched": 0
+    },
+    "existing_client_contract": {
+      "windows": {
+        "passed": 49,
+        "failed": 0,
+        "includes_native_calls": true
+      },
+      "linux": {
+        "passed": 49,
+        "failed": 0,
+        "includes_native_calls": true
+      }
+    },
+    "fixture_change": "A constructor-bypassing response fixture now initializes disabled _trace=None; no assertions changed."
+  },
+  "retained_failures": [
+    {
+      "scope": "Original Windows existing SDK suite",
+      "passed": false,
+      "tests": 49,
+      "errors": 4,
+      "cause": "Constructor-bypassing test fixture lacked the new optional trace member; original failure retained before the explicit fixture correction."
+    },
+    {
+      "scope": "Original Linux existing SDK invocation",
+      "passed": false,
+      "tests": 49,
+      "errors": 6,
+      "cause": "Outer invocation supplied a nonexistent bin/poima path; separate corrected-path invocation passes. Engine and SDK code unchanged."
+    },
+    {
+      "scope": "Knight outer metadata wrapper",
+      "passed": false,
+      "cause": "After the successful public command and empty unforced Job, a final caller-source check indexed a Path instead of joining it. The independent file-only reader checks every omitted original identity. Wrapper remains failed; public game was not rerun."
+    },
+    {
+      "scope": "First independent Knight file reader",
+      "passed": false,
+      "cause": "Reader expected a true wrapper input flag; the original wrapper had set it false in its generic exception handler. The next file-only reader retains that flag and verifies all original files directly. No native rerun."
+    },
+    {
+      "scope": "First independent Kenney file reader",
+      "passed": false,
+      "cause": "Reader compared the authored ID-keyed schema map directly with the native schema list. The second file-only reader joins the complete entries by unique schema ID, preserving every field and type. Original failure retained; no native rerun."
+    }
+  ],
+  "independent_reviews": {
+    "knight_original_wire_full_save_and_inventory": {
+      "bytes": 995,
+      "sha256": "a6b74728ef9d6f6dcf552b11a7b37ca54a48e21e253db5123372245fe7ae26dc"
+    },
+    "runtime_actual": {
+      "bytes": 108796,
+      "sha256": "027e2abcf0d0972c993befc0afe36ca4f13667e23584a76bdb740af222b2f226"
+    },
+    "sdk_source": {
+      "bytes": 1301,
+      "sha256": "f3ffab1641ce3d3944dcccc6f3c52100d25e963bafc99302913e296a40d2cb52"
+    },
+    "kenney_original_wire_full_save_and_inventory": {
+      "bytes": 14383,
+      "sha256": "90751c07b919fac69d4f4bc7f4f5ae39952a483ff3a43756839535c17f3df62e"
+    }
+  },
+  "limits_not_qualified": [
+    "Rendered character or UI appearance, physical input, contact/IK and full joint/skin source-pose oracle in this new entrypoint run.",
+    "Complete equality of later cross-owner callback state: full files are retained, but continuation assertions are selected gameplay observations.",
+    "A fresh independent agent-created game, CoreCLR reload, representative frame/memory/latency performance, clean-machine installation, or the complete Alpha release.",
+    "Arbitrary native descendant sandboxing by the public sample; external Windows Jobs provide separate all-descendant qualification ownership."
+  ],
+  "reproduction": {
+    "guide": "examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window",
+    "entrypoint": "examples/locomotion-yard/headless.py",
+    "original_asset_sources": "docs/CHARACTER_LIBRARY.md and examples/locomotion-yard/README.md",
+    "sdk_trace_tests": "python tests/python_client_trace.py -v",
+    "sdk_regression": "python tests/python_client_contract.py --engine <native-poima> -v",
+    "requirements": "Native Python 3.11+, matching-OS executable, original licensed sources, generated component manifest and complete compatible prebuilt Native AOT artifact. Export requires a matching installed runtime. Use fresh output directories."
+  },
+  "source_files": {
+    "examples/locomotion-yard/headless.py": {
+      "bytes": 46845,
+      "sha256": "bad938126203fac9cfa8aa3893907f5c2290ba2eac8e7d818711d5086ff22738"
+    },
+    "examples/locomotion-yard/run.py": {
+      "bytes": 25146,
+      "sha256": "993ea05cd51a86403858783754219199c185bc278006f38ca2b1f348c6faace0"
+    },
+    "examples/locomotion-yard/knight_profile.py": {
+      "bytes": 7413,
+      "sha256": "df2a699b81b26ba2c7b7bfa42fba7e62babbcdfff8715030035cb3c9d668523d"
+    },
+    "tools/python/poima_client/transport.py": {
+      "bytes": 24835,
+      "sha256": "a559624008134af354d323db92632b08bd924b0944ee7e4d007b2acd6c6255c8"
+    },
+    "tests/python_client_trace.py": {
+      "bytes": 17796,
+      "sha256": "e4f546c38b3eceedfe2320ffbedc1b2bb9758df0aca8cb8b9a64efcbd7976b71"
+    },
+    "tests/python_client_contract.py": {
+      "bytes": 42062,
+      "sha256": "392a464a9f35ce668298b462c8ae33e3555e86bf7ad3b56f73c6afa13854d835"
+    }
+  }
+}
