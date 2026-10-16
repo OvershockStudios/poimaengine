@@ -128,6 +128,97 @@ and Linux headless qualification, plus byte-identical cooked output for the
 previously accepted original fixtures. Application-specific exporter coverage
 and visual rendering remain separate checks.
 
+## Locate an unsupported material
+
+Starting with 0.0.170, pass `"fbx_profile_diagnostics": true` to `asset.import` or
+`asset.source.inspect` to receive source witnesses for selected existing FBX
+material rejections. Omission and `false` keep the previous error shape. The
+flag is a strict Boolean, checked before source I/O; it does not expand the
+accepted material profile or change successful model results.
+
+The error remains `-32050` with its original message. Selected failures add
+`error.data` with this closed versioned shape:
+
+```json
+{
+  "type": "fbx_material_profile",
+  "version": 1,
+  "reason": "transparency",
+  "feature": "opacity_or_transparency",
+  "node": 1,
+  "node_name": "Mesh",
+  "material_slot": 0,
+  "material_name": "Glass",
+  "observed_count": null,
+  "limit": null,
+  "source_role": "base",
+  "donor_index": null
+}
+```
+
+`node` is the normalized original source-node index, rather than a world entity
+ID. `material_slot` belongs to that node's material list, including when several
+nodes share geometry. Display names are repaired to valid UTF-8 and bounded to
+256 bytes; use the indices for identity. No resolved source path or raw shader
+graph is returned. `source_role` is `base`, `inspection` or `animation_donor`;
+only the latter has a non-null, zero-based `donor_index` into the original
+`animations` request array. Donor materials are validated even when their
+geometry is not retained.
+
+| Reason | Repair direction |
+| --- | --- |
+| `transparency` | Supply an opaque material without connected opacity/transparency maps. |
+| `advanced_feature` | Disable the named unsupported feature, including its texture connection. |
+| `unlit` | Use a supported lit material. |
+| `shader_model` | Convert to a supported normalized shader model. |
+| `texture_slot` | Remove or explicitly convert the named unsupported texture response. |
+| `uv_binding` | Bind the texture to the supported single UV set and matching name. |
+| `normal_response` | Remove the custom normal response, or use a scalar response of exactly one. |
+
+`feature` names a fixed importer property, such as `fbx.bump` or
+`pbr.transmission_factor`. Counts and limits are nullable integers. For
+`normal_response`, `observed_count` is the number of components, not the scalar
+value: count one/limit one can still reject when that scalar is not one. For a
+UV-name mismatch, unknown counts remain null. Repair the identified source
+material and retry; rejection does not publish a partial model or change the
+authored world, history or existing packages.
+
+Focused method discovery exposes the shape under
+`x-error-data.fbx_material_profile`. Check both type and version. This opt-in
+extension is outside the frozen authoring-core contract. Other material checks,
+including scalar ranges, texture-graph internals and skin/rig failures, can
+retain generic errors. Existing texture-dependency data is unaffected by the
+switch. Importing glTF/GLB does not gain FBX diagnostics.
+
+Run the registered Linux headless check after building `poima` with tests
+enabled:
+
+```sh
+ctest --test-dir build/headless -R '^fbx_material_profile_contract$' --output-on-failure
+```
+
+Each invocation retains a fresh UUID output directory under
+`build/fbx-material-profile`. The fixture has a 180-second internal deadline,
+a 210-second CTest bound, at most 1,200 calls per CLI owner and a 128 MiB
+retained-output bound. To also compare a retained previous native CLI, run:
+
+```sh
+python tests/fbx_material_profile.py --binary CURRENT_CLI --legacy-binary PREVIOUS_CLI --output NEW_OUTPUT
+```
+
+`NEW_OUTPUT` must not exist. Windows native execution requires an externally
+owned Windows Job; an unowned invocation rejects before starting the CLI.
+The optional comparison uses two serial native owners and checks complete
+successful result values, exact raw error-member bytes and all complete cooked
+package bytes. It does not compare raw successful-response serialization.
+
+The [0.0.170 results](evidence/m2-fbx-material-profile.json) separate Windows
+native qualification, Linux diagnostic/legacy parity and the failed broader
+Linux discovery regression gate. Original fixtures cover all seven reason
+families, shared geometry/local slots, donor attribution, zero UV sets and a
+UTF-8 name boundary. They do not qualify arbitrary exporters or every material
+failure branch.
+
 ## Repair an external texture dependency
 
 Starting with 0.0.155, `asset.import` and `asset.source.inspect` identify a

@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 102}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 103}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -503,6 +503,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     animation_source["allOf"]=Json::array({Json{{"not",{{"required",Json::array({"frame_transfer","retarget"})}}}}});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"fbx_profile_diagnostics",{{"type","boolean"},{"default",false}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
     methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching by default; mutually exclusive frame_transfer and retarget policies provide explicit reference-frame or quaternion-chain conversion. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
     result["invariants"].push_back("Animation frame_transfer is opt-in reference-frame-v1: explicit imported-rest or sampled source/target references, source sampling before selected-take filtering, and optional rigid alignment. Same named topology and coincident global origins are required; mapped scales and scale curves must be uniform. Conversion preserves curve interpolation and includes transformed sparse defaults; target geometry/rest/inverse binds are unchanged. It does not infer bind poses, remove root motion or move runtime controllers. Failures publish no partial model.");
@@ -544,6 +545,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     auto source_inspect=object_schema({{"source",{{"type","string"},{"minLength",1},{"maxLength",4096}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"fbx_profile_diagnostics",{{"type","boolean"},{"default",false}}},
         {"section",{{"enum",{"summary","nodes","skins","animations","skin_joints","animation_channels"}},{"default","summary"}}},
         {"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",64}}},
         {"pose",reference_pose},{"expected_model_sha256",asset_id},{"skin",rev},{"clip",rev}},{"source"});
@@ -573,6 +575,27 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"else",{{"properties",{{"donor_index",{{"type","null"}}}}}}}}});
     methods["asset.import"]["x-error-data"]["fbx_texture_dependency"]=texture_dependency_error;
     methods["asset.source.inspect"]["x-error-data"]["fbx_texture_dependency"]=texture_dependency_error;
+    const Json nullable_count={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
+    auto material_profile_error=object_schema({
+        {"type",{{"const","fbx_material_profile"}}},{"version",{{"const",1}}},
+        {"reason",{{"enum",{"transparency","advanced_feature","unlit","shader_model","texture_slot","uv_binding","normal_response"}}}},
+        {"feature",{{"type","string"},{"minLength",1},{"maxLength",64}}},
+        {"node",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
+        {"node_name",{{"type","string"},{"maxLength",256}}},
+        {"material_slot",{{"type","integer"},{"minimum",0},{"maximum",4294967295ull}}},
+        {"material_name",{{"type","string"},{"maxLength",256}}},
+        {"observed_count",nullable_count},{"limit",nullable_count},
+        {"source_role",{{"enum",{"base","animation_donor","inspection"}}}},
+        {"donor_index",{{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",31}},Json{{"type","null"}}})}}}},
+        {"type","version","reason","feature","node","node_name","material_slot","material_name","observed_count","limit","source_role","donor_index"});
+    material_profile_error["description"]="Opt-in witness for selected material-profile rejection sites. node is the original normalized source-node index; material_slot is local to it. Display names are repaired and bounded, not matching identities. observed_count/limit describe UV-set or connected normal-response component counts, never an inferred source total or scalar magnitude; normal_response additionally requires scalar value one. No source path or raw material graph is returned.";
+    material_profile_error["allOf"]=Json::array({Json{
+        {"if",{{"properties",{{"source_role",{{"const","animation_donor"}}}}}}},
+        {"then",{{"properties",{{"donor_index",{{"type","integer"},{"minimum",0},{"maximum",31}}}}}}},
+        {"else",{{"properties",{{"donor_index",{{"type","null"}}}}}}}}});
+    methods["asset.import"]["x-error-data"]["fbx_material_profile"]=material_profile_error;
+    methods["asset.source.inspect"]["x-error-data"]["fbx_material_profile"]=material_profile_error;
+    result["invariants"].push_back("fbx_profile_diagnostics defaults false. Only true adds versioned fbx_material_profile data to selected existing material rejections; legacy omitted/false error envelopes and all accepted cooked content are preserved. Source node indices refer to normalized original FBX nodes and material_slot is local to that node. Counts/limits are present only when observed; normal_response requires a single component with scalar value one. Donor attribution follows the original animations array. No source repair, skipped materials, partial publication or absolute path disclosure is performed.");
     result["invariants"].push_back("Contained external FBX texture read failures return error -32050 with versioned fbx_texture_dependency data, relative dependency identity, reason and effective byte limit. Animation donor failures identify the zero-based donor index. Source inspection and rejected imports do not publish partial models or mutate authored state; no texture search or admission relaxation is performed.");
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};

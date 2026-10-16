@@ -26,6 +26,27 @@ public:
 private:
     FbxTextureDependencyDiagnostic diagnostic_;
 };
+enum class FbxMaterialProfileReason {
+    transparency,advanced_feature,unlit,shader_model,texture_slot,uv_binding,normal_response
+};
+struct FbxMaterialProfileDiagnostic {
+    // Indices belong to the normalized original FBX, not instantiated entities.
+    std::uint32_t node;
+    std::uint32_t material_slot; // Local to this source node's material list.
+    std::string node_name,material_name;
+    FbxMaterialProfileReason reason;
+    std::string feature; // Fixed importer property label, never a source path.
+    std::optional<std::uint64_t> observed_count,limit;
+    std::optional<std::size_t> donor_index{};
+};
+const char* fbx_material_profile_reason_name(FbxMaterialProfileReason reason) noexcept;
+class FbxMaterialProfileError final : public std::runtime_error {
+public:
+    FbxMaterialProfileError(const char* message,FbxMaterialProfileDiagnostic diagnostic);
+    const FbxMaterialProfileDiagnostic& diagnostic() const noexcept {return diagnostic_;}
+private:
+    FbxMaterialProfileDiagnostic diagnostic_;
+};
 // Restricted normalized FBX conversion. Geometryless animation donors are
 // allowed here; ordinary cooked-model publication still requires geometry.
 std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source,FbxNormalConvention normals=FbxNormalConvention::opengl);

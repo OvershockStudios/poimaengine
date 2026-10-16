@@ -64,6 +64,10 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
                 auto diagnostic=error.diagnostic();diagnostic.donor_index=donors.size();
                 throw FbxTextureDependencyError(std::move(diagnostic));
             }
+            catch(const FbxMaterialProfileError& error) {
+                auto diagnostic=error.diagnostic();diagnostic.donor_index=donors.size();
+                throw FbxMaterialProfileError(error.what(),std::move(diagnostic));
+            }
             const auto size=retained_model_import_bytes(*donor);
             if(size>128*1024*1024-retained)throw std::runtime_error("Combined imported models exceed the 128 MiB retained-data budget.");
             retained+=size;donors.push_back(std::move(donor));

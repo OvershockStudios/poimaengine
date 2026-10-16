@@ -25,6 +25,20 @@ const char* fbx_texture_dependency_reason_name(FbxTextureDependencyReason reason
 FbxTextureDependencyError::FbxTextureDependencyError(FbxTextureDependencyDiagnostic diagnostic)
     : std::runtime_error(std::string("FBX external texture dependency rejected (")+
         fbx_texture_dependency_reason_name(diagnostic.reason)+")."),diagnostic_(std::move(diagnostic)) {}
+const char* fbx_material_profile_reason_name(FbxMaterialProfileReason reason) noexcept {
+    switch(reason) {
+    case FbxMaterialProfileReason::transparency:return "transparency";
+    case FbxMaterialProfileReason::advanced_feature:return "advanced_feature";
+    case FbxMaterialProfileReason::unlit:return "unlit";
+    case FbxMaterialProfileReason::shader_model:return "shader_model";
+    case FbxMaterialProfileReason::texture_slot:return "texture_slot";
+    case FbxMaterialProfileReason::uv_binding:return "uv_binding";
+    case FbxMaterialProfileReason::normal_response:return "normal_response";
+    }
+    return "unknown";
+}
+FbxMaterialProfileError::FbxMaterialProfileError(const char* message,FbxMaterialProfileDiagnostic diagnostic)
+    : std::runtime_error(message),diagnostic_(std::move(diagnostic)) {}
 namespace {
 constexpr std::size_t source_budget=128*1024*1024, image_budget=64*1024*1024;
 constexpr std::size_t max_vertices=1000000,max_indices=3000000;
@@ -183,26 +197,39 @@ struct Images {
 };
 bool textured(const ufbx_material_map& map) {return map.texture && map.texture_enabled;}
 double factor(const ufbx_material_map& map,double fallback) {return map.has_value ? map.value_real : fallback;}
-void no_texture(const ufbx_material_map& map) {require(!textured(map),"FBX material texture slot cannot be represented by the supported renderer.");}
-void inactive(const ufbx_material_map& map) {require(!textured(map) && (!map.has_value || map.value_real==0),"FBX advanced material feature is unsupported.");}
-void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* source,Images& images,ModelAsset& model) {
+void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* source,Images& images,ModelAsset& model,
+    const ufbx_node& owner,std::uint32_t slot) {
+    auto checked=[&](bool accepted,const char* message,FbxMaterialProfileReason reason,const char* feature,
+        std::optional<std::uint64_t> observed=std::nullopt,std::optional<std::uint64_t> limit=std::nullopt) {
+        if(accepted)return;
+        // Construct names only on rejection. The service repairs UTF-8 and
+        // bounds the display names; source indices are the primary witness.
+        const auto bounded=[](ufbx_string value) {return value.length ? std::string(value.data,std::min<std::size_t>(value.length,256)) : std::string{};};
+        throw FbxMaterialProfileError(message,{owner.typed_id,slot,bounded(owner.name),source ? bounded(source->name) : std::string{},reason,feature,observed,limit});
+    };
+    auto no_texture=[&](const ufbx_material_map& map,const char* feature) {
+        checked(!textured(map),"FBX material texture slot cannot be represented by the supported renderer.",FbxMaterialProfileReason::texture_slot,feature);
+    };
+    auto inactive=[&](const ufbx_material_map& map,const char* feature) {
+        checked(!textured(map) && (!map.has_value || map.value_real==0),"FBX advanced material feature is unsupported.",FbxMaterialProfileReason::advanced_feature,feature);
+    };
     auto texture=[&](const ufbx_texture* t,bool srgb,bool normal_map=false,bool retained=true) {
         if(t && t->uv_set.length) {
-            require(geometry.uv_sets.count==1,"FBX texture references a missing UV set.");
+            checked(geometry.uv_sets.count==1,"FBX texture references a missing UV set.",FbxMaterialProfileReason::uv_binding,"texture.uv_set",geometry.uv_sets.count,1);
             const auto expected=geometry.uv_sets.data[0].name;
-            require(std::string_view(t->uv_set.data,t->uv_set.length)==std::string_view(expected.data,expected.length),"FBX texture references an unsupported UV set.");
+            checked(std::string_view(t->uv_set.data,t->uv_set.length)==std::string_view(expected.data,expected.length),"FBX texture references an unsupported UV set.",FbxMaterialProfileReason::uv_binding,"texture.uv_set");
         }
         return images.texture(t,srgb,normal_map && images.normals==FbxNormalConvention::opengl,retained);
     };
     if(!source) {mesh.material.metallic=0;mesh.material.roughness=1;return;}
     const auto& p=source->pbr;const auto& f=source->fbx;
-    require(!textured(p.opacity) && factor(p.opacity,1)==1 && !textured(f.transparency_factor) && factor(f.transparency_factor,0)==0 && !textured(f.transparency_color),"FBX transparent/alpha material is unsupported.");
-    inactive(p.transmission_factor);inactive(p.subsurface_factor);inactive(p.sheen_factor);inactive(p.coat_factor);inactive(p.thin_film_factor);inactive(p.matte_factor);
-    require(!source->features.unlit.enabled,"FBX unlit material is unsupported.");no_texture(p.displacement_map);no_texture(p.tangent_map);no_texture(f.bump);no_texture(f.displacement);no_texture(f.vector_displacement);
+    checked(!textured(p.opacity) && factor(p.opacity,1)==1 && !textured(f.transparency_factor) && factor(f.transparency_factor,0)==0 && !textured(f.transparency_color),"FBX transparent/alpha material is unsupported.",FbxMaterialProfileReason::transparency,"opacity_or_transparency");
+    inactive(p.transmission_factor,"pbr.transmission_factor");inactive(p.subsurface_factor,"pbr.subsurface_factor");inactive(p.sheen_factor,"pbr.sheen_factor");inactive(p.coat_factor,"pbr.coat_factor");inactive(p.thin_film_factor,"pbr.thin_film_factor");inactive(p.matte_factor,"pbr.matte_factor");
+    checked(!source->features.unlit.enabled,"FBX unlit material is unsupported.",FbxMaterialProfileReason::unlit,"unlit");no_texture(p.displacement_map,"pbr.displacement_map");no_texture(p.tangent_map,"pbr.tangent_map");no_texture(f.bump,"fbx.bump");no_texture(f.displacement,"fbx.displacement");no_texture(f.vector_displacement,"fbx.vector_displacement");
     const bool legacy=source->shader_type==UFBX_SHADER_FBX_LAMBERT || source->shader_type==UFBX_SHADER_FBX_PHONG;
     const bool supported=legacy || source->shader_type==UFBX_SHADER_BLENDER_PHONG || source->shader_type==UFBX_SHADER_GLTF_MATERIAL || source->shader_type==UFBX_SHADER_3DS_MAX_PBR_METAL_ROUGH;
-    require(supported,"FBX shader model is unsupported.");
-    const auto& color=legacy ? f.diffuse_color : p.base_color;const auto& base_factor=legacy ? f.diffuse_factor : p.base_factor;no_texture(base_factor);
+    checked(supported,"FBX shader model is unsupported.",FbxMaterialProfileReason::shader_model,"shader_model");
+    const auto& color=legacy ? f.diffuse_color : p.base_color;const auto& base_factor=legacy ? f.diffuse_factor : p.base_factor;no_texture(base_factor,legacy ? "fbx.diffuse_factor" : "pbr.base_factor");
     const double strength=factor(base_factor,1);require(std::isfinite(strength) && strength>=0 && strength<=1,"FBX diffuse factor exceeds supported range.");
     ufbx_vec3 rgb{};rgb.x=rgb.y=rgb.z=1;if(color.has_value)rgb=color.value_vec3;
     const double values[]{rgb.x*strength,rgb.y*strength,rgb.z*strength};
@@ -213,12 +240,12 @@ void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* sou
         const std::string diagnostic="Legacy FBX Lambert/Phong converted to matte metallic/roughness; legacy specular/ambient response is not reproduced.";
         if(std::find(model.diagnostics.begin(),model.diagnostics.end(),diagnostic)==model.diagnostics.end())model.diagnostics.push_back(diagnostic);
     }else {
-        no_texture(p.specular_factor);no_texture(p.specular_color);no_texture(p.glossiness);
+        no_texture(p.specular_factor,"pbr.specular_factor");no_texture(p.specular_color,"pbr.specular_color");no_texture(p.glossiness,"pbr.glossiness");
         require(!source->features.roughness_as_glossiness.enabled && (!p.glossiness.has_value || p.glossiness.value_real==0),"FBX glossiness conversion is unsupported.");
         require(!p.specular_factor.has_value || p.specular_factor.value_real==1,"FBX custom PBR specular factor is unsupported.");
         if(p.specular_color.has_value)require(p.specular_color.value_vec3.x==1 && p.specular_color.value_vec3.y==1 && p.specular_color.value_vec3.z==1,"FBX custom PBR specular color is unsupported.");
         require(!p.specular_ior.has_value || p.specular_ior.value_real==1.5,"FBX custom PBR IOR is unsupported.");
-        inactive(p.diffuse_roughness);inactive(p.specular_anisotropy);inactive(p.specular_rotation);
+        inactive(p.diffuse_roughness,"pbr.diffuse_roughness");inactive(p.specular_anisotropy,"pbr.specular_anisotropy");inactive(p.specular_rotation,"pbr.specular_rotation");
         const bool rough_map=textured(p.roughness),metal_map=textured(p.metalness);
         require(!rough_map || !p.roughness.has_value || p.roughness.value_components==1,"FBX roughness map factor must be scalar.");
         require(!metal_map || !p.metalness.has_value || p.metalness.value_components==1,"FBX metalness map factor must be scalar.");
@@ -234,7 +261,7 @@ void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* sou
             mesh.textures[1]=images.scalar_pair(rough_texture,metal_texture);
         }
     }
-    const auto& emission=legacy ? f.emission_color : p.emission_color;const auto& emission_factor=legacy ? f.emission_factor : p.emission_factor;no_texture(emission_factor);
+    const auto& emission=legacy ? f.emission_color : p.emission_color;const auto& emission_factor=legacy ? f.emission_factor : p.emission_factor;no_texture(emission_factor,legacy ? "fbx.emission_factor" : "pbr.emission_factor");
     const auto e=emission.has_value ? emission.value_vec3 : ufbx_zero_vec3;const auto ef=factor(emission_factor,1);
     const double emitted[]{e.x*ef,e.y*ef,e.z*ef};for(std::size_t i=0;i<3;++i) {require(std::isfinite(emitted[i]) && emitted[i]>=0 && emitted[i]<=1,"FBX emission exceeds supported range.");mesh.material.emissive[i]=static_cast<float>(emitted[i]);}
     if(textured(emission))mesh.textures[2]=texture(emission.texture,true);
@@ -242,7 +269,7 @@ void material(MeshAsset& mesh,const ufbx_mesh& geometry,const ufbx_material* sou
     if(textured(normal)) {
         // Inactive FBX normal properties can carry exporter defaults (including
         // vectors). Only a connected, enabled map has a response to reproduce.
-        require(!normal.has_value || (normal.value_components==1 && normal.value_real==1),"FBX custom normal-map scalar/vector response is unsupported.");
+        checked(!normal.has_value || (normal.value_components==1 && normal.value_real==1),"FBX custom normal-map scalar/vector response is unsupported.",FbxMaterialProfileReason::normal_response,"normal_map.response",normal.has_value ? std::optional<std::uint64_t>(normal.value_components) : std::nullopt,1);
         mesh.textures[4]=texture(normal.texture,false,true);
         const std::string diagnostic=images.normals==FbxNormalConvention::opengl ?
             "FBX normal-map convention: OpenGL (+green along source +V); green inverted for cooked top-left UV basis." :
@@ -354,7 +381,7 @@ struct Converter {
                 }
             }
             for(auto& [slot,mesh]:parts) {
-                material(*mesh,source,node.materials.count ? node.materials.data[slot] : nullptr,images,model);
+                material(*mesh,source,node.materials.count ? node.materials.data[slot] : nullptr,images,model,node,slot);
                 if(mesh->has_uv) {
                     tangent_fallback_count+=generate_tangents(*mesh,true);
                 }

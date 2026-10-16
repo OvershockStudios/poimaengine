@@ -1,0 +1,299 @@
+{
+  "format": "poima.fbx-material-profile-evidence.v1",
+  "version": "0.0.170",
+  "implemented": {
+    "methods": [
+      "asset.import",
+      "asset.source.inspect"
+    ],
+    "parameter": {
+      "name": "fbx_profile_diagnostics",
+      "type": "boolean",
+      "default": false
+    },
+    "error_type": "fbx_material_profile",
+    "error_version": 1,
+    "scope": "Opt-in source-node/local-material-slot witnesses for selected existing FBX material rejections. Same acceptance predicates and original messages; no import repair or profile expansion."
+  },
+  "windows": {
+    "passed": true,
+    "selected_native_build": {
+      "targets": 8,
+      "reviewed_freeze_inputs": 324,
+      "compiled_inputs": 325,
+      "extra_at_run_input": "final_root_build_plan",
+      "sealed_artifacts": 10,
+      "cache_generation": 33
+    },
+    "cpu_stages": {
+      "total": 13,
+      "native_executions": 8,
+      "original_fixture_producers": 2,
+      "protocol_regressions": 3
+    },
+    "material_protocol": {
+      "current_calls": 1124,
+      "legacy_calls": 345,
+      "original_request_reply_joins": 1469,
+      "primary_cases": 24,
+      "encodings": [
+        "ascii",
+        "binary"
+      ],
+      "reason_families": 7,
+      "opted_in_witnesses": 54,
+      "witness_counts": {
+        "advanced_feature": 5,
+        "unlit": 5,
+        "texture_slot": 5,
+        "uv_binding": 9,
+        "transparency": 18,
+        "normal_response": 8,
+        "shader_model": 4
+      },
+      "typed_successful_result_comparisons": 54,
+      "raw_error_member_comparisons": 58,
+      "legacy_request_comparisons": 112,
+      "whole_cooked_file_byte_pairs": 7,
+      "comparison_scope": "Complete typed successful result equality, exact raw error-member equality and direct whole stored-file byte equality are distinct checks. No raw successful-response serialization parity claim."
+    },
+    "inherited_protocol_regressions": {
+      "rotation_retarget": {
+        "tests": 8,
+        "calls": 684,
+        "owners": 10,
+        "skipped": 1
+      },
+      "source_topology": {
+        "tests": 4,
+        "calls": 666,
+        "owners": 5,
+        "skipped": 0
+      },
+      "scope": "Original reports passed and their complete identities were joined; independent full raw-wire joins in this file audit cover the material protocol only."
+    },
+    "outer_ownership": {
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "total_processes": 31,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "scope": "Outer Job accounting observations; no causal claim that every nested process exited naturally."
+    },
+    "retained_output": {
+      "files": 751,
+      "bytes": 84190447
+    },
+    "elapsed_seconds": 30.308259599958546,
+    "timing_scope": "Wall time of this selected CPU/protocol qualification, not import throughput, GPU, gameplay or comparative performance."
+  },
+  "linux": {
+    "original_aggregate": {
+      "passed": false,
+      "ctest_passed": 19,
+      "ctest_total": 21,
+      "failed_tests": [
+        "mcp_contract",
+        "world_contract"
+      ],
+      "configure_exit_code": 0,
+      "build_exit_code": 0,
+      "ctest_exit_code": 8,
+      "forced_cleanup": false,
+      "elapsed_seconds": 592.9404664940084,
+      "scoped_input_files": 345,
+      "sealed_artifacts": 8,
+      "scope": "Original21-test headless build/CTest owner; complete original verdict retained. Discovery assertion failures are separate from the new material feature."
+    },
+    "original_material_ctest": {
+      "passed": true,
+      "current_calls": 1124,
+      "original_request_reply_joins": 1124,
+      "primary_cases": 24,
+      "opted_in_witnesses": 54,
+      "legacy_comparisons": 0,
+      "cross_native_package_pairs": 0,
+      "scope": "Current-only original CTest. No old-version parity credit."
+    },
+    "separate_material_parity": {
+      "passed": true,
+      "original_aggregate_regraded": false,
+      "current_calls": 1124,
+      "legacy_calls": 345,
+      "original_request_reply_joins": 1469,
+      "primary_cases": 24,
+      "reason_families": 7,
+      "opted_in_witnesses": 54,
+      "witness_counts": {
+        "advanced_feature": 5,
+        "unlit": 5,
+        "texture_slot": 5,
+        "uv_binding": 9,
+        "transparency": 18,
+        "normal_response": 8,
+        "shader_model": 4
+      },
+      "legacy_request_comparisons": 112,
+      "typed_successful_result_comparisons": 54,
+      "raw_error_member_comparisons": 58,
+      "whole_cooked_file_byte_pairs": 7,
+      "actual_native_owners": 2,
+      "forced_cleanup": false,
+      "elapsed_seconds": 96.2697013450088,
+      "scope": "Fresh native owners using sealed170 and167 ELF CLIs; no compiler, rebuild, test-gate mutation or original aggregate regrade."
+    },
+    "retained_inputs": {
+      "prior_cache_files": 158,
+      "prior_cache_bytes": 342792323,
+      "prior_sealed_artifacts": 7,
+      "current_cache_files": 337,
+      "metadata_negative_files": 16,
+      "negative_file_bytes_each": 33554433,
+      "scope": "Complete terminal ordinary-file inventories/hashes; logical sparse negative files count within the original protocol caps, not a physical allocation or continuous peak claim."
+    },
+    "timing_scope": "Original owner wall times only, not throughput, comparative performance or gameplay frame time."
+  },
+  "public_source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 87740,
+      "sha256": "6c7626a592b7d838d267153b6c8b78fa8f7d14f55c62b4f8a62e46f60ba309fd"
+    },
+    "src/fbx.hpp": {
+      "bytes": 2440,
+      "sha256": "ff56aca9abb8816cff017d5fb3c80eaf64f16a1e36a4dbd901313f0014475465"
+    },
+    "src/fbx.cpp": {
+      "bytes": 41826,
+      "sha256": "054fb3652d4d6d069e1a242c892ef5682d9473d1e4f229c34c2cd3b94e32d921"
+    },
+    "src/asset_store.hpp": {
+      "bytes": 15526,
+      "sha256": "04d5268e492ccb49b6a3c2ef54eb63af3ca23237b858a343ba6ea5b68281ff36"
+    },
+    "src/world.cpp": {
+      "bytes": 328885,
+      "sha256": "f88124b0cbe1f62f3524de9769576127588689a1eb4e4d966538cb9d782f9bf3"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 115344,
+      "sha256": "452800863e2c068aba8dccfd301bdb09a852d4913ce01df0afb2372c2695a75b"
+    },
+    "tests/fbx_native.cpp": {
+      "bytes": 23866,
+      "sha256": "b8e904d32f67b755b517fc988bace90fdb0d9d57f0ff03c6fbade6eb705f6926"
+    },
+    "tests/fbx_material_profile.py": {
+      "bytes": 25866,
+      "sha256": "604703d7c54b6b857cf17ddf674a7b55b1ca0aa2cf64a8acfc38c7a78a93975b"
+    }
+  },
+  "receipt_identities": {
+    "windows_native_build": {
+      "bytes": 55858,
+      "sha256": "82662a850e54ec0a896f6387bcf2a97194b0b581ad1ae9722a2721064e079407"
+    },
+    "windows_native_source_manifest": {
+      "bytes": 48948,
+      "sha256": "e287a77af39c3855d13d3678550065fe6894f999e7acb5468c7c54ee1514c954"
+    },
+    "windows_native_seals": {
+      "bytes": 1776,
+      "sha256": "380847056e2fe40b959e2c9f9d5f0ebb57ba15e97a1c249591ba60d91e269608"
+    },
+    "windows_worker": {
+      "bytes": 69397,
+      "sha256": "ec54966e1a9dabb1005de8f1c296c74c4e1c60f4f9bc8135b67a57626b50ef79"
+    },
+    "windows_qualification": {
+      "bytes": 2406,
+      "sha256": "2db23c1f96d770f3f48fc19766526a8114c6fc5458023793b40edad14cb1af55"
+    },
+    "windows_material_protocol": {
+      "bytes": 1106564,
+      "sha256": "069895112018245d57248c97756381aba3e83899a8bf11712732f67876655931"
+    },
+    "windows_focused_file_audit": {
+      "bytes": 80110,
+      "sha256": "3d48f554bc51680b4c1b6f7d2146d1fbd845d14aaf8502f0ac67b51adf9e8529"
+    },
+    "windows_authority_file_audit": {
+      "bytes": 92962,
+      "sha256": "2f34a7eb4d3117bdc90094309f94dada674cca5d1cb8ee74d0a4e639ec118697"
+    },
+    "retained_windows_reader_failure": {
+      "bytes": 90701,
+      "sha256": "7d8c23d07d392732d136fbc196ce6f6d43c15b8ea455e25408fa2a1414b715a1"
+    },
+    "linux_original_failed_aggregate": {
+      "bytes": 415472,
+      "sha256": "cd4e8a5f7ea0e45d448b2716d368c617082be9c01a5b226dd047ebb35291b87c"
+    },
+    "linux_original_ctest_results": {
+      "bytes": 19113,
+      "sha256": "8bf16592be5e51c831bfbb7cdedc6a0ff8702bd72636aaad8540adf3590f3232"
+    },
+    "linux_source_manifest": {
+      "bytes": 51978,
+      "sha256": "214c6ecdf2ec2759496830344f9466aa9fe09d68a293a50c6aa660a68ced7816"
+    },
+    "linux_sealed_artifacts": {
+      "bytes": 1108,
+      "sha256": "48c5b8261c998b80e25eeffa1e50b7ccb26058e73fdc194523c88a34553f57d5"
+    },
+    "linux_original_material_ctest": {
+      "bytes": 868609,
+      "sha256": "2aff0bcfcdb86929cae7c89f2b6ea47616ff6df7c13ce72f59d9269ebcb52c8c"
+    },
+    "linux_separate_material_parity": {
+      "bytes": 1757,
+      "sha256": "b46ce7c8e178ee4a1a07d684eb9f2d897c4cfbf3a646c52e79ee56be63e18e5b"
+    },
+    "linux_separate_material_protocol": {
+      "bytes": 1104457,
+      "sha256": "1903bd6adacd3e93dbe3ce90d1c6edd67e4c57d9bbaa9d431f8de7e336dc781e"
+    },
+    "linux_current_only_file_audit": {
+      "bytes": 73389,
+      "sha256": "8e4c2d2d9bf0c20e5e0123ab73e70ef5cdba95a9b2eb6ab8e6d48216d93a687d"
+    },
+    "linux_parity_file_audit": {
+      "bytes": 76514,
+      "sha256": "af5eada101ecab6819f12f9c6f070f7a3ad617cafe4beaafe314e7b5708df215"
+    },
+    "linux_authority_file_audit": {
+      "bytes": 648104,
+      "sha256": "73aa0af85650acc291407b616e1bd61b932d1412e3c9be0d7978b28de8452fc0"
+    }
+  },
+  "retained_failures": [
+    {
+      "scope": "Original Linux native build/CTest aggregate",
+      "outcome": "failed",
+      "passed_tests": 19,
+      "total_tests": 21,
+      "failed_tests": [
+        "mcp_contract",
+        "world_contract"
+      ],
+      "cause": "Focused-discovery contract assertions failed. Original gate and failures remain intact; a later discovery checkpoint must address them. Separate material parity did not change this verdict."
+    },
+    {
+      "scope": "Private Windows evidence selector, not engine or native qualification",
+      "outcome": "failed_before_output",
+      "cause": "First selector attempted to include version-only Python project metadata absent from the audited input closure. The next selector chose only actual audited code inputs; no candidate was published by the failed selector."
+    },
+    {
+      "scope": "Independent Windows file reader, not engine or native qualification",
+      "outcome": "failed",
+      "cause": "First reader required an error list for older unittest reports. Their original schema uses integer zero errors and failures. The next reader checked those exact original types; original failed reader output was retained."
+    }
+  ],
+  "limitations": [
+    "Original analytic fixtures only; no general accepted-character content or independent third-party provider qualification.",
+    "Selected material rejection sites only; skin/rig rejection diagnostics and broader import repairs are separate.",
+    "Per-rejection world/history native payloads were independently compared. Original per-rejection file/package invariants are harness assertions; historical complete package inventories were not separately retained.",
+    "No renderer, GUI, GPU, C# build, performance, 30-minute reliability or Alpha completion claim.",
+    "Original Linux aggregate remains failed despite passing scoped material runs. File-audit PASS verifies those original outcomes; it is not an engine-gate regrade."
+  ],
+  "qualification_scope": "Windows selected qualification passed. Original broader Linux gate failed19/21; its current-only material CTest passed. A separate fresh sealed-Linux parity owner passed without rebuilding, rerunning or regrading that gate."
+}

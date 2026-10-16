@@ -1874,11 +1874,11 @@ public:
             out["total"]=total;out["next_offset"]=offset+limit<total ? Json(offset+limit) : Json(nullptr);return out;
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
-    static std::string asset_diagnostic(const char* message) {
+    static std::string asset_diagnostic(const char* message,std::size_t limit=1024) {
         // Filesystem diagnostics can include arbitrary POSIX filename bytes.
         // Bound both input and repaired output without splitting UTF-8.
-        auto text=Json::parse(Json(std::string(message).substr(0,1024)).dump(-1,' ',false,Json::error_handler_t::replace)).get<std::string>();
-        auto length=std::min<std::size_t>(text.size(),1024);
+        auto text=Json::parse(Json(std::string(message).substr(0,limit)).dump(-1,' ',false,Json::error_handler_t::replace)).get<std::string>();
+        auto length=std::min<std::size_t>(text.size(),limit);
         while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
         text.resize(length);return text;
     }
@@ -1896,8 +1896,24 @@ public:
             {"source_role",inspection ? "inspection" : diagnostic.donor_index ? "animation_donor" : "base"},
             {"donor_index",!inspection && diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)}});
     }
+    static Error fbx_material_profile_error(const FbxMaterialProfileError& error,bool enabled,bool inspection=false) {
+        if(!enabled)return Error(-32050,asset_diagnostic(error.what()));
+        const auto& diagnostic=error.diagnostic();
+        return Error(-32050,asset_diagnostic(error.what()),{
+            {"type","fbx_material_profile"},{"version",1},
+            {"reason",fbx_material_profile_reason_name(diagnostic.reason)},
+            {"feature",diagnostic.feature},{"node",diagnostic.node},
+            {"node_name",asset_diagnostic(diagnostic.node_name.c_str(),256)},
+            {"material_slot",diagnostic.material_slot},
+            {"material_name",asset_diagnostic(diagnostic.material_name.c_str(),256)},
+            {"observed_count",diagnostic.observed_count ? Json(*diagnostic.observed_count) : Json(nullptr)},
+            {"limit",diagnostic.limit ? Json(*diagnostic.limit) : Json(nullptr)},
+            {"source_role",inspection ? "inspection" : diagnostic.donor_index ? "animation_donor" : "base"},
+            {"donor_index",!inspection && diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)}});
+    }
     Json source_model_inspection(const Json& params) const {
-        fields(params,{"source","fbx_normal_map","section","offset","limit","pose","expected_model_sha256","skin","clip"},{"source"});
+        fields(params,{"source","fbx_normal_map","fbx_profile_diagnostics","section","offset","limit","pose","expected_model_sha256","skin","clip"},{"source"});
+        require(!params.contains("fbx_profile_diagnostics") || params.at("fbx_profile_diagnostics").is_boolean(),"fbx_profile_diagnostics must be Boolean.");
         const auto& path=params.at("source");
         require(path.is_string(),"Source inspection requires a path.");const auto text=path.get<std::string>();
         require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid source inspection path.");
@@ -1992,6 +2008,7 @@ public:
             return out;
         }catch(const Error&) {throw;}
         catch(const FbxTextureDependencyError& error) {throw fbx_texture_dependency_error(error,true);}
+        catch(const FbxMaterialProfileError& error) {throw fbx_material_profile_error(error,params.value("fbx_profile_diagnostics",false),true);}
         catch(const std::exception& error) {throw Error(-32050,asset_diagnostic(error.what()));}
     }
     Json asset_dispatch(const std::string& method,const Json& params) const {
@@ -2003,7 +2020,8 @@ public:
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
-                fields(params,{"source","animations","fbx_normal_map"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                fields(params,{"source","animations","fbx_normal_map","fbx_profile_diagnostics"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                require(!params.contains("fbx_profile_diagnostics") || params.at("fbx_profile_diagnostics").is_boolean(),"fbx_profile_diagnostics must be Boolean.");
                 const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid source path.");
                 auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
                 std::optional<FbxNormalConvention> normal_map;
@@ -2073,6 +2091,7 @@ public:
             return result;
         } catch(const Error&) { throw; }
         catch(const FbxTextureDependencyError& error) { throw fbx_texture_dependency_error(error); }
+        catch(const FbxMaterialProfileError& error) { throw fbx_material_profile_error(error,params.value("fbx_profile_diagnostics",false)); }
         catch(const AnimationCompositionError& error) {
             const auto& report=error.report();
             Json issues=Json::array();

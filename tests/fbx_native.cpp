@@ -53,6 +53,22 @@ template<class F> void ordinary_rejection(F&& callback,const char* label) {
     catch(const std::exception&) {rejected=true;}
     check(rejected,std::string("Expected an ordinary rejection: ")+label);
 }
+void material_profile(const std::filesystem::path& source) {
+    bool rejected=false;
+    try {import_fbx(source);}
+    catch(const FbxMaterialProfileError& error) {
+        rejected=true;const auto& d=error.diagnostic();
+        check(d.reason==FbxMaterialProfileReason::normal_response && d.feature=="normal_map.response",
+              "Connected vector response must identify its exact material feature.");
+        check(d.node_name=="Mesh" && d.material_name=="Analytic" && d.material_slot==0,
+              "Material rejection lost its actual mesh/material context.");
+        check(d.observed_count==3 && d.limit==1 && !d.donor_index,
+              "Native material witness must retain actual component counts without donor inference.");
+        check(std::string(error.what())=="FBX custom normal-map scalar/vector response is unsupported.",
+              "Typed material error changed its legacy message.");
+    }
+    check(rejected,"Expected a typed connected-normal material rejection.");
+}
 std::uint32_t node(const ModelAsset& model,const std::string& name) {
     for(std::size_t i=0;i<model.nodes.size();++i)if(model.nodes[i].name==name)return static_cast<std::uint32_t>(i);
     throw std::runtime_error("Missing imported node "+name);
@@ -214,6 +230,7 @@ int main(int argc,char** argv) {
                 "nested_missing_texture","unicode_missing_texture","escaping_texture","uv_transform"})
             check(std::filesystem::is_regular_file(root/(std::string(name)+".fbx")),std::string("Missing fixture: ")+name);
         auto load=[&](const char* name){return import_fbx(root/(std::string(name)+".fbx"));};
+        material_profile(root/"active_normal_response.fbx");
         texture_dependency(root/"missing_texture.fbx",FbxTextureDependencyReason::unavailable,"absent.png",std::nullopt);
         texture_dependency(root/"missing_texture_donor.fbx",FbxTextureDependencyReason::unavailable,"absent.png",std::nullopt);
         texture_dependency(root/"empty_texture.fbx",FbxTextureDependencyReason::empty,"empty.png",0);

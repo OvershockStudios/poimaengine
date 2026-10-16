@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.169**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.170**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.170 adds opt-in [FBX material rejection witnesses](FBX_IMPORT.md#locate-an-unsupported-material)
+to `asset.import` and `asset.source.inspect`. Selected existing failures identify
+the original source node, its local material slot, rejected feature and original
+animation-donor index. Display names are bounded UTF-8. Omitted/false requests
+retain previous errors; successful conversion and the accepted profile stay the
+same. The new option is outside the frozen authoring-core contract.
+
+Windows passes eight native executions and three protocol regressions, with two
+original fixture producers. Independent review verifies 1,469 material-protocol
+request/reply pairs, 54 exact witnesses, 112 old-native comparisons and seven
+complete cooked-file byte pairs. Linux builds and passes 19 of 21 CTests,
+including the new diagnostic check. Its overall regression gate **fails** on
+`world_contract` and `mcp_contract` discovery assertions; the planned legacy
+parity phase in that owner was not reached. Nested animation conditionals trigger
+the existing conservative discovery fallback, while these assertions expect
+pruning; another expectation omits reserved runtime-contract metadata. These
+predate this change and require a separate follow-up. The failed gate remains
+failed. A separate sealed-binary Linux run passes all 24 diagnostic cases,
+112 legacy comparisons and seven complete cooked-file pairs without rebuilding
+or changing that gate. Both of its native owners close with code zero.
+[Recorded scopes and outcomes](evidence/m2-fbx-material-profile.json).
 
 The 0.0.169 [mixed Performance Yard workflow](PERFORMANCE_YARD_MIXED_RELIABILITY.md)
 passes twelve warm save/load cycles, six compatible C# body replacements,

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.170
+
+- Add opt-in FBX material errors with original source-node/local-slot witnesses, feature labels, bounded names and animation-donor attribution. Preserve existing acceptance, omitted/false errors and successful cooked content. [Guide](docs/FBX_IMPORT.md#locate-an-unsupported-material).
+- Qualify Windows native checks and separate Linux diagnostic/old-binary parity, including all seven reason families and seven complete cooked-file byte pairs per comparison. Retain the broader Linux gate's 19/21 result and two discovery assertion failures for a separate follow-up. [Results](docs/evidence/m2-fbx-material-profile.json).
+
 ## 0.0.169
 
 - Qualify the full 2,394-entity CoreCLR workflow through twelve save/load cycles, six compatible code reloads, sixteen live scalar/PNG adoptions and fresh-process continuation. Verify over 31 minutes of unpaused play, 76 complete snapshots, 31 exact whole-file/state pairs and 22 complete edit forecasts. [Workflow](docs/PERFORMANCE_YARD_MIXED_RELIABILITY.md).
