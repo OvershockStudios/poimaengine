@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.169
+
+- Qualify the full 2,394-entity CoreCLR workflow through twelve save/load cycles, six compatible code reloads, sixteen live scalar/PNG adoptions and fresh-process continuation. Verify over 31 minutes of unpaused play, 76 complete snapshots, 31 exact whole-file/state pairs and 22 complete edit forecasts. [Workflow](docs/PERFORMANCE_YARD_MIXED_RELIABILITY.md).
+- Independently join 3,927 original native calls, clean owned process closure and 2,018 OS memory queries and sixty fixed analysis windows. Preserve the separate rehearsal and earlier failures; memory-growth causes, matched recording overhead and the wider Alpha gates remain open. [Results](docs/evidence/m2-mixed-coreclr-reliability.json).
+
 ## 0.0.168
 
 - Qualify CoreCLR compilation, failed-build recovery, compatible reload and complete warm/cold saves in the full 2,394-entity Performance Yard. Verify 391 native calls, eight complete checkpoints and five exact saved-file/state pairs. [Workflow](docs/PERFORMANCE_YARD_CORECLR.md).

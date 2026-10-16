@@ -78,3 +78,9 @@ foreground frame budgets, clean-machine delivery and the wider Alpha gates
 remain separate qualifications.
 
 [Original results and retained failures](evidence/m2-coreclr-performance-yard.json).
+
+The later [mixed CoreCLR cohort](PERFORMANCE_YARD_MIXED_RELIABILITY.md) combines
+this prerequisite with twelve longer save/load cycles, six body reloads and
+sixteen live scalar/texture applies. It establishes over thirty minutes of
+verified unpaused play. Its original records and memory observations are separate
+from this short cohort; growth causes, observer cost and wider Alpha gates stay open.

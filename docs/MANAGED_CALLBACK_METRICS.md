@@ -134,3 +134,10 @@ actual 50-field/four-component reload, warm restoration with thirty zero-valued
 fresh counters, default-off cold restoration and complete saved-state comparisons.
 Its short background run qualifies integration; observer cost, retained heap and
 sustained memory growth remain separate questions.
+
+The later [mixed CoreCLR workflow](PERFORMANCE_YARD_MIXED_RELIABILITY.md) repeats
+six compatible body reloads and twelve warm restores over more than thirty
+minutes of real unpaused play. It verifies fresh counter lifetimes alongside
+complete authoritative saves; cold trusted configuration defaults profiling off.
+The record does not turn callback allocation counts into retained-heap size or
+qualify observer overhead.

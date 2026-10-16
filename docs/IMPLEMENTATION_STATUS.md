@@ -1,27 +1,34 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.168**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.169**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
-The 0.0.168 [full Performance Yard CoreCLR check](PERFORMANCE_YARD_CORECLR.md)
-passes actual compilation, structured-error recovery, compatible body reload and
-warm/fresh-process save continuation using native 0.0.167. It retains all 50
-globals, four component schemas and the full 2,394-entity authored world. An
-independent audit joins 391 native calls, eight complete v7 snapshots and five
-byte-exact, typed-exact whole-document pairs. A separate real native schema
-import verifies canonical values without casting raw compiler metadata.
+The 0.0.169 [mixed Performance Yard workflow](PERFORMANCE_YARD_MIXED_RELIABILITY.md)
+passes twelve warm save/load cycles, six compatible C# body replacements,
+sixteen scalar/encoded-PNG live adoptions and fresh-process continuation in the
+full 2,394-entity scene. It uses the sealed native 0.0.167 implementation and
+retains all fifty gameplay globals, four component schemas and fourteen v7
+snapshot payload members. Independent original-file review joins 3,927 native
+calls, 76 complete snapshots, 31 byte-exact/type-exact whole-file pairs and
+22 complete prospective edit forecasts. All native hosts and connecting clients
+close with code zero; the external Job ends empty without forced cleanup.
 
-Five fixed five-second play intervals qualify conservative observed cadence
-bounds wholly inside 58–62 ticks/s, with more than 25.34 seconds between native
-observation events. Both background windows close cleanly; the external Job
-ends empty without forced cleanup. Callback lifetimes and 41 actual process-memory
-queries pass their selected checks. This cohort retains the normal Windows user
-profile while isolating application-data and temporary paths; cache state is
-uncontrolled. Earlier startup, observer-selection, timing and reader failures
-remain failed. Matched recording overhead, continuing memory growth, foreground
-frame budgets, physical interaction and the thirty-minute mixed-reliability gate
-remain open. [Results and limits](evidence/m2-coreclr-performance-yard.json).
+Twelve fixed primary intervals establish at least 1,801.192437 seconds, with
+1,872.608762 total unpaused observation-event seconds including discarded play
+and cold continuation. Every conservative cadence interval fits 58–62 ticks/s;
+this is not rendered FPS. Six separately declared semantic Ticks verify changed
+bodies. The same-operation short rehearsal remains a separate result without
+thirty-minute credit. [Original results](evidence/m2-mixed-coreclr-reliability.json).
+
+The integrated recorder retains 2,018 real OS queries, 431 phase marks and all
+sixty fixed thirty-second analysis windows. Private commit rises early and later
+window medians level out; changing module/content lineage prevents a causal
+allocation conclusion. Matched observer overhead, unexplained continuing memory
+growth, foreground frame budgets, physical interaction, clean installation and
+the wider Alpha gate remain open. The earlier
+[short CoreCLR integration](PERFORMANCE_YARD_CORECLR.md), original startup and
+verifier failures retain their separate scopes and verdicts.
 
 Version 0.0.167 adds opt-in [CoreCLR callback metrics](MANAGED_CALLBACK_METRICS.md):
 fixed per-module Initialize/Tick/Control counters, current-thread allocated bytes

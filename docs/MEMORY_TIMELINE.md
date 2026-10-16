@@ -110,8 +110,8 @@ python tests/windows_memory_timeline_smoke.py --output build/memory-timeline-smo
 
 Its seven queries include two deliberately crossed phase boundaries. Those
 phase names are test labels, rather than actual engine gameplay. This probe
-qualifies the Windows clock/counter/association path only. Sustained mixed-game
-reliability and integrated recording overhead still need qualification.
+qualifies the Windows clock/counter/association path only. It does not establish
+sustained mixed-game reliability or integrated recording overhead.
 
 ## Background-game integration
 
@@ -139,3 +139,17 @@ process lifetimes separately and uses conservative request brackets for observed
 simulation cadence. This extends short integration coverage; it does not qualify
 recording overhead, continuing growth, continuous memory peaks or thirty-minute
 reliability.
+
+## Sustained mixed CoreCLR integration
+
+The [0.0.169 mixed workflow](PERFORMANCE_YARD_MIXED_RELIABILITY.md) records 2,018
+actual queries and 431 phase marks through twelve save/load cycles, six body
+reloads, sixteen live scalar/PNG adoptions and fresh-process continuation. All
+sixty predeclared thirty-second primary windows contain eligible whole queries.
+The independently audited run establishes 1,872.608762 total unpaused seconds.
+
+Private-commit window medians rise early and later level out. The full cycle
+series, changing module/content lineage and actual query brackets remain
+retained. This qualifies sustained functional integration and recording, not
+a causal growth diagnosis, leak absence, matched observer overhead or continuous
+RAM/VRAM peaks. [Results](evidence/m2-mixed-coreclr-reliability.json).

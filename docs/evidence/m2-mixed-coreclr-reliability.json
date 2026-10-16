@@ -1,0 +1,905 @@
+{
+  "format": "poima.mixed-coreclr-reliability.evidence.v1",
+  "source_checkpoint": "0.0.169",
+  "compiled_engine_checkpoint": "0.0.167",
+  "date": "2026-10-16",
+  "scope": "Long full-workload mixed functional/state/timing/recording integration. Continuing-memory-growth and broader Alpha requirements remain separate.",
+  "native_reuse": {
+    "prerequisite168": {
+      "bytes": 19990,
+      "sha256": "28a6b789368123018add4cf391c1501a410ffc85fa65c730ff9816c9349063fb"
+    },
+    "historic_native_source_files": 314,
+    "current_source_checkpoint_at_admission": "0.0.168",
+    "only_native_source_exception": "Exact reversible CMake project version167 to168 clause; runtime binary stays167."
+  },
+  "workload": {
+    "authored_entities": 2394,
+    "cooked_baseline_assets": 15,
+    "skinned_instances": 24,
+    "lights": 64,
+    "globals": 50,
+    "component_schemas": 4,
+    "width": 1920,
+    "height": 1080,
+    "vertical_fov_degrees": 50,
+    "mode": "background",
+    "lighting_path": "deferred",
+    "ambient_occlusion": "medium GTAO",
+    "audio_enabled": false,
+    "hardware_input_enabled": false
+  },
+  "long_consumer": {
+    "passed": true,
+    "closure": {
+      "seconds": 2045.1485056000529,
+      "observed_processes": 44,
+      "active_processes": 0,
+      "forced_cleanup": false,
+      "accounting_terminations": 0,
+      "scope": "External supervisor accounting only; not a per-descendant exit inference."
+    },
+    "counts": {
+      "cycles": 12,
+      "reloads": 6,
+      "scene_groups": 4,
+      "scene_applies": 16,
+      "checkpoints": 76,
+      "whole_pairs": 31,
+      "whole_forecasts": 22,
+      "actual_native_owners": 3,
+      "rendered_owners": 2
+    },
+    "rpc_count": 3927,
+    "game_rpc_count": 3887,
+    "schema_normalizer_rpc_count": 40,
+    "guaranteed_primary_ns": 1801192437300,
+    "guaranteed_total_ns": 1872608762200,
+    "intervals": [
+      {
+        "owner": "warm",
+        "label": "c1-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150077044300,
+        "maximum_elapsed_ns": 150123314600,
+        "tick_delta": 9007,
+        "rate_interval": {
+          "minimum": 59.99734301097026,
+          "maximum": 60.01584081037235
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c1-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5087583600,
+        "maximum_elapsed_ns": 5102701500,
+        "tick_delta": 306,
+        "rate_interval": {
+          "minimum": 59.968234473445094,
+          "maximum": 60.14643179524362
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c2-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150091961500,
+        "maximum_elapsed_ns": 150135959300,
+        "tick_delta": 9007,
+        "rate_interval": {
+          "minimum": 59.992289935033575,
+          "maximum": 60.0098760119142
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c2-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5097324200,
+        "maximum_elapsed_ns": 5117730500,
+        "tick_delta": 307,
+        "rate_interval": {
+          "minimum": 59.987527674620615,
+          "maximum": 60.227677886370266
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c3-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150069293900,
+        "maximum_elapsed_ns": 150126456300,
+        "tick_delta": 9008,
+        "rate_interval": {
+          "minimum": 60.00274849623557,
+          "maximum": 60.02560394535181
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c3-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5109887800,
+        "maximum_elapsed_ns": 5135296300,
+        "tick_delta": 308,
+        "rate_interval": {
+          "minimum": 59.97706500401934,
+          "maximum": 60.27529606423061
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c4-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150097826000,
+        "maximum_elapsed_ns": 150151671100,
+        "tick_delta": 9009,
+        "rate_interval": {
+          "minimum": 59.99933223520414,
+          "maximum": 60.02085599827409
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c4-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5115339900,
+        "maximum_elapsed_ns": 5169773300,
+        "tick_delta": 309,
+        "rate_interval": {
+          "minimum": 59.77051256773677,
+          "maximum": 60.40654307253366
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c5-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150101810300,
+        "maximum_elapsed_ns": 150150822300,
+        "tick_delta": 9009,
+        "rate_interval": {
+          "minimum": 59.99967141039094,
+          "maximum": 60.019262805653185
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c5-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5098094900,
+        "maximum_elapsed_ns": 5145182700,
+        "tick_delta": 307,
+        "rate_interval": {
+          "minimum": 59.66746331476237,
+          "maximum": 60.21857302028646
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c6-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150095543800,
+        "maximum_elapsed_ns": 150153032200,
+        "tick_delta": 9009,
+        "rate_interval": {
+          "minimum": 59.99878835613684,
+          "maximum": 60.02176861429246
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c6-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5101829400,
+        "maximum_elapsed_ns": 5148809100,
+        "tick_delta": 307,
+        "rate_interval": {
+          "minimum": 59.62543843390892,
+          "maximum": 60.1744934865913
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c7-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150096516300,
+        "maximum_elapsed_ns": 150144755300,
+        "tick_delta": 9009,
+        "rate_interval": {
+          "minimum": 60.002095857423534,
+          "maximum": 60.02137972338802
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c7-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5103637300,
+        "maximum_elapsed_ns": 5149159100,
+        "tick_delta": 307,
+        "rate_interval": {
+          "minimum": 59.621385557886526,
+          "maximum": 60.153177421130614
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c8-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150114620900,
+        "maximum_elapsed_ns": 150165210700,
+        "tick_delta": 9010,
+        "rate_interval": {
+          "minimum": 60.00058174592898,
+          "maximum": 60.020802410726404
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c8-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5108070200,
+        "maximum_elapsed_ns": 5150143100,
+        "tick_delta": 308,
+        "rate_interval": {
+          "minimum": 59.804163499845274,
+          "maximum": 60.29674376832174
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c9-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150105409600,
+        "maximum_elapsed_ns": 150148514100,
+        "tick_delta": 9007,
+        "rate_interval": {
+          "minimum": 59.98727362697225,
+          "maximum": 60.00449966461435
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c9-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5105807400,
+        "maximum_elapsed_ns": 5155411400,
+        "tick_delta": 308,
+        "rate_interval": {
+          "minimum": 59.743049798120865,
+          "maximum": 60.32346617696547
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c10-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150120509900,
+        "maximum_elapsed_ns": 150155271600,
+        "tick_delta": 9008,
+        "rate_interval": {
+          "minimum": 59.99123376764616,
+          "maximum": 60.00512525570632
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c10-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5123553500,
+        "maximum_elapsed_ns": 5168882200,
+        "tick_delta": 309,
+        "rate_interval": {
+          "minimum": 59.78081682728231,
+          "maximum": 60.30970497331588
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c11-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150111809000,
+        "maximum_elapsed_ns": 150141841600,
+        "tick_delta": 9008,
+        "rate_interval": {
+          "minimum": 59.99659990849613,
+          "maximum": 60.00860332047561
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c11-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5124340000,
+        "maximum_elapsed_ns": 5151973500,
+        "tick_delta": 308,
+        "rate_interval": {
+          "minimum": 59.78291619706506,
+          "maximum": 60.105301365639285
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c12-primary",
+        "requested_seconds": 150,
+        "guaranteed_elapsed_ns": 150110091800,
+        "maximum_elapsed_ns": 150143586200,
+        "tick_delta": 9008,
+        "rate_interval": {
+          "minimum": 59.995902775366105,
+          "maximum": 60.00928979513155
+        }
+      },
+      {
+        "owner": "warm",
+        "label": "c12-discarded",
+        "requested_seconds": 5,
+        "guaranteed_elapsed_ns": 5126689600,
+        "maximum_elapsed_ns": 5157584800,
+        "tick_delta": 308,
+        "rate_interval": {
+          "minimum": 59.71787414915602,
+          "maximum": 60.07775465867877
+        }
+      },
+      {
+        "owner": "cold",
+        "label": "cold-continued",
+        "requested_seconds": 10,
+        "guaranteed_elapsed_ns": 10114167100,
+        "maximum_elapsed_ns": 10148203700,
+        "tick_delta": 608,
+        "rate_interval": {
+          "minimum": 59.91208079514604,
+          "maximum": 60.11369932774791
+        }
+      }
+    ],
+    "comparison_exclusions": [],
+    "snapshot_version": 7,
+    "snapshot_payload_members": 14,
+    "compile_outcomes": [
+      {
+        "label": "baseline-A",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "intentional-invalid",
+        "state": "failed",
+        "exit_code": 1
+      },
+      {
+        "label": "c2-compatible-B",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "c4-compatible-A",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "c6-compatible-B",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "c8-compatible-A",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "c10-compatible-B",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "c12-compatible-A",
+        "state": "succeeded",
+        "exit_code": 0
+      }
+    ],
+    "warm_connections": 6,
+    "cold_connections": 1,
+    "manual_semantic_ticks": 6,
+    "recording": {
+      "samples": 2018,
+      "assigned_closed_queries": 2017,
+      "phase_events": 431,
+      "scope": "Actual associations, no causal allocation/growth/overhead conclusion"
+    },
+    "scope": "Rehearsal/fresh owners and original byte/type/lexical checks remain separate; native observed tick cadence is not frame FPS."
+  },
+  "memory_analysis": {
+    "primary_cycles": 12,
+    "long_windows_per_cycle": 5,
+    "raw_samples": 2018,
+    "phase_events": 431,
+    "complete_long_windows": 60,
+    "cycle_summaries": [
+      {
+        "cycle": 1,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 325330944.0,
+            "last_window_median": 293560320,
+            "first_to_last_median_delta": -31770624.0,
+            "five_window_median_slope_bytes_per_second": -207714.98666666666
+          },
+          "private_commit_bytes": {
+            "first_window_median": 515874816.0,
+            "last_window_median": 518721536,
+            "first_to_last_median_delta": 2846720.0,
+            "five_window_median_slope_bytes_per_second": 23005.866666666665
+          }
+        }
+      },
+      {
+        "cycle": 2,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 307609600.0,
+            "last_window_median": 307634176,
+            "first_to_last_median_delta": 24576.0,
+            "five_window_median_slope_bytes_per_second": 232.10666666666665
+          },
+          "private_commit_bytes": {
+            "first_window_median": 536113152.0,
+            "last_window_median": 536113152,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      },
+      {
+        "cycle": 3,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 320356352.0,
+            "last_window_median": 322576384.0,
+            "first_to_last_median_delta": 2220032.0,
+            "five_window_median_slope_bytes_per_second": 17995.093333333334
+          },
+          "private_commit_bytes": {
+            "first_window_median": 549183488.0,
+            "last_window_median": 551284736.0,
+            "first_to_last_median_delta": 2101248.0,
+            "five_window_median_slope_bytes_per_second": 17066.666666666668
+          }
+        }
+      },
+      {
+        "cycle": 4,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 386658304,
+            "last_window_median": 388288512.0,
+            "first_to_last_median_delta": 1630208.0,
+            "five_window_median_slope_bytes_per_second": 14670.506666666666
+          },
+          "private_commit_bytes": {
+            "first_window_median": 617046016,
+            "last_window_median": 618647552.0,
+            "first_to_last_median_delta": 1601536.0,
+            "five_window_median_slope_bytes_per_second": 14376.96
+          }
+        }
+      },
+      {
+        "cycle": 5,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 390385664.0,
+            "last_window_median": 390389760.0,
+            "first_to_last_median_delta": 4096.0,
+            "five_window_median_slope_bytes_per_second": 40.96
+          },
+          "private_commit_bytes": {
+            "first_window_median": 619962368.0,
+            "last_window_median": 619962368.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      },
+      {
+        "cycle": 6,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 391561216.0,
+            "last_window_median": 391561216.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          },
+          "private_commit_bytes": {
+            "first_window_median": 620859392.0,
+            "last_window_median": 620859392.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      },
+      {
+        "cycle": 7,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 432943104.0,
+            "last_window_median": 431640576.0,
+            "first_to_last_median_delta": -1302528.0,
+            "five_window_median_slope_bytes_per_second": -8683.52
+          },
+          "private_commit_bytes": {
+            "first_window_median": 663044096.0,
+            "last_window_median": 663072768.0,
+            "first_to_last_median_delta": 28672.0,
+            "five_window_median_slope_bytes_per_second": 191.14666666666668
+          }
+        }
+      },
+      {
+        "cycle": 8,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 432160768.0,
+            "last_window_median": 432144384.0,
+            "first_to_last_median_delta": -16384.0,
+            "five_window_median_slope_bytes_per_second": -109.22666666666667
+          },
+          "private_commit_bytes": {
+            "first_window_median": 662355968.0,
+            "last_window_median": 662327296.0,
+            "first_to_last_median_delta": -28672.0,
+            "five_window_median_slope_bytes_per_second": -191.14666666666668
+          }
+        }
+      },
+      {
+        "cycle": 9,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 432644096.0,
+            "last_window_median": 432660480.0,
+            "first_to_last_median_delta": 16384.0,
+            "five_window_median_slope_bytes_per_second": 109.22666666666667
+          },
+          "private_commit_bytes": {
+            "first_window_median": 662224896.0,
+            "last_window_median": 662224896.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      },
+      {
+        "cycle": 10,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 432295936.0,
+            "last_window_median": 432295936.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          },
+          "private_commit_bytes": {
+            "first_window_median": 661544960.0,
+            "last_window_median": 661544960.0,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      },
+      {
+        "cycle": 11,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 433225728.0,
+            "last_window_median": 433160192.0,
+            "first_to_last_median_delta": -65536.0,
+            "five_window_median_slope_bytes_per_second": -655.36
+          },
+          "private_commit_bytes": {
+            "first_window_median": 661889024.0,
+            "last_window_median": 661823488.0,
+            "first_to_last_median_delta": -65536.0,
+            "five_window_median_slope_bytes_per_second": -655.36
+          }
+        }
+      },
+      {
+        "cycle": 12,
+        "summary": {
+          "working_set_bytes": {
+            "first_window_median": 433102848.0,
+            "last_window_median": 431747072,
+            "first_to_last_median_delta": -1355776.0,
+            "five_window_median_slope_bytes_per_second": -13557.76
+          },
+          "private_commit_bytes": {
+            "first_window_median": 661549056.0,
+            "last_window_median": 661549056,
+            "first_to_last_median_delta": 0.0,
+            "five_window_median_slope_bytes_per_second": 0.0
+          }
+        }
+      }
+    ],
+    "scope": "Fixed-window process observations; no leak absence, causal allocation, continuous peak, VRAM, recording-overhead or Alpha closure"
+  },
+  "rehearsal": {
+    "passed": true,
+    "duration_gate_passed": false,
+    "closure": {
+      "seconds": 307.1979408999905,
+      "observed_processes": 44,
+      "active_processes": 0,
+      "forced_cleanup": false,
+      "accounting_terminations": 0,
+      "scope": "External supervisor accounting only; not a per-descendant exit inference."
+    },
+    "scope": "Same fixed twelve-cycle operation schedule with shorter primary intervals; not a thirty-minute result."
+  },
+  "environment": {
+    "profile": "Normal caller USERPROFILE",
+    "isolated": [
+      "APPDATA",
+      "LOCALAPPDATA",
+      "TEMP"
+    ],
+    "caches_controlled": false,
+    "scope": "Observed declared environment, not a driver/cache cause or clean-machine proof."
+  },
+  "retained_failures": [
+    {
+      "kind": "focused_collector_1",
+      "aggregate_passed": false,
+      "written_inner_passed": true,
+      "physical_byte_difference": 147,
+      "native_workers_passed": {
+        "compile": true,
+        "focused": true
+      },
+      "cause": "Final physical-byte census differed by CRLF expansion; original enclosing failure remains failed, even though native workers passed."
+    },
+    {
+      "kind": "full_preparation_1",
+      "passed": false,
+      "native_executed": false,
+      "compiler_executed": false,
+      "cause": "File-only preparation imported an unavailable helper name and failed before a producer or plan."
+    },
+    {
+      "kind": "full_consumer_1",
+      "passed": false,
+      "forced_cleanup": true,
+      "attempted_compile_jobs": 1,
+      "compiler_terminal_observed": false,
+      "play_intervals": 0,
+      "cause": "Original collector rejected an output during concurrent file retirement; the record lacks the path/type needed for a definitive causal identity. No compilation success or gameplay qualification is inferred."
+    },
+    {
+      "kind": "full_consumer_2",
+      "passed": false,
+      "baseline_compile_completed": true,
+      "component_extraction_exit_code": 0,
+      "play_intervals": 0,
+      "forced_cleanup": false,
+      "outer_accounting": {
+        "observed_processes": 8,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "exit_code": 1,
+        "scope": "Original outer Job accounting only; not a per-descendant natural-exit claim."
+      },
+      "raw_generator_matches_retained_native94_typed": true,
+      "raw_generator_matches_authored_registry_typed": false,
+      "all_four_schema_fingerprints_match": true,
+      "typed_default_token_differences": 15,
+      "original_data_coerced": false,
+      "engine_fault_established": false,
+      "cause": "A strict prerequisite compared raw generated component metadata with an authored canonical registry. Fifteen float64 defaults have distinct integer versus floating JSON tokens. The independent original-file comparison preserves those types; no gameplay or compatibility qualification follows, and the original assertion failure stays failed."
+    },
+    {
+      "kind": "full_consumer_3",
+      "passed": false,
+      "headless_schema_prerequisite_passed": true,
+      "player_start_accepted": true,
+      "following_inspect_outcome_unknown": true,
+      "play_intervals": 0,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 9,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 27.82116799999494,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "cause_established": false,
+      "scope": "Accepted startup did not qualify renderer readiness; the original request outcome and forced cleanup remain failures."
+    },
+    {
+      "kind": "full_consumer_4",
+      "passed": false,
+      "reported_functional_errors": 0,
+      "requested_memory_timeline_passed": false,
+      "observer_initialization_exception": "AttributeError",
+      "reported_complete_saved_documents": 8,
+      "reported_whole_equal_pairs": 5,
+      "reported_play_segments": 5,
+      "reported_real_play_seconds": 22.162273799884133,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": false,
+        "observed_processes": 19,
+        "active_at_worker_exit": 0,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 46.46449210005812,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "The original worker reports completed functional steps and clean native owners, but its requested memory observer failed initialization/association. The aggregate stays FAILED; later corrected import selection cannot regrade it."
+    },
+    {
+      "kind": "full_consumer_5",
+      "passed": false,
+      "requested_memory_timeline_passed": true,
+      "reported_completed_play_segments": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": false,
+        "observed_processes": 17,
+        "active_at_worker_exit": 0,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 29.860136299976148,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "clock_assertion_passed": false,
+      "engine_clock_fault_established": false,
+      "scope": "The original two-second discarded-play rate assertion failed. Its tick endpoints enclosed RPC work outside its Python timer. A new prospective interval protocol does not alter that assertion, its original data or aggregate FAILED outcome."
+    },
+    {
+      "kind": "startup_diagnostic_1",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 25.07310400006827,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    },
+    {
+      "kind": "startup_diagnostic_2",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 24.984711199998856,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    },
+    {
+      "kind": "startup_diagnostic_3",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 25.211413999903016,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    },
+    {
+      "kind": "file_admission_1",
+      "passed": false,
+      "native_executed": false,
+      "cause": "A slash-only manifest validator rejected the original Windows relativeA4 path before a plan or native execution. A new admission helper corrected its own path handling; the original attempt stays failed."
+    }
+  ],
+  "retained_file_audit_failures": [
+    {
+      "kind": "full6_reader_5",
+      "file_only": true,
+      "passed": false,
+      "audit_completed": false,
+      "original_native_campaign_passed": true,
+      "source_corrected_in_new_reader": true,
+      "cause": "The reader assumed every ready player response contained a full render report. Original compact player.control receipts legally retain report:null; the reader raised TypeError. The incomplete file-audit failure remains failed, separately from the unchanged native campaign and new successful reader."
+    }
+  ],
+  "limits": [
+    "No absence-of-leak or unexplained-continuing-growth qualification follows from functional survival.",
+    "No matched recording-overhead, continuous RAM/VRAM peaks, foreground frame-time, physical-control, clean-machine or Alpha-completion claim.",
+    "Callback allocated bytes are current-thread attempts, not retained heap, native allocations or exclusive GC causes.",
+    "This CoreCLR save lineage does not establish interchange with historical NativeAOT saves."
+  ],
+  "authored_source_pins": {
+    "examples/performance-yard/PerformanceGame.cs": {
+      "bytes": 10323,
+      "sha256": "a25baac6619b38d2859412a5cb23d10e6038164d85d365e9c0d096aef5e4ff6b"
+    },
+    "examples/relay-yard/RelayYardGame.cs": {
+      "bytes": 25747,
+      "sha256": "a84f2ba0328eabc5ab2c7266953d6d2620f05dbf5b7d108218ec8dd86bf5a0de"
+    },
+    "examples/relay-yard/RelayAudio.cs": {
+      "bytes": 7615,
+      "sha256": "42fe87118178ae8cc3fea1a04a738501f35cba37c4f4647877b23b758a548bf4"
+    },
+    "examples/locomotion-yard/LocomotionYardGame.cs": {
+      "bytes": 18004,
+      "sha256": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f"
+    }
+  },
+  "original_report_identities": {
+    "retained_file_admission_1": {
+      "bytes": 573,
+      "sha256": "0a5c6d62a6066a66fadecb9b0a1403e3507d94ddf653308e6374dbfee77669f3"
+    },
+    "previous168": {
+      "bytes": 19990,
+      "sha256": "28a6b789368123018add4cf391c1501a410ffc85fa65c730ff9816c9349063fb"
+    },
+    "long_qualification": {
+      "bytes": 2201,
+      "sha256": "72adc687967c7e3d7734a14407cbda8f2c89390b9149059f3ec25cd6940f9b5d"
+    },
+    "long_evidence": {
+      "bytes": 9147920,
+      "sha256": "52d82fa2256920ddb13b7caa024d449fa25622976326293a55f8ebd0cc77e152"
+    },
+    "long_admission": {
+      "bytes": 257269,
+      "sha256": "fbad0ec03e25811ee9e6eb48d5473d68b4797393afc4b624be5044c18f00bf34"
+    },
+    "long_independent_audit": {
+      "bytes": 387273,
+      "sha256": "b6f32cf67873f781ae23226bab4d4f0159032bdfe9b7b0277f62e8bd127e6e90"
+    },
+    "predeclared_memory_plan": {
+      "bytes": 3240,
+      "sha256": "a8891c1edbf338f9d00c35bb90873cbbbc29934fa60d5b5d4ecc64dd0100ede1"
+    },
+    "rehearsal_qualification": {
+      "bytes": 2197,
+      "sha256": "776258dd8bcc5c4eb282002be63d9daf0139341c3500eeb7ce8d178ef377882c"
+    },
+    "rehearsal_evidence": {
+      "bytes": 6619634,
+      "sha256": "d5ea52054338abd0e6039e462c0bc150863f3412ca4c68d4795f28cbb9a8d472"
+    },
+    "rehearsal_independent_audit": {
+      "bytes": 319089,
+      "sha256": "bdc2468d0240b9dfab026f76ee8f7f99bf449322f009c8f67d3c47c11d813a1f"
+    }
+  }
+}

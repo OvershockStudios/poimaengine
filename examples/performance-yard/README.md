@@ -100,3 +100,10 @@ checks actual compilation, failed-build recovery, compatible reload and complete
 warm/cold saves in the full world. It includes callback and process-memory
 observations across five fixed background-play intervals. Its conservative tick
 cadence bounds are separate from the foreground frame-time measurements above.
+
+The [0.0.169 mixed CoreCLR workflow](../../docs/PERFORMANCE_YARD_MIXED_RELIABILITY.md)
+adds twelve save/load cycles, six compatible code reloads, sixteen live scalar/PNG
+applies and fresh-process continuation. It independently verifies over thirty
+minutes of unpaused play, complete snapshots and phase-aware memory recording.
+Its functional/cadence result is separate from the foreground frame budgets,
+physical input and memory-growth/overhead qualifications.
