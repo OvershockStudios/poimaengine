@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <chrono>
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -68,6 +69,46 @@ struct CompilerServerStatus {
     std::optional<CompilerServerRetirement> retirement=std::nullopt;
     CompilerServerDiagnostics diagnostics{};
 };
+enum class ProcessPlatform { windows,posix };
+enum class ProcessTerminationKind { windows_exit,posix_exit,posix_signal,posix_other };
+enum class ProcessCleanupAction { windows_job_terminate,windows_process_terminate,windows_job_close,posix_group_kill };
+enum class ProcessCleanupReason { completion,cancelled,timed_out,worker_failure };
+struct ProcessGroupAccounting {
+    // Raw Windows Job counters. In particular, total_terminated_processes is
+    // not a count attributed to this request or a causal explanation of exits.
+    std::uint32_t total_processes=0,active_processes=0,total_terminated_processes=0;
+    bool operator==(const ProcessGroupAccounting&) const=default;
+};
+struct ProcessTermination {
+    ProcessTerminationKind kind=ProcessTerminationKind::posix_other;
+    std::optional<std::uint32_t> windows_exit_code;
+    std::optional<int> posix_wait_status,exit_status,signal;
+    std::optional<bool> core_dumped;
+    bool operator==(const ProcessTermination&) const=default;
+};
+struct ProcessCleanupRequest {
+    ProcessCleanupAction action=ProcessCleanupAction::posix_group_kill;
+    ProcessCleanupReason reason=ProcessCleanupReason::completion;
+    std::optional<bool> succeeded;
+    std::optional<std::uint32_t> error_code;
+    std::optional<ProcessGroupAccounting> before,after;
+    bool operator==(const ProcessCleanupRequest&) const=default;
+};
+struct ProcessObservation {
+    ProcessPlatform platform=ProcessPlatform::posix;
+    bool launched=false,leader_exit_observed=false;
+    std::optional<std::uint32_t> leader_pid;
+    std::optional<bool> group_assigned,leader_reaped;
+    std::optional<ProcessTermination> termination;
+    std::array<ProcessCleanupRequest,4> cleanup_requests{};
+    std::uint32_t cleanup_count=0;
+    bool cleanup_requests_overflow=false,cleanup_finished=false;
+    // Worker-owned observations, copied under the ordinary status mutex. No
+    // natural/forced-exit inference, caller paths, argv or environment values.
+    // POSIX group accounting stays unknown; finished means the existing cleanup
+    // sequence finished, not that all descendants were observed or reaped.
+    bool operator==(const ProcessObservation&) const=default;
+};
 struct Status {
     JobId id=0;
     State state=State::queued;
@@ -82,6 +123,9 @@ struct Status {
     // also allowed when no verifier is supplied or it returns an empty string.
     std::string result;
     std::optional<CompilerServerStatus> compiler_server=std::nullopt;
+    // Null before the ordinary runner is observed (including queued cancel).
+    // A running verifier can retain completed process facts before job success.
+    std::optional<ProcessObservation> process=std::nullopt;
 };
 // Validate request fields without filesystem probes, queuing or execution.
 // Throws std::invalid_argument for the same field errors as Jobs::submit.

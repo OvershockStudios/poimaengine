@@ -163,6 +163,49 @@ Json status(const Status& value,bool diagnostics,bool include_error=false) {
     }
     return result;
 }
+Json process_observation(const std::optional<ProcessObservation>& observed) {
+    if(!observed)return nullptr;
+    const auto& value=*observed;
+    const auto number=[](const auto& item)->Json {return item ? Json(*item):Json(nullptr);};
+    const auto accounting=[](const std::optional<ProcessGroupAccounting>& item)->Json {
+        if(!item)return nullptr;
+        return Json{{"total_processes",item->total_processes},{"active_processes",item->active_processes},{"total_terminated_processes",item->total_terminated_processes}};
+    };
+    Json termination=nullptr;
+    if(value.termination) {
+        const auto& item=*value.termination;const char* kind="posix_other";
+        switch(item.kind) {
+            case ProcessTerminationKind::windows_exit:kind="windows_exit";break;
+            case ProcessTerminationKind::posix_exit:kind="posix_exit";break;
+            case ProcessTerminationKind::posix_signal:kind="posix_signal";break;
+            case ProcessTerminationKind::posix_other:break;
+        }
+        termination={{"kind",kind},{"windows_exit_code",number(item.windows_exit_code)},{"posix_wait_status",number(item.posix_wait_status)},
+            {"exit_status",number(item.exit_status)},{"signal",number(item.signal)},{"core_dumped",number(item.core_dumped)}};
+    }
+    Json requests=Json::array();
+    for(std::size_t index=0;index<value.cleanup_count && index<value.cleanup_requests.size();++index) {
+        const auto& item=value.cleanup_requests[index];const char* action="posix_group_kill";const char* reason="completion";
+        switch(item.action) {
+            case ProcessCleanupAction::windows_job_terminate:action="windows_job_terminate";break;
+            case ProcessCleanupAction::windows_process_terminate:action="windows_process_terminate";break;
+            case ProcessCleanupAction::windows_job_close:action="windows_job_close";break;
+            case ProcessCleanupAction::posix_group_kill:break;
+        }
+        switch(item.reason) {
+            case ProcessCleanupReason::cancelled:reason="cancelled";break;
+            case ProcessCleanupReason::timed_out:reason="timed_out";break;
+            case ProcessCleanupReason::worker_failure:reason="worker_failure";break;
+            case ProcessCleanupReason::completion:break;
+        }
+        requests.push_back({{"action",action},{"reason",reason},{"succeeded",number(item.succeeded)},
+            {"error_code",number(item.error_code)},{"before",accounting(item.before)},{"after",accounting(item.after)}});
+    }
+    return Json{{"version",1},{"platform",value.platform==ProcessPlatform::windows?"windows":"posix"},
+        {"launched",value.launched},{"leader_pid",number(value.leader_pid)},{"group_assigned",number(value.group_assigned)},
+        {"leader_exit_observed",value.leader_exit_observed},{"leader_reaped",number(value.leader_reaped)},{"termination",termination},
+        {"cleanup",{{"requests",requests},{"requests_overflow",value.cleanup_requests_overflow},{"finished",value.cleanup_finished}}}};
+}
 Json object(Json properties,Json required=Json::array()) { return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; }
 }
 void Service::configure(std::vector<Profile> profiles) {
@@ -339,9 +382,10 @@ Json Service::dispatch(const std::string& method,const Json& p) {
     const bool inspect=method=="development.inspect",diagnostics=method=="development.diagnostics",cancel=method=="development.cancel",forget=method=="development.forget";
     need(inspect || diagnostics || cancel || forget,"Unknown development operation.",-32601);
     if(diagnostics)fields(p,{"job_id","limit"},{"job_id"});
-    else if(inspect)fields(p,{"job_id","include_output"},{"job_id"});
+    else if(inspect)fields(p,{"job_id","include_output","include_process"},{"job_id"});
     else fields(p,{"job_id"},{"job_id"});
     if(inspect && p.contains("include_output"))need(p.at("include_output").is_boolean(),"Include output must be boolean.");
+    if(inspect && p.contains("include_process"))need(p.at("include_process").is_boolean(),"Include process must be boolean.");
     const bool include_output=!inspect || p.value("include_output",true);
     const auto limit=p.value("limit",Json(32));
     if(diagnostics)need(limit.is_number_integer() && limit>=1 && limit<=128,"Diagnostic limit must be 1..128.");
@@ -367,7 +411,9 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         result["recognized_lines"]=report.recognized_count;result["more"]=report.more;result["incomplete"]=report.incomplete;
         result["limit"]=limit;result["parser"]="msbuild-csharp-subset-v1";return result;
     }
-    return status(*prior,include_output,!include_output);
+    auto result=status(*prior,include_output,!include_output);
+    if(inspect && p.value("include_process",false))result["process"]=process_observation(prior->process);
+    return result;
 }
 Json Service::schemas() {
     const Json path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Absolute UTF-8 path."}},
@@ -394,7 +440,8 @@ Json Service::schemas() {
             {"compiler_server",{{"type","string"},{"minLength",1},{"maxLength",4096},
                 {"description","Optional absolute VBCSCompiler.dll selector for an engine-owned Windows compiler session. Omit for isolated builds. Startup failures fail the job; ordinary SDK fallback is reported separately. The worker selects the private pipe."}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
         {"development.jobs",object(Json::object())},
-        {"development.inspect",object({{"job_id",id},{"include_output",{{"type","boolean"},{"default",true}}}},{"job_id"})},
+        {"development.inspect",object({{"job_id",id},{"include_output",{{"type","boolean"},{"default",true}}},
+            {"include_process",{{"type","boolean"},{"default",false},{"description","Opt in to retained ordinary-job process and cleanup observations. Null before the runner is observed; no live process probing or exit-cause inference."}}}},{"job_id"})},
         {"development.diagnostics",object({{"job_id",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",32}}}},{"job_id"})},
         {"development.cancel",object({{"job_id",id}},{"job_id"})},
         {"development.forget",object({{"job_id",id}},{"job_id"})}};

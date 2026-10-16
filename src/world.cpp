@@ -1897,14 +1897,25 @@ public:
             {"donor_index",!inspection && diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)}});
     }
     Json source_model_inspection(const Json& params) const {
-        fields(params,{"source","fbx_normal_map","section","offset","limit","pose","expected_model_sha256"},{"source"});
+        fields(params,{"source","fbx_normal_map","section","offset","limit","pose","expected_model_sha256","skin","clip"},{"source"});
         const auto& path=params.at("source");
         require(path.is_string(),"Source inspection requires a path.");const auto text=path.get<std::string>();
         require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid source inspection path.");
         require(!params.contains("section") || params.at("section").is_string(),"Source inspection section must be a string.");
         const auto section=params.value("section",std::string("summary"));
-        require(section=="summary" || section=="nodes" || section=="skins" || section=="animations","Invalid source inspection section.");
+        require(section=="summary" || section=="nodes" || section=="skins" || section=="animations" || section=="skin_joints" || section=="animation_channels","Invalid source inspection section.");
         require(!params.contains("pose") || section=="nodes","Source pose sampling requires the nodes section.");
+        require(!params.contains("skin") || section=="skin_joints","Source skin selector requires the skin_joints section.");
+        require(!params.contains("clip") || section=="animation_channels","Source clip selector requires the animation_channels section.");
+        std::optional<std::uint64_t> selected_skin,selected_clip;
+        if(section=="skin_joints") {
+            require(params.contains("skin"),"Source skin_joints inspection requires a skin selector.");
+            selected_skin=revision(params.at("skin"));
+        }
+        if(section=="animation_channels") {
+            require(params.contains("clip"),"Source animation_channels inspection requires a clip selector.");
+            selected_clip=revision(params.at("clip"));
+        }
         const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
         const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;
         require(limit>=1 && limit<=64,"Source inspection page limit must be 1..64.");
@@ -1930,6 +1941,8 @@ public:
             validate_animation_data(model);const auto retained=retained_model_import_bytes(model);
             const auto fingerprint=content_hash(encode_model(model));
             if(expected && *expected!=fingerprint)throw std::runtime_error("Source model fingerprint changed; inspect the current source before selecting nodes or takes.");
+            if(selected_skin && *selected_skin>=model.skins.size())throw std::runtime_error("Source skin index is outside the original model.");
+            if(selected_clip && *selected_clip>=model.animations.size())throw std::runtime_error("Source clip index is outside the original model.");
             std::optional<ModelPose> pose;
             if(selector) {
                 if(selector->clip && (*selector->clip>=model.animations.size() || selector->time>model.animations[*selector->clip].duration))
@@ -1947,8 +1960,12 @@ public:
                 {"diagnostic_count",model.diagnostics.size()},{"diagnostics_truncated",model.diagnostics.size()>64}};
             if(pose)out["pose"]=params.at("pose");
             if(section!="summary") {
-                const auto total=section=="nodes" ? model.nodes.size() : section=="skins" ? model.skins.size() : model.animations.size();
-                const auto end=std::min<std::uint64_t>(total,offset+limit);out["items"]=Json::array();out["section"]=section;out["total"]=total;
+                const auto total=selected_skin ? model.skins[*selected_skin].joints.size() : selected_clip ? model.animations[*selected_clip].channels.size() :
+                    section=="nodes" ? model.nodes.size() : section=="skins" ? model.skins.size() : model.animations.size();
+                const auto end=offset>=total ? total:offset+std::min<std::uint64_t>(limit,total-offset);
+                out["items"]=Json::array();out["section"]=section;out["total"]=total;
+                if(selected_skin)out["skin"]=*selected_skin;
+                if(selected_clip)out["clip"]=*selected_clip;
                 for(auto i=offset;i<end;++i) {
                     if(section=="nodes") {
                         const auto& node=model.nodes[i];
@@ -1959,6 +1976,13 @@ public:
                         out["items"].push_back(std::move(row));
                     }else if(section=="skins") {
                         const auto& skin=model.skins[i];out["items"].push_back({{"index",i},{"name",skin.name},{"skeleton",skin.skeleton},{"joints",skin.joints.size()}});
+                    }else if(selected_skin) {
+                        const auto& skin=model.skins[*selected_skin];out["items"].push_back({{"index",i},{"node",skin.joints[i]},{"inverse_bind",skin.inverse_bind[i]}});
+                    }else if(selected_clip) {
+                        const auto& channel=model.animations[*selected_clip].channels[i];
+                        const char* paths[]={"translation","rotation","scale"};const char* modes[]={"STEP","LINEAR","CUBICSPLINE"};
+                        out["items"].push_back({{"index",i},{"node",channel.node},{"path",paths[std::size_t(channel.path)]},
+                            {"interpolation",modes[std::size_t(channel.interpolation)]},{"keys",channel.times.size()}});
                     }else {
                         const auto& clip=model.animations[i];out["items"].push_back({{"index",i},{"name",clip.name},{"duration",clip.duration},{"channels",clip.channels.size()}});
                     }

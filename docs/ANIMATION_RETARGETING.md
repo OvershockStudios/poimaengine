@@ -47,11 +47,47 @@ fingerprint for `expected_target_model_sha256`, and the donor's fingerprint for
 model content**, including the original takes; they are not raw source-file
 hashes or the eventual cooked asset identity.
 
-`section` is `summary` (default), `nodes`, `skins` or `animations`. Pages contain
+`section` is `summary` (default), `nodes`, `skins`, `animations`, `skin_joints`
+or `animation_channels`. Pages contain
 at most 64 items and return `next_offset` or null. Node rows provide original
 indices, names, parents and local transforms. Animation rows provide original
 take indices, names, durations and channel counts. Skin rows provide skeleton
 indices and joint counts.
+
+For original membership, select a skin or take explicitly:
+
+```json
+{"jsonrpc":"2.0","id":3,"method":"asset.source.inspect","params":{"source":"characters/body.fbx","section":"skin_joints","skin":0,"limit":64,"expected_model_sha256":"<base model_sha256>"}}
+{"jsonrpc":"2.0","id":4,"method":"asset.source.inspect","params":{"source":"characters/motions.fbx","section":"animation_channels","clip":0,"limit":64,"expected_model_sha256":"<donor model_sha256>"}}
+```
+
+Replace each fingerprint placeholder with its actual inspected value. A
+`skin_joints` page returns palette-order `index`, original `node` and
+`inverse_bind` matrices (flat arrays of 16 numbers, column-major), with the
+selected `skin` in the response. An
+`animation_channels` page returns original-order `index`, target `node`,
+`path` (`translation`, `rotation` or `scale`), `interpolation` (`STEP`, `LINEAR`
+or `CUBICSPLINE`) and `keys` (the number of time keys), with the selected `clip`.
+Cubic tangent/value triples do not count as three time keys. These pages
+provide topology metadata; they do not return every animation key value.
+
+`skin` is required only for `skin_joints`; `clip` is required only for
+`animation_channels`. Either selector on another section rejects, and these
+sections cannot carry `pose`. Malformed selectors reject before source I/O
+(`-32602`); an otherwise valid index outside the parsed source rejects as an
+import error (`-32050`).
+Use the returned `next_offset` with the same fingerprint to continue. A source
+fingerprint change requires inspecting and reviewing the source again.
+
+Before building an explicit node map, page every target skin's joint membership
+and every selected donor take's channel metadata. Follow each original node's
+parents from the `nodes` pages to obtain the required ancestor closures. Include
+helper and importer-created ancestors, and include channel targets even when
+their translation or scale tracks will be discarded by the chosen policy.
+Choose correspondence from names, rest frames and intended semantics, then
+apply the [explicit-map constraints](#map-differently-named-nodes).
+This inspection does not require publishing either source as a cooked asset;
+it does not choose anatomical correspondence or repair an incompatible rig.
 
 Use the first response's `model_sha256` as `expected_model_sha256` on subsequent
 pages or pose observations. Replace the placeholder below with that actual
@@ -338,3 +374,26 @@ uses normalized original source observations and independent quaternion-chain,
 forward-kinematics and skin calculations, not an independent FBX parser.
 Hardware readback does not establish physical-input, editor, contact/loop,
 compiled locomotion or performance qualification.
+
+The original-topology protocol check needs Python 3.11+ and a matching native
+engine. It authors analytic glTF/GLB and FBX inputs, verifies paged membership
+without cooking, constructs a source map from the inspected topology, then
+checks retargeted motion and cooked reopening with its source copies unavailable:
+
+```sh
+python3 tests/source_inspection_topology.py \
+  --binary build/headless/poima --output build/source-topology-example \
+  --record build/source-topology-example-record.json --timeout 180
+```
+
+Use new output and record paths. The output retains original native request,
+response and error streams as well as `evidence.json`. On Windows, run the
+matching native Python inside an owned process-tree supervisor such as
+[the qualification gate](../tests/switchback_ownership.py). No renderer,
+downloaded character content or managed compiler is required. Its original
+FBX fixtures exercise the same importer as production, not an independent FBX
+implementation or a general exporter-compatibility guarantee.
+
+The [0.0.165 CPU checks](evidence/m2-source-topology-process-inspection.json)
+record the selected native workflows, compatibility comparisons and retained
+qualification failures separately.

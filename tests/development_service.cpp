@@ -163,6 +163,38 @@ int main(int argc,char** argv) {
         check(service.dispatch("development.jobs",Json::object()).at("jobs").size()==1,"Retry duplicated job.");
         invalid=params;invalid["configuration"]="Release";error("development.compile",invalid,-32009);
         const auto result=wait(first);check(result.at("state")=="succeeded","Generated compiler command failed.");
+        {
+            const auto id=first.at("job_id");
+            check(!result.contains("process") && service.dispatch("development.inspect",{{"job_id",id},{"include_process",false}}).dump()==result.dump(),
+                "Default/false process selector changed legacy full status.");
+            auto enriched=service.dispatch("development.inspect",{{"job_id",id},{"include_process",true}});
+            const auto& process=enriched.at("process");
+            check(process.is_object() && process.size()==9 && process.at("version")==1 && process.at("launched")==true &&
+                process.at("leader_pid").is_number_integer() && process.at("leader_pid")>0 && process.at("group_assigned")==true &&
+                process.at("leader_exit_observed")==true && process.at("cleanup").at("finished")==true &&
+                process.at("cleanup").at("requests_overflow")==false && process.at("cleanup").at("requests").size()>=1,
+                "Opt-in completed process observation incomplete.");
+#ifdef _WIN32
+            check(process.at("platform")=="windows" && process.at("leader_reaped").is_null() &&
+                process.at("termination").at("kind")=="windows_exit" && process.at("termination").at("windows_exit_code")==0 &&
+                process.at("termination").at("posix_wait_status").is_null(),"Windows process JSON loses raw exit provenance.");
+#else
+            check(process.at("platform")=="posix" && process.at("leader_reaped")==true &&
+                process.at("termination").at("kind")=="posix_exit" && process.at("termination").at("exit_status")==0 &&
+                process.at("termination").at("signal").is_null() && process.at("termination").at("windows_exit_code").is_null(),"POSIX process JSON loses exit provenance.");
+            for(const auto& cleanup:process.at("cleanup").at("requests"))check(cleanup.at("before").is_null() && cleanup.at("after").is_null(),"POSIX JSON fabricated group accounting.");
+#endif
+            auto compact=service.dispatch("development.inspect",{{"job_id",id},{"include_output",false},{"include_process",true}});
+            check(compact.at("process").dump()==process.dump(),"Compact inspection changed retained process observations.");
+            compact.erase("process");
+            check(compact.dump()==service.dispatch("development.inspect",{{"job_id",id},{"include_output",false}}).dump(),"Opt-in compact projection changed legacy status.");
+            enriched.erase("process");check(enriched.dump()==result.dump(),"Opt-in full projection changed legacy status.");
+            for(const Json& malformed:Json::array({nullptr,0,1,0.0,1.0,"true",Json::array(),Json::object()}))
+                error("development.inspect",{{"job_id",id},{"include_process",malformed}},-32602);
+            error("development.diagnostics",{{"job_id",id},{"include_process",true}},-32602);
+            error("development.cancel",{{"job_id",id},{"include_process",true}},-32602);
+            check(service.dispatch("development.compile",params)==Json({{"job_id",id},{"replayed",true},{"receipt_scope","session"}}),"Process observation changed completed compile receipt.");
+        }
         const auto echoed=Json::parse(result.at("stdout").get<std::string>());
         const Json expected={"build",utf8(project),"-c","Debug","--nologo","--disable-build-servers","--artifacts-path",utf8(root/"output space"/"artifacts"),"-o",utf8(root/"output space"/"managed")};
         check(echoed.at("arguments")==expected,"Argument vector changed or shell-expanded.");
@@ -172,6 +204,9 @@ int main(int argc,char** argv) {
         error("development.inspect",{{"job_id",first.at("job_id")}},-32004);
         check(service.dispatch("development.compile",params).at("replayed")==true,"Forgotten job was compiled again.");
         auto failed=service.dispatch("development.compile",compile("2",project,root/"missing-tool"));check(wait(failed).at("state")=="launch_failed","Missing compiler status lost.");
+        const auto missing_process=service.dispatch("development.inspect",{{"job_id",failed.at("job_id")},{"include_process",true}}).at("process");
+        check(missing_process.is_object() && missing_process.at("launched")==false && missing_process.at("leader_pid").is_null() && missing_process.at("termination").is_null() &&
+            missing_process.at("cleanup").at("requests").empty(),"Launch failure fabricated a process termination.");
         const auto no_diagnostics=service.dispatch("development.diagnostics",{{"job_id",failed.at("job_id")}});
         check(no_diagnostics.at("state")=="launch_failed" && no_diagnostics.at("diagnostics").empty(),"No recognized diagnostics changed launch failure status.");
         auto bytes=service.dispatch("development.compile",compile("3",root/"bytes.csproj",executable));auto bytesResult=wait(bytes);
@@ -230,6 +265,9 @@ int main(int argc,char** argv) {
         const auto& required=schemas.at("development.compile").at("required");
         check(std::find(required.begin(),required.end(),Json("restore"))==required.end(),"Restore became required.");
         check(std::find(required.begin(),required.end(),Json("compiler_server"))==required.end(),"Owned compiler selection became required.");
+        const auto& process_schema=schemas.at("development.inspect").at("properties").at("include_process");
+        check(process_schema.at("type")=="boolean" && process_schema.at("default")==false &&
+            schemas.at("development.inspect").at("required")==Json::array({"job_id"}),"Process discovery changed opt-in admission.");
         std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","explicit_restore_argv","restore_boolean_admission","restore_retry_normalization","compiler_server_selector_admission","compiler_server_receipt_guard","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
             {"diagnostic_checks",{"structured_source_location","summary_deduplication","limited_results_explicit","invalid_limits","invalid_utf8_diagnostic","unrecognized_output_preserves_failure"}},
             {"project_checks",{"host_profile_callbacks","synchronous_no_jobs","native_request_forwarding","missing_artifact_replay_delegation","path_and_type_rejection","native_error_codes","disabled_adoption"}},

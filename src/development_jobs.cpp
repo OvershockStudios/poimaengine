@@ -52,7 +52,29 @@ bool valid_utf8(const std::string& text) {
     }
     return true;
 }
+ProcessCleanupRequest* cleanup_request(ProcessObservation& observed,ProcessCleanupAction action,ProcessCleanupReason reason) noexcept {
+    if(observed.cleanup_count>=observed.cleanup_requests.size()) {observed.cleanup_requests_overflow=true;return nullptr;}
+    auto& result=observed.cleanup_requests[observed.cleanup_count++];result.action=action;result.reason=reason;return &result;
+}
+ProcessCleanupReason cleanup_reason(const std::optional<State>& state) noexcept {
+    if(!state)return ProcessCleanupReason::completion;
+    if(*state==State::cancelled)return ProcessCleanupReason::cancelled;
+    if(*state==State::timed_out)return ProcessCleanupReason::timed_out;
+    return ProcessCleanupReason::worker_failure;
+}
 #ifdef _WIN32
+std::optional<ProcessGroupAccounting> group_accounting(HANDLE group) noexcept {
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION value{};
+    if(!QueryInformationJobObject(group,JobObjectBasicAccountingInformation,&value,sizeof(value),nullptr))return {};
+    return ProcessGroupAccounting{value.TotalProcesses,value.ActiveProcesses,value.TotalTerminatedProcesses};
+}
+void observe_windows_leader(ProcessObservation& observed,HANDLE process) noexcept {
+    if(!process || WaitForSingleObject(process,0)!=WAIT_OBJECT_0)return;
+    observed.leader_exit_observed=true;DWORD code=0;
+    if(GetExitCodeProcess(process,&code)) {
+        ProcessTermination termination;termination.kind=ProcessTerminationKind::windows_exit;termination.windows_exit_code=code;observed.termination=termination;
+    }
+}
 struct Handle {
     HANDLE value=nullptr;
     ~Handle() { if(value && value!=INVALID_HANDLE_VALUE)CloseHandle(value); }
@@ -98,6 +120,18 @@ std::wstring quote(const std::wstring& value) {
     result.append(slashes*2,L'\\');result.push_back(L'"');return result;
 }
 #else
+void observe_posix_leader(ProcessObservation& observed,int status) noexcept {
+    observed.leader_exit_observed=true;observed.leader_reaped=true;
+    ProcessTermination termination;termination.posix_wait_status=status;
+    if(WIFEXITED(status)) {termination.kind=ProcessTerminationKind::posix_exit;termination.exit_status=WEXITSTATUS(status);}
+    else if(WIFSIGNALED(status)) {
+        termination.kind=ProcessTerminationKind::posix_signal;termination.signal=WTERMSIG(status);
+#ifdef WCOREDUMP
+        termination.core_dumped=bool(WCOREDUMP(status));
+#endif
+    }
+    observed.termination=termination;
+}
 struct Fd {
     int value=-1;
     ~Fd() { if(value>=0)close(value); }
@@ -181,6 +215,7 @@ struct Jobs::Impl {
         result.output_bytes=source.output_bytes;result.error_bytes=source.error_bytes;
         result.output_truncated=source.output_truncated;result.error_truncated=source.error_truncated;
         result.cancellation_requested=source.cancellation_requested;
+        result.process=source.process;
         if(source.compiler_server) {
             const auto& source_server=*source.compiler_server;
             result.compiler_server.emplace();auto& server=*result.compiler_server;
@@ -202,9 +237,11 @@ struct Jobs::Impl {
         return result;
     }
     struct Result { State state;std::optional<int> exit_code;std::string error; };
-    Result run(Job& job,const std::function<void()>& server_pump={}) {
+    Result run(Job& job,ProcessObservation& observed,const std::function<void()>& server_pump={}) {
 #ifndef _WIN32
         (void)server_pump;
+#else
+        observed.platform=ProcessPlatform::windows;
 #endif
         const auto& request=job.effective_request?*job.effective_request:job.request;
         // Filesystem checks happen on the worker, never on the authoring thread.
@@ -212,6 +249,20 @@ struct Jobs::Impl {
         if(!std::filesystem::is_directory(request.working_directory))throw std::runtime_error("Working directory does not exist.");
 #ifdef _WIN32
         Handle output_read,output_write,error_read,error_write,input,group,process,thread;
+        struct FailureObservation {
+            ProcessObservation& observed;Handle& group;Handle& process;
+            ~FailureObservation() noexcept {
+                if(observed.cleanup_finished || !group.value)return;
+                // This is the existing kill-on-close failure boundary, made
+                // observable. Closing cannot prove when/why members exited.
+                auto* event=cleanup_request(observed,ProcessCleanupAction::windows_job_close,ProcessCleanupReason::worker_failure);
+                if(event)event->before=group_accounting(group.value);
+                const auto closed=CloseHandle(group.value);const auto error=closed?0:GetLastError();
+                if(event) {event->succeeded=bool(closed);if(!closed)event->error_code=error;}
+                if(closed)group.value=nullptr;
+                observe_windows_leader(observed,process.value);
+            }
+        } failure_observation{observed,group,process};
         SECURITY_ATTRIBUTES security{sizeof(security),nullptr,TRUE};
         if(!CreatePipe(&output_read.value,&output_write.value,&security,0) ||
            !CreatePipe(&error_read.value,&error_write.value,&security,0))throw std::runtime_error("Cannot create job output pipes.");
@@ -242,9 +293,13 @@ struct Jobs::Impl {
                           flags,request.environment ? environment.data():nullptr,
                           request.working_directory.c_str(),&startup.StartupInfo,&child))throw std::runtime_error("Cannot launch executable (Windows error "+std::to_string(GetLastError())+").");
         process.value=child.hProcess;thread.value=child.hThread;
-        job.launched=true;
-        if(!AssignProcessToJobObject(group.value,process.value) || ResumeThread(thread.value)==DWORD(-1)) {
-            TerminateProcess(process.value,1);WaitForSingleObject(process.value,5000);throw std::runtime_error("Cannot attach/resume child process group.");
+        job.launched=true;observed.launched=true;observed.leader_pid=child.dwProcessId;
+        const auto assigned=AssignProcessToJobObject(group.value,process.value);observed.group_assigned=bool(assigned);
+        if(!assigned || ResumeThread(thread.value)==DWORD(-1)) {
+            auto* event=cleanup_request(observed,ProcessCleanupAction::windows_process_terminate,ProcessCleanupReason::worker_failure);
+            const auto stopped=TerminateProcess(process.value,1);const auto error=stopped?0:GetLastError();
+            if(event) {event->succeeded=bool(stopped);if(!stopped)event->error_code=error;}
+            WaitForSingleObject(process.value,5000);observe_windows_leader(observed,process.value);throw std::runtime_error("Cannot attach/resume child process group.");
         }
         CloseHandle(output_write.value);output_write.value=nullptr;CloseHandle(error_write.value);error_write.value=nullptr;
         auto drain=[&](HANDLE pipe,bool error) {
@@ -256,6 +311,13 @@ struct Jobs::Impl {
             }
         };
         std::optional<State> reason;std::string server_error;
+        auto terminate_group=[&] {
+            auto* event=cleanup_request(observed,ProcessCleanupAction::windows_job_terminate,cleanup_reason(reason));
+            if(event)event->before=group_accounting(group.value);
+            const auto stopped=TerminateJobObject(group.value,1);const auto error=stopped?0:GetLastError();
+            if(event) {event->succeeded=bool(stopped);if(!stopped)event->error_code=error;event->after=group_accounting(group.value);}
+            return bool(stopped);
+        };
         while(true) {
             drain(output_read.value,false);drain(error_read.value,true);
             reason=stop_reason(job);
@@ -266,17 +328,18 @@ struct Jobs::Impl {
                 catch(const std::exception& e){reason=stop_reason(job).value_or(State::failed);server_error=e.what();}
                 catch(...){reason=State::failed;server_error="Unknown compiler server pump failure.";}
             }
-            if(reason) { if(!TerminateJobObject(group.value,1))throw std::runtime_error("Cannot terminate child process group.");break; }
+            if(reason) { if(!terminate_group())throw std::runtime_error("Cannot terminate child process group.");break; }
             const auto waited=WaitForSingleObject(process.value,10);
-            if(waited==WAIT_OBJECT_0)break;
+            if(waited==WAIT_OBJECT_0) {observe_windows_leader(observed,process.value);break;}
             if(waited==WAIT_FAILED)throw std::runtime_error("Cannot observe child exit.");
         }
         // A completed build must not leave children holding pipes/processes.
-        if(!TerminateJobObject(group.value,1))throw std::runtime_error("Cannot clean child process group.");
+        if(!terminate_group())throw std::runtime_error("Cannot clean child process group.");
         const auto cleanup_deadline=Clock::now()+std::chrono::seconds(5);
         while(true) {
             JOBOBJECT_BASIC_ACCOUNTING_INFORMATION accounting{};
             if(!QueryInformationJobObject(group.value,JobObjectBasicAccountingInformation,&accounting,sizeof(accounting),nullptr))throw std::runtime_error("Cannot observe child group cleanup.");
+            if(observed.cleanup_count && !observed.cleanup_requests_overflow)observed.cleanup_requests[observed.cleanup_count-1].after=ProcessGroupAccounting{accounting.TotalProcesses,accounting.ActiveProcesses,accounting.TotalTerminatedProcesses};
             if(accounting.ActiveProcesses==0)break;
             if(Clock::now()>=cleanup_deadline)throw std::runtime_error("Child process group cleanup timed out.");
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -290,8 +353,10 @@ struct Jobs::Impl {
             std::chrono::ceil<std::chrono::milliseconds>(cleanup_deadline-settled_at).count()):0;
         if(WaitForSingleObject(process.value,remaining)!=WAIT_OBJECT_0)
             throw std::runtime_error("Child process retirement timed out or failed.");
+        observed.leader_exit_observed=true;observed.cleanup_finished=true;
         drain(output_read.value,false);drain(error_read.value,true);
         DWORD code=0;if(!GetExitCodeProcess(process.value,&code))throw std::runtime_error("Cannot read process exit code.");
+        ProcessTermination termination;termination.kind=ProcessTerminationKind::windows_exit;termination.windows_exit_code=code;observed.termination=termination;
         return {reason.value_or(code==0?State::succeeded:State::failed),static_cast<int>(code),std::move(server_error)};
 #else
         Fd output_read,output_write,error_read,error_write,input;
@@ -331,11 +396,17 @@ struct Jobs::Impl {
             environment.push_back(nullptr);
         }
         pid_t pid=0;spawn_check(posix_spawn(&pid,executable.c_str(),&actions.value,&attributes.value,argv.data(),request.environment ? environment.data():environ));
-        job.launched=true;
+        job.launched=true;observed.launched=true;observed.leader_pid=static_cast<std::uint32_t>(pid);observed.group_assigned=true;observed.leader_reaped=false;
         struct Child {
-            pid_t pid;bool reaped=false;
-            ~Child() { if(!reaped) { kill(-pid,SIGKILL);int status=0;while(waitpid(pid,&status,0)<0 && errno==EINTR) {} } }
-        } child{pid};
+            pid_t pid;ProcessObservation& observed;bool reaped=false;
+            ~Child() noexcept { if(!reaped) {
+                auto* event=cleanup_request(observed,ProcessCleanupAction::posix_group_kill,ProcessCleanupReason::worker_failure);
+                const auto stopped=kill(-pid,SIGKILL);const auto error=stopped==0?0:errno;
+                if(event) {event->succeeded=stopped==0;if(stopped!=0)event->error_code=static_cast<std::uint32_t>(error);}
+                int status=0;pid_t waited;do {waited=waitpid(pid,&status,0);}while(waited<0 && errno==EINTR);
+                if(waited==pid) {observe_posix_leader(observed,status);observed.cleanup_finished=stopped==0 || error==ESRCH;}
+            } }
+        } child{pid,observed};
         close(output_write.value);output_write.value=-1;close(error_write.value);error_write.value=-1;
         auto drain=[&](int descriptor,bool error) {
             std::array<char,8192> buffer{};
@@ -355,13 +426,16 @@ struct Jobs::Impl {
             // Keep the leader unreaped until its group has been terminated, so
             // no reused PID/PGID can receive an unrelated cleanup signal.
             const auto result=waitid(P_PID,static_cast<id_t>(pid),&information,WEXITED|WNOHANG|WNOWAIT);
-            if(result==0 && information.si_pid==pid)break;
+            if(result==0 && information.si_pid==pid) {observed.leader_exit_observed=true;break;}
             if(result<0 && errno!=EINTR)throw std::runtime_error("Cannot observe child exit.");
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        if(kill(-pid,SIGKILL)<0 && errno!=ESRCH)throw std::runtime_error("Cannot terminate child process group.");
+        auto* cleanup=cleanup_request(observed,ProcessCleanupAction::posix_group_kill,cleanup_reason(reason));
+        const auto stopped=kill(-pid,SIGKILL);const auto error=stopped==0?0:errno;
+        if(cleanup) {cleanup->succeeded=stopped==0;if(stopped!=0)cleanup->error_code=static_cast<std::uint32_t>(error);}
+        if(stopped<0 && error!=ESRCH)throw std::runtime_error("Cannot terminate child process group.");
         while(waitpid(pid,&status,0)<0)if(errno!=EINTR)throw std::runtime_error("Cannot reap child.");
-        child.reaped=true;
+        child.reaped=true;observe_posix_leader(observed,status);observed.cleanup_finished=true;
         drain(output_read.value,false);drain(error_read.value,true);
         const int code=WIFEXITED(status)?WEXITSTATUS(status):(WIFSIGNALED(status)?128+WTERMSIG(status):1);
         return {reason.value_or(code==0?State::succeeded:State::failed),code,{}};
@@ -396,6 +470,7 @@ struct Jobs::Impl {
 #endif
             Result result{queued_cancelled?State::cancelled:State::launch_failed,{}, {}};
             std::optional<CompilerServerStatus> compiler_observation;
+            std::optional<ProcessObservation> process_observation;
             [[maybe_unused]] bool server_retired=false;
             auto retire_compiler=[&](bool graceful){
 #ifdef _WIN32
@@ -424,16 +499,16 @@ struct Jobs::Impl {
                         job->effective_request=job->request;
                         compiler_observation=compiler.prepare(*job->effective_request,[&]{return bool(stop_reason(*job));});
                         {std::lock_guard lock(mutex);job->status.compiler_server=compiler_observation;}
-                        result=run(*job,[&]{compiler.pump([&]{return bool(stop_reason(*job));});});
+                        process_observation.emplace();result=run(*job,*process_observation,[&]{compiler.pump([&]{return bool(stop_reason(*job));});});
                         Status current;{std::lock_guard lock(mutex);current=job->status;}
                         compiler_observation=compiler.complete(current,*compiler_observation);
                     }else{
                         retire_compiler(true);
                         if(compiler.blocked())throw std::runtime_error(compiler.error());
-                        result=run(*job);
+                        process_observation.emplace();result=run(*job,*process_observation);
                     }
 #else
-                    result=run(*job);
+                    process_observation.emplace();result=run(*job,*process_observation);
 #endif
                 }
                 catch(const std::exception& error) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=job->request.compiler_server?stop_reason(*job).value_or(ordinary):ordinary;result.error=std::string(error.what()).substr(0,4096); }
@@ -443,6 +518,7 @@ struct Jobs::Impl {
             bool verify=false;
             {
                 std::lock_guard lock(mutex);
+                job->status.process=process_observation;
                 verify=result.state==State::succeeded && !job->status.cancellation_requested && bool(job->request.verify_success);
             }
             // run() has already completed request-owned cleanup. The callback
@@ -476,6 +552,7 @@ struct Jobs::Impl {
                 job->status.exit_code=result.exit_code;job->status.error=std::move(result.error);
                 job->status.result=job->status.state==State::succeeded?std::move(verified):std::string{};
                 job->status.compiler_server=std::move(compiler_observation);
+                job->status.process=process_observation;
                 if(!queued_cancelled)job->status.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job->started);
                 break;
             }

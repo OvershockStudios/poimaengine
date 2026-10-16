@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 99}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 100}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -539,12 +539,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     auto source_inspect=object_schema({{"source",{{"type","string"},{"minLength",1},{"maxLength",4096}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
-        {"section",{{"enum",{"summary","nodes","skins","animations"}},{"default","summary"}}},
+        {"section",{{"enum",{"summary","nodes","skins","animations","skin_joints","animation_channels"}},{"default","summary"}}},
         {"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",64}}},
-        {"pose",reference_pose},{"expected_model_sha256",asset_id}},{"source"});
+        {"pose",reference_pose},{"expected_model_sha256",asset_id},{"skin",rev},{"clip",rev}},{"source"});
     source_inspect["allOf"]=Json::array({Json{{"if",{{"required",Json::array({"pose"})}}},
         {"then",{{"required",Json::array({"section"})},{"properties",{{"section",{{"const","nodes"}}}}}}}}});
-    source_inspect["description"]="Inspect normalized original glTF/GLB/FBX data without publishing a cooked asset or changing the world. Geometryless animation donors are supported. Page node/default/clip/skin metadata and optionally sample an original node pose without looping or out-of-duration clamping. model_sha256 identifies the original parsed model; use expected_model_sha256 across pages and the retarget source/base guards. Diagnostics retain complete counts and at most 64 bounded records. This evolving read-only method is outside authoring-core v1.";
+    for(const auto& [section_name,selector_name]:{std::pair{"skin_joints","skin"},std::pair{"animation_channels","clip"}}) {
+        source_inspect["allOf"].push_back({{"if",{{"required",Json::array({selector_name})}}},
+            {"then",{{"required",Json::array({"section"})},{"properties",{{"section",{{"const",section_name}}}}}}}});
+        source_inspect["allOf"].push_back({{"if",{{"required",Json::array({"section"})},{"properties",{{"section",{{"const",section_name}}}}}}},
+            {"then",{{"required",Json::array({selector_name})}}}});
+    }
+    source_inspect["description"]="Inspect normalized original glTF/GLB/FBX data without publishing a cooked asset or changing the world. Geometryless animation donors are supported. Page node/default/clip/skin metadata and optionally sample an original node pose without looping or out-of-duration clamping. skin_joints requires an original skin selector and returns ordered palette indices, original node IDs and inverse binds. animation_channels requires an original clip selector and returns ordered channel indices, original target nodes, path, interpolation and key counts. Selectors apply only to their corresponding sections; pose applies only to nodes. model_sha256 identifies the original parsed model; use expected_model_sha256 across pages and the retarget source/base guards. Diagnostics retain complete counts and at most 64 bounded records. This evolving read-only method is outside authoring-core v1.";
     methods["asset.source.inspect"]=source_inspect;
     auto texture_dependency_error=object_schema({
         {"type",{{"const","fbx_texture_dependency"}}},{"version",{{"const",1}}},

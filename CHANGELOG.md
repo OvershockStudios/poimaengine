@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.165
+
+- Inspect original skin joints, inverse binds and animation-channel metadata through paged source inspection before cooking. Preserve original fingerprints, legacy response shapes and cooked package bytes. [Retarget workflow](docs/ANIMATION_RETARGETING.md#inspect-the-original-sources).
+- Add opt-in development-job process observations and Python helper support: retain raw Windows/POSIX termination and cleanup requests while preserving default status, exit projection and retry behavior. [Process semantics](docs/DEVELOPMENT_JOBS.md#process-and-cleanup-observations).
+- Pass eight Windows native executions, four new topology groups, legacy retarget checks and three real C# compiler cases. Match 289 complete legacy response pairs and four cooked packages against 0.0.164. All twelve Linux CTests pass; retain the enclosing collector failure caused by oversized negative-test output and separately audit the records. [Results and limits](docs/evidence/m2-source-topology-process-inspection.json).
+
 ## 0.0.164
 
 - Add optional CoreCLR resources to the installed authoring pack, with one exact SDK shared by the bridge, game reference and native binding generator. Preserve default v1 packs, native profile fingerprints, guarded publication and complete-inventory validation. [Installed authoring](docs/AUTHORING_TOOLS.md).

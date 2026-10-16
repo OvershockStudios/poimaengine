@@ -206,7 +206,8 @@ checkout directory is restored after the supervising Job closes.
 The corrected fresh attempt passes 894 native calls and eighteen complete
 checkpoints: lossless component/global values, successful and rolled-back logical
 Control callbacks, same-owner restoration and fresh-process continuation in both
-the source project and relocated game. All 32 processes close naturally. The
+the source project and relocated game. Its external supervisor observes 32
+processes and finishes with an empty Job without forcing cleanup. The
 first attempt's missing fixture callback remains a separate failed record.
 [Results, artifact identities and limits](evidence/m2-installed-authoring-tools.json).
 
@@ -232,16 +233,26 @@ version-7 checkpoints while the checkout pathname is unavailable. It compiles
 valid source, retains structured CS1525 diagnostics for an intentional failure,
 repairs and reloads compatible code, preserves complete saved state except the
 two declared reload identity fields, then verifies changed behavior and full
-warm/fresh-process save continuation. All seventeen processes close naturally;
+warm/fresh-process save continuation. The external supervisor observes seventeen
+processes and finishes with an empty Job without forcing cleanup;
 the same checkout directory is restored.
 
 A separate 0.0.164 run uses the same v2 pack for NativeAOT publication,
 adoption, export and relocated readonly gameplay. It passes 865 calls and
-eighteen complete checkpoints through five owners; all thirty-two processes
-close naturally. The test-created source project is unavailable during bundled
+eighteen complete checkpoints through five owners. The external supervisors
+observe thirty-two processes and finish with empty Jobs without forcing cleanup.
+The test-created source project is unavailable during bundled
 consumption and is restored exactly. The engine checkout stays available in
 this separate run; its source-absence evidence belongs to the CoreCLR run and
 the earlier v1 NativeAOT check.
+
+Those closure observations describe the external supervisors. Ordinary native
+development jobs retain their separate policy of terminating remaining owned
+children after the leader finishes. The historical records do not establish
+natural exit for every nested child. New
+[opt-in process observations](DEVELOPMENT_JOBS.md#process-and-cleanup-observations)
+separate actual inner cleanup requests from outer-owner closure without changing
+the original workflow verdicts.
 
 These are existing-machine installed authoring checks. Clean-machine
 installation, graphics, latency budgets and the broader Alpha gates remain

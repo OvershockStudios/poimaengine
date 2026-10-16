@@ -55,6 +55,8 @@ def main():
     for name in ("binary", "dotnet", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--installed", action="store_true")
+    parser.add_argument("--include-process", action="store_true",
+                        help="Also qualify opt-in process observations on a supporting host")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     if not args.installed:
@@ -112,6 +114,9 @@ def main():
         need(discovery["methods"]["development.inspect"]["properties"]["include_output"] ==
              dict(type="boolean", default=True), "Compact inspection is unavailable")
         record["schema_revision"] = discovery["schema_revision"]
+        if args.include_process:
+            need(discovery["methods"]["development.inspect"]["properties"]["include_process"]["default"] is False,
+                 "Opt-in process observation is unavailable")
         before = client.inspect()
         image = products / "managed/JobObservationProbe.dll"
         previous = None
@@ -131,6 +136,37 @@ def main():
             projection = {key: value for key, value in full.items() if key not in ("stdout", "stderr")}
             need(compact == projection and "stdout" not in compact and "stderr" not in compact,
                  "Native full/compact projection differs")
+            if args.include_process:
+                need("process" not in full, "Default inspection added process metadata")
+                enriched = client.development_status(receipt["job_id"], include_process=True)
+                need({key: value for key, value in enriched.items() if key != "process"} == full,
+                     "Opt-in inspection changed legacy terminal status")
+                process = enriched["process"]
+                need(process["version"] == 1 and process["launched"] is True and
+                     type(process["leader_pid"]) is int and process["leader_pid"] > 0 and
+                     process["group_assigned"] is True and process["leader_exit_observed"] is True and
+                     process["cleanup"]["finished"] is True and
+                     process["cleanup"]["requests_overflow"] is False,
+                     "Actual SDK process observations are incomplete")
+                if os.name == "nt":
+                    need(process["platform"] == "windows" and process["leader_reaped"] is None and
+                         process["termination"]["kind"] == "windows_exit" and
+                         process["termination"]["windows_exit_code"] == full["exit_code"],
+                         "Actual Windows SDK termination differs")
+                else:
+                    need(process["platform"] == "posix" and process["leader_reaped"] is True and
+                         process["termination"]["kind"] == "posix_exit" and
+                         process["termination"]["exit_status"] == full["exit_code"],
+                         "Actual POSIX SDK termination differs")
+                need(process["cleanup"]["requests"] and all(
+                    row["reason"] == "completion" and row["succeeded"] is True
+                    for row in process["cleanup"]["requests"]), "SDK completion cleanup differs")
+                compact_process = client.wait_for_development(receipt["job_id"], timeout=5,
+                                                              include_process=True)
+                need(compact_process == {key: value for key, value in enriched.items()
+                                         if key not in ("stdout", "stderr")},
+                     "Opt-in native SDK wait projection differs")
+                record.setdefault("process_observations", []).append(process)
             diagnostics = client.call("development.diagnostics", dict(job_id=receipt["job_id"], limit=16))
             need(diagnostics["terminal"] and not diagnostics["incomplete"] and not diagnostics["more"],
                  "Terminal diagnostics are incomplete")

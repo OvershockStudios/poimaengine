@@ -262,6 +262,13 @@ metadata rather than defining another job model. Compact inspection requires
 schema revision 79's optional `include_output` parameter; unsupported hosts
 reject it without an implicit fallback.
 
+Both helpers also accept `include_process=False`. Explicit `True` sends the
+optional selector on every inspection and preserves the native versioned
+[process/cleanup observations](DEVELOPMENT_JOBS.md#process-and-cleanup-observations)
+without interpreting exit causes. Omission and `False` do not send the selector,
+so older hosts keep the existing request path. A host that rejects an explicit
+`True` raises its original RPC error; there is no retry or hidden downgrade.
+
 The wait returns failed, cancelled, timed-out and launch-failed terminal outcomes
 as well as success. `JobWaitExpired` means the local observation budget expired;
 its `job_id` and detached `last_status` preserve recovery context. It does not

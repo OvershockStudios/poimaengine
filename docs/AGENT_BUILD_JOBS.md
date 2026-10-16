@@ -192,9 +192,19 @@ and the worker error, call `development.inspect` only when needed. After recordi
 the result, `development.forget` can release retained-job capacity; it accepts
 terminal jobs only and does not make the old receipt ID reusable.
 
+On a host advertising `include_process`, read
+`client.development_status(job_id, include_output=False, include_process=True)`
+to retain raw leader-exit and cleanup facts before forgetting the job. Null
+observations remain unknown; Windows codes and Job counters do not establish
+an exit cause. Keep this inner runner record separate from the external
+supervisor's closure evidence. See
+[process observation semantics](DEVELOPMENT_JOBS.md#process-and-cleanup-observations).
+
 The SDK's offline checks exercise lifecycle records, deadlines, detached timeout
 context and unchanged error propagation. The explicit
 [native fixture](../tests/python_development_jobs_native.py) builds package-free
 success, syntax failure and repair through the public helpers; Windows execution
 requires an external process-tree owner. It does not qualify gameplay, reload,
 rendering or iteration performance.
+Add `--include-process` to check both default responses and opt-in native
+metadata during those same actual compiler jobs.

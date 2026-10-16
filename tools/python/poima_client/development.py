@@ -26,11 +26,13 @@ class JobWaitExpired(TimeoutError):
         self.last_status = last_status
 
 
-def _arguments(job_id, include_output, timeout):
+def _arguments(job_id, include_output, timeout, include_process):
     if type(job_id) is not int or not 1 <= job_id <= 9007199254740991:
         raise ValueError("job_id must be a positive safe JSON integer")
     if type(include_output) is not bool:
         raise ValueError("include_output must be a boolean")
+    if type(include_process) is not bool:
+        raise ValueError("include_process must be a boolean")
     _seconds(timeout, "timeout")
 
 
@@ -40,13 +42,15 @@ def _seconds(value, name):
         raise ValueError(name + " must be finite, positive and at most 86400 seconds")
 
 
-def _status(client, job_id, include_output, timeout):
+def _status(client, job_id, include_output, timeout, include_process):
     # Omit the optional flag for full inspection, preserving older hosts' default.
     # Compact inspection requires a host advertising include_output; a native
     # rejection propagates without a hidden discovery call or full-log fallback.
     params = {"job_id": job_id}
     if not include_output:
         params["include_output"] = False
+    if include_process:
+        params["include_process"] = True
     result = client.call("development.inspect", params, timeout=timeout)
     valid = isinstance(result, dict) and type(result.get("job_id")) is int
     if valid:
@@ -63,13 +67,14 @@ def _status(client, job_id, include_output, timeout):
     return result
 
 
-def inspect_job(client, job_id, *, include_output=True, timeout=30.0):
-    _arguments(job_id, include_output, timeout)
-    return _status(client, job_id, include_output, timeout)
+def inspect_job(client, job_id, *, include_output=True, timeout=30.0, include_process=False):
+    _arguments(job_id, include_output, timeout, include_process)
+    return _status(client, job_id, include_output, timeout, include_process)
 
 
-def wait_for_job(client, job_id, *, timeout=30.0, poll_interval=0.1, include_output=False):
-    _arguments(job_id, include_output, timeout)
+def wait_for_job(client, job_id, *, timeout=30.0, poll_interval=0.1, include_output=False,
+                 include_process=False):
+    _arguments(job_id, include_output, timeout, include_process)
     _seconds(poll_interval, "poll_interval")
     deadline = time.monotonic() + timeout
     last_status = None
@@ -77,7 +82,7 @@ def wait_for_job(client, job_id, *, timeout=30.0, poll_interval=0.1, include_out
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise JobWaitExpired(job_id, last_status)
-        result = _status(client, job_id, include_output, remaining)
+        result = _status(client, job_id, include_output, remaining, include_process)
         # A valid terminal reply is authoritative even if decoding/validation
         # finished after the local deadline. Failure is also a terminal outcome.
         if result["terminal"]:

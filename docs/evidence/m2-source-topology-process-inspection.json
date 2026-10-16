@@ -1,0 +1,874 @@
+{
+  "format": "poima.source-topology-process-inspection.evidence.v1",
+  "source_checkpoint": "0.0.165",
+  "date": "2026-10-16",
+  "schema_revision": 100,
+  "scope": "Original source topology and opt-in ordinary development-job process observations. CPU/headless qualification only.",
+  "source_inspection": {
+    "method": "asset.source.inspect",
+    "new_sections": [
+      "skin_joints",
+      "animation_channels"
+    ],
+    "page_limit": 64,
+    "selectors": "Explicit skin for skin_joints; explicit clip for animation_channels; neither on other sections; no pose on these new sections.",
+    "fingerprint": "Normalized original parsed model, not raw source bytes or eventual cooked package.",
+    "read_only": true,
+    "cooks_for_discovery": false
+  },
+  "process_inspection": {
+    "method": "development.inspect",
+    "selector": "include_process",
+    "default": false,
+    "record_version": 1,
+    "default_results_unchanged": true,
+    "metadata": "Retained raw leader termination and at most four actual cleanup requests; unknown values remain null. No exception/crash-cause or all-descendant natural-exit inference.",
+    "python_helpers": [
+      "WorldClient.development_status",
+      "WorldClient.wait_for_development"
+    ]
+  },
+  "windows": {
+    "build": {
+      "passed": true,
+      "seconds": 365.4488166750234,
+      "cache_generation": 30,
+      "targets": 9,
+      "compiled_sources": 324,
+      "sealed_artifacts": 12,
+      "previous_164_seals_preserved": 11,
+      "source_inputs_unchanged": true
+    },
+    "checks": {
+      "closure": {
+        "passed": true,
+        "seconds": 41.99383809999563,
+        "outer_job_accounting": {
+          "user_time": 207656250,
+          "kernel_time": 133125000,
+          "period_user_time": 207656250,
+          "period_kernel_time": 133125000,
+          "page_faults": 1361086,
+          "total_processes": 474,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "forced_cleanup": false,
+        "scope": "Unforced external supervisor closure; not causal evidence of every nested exit"
+      },
+      "stages": [
+        {
+          "name": "authoring_pack_profiles",
+          "exit_code": 0,
+          "seconds": 4.6983580000232905,
+          "stdout": {
+            "bytes": 552,
+            "sha256": "e54d17ce414d585cb7cdabfc7db10dcb4951bef019252a6af0ac7482c38b2182"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "development_profiles",
+          "exit_code": 0,
+          "seconds": 0.8979372000321746,
+          "stdout": {
+            "bytes": 234,
+            "sha256": "bb5a8c1a92d0bb35881a52b55607b5498c031671880e3bf641ba624ce1617ce5"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "development_service",
+          "exit_code": 0,
+          "seconds": 5.817211900022812,
+          "stdout": {
+            "bytes": 1257,
+            "sha256": "f7a26b13bd1ba63868b95d3b7bda63c30e364973551f9c28ec4a813a00b1a176"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "development_jobs",
+          "exit_code": 0,
+          "seconds": 5.997375100036152,
+          "stdout": {
+            "bytes": 191,
+            "sha256": "5f74f8cca3d1d599690a4d0f968f499a5541d1e6f0ec75b642ba79550e71b822"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "development_compact_poll",
+          "exit_code": 0,
+          "seconds": 0.3521879999898374,
+          "stdout": {
+            "bytes": 98,
+            "sha256": "2940c56583f6d547e69a0fb5a45ebcf3f4b80864a31b5f0118d24afb9dcce1d9"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "schema",
+          "exit_code": 0,
+          "seconds": 8.46019269991666,
+          "stdout": {
+            "bytes": 110,
+            "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "mcp",
+          "exit_code": 0,
+          "seconds": 0.10408530000131577,
+          "stdout": {
+            "bytes": 148,
+            "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+          },
+          "stderr": {
+            "bytes": 684,
+            "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+          }
+        },
+        {
+          "name": "development_capture_reentry",
+          "exit_code": 0,
+          "seconds": 0.12859159999061376,
+          "stdout": {
+            "bytes": 132,
+            "sha256": "6ee1697b93603785512dbe81b72218baea32a65b5acb03aa1832678f4a7736a5"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "source_topology",
+          "exit_code": 0,
+          "seconds": 2.595211699954234,
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 739,
+            "sha256": "181793fa8b239d7007df0e6eb29e6996f6a0d92d71b639772865decaefc952ed"
+          }
+        },
+        {
+          "name": "rotation_retarget",
+          "exit_code": 0,
+          "seconds": 1.6810266999527812,
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 1735,
+            "sha256": "98298a63e7df4fb6c7e75c7ce6b07a721b74c5272fa2ec1c51df9bfddd675706"
+          }
+        }
+      ]
+    },
+    "topology": {
+      "passed": true,
+      "tests": 4,
+      "skipped": 0,
+      "rpc_count": 666,
+      "local_owners": 5,
+      "source_hashes_unchanged": true,
+      "helpers_unchanged": true,
+      "checks": [
+        {
+          "test": "__main__.SourceTopology.test_analytic_gltf_and_glb_exact_topology_pages",
+          "joint_count": 66,
+          "channel_count": 66,
+          "authored_formats": [
+            "glTF external buffer",
+            "GLB"
+          ],
+          "skins": 2,
+          "takes": 2,
+          "interpolations": [
+            "LINEAR",
+            "STEP",
+            "CUBICSPLINE"
+          ]
+        },
+        {
+          "test": "__main__.SourceTopology.test_original_ascii_binary_and_geometryless_fbx_topology",
+          "oracle": "Authored FBX joint names/inverse binds and transform-curve targets; additional normalized baked channels retained, not guessed"
+        },
+        {
+          "test": "__main__.SourceTopology.test_source_topology_drives_explicit_retarget_then_source_independent_cook",
+          "target_joint_ancestor_closure": [
+            0,
+            2,
+            3
+          ],
+          "selected_channel_ancestor_closure": [
+            0,
+            2,
+            3
+          ],
+          "semantic_aliases": {
+            "DonorRoot": "Root",
+            "DonorChild": "Child"
+          },
+          "node_map": [
+            {
+              "source_node": 3,
+              "target_node": 3
+            },
+            {
+              "source_node": 0,
+              "target_node": 0
+            },
+            {
+              "source_node": 2,
+              "target_node": 2
+            }
+          ],
+          "cooked_asset": "cda1ac2bc7b42a6cf858529102c4a0960586acfd737c1ec89567a777e9907999",
+          "geometry_bytes": 252,
+          "oracle": "Original analytic target FK/skin; exact original geometry prefix and target nodes/skins; complete same-lineage cooked observations after source absence"
+        }
+      ]
+    },
+    "legacy_retarget": {
+      "passed": true,
+      "tests": 8,
+      "skipped": 1,
+      "rpc_count": 684,
+      "local_owners": 10,
+      "skip_reason": "Original external character source directory not supplied."
+    },
+    "actual_sdk": {
+      "closure": {
+        "passed": true,
+        "seconds": 8.599266499979421,
+        "outer_job_accounting": {
+          "user_time": 57187500,
+          "kernel_time": 26250000,
+          "period_user_time": 57187500,
+          "period_kernel_time": 26250000,
+          "page_faults": 200819,
+          "total_processes": 14,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "forced_cleanup": false,
+        "scope": "Unforced external supervisor closure; not causal evidence of every nested exit"
+      },
+      "sdk_version": "10.0.401",
+      "decoded_rpc_count": 190,
+      "cases": [
+        {
+          "label": "success",
+          "job_id": 1,
+          "state": "succeeded",
+          "polls": 72,
+          "full_compact_equal": true,
+          "image_sha256": "48741d840cfc0d2c443a0593d6864b7c126f13084829dae1a349c1540791c681",
+          "diagnostics_complete": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "receipt_replayed": true
+        },
+        {
+          "label": "syntax_failure",
+          "job_id": 2,
+          "state": "failed",
+          "polls": 38,
+          "full_compact_equal": true,
+          "image_sha256": "48741d840cfc0d2c443a0593d6864b7c126f13084829dae1a349c1540791c681",
+          "diagnostics_complete": true,
+          "source_sha256": "4a3661945115407db0613d45915d3ed290d93f6a72613f19d6da42583cdfb34c",
+          "receipt_replayed": true
+        },
+        {
+          "label": "repair",
+          "job_id": 3,
+          "state": "succeeded",
+          "polls": 55,
+          "full_compact_equal": true,
+          "image_sha256": "48741d840cfc0d2c443a0593d6864b7c126f13084829dae1a349c1540791c681",
+          "diagnostics_complete": true,
+          "source_sha256": "efaaa4d90c793b4c2b0bd98de47756bacd1bae756b469e20df7a200171adee9e",
+          "receipt_replayed": true
+        }
+      ],
+      "process_observations": [
+        {
+          "cleanup": {
+            "finished": true,
+            "requests": [
+              {
+                "action": "windows_job_terminate",
+                "after": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "before": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "error_code": null,
+                "reason": "completion",
+                "succeeded": true
+              }
+            ],
+            "requests_overflow": false
+          },
+          "group_assigned": true,
+          "launched": true,
+          "leader_exit_observed": true,
+          "leader_pid": 1932,
+          "leader_reaped": null,
+          "platform": "windows",
+          "termination": {
+            "core_dumped": null,
+            "exit_status": null,
+            "kind": "windows_exit",
+            "posix_wait_status": null,
+            "signal": null,
+            "windows_exit_code": 0
+          },
+          "version": 1
+        },
+        {
+          "cleanup": {
+            "finished": true,
+            "requests": [
+              {
+                "action": "windows_job_terminate",
+                "after": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "before": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "error_code": null,
+                "reason": "completion",
+                "succeeded": true
+              }
+            ],
+            "requests_overflow": false
+          },
+          "group_assigned": true,
+          "launched": true,
+          "leader_exit_observed": true,
+          "leader_pid": 17492,
+          "leader_reaped": null,
+          "platform": "windows",
+          "termination": {
+            "core_dumped": null,
+            "exit_status": null,
+            "kind": "windows_exit",
+            "posix_wait_status": null,
+            "signal": null,
+            "windows_exit_code": 1
+          },
+          "version": 1
+        },
+        {
+          "cleanup": {
+            "finished": true,
+            "requests": [
+              {
+                "action": "windows_job_terminate",
+                "after": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "before": {
+                  "active_processes": 0,
+                  "total_processes": 4,
+                  "total_terminated_processes": 0
+                },
+                "error_code": null,
+                "reason": "completion",
+                "succeeded": true
+              }
+            ],
+            "requests_overflow": false
+          },
+          "group_assigned": true,
+          "launched": true,
+          "leader_exit_observed": true,
+          "leader_pid": 6412,
+          "leader_reaped": null,
+          "platform": "windows",
+          "termination": {
+            "core_dumped": null,
+            "exit_status": null,
+            "kind": "windows_exit",
+            "posix_wait_status": null,
+            "signal": null,
+            "windows_exit_code": 0
+          },
+          "version": 1
+        }
+      ],
+      "native_exit_code": 0,
+      "scope": "Actual success, CS1525 failure and repair; unchanged default requests/results, opt-in full/compact equality and exact retry. Decoded replies retained; no original native wire streams on this SDK route."
+    },
+    "legacy_comparison": {
+      "closure": {
+        "passed": true,
+        "seconds": 6.612486599944532,
+        "outer_job_accounting": {
+          "user_time": 40625000,
+          "kernel_time": 24218750,
+          "period_user_time": 40625000,
+          "period_kernel_time": 24218750,
+          "page_faults": 62434,
+          "total_processes": 3,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "forced_cleanup": false,
+        "scope": "Unforced external supervisor closure; not causal evidence of every nested exit"
+      },
+      "old_checkpoint": "0.0.164",
+      "new_checkpoint": "0.0.165",
+      "rpc_count": 578,
+      "whole_type_exact_response_pairs": 289,
+      "complete_packages_byte_equal": 4,
+      "package_identities": {
+        "0d039dccd5ee5a82a00af9bf9e1cf2bb6b08989d439836d02ab275caea63b8e0.pmodel": {
+          "bytes": 2787,
+          "sha256": "0d039dccd5ee5a82a00af9bf9e1cf2bb6b08989d439836d02ab275caea63b8e0"
+        },
+        "107b08d9ff459163760eb59f5176160e5db14aed1972e6ab3e5e851dc55c0098.pmodel": {
+          "bytes": 2249,
+          "sha256": "107b08d9ff459163760eb59f5176160e5db14aed1972e6ab3e5e851dc55c0098"
+        },
+        "6ee9f5ae985aca58f1aaeea6530134040a7875e7cdfb04736374005a0be53f56.pmodel": {
+          "bytes": 1439,
+          "sha256": "6ee9f5ae985aca58f1aaeea6530134040a7875e7cdfb04736374005a0be53f56"
+        },
+        "7b1fa5de9320880bf6c2e45c8621c72347e64fc32e54928a7ba874954b022427.pmodel": {
+          "bytes": 22766,
+          "sha256": "7b1fa5de9320880bf6c2e45c8621c72347e64fc32e54928a7ba874954b022427"
+        }
+      },
+      "unchanged_sources": true,
+      "scope": "Same original source paths, complete decoded responses and complete package bytes; no normalization or field/type exclusions. Selected accepted legacy requests, not all error variants or broad exporter compatibility."
+    }
+  },
+  "linux": {
+    "aggregate_passed": false,
+    "ctest_passed": true,
+    "aggregate_failure": "Post-test retained-output census exceeded its declared per-protocol and aggregate byte bounds; original failed result retained. All twelve original CTests passed under unchanged limits.",
+    "independent_file_audit": {
+      "bytes": 454472,
+      "sha256": "4afbdea6367679957b5ba58dd122e17f1ecdfce902ccaa33c4664f4ada87d08e"
+    },
+    "seconds": 625.5540595840139,
+    "targets": 8,
+    "sealed_artifacts": 10,
+    "tests": [
+      {
+        "name": "development_jobs",
+        "seconds": "3.23456"
+      },
+      {
+        "name": "development_capture_reentry",
+        "seconds": "0.0454651"
+      },
+      {
+        "name": "development_service",
+        "seconds": "3.39974"
+      },
+      {
+        "name": "development_compact_poll",
+        "seconds": "0.137941"
+      },
+      {
+        "name": "development_profiles",
+        "seconds": "0.369379"
+      },
+      {
+        "name": "authoring_pack_profiles",
+        "seconds": "23.9099"
+      },
+      {
+        "name": "animation_rotation_retarget_protocol",
+        "seconds": "11.8975"
+      },
+      {
+        "name": "source_inspection_topology_protocol",
+        "seconds": "18.2981"
+      },
+      {
+        "name": "fbx_contract",
+        "seconds": "19.6159"
+      },
+      {
+        "name": "python_development_jobs",
+        "seconds": "0.460163"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "45.1034"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.0591252"
+      }
+    ],
+    "effective_test_timeouts": {
+      "development_compact_poll": {
+        "explicit_seconds": 60.0,
+        "default_seconds": 60,
+        "effective_seconds": 60.0
+      },
+      "authoring_pack_profiles": {
+        "explicit_seconds": 60.0,
+        "default_seconds": 60,
+        "effective_seconds": 60.0
+      },
+      "development_profiles": {
+        "explicit_seconds": null,
+        "default_seconds": 60,
+        "effective_seconds": 60
+      },
+      "development_service": {
+        "explicit_seconds": null,
+        "default_seconds": 60,
+        "effective_seconds": 60
+      },
+      "development_jobs": {
+        "explicit_seconds": 60.0,
+        "default_seconds": 60,
+        "effective_seconds": 60.0
+      },
+      "development_capture_reentry": {
+        "explicit_seconds": 15.0,
+        "default_seconds": 60,
+        "effective_seconds": 15.0
+      },
+      "world_schema_native": {
+        "explicit_seconds": 180.0,
+        "default_seconds": 60,
+        "effective_seconds": 180.0
+      },
+      "mcp_native": {
+        "explicit_seconds": 120.0,
+        "default_seconds": 60,
+        "effective_seconds": 120.0
+      },
+      "python_development_jobs": {
+        "explicit_seconds": 30.0,
+        "default_seconds": 60,
+        "effective_seconds": 30.0
+      },
+      "source_inspection_topology_protocol": {
+        "explicit_seconds": 180.0,
+        "default_seconds": 60,
+        "effective_seconds": 180.0
+      },
+      "animation_rotation_retarget_protocol": {
+        "explicit_seconds": 180.0,
+        "default_seconds": 60,
+        "effective_seconds": 180.0
+      },
+      "fbx_contract": {
+        "explicit_seconds": 180.0,
+        "default_seconds": 60,
+        "effective_seconds": 180.0
+      }
+    },
+    "protocols": {
+      "source_inspection_topology_protocol": {
+        "evidence": {
+          "bytes": 1174443,
+          "sha256": "9e19d545bf8cb95ca96c8c27830f97e0a3bea1e85dca05ae157e14eed4863e61"
+        },
+        "outcome": {
+          "passed": true,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "rpc_count": 666,
+          "source_hashes_unchanged": true,
+          "helpers_unchanged": true
+        },
+        "decoded_rpc_count": 666,
+        "local_owners": 5,
+        "retained_files": 152,
+        "retained_bytes": 4845641,
+        "large_fixture_audit_scope": "Size/stat only for metadata-rejected oversized fixtures; smaller files hashed."
+      },
+      "animation_rotation_retarget_protocol": {
+        "evidence": {
+          "bytes": 1419709,
+          "sha256": "711591f6e237f7abcb664a0de5b4c1c43c9dee05900668db277fd9cebe8ff918"
+        },
+        "outcome": {
+          "passed": true,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 1,
+          "rpc_count": 684,
+          "source_hashes_unchanged": true,
+          "helpers_unchanged": null
+        },
+        "decoded_rpc_count": 684,
+        "local_owners": 10,
+        "retained_files": 244,
+        "retained_bytes": 6978704,
+        "large_fixture_audit_scope": "Size/stat only for metadata-rejected oversized fixtures; smaller files hashed."
+      },
+      "fbx_contract": {
+        "evidence": {
+          "bytes": 342867,
+          "sha256": "479ee0c85c32c70ab025225caa8559016c4964ae9469c71a43cfaaa558b467ff"
+        },
+        "outcome": {
+          "passed": true,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "rpc_count": null,
+          "source_hashes_unchanged": null,
+          "helpers_unchanged": null
+        },
+        "decoded_rpc_count": 358,
+        "local_owners": 12,
+        "retained_files": 808,
+        "retained_bytes": 551887354,
+        "large_fixture_audit_scope": "Size/stat only for metadata-rejected oversized fixtures; smaller files hashed."
+      }
+    },
+    "source_inputs_unchanged": true,
+    "preservation_unchanged": true,
+    "scope": "Incremental offline Debug O0/g0 authoring; rendering, simulation, audio, game UI and managed/native gameplay disabled. Whole current prior cache independently retained before mutation; prior162 failures and successful fixture/164 evidence unchanged."
+  },
+  "independent_review": {
+    "passed": true,
+    "report": {
+      "bytes": 4706,
+      "sha256": "1884c27bdc81e92a003d72faec426681dd40dfb0463ce53ee3a82544a518f68e"
+    },
+    "counts": {
+      "assertions": 176223,
+      "current_native_source_files": 324,
+      "current_sealed_artifacts": 12,
+      "prior_sealed_artifacts": 11,
+      "cpu_stages": 8,
+      "checks_outer_processes": 474,
+      "raw_rpc_pairs": 1244,
+      "topology_oracle_pages": 348,
+      "analytic_vectors": 130,
+      "analytic_sample_pages": 52,
+      "whole_repeated_sample_pages": 18,
+      "topology_rpc": 666,
+      "topology_owners": 5,
+      "retarget_decoded_rpc": 684,
+      "retarget_owners": 10,
+      "sdk_actual_cases": 3,
+      "sdk_decoded_calls": 190,
+      "sdk_outer_processes": 14,
+      "whole_legacy_pairs": 289,
+      "whole_package_byte_pairs": 4,
+      "legacy_native_owners": 2
+    },
+    "maximum_selected_analytic_error": 2.1623451007535266e-07,
+    "scope": "File-only original Windows wire/package and selected analytic audit. SDK and legacy-retarget audit retain decoded-only boundaries. Audit duration is not engine performance."
+  },
+  "retained_failures": [
+    {
+      "kind": "linux_reader_only",
+      "reason": "Independent reader1 selected .log names instead of actual retained .txt log names; failed record preserved, separate reader2 passes."
+    },
+    {
+      "kind": "linux_output_collector",
+      "reason": "All twelve CTests passed; retained FBX rejection fixtures exceeded the declared collector byte bounds. Original aggregate remains failed. Separate file audit does not change it."
+    },
+    {
+      "kind": "preworker_launcher",
+      "reason": "Existing supervisor expected Python followed directly by script; -B was interpreted as filename. No native suite ran; original failed owner ended unforced. Fresh corrected checks2 is separate."
+    },
+    {
+      "kind": "reader_only",
+      "reason": "Original file reader searched unescaped backslashes in an escaped traceback. Original failure/report retained; corrected reader2 passes without changing native records."
+    }
+  ],
+  "limits": [
+    "No renderer, presented-frame, foreground/physical-input, performance-budget, clean-machine or Alpha-release qualification.",
+    "Ordinary job lifecycle, legacy exit projection, verifier success rules, retry receipts and default JSON projections remain unchanged; successful leaders may still need descendant cleanup.",
+    "Gameplay C ABI headers are unchanged; the public C++ development Status type is extended. No blanket binary-compatibility claim.",
+    "Both API extensions are outside the frozen authoring-core v1 and runtime game-session v1 surfaces.",
+    "Exceptional OS failure paths have source review; new tests do not empirically inject every Assign/Resume/wait/close failure.",
+    "Analytic fixtures and correlated original FBX parser checks do not establish general character-exporter coverage."
+  ],
+  "reproduce": [
+    "python tests/source_inspection_topology.py --binary <matching-native-engine> --output <fresh-directory> --record <fresh-json> --timeout 180",
+    "python tests/animation_rotation_retarget.py --binary <matching-native-engine> --output <fresh-directory> --timeout 180",
+    "python tests/python_development_jobs.py",
+    "python tests/python_development_jobs_native.py --binary <matching-native-engine> --dotnet <dotnet-10.0.401> --output <fresh-directory> --include-process",
+    "Run Windows processes inside an owned process-tree supervisor; retain actual errors, original records and closure."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 87488,
+      "sha256": "e7e90fd907d61f84ec95f9f2f3899def68b9b992e59330dd1e15fa82238a63ce"
+    },
+    "include/poima/development_jobs.hpp": {
+      "bytes": 8228,
+      "sha256": "5e5dd83e09db186db3a32ef891d54069bbfaaea49b1be61609237e459852511b"
+    },
+    "src/development_jobs.cpp": {
+      "bytes": 40992,
+      "sha256": "77ce88a510ad2cc308e08ac4f163b3c82ef508e6c75fd0d091ad275c4a094ed1"
+    },
+    "src/development_service.cpp": {
+      "bytes": 36322,
+      "sha256": "c7218ae96bd7f6ba28c63c33ae87bca199324d78472a48ab92ba5a710c6fe5cf"
+    },
+    "src/world.cpp": {
+      "bytes": 326170,
+      "sha256": "734011be0057592cf6328fe46c24cc18b93111ccc6bd4e8198a2c947fd1f45e3"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 111546,
+      "sha256": "f549994c7645ce9dbc05ac141e67d5416bcf6f77089be11bbba367a40e07287f"
+    },
+    "tests/development_jobs.cpp": {
+      "bytes": 39559,
+      "sha256": "3b4d260e932fed7f9cb476391509bf8d793cfc052895e860b6b78239894dae96"
+    },
+    "tests/development_service.cpp": {
+      "bytes": 26528,
+      "sha256": "f4e96c514df7a8eb43b4041bf1661112c9a234cb4592eb9b551c2a8a1974ac81"
+    },
+    "tests/python_development_jobs.py": {
+      "bytes": 16956,
+      "sha256": "ea4582e73e11782604123928fa5b0196f3adc537b97ad8b693d6509c356c458a"
+    },
+    "tests/python_development_jobs_native.py": {
+      "bytes": 11907,
+      "sha256": "0b839f8cfe8208b85869f6e1959e30573dbd500b4e8e081076174761927f1701"
+    },
+    "tests/source_inspection_topology.py": {
+      "bytes": 32039,
+      "sha256": "a056a348218aa370921cac52086d5e8aec97999c01f8371e0960d3219afb91d5"
+    },
+    "tools/python/poima_client/client.py": {
+      "bytes": 18214,
+      "sha256": "3f3ab3936f13a4aafe93bb354c2ba3e1ca09d0461a0b8437e6ec898e146bfc49"
+    },
+    "tools/python/poima_client/development.py": {
+      "bytes": 3967,
+      "sha256": "3fa5f90c2c202571f011ccdb0a583cbe842bb30d4d19976caeb6db971f7f08d8"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "e3640e5f4fb0c434e0773008067114fd641f2dae5eea168292a207601fd88c15"
+    }
+  },
+  "original_report_identities": {
+    "windows_build": {
+      "bytes": 56462,
+      "sha256": "043962695bfa2e0b218b3177d1585363a74bf396d70c858f97c006ad7ce3f9e2"
+    },
+    "windows_sources": {
+      "bytes": 48819,
+      "sha256": "6999e2400072c75fc4b5651d972af8db3f2bdd39421591419b1b2faa5ecad331"
+    },
+    "windows_seals": {
+      "bytes": 2119,
+      "sha256": "e3a20e7ca2643605fad0e06d10a5d3d461b75a5d9372ad4d542ef7188f90fbef"
+    },
+    "windows_checks": {
+      "bytes": 64716,
+      "sha256": "50286a8ace470389444c58d913c1a7cd7119b2a1b3d9aa6bc5865433ed5d03dc"
+    },
+    "windows_checks_closure": {
+      "bytes": 2246,
+      "sha256": "ec0b142c569072297903d5e3274bfe720cbec1669d8399ed47760d39db127f42"
+    },
+    "windows_topology": {
+      "bytes": 1171379,
+      "sha256": "ded21dcf002d81d3bccb1bf6d2b9eb9aa3ac05c0c3f4038c88bc06b62589b7c7"
+    },
+    "windows_retarget": {
+      "bytes": 1465191,
+      "sha256": "c0fd8fa2ec539e4c289d9059b011b37c16ca0450884df88ca342391a446a68fe"
+    },
+    "windows_sdk": {
+      "bytes": 127733,
+      "sha256": "53765e0394c993d1f711f31ced6745eeb4860f75b28d9a3de4dc3e9e75784ab5"
+    },
+    "windows_sdk_closure": {
+      "bytes": 2095,
+      "sha256": "fe4e14807030957c5062ddc885ef2adb33975522d03e6656fe207e79359347af"
+    },
+    "windows_legacy": {
+      "bytes": 2779890,
+      "sha256": "60e4829f4f69e4f95e232869fda71ffe72e72170942ae020be9d1ba89ffc09d7"
+    },
+    "windows_legacy_closure": {
+      "bytes": 2064,
+      "sha256": "f72f1e391e2d44cc3ee012dcba17888638c2eccd06fb79258a2e1a9db80d45e9"
+    },
+    "linux": {
+      "bytes": 61868,
+      "sha256": "afe463ffc8a5af56c397d947461b91921c969b20632631a4a67dcf234839f3e5"
+    },
+    "linux_ctest": {
+      "bytes": 8414,
+      "sha256": "17dbe67b58258a1c17a14cc59fe3d9219c6678e984d63f58fa035355cfc8b6db"
+    },
+    "linux_independent_file_audit": {
+      "bytes": 454472,
+      "sha256": "4afbdea6367679957b5ba58dd122e17f1ecdfce902ccaa33c4664f4ada87d08e"
+    },
+    "linux_reader_failure": {
+      "bytes": 4475,
+      "sha256": "e8ba21b7e59a00ca6c2f83e11d0d2ab54128367517f242c447edfd19ed555abe"
+    },
+    "independent_windows_audit": {
+      "bytes": 4706,
+      "sha256": "1884c27bdc81e92a003d72faec426681dd40dfb0463ce53ee3a82544a518f68e"
+    },
+    "retained_preworker_failure": {
+      "bytes": 2602,
+      "sha256": "4d04a7a2c39f565276a5f7ce447e3e8514de9add5127442cd32cd640e326350e"
+    },
+    "retained_reader_failure": {
+      "bytes": 2607,
+      "sha256": "f74be627924d629feca1151f8665eed181e6d6e6b5e1863bba2f0709add88c90"
+    }
+  }
+}

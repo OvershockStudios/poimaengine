@@ -218,17 +218,21 @@ class WorldClient:
     def inspect(self, *, timeout=30.0):
         return self.call("world.inspect", timeout=timeout)
 
-    def development_status(self, job_id, *, include_output=True, timeout=30.0):
+    def development_status(self, job_id, *, include_output=True, timeout=30.0,
+                           include_process=False):
         """Inspect one accepted job, validating only identity and lifecycle.
 
         Compact reads require a host advertising ``include_output``. Full reads
         use the native default. Unknown metadata is preserved in the native reply.
         Job IDs are local to the same live host; no reconnect or retry is implied.
+        Opt-in process observations require a host advertising ``include_process``;
+        they are retained as returned, without inferred termination causes.
         """
-        return inspect_job(self, job_id, include_output=include_output, timeout=timeout)
+        return inspect_job(self, job_id, include_output=include_output, timeout=timeout,
+                           include_process=include_process)
 
     def wait_for_development(self, job_id, *, timeout=30.0, poll_interval=0.1,
-                             include_output=False):
+                             include_output=False, include_process=False):
         """Observe one accepted job until terminal, using compact reads by default.
 
         The total finite budget bounds polling sleeps and each RPC's remaining
@@ -238,7 +242,7 @@ class WorldClient:
         Transport/RPC failures and interruptions propagate unchanged.
         """
         return wait_for_job(self, job_id, timeout=timeout, poll_interval=poll_interval,
-                            include_output=include_output)
+                            include_output=include_output, include_process=include_process)
 
     def history(self, *, timeout=30.0):
         return self.call("world.history", timeout=timeout)

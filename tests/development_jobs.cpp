@@ -27,6 +27,27 @@ using namespace std::chrono_literals;
 namespace dev=poima::development;
 namespace {
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
+const dev::ProcessObservation& observed_process(const dev::Status& status) {
+    check(status.process.has_value(),"Ordinary runner has no retained observation.");
+    const auto& value=*status.process;
+    check(value.launched && value.leader_pid && *value.leader_pid>0 && value.group_assigned==true &&
+        value.leader_exit_observed && value.termination && value.cleanup_finished &&
+        !value.cleanup_requests_overflow && value.cleanup_count>=1 && value.cleanup_count<=4,"Incomplete retained process boundary.");
+#ifdef _WIN32
+    check(value.platform==dev::ProcessPlatform::windows && !value.leader_reaped &&
+        value.termination->kind==dev::ProcessTerminationKind::windows_exit && value.termination->windows_exit_code &&
+        !value.termination->posix_wait_status && !value.termination->exit_status && !value.termination->signal && !value.termination->core_dumped,
+        "Windows observations inferred a POSIX status or exception cause.");
+    check(value.cleanup_requests[0].before && value.cleanup_requests[value.cleanup_count-1].after &&
+        value.cleanup_requests[value.cleanup_count-1].after->active_processes==0,"Windows before/after group observation missing.");
+#else
+    check(value.platform==dev::ProcessPlatform::posix && value.leader_reaped==true &&
+        value.termination->posix_wait_status && !value.termination->windows_exit_code,"POSIX raw wait/reap observation missing.");
+    for(std::size_t i=0;i<value.cleanup_count;++i)
+        check(!value.cleanup_requests[i].before && !value.cleanup_requests[i].after,"POSIX fabricated group accounting.");
+#endif
+    return value;
+}
 std::string path_text(const std::filesystem::path& path) {
     const auto utf8=path.generic_u8string();return std::string(reinterpret_cast<const char*>(utf8.data()),utf8.size());
 }
@@ -195,6 +216,16 @@ int peer(int argc,char** argv) {
         std::cerr<<"diagnostic\n";return 0;
     }
     if(mode=="fail") { std::cerr<<"bad source\n";return 7; }
+    if(mode=="exit143")return 143;
+#ifdef _WIN32
+    // An explicit ExitProcess value is not an exception or crash inference.
+    if(mode=="windows-exit-value")ExitProcess(0xE1A2B3C4U);
+#else
+    if(mode=="signal-term") {
+        sigset_t signals;sigemptyset(&signals);sigaddset(&signals,SIGTERM);sigprocmask(SIG_UNBLOCK,&signals,nullptr);
+        signal(SIGTERM,SIG_DFL);raise(SIGTERM);_exit(99);
+    }
+#endif
     if(mode=="verification") {
         std::ofstream output(utf8_path(argv[3]),std::ios::binary);
         output<<"verified-child-artifact";output.close();
@@ -265,6 +296,8 @@ int test_main(int argc,char** argv) {
         for(std::size_t index=2;index<echo.arguments.size();++index)check(echoed.standard_output.find("["+echo.arguments[index]+"]\n")!=std::string::npos,"Tricky argument was not preserved.");
         check(echoed.standard_output.find(path_text(root/"cwd space"))!=std::string::npos,"Cwd was not applied.");
         check(echoed.standard_error=="diagnostic\n","Separate stderr not captured.");
+        observed_process(echoed);
+        check(jobs.poll_summary(echoed.id)->process==echoed.process,"Compact poll lost immutable process facts.");
         check(!jobs.cancel(echoed.id) && jobs.forget(echoed.id) && !jobs.poll(echoed.id),"Terminal lifecycle failed.");
         {
             using Environment=std::vector<std::pair<std::string,std::string>>;
@@ -349,12 +382,14 @@ int test_main(int argc,char** argv) {
             auto result=await(verification_jobs,verification_jobs.submit(verified));
             check(result.state==dev::State::succeeded && result.exit_code==0 && calls==1 &&
                 result.result=="{\"artifact\":\"verified-child-artifact\"}","Verified child did not publish its result.");
+            observed_process(result);
             verification_jobs.forget(result.id);
             auto rejected=[&](std::function<std::string()> callback,const char* message) {
                 auto child=request("echo");child.verify_success=std::move(callback);
                 const auto status=await(verification_jobs,verification_jobs.submit(std::move(child)));
                 check(status.state==dev::State::failed && status.exit_code==0 && status.result.empty() &&
                     status.error.find(message)!=std::string::npos,"Bad verification did not fail without publishing a result.");
+                observed_process(status);
                 verification_jobs.forget(status.id);
             };
             rejected([]()->std::string{throw std::runtime_error("artifact mismatch");},"artifact mismatch");
@@ -393,11 +428,13 @@ int test_main(int argc,char** argv) {
             const auto id=scoped.submit(child);gate.await_entry();
             const auto before=std::chrono::steady_clock::now();const auto active=scoped.poll(id);
             check(active && active->state==dev::State::running && active->result.empty(),"Unfinished verification published success.");
+            observed_process(*active);
             check(scoped.cancel(id),"Cannot cancel during success verification.");
             check(std::chrono::steady_clock::now()-before<1s,"Verification blocked owner poll/cancel.");
             gate.release();const auto cancelled=await(scoped,id);
             check(cancelled.state==dev::State::cancelled && cancelled.exit_code==0 && cancelled.cancellation_requested &&
                 cancelled.result.empty(),"Cancellation lost to verification success.");
+            check(cancelled.process==active->process,"Verifier cancellation rewrote completed child observations.");
         }
         {
             VerificationGate gate;auto scoped=std::make_unique<dev::Jobs>();ReleaseVerification release{gate};
@@ -419,7 +456,30 @@ int test_main(int argc,char** argv) {
         }
         const auto failed=await(jobs,jobs.submit(request("fail")));
         check(failed.state==dev::State::failed && failed.exit_code==7 && failed.standard_error.find("bad source")!=std::string::npos,"Nonzero exit was not reported.");
+        const auto& failed_process=observed_process(failed);
+#ifdef _WIN32
+        check(failed_process.termination->windows_exit_code==7,"Windows nonzero raw status changed.");
+#else
+        check(failed_process.termination->kind==dev::ProcessTerminationKind::posix_exit && failed_process.termination->exit_status==7 && !failed_process.termination->signal,"POSIX ordinary nonzero exit became a signal.");
+#endif
         jobs.forget(failed.id);
+        {
+            const auto explicit_exit=await(jobs,jobs.submit(request("exit143")));const auto& ordinary=observed_process(explicit_exit);
+            check(explicit_exit.state==dev::State::failed && explicit_exit.exit_code==143,"Explicit exit143 legacy projection changed.");
+#ifdef _WIN32
+            check(ordinary.termination->windows_exit_code==143,"Explicit Windows exit143 changed.");
+            const auto raw=await(jobs,jobs.submit(request("windows-exit-value")));const auto& native=observed_process(raw);
+            check(raw.state==dev::State::failed && native.termination->windows_exit_code==0xE1A2B3C4U &&
+                static_cast<std::uint32_t>(*raw.exit_code)==0xE1A2B3C4U,"Full DWORD exit value or old projection changed.");
+#else
+            check(ordinary.termination->kind==dev::ProcessTerminationKind::posix_exit && ordinary.termination->exit_status==143 && !ordinary.termination->signal,"Exit143 was inferred as SIGTERM.");
+            const auto raw=await(jobs,jobs.submit(request("signal-term")));const auto& native=observed_process(raw);
+            check(raw.state==dev::State::failed && raw.exit_code==143 && native.termination->kind==dev::ProcessTerminationKind::posix_signal &&
+                native.termination->signal==SIGTERM && !native.termination->exit_status &&
+                native.termination->posix_wait_status!=ordinary.termination->posix_wait_status,"Actual SIGTERM and ordinary exit143 were conflated.");
+#endif
+            jobs.forget(raw.id);jobs.forget(explicit_exit.id);
+        }
         const auto flood=await(jobs,jobs.submit(request("flood")));
         check(flood.state==dev::State::succeeded,"Overflow deadlocked process.");
         check(flood.standard_output.size()==1024 && flood.standard_error.size()==1024 && flood.output_truncated && flood.error_truncated,"Diagnostics were not bounded.");
@@ -437,19 +497,30 @@ int test_main(int argc,char** argv) {
 #endif
         auto missing=request("echo");missing.executable=root/"absent";
         const auto absent=await(jobs,jobs.submit(missing));check(absent.state==dev::State::launch_failed && !absent.error.empty() && !absent.exit_code,"Launch failure was not explicit.");jobs.forget(absent.id);
+        check(absent.process && !absent.process->launched && !absent.process->leader_pid && !absent.process->termination && absent.process->cleanup_count==0,
+            "Launch failure fabricated a child/exit/cleanup.");
         const auto active=jobs.submit(request("sleep"));await_output(jobs,active,"ready");
         const auto queued=jobs.submit(request("echo"));check(jobs.cancel(queued),"Cannot cancel queued job.");
         check(!jobs.forget(active),"Forgot running child.");
         check(jobs.cancel(active),"Cannot cancel running job.");
         check(await(jobs,active).state==dev::State::cancelled && await(jobs,queued).state==dev::State::cancelled,"Cancellation did not finish.");
+        const auto cancelled_process=observed_process(*jobs.poll(active));
+        check(cancelled_process.cleanup_requests[0].reason==dev::ProcessCleanupReason::cancelled && !jobs.poll(queued)->process,"Queued/active cancellation process observations differ.");
         jobs.forget(active);jobs.forget(queued);
         auto timed=request("sleep");timed.timeout=100ms;const auto timeout=await(jobs,jobs.submit(timed));
         check(timeout.state==dev::State::timed_out,"Timeout was not reported.");jobs.forget(timeout.id);
+        check(observed_process(timeout).cleanup_requests[0].reason==dev::ProcessCleanupReason::timed_out,"Timeout cleanup cause lost.");
         const auto tree_marker=root/"cancelled-descendant";auto tree=request("tree");tree.arguments.push_back(path_text(tree_marker));
         const auto tree_id=jobs.submit(tree);await_output(jobs,tree_id,"child=");check(jobs.cancel(tree_id),"Tree cancellation rejected.");
         check(await(jobs,tree_id).state==dev::State::cancelled,"Tree did not cancel.");jobs.forget(tree_id);
         const auto orphan_marker=root/"completed-descendant";auto orphan=request("orphan");orphan.arguments.push_back(path_text(orphan_marker));
         const auto orphaned=await(jobs,jobs.submit(orphan));check(orphaned.state==dev::State::succeeded,"Successful leader did not terminate.");jobs.forget(orphaned.id);
+        const auto& orphan_observation=observed_process(orphaned);
+        check(orphan_observation.cleanup_requests[0].reason==dev::ProcessCleanupReason::completion,"Completed orphan cleanup cause changed.");
+#ifdef _WIN32
+        check(orphan_observation.cleanup_requests[0].before->active_processes>=1 && orphan_observation.cleanup_requests[0].before->total_processes>=2,
+            "Successful orphan fixture lost actual active descendant observation.");
+#endif
         const auto destruction_marker=root/"destruction-descendant";
         { dev::Jobs scoped;auto scoped_tree=request("tree");scoped_tree.arguments.push_back(path_text(destruction_marker));const auto id=scoped.submit(scoped_tree);await_output(scoped,id,"child="); }
         std::this_thread::sleep_for(2200ms);

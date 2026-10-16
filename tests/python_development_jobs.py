@@ -100,6 +100,57 @@ class DevelopmentContracts(unittest.TestCase):
                 self.assertEqual(transport.calls, [("development.inspect", params, 7)])
                 self.assertEqual(clock.sleeps, [])
 
+    def test_process_observations_are_explicit_and_retained_without_inference(self):
+        for include_output in (True, False):
+            for include_process in (True, False):
+                with self.subTest(output=include_output, process=include_process):
+                    raw = {"termination": {"kind": "windows_exit", "windows_exit_code": 3221225477},
+                           "cleanup": {"requests": [], "finished": False}, "future": [None, 7]}
+                    reply = status("failed", exit_code=-1073741819, process=raw)
+                    client, transport = self.client(reply)
+                    result = client.development_status(JOB, include_output=include_output,
+                                                       include_process=include_process)
+                    self.assertIs(result, reply)
+                    self.assertIs(result["process"], raw)
+                    expected = {"job_id": JOB}
+                    if not include_output:
+                        expected["include_output"] = False
+                    if include_process:
+                        expected["include_process"] = True
+                    self.assertEqual(transport.calls, [("development.inspect", expected, 30.0)])
+
+    def test_process_flag_applies_to_every_wait_poll_and_preserves_unknown(self):
+        clock = Clock()
+        final = status("succeeded", process=None)
+        client, transport = self.client(status("queued", process=None),
+                                        status("running", process=None), final, clock=clock)
+        with patch("poima_client.development.time", clock):
+            self.assertIs(client.wait_for_development(JOB, include_process=True), final)
+        self.assertEqual(len(transport.calls), 3)
+        self.assertTrue(all(row[1] == {"job_id": JOB, "include_output": False,
+                                      "include_process": True} for row in transport.calls))
+        self.assertIsNone(final["process"])
+
+    def test_process_flag_rejects_nonbooleans_before_transport(self):
+        for value in (None, 0, 1, "true", [], {}):
+            for method in ("development_status", "wait_for_development"):
+                with self.subTest(value=value, method=method):
+                    client, transport = self.client()
+                    with self.assertRaises(ValueError):
+                        getattr(client, method)(JOB, include_process=value)
+                    self.assertEqual(transport.calls, [])
+
+    def test_process_optin_unsupported_host_error_has_no_hidden_retry(self):
+        error = RpcError(-32602, "Unknown field: include_process")
+        for method in ("development_status", "wait_for_development"):
+            with self.subTest(method=method):
+                client, transport = self.client(error)
+                with self.assertRaises(RpcError) as caught:
+                    getattr(client, method)(JOB, include_process=True)
+                self.assertIs(caught.exception, error)
+                self.assertEqual(len(transport.calls), 1)
+                self.assertIs(transport.calls[0][1]["include_process"], True)
+
     def test_all_seven_states_are_valid_and_terminal_failures_are_returned(self):
         for state in STATES:
             with self.subTest(state=state):

@@ -367,6 +367,56 @@ when verifying a compilation or debugging a failure. Compact metadata alone does
 not provide the raw correlated compiler-use or complete diagnostic evidence.
 Reduced response content does not establish a measured latency improvement.
 
+## Process and cleanup observations
+
+Schema revision 100 adds optional boolean `include_process`, defaulting to
+`false`, on `development.inspect`. It works with full or compact inspection:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"development.inspect","params":{"job_id":1,"include_output":false,"include_process":true}}
+```
+
+Omission or `false` preserves the existing response. Only `true` adds `process`;
+catalog, diagnostics, cancellation and retry receipts keep their existing
+shapes. Invalid flag types reject before job lookup. This is a development
+inspection extension, outside the frozen authoring and game-session contracts.
+
+`process` is null before the ordinary runner has published observations. It may
+remain null while a job runs, or after queued cancellation or compiler-server
+startup failure. A launch failure can instead retain a record with
+`launched:false`. Observations copy from worker-owned state; inspection does not
+probe a live process or wait for cleanup. A running verifier may already expose
+completed process observations. The separate compiler-server lifetime retains
+its existing metadata.
+
+The version-1 record contains `platform`, `launched`, `leader_pid`,
+`group_assigned`, `leader_exit_observed`, `leader_reaped`, `termination` and
+`cleanup`. Unobserved or inapplicable values are null. Windows termination keeps
+the unsigned `windows_exit_code`; POSIX keeps `posix_wait_status` and explicitly
+distinguishes `posix_exit`, `posix_signal` and `posix_other`, with applicable
+`exit_status`, `signal` and `core_dumped` values. The existing top-level
+`exit_code` is unchanged: for example, POSIX exit 143 and SIGTERM both project
+to 143 there, while their raw records differ. A Windows code alone does not
+establish a crash, exception or its cause.
+
+`cleanup.requests` retains at most four actual requests, with
+`requests_overflow` reporting truncation. Each records its `action`, `reason`
+(`completion`, `cancelled`, `timed_out` or `worker_failure`), observed API
+`succeeded`/`error_code` and optional Windows Job accounting `before`/`after`.
+Actions are `windows_job_terminate`, `windows_process_terminate`,
+`windows_job_close` or `posix_group_kill`. Accounting retains raw
+`total_processes`, `active_processes` and `total_terminated_processes`; those
+counters do not attribute exits to a particular request. POSIX group counts
+remain null. `cleanup.finished` means the existing cleanup sequence completed,
+not that every descendant was observed or reaped.
+
+These facts do not change job success: a successful leader can still require
+termination of remaining children. An external supervisor's empty Job Object
+or successful engine exit does not prove that every nested process exited
+naturally. Retain explicit inner cleanup observations alongside the outer
+owner's closure record. This extension is not a general crash reporter, stack
+trace collector or process-tree census.
+
 ## Structured compiler feedback (development)
 
 Agents can request recognized compiler errors and warnings without retrieving
@@ -430,3 +480,7 @@ performs bounded work but is not interruptible; destruction joins it.
 
 `validate_request` shares the submit-time validation rules without queueing or
 launching a process, so owner profiles can reject invalid environments at startup.
+
+The [0.0.165 CPU checks](evidence/m2-source-topology-process-inspection.json)
+record the selected native workflows, compatibility comparisons and retained
+qualification failures separately.
