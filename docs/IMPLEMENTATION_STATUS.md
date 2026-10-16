@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.171**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.172**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.172 adds internal Windows world-storage diagnostics: failed native
+operation, commit stage and immediately captured error code on stderr. Public
+JSON-RPC errors, exception messages, schema revision 104 and publication
+ordering remain unchanged. There is no automatic storage retry.
+[Storage and recovery](WORLD_STORAGE_DIAGNOSTICS.md).
+
+The native Windows build completes and eighteen of nineteen CPU stages pass.
+The original receipt-eviction regression still fails. A separate run retaining
+stderr after its unchanged rapid-write loop captures `MoveFileExW`,
+`previous_publish` and Windows error 5. Its native process closes with code zero;
+the original test remains failed. This identifies access denial at backup
+publication, not the responsible process or filesystem condition.
+
+The new Windows protocol fixture separately passes 243 request/reply pairs
+across four native owners. It verifies actual blocked primary and backup
+replacement, complete primary/native/history/receipt preservation on rejection,
+expected sidecars, identical-request recovery, receipt replay and cold reopen.
+Its 131 additional current-build commits pass under a different observation
+pattern; they do not qualify a fix for the rapid-write failure. All 23 selected
+Linux headless CTests pass, including the earlier world/MCP discovery checks
+and the new native storage fixture. The recorded outer Jobs and process groups close without forced
+cleanup. These runs do not qualify actual short-write/flush/close failures,
+power-loss durability, Windows failure causation or the broader Alpha gates.
+[Results and retained failures](evidence/m2-world-storage-diagnostics.json).
 
 Version 0.0.171 restores focused mutation discovery when component values
 contain standard `if`/`then`/`else` schemas. A request for `Transform` keeps its

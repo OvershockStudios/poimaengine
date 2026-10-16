@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.171 LANGUAGES C CXX)
+project(Poima VERSION 0.0.172 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -1251,6 +1251,19 @@ endif()
 
 if(POIMA_ENABLE_AUDIO AND WIN32)
     add_custom_command(TARGET poima POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${POIMA_STEAM_AUDIO_ROOT}/lib/windows-x64/phonon.dll" "$<TARGET_FILE_DIR:poima>/phonon.dll")
+endif()
+
+# Real filesystem storage diagnostics; no engine process or graphics lifetime.
+if(POIMA_BUILD_TESTS)
+    add_executable(poima-world-storage-test tests/world_storage_diagnostics.cpp)
+else()
+    add_executable(poima-world-storage-test EXCLUDE_FROM_ALL tests/world_storage_diagnostics.cpp)
+endif()
+target_compile_features(poima-world-storage-test PRIVATE cxx_std_20)
+set_target_properties(poima-world-storage-test PROPERTIES CXX_EXTENSIONS OFF)
+if(POIMA_BUILD_TESTS)
+    add_test(NAME world_storage_native COMMAND poima-world-storage-test)
+    set_tests_properties(world_storage_native PROPERTIES TIMEOUT 30)
 endif()
 
 # Pure discovery projection contract: no engine process or graphics lifetime.

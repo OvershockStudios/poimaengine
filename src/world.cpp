@@ -1118,14 +1118,14 @@ class World {
         require(fs::exists(path_) == exists_ && (!exists_ || read(path_) == disk_),
             "World file changed outside this session; reopen before editing.", -32009);
         auto pending = path_; pending += ".pending";
-        write_flushed(pending, bytes);
+        write_flushed(pending, bytes, StorageStage::primary_staging);
         if (exists_) {
             auto previous = path_; previous += ".previous";
             auto previous_pending = path_; previous_pending += ".previous.pending";
-            write_flushed(previous_pending, disk_);
-            replace_file(previous_pending, previous);
+            write_flushed(previous_pending, disk_, StorageStage::previous_staging);
+            replace_file(previous_pending, previous, StorageStage::previous_publish);
         }
-        replace_file(pending, path_);
+        replace_file(pending, path_, StorageStage::primary_publish);
         // All potentially failing preparation precedes publication. Swapping
         // state after rename cannot accidentally roll back a committed request.
         doc_.swap(candidate);
@@ -3801,7 +3801,10 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
     }catch(const Json::exception&) {
         response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",-32602},{"message","Invalid operation parameters."}}}};
     }catch(const std::exception& error) {
-        std::cerr<<"World operation failed: "<<error.what()<<'\n';
+        std::cerr<<"World operation failed: "<<error.what();
+        if(const auto* storage=dynamic_cast<const world_detail::StorageFailure*>(&error))
+            world_detail::append_storage_diagnostic(std::cerr,*storage);
+        std::cerr<<'\n';
         response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",-32000},{"message","World storage failure; inspect stderr."}}}};
     }
     return notification ? std::string{} : response.dump();

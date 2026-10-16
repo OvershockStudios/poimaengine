@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.172
+
+- Add Windows world-storage stderr diagnostics with the failed native operation, publication stage and immediately captured error code. Preserve existing JSON-RPC errors, exception messages and commit ordering. [Storage and recovery](docs/WORLD_STORAGE_DIAGNOSTICS.md).
+- Verify controlled primary/backup publication failures, unchanged state on rejection, identical-request recovery, receipt replay and cold reopening. Capture a failure in the original write-stress workload at backup publication with Windows error 5; keep the failed regression and the separate successful protocol cohort distinct. [Results and scope](docs/evidence/m2-world-storage-diagnostics.json).
+
 ## 0.0.171
 
 - Restore focused mutation schemas through standard nested conditionals, preserving complete selected branches, transaction guards and reserved runtime-contract metadata. Keep conservative handling for references, unfamiliar schemas and branch-level ambiguity. [Discovery guide](docs/WORLD_SERVICE.md#focused-discovery-development).

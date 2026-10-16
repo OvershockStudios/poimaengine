@@ -186,6 +186,10 @@ Commit serializes and flushes a staged candidate, publishes the previous primary
 
 A malformed primary is rejected without silently replacing it with a backup. To recover, close writers, preserve the bad file for diagnosis and explicitly restore `.previous` over the primary. The backup is one prior snapshot, not a history. Opening a valid document reconstructs its authored state and receipts.
 
+Windows operation/stage diagnostics and identical-request recovery are described
+in the [storage guide](WORLD_STORAGE_DIAGNOSTICS.md). Capture stderr separately
+from protocol stdout; a storage error retains the existing JSON-RPC response.
+
 ## Limits and diagnostics
 
 The initial service allows 10,000 live entities, 256 operations per transaction, a 16 MiB world document including receipts/retired IDs, 1 MiB request lines, and JSON nesting up to 64. Revisions are safe JSON integers through 2^53−1. Transactions copy and validate the document; large-world performance, long-lived deletion histories and streaming are not qualified. These limits bound an initial implementation, not final engine capacity.

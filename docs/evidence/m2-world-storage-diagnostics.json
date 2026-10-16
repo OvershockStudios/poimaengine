@@ -1,0 +1,188 @@
+{
+  "checkpoint": "0.0.172",
+  "scope": "Selected Windows storage diagnostics, controlled native publication failures and exact recovery; Linux headless regression. Earlier failed records remain failed. No fix or external root-cause finding for intermittent publication errors.",
+  "behavior": {
+    "public_error": {
+      "code": -32000,
+      "message": "World storage failure; inspect stderr."
+    },
+    "diagnostic_channel": "Native service stderr, separate from JSON-RPC stdout",
+    "internal_fields": [
+      "operation",
+      "stage",
+      "win32_code",
+      "requested",
+      "written",
+      "close_win32_code"
+    ],
+    "preserved_boundary": "Original exception text, JSON-RPC storage error and snapshot publication order remain unchanged. No automatic retry is added. POSIX helper behavior remains unchanged."
+  },
+  "windows": {
+    "native_build": {
+      "passed": true,
+      "generation": 35,
+      "compiled_inputs": 332,
+      "sealed_artifacts": 9
+    },
+    "campaign": {
+      "passed": false,
+      "passed_stages": 18,
+      "total_stages": 19,
+      "failed_stage": "world_contract",
+      "failed_test": "test_receipt_eviction_preserves_stale_revision_guard",
+      "world_contract_passed": 13,
+      "world_contract_total": 14,
+      "outer_exit_code": 1,
+      "forced_cleanup": false,
+      "scope": "All19 stages ran. The retained failure remains a failed gate; the eighteen passing stages and controlled protocol do not regrade it."
+    },
+    "protocol": {
+      "passed": true,
+      "independent_file_audit_passed": true,
+      "native_owners": 4,
+      "owner_rpc_pairs": [
+        45,
+        9,
+        45,
+        144
+      ],
+      "original_rpc_pairs": 243,
+      "controlled_publication_failures": 4,
+      "raw_public_error_reply_byte_pairs": 2,
+      "whole_snapshot_records": 306,
+      "payload_paths_per_snapshot": 4,
+      "complete_native_read_results": 94,
+      "additional_current_commits": 131,
+      "final_current_revision": 135,
+      "receipt_count": 128,
+      "actual_independent_oracles": [
+        {
+          "stage": "previous_publish",
+          "operation": "MoveFileExW",
+          "flags": 9,
+          "succeeded": false,
+          "observed_win32_code": 5
+        },
+        {
+          "stage": "primary_publish",
+          "operation": "MoveFileExW",
+          "flags": 9,
+          "succeeded": false,
+          "observed_win32_code": 5
+        }
+      ],
+      "scope": "Separate sealed171/current owners retain raw request/reply/stderr. Real deny-delete handles force primary_publish and previous_publish failures. Independent owned-file OS probes record the literal actual stage-specific codes. Complete authored documents, receipts, history, entity/query/inspect results and all four snapshot payloads match independent forecasts.",
+      "recovery": "After each acknowledged error and complete unchanged-state observations, release the owned handle and resubmit identical parameters. Commit once, verify exact receipt replay without file/history changes, close by EOF and reopen cold with stored document and receipts intact.",
+      "staging_scope": "Exact forecasts retain the new pending candidate and legitimate previous/previous.pending preparations. The original primary/native world remains unchanged on failure. No state field is omitted; the OS-held lock is not opened.",
+      "stress_scope": "131additional commits on a second entity after cold reopen, separately declared from the historical130-commit workload. Unexpected failures are not retried to obtain a pass."
+    },
+    "native_helper_test": {
+      "passed": true,
+      "real_os_scope": "Ordinary writes and controlled Windows staging-create/publication-rename failures on owned files.",
+      "constructed_scope": "Formatter inputs exercise failed-write, short-write, secondary-close, zero-code and bounded-number representations; actual short-write, flush and close failures are not injected."
+    },
+    "original_loop_capture": {
+      "passed": false,
+      "diagnostic_capture_complete": true,
+      "independent_file_audit_passed": true,
+      "tests_run": 1,
+      "failures": 1,
+      "native_exit_code": 0,
+      "outer_exit_code": 1,
+      "forced_cleanup": false,
+      "observed_operation": "MoveFileExW",
+      "observed_stage": "previous_publish",
+      "observed_win32_code": 5,
+      "ast_identical_selected_functions": 9,
+      "scope": "The original create-plus129renames test body and request methods are AST-identical. Decoded universal-newline stderr is retained only after closure. Explicit thread handles/EOF joins and post-test retention are harness differences. No raw wire, precise failed revision or per-call snapshots are claimed. This separate failed capture does not attribute or regrade earlier failures."
+    }
+  },
+  "linux": {
+    "campaign_passed": true,
+    "independent_file_audit_passed": true,
+    "ctest_passed": 23,
+    "ctest_total": 23,
+    "source_files": 348,
+    "sealed_files": 10,
+    "targets": 8,
+    "scope": "Headless simulation-off cohort, including ordinary POSIX helper checks and persisted asset/material/input/settings protocols. It does not run Windows fault injection, native Linux graphics or world_material_native. Earlier failed Linux170/171 gates retain their original verdicts."
+  },
+  "limits": [
+    "Controlled publication rename failures do not qualify power-loss directory durability or every filesystem interruption boundary.",
+    "Internal diagnostic fields are not a new public JSON-RPC schema or a frozen application ABI.",
+    "Actual error codes identify the observed call outcome, not which external process, filter or filesystem condition caused it.",
+    "Raw-wire/CAS protocol observations and post-closure decoded legacy text are separate evidence scopes; neither proves production scale or general reliability."
+  ],
+  "selected_public_sources": {
+    "src/world_storage.hpp": {
+      "bytes": 7775,
+      "sha256": "602232b760017f02b4db5fe064df7e014e24b83613407cdd085bdd3a9e94cc16"
+    },
+    "src/world.cpp": {
+      "bytes": 329193,
+      "sha256": "e6ecf2cd377615769b21dbbc474227dccc8a9cc1409ee726f15d40855ad908ca"
+    },
+    "tests/world_storage_diagnostics.cpp": {
+      "bytes": 8702,
+      "sha256": "a212cf7e0c177f2c6a9db355295e735f28b63496c4b2c6c997681da2752be0e1"
+    },
+    "tests/world_storage_protocol.py": {
+      "bytes": 20247,
+      "sha256": "bcb377545fb7a8d387ca2568181bf725017a9fd312d108dc8843d5e7e0c3bbad"
+    },
+    "tests/world_contract.py": {
+      "bytes": 36338,
+      "sha256": "8303ca513306fed2e579e789f1649e34447bbacfe7c55cd3c618ea016233c8ee"
+    }
+  },
+  "receipts": {
+    "windows_native": {
+      "bytes": 55560,
+      "sha256": "43d0d55fd5712f96bc69785bb1275ea34e559c367919ba921efcd486b4dd4703"
+    },
+    "windows_source_freeze": {
+      "bytes": 50090,
+      "sha256": "518a26979eb77bf5b0219ce814d4dc75a640f0e62dc9f24120ea2ef2519a4f7e"
+    },
+    "windows_seals": {
+      "bytes": 1635,
+      "sha256": "c581d8a85df651e6c87c4206d24888e0401a6a3c5f75c945260a05d6ed38ab69"
+    },
+    "windows_campaign": {
+      "bytes": 3035,
+      "sha256": "b45594b2f4f00cf80304537848eebd0c33bdb018332ffbd36723b844d842b441"
+    },
+    "windows_stages": {
+      "bytes": 74041,
+      "sha256": "f3f7e2a4bd4eb658559decf509dab4a42ed6a43c14a71e3a86ac9b6174928152"
+    },
+    "windows_protocol": {
+      "bytes": 479767,
+      "sha256": "51690a7d6cdb78c59bf1b36f6c6fab0f3b900656d68ecb103e4d2d39927aac41"
+    },
+    "windows_file_audit": {
+      "bytes": 108479,
+      "sha256": "ba6f77e2077c0a9b8b1b60d3d13280f0805ef3c22f9684017ae79fa23af38575"
+    },
+    "legacy_capture": {
+      "bytes": 4835,
+      "sha256": "21bf253a0ec271d6b0257e7adc5c7150f43ba27db4a24e4685b3876e07b8998c"
+    },
+    "legacy_capture_file_audit": {
+      "bytes": 4613,
+      "sha256": "743963520f6586a6f4ae440cdad3a06709272eb58436a074184a357ae22830a6"
+    },
+    "linux_campaign": {
+      "bytes": 110496,
+      "sha256": "f2161db7c5738d578904001a2de3540024d0c48fe3b5c6370b9409ba159b23c9"
+    },
+    "linux_ctest": {
+      "bytes": 18029,
+      "sha256": "4fea6092a6cdce0b5ca6b1319969c40a76232a252500afeee8c6f3d5e3bfeb2c"
+    },
+    "linux_file_audit": {
+      "bytes": 170006,
+      "sha256": "c2d0295c89d9b996f1e8bb0eb4c37820eab670b3265952bdf060dd20cef3f505"
+    }
+  }
+}
