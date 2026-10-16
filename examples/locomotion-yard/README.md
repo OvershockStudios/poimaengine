@@ -1,12 +1,15 @@
 # Locomotion Yard
 
 A compiled C# courier follows a native navigation route around solid cover.
-Its capsule owns movement; an attached imported character plays separate
-original Idle and Run animations. The sample includes redispatch, pause/resume,
+Its capsule owns movement; an attached imported character plays its original
+Idle and Run animations. The sample includes redispatch, pause/resume,
 durable checkpoints and a separate first-person observer.
 
-This sample uses the explicit [rotation retargeting policy](../../docs/ANIMATION_RETARGETING.md).
-It keeps the original target geometry, hierarchy, skin weights and inverse binds.
+Choose either the default Kenney body with separate FBX takes, or an intact
+KayKit Knight GLB library. The Kenney profile uses the explicit
+[rotation retargeting policy](../../docs/ANIMATION_RETARGETING.md); Knight plays
+takes from its own rig. Both retain original geometry, hierarchy, skin weights
+and inverse binds.
 The historical [Character Yard](../character-yard/README.md) remains a separate
 sample with its original arm-opening motion.
 
@@ -18,8 +21,10 @@ conversion, not an editor screenshot.*
 
 ## Prerequisites and original content
 
-Use a matching **0.0.75** engine, SDK and sample checkout, Python 3.9+, and a
-.NET 10 SDK for compilation. Enable simulation, navigation and game UI.
+Use the current sample and an engine with simulation, navigation and game UI.
+The Knight profile requires **0.0.174 or later**. Use Python 3.11+ and a .NET 10
+SDK when compiling gameplay; a supplied compatible Native AOT artifact needs
+neither the SDK nor CoreCLR at play time.
 Windows interactive play also requires Vulkan rendering. CoreCLR development
 requires `POIMA_ENABLE_MANAGED_GAMEPLAY=ON`, matching host headers and a built
 managed bridge; follow [managed setup](../../docs/MANAGED_GAMEPLAY.md#build).
@@ -30,7 +35,15 @@ graphical play.
 The module uses services epoch **7**, a **224-byte** prefix, and the features
 `baseline_v7`, `component_collections_v1`, `animation_inertial_v1`,
 `character_input_v1` and `navigation_query_v1`. Discover the actual build's
-capabilities before loading it.
+capabilities before loading it. A service epoch alone is insufficient: validate
+the artifact's complete call/prefix/feature requirements and component schemas.
+
+| Source profile | Original inputs | Playback |
+| --- | --- | --- |
+| `kenney-fbx` (default) | Kenney body, separate Run/Idle FBX files and `License.txt` | Two explicitly retargeted takes. |
+| `kaykit-knight-original-glb-v1` | Original Knight GLB and `LICENSE.txt` | All 76 takes retained; selects original Idle and Running_A. |
+
+### Default Kenney profile
 
 Obtain Kenney's original [Animated Characters Protagonists 1.1](https://kenney.nl/assets/animated-characters-protagonists),
 licensed [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/).
@@ -45,7 +58,7 @@ The launcher performs no downloads and requires these unchanged files:
 | `Animations/idle.fbx` | `c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74` |
 | `License.txt` | `68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd` |
 
-The sample rejects a different source profile. Other characters require their
+Each profile rejects different source files. Other characters require their
 own inspected references, clip selection and controller dimensions. These raw
 file pins differ from the normalized parsed-model fingerprints used by
 `asset.source.inspect` and the import policy.
@@ -56,6 +69,21 @@ retains local position deltas for `HipsCtrl` and `Hips`; other positions and
 all scales use the target reference. It creates exportable CC0 provenance.
 See [asset provenance](../../docs/ASSET_PROVENANCE.md) and
 [source inspection](../../docs/ANIMATION_RETARGETING.md#inspect-the-original-sources).
+
+### Original Knight library
+
+Obtain the unchanged **KayKit Adventurers 1.0 Knight**, by **Kay Lousberg**, and
+its original **CC0-1.0** notice using the pinned links and hashes in
+[Character library intake](../../docs/CHARACTER_LIBRARY.md#original-source).
+Place `Knight.glb` and `LICENSE.txt` in `build/knight-source`. The launcher performs
+no download or source conversion. The newer KayKit packs are different inputs.
+
+Select `--source-profile kaykit-knight-original-glb-v1` and use
+`--source-directory build/knight-source`. The profile retains all 57 nodes,
+41 skin joints, 15 meshes and 76 original takes. It configures **Idle (36)** and
+**Running_A (48)** directly; `Run` is only the sample's configuration label.
+No take is stripped, renamed or retargeted. The original embedded atlas and
+rigid accessories remain intact, with exportable creator/license provenance.
 
 ## Compile and extract schemas
 
@@ -79,7 +107,7 @@ With Windows-native Python and a matching Windows CoreCLR installation:
 
 ```powershell
 python examples/locomotion-yard/run.py `
-  --binary build/windows-runtime/poima.exe `
+  --binary build/windows-runtime/bin/poima.exe `
   --source-directory build/locomotion-source `
   --manifest build/locomotion-yard/game.poima-components.json `
   --assembly build/locomotion-yard/managed/Poima.LocomotionYardGame.dll `
@@ -87,6 +115,24 @@ python examples/locomotion-yard/run.py `
   --bridge managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll `
   --output build/locomotion-yard/play-01
 ```
+
+For Knight with a supplied compatible Native AOT artifact and its generated
+component manifest:
+
+```powershell
+python examples/locomotion-yard/run.py `
+  --binary build/windows-runtime/bin/poima.exe `
+  --source-profile kaykit-knight-original-glb-v1 `
+  --source-directory build/knight-source `
+  --manifest build/locomotion-yard/native-win/game.poima-components.json `
+  --descriptor build/locomotion-yard/native-win/native-gameplay.json `
+  --output build/locomotion-yard/knight-play-01
+```
+
+Keep the artifact's complete directory, including its notices. The same profile
+flag can be added to the CoreCLR command above, replacing its source directory.
+These are launch recipes; the recorded Knight workflow below is headless and
+does not qualify interactive rendering or physical input.
 
 Replace hostfxr with your installed, matching Windows runtime. Retain the whole
 bridge output directory, including its SDK assembly and runtime configuration.
@@ -123,10 +169,13 @@ The native controller travels from `(-4,0)` to `(4,0)` around the cover. Its
 maximum speed is **4 m/s**; the authored forward input of **0.75** gives
 **3 m/s** on unobstructed straight segments. Input slows within **0.8 m** of a
 route corner or destination, and stops while turning. Physics owns the resulting
-movement. The imported source scale is retained: measured standing height is
-approximately **3.7647** world units, with capsule radius **0.42**. The visual is
-offset from original standing bounds and rotated **180°** around Y so its source
-forward direction matches the controller.
+movement. Both profiles retain source scale and use capsule radius **0.42**.
+Kenney's standing height is approximately **3.7647** world units. Knight uses
+**2.466579007** from all original rest geometry, including its helmet and
+accessories; its visual Y offset is approximately **0.000026835**. The visual is
+rotated **180°** around Y, mapping the declared source +Z facing to controller
+−Z. Knight's rest foot-to-toe bones provide the source-facing witness. These
+are explicit collision/attachment choices, not a contact or stride calibration.
 
 Idle advances and loops while stationary; its initial lead time is **90 ticks**.
 Run also loops. C# measures the previous committed horizontal displacement over
@@ -138,11 +187,17 @@ calibration inferred from an in-place animation.
 Clip or binding changes use a **12-tick** inertial transition. Rate-only changes
 of at least `0.01` wait until an active transition ends, then update with no new
 fade and retain the observed clock. The saved counters distinguish transitions,
-accepted rate corrections and deferred corrections. The original Run has pose
-continuity at wrap (C0), but differing slopes (not C1). No loop repair, IK, foot
-locking, root-motion extraction or ground-contact fitting occurs here.
+accepted rate corrections and deferred corrections. Kenney's original Run has
+pose continuity at wrap (C0), but differing slopes (not C1). Knight retains its
+original Running_A root height offset of approximately **0.05**; the capsule
+owns travel. No loop repair, IK, foot locking, root-motion extraction or
+ground-contact fitting occurs here.
 
-## Verify headlessly
+## Verify the Kenney profile headlessly
+
+The existing `locomotion_yard_contract.py` and `locomotion_yard_bundle.py`
+verifiers select the pinned Kenney sources. They do not accept the Knight source
+folder as a generic replacement.
 
 Use a matching Linux simulation build with navigation, game UI and CoreCLR
 enabled. The authoring-only `headless` preset cannot execute this game.
@@ -182,7 +237,7 @@ SDK and its supported C++ linker toolchain:
 python scripts/publish_native_gameplay.py `
   --project examples/locomotion-yard/Poima.LocomotionYardGame.csproj `
   --type Poima.Examples.LocomotionYardGame `
-  --rid win-x64 --engine-version 0.0.75 `
+  --rid win-x64 `
   --output build/locomotion-yard/native-win `
   --work build/locomotion-yard/native-win-work
 ```
@@ -205,9 +260,11 @@ cmake --install build/windows-runtime --prefix build/locomotion-yard/runtime-win
 ```
 
 Build all configured install targets before installing and use a new prefix.
-The exporter, installed runtime and published artifact must agree on their
-engine version and required service features; relabeling an artifact cannot
-make an older runtime compatible.
+The exporter and installed runtime must have matching engine versions. A
+gameplay artifact must satisfy the runtime's full call, service-prefix and
+feature contract; its engine-version label alone does not establish
+compatibility. Preserve the published descriptor rather than relabeling it.
+An older runtime with an 8,192-channel reader cannot consume the Knight library.
 
 The launcher's development directory is not an exported game. Follow
 [project export](../../docs/PROJECTS.md#install-a-runtime-and-export) with a
@@ -215,7 +272,7 @@ version-2 project manifest referencing the native descriptor, authored world
 and cooked closure. Keep mutable saves outside the immutable bundle with an
 explicit `--save-root`.
 
-The dedicated verifier exports and relocates a bundle, removes its owned source
+The dedicated Kenney verifier exports and relocates a bundle, removes its owned source
 project, and runs the source-independent player before reconstructing a
 separate headless world for pose and checkpoint checks. Use Windows-native
 Python, Windows paths, assertions enabled and a new output directory:
@@ -236,7 +293,7 @@ preserved caller originals. Scripted playback/readbacks do not qualify physical
 input, editor usability, clean-machine deployment, crowds or frame-rate
 performance.
 
-## Recorded profile
+## Recorded Kenney profile
 
 [0.0.75 qualification](../../docs/evidence/m2-locomotion-game.json) records
 Windows/Linux CoreCLR and Native AOT, with an additional Windows GPU cohort:
@@ -251,3 +308,42 @@ courier observations through compiled state and renderer counts; direct native
 courier clocks and poses are checked in the separately reconstructed contract.
 The original source files and compiled inputs remain unchanged. Retained failed
 verifier attempts and their corrections are included in the evidence summary.
+
+## Recorded Knight runtime profile
+
+The separate 0.0.175 Windows headless workflow uses the unchanged 0.0.75
+Native AOT game on native 0.0.174. Its full artifact requirements and native
+canonical component schemas are checked independently of raw generated schema
+JSON. It runs 945 retained requests across two native owners, follows the
+controller's route around solid cover, and returns to advancing Idle.
+
+Five settled observations compare all 57 node transforms and sixteen rigid/skin
+deformation witnesses with original-accessor calculations. A sixth observation
+retains an actual moving inertial fade; it is not compared with an unblended
+destination pose. Deformation is calculated from actual runtime joints, rather
+than measured from GPU vertex buffers.
+
+Ten complete version-7 checkpoints retain all 45 typed gameplay globals, native
+physics, animation histories, UI, components and cameras. Seven comparisons
+cover exact rollback after unsupported Native AOT replacement, immediate warm
+and cold restoration, and complete prospective status/continuation forecasts.
+Post-restore epoch fields come from the actual host save epoch, with its restore
+ledger checked against the load receipt. Those fields remain in comparisons.
+
+The second owner reopens the relocated authored world and cooked store after
+the original owned project and admitted source paths become unavailable. Caller
+originals and a separately retained source copy remain intact.
+
+A separate check copies that same authored project, uses public gameplay
+adoption and export, then relocates the complete 65-file Windows bundle. Its
+bundled executable runs `game serve` from an unrelated working directory with
+a minimal PATH and external saves. Authoring commands reject; the saved fade
+restores exactly and the compiled courier completes the same route. Six full
+checkpoints and five whole-file comparisons retain every state field, including
+explicitly forecast host-epoch changes. The test-owned export project path is
+unavailable; the original consumer records and caller sources remain preserved.
+
+[Recorded results](../../docs/evidence/m2-character-library-locomotion.json)
+separate intake, warm/cold consumption and standalone service execution.
+Rendering, physical input, foot contact/IK, broader exporters, clean-machine
+installation and performance remain separate qualification scopes.

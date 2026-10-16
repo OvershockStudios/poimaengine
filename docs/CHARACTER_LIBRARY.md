@@ -105,6 +105,19 @@ owners compare the complete inspection/import results and every cooked package
 byte for the unchanged original animated-ribbon fixture. This checks one retained
 accepted asset, not universal package compatibility.
 
+## Use the library in compiled gameplay
+
+[Locomotion Yard](../examples/locomotion-yard/README.md#original-knight-library)
+has an explicit `kaykit-knight-original-glb-v1` source profile. It retains the
+complete library and selects its original Idle and Running_A takes, with the
+capsule owning movement. The default Kenney FBX profile remains separate.
+
+The Windows headless consumer checks controller-driven playback, a checkpoint
+during an active inertial fade, complete warm/cold restoration and route
+completion after relocation. Settled runtime joints are compared with the
+original curve arrays. Contact solving, IK and rendered appearance need their
+own qualification; intake alone does not establish them.
+
 ## Limits and recovery
 
 The [animation profile](ANIMATION_ASSETS.md#supported-profile-and-mathematics)
@@ -130,4 +143,5 @@ The cooked v4 layout is unchanged. Readers with the old 8,192-channel limit
 still reject a new package above that profile. The source PNG's bytes/header and
 cooked mip identities/dimensions are checked; this verifier does not independently
 validate every decoded texel or reproduce mip filtering. Rendered appearance,
-runtime locomotion, contacts and broader source families need separate evidence.
+contacts and broader source families need separate evidence. The compiled-game
+workflow above records runtime locomotion separately from these intake checks.

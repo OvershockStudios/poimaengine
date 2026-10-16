@@ -176,6 +176,20 @@ class OwnedGame:
         raise RuntimeError('Asset pagination exceeded its traversal budget.')
 
     def author(self, source_directory):
+        if getattr(self.args, 'source_profile', 'kenney-fbx') == 'kaykit-knight-original-glb-v1':
+            # An explicit sample profile; the default Kenney authoring path,
+            # pins and retarget requests below remain unchanged.
+            import importlib.util
+            import types
+            path = Path(__file__).with_name('knight_profile.py')
+            spec = importlib.util.spec_from_file_location('poima_locomotion_knight_profile', path)
+            if spec is None or spec.loader is None:
+                raise ImportError('Locomotion Yard Knight profile is missing.')
+            profile = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(profile)
+            bindings = types.SimpleNamespace(fixture=fixture, uid=uid, node_id=node_id,
+                RIG=RIG, NOMINAL_RUN_SPEED=NOMINAL_RUN_SPEED)
+            return profile.author_knight(self, source_directory, bindings)
         source_directory = Path(source_directory).resolve(strict=True)
         source_files = {name: source_directory/name for name in SOURCE_SHA}
         if not all(path.is_file() and sha(path)==SOURCE_SHA[name] for name,path in source_files.items()):
@@ -330,6 +344,7 @@ def main():
         parser.add_argument('--'+name, type=Path, required=True)
     for name in ('hostfxr', 'bridge', 'assembly', 'descriptor'):
         parser.add_argument('--'+name, type=Path)
+    parser.add_argument('--source-profile', choices=('kenney-fbx', 'kaykit-knight-original-glb-v1'), default='kenney-fbx')
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=-1)
     args = parser.parse_args()

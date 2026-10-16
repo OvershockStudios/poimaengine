@@ -90,9 +90,11 @@ parallel. Compiled gameplay uses the supported lifetime/data boundaries.
 **Dependencies:** state/resource ownership, fixed-tick contracts and observation.
 **Exit:** representative engine workloads use the shared scheduler, preserve
 declared state/results across worker counts, retire safely on reload/shutdown
-and show measured scaling without oversubscription. This begins during the
-first usable workflow after the current character-import slice, ahead of new
-large graphics, AI and simulation systems.
+and show measured scaling without oversubscription. The shared
+[native executor](JOBS.md) already runs animation sampling, procedural material
+baking and optional background save writes. Representative scaling and broader
+consumer integration remain part of this foundation, ahead of new large
+graphics, AI and simulation systems.
 
 ### 3. Production character and content pipeline
 

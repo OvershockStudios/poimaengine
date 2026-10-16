@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.175
+
+- Add an explicit original KayKit Knight profile to Locomotion Yard, retaining its complete 76-take GLB library and creator/license provenance. Preserve the default Kenney FBX workflow and use the same compiled courier gameplay. [Source profiles](examples/locomotion-yard/README.md).
+- Verify controller-driven animation, complete moving-fade saves, warm/cold continuation and a relocated standalone Windows game-service export, with explicit host-epoch forecasts and independent file review. [Results and scope](docs/evidence/m2-character-library-locomotion.json).
+
 ## 0.0.174
 
 - Extend glTF import with the existing narrow collapsed-UV tangent fallback for geometry without normal maps, preserving valid frames and reporting repaired corners. [Asset profile](docs/ASSETS.md).

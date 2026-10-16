@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.174**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.175**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The explicit Knight profile in [Locomotion Yard](../examples/locomotion-yard/README.md)
+integrates the complete original library with compiled C# movement, navigation
+and inertial Idle/Running_A transitions. Native Windows checks compare all
+57 runtime node transforms with original curves at five settled observations,
+retain an active fade, and verify ten complete checkpoints through warm and
+relocated cold continuation. A separate export of that same world runs through
+its bundled read-only game service and completes the route from the saved fade,
+with six further checkpoints and five whole-file comparisons. Host-epoch and
+callback changes are forecast explicitly; no saved fields are excluded.
+
+These checks use the unchanged 0.0.75 Native AOT game on native 0.0.174, with
+full artifact, service-prefix, feature and schema checks. They qualify this
+bounded headless composition, not rendered appearance, contact/IK, a clean
+machine or general binary compatibility.
+[Results and scope](evidence/m2-character-library-locomotion.json).
 
 Version 0.0.174 extends glTF import with the existing narrow collapsed-UV tangent
 fallback and supports 16,384 animation channels across a model's takes. Invalid

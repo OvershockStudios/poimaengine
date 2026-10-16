@@ -1,0 +1,240 @@
+{
+  "format": "poima.character-library-locomotion-evidence.v1",
+  "source_checkpoint": "0.0.175",
+  "summary": "Explicit intact original-library source profile in the existing compiled courier game; full warm/save/relocated-cold native consumption.",
+  "cohort": {
+    "native_engine_version": "0.0.174",
+    "compiled_game_artifact_version": "0.0.75",
+    "gameplay_source_unchanged": true,
+    "backend": "native_aot",
+    "compatibility_scope": "Actual required call/service prefix/features, all45 typed globals and two complete canonical component schemas checked. No universal ABI or old-game compatibility claim."
+  },
+  "sources": {
+    "examples/locomotion-yard/run.py": {
+      "bytes": 24307,
+      "sha256": "055aa6baf69e6ff71835cfcd82fce56e2d23c631586cbae51fd2b694b7203e07"
+    },
+    "examples/locomotion-yard/knight_profile.py": {
+      "bytes": 7257,
+      "sha256": "e8c6a323ae41eabab6243b13d17c99d0c4f33c9c418d48ac6a221da59e17056f"
+    },
+    "examples/locomotion-yard/LocomotionYardGame.cs": {
+      "bytes": 18004,
+      "sha256": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f"
+    }
+  },
+  "character": {
+    "creator": "Kay Lousberg",
+    "license": "CC0-1.0",
+    "source_url": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47",
+    "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "source_bytes": 3659532,
+    "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+    "nodes": 57,
+    "joints": 41,
+    "meshes": 15,
+    "takes": 76,
+    "channels": 8712,
+    "selected_original_takes": {
+      "Idle": 36,
+      "Running_A": 48
+    },
+    "takes_removed_or_renamed": false,
+    "retargeting": false,
+    "source_scale_retained": true,
+    "capsule_radius": 0.42,
+    "declared_capsule_height": 2.4665790070154516,
+    "nominal_run_speed_mps": 3,
+    "contact_or_stride_calibrated": false
+  },
+  "native_consumer": {
+    "passed": true,
+    "request_reply_pairs": 945,
+    "native_owners": 2,
+    "native_exit_codes": [
+      0,
+      0
+    ],
+    "compiled_route_completions": 2,
+    "direct_obstruction_ray_hit": true,
+    "endpoint_observations": 60,
+    "collision_scope": "Recorded sparse capsule endpoints and native cover ray; not every intermediate tick/contact.",
+    "inputs_unchanged": true,
+    "unknown_outcome": false
+  },
+  "pose_checks": {
+    "settled_observations": 5,
+    "nodes_per_observation": 57,
+    "node_comparisons": 285,
+    "joint_derived_vertex_witnesses": 80,
+    "maximum_matrix_error": 1.7500869919917506e-09,
+    "matrix_tolerance": 8e-05,
+    "maximum_deformation_error": 1.308495534146914e-10,
+    "deformation_tolerance": 0.00015,
+    "active_inertial_observations_retained": 1,
+    "scope": "Original accessor curves versus complete native runtime node matrices. Vertex deformation calculated from observed joints, not GPU vertex-buffer readback. Active inertial pose retained and checked through complete saves, not treated as unblended clip output."
+  },
+  "checkpoints": {
+    "complete_world_save_files": 10,
+    "snapshot_version": 7,
+    "top_level_payload_members": 14,
+    "typed_gameplay_globals": 45,
+    "complete_state_comparisons": 7,
+    "original_file_bytes_identical": 3,
+    "complete_prospective_forecasts": 4,
+    "field_exclusions": 0,
+    "byte_and_type_checks": true,
+    "checksum_forecasts": "Recomputed from whole prospective lexical payload; unchanged source number/string tokens retained.",
+    "epoch_policy": "Predict callback and control changes from game source and actual current host epoch; independently validate complete native restore ledger against load receipts. Epoch fields remain in every full-file comparison.",
+    "unsupported_native_replacement_full_rollback": true,
+    "known_write_retry_receipt_and_store_exact": true,
+    "save_tick": 172,
+    "settled_run_tick": 204,
+    "delivered_tick": 528
+  },
+  "relocation": {
+    "original_owned_project_and_admitted_source_paths_unavailable": true,
+    "caller_and_retained_away_source_copies_preserved": true,
+    "scope": "Fresh owner of relocated authored world and cooked store. The standalone_export record is a separate cohort using the same world.",
+    "complete_relocated_inventory_matches_forecast": true
+  },
+  "process_ownership": {
+    "external_job_assigned": true,
+    "total_processes": 3,
+    "active_at_exit": 0,
+    "active_after_cleanup": 0,
+    "terminated_processes": 0,
+    "forced_cleanup": false,
+    "fixture_files": 59,
+    "fixture_bytes": 23603589
+  },
+  "retained_record_identities": {
+    "consumer": {
+      "bytes": 6653793,
+      "sha256": "4a25ec2a4b96c342dab5743e87927ea9894821c23157cfd5717f943eaf4953f5"
+    },
+    "owner": {
+      "bytes": 2650,
+      "sha256": "90a8048fa6ca3f62728f223d32a9d308d9a3a493aa8ad3cad72240060a8c5e16"
+    },
+    "independent_actual_file_audit": {
+      "bytes": 25088,
+      "sha256": "af94c0fc45abb60ad001af7a4649726bb6b6471bb2092ac25e7fc672df0be275"
+    },
+    "runtime_installation": {
+      "bytes": 22100,
+      "sha256": "2f2ac0d11db20df031ebc21a6e8189fb376e160395df261d656928f41c1e9eeb"
+    },
+    "standalone_export": {
+      "bytes": 262401,
+      "sha256": "f7c099cd468f9123eea189027a1063fa36d47a6694e5028d102ea3a1b688e183"
+    },
+    "standalone_export_owner": {
+      "bytes": 2392,
+      "sha256": "dc367b58662971e33095f0d685e8555b864f7987430251b925cbf4f0ef4b28ae"
+    },
+    "independent_runtime_file_audit": {
+      "bytes": 112255,
+      "sha256": "9dd73292a89e77378cfa1f7a573b5b0b8b6867eba5ba0fc71777ebd08f18697f"
+    },
+    "independent_export_file_audit": {
+      "bytes": 115240,
+      "sha256": "be5077f0b8e3496fbc5866b38961a04365266ec71f15a3093636e958848288cc"
+    },
+    "consumer_public_review": {
+      "bytes": 2030,
+      "sha256": "1780a1f72af7d5b1ac9f0b5fcf09c7ba6469672e2bb7021d7ee9f3f58c371306"
+    }
+  },
+  "not_qualified": [
+    "Rendered appearance or GPU skin-buffer readback",
+    "Physical input and editor interaction",
+    "Foot contact, IK or stride fitting",
+    "Broader exporter families",
+    "Representative performance or Alpha completion"
+  ],
+  "reproduction": "The Locomotion Yard guide documents pinned inputs, source-profile launch, native publication and standard public project adoption/export. Recorded focused headless consumers are retained qualification harnesses; the existing public Kenney-specific verifiers remain separate.",
+  "runtime_installation": {
+    "passed": true,
+    "engine_version": "0.0.174",
+    "files": 49,
+    "bytes": 97481997,
+    "core_and_vendor_libraries_rebuilt": false,
+    "desktop_object_compile_and_link": true,
+    "native_core_and_original_seals_unchanged": true,
+    "stripped_native_images_loader_code_data_equivalent": true,
+    "forced_cleanup": false
+  },
+  "standalone_export": {
+    "passed": true,
+    "same_original_authored_world": true,
+    "public_operations": [
+      "project inspect",
+      "project adopt-gameplay",
+      "project build",
+      "game inspect"
+    ],
+    "native_cli_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "bundle_files": 65,
+    "bundle_bytes": 107625782,
+    "runtime_payloads": 49,
+    "retained_artifact_payloads": 9,
+    "runtime_engine_version": "0.0.174",
+    "retained_game_artifact_version": "0.0.75",
+    "bundled_game_serve_and_connect": true,
+    "unrelated_working_directory": true,
+    "minimal_path": true,
+    "original_test_owned_export_project_path_unavailable": true,
+    "original_bundle_path_unavailable": true,
+    "caller_sources_and_original_consumer_records_preserved": true,
+    "read_only_authoring_rejections": 2,
+    "request_reply_pairs": 50,
+    "complete_world_save_files": 6,
+    "whole_file_comparisons": 5,
+    "field_exclusions": 0,
+    "whole_epoch_forecasts_precomputed_before_mutations": true,
+    "restored_active_fade_tick": 172,
+    "continuation_batches": [
+      32,
+      324
+    ],
+    "delivered_tick": 528,
+    "compiled_delivery_completed": true,
+    "immutable_bundle_unchanged": true,
+    "host_exit_code": 0,
+    "connect_exit_code": 0,
+    "shutdown_acknowledged": true,
+    "job_total_processes": 7,
+    "job_active_at_exit": 0,
+    "job_active_after_cleanup": 0,
+    "job_terminated_processes": 0,
+    "forced_cleanup": false,
+    "inputs_unchanged": true,
+    "unknown_outcome": false,
+    "scope": "Headless standalone compiled game service; not presented Windows gameplay, physical input, clean-machine setup or a representative benchmark."
+  },
+  "independent_review": {
+    "consumer": "PASS: complete original raw requests, checkpoints, original-source FK and ownership.",
+    "runtime_installation": "PASS: source/seals, exact full installed closure, loader/code/data strip equivalence and process groups.",
+    "standalone_export": "PASS: all original CLI/wire records, shipping closure, six complete snapshots and independent whole-file epoch forecasts.",
+    "earlier_file_readers": [
+      {
+        "passed": false,
+        "cause": "Reader treated the ordinary Ninja Entering directory preamble as a bracketed build step.",
+        "native_verdict_changed": false
+      },
+      {
+        "passed": false,
+        "cause": "Reader compared literal CMake install-manifest paths without resolving its /./ spelling.",
+        "native_verdict_changed": false
+      }
+    ],
+    "original_failed_reader_records_preserved": true,
+    "native_reruns_for_reader_corrections": 0
+  }
+}
