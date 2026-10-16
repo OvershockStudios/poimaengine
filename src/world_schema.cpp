@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 101}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 102}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -270,12 +270,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         methods["runtime.observe"]=std::move(observation);
     }
     methods["runtime.gameplay.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"include_schema",{{"type","boolean"},{"default",false}}},{"fields",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",{{"type","string"}}}}}},{"session_id"});
+    methods["runtime.gameplay.metrics"]=object_schema({{"session_id",id},{"tick",rev}},{"session_id"});
+    methods["runtime.gameplay.metrics"]["description"]="Read optional per-module managed callback current-thread allocated bytes and runtime-wide GC collection deltas, without simulation or forced collection. Allocation churn is not heap/live bytes or per-frame allocation. Outside frozen authoring-core/runtime-game-session contracts; null module when no gameplay is loaded.";
     methods["runtime.gameplay.collect"]=object_schema({{"session_id",id}},{"session_id"});
     auto game_edit=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_revision",rev},
         {"values",{{"type","object"},{"maxProperties",128}}}}, {"session_id","request_id","expected_tick","expected_revision","values"});
     methods["runtime.gameplay.edit"]=game_edit;
     auto game_load=game_edit;
     for(const auto* key:{"hostfxr","bridge","assembly","type"})game_load["properties"][key]={{"type","string"},{"minLength",1},{"maxLength",4096}};
+    game_load["properties"]["profile_callbacks"]={{"type","boolean"},{"default",false},{"description","Opt-in CoreCLR callback allocation/GC observations; requires matched bridge negotiation, not saved gameplay state."}};
     game_load["required"]={"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"};
     methods["runtime.gameplay.load"]=game_load;
     auto native_load=game_edit;

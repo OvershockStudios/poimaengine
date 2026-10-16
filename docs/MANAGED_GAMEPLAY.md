@@ -6,6 +6,9 @@ The integrated gameplay SDK supplies one `Game<TState>` module per runtime, with
 
 Opt-in [persistent field metadata](GAMEPLAY_PERSISTENCE.md) assigns stable IDs and literal defaults to global state without changing normal initialization or the current exact-save restore rules.
 
+Opt-in [callback allocation and GC metrics](MANAGED_CALLBACK_METRICS.md) help
+investigate C# callback costs without forcing collection or changing saved state.
+
 ## Build
 
 From the repository root, obtain the optional workspace-local Linux .NET SDK if it is absent:

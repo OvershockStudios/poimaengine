@@ -1,0 +1,708 @@
+{
+  "format": "poima.managed-callback-metrics.evidence.v1",
+  "source_checkpoint": "0.0.167",
+  "date": "2026-10-16",
+  "scope": "Opt-in CoreCLR callback allocation/GC observations with separate native, helper and focused workflow qualification.",
+  "contract": {
+    "load_option": "profile_callbacks",
+    "strict_boolean": true,
+    "default_enabled": false,
+    "backend": "coreclr",
+    "bridge_negotiation_version": 1,
+    "read_operation": "runtime.gameplay.metrics",
+    "read_requires_session": true,
+    "optional_integer_tick": true,
+    "bounded_read_buffer_bytes": 8192,
+    "bucket_categories": [
+      "initialize",
+      "tick",
+      "control"
+    ],
+    "counter_encoding": "canonical unsigned decimal strings",
+    "measurement": "Current-thread allocated-byte deltas; CLR-runtime-wide collection-count deltas during actual validated managed callback attempts.",
+    "not_measured": [
+      "retained heap bytes",
+      "native allocations",
+      "other-thread allocations",
+      "exclusive collection cause",
+      "per-frame allocation",
+      "GPU residency"
+    ],
+    "diagnostic_state_saved": false,
+    "diagnostics_rolled_back": false,
+    "returned_means_native_committed": false,
+    "default_off_support": null,
+    "native_aot_support": false,
+    "frozen_contract_member": false
+  },
+  "compatibility": {
+    "gameplay_C_ABI_unchanged": true,
+    "gameplay_call_bytes": 80,
+    "services_epoch": 7,
+    "binary_gameplay_sdk_rebuilt": false,
+    "sdk_binary": {
+      "bytes": 180224,
+      "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+    },
+    "save_format_changed": false,
+    "selected_unchanged_source_pins": {
+      "include/poima/gameplay_abi.h": {
+        "bytes": 38482,
+        "sha256": "2a238cc703731f83486c49be9f7de6b51bb8f396560a00401e8a137e333ad4b2"
+      },
+      "src/runtime_save.inc": {
+        "bytes": 45669,
+        "sha256": "7186438341553c3f9921bc3d97d3ff5e50146783416c56ea78e41b7ca04a2e6e"
+      },
+      "src/save_store.cpp": {
+        "bytes": 29777,
+        "sha256": "41241b16b251a517b8d3e700c39258eb00cac15e34ab7a85ebc8646aa8ee2391"
+      },
+      "src/gameplay_save.cpp": {
+        "bytes": 7748,
+        "sha256": "9cc7ec3d78e2671a7ba407c733a457fbdc041b3ed1d3b191d279e413d1aa831c"
+      },
+      "src/world_save.inc": {
+        "bytes": 26344,
+        "sha256": "8e6bac65801e5127c7bfd98493af75ad0e375b11d52f66d28b3bc55ca676360e"
+      }
+    },
+    "scope": "Selected unchanged ABI/save source and exact SDK binary; no blanket C++ binary, arbitrary bridge or exported-game compatibility guarantee."
+  },
+  "windows": {
+    "build": {
+      "passed": true,
+      "seconds": 594.8059303460177,
+      "cache_generation": 32,
+      "compiled_sources": 314,
+      "sealed_artifacts": 11,
+      "source_inputs_unchanged": true
+    },
+    "cpu": {
+      "closure": {
+        "passed": true,
+        "seconds": 16.407896099961363,
+        "observed_processes": 7,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+      },
+      "stages": [
+        {
+          "seconds": 7.986506299930625,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 110,
+            "sha256": "502ab5652306680406e098506ec076193825caba9806ce52156f0458fa4c4b89"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "schema"
+        },
+        {
+          "seconds": 0.08707800006959587,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 148,
+            "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+          },
+          "stderr": {
+            "bytes": 684,
+            "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+          },
+          "name": "mcp"
+        },
+        {
+          "seconds": 0.06729279994033277,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 88,
+            "sha256": "cd250ba6f6a8c1626222772cf603ac307780df0802a9fa11db3b746fd51a749a"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "service_contract"
+        },
+        {
+          "seconds": 0.13785569998435676,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 324,
+            "sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "save"
+        },
+        {
+          "seconds": 0.39922120003029704,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 169,
+            "sha256": "b081efa87e8becb2a62c8c31dc17161ef7830d9c8bac66e9fcf0aa061d4b4735"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "components"
+        },
+        {
+          "seconds": 0.0450066999765113,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 159,
+            "sha256": "f2791420d167531ff4d7e53dc105d8b97aa8fb18abbc1637a07c8ebea6962c2f"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "owner_disabled"
+        }
+      ],
+      "scope": "Six selected CPU executions; not an exhaustive engine regression."
+    },
+    "managed": {
+      "closure": {
+        "passed": true,
+        "seconds": 9.622404400026426,
+        "observed_processes": 8,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+      },
+      "stages": [
+        {
+          "seconds": 3.5754379000281915,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 339,
+            "sha256": "0102fb7e29a7efda96b100fc93178506f1751ba44aaabc670c4d85632aee908c"
+          },
+          "stderr": {
+            "bytes": 99,
+            "sha256": "04dde9e46b902240a204acfb0cd5283be410828f0b3e1dc7b8e5f2d40e97272b"
+          },
+          "name": "bridge"
+        },
+        {
+          "seconds": 2.9058641999727115,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 366,
+            "sha256": "8221adffa0a9e4f377a973c525a14702a1c7335d7aaca39040a9ed4ba8a53a6f"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "helper-build"
+        },
+        {
+          "seconds": 0.2278124000877142,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 182,
+            "sha256": "dbcd6fd63026890fd14b58494f4a8b0fabddd5d3efa8fd1d12fe98b5eabfeb11"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "name": "helper-run"
+        }
+      ],
+      "helper_checks": 171,
+      "sdk_rebuilt": false,
+      "bridge_artifact_files": {
+        "Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+        },
+        "Poima.ManagedBridge.deps.json": {
+          "bytes": 854,
+          "sha256": "ac9c021dd722bb1bc5dda50e42a1f86fdf8c87ff266a74d4c557a4794d00b1d2"
+        },
+        "Poima.ManagedBridge.dll": {
+          "bytes": 50688,
+          "sha256": "6aba3347be4ea626ae44630a454aad0b017894160aa374715b4a5368ae749cfc"
+        },
+        "Poima.ManagedBridge.pdb": {
+          "bytes": 18564,
+          "sha256": "70a7b638f8c187a3f2f23ddfc735206cb7d801d445b013f81fe722910e45b58c"
+        },
+        "Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 377,
+          "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+        }
+      },
+      "scope": "New stable bridge against retained installed binary SDK; helper arithmetic and real CLR allocating/throw brackets, not hosted rollback or overhead by themselves."
+    }
+  },
+  "focused": {
+    "passed": true,
+    "campaign": 2,
+    "jobs": [
+      {
+        "passed": true,
+        "seconds": 3.6585218000691384,
+        "observed_processes": 6,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+      },
+      {
+        "passed": true,
+        "seconds": 3.24406799999997,
+        "observed_processes": 4,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+      }
+    ],
+    "rpc_count": 357,
+    "owner_rpc_counts": {
+      "actual_native_compile": 37,
+      "current": 246,
+      "old-bridge": 43,
+      "aot": 31
+    },
+    "complete_saved_documents": 20,
+    "whole_equal_pairs": 8,
+    "comparison_exclusions": [],
+    "selected_enabled_module_snapshots": [
+      {
+        "assembly_sha256": "8a5a79bd5a065a3de901abb3c5dfc52d602305b6a60058d3b87afd9bd2e86d9b",
+        "backend": "coreclr",
+        "data": {
+          "control": {
+            "allocated_bytes": "17176",
+            "calls": "2",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "8920",
+            "returned": "1",
+            "samples": "2",
+            "threw": "1"
+          },
+          "format": "poima.managed-callback-metrics.v1",
+          "initialize": {
+            "allocated_bytes": "32792",
+            "calls": "1",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "32792",
+            "returned": "1",
+            "samples": "1",
+            "threw": "0"
+          },
+          "last_issue": null,
+          "module_handle": "4",
+          "owner_thread_id": 2,
+          "saturated": false,
+          "tick": {
+            "allocated_bytes": "17992",
+            "calls": "4",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "4864",
+            "returned": "3",
+            "samples": "4",
+            "threw": "1"
+          },
+          "version": 1
+        },
+        "enabled": true,
+        "format": "poima.gameplay-callback-metrics.v1",
+        "identity": "poima.qualification.callback-metrics",
+        "supported": true,
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "assembly_sha256": "8a5a79bd5a065a3de901abb3c5dfc52d602305b6a60058d3b87afd9bd2e86d9b",
+        "backend": "coreclr",
+        "data": {
+          "control": {
+            "allocated_bytes": "0",
+            "calls": "0",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "0",
+            "returned": "0",
+            "samples": "0",
+            "threw": "0"
+          },
+          "format": "poima.managed-callback-metrics.v1",
+          "initialize": {
+            "allocated_bytes": "32792",
+            "calls": "1",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "32792",
+            "returned": "1",
+            "samples": "1",
+            "threw": "0"
+          },
+          "last_issue": null,
+          "module_handle": "6",
+          "owner_thread_id": 2,
+          "saturated": false,
+          "tick": {
+            "allocated_bytes": "0",
+            "calls": "0",
+            "gen0_collections": "0",
+            "gen1_collections": "0",
+            "gen2_collections": "0",
+            "invalid_samples": "0",
+            "max_allocated_bytes": "0",
+            "returned": "0",
+            "samples": "0",
+            "threw": "0"
+          },
+          "version": 1
+        },
+        "enabled": true,
+        "format": "poima.gameplay-callback-metrics.v1",
+        "identity": "poima.qualification.callback-metrics",
+        "supported": true,
+        "unavailable_reason": null,
+        "version": 1
+      }
+    ],
+    "snapshot_selection": "Last retained metrics read from each of two enabled current-owner module lifetimes; not a complete event/allocation trace.",
+    "checks": [
+      "default and explicit-false disabled observations",
+      "strict load flag and read guards",
+      "actual allocating Initialize/Tick/Control",
+      "throwing Tick/Control and candidate Initialize rollback",
+      "returned callback rejected by native entity validation",
+      "read-only complete native save preservation",
+      "successful reload resets diagnostic lifetime",
+      "old bridge missing opt-in negotiation preserves selected module",
+      "old NativeAOT unsupported observations preserve complete saved state"
+    ],
+    "scope": "Headless three-owner focused fixture plus separate native compiler owner; no rendering, physical input, frame budget or recording-overhead qualification."
+  },
+  "linux": {
+    "passed": true,
+    "seconds": 453.19011458498426,
+    "tests": [
+      {
+        "name": "gameplay_service_contract",
+        "seconds": "0.0276892",
+        "explicit_seconds": null,
+        "default_seconds": 60,
+        "effective_seconds": 60,
+        "status": "passed"
+      },
+      {
+        "name": "player_owner_poll_disabled",
+        "seconds": "0.0164967",
+        "explicit_seconds": 10.0,
+        "default_seconds": 60,
+        "effective_seconds": 10.0,
+        "status": "passed"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "45.679",
+        "explicit_seconds": 180.0,
+        "default_seconds": 60,
+        "effective_seconds": 180.0,
+        "status": "passed"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.0546261",
+        "explicit_seconds": 120.0,
+        "default_seconds": 60,
+        "effective_seconds": 120.0,
+        "status": "passed"
+      },
+      {
+        "name": "cli_contract",
+        "seconds": "1.01666",
+        "explicit_seconds": 60.0,
+        "default_seconds": 60,
+        "effective_seconds": 60.0,
+        "status": "passed"
+      }
+    ],
+    "sealed_artifacts": 7,
+    "native_windows_source_join": 314,
+    "selected_sources": 315,
+    "cache_before": {
+      "files": 156,
+      "bytes": 338124510,
+      "all_hashes_verified": true
+    },
+    "prior_166_preserved": true,
+    "prior_165_aggregate_passed": false,
+    "scope": "Offline Debug O0/g0 disabled-headless CLI/schema/MCP/service-contract/owner tests; no CoreCLR, NativeAOT module, simulation or graphics execution."
+  },
+  "full_consumer": {
+    "qualified": false,
+    "status": "not_included_without_actual_pass_and_independent_reader"
+  },
+  "limits": [
+    "No managed allocation call-stack/timeline UI, heap census, leak diagnosis or retention proof.",
+    "No matched recorder-overhead or no-continuing-memory-growth qualification.",
+    "No30-minute mixed reliability, focused frame-time, physical input, clean-machine or Alpha completion claim.",
+    "GC may occur naturally during queries; the observer never forces collection or waits for finalizers.",
+    "Diagnostics describe attempted callbacks, even after failed native validation/transaction rollback; queries do not serialize these counters into gameplay saves."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 87488,
+      "sha256": "9261a9410575f82f692e74ca4b9b5d2c31a4eeda928cd1d066005d4cd64de2d9"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "f227f3e94704d907f91d4b4b620f855b751f0c21b1082f2896bb2d047ad4020d"
+    },
+    "include/poima/gameplay.hpp": {
+      "bytes": 2717,
+      "sha256": "594b38e620ab83c541c3275283b4ceb047d900d260fb51b8b2acb3bf331feb82"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 66323,
+      "sha256": "9820b95e91e924932c8affd4ef4dabb9f00ba1719af5baf8b0987e0f8efc288a"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 25726,
+      "sha256": "daeacbaaff1e8cd75f42b506f8904f6e095d436acf76951056763b4c09cc1d35"
+    },
+    "src/runtime.cpp": {
+      "bytes": 149500,
+      "sha256": "21997a0353634c33caafb303afe2eae58269d9af626533d952e04740e7beb09a"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 9185,
+      "sha256": "24b81070ffddd2ae0e82dae83ea4cc513c9a0b7d3e917a81802063a43092baf3"
+    },
+    "src/world.cpp": {
+      "bytes": 327044,
+      "sha256": "49e0a171230789ebc6040a05af772158d749baa218c87b4cfbf46fce662e8039"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 62820,
+      "sha256": "6b6a3eb2e533ca2f04d40435948b33027d5764a77bf22fb5fad5ccb68b518783"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 112437,
+      "sha256": "d531e69b301d37855bc860c22548f7db4d51acc2c1b0213d7d4d8f679d822459"
+    },
+    "tests/world_schema_native.cpp": {
+      "bytes": 22602,
+      "sha256": "11d16b129ea1c42a04a1e64809241c67b5315747ea6a81aa31e8e49c773c3876"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 13973,
+      "sha256": "a865844cb3b4e20af228f4d5e13d3439f34a983c7214cc144da122c32451cef9"
+    },
+    "managed/Poima.ManagedBridge/CallbackMetrics.cs": {
+      "bytes": 6079,
+      "sha256": "9d53a7e3f02ffad33abdf028385e4bbe38fc6d8fc5bed581f8057bb982fb2da1"
+    },
+    "tests/managed_callback_metrics/Program.cs": {
+      "bytes": 9867,
+      "sha256": "6c5472f248b339fa2475b843d99eea55226a00dd1c99fb257b11e7dbe2936c95"
+    },
+    "tests/managed_callback_metrics/ManagedCallbackMetrics.csproj": {
+      "bytes": 484,
+      "sha256": "b0024bbff02b314c2b65c34af39213e84e1116fd4fb45e388e3be7f62f252e3b"
+    },
+    "tests/managed_callback_metrics/README.md": {
+      "bytes": 730,
+      "sha256": "7e038664cd95e75120e0e4edfd0dc8dbeeb16cf2e70474aac2b7e71e2291707e"
+    },
+    "tests/gameplay_callback_metrics_contract.py": {
+      "bytes": 22870,
+      "sha256": "0e2a1d50ec6e24f9fe40b165fb330c9e2f041193902dbc2c22c2ff3162b2e122"
+    },
+    "tests/managed_callback_metrics_game/CallbackProbe.cs": {
+      "bytes": 2828,
+      "sha256": "5eef098b039cc5ff1527ba0f44293b5aa3e0293de4553d1797e59ff1569b716a"
+    },
+    "tests/managed_callback_metrics_game/Poima.CallbackMetricsGame.csproj": {
+      "bytes": 524,
+      "sha256": "41deb1905c3ae436e99c669eecb6fde22905f79619c228ffb4d4715cad782e07"
+    }
+  },
+  "source_qualification_joins": {
+    "CMakeLists.txt": "windows_native_source_freeze",
+    "tools/python/pyproject.toml": "version_metadata_only",
+    "include/poima/gameplay.hpp": "windows_native_source_freeze",
+    "src/gameplay.cpp": "windows_native_source_freeze",
+    "include/poima/runtime.hpp": "windows_native_source_freeze",
+    "src/runtime.cpp": "windows_native_source_freeze",
+    "src/runtime_disabled.cpp": "windows_native_source_freeze",
+    "src/world.cpp": "windows_native_source_freeze",
+    "src/world_player_service.inc": "windows_native_source_freeze",
+    "src/world_schema.cpp": "windows_native_source_freeze",
+    "tests/world_schema_native.cpp": "windows_native_source_freeze",
+    "managed/Poima.ManagedBridge/Entry.cs": "managed_bridge_and_helper_inputs",
+    "managed/Poima.ManagedBridge/CallbackMetrics.cs": "managed_bridge_and_helper_inputs",
+    "tests/managed_callback_metrics/Program.cs": "managed_bridge_and_helper_inputs",
+    "tests/managed_callback_metrics/ManagedCallbackMetrics.csproj": "managed_bridge_and_helper_inputs",
+    "tests/managed_callback_metrics/README.md": "managed_bridge_and_helper_inputs",
+    "tests/gameplay_callback_metrics_contract.py": "focused_original_inputs",
+    "tests/managed_callback_metrics_game/CallbackProbe.cs": "focused_original_inputs",
+    "tests/managed_callback_metrics_game/Poima.CallbackMetricsGame.csproj": "focused_original_inputs"
+  },
+  "retained_failures": [
+    {
+      "kind": "focused_collector_1",
+      "aggregate_passed": false,
+      "written_inner_passed": true,
+      "physical_byte_difference": 147,
+      "native_workers_passed": {
+        "compile": true,
+        "focused": true
+      },
+      "cause": "Final physical-byte census differed by CRLF expansion; original enclosing failure remains failed, even though native workers passed."
+    },
+    {
+      "kind": "full_preparation_1",
+      "passed": false,
+      "native_executed": false,
+      "compiler_executed": false,
+      "cause": "File-only preparation imported an unavailable helper name and failed before a producer or plan."
+    },
+    {
+      "kind": "full_consumer_1",
+      "passed": false,
+      "forced_cleanup": true,
+      "attempted_compile_jobs": 1,
+      "compiler_terminal_observed": false,
+      "play_intervals": 0,
+      "cause": "Original collector rejected an output during concurrent file retirement; the record lacks the path/type needed for a definitive causal identity. No compilation success or gameplay qualification is inferred."
+    },
+    {
+      "kind": "full_consumer_2",
+      "passed": false,
+      "baseline_compile_completed": true,
+      "component_extraction_exit_code": 0,
+      "play_intervals": 0,
+      "forced_cleanup": false,
+      "outer_accounting": {
+        "observed_processes": 8,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "exit_code": 1,
+        "scope": "Original outer Job accounting only; not a per-descendant natural-exit claim."
+      },
+      "raw_generator_matches_retained_native94_typed": true,
+      "raw_generator_matches_authored_registry_typed": false,
+      "all_four_schema_fingerprints_match": true,
+      "typed_default_token_differences": 15,
+      "original_data_coerced": false,
+      "engine_fault_established": false,
+      "cause": "A strict prerequisite compared raw generated component metadata with an authored canonical registry. Fifteen float64 defaults have distinct integer versus floating JSON tokens. The independent original-file comparison preserves those types; no gameplay or compatibility qualification follows, and the original assertion failure stays failed."
+    }
+  ],
+  "original_report_identities": {
+    "windows_build_result": {
+      "bytes": 56099,
+      "sha256": "dfa8e33ac6e53df68b40ed500a7f55469e74b95d3a2a863be966fc37b3c71cca"
+    },
+    "windows_source_pins": {
+      "bytes": 47297,
+      "sha256": "12bed7ffb73e75651495954a1b0ab62eedcf636205846a56892e3688b4c3d717"
+    },
+    "windows_sealed_artifacts": {
+      "bytes": 1957,
+      "sha256": "f7a0b19e93a5506aedc45a9d0f7d7a2e8b33e6de1fcfdf3b6f2d6a5bcfefbc4b"
+    },
+    "windows_cpu_report": {
+      "bytes": 57185,
+      "sha256": "892b3011f435c070af6891e0d996dfad28d722e0f2252c5b57fc26e612f69cae"
+    },
+    "windows_cpu_qualification": {
+      "bytes": 2238,
+      "sha256": "bdb2e3656e33965300b2fd0618ceecc0ac31c7746c7b7592cb51aaca39a38e9a"
+    },
+    "managed_report": {
+      "bytes": 114566,
+      "sha256": "ba19f6cd7ad2ec3a2ce04a4a2b15d5eaf0dcdc6d52e2fa39b61ba8da480095ca"
+    },
+    "managed_qualification": {
+      "bytes": 1757,
+      "sha256": "e7d05a97b6cc360726d72a810bb14dcb8b0518eaa5b286965f86d2821d77b30d"
+    },
+    "focused_report": {
+      "bytes": 27626,
+      "sha256": "6c37df53628d46eb994999d67b9f28c58d417187b401d78b08284e07a58a9b4a"
+    },
+    "focused_qualification": {
+      "bytes": 5157,
+      "sha256": "7a64ffe79dadcaa3be499a5fad98d1b26a9b21992fa5eedeae728a4f1f6c38f9"
+    },
+    "focused_independent_audit": {
+      "bytes": 48755,
+      "sha256": "ace5f9d09d037ad787dc6533350b44a9cc961c68ef6ed7b112f3b83356121824"
+    },
+    "focused_current_transcript": {
+      "bytes": 639197,
+      "sha256": "3400f8c446f714cb1d11ad64f34399bea4088acac580abf3153f9e14e3c7ec94"
+    },
+    "linux_report": {
+      "bytes": 54716,
+      "sha256": "977fedce089616b8c86f561f9c3dc175eadf887b99644bca8daf9a29316d7cba"
+    },
+    "linux_junit": {
+      "bytes": 3262,
+      "sha256": "e6f53ea483ab6e241935edded6f64e0c6d9d89ff246efa4551aacd88633589a9"
+    },
+    "linux_independent_audit": {
+      "bytes": 6185,
+      "sha256": "26be9b10d835b441c4c8ec143037dd55af454a97ec346f242e1511d70c1afde7"
+    },
+    "retained_focused_collector_1": {
+      "bytes": 874,
+      "sha256": "09b96e736d9c82a172faaf3f7782437b59c91641711c9844dcfe63e5973332bb"
+    },
+    "retained_full_preparation_1": {
+      "bytes": 736,
+      "sha256": "b45b50f7f3d03142e6535eb94a68d43a869e5db153540d5900a21ad9db4138e8"
+    },
+    "retained_full_consumer_1": {
+      "bytes": 1572,
+      "sha256": "0eff176516c11f82a09375bd095f15611c0f3b80c3a8e528eb8e2ef80d47ee59"
+    },
+    "retained_full_consumer_2_report": {
+      "bytes": 33417,
+      "sha256": "39694e7fb72e73feff765f2bd3bdd3ef82103bdca8c0edf9e198240a7d97aee2"
+    },
+    "retained_full_consumer_2_qualification": {
+      "bytes": 2906,
+      "sha256": "7e0506e306544adbac31c7cbacd10f181f69ebb121757e5e902d4347bb3694d7"
+    },
+    "retained_full_schema_boundary_review": {
+      "bytes": 3744,
+      "sha256": "e7173a87ff2a5af20ef72bf3db6b001052c159de7cd3fe4e05b661de998b7d85"
+    }
+  }
+}

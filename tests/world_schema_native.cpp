@@ -25,6 +25,47 @@ std::map<std::string,std::string> tree(const fs::path& root) {
 Json invoke(poima::WorldSession& owner,const char* method,const Json& params,poima::WorldRequestScope scope) {
     return Json::parse(owner.request(Json{{"jsonrpc","2.0"},{"id",17},{"method",method},{"params",params}}.dump(),scope));
 }
+void callback_admission(const fs::path& file) {
+    poima::WorldSession owner(file.string());const auto scope=poima::WorldRequestScope::standalone;
+    const auto discovery=invoke(owner,"world.describe",Json::object(),scope).at("result");
+    if(!discovery.at("runtime_available").get<bool>())return; // Disabled builds still check discovery/all six scopes below.
+    const auto before_files=tree(file.parent_path());const auto session=std::string(32,'a');
+    const auto revision=invoke(owner,"world.inspect",Json::object(),scope).at("result").at("revision");
+    need(invoke(owner,"runtime.start",{{"session_id",session},{"revision",revision}},scope).contains("result"),"Cannot start callback admission fixture.");
+    const auto baseline=invoke(owner,"runtime.inspect",{{"session_id",session}},scope);
+    const auto read=invoke(owner,"runtime.gameplay.metrics",{{"session_id",session},{"tick",0}},scope);
+    need(read.contains("result") && read.at("result")==Json({{"session_id",session},{"tick",0},{"revision",0},{"structure_revision",0},{"module",nullptr}}),
+        "Callback metrics no-module response fabricated observations.");
+    for(const auto& tick:Json::array({0.0,true,-1,nullptr,"0"})) {
+        const auto invalid=invoke(owner,"runtime.gameplay.metrics",{{"session_id",session},{"tick",tick}},scope);
+        need(invalid.contains("error") && invalid.at("error").at("code")==-32602,"Callback metrics accepted a noninteger Tick guard.");
+    }
+    const auto stale=invoke(owner,"runtime.gameplay.metrics",{{"session_id",session},{"tick",1}},scope);
+    need(stale.contains("error") && stale.at("error").at("code")==-32009,"Callback metrics ignored a stale Tick guard.");
+    const auto extra=invoke(owner,"runtime.gameplay.metrics",{{"session_id",session},{"unknown",true}},scope);
+    need(extra.contains("error") && extra.at("error").at("code")==-32602,"Callback metrics accepted an unknown field.");
+    Json load={{"session_id",session},{"request_id",std::string(32,'b')},{"expected_tick",0},{"expected_revision",0},
+        {"hostfxr","missing-host.dll"},{"bridge","missing-bridge.dll"},{"assembly","missing-game.dll"},{"type","Missing.Game"}};
+    for(const auto& flag:Json::array({0,1,0.0,1.0,nullptr,"true",Json::array(),Json::object()})) {
+        auto params=load;params["profile_callbacks"]=flag;const auto reply=invoke(owner,"runtime.gameplay.load",params,scope);
+        need(reply.contains("error") && reply.at("error").at("code")==-32602 &&
+            reply.at("error").at("message").get<std::string>().find("profile_callbacks must be Boolean")!=std::string::npos,
+            "Malformed callback flag reached backend/path admission.");
+    }
+    for(const auto& flag:Json::array({nullptr,false,true})) {
+        auto params=load;if(!flag.is_null())params["profile_callbacks"]=flag;
+        const auto reply=invoke(owner,"runtime.gameplay.load",params,scope);
+        need(reply.contains("error") && (reply.at("error").at("code")==-32003 || reply.at("error").at("code")==-32060),
+            "Omitted/Boolean callback flag did not reach ordinary missing-backend/image rejection.");
+    }
+    const auto native=invoke(owner,"runtime.gameplay.load_native",{{"session_id",session},{"request_id",std::string(32,'c')},
+        {"expected_tick",0},{"expected_revision",0},{"descriptor","missing-descriptor.json"},{"profile_callbacks",false}},scope);
+    need(native.contains("error") && native.at("error").at("code")==-32602,"NativeAOT accepted the CoreCLR-only callback flag.");
+    need(invoke(owner,"runtime.inspect",{{"session_id",session}},scope)==baseline &&
+        invoke(owner,"runtime.gameplay.metrics",{{"session_id",session},{"tick",0}},scope)==read && tree(file.parent_path())==before_files,
+        "Callback diagnostic admission changed native state or files.");
+    need(invoke(owner,"runtime.stop",{{"session_id",session}},scope).contains("result"),"Callback admission runtime did not stop.");
+}
 int main(int argc,char** argv) {
     fs::path root,dump;bool temporary=false;
     try {
@@ -47,6 +88,7 @@ int main(int argc,char** argv) {
         auto document=Json::parse(bytes(file));document["world_id"]=std::string(32,'f');
         {std::ofstream out(file,std::ios::binary|std::ios::trunc);out<<document.dump(2)<<'\n';need(bool(out),"Fixture write failed.");}
         const auto fixture_bytes=bytes(file);Json transcript=Json::array();std::vector<Json> mutations;
+        callback_admission(file);
         std::size_t total=0;
         for(const auto mode:{poima::WorldOpenMode::authoring,poima::WorldOpenMode::read_only_runtime}) {
             poima::WorldSession owner(file.string(),mode);
@@ -59,6 +101,25 @@ int main(int argc,char** argv) {
                 const auto full=capture(Json::object()).at("result");
                 need(full.at("schema_revision").get<unsigned>()>=78,"Expected compiler session discovery revision.");
                 need(full.at("schema_revision").get<unsigned>()>=92,"Expected opt-in player lens interpolation discovery.");
+                const auto& callback_metrics=full.at("methods").at("runtime.gameplay.metrics");
+                need(callback_metrics.at("additionalProperties")==false && callback_metrics.at("required")==Json::array({"session_id"}) &&
+                    callback_metrics.at("properties").size()==2 && callback_metrics.at("properties").contains("tick") &&
+                    callback_metrics.at("properties").at("tick").at("type")=="integer",
+                    "Callback metrics must be a read with required session and optional exact integer Tick.");
+                const auto& managed_load=full.at("methods").at("runtime.gameplay.load");
+                const auto& callback_flag=managed_load.at("properties").at("profile_callbacks");
+                need(callback_flag.at("type")=="boolean" && callback_flag.at("default")==false &&
+                    std::find(managed_load.at("required").begin(),managed_load.at("required").end(),Json("profile_callbacks"))==managed_load.at("required").end() &&
+                    !full.at("methods").at("runtime.gameplay.load_native").at("properties").contains("profile_callbacks"),
+                    "Callback recording must be optional/default-disabled CoreCLR metadata only.");
+                for(const auto& malformed:Json::array({nullptr,true,0,Json::array(),Json::object(),Json{{"session_id","invalid"}}})) {
+                    const auto reply=invoke(owner,"runtime.gameplay.metrics",malformed,scope);
+                    need(reply.contains("error") && reply.at("error").at("code")==-32602,
+                        "Callback metrics accepted missing or malformed session parameters.");
+                }
+                const auto absent_metrics=invoke(owner,"runtime.gameplay.metrics",{{"session_id",std::string(32,'a')}},scope);
+                need(absent_metrics.contains("error") && absent_metrics.at("error").at("code")==-32030,
+                    "Callback metrics fabricated a module without a runtime session.");
                 for(const auto* method:{"runtime.play","player.start"})if(full.at("methods").contains(method)) {
                     const auto& launch=full.at("methods").at(method);
                     const auto& interpolation=launch.at("properties").at("lens_interpolation");

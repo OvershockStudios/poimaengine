@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <initializer_list>
 #include <map>
 #include <limits>
 #include <sstream>
@@ -50,6 +51,58 @@ Json parse_control_manifest(const std::string& text) {
         if(event==Json::parse_event_t::object_end)keys.pop_back();
         return true;
     });
+}
+// Diagnostic wire data has a smaller independent budget than load manifests.
+// Validate before exporting it to callers; never coerce numeric/string types.
+Json parse_callback_metrics(const std::string& text,std::uint64_t handle) {
+    check(text.size()<8192,"Gameplay callback metrics exceed 8191 bytes.");
+    std::vector<std::set<std::string>> keys;std::size_t tokens=0;
+    auto value=Json::parse(text,[&](int depth,Json::parse_event_t event,Json& item) {
+        check(depth<=4 && ++tokens<=256,"Gameplay callback metrics nesting/token budget exceeded.");
+        if(event==Json::parse_event_t::object_start)keys.emplace_back();
+        if(event==Json::parse_event_t::key)check(!keys.empty() && keys.back().insert(item.get<std::string>()).second,"Duplicate gameplay callback metrics key.");
+        if(event==Json::parse_event_t::object_end)keys.pop_back();
+        if(event==Json::parse_event_t::value && item.is_string())check(item.get_ref<const std::string&>().size()<=128,"Gameplay callback metrics string exceeds bounds.");
+        if(event==Json::parse_event_t::value && item.is_number_float())check(false,"Gameplay callback metrics require exact integer or decimal-string counters.");
+        return true;
+    });
+    auto fields=[](const Json& object,std::initializer_list<const char*> names) {
+        check(object.is_object() && object.size()==names.size(),"Invalid gameplay callback metrics fields.");
+        for(const auto* name:names)check(object.contains(name),"Missing gameplay callback metrics field.");
+    };
+    auto counter=[](const Json& item) {
+        check(item.is_string(),"Gameplay callback counters require canonical unsigned decimal strings.");
+        const auto& text=item.get_ref<const std::string&>();
+        check(!text.empty() && text.size()<=20 && (text.size()==1 || text.front()!='0'),"Noncanonical gameplay callback counter.");
+        std::uint64_t result=0;const auto [end,error]=std::from_chars(text.data(),text.data()+text.size(),result);
+        check(error==std::errc{} && end==text.data()+text.size(),"Gameplay callback counter exceeds uint64 or is malformed.");return result;
+    };
+    fields(value,{"format","version","module_handle","owner_thread_id","saturated","last_issue","initialize","tick","control"});
+    check(value.at("format").is_string() && value.at("format")=="poima.managed-callback-metrics.v1" &&
+        value.at("version").is_number_integer() && value.at("version")==1,"Unsupported managed callback metrics format/version.");
+    check(counter(value.at("module_handle"))==handle && handle!=0,"Gameplay callback metrics module handle differs.");
+    const auto& thread=value.at("owner_thread_id");
+    check(thread.is_number_integer() && thread>0 && thread<=INT32_MAX,"Invalid gameplay callback metrics owner thread.");
+    check(value.at("saturated").is_boolean(),"Gameplay callback saturation must be Boolean.");
+    const auto& issue=value.at("last_issue");
+    check(issue.is_null() || (issue.is_string() && (issue=="thread_mismatch" || issue=="negative_allocation_counter" ||
+        issue=="negative_collection_counter" || issue=="allocation_counter_regressed" || issue=="collection_counter_regressed" || issue=="counter_saturated")),
+        "Unknown gameplay callback metrics issue.");
+    for(const auto* name:{"initialize","tick","control"}) {
+        const auto& bucket=value.at(name);
+        fields(bucket,{"calls","returned","threw","samples","invalid_samples","allocated_bytes","max_allocated_bytes","gen0_collections","gen1_collections","gen2_collections"});
+        const auto calls=counter(bucket.at("calls")),returned=counter(bucket.at("returned")),threw=counter(bucket.at("threw"));
+        const auto samples=counter(bucket.at("samples")),invalid=counter(bucket.at("invalid_samples"));
+        const auto allocated=counter(bucket.at("allocated_bytes")),maximum=counter(bucket.at("max_allocated_bytes"));
+        const auto gen0=counter(bucket.at("gen0_collections")),gen1=counter(bucket.at("gen1_collections")),gen2=counter(bucket.at("gen2_collections"));
+        check(maximum<=allocated && (maximum!=0 || allocated==0),"Inconsistent gameplay callback allocation totals.");
+        check(samples!=0 || (allocated==0 && maximum==0 && gen0==0 && gen1==0 && gen2==0),"Unsampled gameplay callback has measured counters.");
+        if(!value.at("saturated").get<bool>()) {
+            check(returned<=calls && threw==calls-returned && samples<=calls && invalid==calls-samples,
+                "Inconsistent gameplay callback attempt/sample totals.");
+        }
+    }
+    return value;
 }
 Json service_contract_json(const gameplay_abi::Contract& contract) {
     return Json{{"call_version",contract.call_version},{"call_bytes",contract.call_bytes},
@@ -430,6 +483,17 @@ std::string invoke(Entry entry,PoimaGameCall& call,bool large=false) {
     if(code!=0)throw std::runtime_error(std::string("C# gameplay: ")+buffer.data());
     return buffer.data();
 }
+std::string invoke_callback_metrics(Entry entry,std::uint64_t handle) {
+    check(entry!=nullptr,"Gameplay callback metrics bridge is unavailable.");
+    std::array<char,8192> buffer{};PoimaGameCall call{};
+    call.version=1;call.operation=7;call.handle=handle;call.output=buffer.data();call.output_capacity=static_cast<std::uint32_t>(buffer.size());
+    const auto code=entry(&call,sizeof(call));
+    const auto end=std::find(buffer.begin(),buffer.end(),'\0');
+    check(end!=buffer.end(),"Gameplay callback metrics bridge returned unterminated output.");
+    const std::string text(buffer.begin(),end);
+    if(code!=0)throw std::runtime_error("C# gameplay callback metrics: "+text);
+    return text;
+}
 template<class T>T read(const std::vector<std::uint64_t>& data,std::size_t offset) { T value;std::memcpy(&value,reinterpret_cast<const std::byte*>(data.data())+offset,sizeof(T));return value; }
 template<class T>void write(std::vector<std::uint64_t>& data,std::size_t offset,T value) { std::memcpy(reinterpret_cast<std::byte*>(data.data())+offset,&value,sizeof(T)); }
 }
@@ -519,6 +583,7 @@ void validate_gameplay_schema(const std::string& schema) {
 }
 struct Gameplay::Impl {
     Entry entry=nullptr;Json diagnostics=Json::object();
+    bool callback_metrics_negotiated=false;
     std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
@@ -532,6 +597,7 @@ struct Gameplay::Impl {
 bool Gameplay::available() { return POIMA_MANAGED_GAMEPLAY!=0; }
 bool Gameplay::native_available() { return POIMA_NATIVE_GAMEPLAY!=0; }
 Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,GameplayInitialization initialization,std::optional<gameplay_abi::Contract> available):impl_(std::make_unique<Impl>()) {
+    check(!config.native_aot || !config.profile_callbacks,"Callback profiling is currently supported only for CoreCLR gameplay.");
     const auto actual_available=gameplay_abi::available_contract();
     const auto host_available=available.value_or(actual_available);
     validate_offered_contract(host_available,actual_available);
@@ -555,8 +621,17 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     }
     impl_->config=config;PoimaGameCall call{};call.operation=1;
     const auto offered=config.native_aot ? config.native_requirements.value_or(gameplay_abi::Contract{}) : host_available;
-    const auto text=Json{{"assembly",config.assembly},{"type",config.type},{"host_contract",service_contract_json(offered)}}.dump();call.text=text.c_str();
+    Json load={{"assembly",config.assembly},{"type",config.type},{"host_contract",service_contract_json(offered)}};
+    if(config.profile_callbacks)load["profile_callbacks"]=true;
+    const auto text=load.dump();call.text=text.c_str();
     impl_->manifest=parse_control_manifest(invoke(impl_->entry,call,true));impl_->handle=impl_->manifest.at("handle");impl_->manifest.erase("handle");
+    if(impl_->manifest.contains("callback_metrics_version")) {
+        const auto& version=impl_->manifest.at("callback_metrics_version");
+        check(config.profile_callbacks && !config.native_aot && version.is_number_integer() && version==1,
+            "Unexpected or unsupported gameplay callback metrics negotiation.");
+        impl_->callback_metrics_negotiated=true;impl_->manifest.erase("callback_metrics_version");
+    }
+    check(!config.profile_callbacks || impl_->callback_metrics_negotiated,"Managed bridge does not support requested callback metrics; use a matching bridge.");
     if(impl_->manifest.contains("requirements")) {
         impl_->requirements=parse_gameplay_service_contract(impl_->manifest.at("requirements").dump());impl_->manifest.erase("requirements");
     }
@@ -601,6 +676,17 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     impl_->migration={{"added",added},{"removed",removed},{"preserved",preserved}};impl_->validate();
 }
 Gameplay::~Gameplay()=default;
+std::string Gameplay::callback_metrics() const {
+    Json result={{"format","poima.gameplay-callback-metrics.v1"},{"version",1},
+        {"backend",impl_->config.native_aot ? "native_aot" : "coreclr"},
+        {"identity",impl_->manifest.at("identity")},{"assembly_sha256",impl_->assembly_hash},
+        {"supported",impl_->config.native_aot ? Json(false) : impl_->callback_metrics_negotiated ? Json(true) : Json(nullptr)},
+        {"enabled",impl_->callback_metrics_negotiated},
+        {"unavailable_reason",impl_->callback_metrics_negotiated ? Json(nullptr) : impl_->config.native_aot ? Json("native_aot_not_supported") : Json("not_requested")},
+        {"data",nullptr}};
+    if(impl_->callback_metrics_negotiated)result["data"]=parse_callback_metrics(invoke_callback_metrics(impl_->entry,impl_->handle),impl_->handle);
+    return result.dump();
+}
 void Gameplay::validate_services(const gameplay_abi::Contract& available) const {require_compatible(impl_->requirements,available);}
 const std::vector<components::Schema>& Gameplay::component_schemas() const { return impl_->component_schemas; }
 std::vector<std::uint64_t>& Gameplay::state() { return impl_->storage; }

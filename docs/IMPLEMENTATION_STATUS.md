@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.166**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.167**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.167 adds opt-in [CoreCLR callback metrics](MANAGED_CALLBACK_METRICS.md):
+fixed per-module Initialize/Tick/Control counters, current-thread allocated bytes
+and runtime-wide GC deltas observed during callbacks. Default loads do not
+measure; NativeAOT reports unsupported. Reads never force collection, and
+attempts remain diagnostic when native state rolls back. Successful reload or
+restore starts a fresh counter lifetime; counters and the enable flag are not
+saved gameplay state. The gameplay C ABI, binary SDK and save codec are unchanged;
+the public C++ configuration layout extends and does not establish binary
+compatibility. These extensions are outside the frozen contracts.
+
+The new bridge passes 171 compiled helper checks against the retained binary
+SDK. Six Windows native suites and five Linux headless CTests pass. A real
+Windows CoreCLR fixture passes default/off/opt-in, allocating and throwing
+callbacks, returned-but-rejected writes, compatible reload, old-bridge rejection
+and retained NativeAOT reads. Independent file review joins 357 original calls,
+twenty complete checkpoints and eight exact whole-file state pairs. The first
+collector's final newline census failure remains failed. Full-scene prerequisites
+also retain an import failure, a pre-play census/cleanup failure and a distinct
+raw-versus-canonical metadata assertion failure. No representative CoreCLR game,
+recording-overhead, sustained memory-growth or Alpha gate closes from these
+fixtures. The desktop profiler does not yet display these managed aggregates.
+[Results and boundaries](evidence/m2-managed-callback-metrics.json).
 
 Version 0.0.166 adds explicit background native play for unattended agents:
 real elapsed-time simulation, a nonfocusable window, owner-controlled pause and
@@ -2220,7 +2243,7 @@ The development [standalone template catalog](RUNTIME.md#standalone-template-cat
 
 Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md), reference-frame conversion and [explicit rotation retargeting](ANIMATION_RETARGETING.md) are supported; general Mixamo/exporter compatibility and automatic anatomical/contact retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
 
-The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, native job-worker intervals, separate GPU duration samples and trace export. General worker-stack sampling, managed allocation/GC tracking, GPU residency, calibrated GPU-clock correlation and a sustained benchmark workflow remain unfinished. Experimental [GPU memory diagnostics](GPU_MEMORY.md) separately expose allocation estimates and budgets; they are not residency measurements. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
+The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, native job-worker intervals, separate GPU duration samples and trace export. [Optional CoreCLR callback aggregates](MANAGED_CALLBACK_METRICS.md) provide current-thread allocation and runtime-wide GC observations separately from native captures. General worker-stack sampling, arbitrary managed allocation/call-stack tracking, GPU residency, calibrated GPU-clock correlation and a sustained benchmark workflow remain unfinished. Experimental [GPU memory diagnostics](GPU_MEMORY.md) separately expose allocation estimates and budgets; they are not residency measurements. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
 
 Planned editor workflow improvements include configurable hierarchy/folder styling, component isolation/search/copy-paste, focused object/asset tabs, persistent favorites, fullscreen panels, configurable smooth navigation, hover highlighting and overlap selection, a live preferences inspector, clickable breadcrumbs/back-forward history/context locking, and integrated Git/GitHub workflows. Existing striping, automatic icons, basic geometry picking and dock panels cover only the initial subset.
 

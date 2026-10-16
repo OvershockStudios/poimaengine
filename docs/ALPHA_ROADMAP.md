@@ -121,6 +121,11 @@ two actual native-game owners, 29 process queries and full save continuation
 over a short, complete-workload run. It leaves the focused frame budgets,
 recording overhead, continuing memory growth and thirty-minute gate open.
 
+[Managed callback metrics](MANAGED_CALLBACK_METRICS.md) add optional CoreCLR
+allocation/GC observations for the mixed-reload investigation. Their bounded
+fixture qualification does not close the representative-game, recording-overhead
+or thirty-minute reliability gates.
+
 ## Implementation order
 
 1. Extend the qualified character/content consumer to representative imported

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.167
+
+- Add opt-in CoreCLR callback allocation and GC observations with fixed counters, strict bridge negotiation and read-only inspection. Keep diagnostic attempts outside authoritative state, saves and rollback; preserve default loads and the gameplay C ABI. [Guide](docs/MANAGED_CALLBACK_METRICS.md).
+- Pass 171 managed helper checks, six Windows native suites and five Linux headless CTests. Independently verify 357 native calls, twenty complete checkpoints and eight exact state pairs, including callback failures, reload and older backends. Preserve failed collectors and full-scene prerequisites without qualifying the wider reliability gate. [Results and scope](docs/evidence/m2-managed-callback-metrics.json).
+
 ## 0.0.166
 
 - Add background elapsed-time native play for agents, with a nonfocusable window, no hardware input routed to gameplay, explicit pause/replacement fences and continued simulation while minimized. Preserve existing interactive/replay defaults and foreground measurement eligibility. [Workflow](docs/LIVE_PLAYER.md#background-play-for-agents).

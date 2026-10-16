@@ -31,8 +31,10 @@ internal sealed record FieldDescription(string name,string kind,int offset,int b
 internal sealed record Manifest(ulong handle,string identity,string assembly_sha256,int bytes,FieldDescription[] fields,
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null,
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? persistent=null,
-    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? requirements=null);
-internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes,GameplayRequiredFeatures RequiredFeatures);
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? requirements=null,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] int? callback_metrics_version=null);
+internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes,GameplayRequiredFeatures RequiredFeatures,
+    CallbackMetrics? Metrics=null);
 public static unsafe class Entry
 {
     private static readonly Dictionary<ulong,Module> modules=[];
@@ -60,6 +62,9 @@ public static unsafe class Entry
                     for(int i=0;i<8 && retired.Any(r=>r.IsAlive);++i) { GC.Collect();GC.WaitForPendingFinalizers();GC.Collect(); }
                     int alive=retired.Count(r=>r.IsAlive);retired.RemoveAll(r=>!r.IsAlive);
                     Write(call,JsonSerializer.Serialize(new {active_modules=modules.Count,retired_alive=alive}));break;
+                case 7:
+                    var metrics=modules[call->Handle].Metrics ?? throw new InvalidOperationException("Callback metrics were not requested for this module.");
+                    Write(call,metrics.Serialize());break;
                 default: throw new ArgumentException("Unknown managed bridge operation.");
             }
             return 0;
@@ -97,6 +102,13 @@ public static unsafe class Entry
     private static void Load(NativeCall* call)
     {
         using var request=JsonDocument.Parse(Marshal.PtrToStringUTF8((nint)call->Text) ?? "");
+        bool profileCallbacks=false;
+        if(request.RootElement.TryGetProperty("profile_callbacks",out var profile))
+        {
+            if(profile.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                throw new ArgumentException("profile_callbacks must be Boolean.");
+            profileCallbacks=profile.GetBoolean();
+        }
         string path=Path.GetFullPath(request.RootElement.GetProperty("assembly").GetString()!);
         string typeName=request.RootElement.GetProperty("type").GetString()!;
         if(new FileInfo(path).Length>64*1024*1024)throw new ArgumentException("Game assembly exceeds 64 MiB.");
@@ -139,9 +151,11 @@ public static unsafe class Entry
             var persistent=PersistenceMetadata.Read(state);
             JsonElement? requirements=null;
             if(required!=GameplayRequiredFeatures.None) { using var declaration=JsonDocument.Parse(GameplayRequirements.Json(required));requirements=declaration.RootElement.Clone(); }
-            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent,requirements);
+            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent,requirements,
+                profileCallbacks ? 1 : null);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
-            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required));published=true;
+            var metrics=profileCallbacks ? new CallbackMetrics(handle,Environment.CurrentManagedThreadId) : null;
+            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required,metrics));published=true;
         }
         finally { if(!published) { retired.Add(new(context));context.Unload(); } }
     }
@@ -151,13 +165,32 @@ public static unsafe class Entry
         Module module=modules[call->Handle];
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
-        if(!tick) { module.Game.Initialize(state);return; }
+        if(!tick)
+        {
+            if(module.Metrics is not { } metrics) { module.Game.Initialize(state);return; }
+            var begin=metrics.Begin();bool returned=false;
+            try { module.Game.Initialize(state);returned=true; }
+            finally { metrics.Complete(CallbackKind.Initialize,in begin,returned); }
+            return;
+        }
         ServiceAbi.Validate(call->Services,call->Inputs,call->InputCount);
         GameplayRequirements.ValidateServices(call->Services,module.RequiredFeatures);
         if(control) {
             if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
-            module.Game.Control(state,new ControlContext(call->Services,call->Tick,module.RequiredFeatures));
-        } else module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick,module.RequiredFeatures));
+            var context=new ControlContext(call->Services,call->Tick,module.RequiredFeatures);
+            if(module.Metrics is not { } metrics) { module.Game.Control(state,context);return; }
+            var begin=metrics.Begin();bool returned=false;
+            try { module.Game.Control(state,context);returned=true; }
+            finally { metrics.Complete(CallbackKind.Control,in begin,returned); }
+        }
+        else
+        {
+            var context=new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick,module.RequiredFeatures);
+            if(module.Metrics is not { } metrics) { module.Game.Tick(state,context);return; }
+            var begin=metrics.Begin();bool returned=false;
+            try { module.Game.Tick(state,context);returned=true; }
+            finally { metrics.Complete(CallbackKind.Tick,in begin,returned); }
+        }
     }
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Release(ulong handle)

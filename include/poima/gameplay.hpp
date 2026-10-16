@@ -15,6 +15,8 @@ struct GameplayConfig {
     std::string native_library,native_sha256,native_schema;
     // Verified artifact requirements are control metadata, not saved state.
     std::optional<gameplay_abi::Contract> native_requirements;
+    // Optional CoreCLR diagnostics, outside authoritative gameplay/save state.
+    bool profile_callbacks=false;
 };
 gameplay_abi::Contract parse_gameplay_service_contract(const std::string&);
 void validate_gameplay_schema(const std::string& schema);
@@ -39,6 +41,8 @@ public:
     Gameplay(const Gameplay&)=delete;
     Gameplay& operator=(const Gameplay&)=delete;
     std::string inspect() const;
+    // Cached managed observations only; never performs collection or simulation.
+    std::string callback_metrics() const;
     const std::vector<components::Schema>& component_schemas() const;
     void validate_services(const gameplay_abi::Contract& available) const;
     void edit(const std::string& values);

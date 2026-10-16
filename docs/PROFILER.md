@@ -80,9 +80,17 @@ owner. Waiting and worker intervals can overlap; their sum is not frame time.
 separately from a Recorder's first capacity overflow. Ring loss can span multiple
 captures, so it is not assigned to the currently selected capture.
 
+## Managed gameplay observations
+
+Opt-in [C# callback metrics](MANAGED_CALLBACK_METRICS.md) report current-thread
+allocated bytes and runtime-wide GC deltas around actual CoreCLR callbacks.
+Cached reads are independent of native capture and authoritative state; disabled
+and unsupported modules return explicit availability rather than zero counters.
+These aggregates are not a heap profiler or a managed timeline in this window.
+
 ## Limits
 
-This is an instrumentation profiler, not a complete production profiler. It does not sample call stacks, track managed GC or arbitrary native allocations, sample arbitrary worker stacks, report total process/VRAM usage, calibrate GPU clocks, or replace the planned sustained benchmark workflow. Starting a capture can allocate several MiB; stopping/loading/exporting a large capture has a separate tool cost. Instrumentation and GPU timestamps affect the measured workload.
+This is an instrumentation profiler, not a complete production profiler. It does not sample call stacks, track arbitrary managed/native allocations or managed call stacks, sample arbitrary worker stacks, report total process/VRAM usage, calibrate GPU clocks, or replace the planned sustained benchmark workflow. Starting a capture can allocate several MiB; stopping/loading/exporting a large capture has a separate tool cost. Instrumentation and GPU timestamps affect the measured workload.
 
 The current renderer implementation bounds outstanding frame submissions with `frames_in_flight` (one or two, default two). The one-slot reference path drains after each frame; captures also drain before publishing readback. Resource uploads and lifecycle operations can still wait independently. Two slots do not guarantee overlapping work or improved performance. Render wait/present intervals, GPU queue work, simulation ticks and full application frame time measure different boundaries. No reciprocal of one interval is advertised as a playable FPS result.
 

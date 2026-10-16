@@ -3010,6 +3010,14 @@ public:
     }
     Json gameplay_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Gameplay requests require session_id.");runtime_guard(params);
+        if(method=="runtime.gameplay.metrics") {
+            fields(params,{"session_id","tick"},{"session_id"});
+            if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            try {
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"revision",runtime_->gameplay_revision()},
+                    {"structure_revision",runtime_->structure_revision()},{"module",Json::parse(runtime_->gameplay_callback_metrics())}};
+            }catch(const std::exception& e) {throw Error(-32060,e.what());}
+        }
         if(method=="runtime.gameplay.inspect") {
             fields(params,{"session_id","tick","include_schema","fields"},{"session_id"});
             if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3028,10 +3036,11 @@ public:
         }
         const bool managed_load=method=="runtime.gameplay.load",native_load=method=="runtime.gameplay.load_native",load=managed_load || native_load;
         require(load || method=="runtime.gameplay.edit","Unknown gameplay method.",-32601);
-        if(managed_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
+        if(managed_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values","expected_structure_revision","profile_callbacks"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
         else if(native_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","descriptor","expected_descriptor_sha256","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","descriptor"});
         else fields(params,{"session_id","request_id","expected_tick","expected_revision","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","values"});
         identifier(params.at("request_id"));auto normalized=params;normalized["method"]=method;
+        if(managed_load)require(!params.contains("profile_callbacks") || params.at("profile_callbacks").is_boolean(),"profile_callbacks must be Boolean.");
         if(!normalized.contains("values"))normalized["values"]=Json::object();
         require(normalized.at("values").is_object() && normalized.at("values").size()<=128,"Gameplay values must be a bounded field object.");
         // Validate wire types before receipt equality: JSON numeric comparison
@@ -3050,6 +3059,7 @@ public:
         if(managed_load) {
             for(const auto* key:{"hostfxr","bridge","assembly","type"})require(params.at(key).is_string() && !params.at(key).get_ref<const std::string&>().empty() && params.at(key).get_ref<const std::string&>().size()<=4096,"Gameplay paths/type must contain 1..4096 UTF-8 bytes.");
             config.hostfxr=path("hostfxr");config.bridge=path("bridge");config.assembly=path("assembly");config.type=params.at("type").get<std::string>();
+            config.profile_callbacks=params.value("profile_callbacks",false);
         }
         if(native_load)require(params.at("descriptor").is_string() && !params.at("descriptor").get_ref<const std::string&>().empty() && params.at("descriptor").get_ref<const std::string&>().size()<=4096,"Gameplay descriptor must contain 1..4096 UTF-8 bytes.");
         if(native_load && params.contains("expected_descriptor_sha256")) {
