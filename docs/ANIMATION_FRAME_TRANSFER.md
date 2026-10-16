@@ -113,7 +113,7 @@ source defaults differ from target defaults and a selected clip has no channel
 for that property. A sampled reference is not substituted for the original
 source defaults during motion playback.
 
-The existing model budgets still apply, including 8,192 total channels,
+The existing model budgets still apply, including 16,384 total channels,
 1,000,000 total keys and the import's retained-data limit. Added constant
 channels count toward these budgets. Unsupported source geometry, materials or
 deformation can reject before conversion, even when only donor curves are used.

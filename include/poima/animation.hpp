@@ -2,7 +2,7 @@
 #pragma once
 #include "poima/assets.hpp"
 namespace poima {
-inline constexpr std::size_t max_model_skins=64,max_skin_joints=256,max_model_clips=256,max_animation_channels=8192,max_animation_keys=1000000;
+inline constexpr std::size_t max_model_skins=64,max_skin_joints=256,max_model_clips=256,max_animation_channels=16384,max_animation_keys=1000000;
 struct NodePose { std::array<double,3> position{0,0,0},scale{1,1,1};std::array<double,4> rotation{0,0,0,1}; };
 struct SkinBounds { std::vector<std::optional<Bounds>> joints;double weight_sum_error=0; };
 SkinBounds skin_bounds(const MeshAsset& mesh);

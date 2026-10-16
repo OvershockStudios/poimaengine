@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.174
+
+- Extend glTF import with the existing narrow collapsed-UV tangent fallback for geometry without normal maps, preserving valid frames and reporting repaired corners. [Asset profile](docs/ASSETS.md).
+- Support 16,384 animation channels across a model's takes while retaining the independent key, joint and package limits. Add exact-boundary, malformed-package and retargeting-budget checks. [Animation profile](docs/ANIMATION_ASSETS.md).
+
 ## 0.0.173
 
 - Add bounded Windows authored-world publication retries with exact primary/prepared-byte guards. Preserve public errors, once-only commit ordering and shared storage callers; expose actual retry facts on stderr. [Policy and recovery](docs/WORLD_STORAGE_DIAGNOSTICS.md).

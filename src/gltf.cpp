@@ -289,7 +289,11 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
                 cooked->vertices=std::move(flat);std::iota(cooked->indices.begin(),cooked->indices.end(),0u);
                 result->diagnostics.push_back("Generated flat normals for primitive "+std::to_string(result->primitives.size())+".");
             }
-            if(uv && !tangents)generate_tangents(*cooked);
+            if(uv && !tangents) {
+                const auto repaired=generate_tangents(*cooked,true);
+                if(repaired)result->diagnostics.push_back("Generated orthogonal tangent fallback for "+std::to_string(repaired)+
+                    " triangle corners without a normal map on primitive "+std::to_string(result->primitives.size())+".");
+            }
             require(cooked->vertices.size()<=max_vertices-total_vertices,"Tangent expansion exceeds the model vertex budget.");
             total_vertices+=cooked->vertices.size();total_indices+=cooked->indices.size();
             meshes[&mesh].push_back(static_cast<std::uint32_t>(result->primitives.size()));result->primitives.push_back(cooked);

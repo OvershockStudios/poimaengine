@@ -58,7 +58,14 @@ The command samples curves on the CPU and defaults to GPU compute deformation (`
 
 These rules follow the [Khronos glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#skins) and its [animation interpolation appendix](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#appendix-c-interpolation). The reference sampler preserves source curves for import diagnostics. Compressed sampling and animation blending are not implemented.
 
-Limits: 64 skins, 256 joints per skin, 4096 total joint references, 256 clips, 8192 total channels, one million total keys and key times in 0–3600 seconds. Inverse-bind accessors may contain extra elements but are limited to 4096 matrices; only the referenced joint prefix is retained. Node/geometry/package limits from [Assets](ASSETS.md) also apply. Preview limits are 10,000 drawable instances, one million deformed vertices and three million deformed indices in aggregate. They are bounded bootstrap limits, not shipping content targets.
+Limits: 64 skins, 256 joints per skin, 4096 total joint references, 256 clips, 16,384 total channels, one million total keys and key times in 0–3600 seconds. Inverse-bind accessors may contain extra elements but are limited to 4096 matrices; only the referenced joint prefix is retained. Node/geometry/package limits from [Assets](ASSETS.md) also apply. Preview limits are 10,000 drawable instances, one million deformed vertices and three million deformed indices in aggregate. They are bounded bootstrap limits, not shipping content targets.
+
+The channel limit applies across all takes, including before donor take selection.
+Version 0.0.174 increases that limit from 8,192 without changing the cooked v4
+layout or the independent key, joint, metadata and package budgets. Older readers
+still reject packages exceeding their 8,192-channel profile. Import and compiled
+sampling can hold separate curve copies; these limits are not a process-memory
+guarantee.
 
 Morph targets, mirrored/nonpositive node scales and the broader excluded glTF profile remain unsupported. Static matrix-authored nodes use the [documented decomposition policy](ASSETS.md#matrix-authored-transforms); animation-targeted nodes must supply TRS. Inverse bind matrices must be affine and invertible. Weighted primitives instantiated without a skin are rejected. Unused weighted primitives are retained in v4 packages.
 
@@ -81,3 +88,8 @@ The content hash covers the entire package. A successful hash check is followed 
 The [captured analytic ribbon](evidence/m2-animation-reference.png) is a numerical graphics fixture, not a character-art or finished-quality demonstration.
 
 These synthetic fixtures establish the supported asset reference path. They do not qualify arbitrary third-party characters or production animation performance. Evidence and actual executed platforms are recorded in [the animation asset checkpoint](evidence/m2-animation-assets.json); runtime playback has its own [contract and verification](RUNTIME_ANIMATION.md).
+
+The [multi-take character guide](CHARACTER_LIBRARY.md) extends intake checks to an
+unchanged, separately supplied KayKit character, with original curves, mixed
+rigid/skinned attachments and relocated cooked reopening. Its CPU observations
+remain separate from rendering and runtime locomotion qualification.

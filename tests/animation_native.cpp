@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/animation.hpp"
+#include "../third_party/nlohmann/json.hpp"
+#include <bit>
+#include <filesystem>
+#include <fstream>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -255,6 +259,125 @@ void packages() {
     auto mesh=std::make_shared<MeshAsset>(*m.primitives[0]);mesh->influences.clear();m.primitives={mesh};m.nodes[0].primitives={0};
     check(encode_model(m).substr(0,8)=="POIMAM03","Static model changed package format.");
 }
+// Independent fixed cardinalities: changing another engine limit must not make
+// these channel boundary cases silently exercise a different constraint.
+static_assert(max_animation_channels==16384 && max_animation_keys==1000000);
+static_assert(max_model_clips==256 && max_model_skins==64 && max_skin_joints==256);
+template<class F> void rejects_exact(F&& operation,const char* expected) {
+    bool caught=false;
+    try { operation(); }
+    catch(const std::exception& error) { caught=true;check(std::string(error.what())==expected,"Boundary rejected for a different constraint."); }
+    check(caught,"Over-bound animation was accepted.");
+}
+void budget_word(std::string& bytes,std::uint32_t value) {
+    for(unsigned i=0;i<4;++i)bytes.push_back(static_cast<char>((value>>(8*i))&255));
+}
+std::uint32_t budget_u32(const std::string& bytes,std::size_t offset) {
+    check(offset+4<=bytes.size(),"Test package prefix is truncated.");std::uint32_t result=0;
+    for(unsigned i=0;i<4;++i)result|=std::uint32_t(static_cast<unsigned char>(bytes[offset+i]))<<(8*i);return result;
+}
+void aggregate_channel_boundary() {
+    auto m=model();m.nodes.resize(129);
+    for(unsigned node=3;node<=128;++node) {m.nodes[node].name="budget"+std::to_string(node);m.nodes[node].parent=2;}
+    for(unsigned clip=0;clip<128;++clip) {
+        AnimationClip animation;animation.name="take"+std::to_string(clip);animation.duration=0;
+        for(unsigned node=1;node<=128;++node)animation.channels.push_back({node,AnimationPath::translation,AnimationInterpolation::linear,{0},{{float(clip),float(node),0,0}}});
+        m.animations.push_back(std::move(animation));
+    }
+    std::size_t channels=0;for(const auto& clip:m.animations)channels+=clip.channels.size();
+    check(channels==16384 && m.animations.size()==128 && m.skins.size()==1 && m.skins[0].joints.size()==2,"Wrong independent aggregate fixture.");
+    validate_animation_data(m);
+    const auto bytes=encode_model(m);check(bytes.substr(0,8)=="POIMAM04","Channel extension changed cooked layout.");
+    const auto decoded=decode_model(bytes);check(encode_model(*decoded)==bytes,"Exact-boundary cooked bytes changed on reopen.");
+    const CompiledAnimation compiled(*decoded);
+    for(unsigned clip:{0u,127u}) {
+        const auto sampled=compiled.sample(clip,0,false);
+        for(unsigned node=1;node<=128;++node) {near(sampled.local[node].position[0],clip);near(sampled.local[node].position[1],node);near(sampled.local[node].position[2],0);}
+    }
+    auto over=m;over.animations.back().channels.push_back({0,AnimationPath::translation,AnimationInterpolation::linear,{0},{{0,0,0,0}}});
+    // The extra target is unique in this take; only the aggregate count is bad.
+    rejects_exact([&]{validate_animation_data(over);},"Animation channel budget exceeded.");
+    rejects_exact([&]{static_cast<void>(CompiledAnimation(over));},"Animation channel budget exceeded.");
+    rejects_exact([&]{static_cast<void>(encode_model(over));},"Animation channel budget exceeded.");
+    // Bypass encoder validation: add a complete independent channel to the
+    // accepted v4 metadata AND its20-byte curve payload, updating both lengths.
+    // A decoder regression cannot hide behind the encoder's shared validator.
+    const auto header_size=budget_u32(bytes,8),binary_size=budget_u32(bytes,12);
+    check(std::size_t(header_size)+binary_size+16==bytes.size(),"Original package length mismatch.");
+    auto metadata=nlohmann::json::parse(bytes.substr(16,header_size));auto binary=bytes.substr(16+header_size);
+    check(metadata.at("images").empty(),"Boundary mutation assumes no image payload.");
+    metadata["animations"].back()["channels"].push_back({{"node",0},{"path",0},{"interpolation",1},{"keys",1}});
+    metadata["animation_bytes"]=metadata.at("animation_bytes").get<std::size_t>()+20;
+    for(unsigned word=0;word<5;++word)budget_word(binary,0);
+    const auto text=metadata.dump();std::string malformed="POIMAM04";budget_word(malformed,static_cast<std::uint32_t>(text.size()));budget_word(malformed,static_cast<std::uint32_t>(binary.size()));malformed+=text;malformed+=binary;
+    rejects_exact([&]{static_cast<void>(decode_model(malformed));},"Invalid channel count.");
+    check(encode_model(m)==bytes,"Rejected boundary operations modified the original model.");
+}
+void unchanged_key_boundary() {
+    auto m=model();AnimationChannel channel;channel.node=1;channel.path=AnimationPath::translation;
+    channel.times.reserve(1000001);channel.values.reserve(1000001);
+    // Binary-exact step1/1024 stays strictly increasing below3600seconds.
+    for(unsigned i=0;i<1000000;++i) {channel.times.push_back(float(i)/1024);channel.values.push_back({2,2,0,0});}
+    m.animations.push_back({"key-boundary",double(channel.times.back()),{std::move(channel)}});
+    validate_animation_data(m);
+    {const CompiledAnimation compiled(m);near(compiled.sample(0,500,false).local[1].position[0],2);}
+    auto& curve=m.animations[0].channels[0];const auto duration=m.animations[0].duration;
+    curve.times.push_back(1000000.f/1024);curve.values.push_back({2,2,0,0});m.animations[0].duration=curve.times.back();
+    rejects_exact([&]{validate_animation_data(m);},"Animation key budget exceeded.");
+    rejects_exact([&]{static_cast<void>(CompiledAnimation(m));},"Animation key budget exceeded.");
+    rejects_exact([&]{static_cast<void>(encode_model(m));},"Animation key budget exceeded.");
+    curve.times.pop_back();curve.values.pop_back();m.animations[0].duration=duration;validate_animation_data(m);
+    check(curve.times.size()==1000000 && curve.values.size()==1000000 && curve.times.back()==999999.f/1024,"Failed key checks changed accepted fixture.");
+}
+struct BudgetTemp {
+    std::filesystem::path directory;
+    BudgetTemp() {
+        for(unsigned attempt=0;attempt<32;++attempt) {
+            directory=std::filesystem::temp_directory_path()/("poima-animation-budget-"+std::to_string(std::random_device{}())+"-"+std::to_string(attempt));
+            if(std::filesystem::create_directory(directory))return;
+        }
+        throw std::runtime_error("Cannot create owned animation budget fixture.");
+    }
+    ~BudgetTemp() {std::error_code error;std::filesystem::remove_all(directory,error);}
+};
+void gltf_channel_boundary() {
+    using Json=nlohmann::json;BudgetTemp temporary;
+    // One ordinary triangle, one shared constant time/value sampler,128takes
+    // and128distinct targets per take. No joints/images/extra dependencies.
+    std::string binary;
+    for(float value:{0.f,0.f,0.f,1.f,0.f,0.f,0.f,1.f,0.f,0.f,3.f,2.f,1.f})budget_word(binary,std::bit_cast<std::uint32_t>(value));
+    Json children=Json::array(),nodes=Json::array({{{"name","root"},{"mesh",0}}});
+    for(unsigned node=1;node<=128;++node) {children.push_back(node);nodes.push_back({{"name","target"+std::to_string(node)}});}
+    nodes[0]["children"]=children;
+    Json source={{"asset",{{"version","2.0"}}},{"nodes",nodes},{"scenes",Json::array({{{"nodes",{0}}}})},{"scene",0},
+        {"buffers",Json::array({{{"byteLength",binary.size()}}})},
+        {"bufferViews",Json::array({{{"buffer",0},{"byteOffset",0},{"byteLength",36}},{{"buffer",0},{"byteOffset",36},{"byteLength",4}},{{"buffer",0},{"byteOffset",40},{"byteLength",12}}})},
+        {"accessors",Json::array({{{"bufferView",0},{"componentType",5126},{"count",3},{"type","VEC3"},{"min",{0,0,0}},{"max",{1,1,0}}},{{"bufferView",1},{"componentType",5126},{"count",1},{"type","SCALAR"},{"min",{0}},{"max",{0}}},{{"bufferView",2},{"componentType",5126},{"count",1},{"type","VEC3"}}})},
+        {"meshes",Json::array({{{"primitives",Json::array({{{"attributes",{{"POSITION",0}}}}})}}})},{"animations",Json::array()}};
+    for(unsigned clip=0;clip<128;++clip) {
+        Json channels=Json::array();for(unsigned node=1;node<=128;++node)channels.push_back({{"sampler",0},{"target",{{"node",node},{"path","translation"}}}});
+        source["animations"].push_back({{"name","take"+std::to_string(clip)},{"samplers",Json::array({{{"input",1},{"output",2},{"interpolation","LINEAR"}}})},{"channels",channels}});
+    }
+    auto write_glb=[&](const char* filename) {
+        auto text=source.dump();while(text.size()%4)text.push_back(' ');
+        std::string glb;budget_word(glb,0x46546c67);budget_word(glb,2);budget_word(glb,static_cast<std::uint32_t>(28+text.size()+binary.size()));
+        budget_word(glb,static_cast<std::uint32_t>(text.size()));budget_word(glb,0x4e4f534a);glb+=text;
+        budget_word(glb,static_cast<std::uint32_t>(binary.size()));budget_word(glb,0x004e4942);glb+=binary;
+        check(glb.size()<2*1024*1024,"Synthetic aggregate source unexpectedly large.");
+        const auto path=temporary.directory/filename;std::ofstream stream(path,std::ios::binary);stream.write(glb.data(),static_cast<std::streamsize>(glb.size()));stream.close();check(bool(stream),"Cannot write bounded original GLB.");return path;
+    };
+    const auto accepted=import_gltf(write_glb("exact.glb"));
+    check(accepted->animations.size()==128 && accepted->nodes.size()==129 && accepted->skins.empty(),"Exact GLB changed its independent profile.");
+    std::size_t count=0;for(const auto& clip:accepted->animations) {check(clip.channels.size()==128 && clip.duration==0,"Wrong imported boundary clip.");count+=clip.channels.size();}
+    check(count==16384,"Exact GLB lost channels.");const auto cooked=encode_model(*accepted);const auto reopened=decode_model(cooked);
+    check(encode_model(*reopened)==cooked,"Imported boundary package failed exact reopen.");
+    const CompiledAnimation compiled(*reopened);
+    for(unsigned clip:{0u,127u})for(unsigned node:{1u,128u})check(compiled.sample(clip,0,false).local[node].position==std::array<double,3>{3,2,1},"Independent original constant pose changed.");
+    source["animations"].back()["channels"].push_back({{"sampler",0},{"target",{{"node",0},{"path","translation"}}}});
+    rejects_exact([&]{static_cast<void>(import_gltf(write_glb("over.glb")));},"Animation channel budget exceeded.");
+    check(encode_model(*accepted)==cooked,"Rejected GLB changed the accepted model.");
+}
+
 void invalid() {
     auto base=model();base.animations.push_back({"move",2,{translation()}});
     auto mutation=[&](auto change) { auto m=base;change(m);rejects([&] { validate_animation_data(m); });rejects([&] { CompiledAnimation invalid(m); }); };
@@ -359,6 +482,6 @@ void tangent_weights() {
 }
 }
 int main() {
-    try { curves();compiled_sampling();analytic_local_motion();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation immutable compiled sampling, analytic curves/local motion, authored baselines, hierarchy, CPU skinning, packages and invalid inputs passed.\n"; }
+    try { curves();compiled_sampling();analytic_local_motion();skinning();packages();aggregate_channel_boundary();unchanged_key_boundary();gltf_channel_boundary();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation immutable compiled sampling, analytic curves/local motion, authored baselines, hierarchy, CPU skinning, packages and invalid inputs passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

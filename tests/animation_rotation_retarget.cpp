@@ -330,9 +330,13 @@ void synthesized_budget() {
     auto source=base;source.skins.clear();const auto source_ref=reference(source,defaults(source));auto target=defaults(base);
     for(unsigned i=1;i<=2800;++i){source.nodes[i].rotation=axis(0,90);target[i].position={.125,0,0};target[i].scale={2,3,1};}
     const auto target_ref=reference(base,target);source.animations={{"budget",1,{{0,AnimationPath::rotation,AnimationInterpolation::linear,{0,1},{{0,0,0,1},{0,0,0,1}}}}}};
+    auto second=source.animations.front();second.name="budget-second";source.animations.push_back(std::move(second));
+    // Two distinct takes yield 16,802 channels without increasing the existing
+    // 2,800 joint references or crossing the independent key/take limits.
     validate_animation_data(base);validate_animation_data(source);const auto old_base=encode_model(base),old_source=encode_model(source);bool caught=false;
-    try{static_cast<void>(transfer_animation_rotations(base,source,source_ref,target_ref));}catch(const std::exception&){caught=true;}
-    check(caught,"Retarget exceeded8192synthesized channels without rejection.");check(encode_model(base)==old_base && encode_model(source)==old_source,"Budget rejection modified models.");
+    try { static_cast<void>(transfer_animation_rotations(base,source,source_ref,target_ref)); }
+    catch(const std::exception& error) { caught=true;check(std::string(error.what())=="Reference-rotation synthesized channel budget exceeded.","Retarget failed a different bound before the channel budget."); }
+    check(caught,"Retarget accepted more than 16,384 synthesized channels.");check(encode_model(base)==old_base && encode_model(source)==old_source,"Budget rejection modified models.");
 }
 }
 int main() {

@@ -285,9 +285,15 @@ void synthesized_budget() {
     f.source=f.base;f.source.skins.clear();f.target_ref=reference(f.base,defaults(f.base));f.source_ref=reference(f.source,defaults(f.source));
     for(unsigned i=1;i<=2800;++i){f.source.nodes[i].position={.125,0,0};f.source.nodes[i].rotation=axis(0,90);f.source.nodes[i].scale={2,2,2};}
     f.source.animations={{"bounded",1,{{0,AnimationPath::translation,AnimationInterpolation::linear,{0,1},{{0,0,0,0},{0,0,0,0}}}}}};
-    // 2,800 required nodes each need three sparse constants: 8,401 channels
-    // including the authored root track, beyond the existing 8,192 budget.
-    validate_animation_data(f.base);validate_animation_data(f.source);rejected(std::move(f),[](auto&){});
+    auto second=f.source.animations.front();second.name="bounded-second";f.source.animations.push_back(std::move(second));
+    // Two distinct takes each require 2,800*3 sparse constants plus one root
+    // track: 16,802 total channels. The joint-reference count remains 2,800.
+    validate_animation_data(f.base);validate_animation_data(f.source);
+    const auto old_base=encode_model(f.base),old_source=encode_model(f.source);bool caught=false;
+    try { static_cast<void>(converted(f)); }
+    catch(const std::exception& error) { caught=true;check(std::string(error.what())=="Reference-frame transfer synthesized channel budget exceeded.","Transfer failed a different bound before the channel budget."); }
+    check(caught,"Transfer accepted more than 16,384 synthesized channels.");
+    check(encode_model(f.base)==old_base && encode_model(f.source)==old_source,"Budget rejection modified original models.");
 }
 }
 int main() {

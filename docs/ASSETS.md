@@ -94,6 +94,17 @@ An entity cannot combine `StaticMesh` and the older `MeshRenderer`. `PbrMaterial
 
 This strict profile is intended to grow. Broader transforms/materials, compressed GPU formats and streaming remain required work. [Material authoring](MATERIAL_AUTHORING.md) adds independent image imports, texture-slot overrides, sampler/strength editing and effective inspection. Asset workflows target Poima’s own authoring model and standard interchange formats. Users must have appropriate rights to imported source assets.
 
+When generating missing tangents, glTF import uses the same narrow collapsed-UV
+fallback as FBX. An invalid generated frame can receive a deterministic
+orthogonal tangent only when its triangle has exactly zero UV area, nonzero
+finite geometric area, a valid normal and no normal map. A diagnostic identifies
+the primitive and repaired-corner count. Source geometry, normals, UVs, skin
+weights and valid generated frames remain intact. This does not recover UV
+direction or normal-map fidelity: repair the source UVs before adding a normal
+map. Invalid authored tangents, invalid normal-mapped frames and invalid frames
+on noncollapsed UV triangles remain errors. Direct generic tangent generation
+keeps its strict default; this is an explicit importer policy.
+
 ## Storage, limits and recovery
 
 The model package is versioned: eight-byte ASCII `POIMAM03`, a little-endian uint32 metadata length, a little-endian uint32 binary length, UTF-8 JSON metadata, then packed geometry followed by RGBA8 mip chains. Each primitive stores interleaved little-endian float32 position/normal/UV/tangent XYZW (48 bytes per vertex), followed by uint32 triangle indices. Metadata contains counts, material factors, nodes, roots, diagnostics, five texture references/samplers, normal scale, UV availability, image color spaces/mip sizes, the geometry byte boundary and importer identity. Decoding checks the version, lengths, counts, finite values, normalized normals/quaternions, tangent frames, indices and acyclic hierarchy and mip lengths/dimensions, sampler enums and map color spaces before exposing the model. Existing `POIMAM01`/`POIMAM02` packages remain readable; new imports use version 3 and receive new content hashes even when the source is unchanged.

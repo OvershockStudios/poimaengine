@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.173**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.174**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.174 extends glTF import with the existing narrow collapsed-UV tangent
+fallback and supports 16,384 animation channels across a model's takes. Invalid
+generated frames can use an orthogonal tangent only on exactly UV-collapsed,
+nondegenerate triangles without a normal map. Valid frames and original geometry
+remain intact; diagnostics identify repaired corners. Independent key, joint,
+metadata and package limits and the cooked v4 layout remain unchanged. Older
+readers still reject content above their channel limit.
+[Supported profile and workflow](CHARACTER_LIBRARY.md).
+
+The unchanged KayKit Knight imports with all 76 takes, 8,712 channels, 90,748
+keys and 6,952 triangles. Separate Windows checks compare original curves,
+geometry, skin attributes and six numerical poses, then relocate the world and
+cooked store and verify fresh-owner continuation and receipt replay with the
+admitted source path unavailable. One previously accepted ribbon asset retains
+identical complete results and cooked bytes on the old and new builds. These
+are CPU intake observations, not rendered-character or gameplay qualification.
+
+The original Windows campaign remains failed at 23 of 24 stages: its final
+checker expected a generic count field where `asset.inspect` returns
+section-specific counts. Corrected character checks run separately; the failed
+campaign is not regraded. All 33 selected Linux headless CTests pass. Original
+source/artifact identities and natural process closure are independently
+reviewed. Broader exporters, anatomical retargeting, contact solving, graphics
+and Alpha qualification remain separate.
+[Results and retained outcomes](evidence/m2-character-library-intake.json).
 
 Version 0.0.173 adds bounded retries for Windows authored-world primary and
 backup publication. The policy permits at most six rename calls in total,

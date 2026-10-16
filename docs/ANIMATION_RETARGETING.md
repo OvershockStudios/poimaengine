@@ -280,7 +280,7 @@ Sparse clips can need constant channels for transformed original source-default
 rotations or target-reference positions/scales. Source defaults remain distinct
 from the explicit source reference. Discarded-only clips retain their original
 duration through a constant target-reference scale endpoint when necessary.
-The existing 8,192-channel, 1,000,000-key and retained-data budgets still apply
+The existing 16,384-channel, 1,000,000-key and retained-data budgets still apply
 to all resulting clips, including synthesized constants.
 
 ## Observe, recover and use the result

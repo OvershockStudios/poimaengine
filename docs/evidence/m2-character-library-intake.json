@@ -1,0 +1,402 @@
+{
+  "format": "poima.character-library-intake-evidence.v1",
+  "engine_version": "0.0.174",
+  "summary": "Original independently authored multi-take character intake with narrow unmapped-UV tangent fallback and a general bounded channel profile; original rejection and checker failure are preserved separately.",
+  "contract": {
+    "limits": {
+      "channels": 16384,
+      "time_keys": 1000000,
+      "clips": 256,
+      "skins": 64,
+      "joints_per_skin": 256,
+      "joint_references": 4096,
+      "cooked_package_bytes": 67108864,
+      "cooked_metadata_bytes": 8388608,
+      "time_seconds": [
+        0,
+        3600
+      ]
+    },
+    "key_limit_qualification": "One-million-key native validation and immutable compiled-sampler boundary; no full-limit cooked-codec exercise is claimed.",
+    "channel_boundary_scope": "Shared native/import/codec/synthesis channel limit; original key/file/package bounds remain.",
+    "tangent_policy": "Only invalid generated Mikk frames on exact-zero-UV-determinant, positive-area triangles with unit normals and no normal-map texture may use the existing orthogonal fallback. Authored tangents and generic default strict behavior remain unchanged.",
+    "schema_revision": 104,
+    "gameplay_c_abi_changed": false,
+    "model_package_format": "POIMAM04; unchanged layout. Reader 0.0.173 need not accept new content above its 8,192-channel bound."
+  },
+  "original_character": {
+    "creator": "Kay Lousberg",
+    "pack": "KayKit Adventurers 1.0",
+    "license": "CC0-1.0",
+    "source_url": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47",
+    "source": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "license_notice": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "nodes": 57,
+    "primitives": 15,
+    "joints": 41,
+    "takes": 76,
+    "channels": 8712,
+    "time_keys": 90748,
+    "triangles": 6952,
+    "original_vertices": 7024,
+    "base_color_image_dimensions": [
+      1024,
+      1024
+    ]
+  },
+  "original173_observation": {
+    "observation_completed": true,
+    "intake_accepted": false,
+    "request_reply_pairs": 22,
+    "intake_requests": 3,
+    "actual_error": {
+      "code": -32050,
+      "message": "Generated tangent is invalid; check degenerate geometry/UVs."
+    },
+    "first_failure_was_channel_limit": false,
+    "authoring_history_and_files_unchanged": true
+  },
+  "native_windows_build": {
+    "passed": true,
+    "cache_generation": 37,
+    "selected_targets": 8,
+    "compiled_source_inputs": 333,
+    "sealed_artifacts": 10,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "scope": "Selected incremental native build on the retained configured toolchain; no full vendor/toolchain rebuild claim."
+  },
+  "original_windows_campaign": {
+    "passed": false,
+    "stages_total": 24,
+    "stages_passed": 23,
+    "stages_failed": [
+      "character_library"
+    ],
+    "native_executions": 8,
+    "distinct_native_executables": 7,
+    "checker_failure": "Original checker expected total for asset.inspect; existing native counts are section-specific. KeyError: 'total'.",
+    "native_import_completed": true,
+    "original_poses_qualified": 0,
+    "original_cold_continuation_qualified": false,
+    "optional_original_kenney_rotation_test_skips": 1,
+    "forced_cleanup": false,
+    "regraded": false
+  },
+  "strengthened_character_cohort": {
+    "passed": true,
+    "checker_source": {
+      "bytes": 35899,
+      "sha256": "0957370e9a90590ecc8cddc53f630f346dd408159d20602354529463c8fe94f7"
+    },
+    "native_owners": 4,
+    "request_reply_pairs": 88,
+    "complete_state_observations": 15,
+    "authoritative_payload_families": 4,
+    "operational_writer_lock_separate": true,
+    "pose_checks": {
+      "poses": 6,
+      "warm_poses": 5,
+      "cold_poses": 1,
+      "node_witnesses": 342,
+      "vertex_witnesses": 96,
+      "source_poses": 5,
+      "max_matrix_error": 2.5704988276809004e-09,
+      "scope": "Independent raw original arrays/FK and palette-world skinning. No rendering or anatomical/retargeting fidelity claim."
+    },
+    "current_cooked_package": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    },
+    "cooked_vertices": 7962,
+    "material_and_skin_attributes_checked": true,
+    "all_original_skin_presence_flags_checked": true,
+    "all_original_triangle_corners_and_curve_arrays_checked": true,
+    "fallback_diagnostics": [
+      {
+        "primitive": 0,
+        "repaired_triangle_corners": 134
+      },
+      {
+        "primitive": 1,
+        "repaired_triangle_corners": 73
+      },
+      {
+        "primitive": 2,
+        "repaired_triangle_corners": 18
+      },
+      {
+        "primitive": 3,
+        "repaired_triangle_corners": 24
+      },
+      {
+        "primitive": 4,
+        "repaired_triangle_corners": 174
+      },
+      {
+        "primitive": 5,
+        "repaired_triangle_corners": 284
+      },
+      {
+        "primitive": 6,
+        "repaired_triangle_corners": 73
+      },
+      {
+        "primitive": 7,
+        "repaired_triangle_corners": 169
+      },
+      {
+        "primitive": 8,
+        "repaired_triangle_corners": 2
+      },
+      {
+        "primitive": 10,
+        "repaired_triangle_corners": 134
+      },
+      {
+        "primitive": 11,
+        "repaired_triangle_corners": 31
+      },
+      {
+        "primitive": 12,
+        "repaired_triangle_corners": 48
+      },
+      {
+        "primitive": 13,
+        "repaired_triangle_corners": 240
+      },
+      {
+        "primitive": 14,
+        "repaired_triangle_corners": 240
+      }
+    ],
+    "fallback_repaired_corners_total": 1644,
+    "independent_texel_filtering_conformance": false,
+    "cold_full_document_equal": true,
+    "cold_persisted_receipt_replayed": true,
+    "rejected_requests_preserved": 3,
+    "relocation": {
+      "old_world_path_absent": true,
+      "old_store_path_absent": true,
+      "admitted_source_path_absent": true,
+      "caller_original_inputs_retained": true
+    },
+    "relocation_scope": "Owned world payloads and complete asset store relocated; admitted source-copy path absent. Caller originals and retained source copies elsewhere remain.",
+    "outer_job_exit_code": 0,
+    "outer_job_empty": true,
+    "forced_cleanup": false
+  },
+  "prior_corrected_character_cohort": {
+    "passed": true,
+    "native_owners": 4,
+    "request_reply_pairs": 88,
+    "checker_source": {
+      "bytes": 35706,
+      "sha256": "6546d1a5ac1320403ca1faae6df9d6a23b05462cde3531766afaf61534a3d1ad"
+    },
+    "scope": "The separately completed pagination-corrected cohort remains PASS. Its previous independent reader and exact owner/evidence/source receipts are preserved; its original raw curve/pose proof is inherited, not rerun or recast as this strengthened cohort."
+  },
+  "accepted_old_content_parity": {
+    "passed": true,
+    "source": "Existing animated-ribbon GLB",
+    "source_identity": {
+      "bytes": 2388,
+      "sha256": "d8e150e26529c3f3f39df2226d3bc929cd6d6d0465bcf6bde45deddffb860d7d"
+    },
+    "complete_result_pairs": 2,
+    "whole_package_pairs": 1,
+    "whole_package_identity": {
+      "bytes": 1796,
+      "sha256": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be"
+    },
+    "scope": "One unchanged accepted original on separately supplied 0.0.173/0.0.174 binaries; not arbitrary old content or old-reader support for new over-limit packages."
+  },
+  "linux_headless": {
+    "passed": true,
+    "targets": 14,
+    "source_inputs": 360,
+    "joined_windows_compiled_inputs": 333,
+    "sealed_artifacts": 16,
+    "ctests_passed": 33,
+    "ctests_total": 33,
+    "failed_tests": [],
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "scope": "Offline Debug CPU/headless import, animation, tangent and retained authoring/storage/ABI checks. No original Knight Linux consumer, Windows fault or graphics qualification."
+  },
+  "independent_file_audits": {
+    "windows_passed": true,
+    "windows_original_campaign_passed": false,
+    "linux_passed": true,
+    "linux_campaign_passed": true,
+    "scope": "Independent raw-wire, source/seal, whole-payload, native closure and original result joins. Audit success does not change an original failed campaign."
+  },
+  "retained_file_reader_failure": {
+    "passed": false,
+    "audit_completed": false,
+    "scope": "Original Windows file reader could not interpret a backslash-separated retained owner-source label on the file-audit platform. Its FileNotFoundError remains unchanged; this is separate from original engine and corrected-consumer outcomes."
+  },
+  "source_pins": {
+    "include/poima/animation.hpp": {
+      "bytes": 2569,
+      "sha256": "fd17f07bb44773756932fdd3e82c2bfb75a6b1c4835c770d80769006c815e466"
+    },
+    "src/gltf.cpp": {
+      "bytes": 29999,
+      "sha256": "12062d8ce43a68d12c7dd0bb85567596cf73a0a903e18dedc480c890c31fa94f"
+    },
+    "src/tangents.cpp": {
+      "bytes": 6532,
+      "sha256": "a79998e3917ad0c779423eeac08eb52295275c352770e78093315147bedc2d95"
+    },
+    "src/animation.cpp": {
+      "bytes": 22940,
+      "sha256": "b55cf2048505c6dbcc2c845b8b87b37033cd7d989212bfec46c33ac8944fc481"
+    },
+    "src/model_codec.cpp": {
+      "bytes": 19884,
+      "sha256": "952f08574007227a5b8e21848f879ec5937155ea8e6ea74599ffd64d1bb55f3d"
+    },
+    "tests/animation_native.cpp": {
+      "bytes": 36498,
+      "sha256": "8e04dc4023533edcfc356b63f303daa148f1d6963eb3649bafe5dc4e65f9bff7"
+    },
+    "tests/animation_frame_transfer.cpp": {
+      "bytes": 27612,
+      "sha256": "15fac2a3d769e2552c987091ae5b039422d28fa30fbe0458e046bfd390f26b07"
+    },
+    "tests/animation_rotation_retarget.cpp": {
+      "bytes": 31950,
+      "sha256": "88e4e3618f994215c4e826c48452f185f48dfb57ea3a4d0473515c4529632a99"
+    },
+    "tests/gltf_matrix_native.cpp": {
+      "bytes": 21442,
+      "sha256": "f37be7a1de7246252468a559ccee4329af651cee3531eadbcf1e6c282b8ae206"
+    },
+    "tests/tangents_native.cpp": {
+      "bytes": 3685,
+      "sha256": "9d55b1588140c06bf950208eea4686b1327dba5b4a5d37e14ca971366f485d96"
+    },
+    "tests/character_library_intake.py": {
+      "bytes": 35899,
+      "sha256": "0957370e9a90590ecc8cddc53f630f346dd408159d20602354529463c8fe94f7"
+    }
+  },
+  "retained_receipts": {
+    "windows_native_build": {
+      "bytes": 56307,
+      "sha256": "18ae57fbc2085e342c90a58d945369e4435deb423a40bd9448341e7c04628cce"
+    },
+    "windows_native_source": {
+      "bytes": 50273,
+      "sha256": "b79889fdad2722a4c6068930795b24c0f262438fc7badd1fb682292ab4def83a"
+    },
+    "windows_native_seals": {
+      "bytes": 1816,
+      "sha256": "d09eac0a6ebd80cd1d8b5452329a21636906a6b1a44d1efc1fb480943a54e238"
+    },
+    "original_windows_campaign": {
+      "bytes": 83525,
+      "sha256": "2901000d6d74aa08e7e91bb6180430832df6ce2cf16916ef8c97bb1fbc3f8305"
+    },
+    "original_windows_job": {
+      "bytes": 1948,
+      "sha256": "156170b49d114ba5ceba908a056d38687c38c21ff360a3529c3c3cf74c7c4c9d"
+    },
+    "original_failed_checker_evidence": {
+      "bytes": 107115,
+      "sha256": "afb92f272064f74a1dfbeb28f15ed057f5a5c2bf05a7bc0a2282c876a08f7f46"
+    },
+    "strengthened_character_owner": {
+      "bytes": 2692,
+      "sha256": "499d4421a2dcc773d6592b09b378198fa0c74151c800467b56d7b5348bf8f9d8"
+    },
+    "strengthened_character_job": {
+      "bytes": 1853,
+      "sha256": "ad3e141cc50bb5f54a33e208157e9026f631f22fe717e9b2c7938bdafd4f4743"
+    },
+    "strengthened_character_evidence": {
+      "bytes": 1095678,
+      "sha256": "4fc4b44b0a7078021e9613d24f928e8bb6bc447ac005919c121b16917e801808"
+    },
+    "original173_rejection": {
+      "bytes": 13712,
+      "sha256": "17fc0f1cb68849e8d55c75b2d2e2b2a3a1353e61e2c1597fb760074c7e69a49e"
+    },
+    "original173_rejection_job": {
+      "bytes": 1422,
+      "sha256": "ce36f118067d266384e3bfcc65d25f5d4b73990f9afbcae0b3a36d1078cd4f36"
+    },
+    "linux_native_and_tests": {
+      "bytes": 321979,
+      "sha256": "91fd7a63a17d49d92acc8ae0ff4c0be7fa0908b15bb4bee661078102de6ad7ae"
+    },
+    "linux_source": {
+      "bytes": 54298,
+      "sha256": "fd65ead8034d1ef404d868e9a50a16ead284bd0a33756260ed9502d841f0d816"
+    },
+    "linux_seals": {
+      "bytes": 2276,
+      "sha256": "bc5a3c98e751cde9e664d4f0a5c88b804bbaca0e6c70e2b5388c3cd5af13ffdf"
+    },
+    "linux_junit": {
+      "bytes": 24129,
+      "sha256": "b320b47dbd9096154ba0879d7f6bb3d7f5c358273d69c19a0ee83fcc69251640"
+    },
+    "independent_windows_file_audit": {
+      "bytes": 90184,
+      "sha256": "3d088450faff09d68f1b552416107e79cf0b21be77c3ac4aa352e93d2ea7ef90"
+    },
+    "independent_linux_file_audit": {
+      "bytes": 307061,
+      "sha256": "78ac095eba8ad7cbb0c732e05653a7665155505b792a0fe2a1b3d1aa59cb616b"
+    },
+    "original_failed_checker_source": {
+      "bytes": 35603,
+      "sha256": "2ca5442a8ad79b937a97366140fe9e3785805f4b0c67a171e99316d10edb570c"
+    },
+    "original_failed_windows_file_audit": {
+      "bytes": 77478,
+      "sha256": "ee19d1d762809714a540561b0a167ba9a82c97d2d0c63c9048cfe532747c2f97"
+    },
+    "original_failed_windows_file_auditor_source": {
+      "bytes": 48772,
+      "sha256": "f1a6aa47ad35ba918777b38184d1be9f448c94dee7e165a451b05a7c46c82f9f"
+    },
+    "prior_corrected_character_owner": {
+      "bytes": 2691,
+      "sha256": "c55933ee7301cdad751a67fdd7788a317c3d76fe6cd4fb8348b6ce176456ea55"
+    },
+    "prior_corrected_character_job": {
+      "bytes": 1852,
+      "sha256": "7f966beb40092062f7524eb4467f3cfa9ca49836487ef9bba41bc83912e11a5e"
+    },
+    "prior_corrected_character_evidence": {
+      "bytes": 1095653,
+      "sha256": "48ce1035da4550a7ecb44739ecbdd12d43d025c303a4112e2e02a0820b832cca"
+    },
+    "prior_corrected_checker_source": {
+      "bytes": 35706,
+      "sha256": "6546d1a5ac1320403ca1faae6df9d6a23b05462cde3531766afaf61534a3d1ad"
+    },
+    "prior_successful_windows_file_audit": {
+      "bytes": 87852,
+      "sha256": "2cb9428a9b10548e0ae78e4acb0bcf08c148fbf8a7fd411c70968419ec112944"
+    },
+    "prior_successful_windows_file_auditor_source": {
+      "bytes": 49237,
+      "sha256": "b4cc1fc4d1131e252fa848f3258fca435a067707d9c627c448f67f8fa4ef6cfd"
+    }
+  },
+  "limits": [
+    "One original multi-take GLB character and one accepted-old synthetic content comparison; not general exporter coverage.",
+    "Broader FBX sources, anatomical retargeting, contact/IK, rendered characters and game performance require separate qualification.",
+    "No Alpha gate completion, production reliability, independent texel/filtering conformance or full-key-limit codec claim."
+  ]
+}
