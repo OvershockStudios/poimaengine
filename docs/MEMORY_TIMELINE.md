@@ -131,3 +131,11 @@ are mixed, and the warm working set increases during this short run. No
 leak cause, plateau, instrumentation-overhead bound, peak VRAM or thirty-minute
 reliability qualification is established. The separate focused-player
 requirements remain unchanged.
+
+The [0.0.168 CoreCLR integration](PERFORMANCE_YARD_CORECLR.md) records 41 actual
+queries and 67 phase marks through compile/error/repair, reload and warm/cold
+restoration in the complete Performance Yard. It preserves native module and
+process lifetimes separately and uses conservative request brackets for observed
+simulation cadence. This extends short integration coverage; it does not qualify
+recording overhead, continuing growth, continuous memory peaks or thirty-minute
+reliability.

@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.167**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.168**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.168 [full Performance Yard CoreCLR check](PERFORMANCE_YARD_CORECLR.md)
+passes actual compilation, structured-error recovery, compatible body reload and
+warm/fresh-process save continuation using native 0.0.167. It retains all 50
+globals, four component schemas and the full 2,394-entity authored world. An
+independent audit joins 391 native calls, eight complete v7 snapshots and five
+byte-exact, typed-exact whole-document pairs. A separate real native schema
+import verifies canonical values without casting raw compiler metadata.
+
+Five fixed five-second play intervals qualify conservative observed cadence
+bounds wholly inside 58–62 ticks/s, with more than 25.34 seconds between native
+observation events. Both background windows close cleanly; the external Job
+ends empty without forced cleanup. Callback lifetimes and 41 actual process-memory
+queries pass their selected checks. This cohort retains the normal Windows user
+profile while isolating application-data and temporary paths; cache state is
+uncontrolled. Earlier startup, observer-selection, timing and reader failures
+remain failed. Matched recording overhead, continuing memory growth, foreground
+frame budgets, physical interaction and the thirty-minute mixed-reliability gate
+remain open. [Results and limits](evidence/m2-coreclr-performance-yard.json).
 
 Version 0.0.167 adds opt-in [CoreCLR callback metrics](MANAGED_CALLBACK_METRICS.md):
 fixed per-module Initialize/Tick/Control counters, current-thread allocated bytes
@@ -22,9 +41,10 @@ and retained NativeAOT reads. Independent file review joins 357 original calls,
 twenty complete checkpoints and eight exact whole-file state pairs. The first
 collector's final newline census failure remains failed. Full-scene prerequisites
 also retain an import failure, a pre-play census/cleanup failure and a distinct
-raw-versus-canonical metadata assertion failure. No representative CoreCLR game,
-recording-overhead, sustained memory-growth or Alpha gate closes from these
-fixtures. The desktop profiler does not yet display these managed aggregates.
+raw-versus-canonical metadata assertion failure. These focused fixtures alone do
+not qualify full-scene CoreCLR play. Recording overhead, sustained memory growth
+and the wider Alpha gates remain open. The desktop profiler does not yet display
+these managed aggregates.
 [Results and boundaries](evidence/m2-managed-callback-metrics.json).
 
 Version 0.0.166 adds explicit background native play for unattended agents:

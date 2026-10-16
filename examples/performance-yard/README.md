@@ -94,3 +94,9 @@ laptop. Both runs maintain approximately 60 simulation ticks/s and complete
 three circuits. The application present-return p95 is 12.444 ms on RTX 4070
 Laptop and 27.409 ms on AMD integrated graphics; AMD misses the timing budgets.
 Compressed raw rows and process-memory samples accompany the results.
+
+The [0.0.168 CoreCLR workflow](../../docs/PERFORMANCE_YARD_CORECLR.md) separately
+checks actual compilation, failed-build recovery, compatible reload and complete
+warm/cold saves in the full world. It includes callback and process-memory
+observations across five fixed background-play intervals. Its conservative tick
+cadence bounds are separate from the foreground frame-time measurements above.

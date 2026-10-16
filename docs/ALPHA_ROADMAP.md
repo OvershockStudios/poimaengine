@@ -126,6 +126,13 @@ allocation/GC observations for the mixed-reload investigation. Their bounded
 fixture qualification does not close the representative-game, recording-overhead
 or thirty-minute reliability gates.
 
+The [0.0.168 CoreCLR integration](PERFORMANCE_YARD_CORECLR.md) exercises the
+complete Performance Yard with actual compile/error/repair, compatible reload,
+eight complete checkpoints and fresh-process continuation. Five fixed play
+intervals pass conservative observed tick-cadence bounds and the 41-query memory
+timeline passes. This closes the short full-workload CoreCLR consumer prerequisite;
+it does not close the thirty-minute mixed-reliability or wider performance gate.
+
 ## Implementation order
 
 1. Extend the qualified character/content consumer to representative imported

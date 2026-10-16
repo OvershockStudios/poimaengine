@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.168
+
+- Qualify CoreCLR compilation, failed-build recovery, compatible reload and complete warm/cold saves in the full 2,394-entity Performance Yard. Verify 391 native calls, eight complete checkpoints and five exact saved-file/state pairs. [Workflow](docs/PERFORMANCE_YARD_CORECLR.md).
+- Integrate callback counters and a 41-query process-memory timeline through five fixed play intervals. Bound cadence with original request/response envelopes and preserve earlier startup, observer and verifier failures. The longer reliability and Alpha gates remain open. [Results](docs/evidence/m2-coreclr-performance-yard.json).
+
 ## 0.0.167
 
 - Add opt-in CoreCLR callback allocation and GC observations with fixed counters, strict bridge negotiation and read-only inspection. Keep diagnostic attempts outside authoritative state, saves and rollback; preserve default loads and the gameplay C ABI. [Guide](docs/MANAGED_CALLBACK_METRICS.md).

@@ -127,4 +127,10 @@ missing legacy inputs must fail admission rather than silently skip cases.
 
 [Recorded results and limits](evidence/m2-managed-callback-metrics.json) separate
 helper checks, actual native hosting, Linux disabled-runtime regression and the
-remaining full-workload qualification.
+separate full-workload qualification.
+
+The [full Performance Yard CoreCLR check](PERFORMANCE_YARD_CORECLR.md) adds
+actual 50-field/four-component reload, warm restoration with thirty zero-valued
+fresh counters, default-off cold restoration and complete saved-state comparisons.
+Its short background run qualifies integration; observer cost, retained heap and
+sustained memory growth remain separate questions.

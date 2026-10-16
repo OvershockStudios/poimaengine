@@ -1,0 +1,514 @@
+{
+  "format": "poima.coreclr-performance-yard.evidence.v1",
+  "source_checkpoint": "0.0.168",
+  "compiled_engine_checkpoint": "0.0.167",
+  "date": "2026-10-16",
+  "scope": "Short full-workload CoreCLR integration with actual compile/failure/repair, typed native schema import, body reload, whole saves and background play.",
+  "prerequisite": {
+    "callback_metrics_checkpoint": "0.0.167",
+    "evidence": {
+      "bytes": 25657,
+      "sha256": "a5572d1a5ecd72af4fec8c1d7b4873ffe831752ecce572afeb13995bd92ed526"
+    },
+    "native_source_files": 314,
+    "native_generation": 32,
+    "gameplay_C_ABI_unchanged": true,
+    "binary_gameplay_sdk_rebuilt": false,
+    "scope": "Qualified unchanged compiled167 prerequisite; publication168 does not imply a new native build."
+  },
+  "full_consumer": {
+    "qualified": true,
+    "closure": {
+      "passed": true,
+      "seconds": 49.9352958999807,
+      "observed_processes": 19,
+      "active_processes": 0,
+      "accounting_terminations": 0,
+      "forced_cleanup": false,
+      "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+    },
+    "authoritative_native_owners": 3,
+    "headless_schema_owners": 1,
+    "rendered_native_owners": 2,
+    "connecting_clients": 2,
+    "authored_entities": 2394,
+    "cooked_assets": 15,
+    "coreclr_schema_fields": 50,
+    "component_schemas": 4,
+    "snapshot_payload_keys": 14,
+    "rpc_count": 391,
+    "game_rpc_count": 349,
+    "schema_normalizer_rpc_count": 42,
+    "complete_saved_documents": 8,
+    "whole_equal_pairs": 5,
+    "comparison_exclusions": [],
+    "real_play_segments": 5,
+    "real_play_seconds": 25.3456659,
+    "semantic_probe_ticks": 1,
+    "clock_observation": {
+      "method": "Entire conservative rate interval from original inspect/pause RPC envelopes",
+      "required_rate_range": [
+        58,
+        62
+      ],
+      "minimum_seconds_per_segment": 5,
+      "segments": [
+        {
+          "owner": "warm",
+          "label": "baseline-before-save",
+          "tick_delta": 306,
+          "event_elapsed_ns": {
+            "minimum": 5049176500,
+            "maximum": 5114853900
+          },
+          "rate_interval": {
+            "minimum": 59.82575572686446,
+            "maximum": 60.603942048767756
+          }
+        },
+        {
+          "owner": "warm",
+          "label": "changed-before-save",
+          "tick_delta": 306,
+          "event_elapsed_ns": {
+            "minimum": 5075796900,
+            "maximum": 5125080700
+          },
+          "rate_interval": {
+            "minimum": 59.70637691617227,
+            "maximum": 60.286100099868065
+          }
+        },
+        {
+          "owner": "warm",
+          "label": "changed-discarded",
+          "tick_delta": 306,
+          "event_elapsed_ns": {
+            "minimum": 5073305600,
+            "maximum": 5124600300
+          },
+          "rate_interval": {
+            "minimum": 59.711974024588805,
+            "maximum": 60.31570422250928
+          }
+        },
+        {
+          "owner": "warm",
+          "label": "warm-continued",
+          "tick_delta": 308,
+          "event_elapsed_ns": {
+            "minimum": 5066518000,
+            "maximum": 5148623200
+          },
+          "rate_interval": {
+            "minimum": 59.82181799592559,
+            "maximum": 60.791257427685046
+          }
+        },
+        {
+          "owner": "cold",
+          "label": "cold-continued",
+          "tick_delta": 310,
+          "event_elapsed_ns": {
+            "minimum": 5080868900,
+            "maximum": 5180858600
+          },
+          "rate_interval": {
+            "minimum": 59.83564191464326,
+            "maximum": 61.013186150109085
+          }
+        }
+      ],
+      "scope": "Observed tick cadence with bounded event-time uncertainty; not exact native accepted time, frame latency or a matched performance comparison."
+    },
+    "compile_outcomes": [
+      {
+        "label": "baseline-A",
+        "state": "succeeded",
+        "exit_code": 0
+      },
+      {
+        "label": "intentional-invalid",
+        "state": "failed",
+        "exit_code": 1
+      },
+      {
+        "label": "compatible-B",
+        "state": "succeeded",
+        "exit_code": 0
+      }
+    ],
+    "body_reload_preserved_fields": 50,
+    "changed_first_tick_counter_delta": 2,
+    "warm_profile_callbacks": true,
+    "cold_profile_callbacks": false,
+    "rendering": {
+      "width": 1920,
+      "height": 1080,
+      "gpu_index": 1,
+      "mode": "background",
+      "lighting_path": "deferred",
+      "ambient_occlusion": "medium GTAO",
+      "audio_enabled": false,
+      "hardware_input_enabled": false,
+      "vertical_fov_degrees": 50
+    },
+    "memory_observations": {
+      "samples": 41,
+      "assigned_closed_queries": 41,
+      "phase_events": 67,
+      "scope": "Actual associations, no causal allocation/growth/overhead conclusion"
+    },
+    "lineage": "New CoreCLR saves only; no interchange qualification with retained94 NativeAOT saves."
+  },
+  "schema_boundaries": {
+    "raw_generated_four_schemas_match_retained_native94_typed": true,
+    "raw_matches_authored_registry_typed": false,
+    "typed_default_token_differences": 15,
+    "actual_native_import_matches_authored_registry_typed": true,
+    "fixture_coercion": false,
+    "import_retry_preserved": true,
+    "compiler_schema_owner_runtime_started": false,
+    "scope": "Separate real headless compiler/schema owner imports the original raw manifest, observes/persists the canonical native registry and closes before rendered owners."
+  },
+  "environment": {
+    "profile": "Normal caller USERPROFILE",
+    "isolated": [
+      "APPDATA",
+      "LOCALAPPDATA",
+      "TEMP"
+    ],
+    "context_declared_in_admission": true,
+    "cache_state_controlled": false,
+    "scope": "Supported observed setup, not a matched environment/performance experiment or a demonstrated root cause."
+  },
+  "startup_diagnostic": {
+    "passed": true,
+    "startup_ready": true,
+    "thread_captures": 0,
+    "rpc_count": 18,
+    "closure": {
+      "passed": true,
+      "seconds": 4.7144145999336615,
+      "observed_processes": 3,
+      "active_processes": 0,
+      "accounting_terminations": 0,
+      "forced_cleanup": false,
+      "scope": "External supervisor accounting only; not a per-descendant natural-exit claim."
+    },
+    "profile_context": "Normal caller USERPROFILE; APPDATA, LOCALAPPDATA and TEMP remain fresh isolated paths.",
+    "cause_established": false,
+    "performance_comparison_qualified": false,
+    "scope": "One separate paused-startup diagnostic with unchanged compiled167 engine and retained DLL. It reached readiness before the first scheduled observation. Existing driver/cache state is uncontrolled; no native fix, causal diagnosis, portable environment result or matched timing claim follows."
+  },
+  "retained_failures": [
+    {
+      "kind": "focused_collector_1",
+      "aggregate_passed": false,
+      "written_inner_passed": true,
+      "physical_byte_difference": 147,
+      "native_workers_passed": {
+        "compile": true,
+        "focused": true
+      },
+      "cause": "Final physical-byte census differed by CRLF expansion; original enclosing failure remains failed, even though native workers passed."
+    },
+    {
+      "kind": "full_preparation_1",
+      "passed": false,
+      "native_executed": false,
+      "compiler_executed": false,
+      "cause": "File-only preparation imported an unavailable helper name and failed before a producer or plan."
+    },
+    {
+      "kind": "full_consumer_1",
+      "passed": false,
+      "forced_cleanup": true,
+      "attempted_compile_jobs": 1,
+      "compiler_terminal_observed": false,
+      "play_intervals": 0,
+      "cause": "Original collector rejected an output during concurrent file retirement; the record lacks the path/type needed for a definitive causal identity. No compilation success or gameplay qualification is inferred."
+    },
+    {
+      "kind": "full_consumer_2",
+      "passed": false,
+      "baseline_compile_completed": true,
+      "component_extraction_exit_code": 0,
+      "play_intervals": 0,
+      "forced_cleanup": false,
+      "outer_accounting": {
+        "observed_processes": 8,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "exit_code": 1,
+        "scope": "Original outer Job accounting only; not a per-descendant natural-exit claim."
+      },
+      "raw_generator_matches_retained_native94_typed": true,
+      "raw_generator_matches_authored_registry_typed": false,
+      "all_four_schema_fingerprints_match": true,
+      "typed_default_token_differences": 15,
+      "original_data_coerced": false,
+      "engine_fault_established": false,
+      "cause": "A strict prerequisite compared raw generated component metadata with an authored canonical registry. Fifteen float64 defaults have distinct integer versus floating JSON tokens. The independent original-file comparison preserves those types; no gameplay or compatibility qualification follows, and the original assertion failure stays failed."
+    },
+    {
+      "kind": "full_consumer_3",
+      "passed": false,
+      "headless_schema_prerequisite_passed": true,
+      "player_start_accepted": true,
+      "following_inspect_outcome_unknown": true,
+      "play_intervals": 0,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 9,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 27.82116799999494,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "cause_established": false,
+      "scope": "Accepted startup did not qualify renderer readiness; the original request outcome and forced cleanup remain failures."
+    },
+    {
+      "kind": "full_consumer_4",
+      "passed": false,
+      "reported_functional_errors": 0,
+      "requested_memory_timeline_passed": false,
+      "observer_initialization_exception": "AttributeError",
+      "reported_complete_saved_documents": 8,
+      "reported_whole_equal_pairs": 5,
+      "reported_play_segments": 5,
+      "reported_real_play_seconds": 22.162273799884133,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": false,
+        "observed_processes": 19,
+        "active_at_worker_exit": 0,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 46.46449210005812,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "The original worker reports completed functional steps and clean native owners, but its requested memory observer failed initialization/association. The aggregate stays FAILED; later corrected import selection cannot regrade it."
+    },
+    {
+      "kind": "full_consumer_5",
+      "passed": false,
+      "requested_memory_timeline_passed": true,
+      "reported_completed_play_segments": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": false,
+        "observed_processes": 17,
+        "active_at_worker_exit": 0,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 29.860136299976148,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "clock_assertion_passed": false,
+      "engine_clock_fault_established": false,
+      "scope": "The original two-second discarded-play rate assertion failed. Its tick endpoints enclosed RPC work outside its Python timer. A new prospective interval protocol does not alter that assertion, its original data or aggregate FAILED outcome."
+    },
+    {
+      "kind": "startup_diagnostic_1",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 25.07310400006827,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    },
+    {
+      "kind": "startup_diagnostic_2",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 24.984711199998856,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    },
+    {
+      "kind": "startup_diagnostic_3",
+      "passed": false,
+      "startup_passed": false,
+      "retained_capture_count": 2,
+      "outer_accounting": {
+        "exit_code": 1,
+        "forced_cleanup": true,
+        "observed_processes": 3,
+        "active_at_worker_exit": 1,
+        "active_after_cleanup": 0,
+        "accounting_terminations_at_worker_exit": 0,
+        "accounting_terminations_after_cleanup": 0,
+        "seconds": 25.211413999903016,
+        "scope": "Original external Job accounting; no inferred per-descendant natural-exit result."
+      },
+      "scope": "Separate intervening thread-observation attempt; suspension/unwind changes across attempts prevent a matched timing comparison. No earlier failure is regraded."
+    }
+  ],
+  "retained_file_audit_failures": [
+    {
+      "kind": "full6_reader_5",
+      "file_only": true,
+      "passed": false,
+      "audit_completed": false,
+      "original_native_campaign_passed": true,
+      "source_corrected_in_new_reader": true,
+      "cause": "The reader assumed every ready player response contained a full render report. Original compact player.control receipts legally retain report:null; the reader raised TypeError. The incomplete file-audit failure remains failed, separately from the unchanged native campaign and new successful reader."
+    }
+  ],
+  "limits": [
+    "No matched observer-overhead, memory-growth, retained-heap or leak qualification.",
+    "No thirty-minute mixed-reliability, foreground frame-time, physical-input, clean-machine or Alpha completion claim.",
+    "Current-thread callback allocations and runtime-wide GC deltas retain the167 attribution limits.",
+    "Successful normal-profile startup does not diagnose the failed isolated-profile runs or regrade their unknown outcomes."
+  ],
+  "authored_source_pins": {
+    "examples/performance-yard/PerformanceGame.cs": {
+      "bytes": 10323,
+      "sha256": "a25baac6619b38d2859412a5cb23d10e6038164d85d365e9c0d096aef5e4ff6b"
+    },
+    "examples/relay-yard/RelayYardGame.cs": {
+      "bytes": 25747,
+      "sha256": "a84f2ba0328eabc5ab2c7266953d6d2620f05dbf5b7d108218ec8dd86bf5a0de"
+    },
+    "examples/relay-yard/RelayAudio.cs": {
+      "bytes": 7615,
+      "sha256": "42fe87118178ae8cc3fea1a04a738501f35cba37c4f4647877b23b758a548bf4"
+    },
+    "examples/locomotion-yard/LocomotionYardGame.cs": {
+      "bytes": 18004,
+      "sha256": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f"
+    }
+  },
+  "original_report_identities": {
+    "windows_native_build_result": {
+      "bytes": 56099,
+      "sha256": "dfa8e33ac6e53df68b40ed500a7f55469e74b95d3a2a863be966fc37b3c71cca"
+    },
+    "windows_native_sealed_artifacts": {
+      "bytes": 1957,
+      "sha256": "f7a0b19e93a5506aedc45a9d0f7d7a2e8b33e6de1fcfdf3b6f2d6a5bcfefbc4b"
+    },
+    "windows_native_source_pins": {
+      "bytes": 47297,
+      "sha256": "12bed7ffb73e75651495954a1b0ab62eedcf636205846a56892e3688b4c3d717"
+    },
+    "published_callback_metrics_167": {
+      "bytes": 25657,
+      "sha256": "a5572d1a5ecd72af4fec8c1d7b4873ffe831752ecce572afeb13995bd92ed526"
+    },
+    "full_consumer_qualification": {
+      "bytes": 1991,
+      "sha256": "e27db2346ad5f3415c4db5fa075c08aa90cf7114cad56cc3feee92b35f599bd9"
+    },
+    "full_consumer_report": {
+      "bytes": 15775608,
+      "sha256": "6c151963376d06b6e9ae3eca1c7785102f6719381e361e42400f3e6852cb5c54"
+    },
+    "full_consumer_admission": {
+      "bytes": 73678,
+      "sha256": "73d7e81fa9100007966186de0235a9d3df7030862e722fdbe37eefa617cece21"
+    },
+    "full_consumer_independent_audit": {
+      "bytes": 140600,
+      "sha256": "de196eb32b640f8a52ee0acb6f389fe13f79ce57debe0dfa65989dd67e11bbb1"
+    },
+    "full_consumer_independent_audit_source": {
+      "bytes": 54198,
+      "sha256": "1e2d3720da568088f58b3bfdaf63729f1e81731a2a212e4d1b165787c6a5e39e"
+    },
+    "retained_file_reader_5_failure": {
+      "bytes": 134566,
+      "sha256": "07bdaf54dc221acb17b94384f0eba366508d41f6c57952f9eb9c3ef54af63ae0"
+    },
+    "retained_file_reader_5_source": {
+      "bytes": 53199,
+      "sha256": "f561b00c22791ee454c2485a52aec80233527ad74fb3c14d0b9cd33a6b0446c5"
+    },
+    "retained_full_consumer_3_qualification": {
+      "bytes": 3076,
+      "sha256": "8b2a0a489c9c84418b20ea2bf8058002ce06f639f60772a1ec9bcb928e4047ab"
+    },
+    "retained_full_consumer_3_report": {
+      "bytes": 337463,
+      "sha256": "ce4805651ed26daa0e91a1ed835dc8eb162c8398e5abed6d875cdcd086881e09"
+    },
+    "retained_full_consumer_4_qualification": {
+      "bytes": 2923,
+      "sha256": "35e4b7ea23d76c97fb98b2f7f73b3d2dd0634a1bc3505d5cc745ed6335112d49"
+    },
+    "retained_full_consumer_4_report": {
+      "bytes": 14732930,
+      "sha256": "8c3ae574de6433bd3b24e010cdaa3fc0310dbdcd032b38ccf5e114e5c5380477"
+    },
+    "retained_full_consumer_5_qualification": {
+      "bytes": 2921,
+      "sha256": "2aeefa9bcf1be0b13fdb92db6bdb934e35bbc808ee99efa112e811a20781db22"
+    },
+    "retained_full_consumer_5_report": {
+      "bytes": 8427475,
+      "sha256": "6dabd55cb5507041740af9449578ba79a52277ab9adcb6c6a34715b1fb65ccc0"
+    },
+    "retained_startup_diagnostic_1_qualification": {
+      "bytes": 2289,
+      "sha256": "5f6cf1a6c8dfc0e42289c149013419675c71d688a32cc9800de15e72c01c20dc"
+    },
+    "retained_startup_diagnostic_1_report": {
+      "bytes": 304088,
+      "sha256": "d458ec779e9d7d07737892c0b991d68c3d69986914e72c4c0848940ca2b34a91"
+    },
+    "retained_startup_diagnostic_2_qualification": {
+      "bytes": 2290,
+      "sha256": "54a56f8e2468183f9484d68c397fd30803d203e5a95fffda7436e93b20ffe97c"
+    },
+    "retained_startup_diagnostic_2_report": {
+      "bytes": 498604,
+      "sha256": "adbbc7f94c943cbb6a286833fe147af3f3a95b314569405e6f3d7c9950bec549"
+    },
+    "retained_startup_diagnostic_3_qualification": {
+      "bytes": 2291,
+      "sha256": "5213f4eaf146f3666d04e6a4d35f01b128d2d832082719fabf62a6a3a600e6d4"
+    },
+    "retained_startup_diagnostic_3_report": {
+      "bytes": 895595,
+      "sha256": "09b649fe2d8c1f00ab7633dc8d94316817dd41a79d67d0544f263779afa4791e"
+    },
+    "startup_diagnostic_4_qualification": {
+      "bytes": 1641,
+      "sha256": "c30b78bad9e98cf13b1fdf60aecc0b27a23daae2f681cf65ac5f61f6bf025c22"
+    },
+    "startup_diagnostic_4_report": {
+      "bytes": 652158,
+      "sha256": "8761bd04c0fe17fc083a9f7be4f49bdc7b3f4596bae00d29950cd5336388d50d"
+    },
+    "startup_diagnostic_4_admission": {
+      "bytes": 73436,
+      "sha256": "28d1cc263a76bee0891cee8bc7091888f9ae0cc2febe06c4b9fb8f52db4c217d"
+    }
+  }
+}
