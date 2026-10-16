@@ -48,6 +48,13 @@ a package. Page through all original takes and retain `model_sha256` for guarded
 source inspection or clip composition. Import returns the cooked asset identity
 and diagnostics without changing the authored world revision.
 
+With **0.0.176 or later / schema revision 105**, add
+`"expected_model_sha256":"<model_sha256 from request 1>"` to the import
+parameters to bind admission to the inspected original. Replace the placeholder
+with the returned 64-character fingerprint. The raw source/license hashes in
+the table above are separate file checks. See [guarded import and recovery](ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models)
+for donor guards, structured mismatch errors and validation order.
+
 Inspect cooked nodes, skin joints and takes through the
 [asset and animation APIs](ANIMATION_ASSETS.md). `asset.inspect` supplies section
 counts in fields such as `nodes` and `animations`; source inspection and animation

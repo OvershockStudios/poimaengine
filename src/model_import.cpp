@@ -123,9 +123,24 @@ ImportedModel import_model(const std::filesystem::path& source,FbxNormalConventi
     // user-chosen name has no standard extension. FBX dispatch is explicit.
     return {import_gltf(source),{}};
 }
+void validate_model_source_fingerprint(const std::optional<std::string>& expected) {
+    if(!expected)return;
+    require(expected->size()==64 && expected->find_first_not_of("0123456789abcdef")==std::string::npos,
+        "Expected model SHA256 must be 64 lowercase hexadecimal characters.");
+}
+std::string verify_model_source_fingerprint(const ModelAsset& model,const std::string& expected,ModelSourceRole role) {
+    validate_model_source_fingerprint(expected);
+    auto actual=fingerprint(model);
+    if(expected!=actual)throw ModelSourceFingerprintError({role,std::nullopt,expected,actual});
+    return actual;
+}
 ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention,const ModelAsset* base) {
     require(!(source.frame_transfer && source.rotation_retarget),"Frame transfer and rotation retarget policies are mutually exclusive.");
+    validate_model_source_fingerprint(source.expected_model_sha256);
     auto imported=import_model(source.source,convention);
+    std::optional<std::string> original_fingerprint;
+    if(source.expected_model_sha256)original_fingerprint=verify_model_source_fingerprint(
+        *imported.model,*source.expected_model_sha256,ModelSourceRole::animation_donor);
     require(!imported.model->animations.empty(),"Animation source contains no takes.");
     require(source.name.size()<=256 && source.name.find('\0')==std::string::npos,"Invalid animation take name.");
     std::optional<ModelPose> source_reference,target_reference;
@@ -137,11 +152,11 @@ ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNorm
         target_reference=reference_pose(*base,policy.target_reference,"target");
         provenance.push_back("reference-frame-v1 source_reference="+selector_text(policy.source_reference)+" source_time="+decimal(policy.source_reference.time)+
             " target_reference="+selector_text(policy.target_reference)+" target_time="+decimal(policy.target_reference.time));
-        provenance.push_back("reference-frame-v1 source_model_sha256="+fingerprint(*imported.model)+" target_model_sha256="+fingerprint(*base));
+        provenance.push_back("reference-frame-v1 source_model_sha256="+(original_fingerprint ? *original_fingerprint : fingerprint(*imported.model))+" target_model_sha256="+fingerprint(*base));
     }else if(source.rotation_retarget) {
         require(base!=nullptr,"Reference-rotation retarget requires the immutable base model.");
         const auto& policy=*source.rotation_retarget;
-        const auto source_hash=fingerprint(*imported.model),target_hash=fingerprint(*base);
+        const auto source_hash=original_fingerprint ? *original_fingerprint : fingerprint(*imported.model),target_hash=fingerprint(*base);
         auto expected_hash=[&](const std::string& expected,const std::string& actual,const char* message) {
             if(expected.empty())return;
             require(expected.size()==64 && std::all_of(expected.begin(),expected.end(),[](char value) {

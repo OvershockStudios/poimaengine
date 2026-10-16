@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.176
+
+- Guard base and animation-donor imports with optional inspected-model fingerprints, returning structured stale-source diagnostics before publication while preserving legacy requests and cooked bytes. [Contract and recovery](docs/ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models).
+- Add opt-in source guards to Locomotion Yard, preserve structured errors and inspect the authored profile's actual nodes. Verify native imports and compiled character consumption; retain the Linux fixture deadline failure separately from its focused follow-up. [Results and scope](docs/evidence/m2-model-source-guards.json).
+
 ## 0.0.175
 
 - Add an explicit original KayKit Knight profile to Locomotion Yard, retaining its complete 76-take GLB library and creator/license provenance. Preserve the default Kenney FBX workflow and use the same compiled courier gameplay. [Source profiles](examples/locomotion-yard/README.md).

@@ -42,6 +42,14 @@ def node_id(rig, index):
     return hashlib.sha256(f'poima.instance.v1/{rig}/node/{index}'.encode()).hexdigest()[:32]
 
 
+def source_selection(selection, model_sha256, guard_sources=False):
+    """Optionally bind a donor selection to its inspected normalized model."""
+    result = dict(selection)
+    if guard_sources:
+        result['expected_model_sha256'] = model_sha256
+    return result
+
+
 COORDINATES, CURSOR = uid(1), uid(2)
 ACTIONS = {name: 800+index for index, name in enumerate(
     ('dispatch', 'pause', 'resume', 'save', 'load', 'status'))}
@@ -157,6 +165,8 @@ class OwnedGame:
         try: result = self.client.call(method, params or {}, timeout=min(timeout, remaining))
         except RpcError as failure:
             row['error'] = dict(code=failure.code, message=failure.message)
+            if failure.data is not None:
+                row['error']['data'] = failure.data
             if error is None or failure.code != error: raise
             return row['error']
         row['result'] = result
@@ -197,6 +207,10 @@ class OwnedGame:
         self.rpc('component.schema.import', dict(request_id=uuid.uuid4().hex, base_revision=0, manifest=self.manifest))
         base_path=source_files['Model/characterMedium.fbx']
         base_info=self.rpc('asset.source.inspect',dict(source=self.native(base_path)))
+        guard_sources=getattr(self.args, 'guard_sources', False)
+        base_import=dict(source=self.native(base_path))
+        if guard_sources:
+            base_import['expected_model_sha256']=base_info['model_sha256']
         base_nodes=self.page('asset.source.inspect',dict(source=self.native(base_path),section='nodes',expected_model_sha256=base_info['model_sha256']))
         selections=[];profiles={}
         for name in ('run','idle'):
@@ -213,9 +227,10 @@ class OwnedGame:
             policy=dict(policy='reference-rotation-v1',source_pose=dict(kind='sample',clip=references[0]['index'],time=0),target_pose=dict(kind='rest'),
                 positions=dict(kind='reference_delta',nodes=sorted(selected),scale=1),scales='target_reference',
                 expected_source_model_sha256=info['model_sha256'],expected_target_model_sha256=base_info['model_sha256'])
-            selections.append(dict(source=self.native(path),clip=motions[0]['index'],name=name.title(),retarget=policy))
+            selections.append(source_selection(dict(source=self.native(path),clip=motions[0]['index'],name=name.title(),retarget=policy),
+                info['model_sha256'],guard_sources))
             profiles[name]=dict(source=str(path),info=info,reference=references[0],motion=motions[0],nodes=nodes,policy=policy)
-        baseline=self.rpc('asset.import',dict(source=self.native(base_path)))
+        baseline=self.rpc('asset.import',base_import)
         original_points=[]
         for node in base_nodes:
             for primitive in node['primitives']:
@@ -225,7 +240,7 @@ class OwnedGame:
         capsule=dict(radius=CAPSULE_RADIUS,height=bounds['max'][1]-bounds['min'][1])
         if not 2*CAPSULE_RADIUS < capsule['height'] <= 4:raise ValueError('Unexpected original standing height.')
         attachment=dict(position=[0,-bounds['min'][1],0],rotation=[0,1,0,0],scale=[1,1,1])
-        imported=self.rpc('asset.import',dict(source=self.native(base_path),animations=selections))
+        imported=self.rpc('asset.import',dict(base_import,animations=selections))
         asset=imported['asset'];clips=self.page('asset.inspect',dict(asset=asset,section='animations'))
         by_name={c['name']:c for c in clips}
         if set(by_name)!={'Run','Idle'} or len(clips)!=2 or imported['nodes']!=len(base_nodes):
@@ -286,9 +301,10 @@ class OwnedGame:
         return result
 
     def snapshot(self):
+        """Selected legacy observations; this is not a complete native save."""
         state, module, route = self.inspect(), self.module(), self.route()
         return normalized(dict(tick=self.tick, entity=self.entity(), rig=self.entity(RIG),
-            nodes=[self.entity(node_id(uid(RIG), index)) for index in range(61)], route=route,
+            nodes=[self.entity(identity) for identity in self.authored['nodes']], route=route,
             config=self.visual_config(), values=module['module']['values'], backend=module['module']['backend'],
             gameplay_revision=module['revision'], revisions=dict(component_revision=route['component_revision'],
                 **{key:state[key] for key in ('structure_revision', 'ui_revision', 'control_sequence')}),
@@ -345,6 +361,7 @@ def main():
     for name in ('hostfxr', 'bridge', 'assembly', 'descriptor'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--source-profile', choices=('kenney-fbx', 'kaykit-knight-original-glb-v1'), default='kenney-fbx')
+    parser.add_argument('--guard-sources', action='store_true', help='Require inspected normalized model fingerprints during source imports.')
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=-1)
     args = parser.parse_args()

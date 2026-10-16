@@ -47,7 +47,31 @@ struct ModelAnimationSource {
     std::string name;
     std::optional<AnimationFrameTransfer> frame_transfer;
     std::optional<AnimationRotationRetarget> rotation_retarget;
+    // Fingerprint of the complete original normalized donor, before take
+    // selection, naming or either coordinate-transfer policy.
+    std::optional<std::string> expected_model_sha256;
 };
+enum class ModelSourceRole { base, animation_donor };
+struct ModelSourceFingerprintDiagnostic {
+    ModelSourceRole role=ModelSourceRole::base;
+    std::optional<std::size_t> donor_index;
+    std::string expected_model_sha256,actual_model_sha256;
+};
+class ModelSourceFingerprintError final : public std::runtime_error {
+public:
+    explicit ModelSourceFingerprintError(ModelSourceFingerprintDiagnostic diagnostic)
+        :std::runtime_error("Model source changed since inspection; inspect it again before importing."),
+         diagnostic_(std::move(diagnostic)) {}
+    const ModelSourceFingerprintDiagnostic& diagnostic() const noexcept { return diagnostic_; }
+private:
+    ModelSourceFingerprintDiagnostic diagnostic_;
+};
+// Format validation performs no source I/O. The verifier hashes importerless
+// encode_model bytes, exactly as asset.source.inspect, and returns that hash
+// for reuse by existing transfer provenance. Omitted guards do no hashing.
+void validate_model_source_fingerprint(const std::optional<std::string>& expected);
+std::string verify_model_source_fingerprint(const ModelAsset& model,
+    const std::string& expected,ModelSourceRole role);
 enum class AnimationCompositionIssueKind {
     missing_joint_or_ancestor, missing_animation_target, rest_frame
 };

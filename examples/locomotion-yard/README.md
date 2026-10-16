@@ -85,6 +85,24 @@ Select `--source-profile kaykit-knight-original-glb-v1` and use
 No take is stripped, renamed or retargeted. The original embedded atlas and
 rigid accessories remain intact, with exportable creator/license provenance.
 
+### Optional inspected-source guards
+
+Add `--guard-sources` with an engine using **schema revision 105** (0.0.176 or
+later). Each base import and Kenney donor selection uses its inspected original
+model fingerprint; Knight guards its intact library. Raw source/license pins
+and Kenney's inner rotation-policy guards remain independent checks.
+
+The flag defaults to off, preserving the existing import request fields. A
+mismatch stops authoring and retains the native error and structured data;
+there is no automatic reinspection, repair or import retry. Restore the intended
+source or inspect and select new content deliberately. See the
+[guard contract](../../docs/ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models).
+The flag changes neither gameplay backend nor player mode.
+
+The helper's selected `snapshot()` observation follows the authored profile's
+node IDs: 57 for Knight and 61 for the retained Kenney fixture. It removes
+session fields and is not a complete native-checkpoint oracle.
+
 ## Compile and extract schemas
 
 Run from the repository root after building the matching SDK and bridge:

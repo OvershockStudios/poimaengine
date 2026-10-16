@@ -63,7 +63,10 @@ def author_knight(game,source_directory,launcher):
     for name,index,count in((IDLE_NAME,IDLE_INDEX,123),(RUN_NAME,RUN_INDEX,122)):
         matches=[c for c in takes if c['name']==name]
         need(len(matches)==1 and matches[0]['index']==index and matches[0]['channels']==count,'Inspected original locomotion take differs')
-    imported=game.rpc('asset.import',dict(source=game.native(source)))
+    import_params=dict(source=game.native(source))
+    if getattr(getattr(game,'args',None),'guard_sources',False):
+        import_params['expected_model_sha256']=fingerprint
+    imported=game.rpc('asset.import',import_params)
     asset=imported['asset'];need(asset==fingerprint,'Imported full-library fingerprint differs from inspected source')
     cooked=game.page('asset.inspect',dict(asset=asset,section='animations'))
     need(exact(cooked,takes) and len(cooked)==76,'Every original take must survive cooking unchanged')

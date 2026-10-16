@@ -36,6 +36,94 @@ Node sampling is the default: each item supplies local position/rotation/scale, 
 
 Invalid selectors/parameters return `-32602`; invalid packages or unevaluable poses return `-32050`. The sampler rejects a cubic quaternion that evaluates to zero, nonpositive evaluated scale, singular blended skin transforms or out-of-range coordinates. These are reported failures, not silently substituted poses.
 
+## Bind imports to inspected original models
+
+With world schema revision **105**, `asset.import` accepts optional
+`expected_model_sha256` on the base request and on each object in `animations`.
+Obtain each value from that file's `asset.source.inspect.model_sha256` using the
+same FBX normal-map convention. The fingerprint identifies the **complete
+normalized parsed model**, before selecting a take, renaming it, frame transfer
+or rotation retargeting. It is not the raw file's SHA-256, the selected donor's
+identity or the final composed package's asset ID. Do not substitute those
+identities even when two happen to coincide for a particular import.
+
+For example, after separately inspecting `body.fbx` and `motion.fbx`, substitute
+the returned fingerprints into this request:
+
+```json
+{"source":"body.fbx","expected_model_sha256":"<body model_sha256>","animations":[{"source":"motion.fbx","clip":1,"name":"Run","expected_model_sha256":"<motion model_sha256>"}]}
+```
+
+Both placeholders must be replaced with the corresponding 64 lowercase
+hexadecimal characters. A donor string still appends takes without a new
+admission guard; use an object to guard that donor. A donor object can combine
+this guard with either its `frame_transfer` or `retarget` policy. The mandatory
+`expected_source_model_sha256` and
+`expected_target_model_sha256` inside rotation retargeting remain separate
+checks; the new outer guard does not replace them.
+
+Omitted guards retain the existing request behavior. Matching guards do not
+become cooked metadata or change a successful package's identity. Whole-source
+import budgets still apply before take selection. File-size preflight can
+inspect donor metadata before the base fingerprint is compared; the API does
+not promise that a stale base prevents all donor filesystem access.
+
+A well-formed guard that differs from the parsed model rejects with `-32050`,
+message `Model source changed since inspection; inspect it again before importing.`,
+and this complete `error.data` shape:
+
+| Member | Value |
+| --- | --- |
+| `type` | `"model_source_changed"` |
+| `version` | integer `1` |
+| `source_role` | `"base"` or `"animation_donor"` |
+| `donor_index` | `null` for base; integer `0..31` for the original `animations` array index |
+| `expected_model_sha256` | The submitted original-model fingerprint |
+| `actual_model_sha256` | The newly parsed original-model fingerprint |
+
+This rejection publishes no partial package and leaves the authored world
+unchanged. Malformed guard values reject with `-32602` before importer I/O;
+other import errors retain their existing behavior. Parsing and format
+validation can fail before a meaningful model fingerprint exists. Keep the
+original error and data, inspect the source deliberately, then choose whether
+to accept a new fingerprint or restore the intended source. The engine does
+not repair files, replace the submitted guard or retry the import automatically.
+
+### Verify import guards
+
+With Python 3.11+ and a built Linux headless executable:
+
+```sh
+python3 tests/asset_import_guards.py --binary build/headless/poima
+```
+
+The final JSON line gives the retained output and evidence paths. Native POSIX
+runs default to Python's temporary directory (respecting `TMPDIR`); Windows and
+Windows-interop runs keep the project `build/asset-import-guards` default.
+`--output` selects a fresh path explicitly. Under WSL, use a native Linux
+filesystem for repeated full-tree observations. Copy retained temporary output
+before OS cleanup if it must survive a restart. The fixture does not delete it.
+
+The three protocol groups retain original requests/replies, source versions,
+complete authored/store snapshots and `evidence.json`. They cover malformed
+values, matching guards, changed base/donor models and deliberate recovery.
+Add `--baseline <retained-older-native-executable>` for an independent legacy
+reply/package comparison; without it, compatibility checks use the current
+native executable. Bounds are 180 seconds, 1,600 requests and 128 MiB of retained
+output, with ten seconds inside the total deadline reserved for owner cleanup.
+The complete output census still runs before every request. Windows-native
+Python requires a caller-owned process-tree Job; use the
+[supervisor pattern](CHARACTER_LIBRARY.md#run-the-independent-checks) with this
+fixture's arguments and a 210-second outer limit.
+
+CTest also registers `model_source_fingerprint_native`,
+`model_source_fingerprint_protocol` and `locomotion_source_guards`. The first
+checks native helper policy/byte parity; the last uses a fake client to check
+launcher request shapes and error retention. The launcher unit checks are not
+native execution evidence. `python3 tests/asset_import_guards_harness.py` checks
+default paths and cleanup budget with a fake owner. See the [checkpoint evidence](evidence/m2-model-source-guards.json)
+for the actual platform cohorts and their different baseline scopes.
+
 ## Visual observation
 
 `asset.animation.capture` accepts `asset`, `time`, optional `clip`/`loop`, and the existing `world.capture` parameters: required `revision`, `camera`, `path`, plus optional width, height, GPU, samples, culling and profiling. The authored camera and lighting illuminate an isolated model in its source coordinate system. Other authored meshes are excluded. Only the model's selected scene roots and descendants are drawn. Capture leaves the scene and running simulation unchanged.

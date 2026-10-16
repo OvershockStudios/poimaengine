@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.175**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.176**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.176 adds optional original-model fingerprint guards to base and
+animation-donor imports. Malformed values reject before importer I/O; stale
+parsed models return structured role/index/hash diagnostics without publishing
+partial content. Matching or omitted guards preserve cooked bytes. Existing
+rotation-retarget guards remain independent. [Import and recovery](ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models).
+
+All 24 original Windows CPU stages pass. Separate checks verify 596 original
+request/reply pairs, 41 complete rejection-preservation comparisons and seven
+whole legacy/guarded package families against the retained 0.0.174 native build.
+A 41-request compiled Knight run uses the public guarded authoring helpers,
+retains all 76 takes and verifies movement and complete authored-state
+preservation. This is not execution of the launcher's interactive main or new
+save, export or rendering qualification.
+
+The original Linux cohort remains failed at 35 of 36 CTests after the new
+fixture exhausted its deadline on a mounted filesystem. A revised fixture keeps
+every full census and assertion, defaults native POSIX output to its temporary
+directory and reserves cleanup time inside the same deadline. The separately
+run configured guard CTest passes with 582 native request/reply pairs; its
+original output and complete copy remain retained. Native artifacts are reused
+unchanged, with the sole noncompiled fixture-source change identified explicitly.
+The revised fixture separately passes the Windows guard cohort with 596 native
+request/reply pairs and the retained legacy baseline. The original Linux failure
+is not regraded. [Evidence and reproduction](evidence/m2-model-source-guards.json).
 
 The explicit Knight profile in [Locomotion Yard](../examples/locomotion-yard/README.md)
 integrates the complete original library with compiled C# movement, navigation

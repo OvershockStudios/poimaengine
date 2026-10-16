@@ -16,6 +16,14 @@ explicit reference poses with the returned original-model fingerprint. The
 [retargeting playbook](ANIMATION_RETARGETING.md) explains animation-only donor
 inspection, selecting original IDs/takes and importing guarded motion policies.
 
+Schema revision **105** adds optional `expected_model_sha256` to `asset.import`
+and its animation donor objects. Use each original file's inspected
+`model_sha256`; a mismatch returns `-32050` with the `model_source_changed`
+error-data schema advertised by `world.describe`. Matching guards preserve
+cooked package bytes. [Import admission and recovery](ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models)
+defines the exact fields, validation order and deliberate recovery. This
+addition does not change protocol version 1 or the authoring-core v1 contract.
+
 ## Asset references
 
 `world.asset.references` lists explicit model, image, audio and navigation bindings by

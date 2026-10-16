@@ -40,7 +40,10 @@ inline LoadedModel read_model_asset(const std::filesystem::path& directory,const
     return {id,bytes.size(),decode_model(bytes)};
 }
 inline LoadedModel store_model_asset(const std::filesystem::path& directory,const std::filesystem::path& source,
-    const std::vector<ModelAnimationSource>& animations={},std::optional<FbxNormalConvention> normal_map={}) {
+    const std::vector<ModelAnimationSource>& animations={},std::optional<FbxNormalConvention> normal_map={},
+    std::optional<std::string> expected_model_sha256={}) {
+    validate_model_source_fingerprint(expected_model_sha256);
+    for(const auto& file:animations)validate_model_source_fingerprint(file.expected_model_sha256);
     // Bound the selected top-level files before retaining multiple parsed models.
     // Each importer independently bounds its external dependency reads.
     constexpr std::uintmax_t source_budget=128*1024*1024;std::uintmax_t selected_bytes=0;
@@ -53,6 +56,8 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
     const auto convention=normal_map.value_or(FbxNormalConvention::opengl);
     auto imported=import_model(source,convention);
     if(normal_map && imported.importer.empty())throw std::runtime_error("fbx_normal_map applies only to FBX base sources; glTF normal maps use their own fixed convention.");
+    if(expected_model_sha256)(void)verify_model_source_fingerprint(*imported.model,
+        *expected_model_sha256,ModelSourceRole::base);
     if(!animations.empty()) {
         if(animations.size()>32)throw std::runtime_error("Animation composition permits at most 32 source files.");
         std::vector<std::shared_ptr<const ModelAsset>> donors;
@@ -60,6 +65,10 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
         for(const auto& file:animations) {
             std::shared_ptr<const ModelAsset> donor;
             try { donor=import_animation_source(file,convention,(file.frame_transfer || file.rotation_retarget) ? imported.model.get() : nullptr).model; }
+            catch(const ModelSourceFingerprintError& error) {
+                auto diagnostic=error.diagnostic();diagnostic.donor_index=donors.size();
+                throw ModelSourceFingerprintError(std::move(diagnostic));
+            }
             catch(const FbxTextureDependencyError& error) {
                 auto diagnostic=error.diagnostic();diagnostic.donor_index=donors.size();
                 throw FbxTextureDependencyError(std::move(diagnostic));

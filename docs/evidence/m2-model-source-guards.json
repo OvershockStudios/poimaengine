@@ -1,0 +1,346 @@
+{
+  "format": "poima.model-source-guards-evidence.v1",
+  "source_checkpoint": "0.0.176",
+  "summary": "Optional guarded admission binds complete original parsed base/donor models to inspected identities before take selection, conversion and package publication.",
+  "contract": {
+    "world_schema_revision": 105,
+    "request_fields": [
+      "asset.import.expected_model_sha256",
+      "asset.import.animations[].expected_model_sha256"
+    ],
+    "guard_format": "64 lowercase hexadecimal characters; explicit null/empty/non-string/malformed values reject -32602 before importer I/O",
+    "identity": "SHA256 of encode_model(original parsed normalized model), matching asset.source.inspect.model_sha256; not raw file, selected/renamed donor, or final composed/importer-tagged package identity",
+    "mismatch_code": -32050,
+    "error_data_fields": [
+      "type",
+      "version",
+      "source_role",
+      "donor_index",
+      "expected_model_sha256",
+      "actual_model_sha256"
+    ],
+    "existing_inner_rotation_guards_independently_required": true,
+    "automatic_reinspection_retry_or_repair": false,
+    "matching_guard_changes_cooked_metadata": false,
+    "omitted_guard_requires_new_hashing": false,
+    "base_preflight_scope": "Existing aggregate source-size admission may stat donor files before comparing the base model."
+  },
+  "sources": {
+    "CMakeLists.txt": {
+      "bytes": 89473,
+      "sha256": "561a2a7d6f617af06e1c786e6da2ad34879a5b848d7e7a06aec7eb917bcea57e"
+    },
+    "src/model_import.hpp": {
+      "bytes": 6716,
+      "sha256": "e7951fcdd7eeb4b2944ef0fe170d3b1c4b1cf657ec9c1bdfb05bf37c421ff933"
+    },
+    "src/model_import.cpp": {
+      "bytes": 56957,
+      "sha256": "afab55674b3a533b4cf698eb58c22cfbcb2131fc0de8c4880d6230d3651ee0e6"
+    },
+    "src/asset_store.hpp": {
+      "bytes": 16122,
+      "sha256": "fc943338d154af77b71ed82f97f2e1446926de70159883e2b22da7f98fdbaf17"
+    },
+    "src/world.cpp": {
+      "bytes": 331555,
+      "sha256": "4b575bf9d3517ac56bdce878bac03743c489971bbab0ba42c73ebc2aa6198880"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 117399,
+      "sha256": "1cd399336fa2ed58b571b5f2d15917cdf7143c277851b1fc4896393ce20741ea"
+    },
+    "tests/model_source_fingerprint.cpp": {
+      "bytes": 8470,
+      "sha256": "ed2adfa43de15c9db4411a427b1382fd0ecf97d3edcdaeb241d913a2ace66aab"
+    },
+    "tests/asset_import_guards.py": {
+      "bytes": 28251,
+      "sha256": "10a690aa4036c4eb4f3fb7b56871fa0df5d012a12a0759224104dfed9aa9c287"
+    },
+    "tests/locomotion_source_guards.py": {
+      "bytes": 9901,
+      "sha256": "ea77d7ccf8e8107dc0ad4470d456360613cc9dd55fd18daad84df3d5f6ba3f73"
+    },
+    "examples/locomotion-yard/run.py": {
+      "bytes": 25146,
+      "sha256": "993ea05cd51a86403858783754219199c185bc278006f38ca2b1f348c6faace0"
+    },
+    "examples/locomotion-yard/knight_profile.py": {
+      "bytes": 7413,
+      "sha256": "df2a699b81b26ba2c7b7bfa42fba7e62babbcdfff8715030035cb3c9d668523d"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "d8ab1e8db6337d8915d1f2e9a12f3b48089c783185f4e91fa70a147dc61b7c0f"
+    },
+    "tests/asset_import_guards_harness.py": {
+      "bytes": 5811,
+      "sha256": "0091d099c71b17e21aa6ee94d4af6260873f07a90785eb7828737d3a5c169b44"
+    }
+  },
+  "native_windows_build": {
+    "passed": true,
+    "selected_targets": 8,
+    "sealed_artifacts": 10,
+    "source_inputs": 338,
+    "cache_generation": 38,
+    "seconds": 473.77630128501914,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false,
+    "receipt": {
+      "bytes": 57408,
+      "sha256": "436322fe235e8e468a71a85450a602fea35a16364f417cc96ab3eefde524965f"
+    },
+    "executable": {
+      "bytes": 26256384,
+      "sha256": "825c2b3ced27632edf381fc31d25a9c04be2ff8d97b3c757e60a05b4af95fc6f"
+    },
+    "scope": "Selected incremental build with exact source/configuration/tool fences; not a full rebuild of inherited vendor dependencies."
+  },
+  "windows_cpu": {
+    "passed": true,
+    "stages": 24,
+    "worker_seconds": 58.650401899940334,
+    "outer_job_seconds": 58.88219979999121,
+    "worker_exit_code": 0,
+    "forced_cleanup": false,
+    "terminal_inputs_unchanged": true,
+    "receipt": {
+      "bytes": 2559,
+      "sha256": "cdfa2920b270beb3e6b7f9b06a95ac6790b8532d94ae94eed8e8776909c03d31"
+    },
+    "report": {
+      "bytes": 87000,
+      "sha256": "fef4b79f1fae7325e2f948f431e4c230f56e973f1fa1ad2130f6c08f2d0749f6"
+    },
+    "root_tool_session_exit_code_claimed": false
+  },
+  "windows_guard_protocol": {
+    "passed": true,
+    "protocol_groups": 3,
+    "native_owners": 4,
+    "request_reply_pairs": 596,
+    "complete_observation_boundaries": 98,
+    "whole_rejection_preservation_pairs": 41,
+    "malformed_missing_path_cases": 30,
+    "independently_checked_typed_mismatch_errors": 7,
+    "base_mismatch_errors": 2,
+    "donor_mismatch_errors": 5,
+    "donor_index_one_exercised": true,
+    "preserved_inner_policy_error_pairs": 2,
+    "legacy_baseline_native_version": "0.0.174",
+    "complete_legacy_and_guarded_response_package_families": 7,
+    "identical_request_source_restoration_recoveries": 2,
+    "normalized_vs_raw_digest_distinctions": 7,
+    "field_exclusions": 0,
+    "all_native_owners_exit_zero": true,
+    "all_transports_unbroken": true,
+    "source_inputs_unchanged": true,
+    "receipt": {
+      "bytes": 626620,
+      "sha256": "905eb6b9222cc90c22201b9c8ad389cb556fde5d01d0ae8994e51ae4725cdb9b"
+    }
+  },
+  "guarded_character_consumer": {
+    "passed": true,
+    "literal_guard_flag_parsed": true,
+    "public_authoring_helpers_executed": true,
+    "interactive_main_executed": false,
+    "native_request_reply_pairs": 41,
+    "native_owners": 1,
+    "compiled_artifact_version": "0.0.75",
+    "compiled_backend": "native_aot",
+    "compiled_artifact_files": 9,
+    "artifact_unchanged": true,
+    "typed_gameplay_globals": 45,
+    "canonical_component_schemas": 2,
+    "original_takes": 76,
+    "original_channels": 8712,
+    "idle_clip": 36,
+    "run_clip": 48,
+    "settling_ticks": 60,
+    "game_ticks": 180,
+    "runtime_observations": 3,
+    "horizontal_endpoint_displacement_metres": 3.6462930973214713,
+    "complete_authored_payload_family_members": 4,
+    "present_authored_file_byte_pairs": 2,
+    "whole_package_byte_pairs": 3,
+    "complete_authored_native_history_and_store_unchanged": true,
+    "receipt": {
+      "bytes": 417412,
+      "sha256": "9ba3fa81d7fa888b1fa12b80869f6e9d8084f39fd75620c63b57e408929acc8a"
+    },
+    "scope": "Existing compiled courier on the complete original library. Sparse endpoints, not every contact; no new save/export/render/performance qualification."
+  },
+  "portable_launcher_unit_checks": {
+    "linux_methods": 6,
+    "windows_methods": 6,
+    "scope": "Fake-client request shapes, original default requests, optional guards, structured error data and actual authored node membership; separate from native execution. Four further harness checks per OS cover temporary defaults and reserved cleanup time with a fake owner.",
+    "harness_fake_owner_methods_linux": 4,
+    "harness_fake_owner_methods_windows": 4
+  },
+  "retained_failures": {
+    "original_0_0_174_windows_campaign_passed": false,
+    "original_0_0_174_stage_passes": 23,
+    "original_0_0_174_stage_total": 24,
+    "original_campaign_regraded": false,
+    "independent_guard_reader_v1_passed": false,
+    "reader_failure_cause": "A reader message-prefix selector omitted the separate existing target-policy error. A new reader uses both exact original messages; original native records are unchanged.",
+    "native_producer_rerun_for_reader_correction": false,
+    "first_linux_harness_unit_passed": false,
+    "first_linux_harness_unit_errors": 2,
+    "first_linux_harness_unit_cause": "Fake-owner setup omitted its command-line interop flag; the test setup was corrected before four checks passed on both OSes. Production native code was unchanged.",
+    "first_linux_focused_reader_passed": false,
+    "first_linux_focused_reader_cause": "Reader text matching did not accept Windows CRLF in the separate fake-unit log. A new reader recognizes logical lines while retaining original bytes; native protocol data is not normalized."
+  },
+  "unchanged_boundaries": [
+    "authoring-core v1 selected methods",
+    "runtime game-session v1 selected methods",
+    "gameplay C ABI",
+    "cooked model layouts",
+    "save layouts",
+    "default sample profile and gameplay source"
+  ],
+  "limits": [
+    "Windows CLI/import and Linux headless cohorts remain separate scopes.",
+    "No new rendered-character, contact/IK, anatomical retargeting, arbitrary exporter, GUI, physical input or representative performance qualification.",
+    "The guarded public sample entrypoint remains interactive; the native consumer executes its authoring/runtime helpers.",
+    "Alpha release gates remain open."
+  ],
+  "reproduce": {
+    "manual": "docs/ANIMATION_ASSETS.md#verify-import-guards",
+    "fixture": "tests/asset_import_guards.py",
+    "optional_baseline_flag": "--baseline",
+    "character_source": "docs/CHARACTER_LIBRARY.md#original-source"
+  },
+  "fixture_source_attribution": {
+    "original_executed_fixture": {
+      "bytes": 27461,
+      "sha256": "59ab4c0453a453ce471e7708f293ca840beab5b3d0152dedf6c4dce73a2963d7"
+    },
+    "current_fixture": {
+      "bytes": 28251,
+      "sha256": "10a690aa4036c4eb4f3fb7b56871fa0df5d012a12a0759224104dfed9aa9c287"
+    },
+    "original_fixture_bytes_retained": true,
+    "compiled_cpp_sources_changed_by_followup": false,
+    "native_rebuild_for_followup": false,
+    "scope": "The original338-row Windows build and366-row Linux cohort include the original noncompiled Python fixture. Follow-ups explicitly join its retained old bytes to the amended fixture; all other selected source rows and native artifacts remain unchanged."
+  },
+  "linux_original": {
+    "passed": false,
+    "ctest_passed": 35,
+    "ctest_total": 36,
+    "failed_test": "model_source_fingerprint_protocol",
+    "native_targets": 15,
+    "sealed_artifacts": 17,
+    "source_inputs": 366,
+    "configure_exit_code": 0,
+    "build_exit_code": 0,
+    "ctest_exit_code": 8,
+    "whole_owner_seconds": 986.0475922999904,
+    "forced_cleanup": false,
+    "source_inputs_unchanged": true,
+    "fixture_seconds": 180.256,
+    "fixture_recorded_attempts": 349,
+    "fixture_complete_request_reply_pairs": 348,
+    "fixture_owners": 2,
+    "second_owner_recorded_exit_code": null,
+    "fixture_failures": 2,
+    "fixture_skipped": 1,
+    "regraded": false,
+    "receipt": {
+      "bytes": 249501,
+      "sha256": "d8eb3c1d251ee625a62752d68295a57db868a7aa1655f2a50f4201f030a30b07"
+    },
+    "diagnosis": "The fixture exhausted its original work deadline while retaining full output observations. The final attempted read is unsent in original wire files; its conservative unknown flag and null cleanup exit remain unchanged.",
+    "observer_measurement_scope": "Six file-only traversals of the retained partial tree measure full-census cost, not an engine-latency comparison or a full wall-clock causal breakdown."
+  },
+  "linux_focused_followup": {
+    "passed": true,
+    "configured_ctest_passed": 1,
+    "configured_ctest_total": 1,
+    "configured_ctest_seconds": 3.92,
+    "configured_ctest_timeout_seconds": 210,
+    "fixture_total_deadline_seconds": 180,
+    "fixture_work_budget_seconds": 170,
+    "cleanup_reserve_seconds": 10,
+    "every_request_full_census_retained": true,
+    "request_reply_pairs": 582,
+    "native_owners": 3,
+    "protocol_groups": 3,
+    "protocol_failures": 0,
+    "protocol_errors": 0,
+    "protocol_skips": 0,
+    "legacy_baseline_used": false,
+    "current_legacy_guarded_response_package_families": 7,
+    "all_native_owners_exit_zero": true,
+    "all_transports_unbroken": true,
+    "native_artifacts_unchanged": 17,
+    "native_compiler_or_configure_run": false,
+    "whole_owner_seconds": 70.96586428198498,
+    "forced_cleanup": false,
+    "complete_original_temporary_output_retained": true,
+    "complete_independent_output_copy_verified": true,
+    "retained_files_per_copy": 564,
+    "retained_bytes_per_copy": 4164658,
+    "receipt": {
+      "bytes": 151795,
+      "sha256": "b55f4d482b624fdf5cd33955ccfa4be32b559028067b6a3cc3c24f3f28760b3f"
+    },
+    "protocol_receipt": {
+      "bytes": 638932,
+      "sha256": "35326a8b343516767cf63b7959efc7c5376793f52faa6716662b405692d6e2e0"
+    },
+    "scope": "One fresh focused CTest with the amended noncompiled fixture and OS temporary output; not a regrade or repeat of the original36-test cohort. No causal speedup ratio is claimed."
+  },
+  "windows_focused_followup": {
+    "passed": true,
+    "protocol_groups": 3,
+    "native_owners": 4,
+    "request_reply_pairs": 596,
+    "fixture_total_deadline_seconds": 180,
+    "fixture_work_budget_seconds": 170,
+    "outer_job_limit_seconds": 210,
+    "whole_owner_seconds": 33.6570861999644,
+    "outer_job_seconds": 33.10900430008769,
+    "outer_job_processes": 5,
+    "outer_job_exit_code": 0,
+    "forced_cleanup": false,
+    "terminal_inputs_unchanged": true,
+    "legacy_baseline_native_version": "0.0.174",
+    "complete_legacy_guarded_response_package_families": 7,
+    "receipt": {
+      "bytes": 2453,
+      "sha256": "01bc93819d58796fe3e80f2f1b05f97424b188967816de6eedc594410a9111ed"
+    },
+    "protocol_receipt": {
+      "bytes": 631287,
+      "sha256": "b45c3bc4ccbcd005f1ea46e804b801c1407d73d18740c8d1f5d531196f92ece3"
+    },
+    "scope": "New fixture under one direct owned Windows Job, using unchanged176 and174 binaries and an explicit output. Original24-stage campaign remains separate."
+  },
+  "independent_reviews": {
+    "native_build": {
+      "bytes": 128982,
+      "sha256": "7b366df52f888ac4208ac641eff898297a76cd93240c1b15e50635b2b14dc1b1"
+    },
+    "windows_original_campaign_and_character": {
+      "bytes": 76698,
+      "sha256": "a49fe7545535fbabf85c0d6e4642d3af0ac0bd1b1ce7499c5a97ad1879120805"
+    },
+    "windows_original_guard": {
+      "bytes": 221363,
+      "sha256": "6a07e605177dd648041217e0878f2946e7ebc822b2b36906c3519e5dfa1f39f4"
+    },
+    "linux_focused_followup": {
+      "bytes": 464877,
+      "sha256": "10584b0ad0f9b6b0f55395b0cc79cf907ffdf43f5b4c50797a2e90dee758e799"
+    },
+    "windows_focused_followup": {
+      "bytes": 217911,
+      "sha256": "0ae77dd9d7f4fd8e4f6b07473c47212bfd09f4e9de0395739104ba73535a4597"
+    }
+  }
+}

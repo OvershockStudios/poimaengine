@@ -2031,8 +2031,14 @@ public:
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
-                fields(params,{"source","animations","fbx_normal_map","fbx_profile_diagnostics"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                fields(params,{"source","animations","fbx_normal_map","fbx_profile_diagnostics","expected_model_sha256"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
                 require(!params.contains("fbx_profile_diagnostics") || params.at("fbx_profile_diagnostics").is_boolean(),"fbx_profile_diagnostics must be Boolean.");
+                std::optional<std::string> expected_model;
+                if(params.contains("expected_model_sha256")) {
+                    const auto& value=params.at("expected_model_sha256");
+                    require(value.is_string() && valid_asset_id(value.get<std::string>()),"Expected source model SHA256 must be 64 lowercase hexadecimal characters.");
+                    expected_model=value.get<std::string>();
+                }
                 const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid source path.");
                 auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
                 std::optional<FbxNormalConvention> normal_map;
@@ -2047,7 +2053,12 @@ public:
                     for(const auto& file:files) {
                         ModelAnimationSource selected;std::string value;
                         if(file.is_object()) {
-                            fields(file,{"source","clip","name","frame_transfer","retarget"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            fields(file,{"source","clip","name","frame_transfer","retarget","expected_model_sha256"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            if(file.contains("expected_model_sha256")) {
+                                const auto& expected=file.at("expected_model_sha256");
+                                require(expected.is_string() && valid_asset_id(expected.get<std::string>()),"Expected animation source model SHA256 must be 64 lowercase hexadecimal characters.");
+                                selected.expected_model_sha256=expected.get<std::string>();
+                            }
                             require(!file.contains("frame_transfer") || !file.contains("retarget"),"Frame transfer and retarget policies are mutually exclusive.");
                             if(file.contains("clip")) {const auto index=revision(file.at("clip"));require(index<256,"Animation take index must be 0..255.");selected.clip=static_cast<std::uint32_t>(index);}
                             if(file.contains("name")) {
@@ -2062,7 +2073,7 @@ public:
                         selected.source=std::move(path);animations.push_back(std::move(selected));
                     }
                 }
-                loaded=store_model_asset(asset_directory(),source,animations,normal_map);
+                loaded=store_model_asset(asset_directory(),source,animations,normal_map,expected_model);
             } else if(method=="asset.inspect") {
                 fields(params,{"asset","section","offset","limit"},{"asset"});
                 require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
@@ -2101,6 +2112,14 @@ public:
             }
             return result;
         } catch(const Error&) { throw; }
+        catch(const ModelSourceFingerprintError& error) {
+            const auto& diagnostic=error.diagnostic();
+            throw Error(-32050,error.what(),{{"type","model_source_changed"},{"version",1},
+                {"source_role",diagnostic.role==ModelSourceRole::base ? "base" : "animation_donor"},
+                {"donor_index",diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)},
+                {"expected_model_sha256",diagnostic.expected_model_sha256},
+                {"actual_model_sha256",diagnostic.actual_model_sha256}});
+        }
         catch(const FbxTextureDependencyError& error) { throw fbx_texture_dependency_error(error); }
         catch(const FbxMaterialProfileError& error) { throw fbx_material_profile_error(error,params.value("fbx_profile_diagnostics",false)); }
         catch(const AnimationCompositionError& error) {

@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 104}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 105}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -499,13 +499,26 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     rotation_retarget["description"]="Explicit quaternion-chain retargeting with target-reference positions/scales and optional selected source-local position deltas. Original source/base fingerprints from asset.source.inspect are required. Preserves target geometry/defaults/binds, not source affine matrices, contacts or planted feet. Alignment is normalized XYZW; no automatic proportions, root-motion extraction or controller movement. Optional node_map uses 1..1024 original source/target index pairs, one-to-one direct-parent/root correspondence, complete target skin and selected source channel ancestry, and no unrelated pairs; omission retains exact named hierarchy matching.";
     auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
-        {"frame_transfer",frame_transfer},{"retarget",rotation_retarget}},{"source"});
+        {"frame_transfer",frame_transfer},{"retarget",rotation_retarget},{"expected_model_sha256",asset_id}},{"source"});
     animation_source["allOf"]=Json::array({Json{{"not",{{"required",Json::array({"frame_transfer","retarget"})}}}}});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
+        {"expected_model_sha256",asset_id},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
         {"fbx_profile_diagnostics",{{"type","boolean"},{"default",false}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
-    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching by default; mutually exclusive frame_transfer and retarget policies provide explicit reference-frame or quaternion-chain conversion. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Optional expected_model_sha256 guards the original parsed base model against asset.source.inspect.model_sha256 before composition. Animation paths append all named takes; objects select a take by index and optionally rename it. A donor object's optional expected_model_sha256 guards its entire original parsed model before selection or conversion. Fingerprints are not raw-file or composed-package hashes. Exact hierarchy/rest-frame matching by default; mutually exclusive frame_transfer and retarget policies provide explicit reference-frame or quaternion-chain conversion. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    auto source_changed=object_schema({{"type",{{"const","model_source_changed"}}},{"version",{{"const",1}}},
+        {"source_role",{{"enum",{"base","animation_donor"}}}},
+        {"donor_index",{{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",31}},Json{{"type","null"}}})}}},
+        {"expected_model_sha256",asset_id},{"actual_model_sha256",asset_id}},
+        {"type","version","source_role","donor_index","expected_model_sha256","actual_model_sha256"});
+    source_changed["allOf"]=Json::array({Json{
+        {"if",{{"properties",{{"source_role",{{"const","animation_donor"}}}}}}},
+        {"then",{{"properties",{{"donor_index",{{"type","integer"},{"minimum",0},{"maximum",31}}}}}}},
+        {"else",{{"properties",{{"donor_index",{{"type","null"}}}}}}}}});
+    source_changed["description"]="The optional import guard did not match the complete original parsed base or donor model. Donor index refers to the original animations array. No package is published. Reinspect deliberately before choosing new model identities; no automatic retry or source repair occurs.";
+    methods["asset.import"]["x-error-data"]["model_source_changed"]=source_changed;
+    result["invariants"].push_back("Optional asset.import base and donor expected_model_sha256 guards use the complete original normalized model identity from asset.source.inspect, before filtering, renaming, frame transfer or retargeting. A mismatch returns -32050 with model_source_changed data and publishes no partial package. Existing rotation-retarget guards remain independently required. Matching or omitted new guards do not enter cooked metadata or alter package identity.");
     result["invariants"].push_back("Animation frame_transfer is opt-in reference-frame-v1: explicit imported-rest or sampled source/target references, source sampling before selected-take filtering, and optional rigid alignment. Same named topology and coincident global origins are required; mapped scales and scale curves must be uniform. Conversion preserves curve interpolation and includes transformed sparse defaults; target geometry/rest/inverse binds are unchanged. It does not infer bind poses, remove root motion or move runtime controllers. Failures publish no partial model.");
     result["invariants"].push_back("Animation retarget is opt-in reference-rotation-v1 and mutually exclusive with frame_transfer. Quaternion-chain orientation transfer ignores affine scale; explicit target-reference scale/position policies preserve target geometry and optionally transfer selected local position deltas. Original source/base model fingerprints guard source-local indices and reference takes before filtering. Source scaling and unselected translation tracks are discarded with counts; constant target-reference channels preserve original duration. Shape similarity, contacts, ground placement and loop continuity require separate observation/authoring, not an inferred guarantee.");
     const Json composition_identity={{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",9999}},Json{{"type","null"}}})}};

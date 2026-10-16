@@ -22,6 +22,14 @@ Open `poima world build/model.world.json`. Paths passed to `asset.import` are ab
 
 The result returns `asset` (a 64-character SHA-256 identity), package bytes, node/primitive/image/vertex/triangle counts, selected scene roots and diagnostics. Import publishes a package into `build/model.world.json.assets/<asset>.pmodel`; it does not increment the scene revision. Repeating an identical import deduplicates the cooked output. It still parses/cooks the input; an incremental dependency/build cache remains future work.
 
+To require the model inspected earlier, pass its original
+`asset.source.inspect.model_sha256` as `expected_model_sha256` to `asset.import`
+(schema revision 105 or later). This is a normalized parsed-model fingerprint,
+not a raw-file hash. Changed models reject before package publication; matching
+or omitted guards preserve cooked bytes. The same optional field applies to
+animation donor objects. See [guarded import and recovery](ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models)
+for exact diagnostics and validation order.
+
 Inspect metadata without dumping vertex arrays:
 
 ```json
