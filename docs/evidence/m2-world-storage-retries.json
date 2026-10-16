@@ -1,0 +1,255 @@
+{
+  "format": "poima.world-storage-retries-evidence.v1",
+  "engine_version": "0.0.173",
+  "summary": "Bounded authored-world Windows rename retries with actual first-failure observation, once-only commit and complete-byte conflict guards. New cohorts are separate from earlier failed regressions.",
+  "contract": {
+    "publication_stages": [
+      "previous_publish",
+      "primary_publish"
+    ],
+    "eligible_win32_codes": [
+      5,
+      32,
+      33
+    ],
+    "max_rename_attempts": 6,
+    "requested_wait_ms": [
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "max_requested_wait_total_ms": 62,
+    "cooperative_eligibility_ms": 100,
+    "scope": "Eligibility begins after the first actual failed call and is checked before another call. Synchronous filesystem calls are not interrupted; this is not a 100 ms request-duration promise. Controlled Windows runs observed code 5; codes 32/33 have classifier coverage. Shared one-attempt callers and POSIX behavior are unchanged. Public JSON-RPC errors, discovery schema and gameplay C ABI are unchanged."
+  },
+  "native_build": {
+    "generation": 36,
+    "selected_inputs": 332,
+    "sealed_artifacts": 9,
+    "passed": true,
+    "source_inputs_unchanged": true,
+    "forced_cleanup": false
+  },
+  "windows": {
+    "campaign_passed": true,
+    "stages_passed": 20,
+    "stages_total": 20,
+    "outer_job_exit_code": 0,
+    "outer_job_active_after_cleanup": 0,
+    "outer_job_forced_cleanup": false,
+    "ownership_scope": "Actual empty/unforced outer Job and closed recorded native owners; raw Job accounting does not prove the cause of every nested exit.",
+    "retry_protocol": {
+      "passed": true,
+      "cases": [
+        {
+          "stage": "primary_publish",
+          "mode": "persistent",
+          "actual_first_win32_code": 5,
+          "passed": true,
+          "attempts": 5,
+          "scheduled_wait_ms": 30,
+          "retry_elapsed_us": 80251
+        },
+        {
+          "stage": "previous_publish",
+          "mode": "persistent",
+          "actual_first_win32_code": 5,
+          "passed": true,
+          "attempts": 5,
+          "scheduled_wait_ms": 30,
+          "retry_elapsed_us": 74995
+        },
+        {
+          "stage": "primary_publish",
+          "mode": "release",
+          "actual_first_win32_code": 5,
+          "passed": true,
+          "attempts": 2,
+          "scheduled_wait_ms": 2,
+          "retry_elapsed_us": 10866
+        },
+        {
+          "stage": "previous_publish",
+          "mode": "release",
+          "actual_first_win32_code": 5,
+          "passed": true,
+          "attempts": 2,
+          "scheduled_wait_ms": 2,
+          "retry_elapsed_us": 10249
+        },
+        {
+          "stage": "previous_publish",
+          "mode": "primary_guard",
+          "actual_first_win32_code": 5,
+          "passed": true
+        },
+        {
+          "stage": "primary_publish",
+          "mode": "prepared_guard",
+          "actual_first_win32_code": 5,
+          "passed": true
+        }
+      ],
+      "native_owners": 12,
+      "original_raw_rpc_pairs": 116,
+      "whole_four_file_forecasts": 58,
+      "whole_native_observation_results": 94,
+      "scope": "Each stage has a persistent blocker and release after an observed actual failed call. Two cross-stage cases mutate the complete original primary or prepared bytes during backoff. Original raw requests/replies/direct stderr offsets and EOF, complete authored document, native queries/inspect/history, receipt replay, legitimate sidecars and cold reopen are retained. No state fields are omitted. Recovered backup publication alone is not treated as a committed transaction. Direct-file stderr changes observation I/O and is not a timing comparison."
+    },
+    "original_loop_cohort": {
+      "passed": true,
+      "planned_members": 20,
+      "completed_members": 20,
+      "passed_members": 20,
+      "failed_members": 0,
+      "authored_commits_per_member": 130,
+      "ast_identical_selected_functions": 9,
+      "retried_renames_recovered": 24,
+      "recovered_renames_by_stage": {
+        "primary_publish": 15,
+        "previous_publish": 9
+      },
+      "observed_failed_win32_codes": [
+        5
+      ],
+      "seconds": 29.421544599928893,
+      "scope": "Fixed 20 fresh-owner original create-plus129renames UUID/text-pipe unittest runs. Every planned member is retained with no replacement run. Stderr is original reader-decoded text retained only after EOF; this cohort adds no per-call raw wire or CAS observations and supplies no precise failed revision, causal or performance claim."
+    }
+  },
+  "early_native_helper": {
+    "passed": true,
+    "real_retry_cases": 6,
+    "legacy_real_windows_failure_cases": 3,
+    "scope": "Independent helper-level real Windows cases plus constructed policy/formatter inputs. These are distinct from the world-service full-state protocol. Actual flush, short-write and close failures were not forced."
+  },
+  "linux": {
+    "campaign_passed": true,
+    "targets": 8,
+    "selected_sources": 348,
+    "sealed_artifacts": 10,
+    "ctest_passed": 23,
+    "ctest_total": 23,
+    "scope": "Offline Debug headless simulation OFF cohort. Ordinary Unix storage, formatter/policy and persisted asset/input/settings/authoring/native-ABI paths; no actual Windows sharing faults, native Linux graphics or managed gameplay execution.",
+    "prior172_source_files": 348,
+    "prior172_sealed_artifacts": 10,
+    "prior_cache_files": 343,
+    "copied_cache_files": 331,
+    "referenced_cache_files": 12
+  },
+  "retained_failures": {
+    "original172_windows_campaign": {
+      "passed": false,
+      "stages_passed": 18,
+      "stages_total": 19
+    },
+    "original172_captured_loop": {
+      "passed": false,
+      "actual_stderr_stage": "previous_publish",
+      "actual_win32_code": 5
+    },
+    "original171_linux": {
+      "passed": false,
+      "tests_passed": 15,
+      "tests_total": 16
+    },
+    "original170_linux": {
+      "passed": false,
+      "tests_passed": 19,
+      "tests_total": 21
+    },
+    "linux_file_preparer1": {
+      "passed": false,
+      "native_execution": false,
+      "compiler_execution": false,
+      "cache_reconfigured": false,
+      "scope": "A file-only collector used an absolute lookup against repository-relative audit labels. The successor corrected that exact key; no engine workload or prior verdict changed."
+    }
+  },
+  "limits": "This bounded storage checkpoint does not establish crash/power-loss durability, universal filesystem reliability, external-writer race freedom, root cause of older failures, broad Alpha closure, rendering, latency or throughput.",
+  "selected_public_source_identities": {
+    "src/world_storage.hpp": {
+      "bytes": 15694,
+      "sha256": "5a3292c36873d413dbf8bf473fca34a23a4fba8da385c6dac5ab1fc52ff7f216"
+    },
+    "src/world.cpp": {
+      "bytes": 330001,
+      "sha256": "b5eb49ed30ee09f0c12ae4c6cc231eb71127ad370fcf397ee7a49eecff92b1af"
+    },
+    "tests/world_storage_diagnostics.cpp": {
+      "bytes": 22437,
+      "sha256": "450c330b96221918e24aab77c23bba4b4fb5a35f8912b1639a9a2d8b29e33ba0"
+    },
+    "tests/world_storage_retry_protocol.py": {
+      "bytes": 19444,
+      "sha256": "3a4bb3fdb214a62b88836d34f2471c36e1d488aa8b8fcfca971f6ba91db3c0c4"
+    },
+    "tests/world_storage_protocol.py": {
+      "bytes": 20247,
+      "sha256": "bcb377545fb7a8d387ca2568181bf725017a9fd312d108dc8843d5e7e0c3bbad"
+    },
+    "tests/world_contract.py": {
+      "bytes": 36338,
+      "sha256": "8303ca513306fed2e579e789f1649e34447bbacfe7c55cd3c618ea016233c8ee"
+    }
+  },
+  "original_receipt_identities": {
+    "windows_native_build": {
+      "bytes": 55884,
+      "sha256": "0edc19b87ba95324ff16c743dcd1b2409c87c3b7f97cea03c1dc206b477b1278"
+    },
+    "windows_native_seals": {
+      "bytes": 1635,
+      "sha256": "89e3513099c32cbe1c06df4402e5508cf7a3f841d9eb22417e8b58b26db00632"
+    },
+    "windows_cpu_campaign": {
+      "bytes": 78810,
+      "sha256": "646469469b7e7c5da85fbb61d3330bb0a1baaba15880b5d3496cd5ffa29c2ecc"
+    },
+    "windows_outer_job": {
+      "bytes": 2553,
+      "sha256": "7373bb91fdb1bf0459039e2ec9bf40d767fb861c3bd30c219731d8db1111bd58"
+    },
+    "windows_retry_protocol": {
+      "bytes": 205086,
+      "sha256": "0ce1cccd69c2c3c119a5e7196bfa0be32fda1f75bc60c097d92dbc35ca30dfba"
+    },
+    "windows_original_loop_cohort": {
+      "bytes": 57476,
+      "sha256": "20b1fc9a69d3edb3c9da65395b5a1085a71d5f05f895ec4b633ed7296666b01a"
+    },
+    "windows_independent_file_audit": {
+      "bytes": 125732,
+      "sha256": "f270803e7351bd284c5ec6c3bc450e8399a3f958235e89e3acb84ce4fa71281d"
+    },
+    "linux_campaign": {
+      "bytes": 110498,
+      "sha256": "b7327368dcfe89e9300a55b7d74fe81a2d9026cad7d821b5aa3916a3558a820b"
+    },
+    "linux_independent_file_audit": {
+      "bytes": 172567,
+      "sha256": "1b5be1c7dec1ee746b10eaf5b33239d0fa4a5feebba51f2b99a57f2187e1ac98"
+    },
+    "early_native_helper": {
+      "bytes": 556,
+      "sha256": "63b455e2560b3856482d7e500791d99df5c1c84cbc82810dd7e295ff67a4bf3f"
+    },
+    "early_native_stdout": {
+      "bytes": 1191,
+      "sha256": "b87fe739a0a484ccb848dbc38be00831989c8f5d13f4baff25c60a4a5ec6540a"
+    },
+    "original172_windows_failed_campaign": {
+      "bytes": 74041,
+      "sha256": "f3f7e2a4bd4eb658559decf509dab4a42ed6a43c14a71e3a86ac9b6174928152"
+    },
+    "original172_failed_loop_capture": {
+      "bytes": 4835,
+      "sha256": "21bf253a0ec271d6b0257e7adc5c7150f43ba27db4a24e4685b3876e07b8998c"
+    },
+    "linux_original_file_preparation_failure": {
+      "bytes": 1123,
+      "sha256": "874a5d0315ea57c94f2c4614da6cd5de08e87c300a6ad58d97bb90461ec4b2f5"
+    }
+  }
+}

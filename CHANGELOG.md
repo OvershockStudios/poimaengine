@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.173
+
+- Add bounded Windows authored-world publication retries with exact primary/prepared-byte guards. Preserve public errors, once-only commit ordering and shared storage callers; expose actual retry facts on stderr. [Policy and recovery](docs/WORLD_STORAGE_DIAGNOSTICS.md).
+- Pass six controlled service-level retry/conflict cases and twenty fresh runs of the original rapid-write test, including 24 recovered renames. Retain earlier failed checkpoints as separate evidence. [Results and scope](docs/evidence/m2-world-storage-retries.json).
+
 ## 0.0.172
 
 - Add Windows world-storage stderr diagnostics with the failed native operation, publication stage and immediately captured error code. Preserve existing JSON-RPC errors, exception messages and commit ordering. [Storage and recovery](docs/WORLD_STORAGE_DIAGNOSTICS.md).

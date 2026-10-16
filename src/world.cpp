@@ -1117,15 +1117,26 @@ class World {
         require(bytes.size() <= max_document_bytes, "World document would exceed 16 MiB.");
         require(fs::exists(path_) == exists_ && (!exists_ || read(path_) == disk_),
             "World file changed outside this session; reopen before editing.", -32009);
+        const auto publish = [&](const fs::path& source, const fs::path& destination,
+                                 StorageStage stage, std::string_view prepared) {
+            const StorageRetryObserver observer{nullptr, [](void*, StorageStage failed_stage, const StorageRetryFacts& facts) noexcept {
+                report_world_publication_retry_pending(std::cerr, failed_stage, facts);
+            }};
+            const auto retried = replace_world_publication(source, destination, stage, [&] {
+                require(world_publication_unchanged(path_, exists_, disk_, source, prepared),
+                    "World file changed outside this session; reopen before editing.", -32009);
+            }, &observer);
+            report_world_publication_recovery(std::cerr, stage, retried);
+        };
         auto pending = path_; pending += ".pending";
         write_flushed(pending, bytes, StorageStage::primary_staging);
         if (exists_) {
             auto previous = path_; previous += ".previous";
             auto previous_pending = path_; previous_pending += ".previous.pending";
             write_flushed(previous_pending, disk_, StorageStage::previous_staging);
-            replace_file(previous_pending, previous, StorageStage::previous_publish);
+            publish(previous_pending, previous, StorageStage::previous_publish, disk_);
         }
-        replace_file(pending, path_, StorageStage::primary_publish);
+        publish(pending, path_, StorageStage::primary_publish, bytes);
         // All potentially failing preparation precedes publication. Swapping
         // state after rename cannot accidentally roll back a committed request.
         doc_.swap(candidate);

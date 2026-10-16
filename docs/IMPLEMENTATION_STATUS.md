@@ -1,8 +1,37 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.172**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.173**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.173 adds bounded retries for Windows authored-world primary and
+backup publication. The policy permits at most six rename calls in total,
+including the first, for selected access/sharing/lock failures, with at most
+62 ms of requested waits and a cooperative 100 ms eligibility window. Complete original primary and prepared
+bytes are checked before each retry; conflicts preserve external changes.
+Public errors, schema revision 104, gameplay C ABI and commit ordering remain
+unchanged. Generic shared storage callers and POSIX behavior retain their prior
+semantics. [Policy, diagnostics and recovery](WORLD_STORAGE_DIAGNOSTICS.md).
+
+All twenty selected Windows CPU stages pass, including the unchanged world
+regression. Six controlled service-level cases verify persistent refusal,
+release after an actual failed call and exact-byte conflicts through twelve
+native owners, 116 original request/reply pairs and 58 whole four-file forecasts.
+Warm/cold receipt replay and complete native/history/primary observations pass.
+A separate fixed cohort passes twenty fresh runs of the unchanged original
+130-commit method; post-EOF decoded stderr records 24 recovered renames, fifteen
+primary and nine backup replacements. These are different observation scopes,
+not a latency comparison. Controlled and recorded failed-call codes are 5;
+codes 32/33 have policy-classifier coverage.
+
+All 23 selected Linux headless CTests pass with source and artifact fences intact.
+The recorded outer Windows Job and Linux process groups close without forced
+cleanup. Earlier 0.0.172 write failures retain their failed verdicts. The first
+Linux admission preparer also remains a separate file-only failure: its
+successor corrected an exact audit-key lookup before any cache reconfiguration.
+These results do not establish the external cause of the earlier denial,
+universal filesystem reliability, power-loss durability, nonblocking diagnostics
+or the broader Alpha gates. [Results and retained scopes](evidence/m2-world-storage-retries.json).
 
 Version 0.0.172 adds internal Windows world-storage diagnostics: failed native
 operation, commit stage and immediately captured error code on stderr. Public
