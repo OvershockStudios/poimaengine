@@ -1,0 +1,842 @@
+{
+  "format": "poima.editor-selection-reconciliation",
+  "version": 1,
+  "checkpoint": "0.0.163",
+  "date": "2026-10-16",
+  "summary": "Resolve deferred native selection after authored/live-component drafts without losing drafts, misdirecting Apply, reverting accepted local selection, or allowing gizmos after failed reads.",
+  "source_pins": {
+    "desktop/Poima.Editor/EditorModel.cs": {
+      "bytes": 27569,
+      "sha256": "c6a1f29dffc37b83bf8370d99345c7d1ba309596d280cb6ecef61e06cf1f2b37"
+    },
+    "desktop/Poima.Editor/MainWindow.cs": {
+      "bytes": 86242,
+      "sha256": "13d0bb81e21f5a4cc99c5631b7ea7035ab49230bc7a762f0a95f26ca7c45907f"
+    },
+    "desktop/Poima.Editor/NativeHost.cs": {
+      "bytes": 10237,
+      "sha256": "eb21b568cfa9c6d54688aa086b6a2f927da94cf8ed9ffe48f55096ac516aaa2e"
+    },
+    "desktop/Poima.Editor/ComponentEditorModel.cs": {
+      "bytes": 10574,
+      "sha256": "78c39b184f15bb7939ea88ddacfd7e6cc60744de235db6bada512e1018a2fbe6"
+    },
+    "tests/fixtures/editor_selection_model/Program.cs": {
+      "bytes": 32952,
+      "sha256": "2149425288c4adf598d07a78827d683e029be1ced879a3a1a670350b1391cd56"
+    },
+    "tests/fixtures/editor_selection_model/Poima.SelectionModel.Contract.csproj": {
+      "bytes": 527,
+      "sha256": "14bd2f94a5267fbdc42baa4a9164d62073e7470ccab259928bbd1e3f4086d57a"
+    },
+    "tests/fixtures/editor_selection_native/Program.cs": {
+      "bytes": 18884,
+      "sha256": "5946fc2e5b4739632e6440aebfcd87d5a6b6c16acf1150085f96c2dfd0b9a748"
+    },
+    "tests/fixtures/editor_selection_native/Poima.SelectionNative.Contract.csproj": {
+      "bytes": 906,
+      "sha256": "dc7ff917e6adfa9e0c9dac1a94969e945f1c5f79d585e5921b75c9b5f377cbfe"
+    }
+  },
+  "managed_model": {
+    "scope": "Linked production EditorModel and ComponentEditorModel with fake native transport; compiled once on Linux and exact IL also executed on native Windows .NET.",
+    "sdk": "10.0.401",
+    "framework": "net10.0",
+    "linux": {
+      "passed": true,
+      "result": {
+        "format": "poima.editor-selection-model",
+        "version": 1,
+        "scope": "linked production EditorModel and ComponentEditorModel; fake RPC transport; no native/GUI/input qualification",
+        "scenarios": 34,
+        "checks": 302,
+        "failed": 0,
+        "results": [
+          {
+            "scenario": "dirty_reload",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "original_entity_apply",
+            "status": "pass",
+            "checks": 12
+          },
+          {
+            "scenario": "authored_apply_invalid",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "authored_apply_stale",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "authored_apply_native",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "remote_null",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "latest_b_c",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "latest_b_null",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "latest_b_a",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "deleted_pending_target",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_clean",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_dirty",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_entity.get_clean",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_entity.get_dirty",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "post_apply_unknown_selection",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "local_ack_stale_cache_later_return",
+            "status": "pass",
+            "checks": 11
+          },
+          {
+            "scenario": "local_supersedes_deferred",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "cancel_before_selection_notification",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "authored_edit_back_completion",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "compound_field_completion",
+            "status": "pass",
+            "checks": 8
+          },
+          {
+            "scenario": "automatic_authored_reconciliation_failure",
+            "status": "pass",
+            "checks": 14
+          },
+          {
+            "scenario": "automatic_live_reconciliation_failure",
+            "status": "pass",
+            "checks": 14
+          },
+          {
+            "scenario": "live_component_apply",
+            "status": "pass",
+            "checks": 13
+          },
+          {
+            "scenario": "live_component_reload",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_discard",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_revert",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_failure_invalid",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "live_component_failure_edit",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "live_component_failure_reload",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "authored_reload_during_live_draft",
+            "status": "pass",
+            "checks": 8
+          },
+          {
+            "scenario": "deleted_retained_original_valid_pending",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "deleted_pending_clear_failure",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "local_accepted_read_failure",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_committed_read_failure",
+            "status": "pass",
+            "checks": 8
+          }
+        ]
+      },
+      "report": {
+        "bytes": 15200,
+        "sha256": "b9db944961eea9caf67cb01820f4f54a6f3d871df7ee429475a3dc859216574d"
+      }
+    },
+    "windows": {
+      "passed": true,
+      "result": {
+        "format": "poima.editor-selection-model",
+        "version": 1,
+        "scope": "linked production EditorModel and ComponentEditorModel; fake RPC transport; no native/GUI/input qualification",
+        "scenarios": 34,
+        "checks": 302,
+        "failed": 0,
+        "results": [
+          {
+            "scenario": "dirty_reload",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "original_entity_apply",
+            "status": "pass",
+            "checks": 12
+          },
+          {
+            "scenario": "authored_apply_invalid",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "authored_apply_stale",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "authored_apply_native",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "remote_null",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "latest_b_c",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "latest_b_null",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "latest_b_a",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "deleted_pending_target",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_clean",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_dirty",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_entity.get_clean",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "read_failure_entity.get_dirty",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "post_apply_unknown_selection",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "local_ack_stale_cache_later_return",
+            "status": "pass",
+            "checks": 11
+          },
+          {
+            "scenario": "local_supersedes_deferred",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "cancel_before_selection_notification",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "authored_edit_back_completion",
+            "status": "pass",
+            "checks": 5
+          },
+          {
+            "scenario": "compound_field_completion",
+            "status": "pass",
+            "checks": 8
+          },
+          {
+            "scenario": "automatic_authored_reconciliation_failure",
+            "status": "pass",
+            "checks": 14
+          },
+          {
+            "scenario": "automatic_live_reconciliation_failure",
+            "status": "pass",
+            "checks": 14
+          },
+          {
+            "scenario": "live_component_apply",
+            "status": "pass",
+            "checks": 13
+          },
+          {
+            "scenario": "live_component_reload",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_discard",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_revert",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_failure_invalid",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "live_component_failure_edit",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "live_component_failure_reload",
+            "status": "pass",
+            "checks": 9
+          },
+          {
+            "scenario": "authored_reload_during_live_draft",
+            "status": "pass",
+            "checks": 8
+          },
+          {
+            "scenario": "deleted_retained_original_valid_pending",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "deleted_pending_clear_failure",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "local_accepted_read_failure",
+            "status": "pass",
+            "checks": 10
+          },
+          {
+            "scenario": "live_component_committed_read_failure",
+            "status": "pass",
+            "checks": 8
+          }
+        ]
+      },
+      "report": {
+        "bytes": 12921,
+        "sha256": "89671d6345afcada53f8fbfd03c7b4204689ac66576c3e27c62b436e5ef050dd"
+      },
+      "natural_processes": 6,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "decoded_cross_platform_reports_equal": true,
+    "images": {
+      "baseline": {
+        "path": "build/editor-selection-0.0.163/linux-model-3/baseline-bin/Baseline.dll",
+        "bytes": 83456,
+        "sha256": "b8028ee24351ec6ed0c7ede0bcb95a8f31243bdd99ea70bfc5c0d47f7483dd85"
+      },
+      "selection": {
+        "path": "build/editor-selection-0.0.163/linux-model-3/selection-bin/Poima.SelectionModel.Contract.dll",
+        "bytes": 85504,
+        "sha256": "610b499c8ee520533ae9e141654df97df0d34ab09537b04090b0d0786d1514a2"
+      }
+    },
+    "predecessor": {
+      "commit": "76f1124467d183cf30998841aeb27439017ba13d",
+      "result": {
+        "format": "poima.editor-selection-model",
+        "version": 1,
+        "scope": "linked production EditorModel and ComponentEditorModel; fake RPC transport; no native/GUI/input qualification",
+        "scenarios": 34,
+        "checks": 90,
+        "failed": 32,
+        "results": [
+          {
+            "scenario": "dirty_reload",
+            "status": "fail",
+            "checks": 2,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "original_entity_apply",
+            "status": "fail",
+            "checks": 1,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "authored_apply_invalid",
+            "status": "fail",
+            "checks": 6,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "authored_apply_stale",
+            "status": "fail",
+            "checks": 6,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "authored_apply_native",
+            "status": "fail",
+            "checks": 6,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "remote_null",
+            "status": "fail",
+            "checks": 2,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "latest_b_c",
+            "status": "fail",
+            "checks": 3,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "latest_b_null",
+            "status": "fail",
+            "checks": 3,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "latest_b_a",
+            "status": "pass",
+            "checks": 7
+          },
+          {
+            "scenario": "deleted_pending_target",
+            "status": "fail",
+            "checks": 1,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_clean",
+            "status": "fail",
+            "checks": 0,
+            "error": "Injected read failure unexpectedly succeeded."
+          },
+          {
+            "scenario": "read_failure_desktop.inspect_dirty",
+            "status": "fail",
+            "checks": 0,
+            "error": "Injected read failure unexpectedly succeeded."
+          },
+          {
+            "scenario": "read_failure_entity.get_clean",
+            "status": "fail",
+            "checks": 3,
+            "error": "Failed selection sync permitted gizmo commit."
+          },
+          {
+            "scenario": "read_failure_entity.get_dirty",
+            "status": "fail",
+            "checks": 6,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "post_apply_unknown_selection",
+            "status": "fail",
+            "checks": 0,
+            "error": "Post-commit inspection failure missing."
+          },
+          {
+            "scenario": "local_ack_stale_cache_later_return",
+            "status": "fail",
+            "checks": 7,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "local_supersedes_deferred",
+            "status": "pass",
+            "checks": 6
+          },
+          {
+            "scenario": "cancel_before_selection_notification",
+            "status": "fail",
+            "checks": 1,
+            "error": "Selection published before cancelling old gesture."
+          },
+          {
+            "scenario": "authored_edit_back_completion",
+            "status": "fail",
+            "checks": 1,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "compound_field_completion",
+            "status": "fail",
+            "checks": 4,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "automatic_authored_reconciliation_failure",
+            "status": "fail",
+            "checks": 1,
+            "error": "Automatic failure retried through its notification."
+          },
+          {
+            "scenario": "automatic_live_reconciliation_failure",
+            "status": "fail",
+            "checks": 1,
+            "error": "Automatic failure retried through its notification."
+          },
+          {
+            "scenario": "live_component_apply",
+            "status": "fail",
+            "checks": 1,
+            "error": "Remote selection bypassed live draft guard."
+          },
+          {
+            "scenario": "live_component_reload",
+            "status": "fail",
+            "checks": 1,
+            "error": "Remote selection bypassed live draft guard."
+          },
+          {
+            "scenario": "live_component_discard",
+            "status": "fail",
+            "checks": 1,
+            "error": "Remote selection bypassed live draft guard."
+          },
+          {
+            "scenario": "live_component_revert",
+            "status": "fail",
+            "checks": 1,
+            "error": "Remote selection bypassed live draft guard."
+          },
+          {
+            "scenario": "live_component_failure_invalid",
+            "status": "fail",
+            "checks": 3,
+            "error": "Failed component operation adopted deferred target."
+          },
+          {
+            "scenario": "live_component_failure_edit",
+            "status": "fail",
+            "checks": 3,
+            "error": "Failed component operation adopted deferred target."
+          },
+          {
+            "scenario": "live_component_failure_reload",
+            "status": "fail",
+            "checks": 3,
+            "error": "Failed component operation adopted deferred target."
+          },
+          {
+            "scenario": "authored_reload_during_live_draft",
+            "status": "fail",
+            "checks": 3,
+            "error": "Model/native selection differ."
+          },
+          {
+            "scenario": "deleted_retained_original_valid_pending",
+            "status": "fail",
+            "checks": 1,
+            "error": "Deleting retained original clobbered valid remote selection or bypassed live draft."
+          },
+          {
+            "scenario": "deleted_pending_clear_failure",
+            "status": "fail",
+            "checks": 0,
+            "error": "Native clear failure unexpectedly succeeded."
+          },
+          {
+            "scenario": "local_accepted_read_failure",
+            "status": "fail",
+            "checks": 3,
+            "error": "Failed post-selection read destroyed original clean Inspector."
+          },
+          {
+            "scenario": "live_component_committed_read_failure",
+            "status": "fail",
+            "checks": 3,
+            "error": "Read failure lost component draft or pending choice."
+          }
+        ]
+      },
+      "adaptation": "Baseline-only copied test source removes calls to the new ReconcileSelection method and replaces new SelectionNeedsRefresh property observations with false so the previous model can compile. Production predecessor source is exact. This is regression diagnosis, not a controlled benchmark or success-rate comparison."
+    }
+  },
+  "existing_regressions": {
+    "linux": [
+      "ComponentFields and linked ComponentEditorModel: 83 checks passed",
+      "Save model revision freshness, frozen retry guards and stopped replacement passed"
+    ],
+    "windows": [
+      "Exact same component fixture image passed",
+      "Exact same save fixture image passed"
+    ],
+    "native_or_gui_evidence": false
+  },
+  "editor_compile": {
+    "passed": true,
+    "target": "win-x64",
+    "configuration": "Release",
+    "sdk": "10.0.401",
+    "locked_dependencies": true,
+    "package_sources": "cleared; existing package cache",
+    "source_files": 33,
+    "output_files": 237,
+    "editor_image": {
+      "filename": "Poima.Editor.dll",
+      "bytes": 1267200,
+      "sha256": "65bf47293fad65b34f10204bd369b5d95340b3eb04d6244332e4d66fb35e3017"
+    },
+    "warnings": [
+      "Three existing obsolete Bitmap.Save overload warnings in AgentWindow, SaveWindow and GameplayWindow."
+    ],
+    "scope": "Complete Avalonia editor managed build; compile is not window or input qualification."
+  },
+  "native_bridge": {
+    "passed": true,
+    "engine_version": "0.0.162",
+    "fixture_build": {
+      "bytes": 1970,
+      "sha256": "a98206545d90fc7fd12b47a20ef5aac26f7881d625b519b1885741a591c8a756"
+    },
+    "scope": "Actual compiled EditorModel, ComponentEditorModel and NativeHost over installed unattached native desktop bridge; no AppBuilder, window, rendering, Pump clock, input injection or physical/GUI qualification.",
+    "checks": 53,
+    "cases": [
+      {
+        "name": "dirty_reload",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "original_target_apply",
+        "passed": true,
+        "checks": 18
+      },
+      {
+        "name": "remote_clear_and_deleted_pending",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "local_ack_stale_cache",
+        "passed": true,
+        "checks": 15
+      }
+    ],
+    "editor": {
+      "filename": "Poima.Editor.dll",
+      "bytes": 1267200,
+      "sha256": "65bf47293fad65b34f10204bd369b5d95340b3eb04d6244332e4d66fb35e3017"
+    },
+    "native_bridge": {
+      "filename": "poima_desktop.dll",
+      "bytes": 21349376,
+      "sha256": "b1547618cced2a01892dd2cf2d49c06e47ee41d8bb244a28b194c44f5ac6df76"
+    },
+    "managed_resolutions": [
+      {
+        "filename": "Avalonia.Base.dll",
+        "bytes": 2356736,
+        "sha256": "10f1e2633a5776d79807aeafcdccd8990dd8296b6ff6b16914ae441439dbc230",
+        "requested": "Avalonia.Base, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b"
+      }
+    ],
+    "full_observations": {
+      "bytes": 143868,
+      "sha256": "6deb3900f9638b3f5f5d1908f4decb8c4b16b3b1408faf6ccd6512798ad4c4b8"
+    },
+    "verified": [
+      "Actual production NativeHost and Dispatcher.UIThread.VerifyAccess execute on the creating console thread.",
+      "Dirty authored name, component data, original guards, schemas, generation and raw invalid text survive remote selection until Reload.",
+      "Apply writes original A name/Transform once at the original revision, then model and native select B. Complete authored document differs only in intended A properties, revision and one appended checked native receipt.",
+      "Selection-only Reload, remote clear, deletion resolution and local/cached-state cases preserve complete authored disk bytes, native entity observations, world inspection and undo history.",
+      "Native selection and Inspector target agree after resolution; no viewport attached or presented and no runtime started. One unattached gizmo inspection is retained."
+    ],
+    "natural_processes": 2,
+    "active_processes": 0,
+    "terminated_processes": 0,
+    "forced_cleanup": false
+  },
+  "retained_failures": [
+    {
+      "stage": "Windows managed owner first attempt",
+      "outcome": "failed before fixture execution",
+      "cause": "Private supervisor passed an interpreter switch where the existing gated trampoline requires the script path. Corrected only the runner arguments in a fresh successor.",
+      "owner": {
+        "bytes": 1984,
+        "sha256": "3e6cc22101c70be16fa234f4c772576c24cc8b06d7b4ad37099ff188481064ed"
+      },
+      "forced_cleanup": false
+    },
+    {
+      "stage": "Native integration first attempt",
+      "outcome": "failed assembly preflight; no native bridge loaded and no cases started",
+      "cause": "Private runner supplied the installed bin directory instead of the documented runtime prefix. A fresh successor used the runtime prefix without changing the fixture or engine.",
+      "owner": {
+        "bytes": 2091,
+        "sha256": "6a77aa6cc118fa7f43a64ded0c67a8b426d5a4f723f682366e86e1061f2c541b"
+      },
+      "forced_cleanup": false
+    },
+    {
+      "stage": "Independent file audit first reader",
+      "outcome": "reader failed; original product results unchanged",
+      "cause": "The first reader incorrectly treated component/save plain PASS text as JSON. A fresh reader compares decoded text with line-ending normalization; no product reruns or artifact changes.",
+      "record": {
+        "bytes": 992,
+        "sha256": "602e819c0e1e4f5180da4867258c7f4a578024abc00b47cc7b8bca2f7db4e6d0"
+      }
+    }
+  ],
+  "records": {
+    "linux_final_model": {
+      "bytes": 15200,
+      "sha256": "b9db944961eea9caf67cb01820f4f54a6f3d871df7ee429475a3dc859216574d"
+    },
+    "windows_final_models": {
+      "bytes": 12921,
+      "sha256": "89671d6345afcada53f8fbfd03c7b4204689ac66576c3e27c62b436e5ef050dd"
+    },
+    "windows_model_owner": {
+      "bytes": 1600,
+      "sha256": "43f8108e2dd03f3172acedd7dde8f1269b0ddde8bbe270ddcbd85782ea0a61db"
+    },
+    "existing_regressions_linux": {
+      "bytes": 16587,
+      "sha256": "c3ad92fa33434d1d8e7eb717f7d183e5f94bc19ab791b7af947cfaaa6ef9c396"
+    },
+    "editor_compile": {
+      "bytes": 42205,
+      "sha256": "53dab0e5ceb36a5cf75c4897abb17efdaf023904bec210be3d2cdcd44fe023c4"
+    },
+    "native_fixture_compile": {
+      "bytes": 1970,
+      "sha256": "a98206545d90fc7fd12b47a20ef5aac26f7881d625b519b1885741a591c8a756"
+    },
+    "native_run": {
+      "bytes": 154443,
+      "sha256": "8cbe8e94127b658b65e62006a0b1aeea9603b0bb176b0e58c16da451c1113405"
+    },
+    "native_owner": {
+      "bytes": 1610,
+      "sha256": "74962e69225a85b32e919ed25fa27563d174b51e9d90e1baa481a6e69194d2a3"
+    },
+    "native_full_observations": {
+      "bytes": 143868,
+      "sha256": "6deb3900f9638b3f5f5d1908f4decb8c4b16b3b1408faf6ccd6512798ad4c4b8"
+    },
+    "failed_windows_gate": {
+      "bytes": 1984,
+      "sha256": "3e6cc22101c70be16fa234f4c772576c24cc8b06d7b4ad37099ff188481064ed"
+    },
+    "failed_native_prefix_preflight": {
+      "bytes": 2091,
+      "sha256": "6a77aa6cc118fa7f43a64ded0c67a8b426d5a4f723f682366e86e1061f2c541b"
+    }
+  },
+  "limits": [
+    "Managed model tests use a fake transport and establish client state transitions only.",
+    "The native integration uses an unattached Windows bridge and actual compiled managed classes; it does not establish displayed Inspector/Hierarchy/gizmo agreement, physical mouse/keyboard/controller interaction, docking or presented frames.",
+    "No renderer, GPU, focus activation, input injection, gameplay simulation, engine native rebuild, new API stability or complete Alpha qualification is claimed.",
+    "The native integration checks four selected cases; broader failure permutations are modeled tests, not native executions.",
+    "The full editor compilation retains three existing unrelated deprecation warnings.",
+    "No atomic concurrent selection guarantee is added; native selection and displayed/presented observations remain separate boundaries."
+  ],
+  "independent_file_audit": {
+    "passed": true,
+    "checks": 578,
+    "scope": "Source and artifact identities, decoded cross-platform reports, actual native whole-document/history/receipt comparisons and natural owner closure. File-only review; no new execution.",
+    "record": {
+      "bytes": 3119,
+      "sha256": "4bdf54a8bbe791822f73b41fd4d9ba394c78741905413469efa853f3bc0783e5"
+    }
+  }
+}

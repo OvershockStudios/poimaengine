@@ -22,7 +22,17 @@ public sealed class EditorModel : IDisposable
 {
     public NativeHost Host { get; }
     public GameplayEditorModel? Gameplay { get; set; }
-    public ComponentEditorModel? Components { get; set; }
+    private ComponentEditorModel? components;
+    public ComponentEditorModel? Components
+    {
+        get => components;
+        set
+        {
+            if (components is not null) components.Changed -= ComponentDraftChanged;
+            components = value;
+            if (components is not null) components.Changed += ComponentDraftChanged;
+        }
+    }
     public JsonObject Schemas { get; private set; } = new();
     public JsonObject DraftSchemas { get; private set; } = new();
     public event EventHandler? Changed;
@@ -35,6 +45,7 @@ public sealed class EditorModel : IDisposable
     public long BaseRevision { get; private set; }
     public long DraftGeneration { get; private set; }
     public string? Selected { get; private set; }
+    public bool SelectionNeedsRefresh => !selectionSynchronized;
     public string DraftName { get; private set; } = "";
     public JsonObject DraftComponents { get; private set; } = new();
     public bool Dirty => Selected is not null && (invalid.Count != 0 || DraftName != baselineName || !JsonNode.DeepEquals(DraftComponents, baseline));
@@ -55,8 +66,41 @@ public sealed class EditorModel : IDisposable
     private JsonObject baseline = new();
     private bool refreshing;
     private string? observedSelection;
+    private bool selectionPending;
+    private string? pendingSelection;
+    private bool selectionSynchronized;
+    private bool reconcilingSelection;
+    private string? selectionError;
     private readonly HashSet<string> invalid = [];
     private readonly Dictionary<string, string> rawFields = new(StringComparer.Ordinal);
+
+    private void ComponentDraftChanged(object? sender, EventArgs args)
+        => ReconcileSelection();
+    public void ReconcileSelection()
+    {
+        if (refreshing || reconcilingSelection || !selectionPending || Dirty || Components?.Dirty == true) return;
+        reconcilingSelection = true;
+        try { Refresh(); selectionError = null; }
+        catch (Exception error)
+        {
+            // Automatic reconciliation runs from field-change callbacks. Keep
+            // failures visible without unwinding the GUI event or recursively
+            // retrying through Note -> Changed -> Inspector refresh.
+            if (selectionError != error.Message)
+            {
+                selectionError = error.Message;
+                Note("Inspector selection refresh failed: " + error.Message);
+            }
+        }
+        finally { reconcilingSelection = false; }
+    }
+    private void ObserveSelection(string? selected)
+    {
+        if (selected != observedSelection) SceneChanging?.Invoke();
+        observedSelection = selected;
+        pendingSelection = selected;
+        selectionPending = true;
+    }
 
     public EditorModel(NativeHost host)
     {
@@ -109,19 +153,18 @@ public sealed class EditorModel : IDisposable
             Host.Call("desktop.game.camera", new() { ["camera"] = GameCamera });
         }
     }
-    public void Refresh()
+    public void Refresh() => Refresh(discardAuthoredDraft: false);
+    private void Refresh(bool discardAuthoredDraft)
     {
         if (refreshing) return;
         refreshing = true;
+        selectionSynchronized = false;
         try
         {
             Revision = Host.Call("world.inspect")["revision"]!.GetValue<long>();
-            var nativeSelection = Host.State["selected"]?.GetValue<string>();
-            if (nativeSelection != observedSelection)
-            {
-                if (!Dirty) Selected = nativeSelection;
-                observedSelection = nativeSelection;
-            }
+            // Call() does not update Host.State. Read the current selection so a
+            // cached poll cannot undo a just-accepted local selection.
+            ObserveSelection(Host.Call("desktop.inspect")["selected"]?.GetValue<string>());
             SyncPlayback();
             var found = new List<EntityRow>();
             var parameters = new JsonObject { ["revision"] = Revision, ["limit"] = 256 };
@@ -141,30 +184,56 @@ public sealed class EditorModel : IDisposable
             var history = Host.Call("world.history");
             UndoDepth = history["undo_count"]?.GetValue<int>() ?? 0;
             RedoDepth = history["redo_count"]?.GetValue<int>() ?? 0;
-            if (!Dirty) LoadSelected();
+            if (discardAuthoredDraft || !Dirty)
+            {
+                var adoptSelection = Components?.Dirty != true;
+                LoadSelected(adoptSelection && selectionPending ? pendingSelection : Selected);
+                if (adoptSelection) selectionPending = false;
+            }
+            selectionSynchronized = true;
+            selectionError = null;
         }
         finally { refreshing = false; }
         Changed?.Invoke(this, EventArgs.Empty);
     }
-    private void LoadSelected()
+    private void LoadSelected(string? selected)
     {
-        if (!Entities.Any(x => x.Id == Selected)) Selected = null;
-        var value = Selected is null ? null : Host.Call("entity.get", new() { ["id"] = Selected })["value"]!.AsObject();
-        DraftName = value?["name"]?.GetValue<string>() ?? "";
-        DraftComponents = value?["components"] is JsonObject components ? Clone(components) : new();
-        baselineName = DraftName; baseline = Clone(DraftComponents); BaseRevision = Revision;
-        DraftSchemas = Clone(Schemas);
+        if (selected is not null && !Entities.Any(x => x.Id == selected))
+        {
+            // A remote deletion can leave the bridge's session selection on a
+            // missing ID. Clear both clients, never pick an unrelated entity.
+            // A retained Inspector target can also disappear while a separate
+            // live-component draft defers a different, valid native selection.
+            if (selected == observedSelection)
+            {
+                Host.Call("desktop.select", new() { ["id"] = null });
+                ObserveSelection(null);
+            }
+            selected = null;
+        }
+        var value = selected is null ? null : Host.Call("entity.get", new() { ["id"] = selected })["value"]!.AsObject();
+        var name = value?["name"]?.GetValue<string>() ?? "";
+        var draft = value?["components"] is JsonObject fields ? Clone(fields) : new();
+        var saved = Clone(draft); var schemas = Clone(Schemas);
+        // Reads may fail. Preserve the complete old draft until all succeed.
+        if (selected != Selected) SceneChanging?.Invoke();
+        Selected = selected; DraftName = name; DraftComponents = draft;
+        baselineName = name; baseline = saved; BaseRevision = Revision;
+        DraftSchemas = schemas;
         invalid.Clear(); rawFields.Clear();
         ++DraftGeneration;
     }
     public void Select(string? id)
     {
-        if (id == Selected) return;
+        if (id == Selected && !selectionPending && selectionSynchronized) return;
         RequireClean();
         if (id is not null && !Entities.Any(x => x.Id == id)) throw new InvalidOperationException("Entity no longer exists.");
         SceneChanging?.Invoke();
-        Host.Call("desktop.select", new() { ["id"] = id });
-        Selected = id; LoadSelected(); Changed?.Invoke(this, EventArgs.Empty);
+        selectionSynchronized = false;
+        var accepted = Host.Call("desktop.select", new() { ["id"] = id });
+        ObserveSelection(accepted["selected"]?.GetValue<string>());
+        LoadSelected(pendingSelection); selectionPending = false; selectionSynchronized = true; selectionError = null;
+        Changed?.Invoke(this, EventArgs.Empty);
     }
     public void SetName(string name) { SceneChanging?.Invoke(); DraftName = name; }
     public void SetComponent(string type, JsonObject value) { SceneChanging?.Invoke(); DraftComponents[type] = value.DeepClone(); }
@@ -172,7 +241,7 @@ public sealed class EditorModel : IDisposable
     public void SetFieldText(string field, string text) { rawFields[field] = text; }
     public void SetInvalid(string field, bool value) { if (value) invalid.Add(field); else invalid.Remove(field); }
     public bool HasInvalid(string prefix) => invalid.Any(key => key.StartsWith(prefix, StringComparison.Ordinal));
-    public void Reload() { SceneChanging?.Invoke(); LoadSelected(); Changed?.Invoke(this, EventArgs.Empty); }
+    public void Reload() { SceneChanging?.Invoke(); Refresh(discardAuthoredDraft: true); }
     public void RequireAuthoredClean()
     {
         if (Dirty) throw new InvalidOperationException("Apply or reload Inspector changes first.");
@@ -183,7 +252,12 @@ public sealed class EditorModel : IDisposable
     {
         if (RuntimeId is not null) throw new InvalidOperationException("Stop the runtime before changing authored entities.");
     }
-    public void RequireSceneEditable() { RequireStopped(); RequireClean(); }
+    public void RequireSceneEditable()
+    {
+        RequireStopped(); RequireClean();
+        if (!selectionSynchronized || selectionPending && pendingSelection != Selected)
+            throw new InvalidOperationException("Refresh the Inspector to resolve the changed native selection first.");
+    }
     public JsonObject CommitGizmo(long dragId)
     {
         RequireSceneEditable();
@@ -408,5 +482,5 @@ public sealed class EditorModel : IDisposable
         ["paused"] = Paused, ["suspended"] = PlaybackSuspended, ["last_error"] = PlaybackError,
         ["camera"] = GameCamera, ["draft_generation"] = DraftGeneration };
     public JsonObject InspectDraft() => new() { ["entity"] = Selected, ["name"] = DraftName, ["components"] = DraftComponents.DeepClone(), ["invalid_fields"] = new JsonArray(invalid.Order().Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()), ["dirty"] = Dirty, ["conflict"] = Conflict, ["base_revision"] = BaseRevision, ["revision"] = Revision };
-    public void Dispose() { Host.StateChanged -= HostChanged; SceneChanging = null; GameCameraChanging = null; }
+    public void Dispose() { Host.StateChanged -= HostChanged; Components = null; SceneChanging = null; GameCameraChanging = null; }
 }

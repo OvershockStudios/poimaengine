@@ -51,6 +51,22 @@ Inspector provides typed Transform, Camera, MeshRenderer, PbrMaterial, Light and
 
 Changes remain in a draft until **Apply** commits the changed fields together. Display formatting never writes a rounded number or converts an untouched quaternion back from Euler angles; recreated controls ignore their initial text notifications. Invalid fields preserve their raw text through panel floating and layout reset. Closing with unapplied changes is cancelled; Apply or Reload before closing. An external authoring revision change preserves unfinished edits and shows a conflict; a stale Apply is rejected by the core. **Reload** explicitly discards the draft. Selection changes and local actions that would discard an unfinished draft require Apply or Reload first. Native selection requested remotely can differ from the Inspector's retained dirty selection until the draft is resolved.
 
+The editor retains the latest remote selection, including an explicit clear,
+while authored or live-component fields have unfinished edits. **Apply** writes
+the original authored object with its original revision guard, then adopts the
+latest selection; **Reload** discards the authored draft before adopting it.
+Resolving a live-component draft also releases its deferred selection. Returning
+an edited field to its original value reconciles after the complete field edit,
+so intermediate validity notifications cannot redirect the remaining changes.
+A failed read preserves the retained draft and disables Scene manipulation;
+the Inspector keeps **Reload** available for recovery. Automatic refresh errors
+are reported in Console without escaping text-field callbacks or recursively
+retrying. If the latest requested authored object has been deleted, resolution clears
+the session selection and Inspector rather than choosing another object.
+These selection changes create no authored revision or undo entry. The
+[selection checks](evidence/m2-editor-selection-reconciliation.json) distinguish
+managed model tests, native bridge checks and displayed/physical interaction.
+
 The Project browser starts at the nearest ancestor containing `project.json`, within 16 levels, or otherwise the world directory. It supports lazy folder expansion, folder search, list/grid views, glTF/GLB import, cooked model inspection and instantiation. File-type icons are not rendered thumbnails. Storage sidecars, symlinks/reparse points and build/cache/version-control folders are excluded; each folder lists at most 1,024 entries and expands at most 256 subfolders. Imported display names are session-local; unnamed cooked assets use shortened hashes. Drag-and-drop import and production-scale indexing remain unfinished.
 
 **Play** starts the native simulation; **Pause/Resume** controls its clock, and **Step** advances one fixed tick while paused. **Stop** discards runtime changes and preserves authoring. Local authoring operations require stopping the runtime. External core operations retain their existing behavior, including a runtime's frozen authored baseline. Runtime updates refresh transport state without rebuilding the Hierarchy or Inspector every tick.

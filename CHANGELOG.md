@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.163
+
+- Reconcile deferred remote selection after Inspector or live-component drafts resolve. Preserve original-target Apply guards and failed drafts, keep accepted local selections through stale polls, safely clear deleted targets, and block Scene manipulation when selection reads fail. Automatic errors retain a visible Reload recovery path without recursive retries.
+- Pass 34 production-linked model scenarios and 302 assertions on Linux and Windows, compile the full Windows editor, and pass four actual managed-editor/native-bridge cases with full authored-state and history checks. Displayed and physical interaction remain separate. [Behavior](docs/DESKTOP_EDITOR.md#current-authoring-controls), [results and scope](docs/evidence/m2-editor-selection-reconciliation.json).
+
 ## 0.0.162
 
 - Package the binary C# SDK, component analyzer, binding generator and NativeAOT publisher as relocatable [authoring tools](docs/AUTHORING_TOOLS.md). Native build profiles pin and revalidate the complete pack while preserving existing checkout workflows and retries.

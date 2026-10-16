@@ -525,9 +525,13 @@ public sealed partial class MainWindow : Window
         }
         void Banner()
         {
-            footer.IsVisible = Model.Dirty || Model.Conflict;
-            message.Text = Model.Conflict ? "Changed externally. Reload or review your edits." : "Unapplied changes";
-            message.Foreground = EditorTheme.Brush(Model.Conflict ? "#E2B476" : "#9B9B9B");
+            // Field handlers may update validity and component data separately.
+            // Reconcile only after the complete edit, including an edit-back.
+            Model.ReconcileSelection();
+            footer.IsVisible = Model.Dirty || Model.Conflict || Model.SelectionNeedsRefresh;
+            message.Text = Model.SelectionNeedsRefresh ? "Selection refresh failed. Reload the Inspector before editing the Scene." :
+                Model.Conflict ? "Changed externally. Reload or review your edits." : "Unapplied changes";
+            message.Foreground = EditorTheme.Brush(Model.SelectionNeedsRefresh ? "#BA6B60" : Model.Conflict ? "#E2B476" : "#9B9B9B");
         }
         void Refresh()
         {
