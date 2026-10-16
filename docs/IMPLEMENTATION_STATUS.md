@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.163**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.164**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.164 adds an optional installed CoreCLR authoring pack: matching
+bridge/SDK, prebuilt component analyzer and binding generator, with the existing
+NativeAOT publisher. The default thirteen-payload v1 pack remains available;
+v2 admits seventeen payloads and verifies all three SDK copies. Actual Windows
+installed compilation, structured CS1525 diagnostics, repair, compatible reload,
+compiled component/Control rollback and complete warm/fresh-process save
+continuation pass 697 calls and seventeen complete version-7 checkpoints while
+the engine checkout pathname is unavailable. All seventeen processes close
+naturally and the same checkout directory is restored. Independent file checks
+join the original requests, native replies, saved bytes, compiler images and
+whole-document comparisons. A separate full NativeAOT route using v2 passes
+865 calls, eighteen checkpoints and relocated readonly consumption, with all
+thirty-two processes closing naturally; this run excludes the test-created
+source project during bundle consumption, not the engine checkout. Six Windows native suites and eleven Linux headless
+CTest entries pass; portable pack checks pass on both systems, with one Windows
+symlink case skipped. No runtime API/schema or native ABI changes are introduced.
+Clean-machine installation, new timing/rendering and the broader Alpha gates
+remain separate. [Installed workflow](AUTHORING_TOOLS.md),
+[results and scope](evidence/m2-installed-coreclr-authoring.json).
 
 Version 0.0.163 fixes deferred remote selection in the desktop editor. Authored and live-component drafts retain their original targets, fields and guards until resolution; Apply, Reload and completed edit-back reconcile the latest remote choice, including clear or deleted targets. Read failures retain drafts, expose Reload recovery and block Scene manipulation; automatic field-callback errors cannot unwind the GUI or recursively retry. All 34 production-linked model scenarios and 302 assertions pass on Linux and native Windows using the same managed image. Existing component/save regressions pass, and the complete Windows-targeted editor compiles. Four checks using the actual compiled EditorModel, ComponentEditorModel and NativeHost over the installed 0.0.162 native bridge pass 53 assertions, including complete authored-document/history preservation and original-target Apply receipts. No window, rendering, focus or input is used; displayed interaction and docking remain separate Alpha work. [Editor behavior](DESKTOP_EDITOR.md#current-authoring-controls), [results and scope](evidence/m2-editor-selection-reconciliation.json).
 

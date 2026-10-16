@@ -49,6 +49,17 @@ Json pack(const fs::path& root) {
     Json manifest={{"format","poima.authoring-tools"},{"version",1},{"engine_version","0.0.162"},{"framework","net10.0"},{"language","14.0"},{"files",files}};
     write(root/"authoring.json",manifest.dump(2)+'\n');return manifest;
 }
+Json bridge_pack(const fs::path& root) {
+    auto m=pack(root);m["version"]=2;m["engine_version"]="0.0.164";
+    for(const auto& [name,role]:std::map<std::string,std::string>{
+            {"bridge/Poima.Gameplay.dll","sdk"},{"bridge/Poima.ManagedBridge.dll","bridge"},
+            {"bridge/Poima.ManagedBridge.deps.json","bridge"},{"bridge/Poima.ManagedBridge.runtimeconfig.json","bridge"}}) {
+        const auto payload=role=="sdk" ? std::string("fixture SDK identity\n"):"fixture "+name+'\n';
+        write(root/name,payload);m["files"].push_back({{"path",name},{"size",payload.size()},{"sha256",hash(payload)},{"role",role}});
+    }
+    std::sort(m["files"].begin(),m["files"].end(),[](const auto& a,const auto& b){return a.at("path").template get<std::string>()<b.at("path").template get<std::string>();});
+    write(root/"authoring.json",m.dump(2)+'\n');return m;
+}
 void manifest(const fs::path& root,const Json& value) {write(root/"authoring.json",value.dump(2)+'\n');}
 void inventory_file(Json& m,const fs::path& root,const std::string& name,const std::string& payload) {
     write(root/name,payload);for(auto& row:m["files"])if(row["path"]==name) {row["size"]=payload.size();row["sha256"]=hash(payload);}
@@ -106,6 +117,7 @@ int child(int argc,char** argv) {
     check(file_path(argv[1])==root/"tools/publish_native_gameplay.py","Publisher was not pack-owned.");
     artifact(output);Json arguments=Json::array();for(int i=1;i<argc;++i)arguments.push_back(argv[i]);
     if(file_path(option("--project")).filename()=="tamper.csproj")write(root/"native/Entry.cs","changed by zero-exit fixture child\n");
+    if(file_path(option("--project")).filename()=="bridge-tamper.csproj")write(root/"bridge/Poima.ManagedBridge.dll","changed bridge by zero-exit fixture child\n");
     std::cout<<Json{{"arguments",arguments},{"cwd",text(fs::current_path())}}.dump()<<'\n';return 0;
 }
 Json wait(dev::Service& service,const Json& accepted) {
@@ -219,6 +231,63 @@ int run(int argc,char** argv) {
             check(finished.at("error").get<std::string>().find("Authoring pack payload size/hash differs")!=std::string::npos,"Zero-exit failure did not reach the full-pack verifier.");
         }
         std::cout<<"authoring pack: zero-exit full-pack revalidation passed\n"<<std::flush;
+        // V2 is an explicit larger authority. Keep the v1 policy structure and
+        // all old rejection/adapter checks above unchanged.
+        const auto bridge=root/"bridge";auto before_bridge_manifest=pack(bridge/"pack");before_bridge_manifest["engine_version"]="0.0.164";
+        manifest(bridge/"pack",before_bridge_manifest);const auto bp=profile(bridge,executable);
+        Json bridge_policy=bp;
+        for(const auto& [name,selected]:std::map<std::string,fs::path>{{"python",executable},{"publisher",bridge/"pack/tools/publish_native_gameplay.py"},{"dotnet",bridge/"tooling/dotnet.fixture"},{"exporter",bridge/"tooling/exporter.fixture"},{"runtime_descriptor",bridge/"runtime/runtime.json"}})
+            bridge_policy["selected_tools"][name]={{"path",text(selected)},{"sha256",name=="python" ? expected_pack.at("selected_tools").at("python").at("sha256").get<std::string>():hash(bytes(selected))}};
+        bridge_policy["authoring_pack_inventory"]={{"manifest_sha256",hash(bytes(bridge/"pack/authoring.json"))},{"engine_version","0.0.164"},{"files",before_bridge_manifest.at("files")}};
+        const auto before_bridge_fingerprint=hash(bridge_policy.dump());const auto bm=bridge_pack(bridge/"pack");
+        auto bridge_loaded=load(bridge/"profiles.json",bp);
+        check(bm.at("files").size()==17 && bridge_loaded.fingerprint!=before_bridge_fingerprint,"V2 inventory did not change the v1 policy fingerprint.");
+        check(bridge_loaded.authoring_manifest_sha256==hash(bytes(bridge/"pack/authoring.json")),"V2 manifest identity differs.");
+        bridge_policy["authoring_pack_inventory"]={{"manifest_sha256",hash(bytes(bridge/"pack/authoring.json"))},{"engine_version","0.0.164"},{"files",bm.at("files")}};
+        check(bridge_loaded.fingerprint==hash(bridge_policy.dump()),"V2 full seventeen-resource policy fingerprint differs.");
+        unsigned bridge_sequence=0;
+        auto malformed_bridge=[&](auto mutation) {
+            const auto target=root/("invalid-bridge-"+std::to_string(++bridge_sequence));auto m=bridge_pack(target/"pack");const auto q=profile(target,executable);mutation(target,m);
+            rejects([&]{load(target/"profiles.json",q);},"Malformed V2 authoring pack accepted.");
+        };
+        malformed_bridge([](const auto& r,auto& m){m["version"]=-1;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=0;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=3;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=18446744073709551615ULL;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=true;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=2.0;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]="2";manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["version"]=1;manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){m["files"].erase(m["files"].begin()+2);manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto&){fs::remove(r/"pack/bridge/Poima.ManagedBridge.runtimeconfig.json");});
+        malformed_bridge([](const auto& r,auto&){write(r/"pack/bridge/extra.dll","extra bridge\n");});
+        malformed_bridge([](const auto& r,auto& m){inventory_file(m,r/"pack","bridge/Poima.Gameplay.dll","different third SDK\n");});
+        malformed_bridge([](const auto& r,auto& m){for(auto& row:m["files"])if(row["path"]=="bridge/Poima.ManagedBridge.dll")row["role"]="sdk";manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto& m){std::swap(m["files"][1],m["files"][2]);manifest(r/"pack",m);});
+        malformed_bridge([](const auto& r,auto&){write(r/"pack/bridge/Poima.ManagedBridge.dll","uninventoried bridge mutation\n");});
+        malformed_bridge([](const auto& r,auto& m){m["files"].push_back(m["files"][1]);manifest(r/"pack",m);});
+        check(bridge_sequence==16,"V2 malformed fixture count differs.");
+        std::cout<<"authoring pack: V2 full policy and 16 bridge authority rejections passed\n"<<std::flush;
+        // Exercise the production full-closure callback directly before any
+        // queued fixture job. Queue admission itself is not a payload verifier;
+        // the installed Python publisher owns its before-compilation guard.
+        const auto guarded_output=bridge/"outputs/guarded";artifact(guarded_output);
+        write(bridge/"pack/bridge/Poima.ManagedBridge.runtimeconfig.json","changed before verification\n");
+        rejects([&]{bridge_loaded.verify_publish(guarded_output,"Fixture.Game");},"V2 verifier accepted a pre-publication bridge mutation.");
+        bridge_pack(bridge/"pack");write(bridge/"projects/bridge-tamper.csproj","fixture project\n");
+        {
+            dev::Service service;service.configure({bridge_loaded});
+            const auto accepted=service.dispatch("development.publish",{{"request_id",std::string(32,'3')},{"profile","fixture"},{"project","Game.csproj"},{"output","published"},{"type","Fixture.Game"},{"timeout_ms",5000}});
+            const auto finished=wait(service,accepted);
+            check(finished.at("state")=="succeeded" && finished.at("exit_code")==0 && finished.at("result").at("type")=="Fixture.Game","Guarded V2 fixture publication failed.");
+            const auto marker=Json::parse(finished.at("stdout").get<std::string>());const auto args=marker.at("arguments");
+            check(args.size()==15 && args[11]=="--authoring-pack" && args[12]==native_text(bridge_loaded.authoring_pack) && args[13]=="--authoring-sha256" && args[14]==bridge_loaded.authoring_manifest_sha256,"V2 guard argument vector differs.");
+            const auto tampered=service.dispatch("development.publish",{{"request_id",std::string(32,'4')},{"profile","fixture"},{"project","bridge-tamper.csproj"},{"output","tampered"},{"type","Fixture.Game"},{"timeout_ms",5000}});
+            const auto failed=wait(service,tampered);
+            check(failed.at("exit_code")==0 && failed.at("state")=="failed" && failed.at("result").is_null(),"Zero-exit bridge mutation was incorrectly published.");
+            check(failed.at("error").get<std::string>().find("Authoring pack payload size/hash differs")!=std::string::npos,"V2 zero-exit failure did not reach full-pack verification.");
+        }
+        std::cout<<"authoring pack: V2 guarded publish and bridge mutation revalidation passed\n"<<std::flush;
         return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

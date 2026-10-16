@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Build one bounded NativeAOT authoring pack into new, independent directories.
+"""Build one bounded authoring pack into new, independent directories.
 
 Uses the caller's installed .NET SDK and existing framework/cache. Package
 sources are cleared for these builds. No SDK install or global settings change
@@ -15,7 +15,7 @@ import re
 import shutil
 import stat
 import subprocess
-from authoring_pack import FILE_LIMIT, TOTAL_LIMIT, PAYLOAD_ROLES, load_pack
+from authoring_pack import FILE_LIMIT, TOTAL_LIMIT, PAYLOAD_ROLES, CORECLR_PAYLOAD_ROLES, load_pack
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = '''<Project>
@@ -116,13 +116,15 @@ def _copy(source, destination, expected):
           'Pack copy differs from the admitted source.')
 
 
-def _build(dotnet, project, work, label):
+def _build(dotnet, project, work, label, properties=None):
     artifacts = work / (label + '-artifacts')
     output = work / (label + '-output')
     command = [str(dotnet), 'build', str(project), '-c', 'Release', '-o', str(output),
                '--artifacts-path', str(artifacts), '--nologo', '--disable-build-servers',
                '-nodeReuse:false', '-p:UseSharedCompilation=false', '-p:UseAppHost=false',
                '-p:RestoreConfigFile=' + str(work / 'NuGet.Config')]
+    if properties:
+        command.extend('-p:' + key + '=' + str(value) for key, value in properties.items())
     # A separate artifacts root isolates each project's bin/obj, including all
     # ProjectReferences, without a shared BaseIntermediateOutputPath collision.
     subprocess.run(command, cwd=work, check=True, env=dict(os.environ,
@@ -140,8 +142,9 @@ def _outputs(directory, required, optional):
     _need(required <= present, 'Build output omits required authoring resources.')
 
 
-def package_authoring(dotnet, output, work, engine_version=None):
-    """Compile SDK/analyzer/generator, copy fixed resources and publish manifest last."""
+def package_authoring(dotnet, output, work, engine_version=None, coreclr=False):
+    """Compile fixed tools, optionally include CoreCLR, and publish manifest last."""
+    _need(type(coreclr) is bool, 'CoreCLR authoring selection must be a boolean.')
     output, work = _new_directory(output), _new_directory(work)
     _need(not _contains(output, work) and not _contains(work, output), 'Output and work must not overlap.')
     version = engine_version
@@ -156,7 +159,18 @@ def package_authoring(dotnet, output, work, engine_version=None):
     _need(executable.is_file(), 'Explicit installed dotnet executable required.')
     work.mkdir(parents=True, exist_ok=False)
     (work / 'NuGet.Config').write_bytes(b'<configuration><packageSources><clear /></packageSources></configuration>\n')
-    generator = _build(executable, ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj', work, 'generator')
+    bridge = None
+    bridge_files = {'Poima.ManagedBridge.dll', 'Poima.ManagedBridge.deps.json',
+                    'Poima.ManagedBridge.runtimeconfig.json', 'Poima.Gameplay.dll'}
+    if coreclr:
+        bridge = _build(executable, ROOT / 'managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj', work, 'bridge')
+        _outputs(bridge, bridge_files, {'Poima.ManagedBridge.pdb', 'Poima.Gameplay.pdb', 'Poima.Gameplay.deps.json'})
+        # Use the SDK already compiled for the bridge. Rebuilding its source in
+        # a second artifacts root can produce different PDB/MVID identities.
+        generator = _build(executable, ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj',
+                           work, 'generator', {'PoimaGameplayAssembly': bridge / 'Poima.Gameplay.dll'})
+    else:
+        generator = _build(executable, ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj', work, 'generator')
     analyzer = _build(executable, ROOT / 'managed/Poima.Components.Generator/Poima.Components.Generator.csproj', work, 'analyzer')
     generator_files = {'Poima.NativeGame.Generator.dll', 'Poima.NativeGame.Generator.deps.json',
                        'Poima.NativeGame.Generator.runtimeconfig.json', 'Poima.Gameplay.dll'}
@@ -172,9 +186,15 @@ def package_authoring(dotnet, output, work, engine_version=None):
         'notices/POIMA-LICENSE.txt': ROOT / 'LICENSE',
         'notices/POIMA-THIRD-PARTY-NOTICES.md': ROOT / 'THIRD_PARTY_NOTICES.md',
     }
+    if coreclr:
+        resources.update({'bridge/' + name: bridge / name for name in bridge_files})
+    roles = CORECLR_PAYLOAD_ROLES if coreclr else PAYLOAD_ROLES
     # Validate source closure before reserving output; any later failure leaves
     # an incomplete directory with no valid authoring.json, never a valid pack.
     identities = {relative: _source_identity(source) for relative, source in resources.items()}
+    if coreclr:
+        _need(identities['sdk/Poima.Gameplay.dll'] == identities['bridge/Poima.Gameplay.dll'],
+              'Authoring SDK copies differ.')
     total = sum(identity[0] for identity in identities.values()) + len(PROPS.encode()) + len(TARGETS.encode())
     _need(total <= TOTAL_LIMIT, 'Authoring payload total exceeds 64 MiB.')
     output.mkdir(parents=True, exist_ok=False)
@@ -184,12 +204,12 @@ def package_authoring(dotnet, output, work, engine_version=None):
     (output / 'build/Poima.Gameplay.props').write_bytes(PROPS.encode('utf-8'))
     (output / 'build/Poima.Components.targets').write_bytes(TARGETS.encode('utf-8'))
     entries = []
-    for relative, role in sorted(PAYLOAD_ROLES.items()):
+    for relative, role in sorted(roles.items()):
         payload = output / relative
         _regular(payload)
         digest = _digest(payload)
         entries.append(dict(path=relative, size=payload.stat().st_size, sha256=digest, role=role))
-    manifest = dict(format='poima.authoring-tools', version=1, engine_version=version,
+    manifest = dict(format='poima.authoring-tools', version=2 if coreclr else 1, engine_version=version,
                     framework='net10.0', language='14.0', files=entries)
     data = (json.dumps(manifest, indent=2, allow_nan=False) + '\n').encode('utf-8')
     _need(len(data) <= 64 * 1024, 'Authoring manifest exceeds 64 KiB.')
@@ -206,10 +226,11 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--engine-version')
+    parser.add_argument('--coreclr', action='store_true', help='Include the CoreCLR managed bridge (pack format v2).')
     args = parser.parse_args()
-    pack = package_authoring(args.dotnet, args.output, args.work, args.engine_version)
+    pack = package_authoring(args.dotnet, args.output, args.work, args.engine_version, coreclr=args.coreclr)
     print(json.dumps(dict(authoring_pack=str(pack.root), engine_version=pack.engine_version,
-                          manifest_sha256=pack.manifest_sha256, files=13)))
+                          manifest_sha256=pack.manifest_sha256, files=len(pack._entries))))
 
 
 if __name__ == '__main__':

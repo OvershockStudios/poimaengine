@@ -58,7 +58,7 @@ selected C++ toolchain's `PATH`, `INCLUDE`, `LIB` and `LIBPATH`. See the
 [environment contract](DEVELOPMENT_JOBS.md#per-job-environments). Poima does not
 discover, install or activate a toolchain automatically.
 
-For an [installed NativeAOT authoring pack](AUTHORING_TOOLS.md), add the optional
+For an [installed authoring pack](AUTHORING_TOOLS.md), add the optional
 host-only `authoring_pack` directory and select its inventoried publisher:
 
 ```json
@@ -68,8 +68,9 @@ host-only `authoring_pack` directory and select its inventoried publisher:
 
 These are fields in the profile object; all other required fields above remain.
 The pack is separate from `runtime_root`. Configuration validates its exact
-thirteen-resource inventory, payload identities and SDK copies, then records
-the manifest hash in the profile fingerprint. Publication passes
+version-selected thirteen- or seventeen-resource inventory, payload identities
+and SDK copies, then records the manifest hash in the profile fingerprint.
+Publication passes
 `--authoring-pack` and that expected `--authoring-sha256` automatically; neither
 is an RPC-supplied authority override. Do not add a manifest-hash field to the
 profile JSON. Keep outputs outside every configured pack as well as the other
@@ -210,5 +211,14 @@ matching installed Windows runtime, pack, .NET SDK/linker environment and an
 enclosing Windows Job. The [0.0.162 installed workflow](evidence/m2-installed-authoring-tools.json)
 qualifies actual Windows compilation, original-checkout path unavailability,
 native component/Control callbacks, full save continuation and relocated export.
-The earlier failed fixture attempt remains recorded; CoreCLR pack distribution,
-clean-machine setup and rendering remain separate.
+The earlier failed fixture attempt remains recorded.
+
+Optional format-v2 packs add the CoreCLR bridge while retaining NativeAOT
+publication. Native profiles accept the explicit thirteen- or seventeen-resource
+inventory, include its complete authority in the fingerprint and revalidate it
+at publication boundaries. The [installed CoreCLR workflow](../tests/coreclr_authoring_workflow.py)
+separately exercises actual compilation, structured diagnostics, repair,
+compatible reload and complete warm/cold saves with the original checkout path
+unavailable. CoreCLR load paths remain explicit; the build profile does not
+implicitly pin an arbitrary managed load. See [installed tools](AUTHORING_TOOLS.md).
+Clean-machine setup and rendering remain separate.

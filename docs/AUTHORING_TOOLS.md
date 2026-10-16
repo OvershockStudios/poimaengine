@@ -1,15 +1,18 @@
 # Installed C# authoring tools
 
 An authoring pack supplies the compiled gameplay SDK, component analyzer,
-build-time native binding generator and NativeAOT publisher. Games reference
+build-time native binding generator and NativeAOT publisher. An optional CoreCLR
+bridge supports installed development and compatible reload. Games reference
 these installed resources without building Poima's internal managed projects.
 Keep the pack separate from the native runtime distribution and exported games.
 
-Use Python 3.10+, a matching .NET 10 SDK and an x64 native linker toolchain.
-NativeAOT publishing needs a host matching its target OS; `win-x64` builds run
+Use Python 3.10+ and a matching .NET 10 SDK. CoreCLR development also needs
+the native host and an explicitly selected hostfxr from its installed .NET
+runtime. NativeAOT publishing additionally needs an x64 native linker toolchain
+and a host matching its target OS; `win-x64` builds run
 on Windows. The compiler and .NET framework/runtime packages remain explicit
 development prerequisites. The pack builder does not install them or download
-packages. CoreCLR bridge distribution is separate from this NativeAOT pack.
+packages. The optional bridge does not include a .NET runtime or SDK.
 
 ## Build and inspect a pack
 
@@ -27,6 +30,18 @@ sources. Missing installed SDK/framework inputs fail explicitly. Only the fixed
 resources enter the pack; additional compiler outputs need an explicit
 packaging policy. Build work remains available for inspection.
 
+To include CoreCLR development resources, add `--coreclr`:
+
+```sh
+python scripts/package_authoring.py --dotnet /absolute/path/to/dotnet \
+  --coreclr --output dist/authoring --work build/authoring-work
+```
+
+The default remains format v1. `--coreclr` selects format v2, builds the bridge
+and SDK first, and builds the generator against that exact binary SDK. It also
+builds the same component analyzer. No game project needs a reference to the
+engine's internal managed projects.
+
 Copy the complete pack to its installed location. Validate it there:
 
 ```sh
@@ -35,8 +50,11 @@ python /installed/authoring/tools/authoring_pack.py /installed/authoring
 
 The result identifies the pack version, manifest SHA-256 and payload count.
 `authoring.json` inventories thirteen payloads with paths, roles, sizes and
-hashes. Admission checks the complete directory contents, both copies of the
-SDK, and all payload identities. The manifest is limited to 64 KiB, individual
+hashes. Format v2 inventories the same thirteen plus
+`bridge/Poima.ManagedBridge.dll`, its `.deps.json` and `.runtimeconfig.json`,
+and `bridge/Poima.Gameplay.dll`: seventeen payloads in total. Admission checks
+the complete directory contents, every SDK copy and all payload identities.
+The manifest is limited to 64 KiB, individual
 payloads to 16 MiB and total payload data to 64 MiB. Links, reparse points,
 hardlinked files, path aliases and extra files are rejected. Keep build outputs
 and caches outside the pack.
@@ -104,6 +122,42 @@ components also contains `game.poima-components.json`; import its schemas before
 authoring those components. Inspect generated schema/defaults and actual runtime
 behavior before exporting.
 
+## Compile and reload with CoreCLR
+
+Use a format-v2 pack and a native host built with managed gameplay enabled.
+Compile the game project with the installed .NET SDK, using the same props
+import above. Keep compiler intermediates and outputs outside the installed
+pack. If intermediates must also stay outside the authored game, set
+`BaseIntermediateOutputPath` and `MSBuildProjectExtensionsPath` before the SDK
+props import; the [installed workflow](../tests/coreclr_authoring_workflow.py)
+shows that project layout.
+
+The existing `development.compile` operation runs the selected SDK and exposes
+terminal status and structured source diagnostics. An accepted job is not a
+successful compilation. Inspect `development.inspect` and
+`development.diagnostics`, and retain failed attempts before repairing source.
+See [compiler jobs](DEVELOPMENT_JOBS.md) for request fields, trust and bounds.
+
+Start the runtime and call `runtime.gameplay.load` with the inspected session,
+Tick, gameplay revision and structure revision, the selected `hostfxr`,
+`bridge/Poima.ManagedBridge.dll`, the compiled game assembly and its game type.
+The compiled game's copied `Poima.Gameplay.dll` must match the pack's SDK. Keep
+the complete inventoried bridge directory together. The pack validator can
+check its integrity before each consumption; the explicit CoreCLR loader paths
+are not implicitly pinned by a NativeAOT build profile.
+
+After a compatible successful build, reload explicitly using fresh native
+guards. Compatible state migrates through the supported typed schema; building
+a DLL alone does not replace the running game. A failed compilation should
+leave the last usable assembly available. Check live state and the next changed
+gameplay Tick separately. See [managed gameplay](MANAGED_GAMEPLAY.md) and
+[iteration](AGENT_ITERATION.md) for ownership, unsupported changes and recovery.
+
+The bridge is for development. NativeAOT publication continues to use the
+pack's inventoried native generator, publisher and Entry source; a format-v2
+pack supports that route too. Keep development runtime prerequisites separate
+from the exported game's declared native dependencies.
+
 ## Use a native build profile
 
 Add the optional host-selected `authoring_pack` directory to a
@@ -156,7 +210,8 @@ the source project and relocated game. All 32 processes close naturally. The
 first attempt's missing fixture callback remains a separate failed record.
 [Results, artifact identities and limits](evidence/m2-installed-authoring-tools.json).
 
-The [workflow reproducer](../tests/authoring_tools_workflow.py) takes matching
+The [NativeAOT workflow reproducer](../tests/authoring_tools_workflow.py) needs
+Python 3.11+ and takes matching
 `--runtime`, `--pack`, `--dotnet`, `--source` and a new `--output`; run it inside
 an owned Windows Job using the existing
 [process supervisor](../tests/switchback_ownership.py). `--assert-absent` checks
@@ -164,6 +219,31 @@ the supplied original path at workflow boundaries. Its caller owns preparing
 the offline SDK/linker environment and safely excluding/restoring any checkout;
 the workflow alone does not make that path unavailable.
 
-This qualifies installed NativeAOT authoring on the existing development
-computer. CoreCLR bridge packaging, a clean-machine installation, graphics and
-the broader Alpha release gates remain separate.
+The 0.0.164 [CoreCLR reproducer](../tests/coreclr_authoring_workflow.py) needs
+Python 3.11+ and a matching Windows runtime with simulation, managed gameplay
+and game UI enabled. Its compiled fixture exercises generated component access,
+logical controls and rollback as well as code reload. Run it inside the same
+owned Windows Job pattern, with explicit `--runtime`, `--pack`, `--dotnet`,
+`--hostfxr`, `--source` and a new `--output`. Its `--assert-absent` has the same
+caller-owned exclusion requirement.
+
+The recorded CoreCLR run passes 697 native calls and seventeen complete
+version-7 checkpoints while the checkout pathname is unavailable. It compiles
+valid source, retains structured CS1525 diagnostics for an intentional failure,
+repairs and reloads compatible code, preserves complete saved state except the
+two declared reload identity fields, then verifies changed behavior and full
+warm/fresh-process save continuation. All seventeen processes close naturally;
+the same checkout directory is restored.
+
+A separate 0.0.164 run uses the same v2 pack for NativeAOT publication,
+adoption, export and relocated readonly gameplay. It passes 865 calls and
+eighteen complete checkpoints through five owners; all thirty-two processes
+close naturally. The test-created source project is unavailable during bundled
+consumption and is restored exactly. The engine checkout stays available in
+this separate run; its source-absence evidence belongs to the CoreCLR run and
+the earlier v1 NativeAOT check.
+
+These are existing-machine installed authoring checks. Clean-machine
+installation, graphics, latency budgets and the broader Alpha gates remain
+separate.
+[Results and artifact identities](evidence/m2-installed-coreclr-authoring.json).

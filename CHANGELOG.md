@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.164
+
+- Add optional CoreCLR resources to the installed authoring pack, with one exact SDK shared by the bridge, game reference and native binding generator. Preserve default v1 packs, native profile fingerprints, guarded publication and complete-inventory validation. [Installed authoring](docs/AUTHORING_TOOLS.md).
+- Qualify actual installed compilation, structured-error recovery, compatible reload and full warm/cold saves with the engine checkout pathname unavailable: 697 native calls, seventeen checkpoints and seventeen naturally closed processes. A separate v2 NativeAOT publish/adopt/export/relocated-game route passes 865 calls and eighteen checkpoints. Pass six Windows native suites, eleven Linux headless tests and portable pack checks on both systems; preserve failed preflights and the reader correction. [Results and scope](docs/evidence/m2-installed-coreclr-authoring.json).
+
 ## 0.0.163
 
 - Reconcile deferred remote selection after Inspector or live-component drafts resolve. Preserve original-target Apply guards and failed drafts, keep accepted local selections through stale polls, safely clear deleted targets, and block Scene manipulation when selection reads fail. Automatic errors retain a visible Reload recovery path without recursive retries.

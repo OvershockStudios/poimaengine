@@ -23,6 +23,10 @@ ctest --preset runtime-headless
 
 For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The CMake presets leave managed gameplay and game UI off by default, and the authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
 
+An [installed format-v2 authoring pack](AUTHORING_TOOLS.md#compile-and-reload-with-coreclr)
+provides the binary SDK, component analyzer and matching CoreCLR bridge without
+engine-project references. Its .NET SDK/runtime remain explicit prerequisites.
+
 Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its dependency metadata and `Poima.ManagedBridge.runtimeconfig.json`. The game assembly is portable IL; the native executable must load a CoreCLR installation for its own operating system. Tested installations:
 
 | Native engine | Explicit hostfxr path |

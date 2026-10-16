@@ -77,7 +77,7 @@ using Pins=std::vector<std::pair<fs::path,std::string>>;
 void unchanged(const Pins& pins) {
     for(const auto& [file,digest]:pins)need(hash(read(file,256ULL*1024*1024))==digest,"Selected development tool changed during the job.");
 }
-const std::map<std::string,std::string>& authoring_files() {
+const std::map<std::string,std::string>& authoring_files(int version) {
     static const std::map<std::string,std::string> value={
         {"sdk/Poima.Gameplay.dll","sdk"},
         {"analyzers/Poima.Components.Generator.dll","analyzer"},
@@ -89,7 +89,15 @@ const std::map<std::string,std::string>& authoring_files() {
         {"build/Poima.Components.targets","build"},
         {"tools/publish_native_gameplay.py","publisher"},{"tools/authoring_pack.py","validator"},
         {"notices/POIMA-LICENSE.txt","notice"},{"notices/POIMA-THIRD-PARTY-NOTICES.md","notice"}};
-    return value;
+    static const auto bridge_value=[] {
+        auto result=value;
+        result.emplace("bridge/Poima.ManagedBridge.dll","bridge");
+        result.emplace("bridge/Poima.ManagedBridge.deps.json","bridge");
+        result.emplace("bridge/Poima.ManagedBridge.runtimeconfig.json","bridge");
+        result.emplace("bridge/Poima.Gameplay.dll","sdk");
+        return result;
+    }();
+    return version==1 ? value:bridge_value;
 }
 bool authoring_digest(const std::string& value) {
     return value.size()==64 && std::all_of(value.begin(),value.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');});
@@ -116,17 +124,18 @@ AuthoringPack authoring_pack(const fs::path& root,const std::string& expected={}
     need(!bytes.starts_with("\xEF\xBB\xBF"),"Authoring pack manifest must be UTF-8 JSON without a BOM.");
     need(expected.empty() || digest==expected,"Authoring pack manifest changed after configuration.");
     const auto doc=parse(bytes);fields(doc,{"format","version","engine_version","framework","language","files"});
-    need(doc.at("format")=="poima.authoring-tools" && doc.at("version").is_number_integer() && doc.at("version")==1,
+    need(doc.at("format")=="poima.authoring-tools" && doc.at("version").is_number_integer() && (doc.at("version")==1 || doc.at("version")==2),
          "Unsupported authoring pack format.");
+    const int manifest_version=doc.at("version").get<int>();const auto& resources=authoring_files(manifest_version);
     const auto version=string(doc.at("engine_version"),128);
     need(std::regex_match(version,std::regex("[0-9]+\\.[0-9]+\\.[0-9]+")),"Authoring pack engine version must be numeric major.minor.patch.");
     need(doc.at("framework")=="net10.0" && doc.at("language")=="14.0","Unsupported authoring pack framework/language.");
-    const auto& rows=doc.at("files");need(rows.is_array() && rows.size()==authoring_files().size(),"Authoring pack requires the fixed thirteen resources.");
+    const auto& rows=doc.at("files");need(rows.is_array() && rows.size()==resources.size(),manifest_version==1 ? "Authoring pack requires the fixed thirteen resources.":"Authoring pack requires the fixed seventeen resources.");
     std::set<std::string> expected_entries{"authoring.json"};std::uint64_t total=0;std::string previous;
     for(const auto& entry:rows) {
         fields(entry,{"path","size","sha256","role"});const auto name=string(entry.at("path"),1024),role=string(entry.at("role"),32),sha=string(entry.at("sha256"),64);
-        const auto known=authoring_files().find(name);
-        need(known!=authoring_files().end() && known->second==role && (previous.empty() || previous<name),"Authoring pack resource path/role/order differs from the fixed inventory.");
+        const auto known=resources.find(name);
+        need(known!=resources.end() && known->second==role && (previous.empty() || previous<name),"Authoring pack resource path/role/order differs from the fixed inventory.");
         previous=name;need(authoring_digest(sha),"Authoring pack resource digest must be lowercase SHA256.");
         const auto& size=entry.at("size");need(size.is_number_integer() && size>=1 && size<=16*1024*1024,"Authoring pack resource size must be an integer in 1..16 MiB.");
         const auto count=size.get<std::uint64_t>();need(count<=64ULL*1024*1024-total,"Authoring pack payload exceeds 64 MiB.");total+=count;
@@ -143,13 +152,17 @@ AuthoringPack authoring_pack(const fs::path& root,const std::string& expected={}
         need(++count<=64 && it.depth()<4,"Authoring pack directory closure exceeds its bounds.");
         const auto name=text(it->path().lexically_relative(root));
         need(expected_entries.contains(name),"Authoring pack contains an uninventoried entry.");
-        const bool directory=!authoring_files().contains(name) && name!="authoring.json";
+        const bool directory=!resources.contains(name) && name!="authoring.json";
         authoring_kind(it->path(),directory);need(actual.insert(name).second,"Authoring pack path alias.");
     }
     need(actual==expected_entries,"Authoring pack resource closure is incomplete.");
     const auto sdk=std::find_if(rows.begin(),rows.end(),[](const auto& row){return row.at("path")=="sdk/Poima.Gameplay.dll";});
     const auto duplicate=std::find_if(rows.begin(),rows.end(),[](const auto& row){return row.at("path")=="tools/native-generator/Poima.Gameplay.dll";});
     need(sdk->at("size")==duplicate->at("size") && sdk->at("sha256")==duplicate->at("sha256"),"Authoring pack SDK copies have different identities.");
+    if(manifest_version==2) {
+        const auto bridge_sdk=std::find_if(rows.begin(),rows.end(),[](const auto& row){return row.at("path")=="bridge/Poima.Gameplay.dll";});
+        need(sdk->at("size")==bridge_sdk->at("size") && sdk->at("sha256")==bridge_sdk->at("sha256"),"Authoring pack SDK copies have different identities.");
+    }
     return {root,digest,Json{{"manifest_sha256",digest},{"engine_version",version},{"files",rows}}};
 }
 std::string project_result(const Reply& reply) {
