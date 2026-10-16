@@ -67,6 +67,32 @@ this view is an
 authoring aid rather than a guarantee that every retained branch has one exact
 operation/type constant. Mixed-operation atomic transactions remain supported.
 
+Starting with 0.0.171, standard `if`, `then` and `else` schemas nested inside
+component values participate in the recursive schema check. An unrelated
+`AnimationRig.root_motion` conditional therefore does not prevent narrowing a
+`component.set` request to its original `Transform` branch. The selected
+conditional subtree and transaction envelope remain unchanged; discovery does
+not evaluate or rewrite that conditional. Branch-level conditionals remain
+conservative, as do nested references, unfamiliar dialects, unknown keywords
+and malformed schema positions. A retained opaque branch cannot by itself
+establish that a requested selector is supported.
+
+`runtime_game_session_contract`, like `authoring_contract`, is reserved session
+metadata in full and focused views. It is not listed as a selectable catalog
+section. Its availability describes the contract profile, not whether a runtime
+is currently ready for a particular call.
+
+The 0.0.171 [Windows/Linux checks](evidence/m2-conditional-discovery.json)
+exercise full/catalog/method/component/section views, eight mutation selectors,
+five invalid selectors and complete per-owner state/history/file preservation.
+`tests/conditional_discovery_protocol.py` compares separately built 0.0.170 and
+0.0.171 binaries through both CLI and MCP; Windows execution requires an owned
+Job such as `tests/switchback_ownership.py` provides. Its baseline rejection of
+AnimationRig is a distinct support-restoration case, not a size comparison.
+The existing `mutation-discovery-native`, `world_session_native`,
+`world_contract` and `mcp_contract` CTests cover the current implementation
+without requiring a previous binary. Historical failed runs remain separate.
+
 Selectors contain 1–128 UTF-8 bytes. `operation` is required for `mutation`;
 `type` is optional only for
 `component.set` and `component.remove`. These selectors are forbidden in other

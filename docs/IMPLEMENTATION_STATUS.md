@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.170**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.171**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.171 restores focused mutation discovery when component values
+contain standard `if`/`then`/`else` schemas. A request for `Transform` keeps its
+original branch and complete transaction envelope; `AnimationRig` can also be
+selected without discarding its conditional fields. References, unfamiliar
+schema semantics and ambiguous branch-level conditions still use conservative
+handling. Reserved runtime-contract metadata stays present in focused views.
+[Behavior](WORLD_SERVICE.md#focused-discovery-development).
+
+The corrected Linux cohort passes all sixteen selected CTests. Its earlier
+15/16 result is retained: the remaining native fixture expected the old full
+union, and the follow-up changes only that exact expected projection. All six
+other sealed binaries/archives, including the engine, remain byte-identical.
+Windows passes the native discovery/schema/MCP checks, seven separately run
+MCP/authoring-contract checks and the corrected shared-session native fixture
+linked to the same compiled core.
+
+On each platform, four actual CLI/MCP owners complete 252 request/reply pairs.
+Fourteen comparisons return smaller original replies while preserving the
+complete selected schemas; two separately verify newly available AnimationRig
+selection against the old build's exact rejection. These are response-byte
+measurements, not token-cost or iteration-time measurements.
+[Results and retained failures](evidence/m2-conditional-discovery.json).
+
+The original Windows regression remains failed at 13/14 world tests after a
+snapshot-publication error during receipt eviction. A retained diagnostic also
+reproduces publication failure in the previous build; its current-build
+130-commit sequence passes. Storage code is unchanged and the underlying
+Windows error code was not captured, so this is an open reliability issue,
+not a qualified fix. The recorded outer Jobs and process groups close without
+forced cleanup.
 
 Version 0.0.170 adds opt-in [FBX material rejection witnesses](FBX_IMPORT.md#locate-an-unsupported-material)
 to `asset.import` and `asset.source.inspect`. Selected existing failures identify
@@ -11,20 +42,19 @@ animation-donor index. Display names are bounded UTF-8. Omitted/false requests
 retain previous errors; successful conversion and the accepted profile stay the
 same. The new option is outside the frozen authoring-core contract.
 
-Windows passes eight native executions and three protocol regressions, with two
-original fixture producers. Independent review verifies 1,469 material-protocol
-request/reply pairs, 54 exact witnesses, 112 old-native comparisons and seven
-complete cooked-file byte pairs. Linux builds and passes 19 of 21 CTests,
-including the new diagnostic check. Its overall regression gate **fails** on
-`world_contract` and `mcp_contract` discovery assertions; the planned legacy
-parity phase in that owner was not reached. Nested animation conditionals trigger
-the existing conservative discovery fallback, while these assertions expect
-pruning; another expectation omits reserved runtime-contract metadata. These
-predate this change and require a separate follow-up. The failed gate remains
-failed. A separate sealed-binary Linux run passes all 24 diagnostic cases,
-112 legacy comparisons and seven complete cooked-file pairs without rebuilding
-or changing that gate. Both of its native owners close with code zero.
-[Recorded scopes and outcomes](evidence/m2-fbx-material-profile.json).
+At 0.0.170, Windows passed eight native executions and three protocol regressions,
+with two original fixture producers. Independent review verified 1,469
+material-protocol request/reply pairs, 54 exact witnesses, 112 old-native
+comparisons and seven complete cooked-file byte pairs. Linux built and passed
+19 of 21 CTests, including the diagnostic check. That original gate **failed**
+on `world_contract` and `mcp_contract` discovery assertions, before its planned
+legacy parity phase. Nested animation conditionals triggered conservative
+fallback where those assertions expected pruning; another expectation omitted
+reserved runtime-contract metadata. The 0.0.171 follow-up is recorded above;
+the original failure remains unchanged. A separate sealed-binary Linux run
+passed all 24 diagnostic cases, 112 legacy comparisons and seven complete
+cooked-file pairs without rebuilding or changing that gate. Both native owners
+closed with code zero. [Recorded scopes and outcomes](evidence/m2-fbx-material-profile.json).
 
 The 0.0.169 [mixed Performance Yard workflow](PERFORMANCE_YARD_MIXED_RELIABILITY.md)
 passes twelve warm save/load cycles, six compatible C# body replacements,

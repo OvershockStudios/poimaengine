@@ -127,11 +127,10 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
                 branches.push_back(branch);
         }
         check(branches.size()==1,"Missing Transform discovery fixture branch.");
-        // The rich native schema contains conditional root-motion semantics.
-        // Unknown keywords prohibit pruning the enclosing union; the selected
-        // plain Transform witness still has to exist. Synthetic discovery tests
-        // separately exercise pruning of completely recognized schemas.
+        // Recognized conditional root-motion semantics remain unchanged in
+        // their original branch while the focused union selects only Transform.
         check(has_conditional,"Rich discovery fixture no longer has its conditional-preservation witness.");
+        projected["properties"]["ops"]["items"]["oneOf"]=branches;
         expected=metadata;expected["partial"]=true;expected["view"]="mutation";
         expected["selection"]=selection;expected["methods"]={{"world.transact",projected}};
         check(result({{"view","mutation"},{"operation","component.set"},{"type","Transform"}})==expected,

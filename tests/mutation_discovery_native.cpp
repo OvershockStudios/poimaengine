@@ -45,6 +45,61 @@ int main() { try {
     rejects([&] { mutation_schema(source, "unknown"); });
     rejects([&] { mutation_schema(source, "component.set", "Missing"); });
 
+    // Standard conditionals inside an unrelated value schema do not make
+    // its explicit operation/type constants overlap the selected Transform.
+    // Keep the selected rig's entire conditional subtree byte-for-byte.
+    auto rig = branch("component.set", {{"const", "AnimationRig"}});
+    Json conditional_value = {{"type", "object"}, {"properties", {
+        {"mode", {{"enum", {"extract", "character"}}}},
+        {"actor", {{"anyOf", Json::array({Json{{"type", "string"}}, Json{{"type", "null"}}})}}}}}};
+    conditional_value["if"] = {{"properties", {{"mode", {{"const", "character"}}}}}, {"required", {"mode"}}};
+    conditional_value["then"] = {{"required", {"actor"}}, {"properties", {{"actor", {{"type", "string"}}}}}};
+    conditional_value["else"] = {{"properties", {{"actor", {{"type", "null"}}}}}};
+    rig["properties"]["value"] = conditional_value;
+    rig["required"].push_back("value");
+    const auto conditional_source = envelope(Json::array({rename, rig, transform, camera}));
+    const auto original_conditional = conditional_source.dump();
+    check(items(mutation_schema(conditional_source, "component.set", "Transform")) == Json::array({transform}),
+          "Nested standard value conditional disabled disjoint type pruning.");
+    check(items(mutation_schema(conditional_source, "component.set", "AnimationRig")) == Json::array({rig}),
+          "Selected conditional component schema was lost or rewritten.");
+    check(conditional_source.dump() == original_conditional, "Conditional source was mutated.");
+
+    // Recurse into all three conditional schema positions. A reference,
+    // unfamiliar dialect or unknown nested keyword still preserves the union.
+    for (const auto* position : {"if", "then", "else"}) {
+        for (const auto* keyword : {"$ref", "$dynamicRef", "$recursiveRef", "$schema", "$vocabulary", "futureSemantics"}) {
+            auto guarded = rig;
+            guarded["properties"]["value"][position][keyword] = "opaque";
+            const auto value = envelope(Json::array({rename, guarded, transform, camera}));
+            check(mutation_schema(value, "component.set", "Transform") == value,
+                  "Opaque conditional descendant failed to preserve its whole source union.");
+        }
+        auto malformed = rig;
+        malformed["properties"]["value"][position] = Json::array({true});
+        const auto value = envelope(Json::array({rename, malformed, transform, camera}));
+        check(mutation_schema(value, "component.set", "Transform") == value,
+              "Nonschema conditional value was treated as a known schema.");
+    }
+    auto boolean_condition = rig;
+    boolean_condition["properties"]["value"]["if"] = true;
+    boolean_condition["properties"]["value"]["then"] = true;
+    boolean_condition["properties"]["value"]["else"] = false;
+    check(items(mutation_schema(envelope(Json::array({boolean_condition, transform, camera})),
+                                "component.set", "Transform")) == Json::array({transform}),
+          "Boolean conditional schemas unnecessarily disabled proven disjoint pruning.");
+
+    // A conditional at the branch itself may alter applicability. Preserve it
+    // conservatively and require an independent plain supported witness.
+    for (const auto* position : {"if", "then", "else"}) {
+        auto conditional_branch = camera; conditional_branch[position] = Json::object();
+        const auto value = envelope(Json::array({conditional_branch, transform, rename}));
+        check(items(mutation_schema(value, "component.set", "Transform")) == Json::array({conditional_branch, transform}),
+              "Branch-level conditional was pruned instead of conservatively retained.");
+        auto no_plain_witness = transform; no_plain_witness[position] = Json::object();
+        rejects([&] { mutation_schema(envelope(Json::array({no_plain_witness, camera})), "component.set", "Transform"); });
+    }
+
     auto ref = rename; ref["properties"]["id"]["$ref"] = "#/$defs/id";
     auto dynamic_ref = rename; dynamic_ref["$dynamicRef"] = "#node";
     auto recursive_ref = rename; recursive_ref["properties"]["op"]["$recursiveRef"] = "#";

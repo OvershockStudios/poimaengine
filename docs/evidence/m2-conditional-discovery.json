@@ -1,0 +1,665 @@
+{
+  "checkpoint": "0.0.171",
+  "schema_revision": 104,
+  "scope": "Native focused discovery classification and bounded original CLI/MCP response observations. No graphics, model-token cost, latency, throughput, broad API stability or Alpha completion claim.",
+  "implementation": {
+    "nested_conditional_keywords": [
+      "if",
+      "then",
+      "else"
+    ],
+    "scope": "Recognized nested schemas remain intact inside selected mutation branches. Unknown/malformed schemas and branch-top conditional selector ambiguity retain conservative handling.",
+    "selected_public_sources": {
+      "src/mutation_discovery.hpp": {
+        "bytes": 6671,
+        "sha256": "520a632fc5bb28b2fe172e502daa3e63981781e770e7e1750e81ba9673a50c0f"
+      },
+      "tests/mutation_discovery_native.cpp": {
+        "bytes": 11098,
+        "sha256": "f5b71734ba486d83e3f9869fc365749e34583a3f3ac05341a040664ad1795aea"
+      },
+      "tests/world_schema_native.cpp": {
+        "bytes": 22602,
+        "sha256": "11d16b129ea1c42a04a1e64809241c67b5315747ea6a81aa31e8e49c773c3876"
+      },
+      "tests/mcp_contract.py": {
+        "bytes": 22675,
+        "sha256": "698074eab7b622ef51e45f6b4dcbfc613e71cb58adcbd05f51664a3d4afb6b2e"
+      },
+      "tests/world_contract.py": {
+        "bytes": 36338,
+        "sha256": "8303ca513306fed2e579e789f1649e34447bbacfe7c55cd3c618ea016233c8ee"
+      },
+      "tests/conditional_discovery_protocol.py": {
+        "bytes": 18564,
+        "sha256": "30d2c15ecd4db13bbe592f0a59f5917a9d83a5b06f5cb621bb61b79a548c525e"
+      },
+      "tests/world_session_native.cpp": {
+        "bytes": 80880,
+        "sha256": "7449c037edb6373989ab19e3889201e02f7346e2427d13e7cf184714f99d3e50"
+      }
+    }
+  },
+  "windows": {
+    "native_build": {
+      "passed": true,
+      "generation": 34,
+      "compiled_inputs": 318,
+      "sealed_artifacts": 6,
+      "forced_cleanup": false
+    },
+    "original_campaign": {
+      "passed": false,
+      "planned_stages": 11,
+      "reached_stages": [
+        {
+          "name": "mutation",
+          "exit_code": 0
+        },
+        {
+          "name": "schema",
+          "exit_code": 0
+        },
+        {
+          "name": "mcp",
+          "exit_code": 0
+        },
+        {
+          "name": "world_contract",
+          "exit_code": 1
+        }
+      ],
+      "world_contract_passed": 13,
+      "world_contract_total": 14,
+      "failed_test": "test_receipt_eviction_preserves_stale_revision_guard",
+      "regraded": false
+    },
+    "separate_remaining_stages": {
+      "passed": true,
+      "stages": [
+        "mcp_contract",
+        "authoring_core",
+        "authoring_identity",
+        "request_compatibility",
+        "request_projection",
+        "response_compatibility",
+        "contract_artifacts"
+      ],
+      "count": 7,
+      "original_failed_campaign_regraded": false
+    },
+    "consumer": {
+      "passed": true,
+      "independent_file_audit_passed": true,
+      "owners": 4,
+      "original_rpc_pairs": 252,
+      "mcp_notifications": 2,
+      "observation_boundaries": 80,
+      "comparisons": 16,
+      "raw_reply_size_reductions": 14,
+      "unsupported_to_supported": 2,
+      "measurements": [
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "Transform",
+          "baseline_reply_bytes": 78548,
+          "current_reply_bytes": 2924,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "support_restored",
+          "operation": "component.set",
+          "type": "AnimationRig",
+          "baseline_reply_bytes": 124,
+          "current_reply_bytes": 5210,
+          "baseline_branches": null,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "game:00000000000000000000000000000002",
+          "baseline_reply_bytes": 78576,
+          "current_reply_bytes": 2824,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.remove",
+          "type": "Camera",
+          "baseline_reply_bytes": 78548,
+          "current_reply_bytes": 2664,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.create",
+          "type": null,
+          "baseline_reply_bytes": 78529,
+          "current_reply_bytes": 2566,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.rename",
+          "type": null,
+          "baseline_reply_bytes": 78529,
+          "current_reply_bytes": 2484,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.reparent",
+          "type": null,
+          "baseline_reply_bytes": 78531,
+          "current_reply_bytes": 2505,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": null,
+          "baseline_reply_bytes": 78529,
+          "current_reply_bytes": 23468,
+          "baseline_branches": 35,
+          "current_branches": 19
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "Transform",
+          "baseline_reply_bytes": 169926,
+          "current_reply_bytes": 6298,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "support_restored",
+          "operation": "component.set",
+          "type": "AnimationRig",
+          "baseline_reply_bytes": 315,
+          "current_reply_bytes": 11312,
+          "baseline_branches": null,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "game:00000000000000000000000000000002",
+          "baseline_reply_bytes": 169982,
+          "current_reply_bytes": 6084,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.remove",
+          "type": "Camera",
+          "baseline_reply_bytes": 169926,
+          "current_reply_bytes": 5730,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.create",
+          "type": null,
+          "baseline_reply_bytes": 169884,
+          "current_reply_bytes": 5522,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.rename",
+          "type": null,
+          "baseline_reply_bytes": 169884,
+          "current_reply_bytes": 5342,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.reparent",
+          "type": null,
+          "baseline_reply_bytes": 169888,
+          "current_reply_bytes": 5394,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": null,
+          "baseline_reply_bytes": 169884,
+          "current_reply_bytes": 50848,
+          "baseline_branches": 35,
+          "current_branches": 19
+        }
+      ],
+      "oracle": "Complete independently selected original schema branches and preserved envelopes; unchanged complete per-owner native state/history and authored bytes; five invalid-selector error comparisons. Same-build direct/MCP full descriptors and errors agree.",
+      "byte_scope": "Original UTF-8 response lines including transport framing. Compare only within the same transport; MCP contains text and structured content. Old AnimationRig errors are not schema-size baselines."
+    },
+    "original_consumer_failure": {
+      "passed": false,
+      "cause": "The first fixture incorrectly expected sealed170 AnimationRig selection to succeed. Original -32602 rejection is retained and explicitly required in the corrected cohort.",
+      "original_raw_pairs": 24,
+      "original_compact_records": 23,
+      "regraded": false
+    },
+    "supplemental_native_session": {
+      "passed": true,
+      "independent_file_audit_passed": true,
+      "source": "tests/world_session_native.cpp",
+      "source_identity": {
+        "bytes": 80880,
+        "sha256": "7449c037edb6373989ab19e3889201e02f7346e2427d13e7cf184714f99d3e50"
+      },
+      "new_test_binary": {
+        "bytes": 25096192,
+        "sha256": "59dfe4e1bfceae4f950600c0efaa1e81445bbadf4298e3612373c6107881d108"
+      },
+      "compile_scope": "One corrected test translation unit linked against the immutable generation34 engine and recorded library/header dependency closure; no new engine generation.",
+      "forced_cleanup": false,
+      "original_campaign_regraded": false
+    }
+  },
+  "linux": {
+    "original_campaign": {
+      "passed": false,
+      "ctest_passed": 15,
+      "ctest_total": 16,
+      "failed_tests": [
+        "world_session_native"
+      ],
+      "cause_scope": "A native test retained the old full-union expectation; original gate remains failed.",
+      "regraded": false
+    },
+    "repair_campaign": {
+      "passed": true,
+      "independent_file_audit_passed": true,
+      "ctest_passed": 16,
+      "ctest_total": 16,
+      "selected_tests": [
+        "fbx_material_profile_contract",
+        "authoring_api_compatibility",
+        "authoring_api_projection",
+        "authoring_response_compatibility",
+        "authoring_contract_artifacts",
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "python_response_contract",
+        "python_client_contract",
+        "world_session_native",
+        "world_schema_native",
+        "mcp_native",
+        "mcp_contract",
+        "cli_contract",
+        "world_contract",
+        "mutation-discovery-native"
+      ],
+      "source_files": 337,
+      "sealed_files": 7,
+      "unchanged_non_oracle_seals": 6,
+      "source_change": "tests/world_session_native.cpp",
+      "source_identity": {
+        "bytes": 80880,
+        "sha256": "7449c037edb6373989ab19e3889201e02f7346e2427d13e7cf184714f99d3e50"
+      },
+      "original_failed_aggregate_regraded": false,
+      "scope": "The stale full-union test expectation was corrected. The same complete selected16-test cohort passes; original15/16 failure remains a separate result. This is a test-only successor, not an engine behavior fix."
+    },
+    "consumer": {
+      "passed": true,
+      "independent_file_audit_passed": true,
+      "owners": 4,
+      "original_rpc_pairs": 252,
+      "mcp_notifications": 2,
+      "observation_boundaries": 80,
+      "comparisons": 16,
+      "raw_reply_size_reductions": 14,
+      "unsupported_to_supported": 2,
+      "measurements": [
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "Transform",
+          "baseline_reply_bytes": 78560,
+          "current_reply_bytes": 2936,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "support_restored",
+          "operation": "component.set",
+          "type": "AnimationRig",
+          "baseline_reply_bytes": 123,
+          "current_reply_bytes": 5222,
+          "baseline_branches": null,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "game:00000000000000000000000000000002",
+          "baseline_reply_bytes": 78588,
+          "current_reply_bytes": 2836,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.remove",
+          "type": "Camera",
+          "baseline_reply_bytes": 78560,
+          "current_reply_bytes": 2676,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.create",
+          "type": null,
+          "baseline_reply_bytes": 78541,
+          "current_reply_bytes": 2578,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.rename",
+          "type": null,
+          "baseline_reply_bytes": 78541,
+          "current_reply_bytes": 2496,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "entity.reparent",
+          "type": null,
+          "baseline_reply_bytes": 78543,
+          "current_reply_bytes": 2517,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "direct",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": null,
+          "baseline_reply_bytes": 78541,
+          "current_reply_bytes": 23480,
+          "baseline_branches": 35,
+          "current_branches": 19
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "Transform",
+          "baseline_reply_bytes": 169952,
+          "current_reply_bytes": 6324,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "support_restored",
+          "operation": "component.set",
+          "type": "AnimationRig",
+          "baseline_reply_bytes": 315,
+          "current_reply_bytes": 11338,
+          "baseline_branches": null,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": "game:00000000000000000000000000000002",
+          "baseline_reply_bytes": 170008,
+          "current_reply_bytes": 6110,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.remove",
+          "type": "Camera",
+          "baseline_reply_bytes": 169952,
+          "current_reply_bytes": 5756,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.create",
+          "type": null,
+          "baseline_reply_bytes": 169910,
+          "current_reply_bytes": 5548,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.rename",
+          "type": null,
+          "baseline_reply_bytes": 169910,
+          "current_reply_bytes": 5368,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "entity.reparent",
+          "type": null,
+          "baseline_reply_bytes": 169914,
+          "current_reply_bytes": 5420,
+          "baseline_branches": 35,
+          "current_branches": 1
+        },
+        {
+          "transport": "mcp",
+          "kind": "response_reduced",
+          "operation": "component.set",
+          "type": null,
+          "baseline_reply_bytes": 169910,
+          "current_reply_bytes": 50874,
+          "baseline_branches": 35,
+          "current_branches": 19
+        }
+      ],
+      "scope": "Complete original direct/MCP wires, independent selected branches/envelopes, whole per-owner native state/history and authored-file observations. Same transport only; original AnimationRig errors are not schema-size baselines."
+    }
+  },
+  "prior_checkpoint": {
+    "checkpoint": "0.0.170",
+    "linux_aggregate_passed": false,
+    "ctest_passed": 19,
+    "ctest_total": 21,
+    "failed_tests": [
+      "mcp_contract",
+      "world_contract"
+    ],
+    "regraded": false
+  },
+  "separate_storage_diagnostic": {
+    "passed": false,
+    "diagnostic_completed": true,
+    "all_sequences_succeeded": false,
+    "independent_file_audit_passed": true,
+    "baseline": {
+      "rpc_pairs": 29,
+      "commits": 24,
+      "native_error_code": -32000,
+      "snapshot_revisions": {
+        "primary": 24,
+        "pending": 25,
+        "previous": 24
+      }
+    },
+    "current": {
+      "rpc_pairs": 137,
+      "commits": 130,
+      "stale_error_code": -32009,
+      "state_history_and_snapshot_files_unchanged_by_stale_rejection": true
+    },
+    "outer_exit_code": 1,
+    "forced_cleanup": false,
+    "scope": "A separate diagnostic adds snapshot I/O and uses numbered envelope IDs. It retains the failed publication and does not identify an OS error, external cause, timing equivalence or production fix."
+  },
+  "receipts": {
+    "windows_native_build": {
+      "bytes": 54522,
+      "sha256": "1794293fddc323955a1bd7992eb3e150e138c439ad37da7bfb4b5f2fe4c51af6"
+    },
+    "windows_native_sources": {
+      "bytes": 47816,
+      "sha256": "e43cb4198980cc4c50f63e37c682fbd4fe989de1ce0201cf442393423cda5a2b"
+    },
+    "windows_native_seals": {
+      "bytes": 1164,
+      "sha256": "a770f91dede684f637615aa87cc275d20fa2e5dd7936b2c1fee18d56cecf5dc9"
+    },
+    "windows_original_failed_campaign": {
+      "bytes": 2870,
+      "sha256": "5b74eb209bac8e1f3e44708fdde699000258aa119191c78a4a6b212782ca45fd"
+    },
+    "windows_remaining_seven": {
+      "bytes": 2385,
+      "sha256": "9f378f7d265736e90930811787f4495447d912a5762cd751623fda214cf7382c"
+    },
+    "windows_original_failed_consumer": {
+      "bytes": 3654,
+      "sha256": "d8d5daaf6f5d3e0536c5c84e3df9925c56581e1b209d10fbf6798e64a51874c5"
+    },
+    "windows_consumer": {
+      "bytes": 3005,
+      "sha256": "8004e7d3d51c671b1fc7a1d8fd2bcc2fef8e5f3e2e9e4ae4f650fd997f740b32"
+    },
+    "windows_consumer_original_evidence": {
+      "bytes": 160094,
+      "sha256": "4e93c718e8854d73af772c325f84ded6fe95f805cacf4d197c8b852475e3a82b"
+    },
+    "windows_consumer_independent_file_audit": {
+      "bytes": 84824,
+      "sha256": "8abaca9759497ededff544a0bb788ead389f3eb2372d6fc030c1d7a63e663605"
+    },
+    "linux_original_failed_campaign": {
+      "bytes": 83257,
+      "sha256": "857dac8cfae6a1218cf20fe37bbc2b3b3080259da4d2130d7ba56246de1384fa"
+    },
+    "linux_original_failed_ctest": {
+      "bytes": 12058,
+      "sha256": "b55ddfd145f2350e60d4f9bfb70de8bd09a04930cb8941fd69431dcb26449e95"
+    },
+    "storage_diagnostic": {
+      "bytes": 4680,
+      "sha256": "06c72327f8dad02964a5355fee7e0ec580beb5c4907fff90247c1de31355f086"
+    },
+    "storage_diagnostic_independent_file_audit": {
+      "bytes": 170319,
+      "sha256": "7d19c23cf194fbe0f5ae855aa7997e6ce423b49caaef62807ef8b5a63b1b9a8c"
+    },
+    "linux_repair": {
+      "bytes": 108310,
+      "sha256": "ba1d0af74dfd34f39135a33ae12beb2e74eb0f535cf3d6f667e4aa1dc27f1c6b"
+    },
+    "linux_repair_sources": {
+      "bytes": 101482,
+      "sha256": "99f3512a68943600e185ad90d69f2ca23616bc5d92fb67a28d6403917dd697b2"
+    },
+    "linux_repair_seals": {
+      "bytes": 967,
+      "sha256": "80190b67c9a22904d8baeb6c0da9351e16d290e3abd00ac46ab6c7132edb7251"
+    },
+    "linux_repair_ctest": {
+      "bytes": 12094,
+      "sha256": "1a0e429124aa2ca16138544872a7418c83a1c29393ebad8a95174cf584dc8195"
+    },
+    "linux_repair_independent_file_audit": {
+      "bytes": 182896,
+      "sha256": "bb7cd28756fe2d2c6ebcc452970adfd88e1dacc53f07cbe2be511662e720a953"
+    },
+    "linux_consumer": {
+      "bytes": 2334,
+      "sha256": "a31d72136e59fe67e33e3625c143810a65d7aaff87cc2530b0d9f67ad29eb02b"
+    },
+    "linux_consumer_original_evidence": {
+      "bytes": 159971,
+      "sha256": "ddeac1b128ce590313fb74de3fedd83caf87ba0c8b0bec4d25739535dd40339f"
+    },
+    "linux_consumer_independent_file_audit": {
+      "bytes": 88635,
+      "sha256": "09af0708d01801875b36e82cb57237ed24fb004a07174ae4d29f46a056352e6d"
+    },
+    "windows_supplemental_native_session": {
+      "bytes": 347368,
+      "sha256": "addb1fe2c85ad52dc24e34b98988f42d1ac365fdfe29b73a75ae7de17d35c68a"
+    },
+    "windows_supplemental_native_independent_file_audit": {
+      "bytes": 898,
+      "sha256": "d57ee000ed3e22ef5d0ecfc9711d3c9ef16eda51b365f01c1224e6e5afa5dba8"
+    },
+    "windows_supplemental_native_job": {
+      "bytes": 1559,
+      "sha256": "5539b2ac10f63670f7e231c95a72bb33ec64a5bb902f5743c547f3747d415e86"
+    },
+    "windows_supplemental_native_result": {
+      "bytes": 557,
+      "sha256": "d8f0a1c60675d675490aafd196dac129a19b75fd3d0cf8d8aa4cb3b78bb4f44e"
+    },
+    "supplemental_preparer_failure": {
+      "bytes": 499,
+      "sha256": "fbfd45578b4ee94962a0cf1664a3fa4a4dd997e0d1ac6289c5c437f64a4be535"
+    }
+  },
+  "remaining_scope": [
+    "The original Windows storage failure remains unresolved; the separate diagnostic is not a fix or causal finding.",
+    "These bounded consumers do not qualify broad gameplay workflows, rendering, physical input, token pricing, performance or whole-engine reliability."
+  ],
+  "format": "poima.conditional-discovery-evidence.v1",
+  "retained_preparation_failure": {
+    "passed": false,
+    "native_execution": false,
+    "compiler_execution": false,
+    "disabled_plan_created": false,
+    "forced_cleanup": false,
+    "scope": "The first supplemental Windows test preparer exceeded its file-header collection deadline during insufficiently bounded directory traversal. It exited naturally without creating a plan or launching a compiler/native test. A separately reviewed collector narrowed admitted file checks; original records were not changed."
+  }
+}

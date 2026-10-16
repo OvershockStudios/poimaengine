@@ -32,7 +32,8 @@ inline bool known_schema(const Json& schema, unsigned depth = 0) {
         if (key == "properties" || key == "patternProperties" || key == "$defs" || key == "definitions") {
             if (!value.is_object()) return false;
             for (const auto& child : value) if (!known_schema(child, depth + 1)) return false;
-        } else if (key == "items" || key == "additionalProperties" || key == "propertyNames" || key == "not" || key == "contains") {
+        } else if (key == "items" || key == "additionalProperties" || key == "propertyNames" || key == "not" || key == "contains" ||
+                   key == "if" || key == "then" || key == "else") {
             if (!known_schema(value, depth + 1)) return false;
         } else if (key == "oneOf" || key == "anyOf" || key == "allOf" || key == "prefixItems") {
             if (!value.is_array()) return false;
@@ -98,7 +99,8 @@ inline Json mutation_schema(const Json& transaction, std::string_view operation,
     bool supported = false;
     for (const auto& branch : branches) {
         const bool composed = branch.is_object() && (branch.contains("oneOf") || branch.contains("anyOf") ||
-            branch.contains("allOf") || branch.contains("not") || branch.contains("patternProperties"));
+            branch.contains("allOf") || branch.contains("not") || branch.contains("patternProperties") ||
+            branch.contains("if") || branch.contains("then") || branch.contains("else"));
         if (has_reference(branch) || composed || !known_schema(branch)) { retained.push_back(branch); continue; }
         const auto op = discriminator(branch, "op", operation);
         if (op == Match::disjoint) {

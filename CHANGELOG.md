@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.171
+
+- Restore focused mutation schemas through standard nested conditionals, preserving complete selected branches, transaction guards and reserved runtime-contract metadata. Keep conservative handling for references, unfamiliar schemas and branch-level ambiguity. [Discovery guide](docs/WORLD_SERVICE.md#focused-discovery-development).
+- Qualify native Windows/Linux discovery and CLI/MCP comparisons: fourteen smaller replies and two restored AnimationRig selections per platform. Pass the corrected sixteen-test Linux cohort with unchanged engine bytes; preserve earlier failed runs and the separate open Windows snapshot-publication issue. [Results and scope](docs/evidence/m2-conditional-discovery.json).
+
 ## 0.0.170
 
 - Add opt-in FBX material errors with original source-node/local-slot witnesses, feature labels, bounded names and animation-donor attribution. Preserve existing acceptance, omitted/false errors and successful cooked content. [Guide](docs/FBX_IMPORT.md#locate-an-unsupported-material).

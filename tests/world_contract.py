@@ -105,7 +105,7 @@ class WorldContract(unittest.TestCase):
         self.assertEqual(client.rpc('world.describe', {'view': 'full'}), full)
         metadata_keys = {'protocol_version', 'schema_revision', 'mode', 'read_only', 'runtime_available',
                          'session_scope', 'editor_discovery', 'unavailable_methods', 'unavailable_mutations',
-                         'authoring_contract'}
+                         'authoring_contract', 'runtime_game_session_contract'}
         metadata = {key: value for key, value in full.items() if key in metadata_keys}
         sections = sorted(set(full) - metadata_keys - {'methods', 'components'})
         catalog = client.rpc('world.describe', {'view': 'catalog'})
@@ -152,7 +152,7 @@ class WorldContract(unittest.TestCase):
         state, history = client.rpc('world.inspect'), client.rpc('world.history')
         metadata_keys = {'protocol_version', 'schema_revision', 'mode', 'read_only', 'runtime_available',
                          'session_scope', 'editor_discovery', 'unavailable_methods', 'unavailable_mutations',
-                         'authoring_contract'}
+                         'authoring_contract', 'runtime_game_session_contract'}
         metadata = {key: value for key, value in full.items() if key in metadata_keys}
 
         def check_projection(operation, component_type=None):
