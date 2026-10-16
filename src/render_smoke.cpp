@@ -601,7 +601,7 @@ struct Context {
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr,bool replay=false) {
+    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr,bool replay=false,bool background=false) {
         require(!source || !source->ui || !source->logical_ui,"A scene cannot supply both a UI packet and a logical UI presentation.");
 #if !POIMA_GAME_UI
         require(!source || !source->logical_ui || source->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
@@ -660,8 +660,9 @@ struct Context {
             throw std::runtime_error("Hosted viewport currently supports Windows child HWNDs only.");
 #endif
         } else window = SDL_CreateWindow(scene ? "Poima — authored scene preview" : "Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
-            static_cast<int>(options.height), SDL_WINDOW_VULKAN | (player ? SDL_WINDOW_RESIZABLE : 0));
+            static_cast<int>(options.height), SDL_WINDOW_VULKAN | (player ? SDL_WINDOW_RESIZABLE : 0) | (background ? SDL_WINDOW_NOT_FOCUSABLE : 0));
         require(window != nullptr, std::string("SDL window: ") + SDL_GetError());
+        require(!background || (SDL_GetWindowFlags(window)&SDL_WINDOW_NOT_FOCUSABLE),"Background player requires a nonfocusable native window.");
         const auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
         require(get != nullptr, "SDL could not load the Vulkan entry point.");
         std::uint32_t extension_count = 0;
@@ -3479,11 +3480,11 @@ struct PlayerWindow::Impl {
     bool ui_scale_pending=false;
     bool audio_gain_failed=false;
     PlayerReadiness::FocusObservation focus_observation=PlayerReadiness::FocusObservation::none;
-    std::optional<bool> last_drawable;
+    std::optional<bool> last_drawable,focusable;
     std::optional<std::array<std::int32_t,2>> last_drawable_size;
     std::size_t segment=0;
     std::uint32_t offset=0;
-    std::uint64_t previous=0,performance_sequence=0;
+    std::uint64_t previous=0,performance_sequence=0,background_due_ns=0;
     std::uint32_t performance_interventions=0,diagnostic_interventions=0;
     void intervention(std::uint32_t flag) noexcept {
         performance_interventions|=flag;diagnostic_interventions|=flag;if(context.performance_cpu)context.performance_cpu->flags|=flag;
@@ -3499,7 +3500,7 @@ struct PlayerWindow::Impl {
         result.preferences.invert_x=profile.invert_x;result.preferences.invert_y=profile.invert_y;
         result.preferences.audio_outcome=options.audio ? "not_initialized" : "disabled";
         apply_preferences();
-        gamepads=options.replay ? nullptr : options.gamepad_host.get();
+        gamepads=options.replay || options.background ? nullptr : options.gamepad_host.get();
         result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
         result.render.detail=player_readiness::initial_detail;
     }
@@ -3511,7 +3512,7 @@ struct PlayerWindow::Impl {
     }
     PlayerReadiness readiness() const noexcept {
         PlayerReadiness out;out.backend_available=true;out.initialized=initialized;
-        out.closing=quit;out.finished=done;out.replay=options.replay;out.owner_paused=owner_paused;
+        out.closing=quit;out.finished=done;out.replay=options.replay;out.owner_paused=owner_paused;out.background=options.background;out.focusable=focusable;
         out.interactive_active=active;out.ui_ready=ui_ready;out.ui_presented=ui_presented;
         out.ui_observation_retained=bool(ui_observation);out.ui_scale_pending=ui_scale_pending;
         out.focus_observation=focus_observation;
@@ -3579,7 +3580,7 @@ struct PlayerWindow::Impl {
                 sample.world.near_plane==fresh.near_plane && sample.world.far_plane==fresh.far_plane &&
                 sample.viewmodel==(fresh.viewmodel ? std::optional<SceneLens>(fresh.viewmodel->lens) : std::nullopt),
                 "Player committed lens sample differs from its owned scene projection.");
-            if(initialized && (owner_paused || !focused || !active))lens_history.reset(sample,"paused");
+            if(initialized && (owner_paused || (!options.background && (!focused || !active))))lens_history.reset(sample,"paused");
             else if(lens_preference_cut)lens_history.reset(sample,"preference_changed");
             else if(lens_view_cut && (*lens_view_cut!=fresh.view_cut_generation ||
                 *lens_generation!=fresh.presentation_generation || lens_world!=fresh.world_id))lens_history.reset(sample,"presentation_changed");
@@ -3653,20 +3654,22 @@ struct PlayerWindow::Impl {
         require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
         fresh_snapshot();
         context.player_ui_scale=configuration ? configuration->values.ui_scale : options.ui_scale;
-        context.initialize(options.render,&snapshot,true,nullptr,options.replay);
+        context.initialize(options.render,&snapshot,true,nullptr,options.replay,options.background);
         initialized=true;
         result.effective_ui_scale=context.effective_game_ui_scale();
-        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
+        SDL_SetWindowTitle(context.window,options.background ? "Poima player — background — agent-controlled" : options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio) {
             try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),audio_work,result.preferences.requested_master_gain);}
             catch(...) {result.preferences.audio_outcome="initialization_failed";throw;}
             result.preferences.sink_gain=audio->report().master_gain;result.preferences.audio_outcome="sink_gain_verified";
         }
         if(configuration)result.preferences.applied_revision=configuration->revision;
-        focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
+        const auto initial_flags=SDL_GetWindowFlags(context.window);
+        focused=(initial_flags&SDL_WINDOW_INPUT_FOCUS)!=0;
+        focusable=(initial_flags&SDL_WINDOW_NOT_FOCUSABLE)==0;
         focus_observation=PlayerReadiness::FocusObservation::initial_flags;
-        captured=!owner_paused && !options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
-        active=!owner_paused && !options.replay && focused;
+        captured=!owner_paused && !options.replay && !options.background && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
+        active=!owner_paused && !options.replay && !options.background && focused;
         ui_ready=false;ui_presented=false;
         if(gamepads) { gamepad_binding.host=gamepads;gamepads->start(input,options.gamepad_selection);gamepads->activate(active); }
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
@@ -3697,8 +3700,8 @@ struct PlayerWindow::Impl {
         captured=false;active=false;owner_paused=true;input.clear();
         ui_ready=false;ui_presented=false;context.reset_game_ui_input();
         if(gamepads)gamepads->activate(false);
-        require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
-        clock.advance(0,false);previous=SDL_GetTicksNS();
+        if(!options.background)require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
+        clock.advance(0,false);previous=SDL_GetTicksNS();background_due_ns=0;
         if(audio)audio->discard_pending();
         require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
         fresh_snapshot();
@@ -3739,14 +3742,15 @@ struct PlayerWindow::Impl {
         invalidate_capture();
         if(value!=owner_paused)intervention(fp::Flag::paused);
         owner_paused=value;captured=false;input.clear();clock.advance(0,false);reset_lenses(value ? "paused" : "resumed");
-        active=!value && initialized && !options.replay && focused;
+        active=!value && initialized && !options.replay && !options.background && focused;
+        background_due_ns=0;
         if(initialized) {
             previous=SDL_GetTicksNS();
-            require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
+            if(!options.background)require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
             context.reset_game_ui_input();ui_ready=false;
         }
         if(gamepads && gamepad_binding.host)gamepads->activate(active);
-        if(audio)audio->active(!value && (options.replay || (focused && active)));
+        if(audio)audio->active(!value && (options.background || options.replay || (focused && active)));
     }
     void synchronize() {
         if(done)return;
@@ -3781,7 +3785,92 @@ struct PlayerWindow::Impl {
             SDL_Delay(milliseconds);
         }else SDL_Delay(milliseconds);
     }
+    std::uint32_t background_wait_ms(std::uint64_t now) const noexcept {
+        if(now>=background_due_ns)return 0;
+        const auto remaining=background_due_ns-now;
+        return static_cast<std::uint32_t>(remaining/1000000+(remaining%1000000!=0));
+    }
+    void background_frame() {
+        // Independent of cooperative idle deferral: a stream of owner RPCs must
+        // not produce an occluded FIFO render spin. This gate never invents dt.
+        if(const auto delay=background_wait_ms(SDL_GetTicksNS())) {
+            pace_idle(delay);
+            if(cooperative_poll || background_wait_ms(SDL_GetTicksNS()))return;
+        }
+        const auto opportunity=SDL_GetTicksNS();
+        constexpr std::uint64_t interval=16666667; // Nominal 60 Hz opportunities.
+        require(opportunity<=std::numeric_limits<std::uint64_t>::max()-interval,"Background presentation clock exhausted.");
+        background_due_ns=opportunity+interval;
+        const auto events_started=context.performance_cpu?fp::Recorder::now_ns():0;
+        apply_preferences();
+        profiling::SessionScope frame_session(result.final_session);
+        profiling::Scope frame_scope("player.background.frame",static_cast<std::int64_t>(session.tick()));
+        const auto window_id=SDL_GetWindowID(context.window);
+        SDL_Event event;
+        for(std::uint32_t events=0;events<256 && SDL_PollEvent(&event);++events) {
+            if(event.type==SDL_EVENT_QUIT) {quit=true;result.stop_reason="window_closed";}
+            if(event.type<SDL_EVENT_WINDOW_FIRST || event.type>SDL_EVENT_WINDOW_LAST || event.window.windowID!=window_id)continue;
+            if(event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) {quit=true;result.stop_reason="window_closed";}
+            if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_FOCUS_GAINED || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
+                // Read observed flags rather than treating a mode or synthetic
+                // event as proof of physical focus. Focus never pauses this mode.
+                focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
+                focus_observation=event.type==SDL_EVENT_WINDOW_FOCUS_LOST ? PlayerReadiness::FocusObservation::focus_lost_event :
+                    event.type==SDL_EVENT_WINDOW_FOCUS_GAINED ? PlayerReadiness::FocusObservation::focus_gained_event : PlayerReadiness::FocusObservation::minimized_event;
+            }
+            if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+                intervention(fp::Flag::resize);context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+            }
+            // No keyboard, mouse, gamepad or UI event is routed, including Escape.
+        }
+        if(audio)audio->active(!owner_paused);
+        if(context.performance_cpu)context.performance_cpu->work.events_ns+=fp::Recorder::now_ns()-events_started;
+        if(quit)return;
+        int width=0,height=0;
+        require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
+        const auto now=SDL_GetTicksNS();
+        const auto elapsed=static_cast<double>(now-previous)/1e9;previous=now;
+        const auto flags=SDL_GetWindowFlags(context.window);
+        focusable=(flags&SDL_WINDOW_NOT_FOCUSABLE)==0;
+        const bool drawable=width>0 && height>0 && !(flags&SDL_WINDOW_MINIMIZED);
+        last_drawable=drawable;last_drawable_size=std::array<std::int32_t,2>{width,height};
+        {
+            PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.simulation_owner_ns:nullptr);
+            const auto ticks=clock.advance(elapsed,!owner_paused);
+            if(diagnostic_sample)diagnostic_sample->clock=clock.last_sample();
+            for(std::uint32_t tick=0;tick<ticks;++tick) {
+                // Empty inputs remain empty even when a controller was selected.
+                const bool save_serviced=session.advance({});
+                if(diagnostic_sample)++diagnostic_sample->clock.committed_ticks;
+                if(after_advance(save_serviced))break;
+                if(options.lens_interpolation)lens_history.commit(current_lenses());
+            }
+        }
+        // Even while minimized, retain the current owned simulation snapshot and
+        // invalidate old captures. An old presented receipt remains historical.
+        profiling::SessionScope render_session(result.final_session);
+        profiling::Scope presentation_scope("player.background.presentation",static_cast<std::int64_t>(session.tick()));
+        if(!drawable) {
+            {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.scene_prepare_ns:nullptr);fresh_snapshot();}
+            intervention(fp::Flag::skip);ui_ready=false;ui_presented=false;context.reset_game_ui_input();return;
+        }
+        require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
+        if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
+            intervention(fp::Flag::resize);auto resized=options.render;resized.width=static_cast<std::uint32_t>(width);resized.height=static_cast<std::uint32_t>(height);
+            const auto rebuilt=[&] {PerformanceWallScope resize_wall(diagnostic_sample?&diagnostic_sample->resize_ns:nullptr);return context.rebuild(resized);}();
+            if(!rebuilt) {
+                {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.scene_prepare_ns:nullptr);fresh_snapshot();}
+                intervention(fp::Flag::skip);ui_ready=false;ui_presented=false;return;
+            }
+            ++result.swapchain_rebuilds;reset_lenses("resized");
+        }
+        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.scene_prepare_ns:nullptr);fresh_snapshot();context.update_scene();}
+        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.render_ns:nullptr);ui_ready=draw_frame(false);}ui_presented=ui_ready;
+        if(ui_ready) {++result.render.frames_presented;presented_preferences();}
+        if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) {quit=true;result.stop_reason="frame_limit";}
+    }
     void frame() {
+        if(options.background) {background_frame();return;}
         std::uint64_t events_started=context.performance_cpu?fp::Recorder::now_ns():0;
         apply_preferences();
         profiling::SessionScope frame_session(result.final_session);
@@ -3952,7 +4041,7 @@ struct PlayerWindow::Impl {
         }
         done=true;quit=true;active=false;captured=false;input.clear();
         if(gamepads && gamepad_binding.host)gamepads->activate(false);
-        if(initialized)SDL_SetWindowRelativeMouseMode(context.window,false);
+        if(initialized && !options.background)SDL_SetWindowRelativeMouseMode(context.window,false);
         refresh_report();
     }
     void fail(const std::exception& error) noexcept {
@@ -3961,7 +4050,7 @@ struct PlayerWindow::Impl {
         done=true;quit=true;active=false;captured=false;input.clear();result.render.success=false;
         try {result.render.detail=error.what();result.stop_reason="error";}catch(...) {}
         try {if(gamepads && gamepad_binding.host)gamepads->activate(false);}catch(...) {}
-        if(initialized)SDL_SetWindowRelativeMouseMode(context.window,false);
+        if(initialized && !options.background)SDL_SetWindowRelativeMouseMode(context.window,false);
         try {if(audio)audio->active(false);}catch(...) {}
         // Cleanup/device-report failures cannot hide the committed owner tick.
         try {result.final_tick=session.tick();}catch(...) {}
@@ -3993,11 +4082,11 @@ bool PlayerWindow::poll_impl(bool cooperative) {
     // CPU wall observation is always on. Only an admitted FrameToken enables
     // GPU timestamps/retirement tickets; the CPU pointer alone does not.
     sample.begin_ns=fp::Recorder::now_ns();sample.tick_before=state.session.tick();sample.flags=state.performance_interventions;
-    if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+    if(state.owner_paused || (!state.options.replay && !state.options.background && !state.active))sample.flags|=fp::Flag::paused;
     if(state.options.replay)sample.flags|=fp::Flag::replay;
     player_diagnostics::Sample diagnostic;
     diagnostic.flags=state.diagnostic_interventions;
-    if(state.owner_paused || (!state.options.replay && !state.active))diagnostic.flags|=fp::Flag::paused;
+    if(state.owner_paused || (!state.options.replay && !state.options.background && !state.active))diagnostic.flags|=fp::Flag::paused;
     if(state.options.replay)diagnostic.flags|=fp::Flag::replay;
     diagnostic.runtime_replacements_before=state.result.runtime_replacements;
     state.diagnostic_sample=&diagnostic;
@@ -4010,7 +4099,7 @@ bool PlayerWindow::poll_impl(bool cooperative) {
     sample.end_ns=fp::Recorder::now_ns();sample.tick_after=state.result.final_tick;sample.flags|=state.performance_interventions;
     sample.width=state.context.extent.width;sample.height=state.context.extent.height;
     if(state.focused)sample.flags|=fp::Flag::focused;
-    if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+    if(state.owner_paused || (!state.options.replay && !state.options.background && !state.active))sample.flags|=fp::Flag::paused;
     if(!sample.successful_present)sample.flags|=fp::Flag::skip;
     if(token) {
         std::copy_n(state.result.final_session.data(),std::min(std::size_t{32},state.result.final_session.size()),sample.session.data());
@@ -4021,7 +4110,7 @@ bool PlayerWindow::poll_impl(bool cooperative) {
     diagnostic.width=sample.width;diagnostic.height=sample.height;
     diagnostic.flags|=state.diagnostic_interventions;
     if(state.focused)diagnostic.flags|=fp::Flag::focused;
-    if(state.owner_paused || (!state.options.replay && !state.active))diagnostic.flags|=fp::Flag::paused;
+    if(state.owner_paused || (!state.options.replay && !state.options.background && !state.active))diagnostic.flags|=fp::Flag::paused;
     if(!sample.successful_present)diagnostic.flags|=fp::Flag::skip;
     diagnostic.work=sample.work;diagnostic.audio=state.pending_audio();state.previous_audio_work=state.audio_work;
     diagnostic.runtime_replacements_after=state.result.runtime_replacements;
@@ -4031,7 +4120,10 @@ bool PlayerWindow::poll_impl(bool cooperative) {
         if(token)state.performance_interventions=0;
     }
     state.context.performance=nullptr;state.context.performance_token={};state.context.performance_cpu=nullptr;
-    if(cooperative && !state.done)state.idle_pacing.defer(SDL_GetTicksNS(),state.cooperative_delay_ms);
+    if(cooperative && !state.done) {
+        if(state.options.background)state.cooperative_delay_ms=std::max(state.cooperative_delay_ms,state.background_wait_ms(SDL_GetTicksNS()));
+        state.idle_pacing.defer(SDL_GetTicksNS(),state.cooperative_delay_ms);
+    }
     else state.idle_pacing.reset();
     return !state.done;
 }

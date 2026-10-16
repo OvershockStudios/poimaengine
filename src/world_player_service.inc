@@ -24,17 +24,18 @@
         options.lens_interpolation=params.value("lens_interpolation",false);
         if(params.contains("controller"))options.controller=identifier(params.at("controller"));
         options.camera=identifier(params.at("camera"));
-        require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
+        require(params.at("mode")=="interactive" || params.at("mode")=="replay" || params.at("mode")=="background","Player mode must be interactive, replay or background.");
         options.replay=params.at("mode")=="replay";
+        options.background=params.at("mode")=="background";
         require(!options.replay || !options.controller.empty(),"Replay requires a CharacterController; interactive menus may omit controller.");
-        Json input_info={{"source","defaults"},{"revision",0},{"content_hash",nullptr},{"applied",!options.replay}};
+        Json input_info={{"source","defaults"},{"revision",0},{"content_hash",nullptr},{"applied",!options.replay && !options.background}};
         require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
         if(params.contains("input_profile")) {
             try {
                 const auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("input_profile"))) : input_profiles::load(input_profile_path(params.at("input_profile"))));
                 if(params.contains("input_revision"))require(revision(params.at("input_revision"))==loaded.revision,"Input profile revision conflict.",-32009);
                 options.input_profile=std::make_shared<const InputProfile>(loaded.profile);
-                input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay}};
+                input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay && !options.background}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
         }
         if(!options.input_profile)options.input_profile=std::make_shared<const InputProfile>(default_gamepad_input_profile());
@@ -66,12 +67,12 @@
                 options.sequence.push_back({static_cast<std::uint32_t>(ticks),parse_input(segment),std::move(motions),std::move(sounds)});
             }
         } else {
-            require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
+            require(!params.contains("sequence"),options.background ? "Background play advances without a replay input sequence." : "Interactive play takes input from the window, not a replay sequence.");
             if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
         }
         auto settings_application=apply_player_settings(params,options);
         options.render.capture_exclusive=read_only_;
-        if(!options.replay && options.gamepad_selection.mode!="disabled") {
+        if(!options.replay && !options.background && options.gamepad_selection.mode!="disabled") {
             require(GamepadHost::available(),"Gamepad device host is not built.",-32003);
             try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();options.gamepad_host=gamepad_host_; }
             catch(const std::exception& e) { throw Error(-32071,e.what()); }
@@ -304,7 +305,7 @@
         case R::FocusObservation::focus_lost_event:focus="focus_lost_event";break;
         case R::FocusObservation::minimized_event:focus="minimized_event";break;
         }
-        return {{"format","poima.player-readiness.v1"},{"backend_available",state.backend_available},
+        Json result={{"format","poima.player-readiness.v1"},{"backend_available",state.backend_available},
             {"initialized",state.initialized},{"closing",state.closing},{"finished",state.finished},{"replay",state.replay},
             {"owner_paused",state.owner_paused},{"interactive_active",state.interactive_active},
             {"ui_ready",state.ui_ready},{"ui_presented",state.ui_presented},
@@ -315,6 +316,12 @@
             {"drawable_size",state.drawable_size ? Json(*state.drawable_size):Json(nullptr)},
             {"drawable_observation",state.drawable ? Json("last_ordinary_frame_check"):Json(nullptr)},
             {"ready_conditions",std::move(ready)},{"pause_conditions",std::move(paused)}};
+        if(state.background) {
+            result["mode"]="background";result["clock_mode"]="elapsed_zero_input";
+            result["hardware_input_enabled"]=false;
+            result["focusable"]=state.focusable ? Json(*state.focusable):Json(nullptr);
+        }
+        return result;
     }
     Json player_info(bool include_report=true) const {
         Json result={{"available",player_available()},{"generation",player_generation_},

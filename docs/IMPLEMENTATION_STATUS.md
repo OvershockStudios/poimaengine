@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.165**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-16 for **0.0.166**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.166 adds explicit background native play for unattended agents:
+real elapsed-time simulation, a nonfocusable window, owner-controlled pause and
+no physical input routed to gameplay. Presentation has its own nominal 60 Hz
+opportunity gate; minimized simulation continues without claiming presentation
+readiness. Optional audio and lens interpolation are admitted separately from
+physical controls. Existing interactive/replay defaults remain available.
+Thirteen Windows CPU executions pass. A native background-window check passes
+161 calls, compiled Tick/Control, complete paused-save preservation, same-window
+Load replacement, guarded BMP capture/retry and actual minimized progression.
+Its 52 raw performance rows contain 40 successful presents and zero eligible
+foreground cadence samples; this is not a performance budget qualification.
+[Workflow and limits](LIVE_PLAYER.md#background-play-for-agents).
+
+The full Performance Yard also passes two warm save/load cycles and fresh-process
+continuation through the new clock: 2,394 authored entities, 24 animated rigs,
+768 props, 32 dynamic bodies, 64 lights, fifteen cooked assets and retained
+NativeAOT gameplay at 1080p with deferred lighting and medium GTAO. Its authored
+overview camera uses 50° FOV; settings are not matched to the earlier focused
+performance cohort. Five play intervals total 19.132 seconds, with nine complete
+checkpoints and seven exact whole-file comparisons. Twenty-nine actual process
+memory queries join sixty-nine phase marks across two process identities.
+This validates recording integration, not recording overhead, steady memory,
+VRAM peaks or the thirty-minute mixed-reliability gate. Thirteen Linux CPU
+CTest entries pass with original deadlines, and separate file audits verify
+the Windows and Linux records. Earlier source-preparation and reader-limit
+failures remain recorded; no native workflow verdict was regraded.
+[Results and scope](evidence/m2-background-player.json).
 
 Version 0.0.165 lets agents inspect original skin-joint membership and animation
 channel metadata before cooking, with paged fingerprint guards and unchanged

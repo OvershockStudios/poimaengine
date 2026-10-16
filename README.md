@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.165.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.166.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -19,7 +19,7 @@ Poima makes engine operations directly available to tools. External agents such 
 - **Discover and inspect.** Fetch available operations or a focused mutation schema, and inspect the current world before making changes. Find the entity/template fields using an asset through [reference queries](docs/ASSET_REFERENCES.md).
 - **Edit together.** Humans and agents use shared sessions. Atomic transactions apply related edits together; revision guards reject stale changes, and retry receipts prevent duplicate application.
 - **Build deliberately.** Submit [native publish/export jobs](docs/DEVELOPMENT_PROFILES.md) using host-selected toolchains, inspect verified artifact identities, [adopt compiled gameplay into a project](docs/PROJECT_GAMEPLAY_ADOPTION.md) with hash guards and durable retries, then export. Build submission has separate MCP consent.
-- **Run and observe.** Exercise gameplay with scripted input, [inspect readiness, pause and capture a live native game](docs/LIVE_PLAYER.md) through a shared headless host, inspect simulation state and profiling data, and read [displayed UI bounds and clipping](docs/PLAYER_UI_OBSERVATION.md).
+- **Run and observe.** Exercise gameplay with scripted input, [inspect readiness, pause and capture a live native game](docs/LIVE_PLAYER.md) through a shared headless host, use [background elapsed-time play](docs/LIVE_PLAYER.md#background-play-for-agents) without taking input focus, inspect simulation state and profiling data, and read [displayed UI bounds and clipping](docs/PLAYER_UI_OBSERVATION.md).
 - **Recover and repeat.** Bounded authoring undo/redo, runtime rollback and input replay support reproducible checks within their documented contracts.
 
 The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows. [Installed authoring tools](docs/AUTHORING_TOOLS.md) let external C# projects use the compiled SDK, component analyzer, native publisher and optional CoreCLR bridge without an engine source checkout. Optional [owned Windows compiler sessions](docs/DEVELOPMENT_JOBS.md#optional-owned-windows-compiler) reuse a private compiler across MSBuild jobs and expose actual-use evidence.

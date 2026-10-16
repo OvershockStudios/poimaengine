@@ -37,6 +37,40 @@ void predicates() {
           std::string_view(poima::player_readiness::phase_detail(initial,1))==poima::player_readiness::presented_detail,
           "Initialized/presented phase retained the stale first-poll message.");
 }
+void background_predicates_and_admission() {
+    using R=poima::PlayerReadiness;
+    for(unsigned bits=0;bits<128;++bits) {
+        R s;s.background=true;s.backend_available=bits&1;s.initialized=bits&2;
+        s.ui_presented=bits&4;s.closing=bits&8;s.finished=bits&16;
+        s.owner_paused=bits&32;s.interactive_active=bits&64;
+        const auto ready=s.backend_available && s.initialized && s.ui_presented && !s.closing && !s.finished;
+        check(s.ready()==ready && s.paused()==s.owner_paused,"Background readiness invented an interactive pause or presentation.");
+        check(s.pause_conditions()==(s.owner_paused ? std::uint32_t{R::owner_pause}:0u),"Background pause reasons differ from owner intent.");
+        for(bool focus:{false,true})for(bool drawable:{false,true}) {
+            s.focused=focus;s.drawable=drawable;s.focusable=false;
+            check(s.ready()==ready && s.paused()==s.owner_paused,"Background platform facts changed clock ownership.");
+        }
+    }
+    UnpolledSession session;poima::PlayerOptions options;options.background=true;
+    poima::PlayerWindow window(options,session,true);
+    const auto initial=window.readiness();
+    check(initial.background && !initial.replay && !initial.focusable && !initial.focused && !initial.drawable,
+        "Background constructor fabricated platform observations.");
+    window.pause(false);
+    check(!window.paused() && !window.readiness().interactive_active,"Background pre-initialization resume requires focus.");
+    window.request_stop();
+    options.replay=true;
+    bool rejected=false;
+    try {poima::PlayerWindow invalid(options,session);}catch(const std::invalid_argument&) {rejected=true;}
+    check(rejected,"Conflicting background/replay reached native initialization.");
+    // Explicit output and live-clock lens presentation are valid without
+    // constructing any physical device before the first owner poll.
+    options.replay=false;options.audio=true;options.lens_interpolation=true;
+    poima::PlayerWindow configured(options,session);
+    check(configured.readiness().background && !configured.readiness().focusable,
+        "Background audio/lens configuration probed devices during construction.");
+    configured.request_stop();
+}
 void actual_unpolled_owner() {
     UnpolledSession session;poima::PlayerOptions options;options.camera=std::string(31,'0')+"2";
     poima::PlayerWindow window(options,session,true);const auto initial=window.readiness();
@@ -50,4 +84,4 @@ void actual_unpolled_owner() {
     window.request_stop();check(window.readiness().closing && !window.ready(),"Stop intent was not cached.");
 }
 }
-int main() {try {predicates();actual_unpolled_owner();std::cout<<"Cached readiness predicates and actual unpolled owner passed.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main() {try {predicates();actual_unpolled_owner();background_predicates_and_admission();std::cout<<"Cached readiness predicates and actual unpolled owner passed.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

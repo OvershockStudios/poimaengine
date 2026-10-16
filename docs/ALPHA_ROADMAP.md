@@ -116,6 +116,10 @@ Opt-in [process-memory timelines](MEMORY_TIMELINE.md) provide query intervals
 and conservative phase association for further memory investigation. Their
 instrumentation checks do not close representative memory-growth, VRAM,
 reliability or recording-overhead gates.
+The [background-game integration](evidence/m2-background-player.json) adds
+two actual native-game owners, 29 process queries and full save continuation
+over a short, complete-workload run. It leaves the focused frame budgets,
+recording overhead, continuing memory growth and thirty-minute gate open.
 
 ## Implementation order
 

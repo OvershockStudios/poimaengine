@@ -110,5 +110,24 @@ python tests/windows_memory_timeline_smoke.py --output build/memory-timeline-smo
 
 Its seven queries include two deliberately crossed phase boundaries. Those
 phase names are test labels, rather than actual engine gameplay. This probe
-qualifies the Windows clock/counter/association path only. A real reliability
-run is still needed to qualify the integrated recording during game play.
+qualifies the Windows clock/counter/association path only. Sustained mixed-game
+reliability and integrated recording overhead still need qualification.
+
+## Background-game integration
+
+The [0.0.166 native check](evidence/m2-background-player.json) connects this
+recorder to two real native-game process identities using
+[background elapsed-time play](LIVE_PLAYER.md#background-play-for-agents).
+The complete Performance Yard runs five intervals totaling 19.132 seconds,
+with warm and fresh-process continuation and exact complete saves. Its 29
+actual OS queries join 69 phase marks in one collector clock; every query
+fits a single observed phase in this run. Boundary-crossing queries remain
+unassigned under the existing policy.
+
+The largest queried working set is 311,644,160 bytes and the largest queried
+private commit is 590,794,752 bytes. These are sparse observations, not
+continuous peaks or memory budgets. Startup, playback and storage phases
+are mixed, and the warm working set increases during this short run. No
+leak cause, plateau, instrumentation-overhead bound, peak VRAM or thirty-minute
+reliability qualification is established. The separate focused-player
+requirements remain unchanged.

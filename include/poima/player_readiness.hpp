@@ -17,13 +17,17 @@ struct PlayerReadiness {
     std::optional<bool> focused,drawable;
     FocusObservation focus_observation=FocusObservation::none;
     std::optional<std::array<std::int32_t,2>> drawable_size;
+    // Background simulation uses the elapsed clock without interactive focus.
+    bool background=false;
+    // Cached SDL window policy, unknown until actual window initialization.
+    std::optional<bool> focusable;
     constexpr std::uint32_t ready_conditions() const noexcept {
         return (!backend_available ? std::uint32_t{backend_unavailable}:0u) | (!initialized ? std::uint32_t{not_initialized}:0u) |
             (!ui_presented ? std::uint32_t{no_current_presentation}:0u) | (closing ? std::uint32_t{closing_condition}:0u) |
             (finished ? std::uint32_t{finished_condition}:0u);
     }
     constexpr std::uint32_t pause_conditions() const noexcept {
-        return (owner_paused ? std::uint32_t{owner_pause}:0u) | (!replay && initialized && !interactive_active ? std::uint32_t{interactive_inactive}:0u);
+        return (owner_paused ? std::uint32_t{owner_pause}:0u) | (!replay && !background && initialized && !interactive_active ? std::uint32_t{interactive_inactive}:0u);
     }
     constexpr bool ready() const noexcept {return ready_conditions()==0;}
     constexpr bool paused() const noexcept {return pause_conditions()!=0;}

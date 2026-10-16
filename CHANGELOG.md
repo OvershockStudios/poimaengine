@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.166
+
+- Add background elapsed-time native play for agents, with a nonfocusable window, no hardware input routed to gameplay, explicit pause/replacement fences and continued simulation while minimized. Preserve existing interactive/replay defaults and foreground measurement eligibility. [Workflow](docs/LIVE_PLAYER.md#background-play-for-agents).
+- Pass thirteen Windows CPU executions, 161 background protocol calls and thirteen Linux CPU tests. Verify guarded renderer capture, compiled controls, full save restoration and a separate full Performance Yard run with fresh-process continuation, seven exact saved-file pairs and 29 actual memory queries. Preserve earlier source-preparation and reader failures. [Results and limits](docs/evidence/m2-background-player.json).
+
 ## 0.0.165
 
 - Inspect original skin joints, inverse binds and animation-channel metadata through paged source inspection before cooking. Preserve original fingerprints, legacy response shapes and cooked package bytes. [Retarget workflow](docs/ANIMATION_RETARGETING.md#inspect-the-original-sources).

@@ -10,6 +10,7 @@ PlayerControlResult PlayerSession::control(const std::string&,std::uint64_t,cons
     throw std::runtime_error("This player owner does not provide native UI controls.");
 }
 void validate_player_preferences(const PlayerOptions& options) {
+    if(options.background && options.replay)throw std::invalid_argument("Background player cannot use recorded input replay.");
     if(!options.preferences)return;
     const auto state=options.preferences->snapshot();
     if(state->values.samples!=options.render.samples || state->values.frames_in_flight!=options.render.frames_in_flight)

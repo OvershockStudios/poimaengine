@@ -15,6 +15,93 @@ For verified exported content and automatic native gameplay loading, use the
 [exported game service](GAME_SERVICE.md). This guide supplies the shared player
 operations used by both authored-world and packaged-game hosts.
 
+## Background play for agents
+
+Use `mode: "background"` when an agent needs a live elapsed-time game without
+keyboard or mouse focus. The native window is nonfocusable; engine code does
+not request relative mouse capture, initialize gamepad input, or route physical
+keyboard, mouse, gamepad and UI events to gameplay. Compiled game logic and
+normal fixed-step simulation still run. This differs from recorded replay,
+which advances one declared tick per render opportunity.
+
+Start through the same guarded `player.start` operation and camera selection:
+
+```json
+{"session_id":"<current session>","request_id":"<fresh 32-hex id>","expected_tick":0,"expected_generation":0,"camera":"<camera id>","mode":"background","initially_paused":true,"width":1280,"height":720,"audio":false}
+```
+
+Replace the placeholders and guards with observed values. Inspect until the
+owner presents, then resume through `player.control`. Pause before exact-tick
+captures, edits or saves. An optional controller selects the existing avatar;
+it receives no physical-input events. `sequence` is rejected. Input profiles
+remain validated but report `applied: false`; their input-setting outcomes are
+`validated_only`. Explicit `audio: true` and `lens_interpolation: true` are
+allowed. Default audio remains off.
+
+Background simulation uses the existing elapsed clock and eight-tick catch-up
+limit. Presentation opportunities are paced nominally at 60 Hz independently
+of request traffic; this is a pacing policy, not a guaranteed frame rate.
+Minimizing the window suspends presentation while simulation continues. Explicit
+owner pause stops the clock; runtime replacement pauses the player and clears
+old input/clock history before it can resume.
+
+Only background readiness adds `mode: "background"`,
+`clock_mode: "elapsed_zero_input"`, `hardware_input_enabled: false` and
+`focusable`. The last field is null before initialization, then comes from
+actual cached SDL flags. `interactive_active` remains false and does not impose
+`interactive_inactive` pause in this mode. `focused` retains its actual observed
+meaning. A minimized player may be unpaused without being presentation-ready.
+
+Nonfocusability and disabled gameplay routing are not proof of every OS input
+behavior: SDL may transiently auto-capture the mouse during a physical click.
+This mode does not change that global library policy. Background runs also do
+not qualify physical controls or the separate foreground frame-performance
+budget. Existing focused-sample eligibility remains unchanged. The released
+19-method runtime-session contract and older prospective workflow validator do
+not cover this additional player mode; use ordinary discovery and raw calls.
+
+The [0.0.166 evidence](evidence/m2-background-player.json) covers the native
+protocol check below and a separate full Performance Yard run. The latter keeps
+2,394 authored entities and the complete fifteen-asset/nine-file gameplay input,
+uses the authored 50° overview camera at 1080p with medium GTAO and audio off,
+and preserves all nine saved documents through seven exact file comparisons.
+Its five play intervals total 19.132 seconds. Actual memory recording yields
+22 warm-owner and seven fresh-owner queries, all assigned within their recorded
+phase intervals. No foreground cadence, physical-input or long-session memory
+claim follows from those checks.
+
+### Reproduce the bounded Windows check
+
+Build the Vulkan/simulation/game-UI configuration and publish
+[ManagedUiGame](../tests/managed_ui_gameplay/ManagedUiGame.cs) as a Windows
+NativeAOT artifact with identity `poima.test.managed-ui`, services ABI 7 and
+minimum services size 176. The test validates the complete artifact inventory.
+It uses a small procedural room and compiled controls; it is not the full-game
+memory or performance workload. Run native Windows Python from the checkout
+root with fresh output directories and an existing `build` parent:
+
+```python
+from pathlib import Path
+import sys
+sys.path.insert(0, "tests")
+from switchback_ownership import gated
+
+result = gated([
+    sys.executable, "tests/player_background_contract.py",
+    "--binary", "build/windows-runtime/bin/poima.exe",
+    "--native-descriptor", "build/ui-native/native-gameplay.json",
+    "--output", "build/background-check", "--gpu", "0", "--timeout", "180",
+], Path("build/background-supervisor"), 240)
+assert result["passed"] and not result["forced_cleanup"], result
+```
+
+Use your actual binary, artifact and GPU selection. This opens one nonfocusable
+320×180 native window, exercises logical compiled controls and exact saved
+state, writes one renderer BMP, then minimizes only that owned window and stops
+it. It requests no physical input or foreground restoration. Retain the original
+Job record, request/response streams, `result.json` and BMP on success or failure.
+The external Job owns timeout cleanup; a failed or forced run remains failed.
+
 ## Shared idle scheduling
 
 Starting with 0.0.156, shared CLI hosts defer the next ordinary player poll when
@@ -151,14 +238,16 @@ whether to wait, resume, inspect an error, or stop.
 - `pause_conditions` lists `owner_pause` when the owner pause flag is set, and
   `interactive_inactive` when an initialized interactive player is inactive.
   `paused` is true when either condition applies. Replay does not require
-  interactive activity or input focus to advance its declared inputs.
+  interactive activity or input focus to advance its declared inputs. Background
+  play also advances without interactive activity, using its elapsed clock.
 - Raw flags include `initialized`, `closing`, `finished`, `replay`,
   `owner_paused`, `interactive_active`, `ui_ready`, `ui_presented`,
   `ui_observation_retained` and `ui_scale_pending`.
 - `focused` is the cached input-focus gate. `focus_observation` names its last
   source: `initial_window_flags`, `focus_gained_event`, `focus_lost_event` or
   `minimized_event`. Both are null before that path observes focus. A minimized
-  event clears the input-focus gate; it does not prove the current foreground
+  event clears the interactive input-focus gate; background mode instead refreshes
+  the actual window flags. Neither observation proves the current foreground
   application or whether Windows is locked.
 - `drawable` and `drawable_size` are null until the ordinary frame path checks
   window pixel size and minimized state. They retain that check's result and

@@ -105,7 +105,7 @@
             auto& row=field.value();const auto& key=field.key();
             row["outcome"]=key.starts_with("graphics.") ? (row.at("requires_next_player").get<bool>() ? "requires_next_player" : "unchanged") :
                 key=="audio.master_gain" ? observed.audio_outcome :
-                options.replay && key.starts_with("input.") ? "validated_only" : presented ? "applied" : "awaiting_presentation";
+                (options.replay || options.background) && key.starts_with("input.") ? "validated_only" : presented ? "applied" : "awaiting_presentation";
         }
         return result;
     }
@@ -119,7 +119,7 @@
                 // channel has separate next-player/application observations;
                 // adding it must not change older successful-launch outcomes.
                 for(auto& field:application["fields"].items())if(field.key()!="audio.master_gain")
-                    field.value()["outcome"]=options.replay && field.key().starts_with("input.") ? "validated_only" :
+                    field.value()["outcome"]=(options.replay || options.background) && field.key().starts_with("input.") ? "validated_only" :
                         report.render.frames_presented>0 ? "applied" : "not_presented";
             }
             return;
@@ -131,5 +131,5 @@
             options.vertical_fov ? Json(*options.vertical_fov) : Json(nullptr);
         application["fields"]["ui.scale"]["effective"]=report.effective_ui_scale;
         for(auto it=application["fields"].begin();it!=application["fields"].end();++it)
-            it.value()["outcome"]=(options.replay && it.key().starts_with("input.")) ? "validated_only" : report.render.frames_presented>0 ? "applied" : "not_presented";
+            it.value()["outcome"]=((options.replay || options.background) && it.key().starts_with("input.")) ? "validated_only" : report.render.frames_presented>0 ? "applied" : "not_presented";
     }

@@ -97,14 +97,17 @@ struct PlayerOptions {
     std::optional<double> vertical_fov;
     std::optional<float> ui_scale;
     bool replay=false,audio=false;
-    // Interactive FOV-only presentation between committed ticks. Authoritative
+    // Live-clock FOV-only presentation between committed ticks. Authoritative
     // simulation and camera pose remain current; adds at most one tick of FOV lag.
     bool lens_interpolation=false;
-    std::uint32_t max_frames=0; // Interactive: zero runs until window close/Escape.
+    std::uint32_t max_frames=0; // Live players: zero runs until close/owner stop.
     std::vector<PlayerSegment> sequence;
     // Shared service sets the next admitted player generation before creation.
     // Direct native callers retain zero as their unspecialized owner tag.
     std::uint64_t player_generation=0;
+    // Live elapsed-time simulation and presentation without hardware input or
+    // window activation. Explicit audio output remains optional; replay conflicts.
+    bool background=false;
 };
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
 // compose neutral FOV with gameplay zoom on the copy. No borrowed runtime survives.
@@ -192,7 +195,7 @@ public:
 };
 // One frame-driven native graphics lifetime. Every call and destruction belongs
 // to the creating thread; session must outlive the window. Initialization is
-// deferred until poll(). Poll commits at most eight interactive ticks (one replay
+// deferred until poll(). Poll commits at most eight live-clock ticks (one replay
 // tick), then presents. Device/storage/audio waits retain their existing bounds.
 class PlayerWindow {
     struct Impl;

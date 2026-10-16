@@ -1,0 +1,850 @@
+{
+  "format": "poima.background-player.evidence.v1",
+  "source_checkpoint": "0.0.166",
+  "date": "2026-10-16",
+  "scope": "Explicit native background real-clock player and bounded full-workload process-memory timeline integration.",
+  "contract": {
+    "mode": "background",
+    "clock": "elapsed_zero_input",
+    "window": "nonfocusable",
+    "hardware_input_enabled": false,
+    "default_audio": false,
+    "optional_audio_supported": true,
+    "lens_interpolation_supported": true,
+    "interactive_and_replay_defaults_unchanged": true,
+    "within_frozen_contracts": false
+  },
+  "windows": {
+    "build": {
+      "passed": true,
+      "seconds": 432.8403144059703,
+      "cache_generation": 31,
+      "compiled_sources": 322,
+      "sealed_artifacts": 18,
+      "source_inputs_unchanged": true
+    },
+    "cpu": {
+      "closure": {
+        "passed": true,
+        "seconds": 21.761762300040573,
+        "observed_processes": 14,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor closure only; no inference that every nested process exited naturally."
+      },
+      "stages": [
+        {
+          "name": "readiness",
+          "exit_code": 0,
+          "seconds": 0.0718763000331819,
+          "stdout": {
+            "bytes": 63,
+            "sha256": "87fe3b9206f47680b2f2b9519537471909a4343a5872a2b7d1706c1b3cb9b6af"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "input",
+          "exit_code": 0,
+          "seconds": 0.046890600002370775,
+          "stdout": {
+            "bytes": 89,
+            "sha256": "2fe4d5484161b1cf013c5d45858c83fd5e88d993fa5e166a2b919f3af89b6095"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "lens",
+          "exit_code": 0,
+          "seconds": 0.0450335000641644,
+          "stdout": {
+            "bytes": 36,
+            "sha256": "afe3b187f422e0dcd54e697acfb48a71e4e2ab3a8b6f58cc3281ea547858cb67"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "preferences",
+          "exit_code": 0,
+          "seconds": 0.04988069995306432,
+          "stdout": {
+            "bytes": 194,
+            "sha256": "8dd09a6e44f57a66a9459601e684215cb88ef743894c9f6ba035b0fd6c1581b0"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "live_preferences",
+          "exit_code": 0,
+          "seconds": 0.0464471000013873,
+          "stdout": {
+            "bytes": 222,
+            "sha256": "430a6abd0b42e963a9e6f39f87f9431f0b8d180769e08a91af46d796d87ad4be"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "diagnostics",
+          "exit_code": 0,
+          "seconds": 0.036877700011245906,
+          "stdout": {
+            "bytes": 73,
+            "sha256": "f16dceb7f27e86740791a4b1b90e9da224d03bd45791c99a410eb944680a52cb"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "frame_performance",
+          "exit_code": 0,
+          "seconds": 0.05926399992313236,
+          "stdout": {
+            "bytes": 92,
+            "sha256": "ebc54b15b49dda853f3202360f1e3be72d990809b473306557392e7f63ae2c24"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "performance_service",
+          "exit_code": 0,
+          "seconds": 0.03947620000690222,
+          "stdout": {
+            "bytes": 120,
+            "sha256": "53e1e846d2410614e29d7acbf4176ce5d5b88dde2e528091fb928e9dba792806"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "schema",
+          "exit_code": 0,
+          "seconds": 7.992477699997835,
+          "stdout": {
+            "bytes": 110,
+            "sha256": "3890814bfa38e112171127efa3fb526ca77acda32734224247706e7c14abd54e"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "mcp",
+          "exit_code": 0,
+          "seconds": 0.0808060000417754,
+          "stdout": {
+            "bytes": 148,
+            "sha256": "1a0437bf693c05c25819985f172bae0545492d84eda12e6ed83d0984bedf10e0"
+          },
+          "stderr": {
+            "bytes": 684,
+            "sha256": "0aaccfe19d6fd00b22ebfd3e2eba16c12cb1b7f2d299734dc0a84d0e3ec0e2ae"
+          }
+        },
+        {
+          "name": "temporal_clock",
+          "exit_code": 0,
+          "seconds": 0.0512734999647364,
+          "stdout": {
+            "bytes": 29,
+            "sha256": "713af78ccb91dbaec3e896b849640f9da708181d20610f92cb1ec75d0a466d17"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "poll",
+          "exit_code": 0,
+          "seconds": 0.035518000018782914,
+          "stdout": {
+            "bytes": 65,
+            "sha256": "355bf9b15f1faf42c5b311b418b72559fcd33bfae83b6f6bdef263ffc2fdf7ea"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "name": "owner_disabled",
+          "exit_code": 0,
+          "seconds": 0.04601709998678416,
+          "stdout": {
+            "bytes": 159,
+            "sha256": "f2791420d167531ff4d7e53dc105d8b97aa8fb18abbc1637a07c8ebea6962c2f"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "protocol": {
+      "closure": {
+        "passed": true,
+        "seconds": 6.01399810006842,
+        "observed_processes": 4,
+        "active_processes": 0,
+        "accounting_terminations": 0,
+        "forced_cleanup": false,
+        "scope": "External supervisor closure only; no inference that every nested process exited naturally."
+      },
+      "passed": true,
+      "gpu_index": 0,
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "rpc_count": 161,
+      "complete_native_snapshots": 12,
+      "checks": {
+        "native_nonfocusable": true,
+        "elapsed_zero_input_ticks": true,
+        "modal_controls": true,
+        "failed_control_full_rollback": true,
+        "same_window_save_replacement": true,
+        "complete_saved_state_equality": true,
+        "historical_receipts": true,
+        "minimized_elapsed_progress": true,
+        "capture_requested": true
+      },
+      "paused_readback": {
+        "width": 320,
+        "height": 180,
+        "identity": {
+          "bytes": 230538,
+          "sha256": "6cbebfb6f593312ef4d810bc40a3c354dd1551165b7869bc70c88b005f199e78"
+        }
+      },
+      "frame_telemetry": {
+        "recorded_rows": 52,
+        "successful_present_returns": 40,
+        "focused_rows": 0,
+        "eligible_focused_intervals": 0,
+        "foreground_credit": false,
+        "scope": "Telemetry integrity only; background intervals receive no focused performance qualification."
+      },
+      "profiler": {
+        "summary_events": 2638,
+        "first_page_events": 256,
+        "complete_event_stream_retrieved": false
+      },
+      "scope": "Tiny actual AMD Vulkan fixture; no representative speed, physical input or acoustic qualification."
+    }
+  },
+  "linux": {
+    "passed": true,
+    "seconds": 482.825801561994,
+    "tests": [
+      {
+        "name": "frame_performance_native",
+        "seconds": "0.0743308"
+      },
+      {
+        "name": "frame_performance_service",
+        "seconds": "0.018025"
+      },
+      {
+        "name": "player_diagnostics_native",
+        "seconds": "0.0122752"
+      },
+      {
+        "name": "player_readiness_native",
+        "seconds": "0.0131785"
+      },
+      {
+        "name": "temporal_clock_native",
+        "seconds": "0.0101598"
+      },
+      {
+        "name": "player_input",
+        "seconds": "0.0131373"
+      },
+      {
+        "name": "player_lens_native",
+        "seconds": "0.0126187"
+      },
+      {
+        "name": "player_poll_native",
+        "seconds": "0.0107173"
+      },
+      {
+        "name": "player_owner_poll_disabled",
+        "seconds": "0.0152117"
+      },
+      {
+        "name": "player_preferences_native",
+        "seconds": "0.0181549"
+      },
+      {
+        "name": "player_live_preferences_native",
+        "seconds": "0.0409463"
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": "43.1334"
+      },
+      {
+        "name": "mcp_native",
+        "seconds": "0.0516855"
+      }
+    ],
+    "sealed_artifacts": 15,
+    "source_inputs_unchanged": true,
+    "prior_records_and_cache_preservation_unchanged": true,
+    "prior165_aggregate_passed": false,
+    "scope": "Offline Debug O0/g0 headless native CPU suites; rendering/audio/simulation/gameplay disabled. The preserved prior165 aggregate failure is not regraded."
+  },
+  "full_workload": {
+    "closure": {
+      "passed": true,
+      "seconds": 34.75860760000069,
+      "observed_processes": 5,
+      "active_processes": 0,
+      "accounting_terminations": 0,
+      "forced_cleanup": false,
+      "scope": "External supervisor closure only; no inference that every nested process exited naturally."
+    },
+    "passed": true,
+    "worker_seconds": 32.7583583999658,
+    "rpc_count": 281,
+    "owner_rpc_counts": {
+      "warm": 219,
+      "cold": 62
+    },
+    "terminal_output_including_qualification": {
+      "files": 84,
+      "bytes": 67063627
+    },
+    "authored_entities": 2394,
+    "cooked_assets": 15,
+    "gameplay_artifact_files": 9,
+    "gameplay_artifact_checkpoint": "0.0.94",
+    "source_revision": 26,
+    "source_provenance": {
+      "raw_authored_identity": {
+        "bytes": 3571587,
+        "sha256": "5c4d27817f7a5fce33476f36cb89606b43887a5157822fd09466b4869a471282"
+      },
+      "original_revision": 22,
+      "accepted_material_transactions": 4,
+      "complete_final_document_reconstructed": true,
+      "original_content_restored": true,
+      "expected_frozen_identity": {
+        "bytes": 1911529,
+        "sha256": "904831ce36d90e793000400f54e884e877253ad829f10a1b7763d01fc743a8f9"
+      },
+      "expected_frozen_ledgers": {
+        "receipts": {
+          "source_items": 26,
+          "expected_items": 0
+        },
+        "retired_ids": {
+          "source_items": 0,
+          "expected_items": 0
+        },
+        "retired_component_schemas": {
+          "source_items": 0,
+          "expected_items": 0
+        },
+        "retired_template_ids": {
+          "source_items": 0,
+          "expected_items": 0
+        },
+        "retired_ui_ids": {
+          "source_items": 8,
+          "expected_items": 0
+        }
+      },
+      "expected_frozen_before_runtime": true,
+      "original_A4_join": true,
+      "actual_saved_documents_projected": false
+    },
+    "width": 1920,
+    "height": 1080,
+    "camera": "yard_overview",
+    "vertical_fov_degrees": 50,
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "lighting": "deferred",
+    "ambient_occlusion": "medium_GTAO",
+    "audio_output_enabled": false,
+    "native_owner_count": 2,
+    "complete_saved_documents": 9,
+    "complete_type_and_byte_equal_pairs": 7,
+    "comparison_exclusions": [],
+    "checkpoints": [
+      {
+        "label": "cycle1_original",
+        "identity": {
+          "bytes": 2206613,
+          "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 306,
+        "payload_sha256": "7641d156f363593d4da6f939316dbfdf7375aa61f0928f4bd169d5ad352f0bcc"
+      },
+      {
+        "label": "cycle1_paused",
+        "identity": {
+          "bytes": 2206613,
+          "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 306,
+        "payload_sha256": "7641d156f363593d4da6f939316dbfdf7375aa61f0928f4bd169d5ad352f0bcc"
+      },
+      {
+        "label": "cycle1_restored",
+        "identity": {
+          "bytes": 2206613,
+          "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 306,
+        "payload_sha256": "7641d156f363593d4da6f939316dbfdf7375aa61f0928f4bd169d5ad352f0bcc"
+      },
+      {
+        "label": "cycle1_load_retry",
+        "identity": {
+          "bytes": 2206613,
+          "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 306,
+        "payload_sha256": "7641d156f363593d4da6f939316dbfdf7375aa61f0928f4bd169d5ad352f0bcc"
+      },
+      {
+        "label": "cycle2_original",
+        "identity": {
+          "bytes": 2209815,
+          "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 611,
+        "payload_sha256": "086f0f666d4f894fba31ce8c25e964d115e5682e30b512b8702f34a796b2079a"
+      },
+      {
+        "label": "cycle2_paused",
+        "identity": {
+          "bytes": 2209815,
+          "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 611,
+        "payload_sha256": "086f0f666d4f894fba31ce8c25e964d115e5682e30b512b8702f34a796b2079a"
+      },
+      {
+        "label": "cycle2_restored",
+        "identity": {
+          "bytes": 2209815,
+          "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 611,
+        "payload_sha256": "086f0f666d4f894fba31ce8c25e964d115e5682e30b512b8702f34a796b2079a"
+      },
+      {
+        "label": "cycle2_load_retry",
+        "identity": {
+          "bytes": 2209815,
+          "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 611,
+        "payload_sha256": "086f0f666d4f894fba31ce8c25e964d115e5682e30b512b8702f34a796b2079a"
+      },
+      {
+        "label": "cold_restored",
+        "identity": {
+          "bytes": 2209815,
+          "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+        },
+        "snapshot_version": 7,
+        "payload_keys": 14,
+        "gameplay_globals": 50,
+        "tick": 611,
+        "payload_sha256": "086f0f666d4f894fba31ce8c25e964d115e5682e30b512b8702f34a796b2079a"
+      }
+    ],
+    "real_play_segments": [
+      {
+        "label": "cycle1-before-save",
+        "credited_seconds": 5.015408100094646,
+        "tick_before": 2,
+        "tick_after": 306,
+        "ticks_per_second": 60.61321310907146
+      },
+      {
+        "label": "cycle1-discarded-play",
+        "credited_seconds": 2.024177400046028,
+        "tick_before": 307,
+        "tick_after": 431,
+        "ticks_per_second": 61.25945285091136
+      },
+      {
+        "label": "cycle2-before-save",
+        "credited_seconds": 5.030704400036484,
+        "tick_before": 307,
+        "tick_after": 611,
+        "ticks_per_second": 60.42891329448721
+      },
+      {
+        "label": "cycle2-discarded-play",
+        "credited_seconds": 2.030583000043407,
+        "tick_before": 612,
+        "tick_after": 736,
+        "ticks_per_second": 61.06620610797455
+      },
+      {
+        "label": "cold-continued",
+        "credited_seconds": 5.030713399988599,
+        "tick_before": 612,
+        "tick_after": 916,
+        "ticks_per_second": 60.42880518709115
+      }
+    ],
+    "credited_unpaused_seconds": 19.131586300209165,
+    "tick_duration_ratio_scope": "Native tick counts and wall durations use RPC bookends with observation overhead; their ratios are not frame rates or performance comparisons.",
+    "memory_timeline": {
+      "recording_passed": true,
+      "phase_marks": 69,
+      "owner_reports": [
+        {
+          "owner": "warm",
+          "samples": 22,
+          "assigned_samples": 22,
+          "unassigned_samples": 0,
+          "clock_domain": "python.time.monotonic_ns",
+          "observed_pid_and_creation_identity": true,
+          "original_query_intervals_retained": true,
+          "queried_working_set_maximum_bytes": 311644160,
+          "queried_private_commit_maximum_bytes": 578588672,
+          "report": {
+            "bytes": 9405,
+            "sha256": "a7bf04caa489bb0ef511130e2e8454723cfedc1c5ba01ec8bf8c3648117b4fd4"
+          }
+        },
+        {
+          "owner": "cold",
+          "samples": 7,
+          "assigned_samples": 7,
+          "unassigned_samples": 0,
+          "clock_domain": "python.time.monotonic_ns",
+          "observed_pid_and_creation_identity": true,
+          "original_query_intervals_retained": true,
+          "queried_working_set_maximum_bytes": 297435136,
+          "queried_private_commit_maximum_bytes": 590794752,
+          "report": {
+            "bytes": 4478,
+            "sha256": "a99e31db907fefcf0a37c8f2eb54dc2c209784d8fa0bf6d2761f3b5c604a2a54"
+          }
+        }
+      ],
+      "query_count": 29,
+      "assigned_queries": 29,
+      "unassigned_queries": 0,
+      "scope": "Actual single-native-process counters and conservative phase/query association; sampled extrema are not lifetime peaks and no allocation cause or leak result is inferred."
+    },
+    "scope": "Short sequential warm/cold background game integration; not the original focused reliability cohort, recorder overhead comparison or30minute mixed reliability gate. The authored50degree camera differs from the original soak60degree override; no matched-settings or causal performance comparison."
+  },
+  "independent_review": {
+    "windows_passed": true,
+    "fullgame_passed": true,
+    "windows_and_fullgame_share_original_report": true,
+    "linux_passed": true,
+    "scope": "One combined Windows and full-workload file audit, plus a separate Linux file audit. Original records and complete save/wire joins; audit duration is not engine performance."
+  },
+  "retained_failures": [
+    {
+      "kind": "source_only_build_preflight",
+      "native_executed": false,
+      "cause": "A source preparation referenced a nonexistent test filename and failed before compilation; the original failed preparation is retained."
+    },
+    {
+      "kind": "source_only_workload_preflight",
+      "native_executed": false,
+      "cause": "A preparation mistook the original prepared-world identity for the proved final authored-world identity; it failed before a plan or engine launch. The original source version and failure remain retained."
+    },
+    {
+      "kind": "independent_file_reader_bound",
+      "native_executed": false,
+      "cause": "The original file-only reader rejected an intact sealed binary above its128MiB parsed-file bound. A separate reader version streams sealed binaries within explicit bounds and retains the original failure; no engine failure or qualification verdict is regraded."
+    }
+  ],
+  "limits": [
+    "The original foreground reliability cohort and its failures are unchanged; no focused-frame, physical-input or human-availability qualification.",
+    "No 30-minute mixed reload/edit reliability, Alpha completion, representative frame-time budget or clean-machine claim.",
+    "The engine requests no hardware capture in background mode. SDL or platform physical-click auto-capture is outside this qualification; this is not an absolute OS-capture guarantee.",
+    "Recorder overhead, continuing-memory-growth cause, lifetime RAM peaks and GPU residency remain open.",
+    "Full-workload audio output is explicitly disabled; persisted sound state remains in every complete saved document. No acoustic or listening qualification.",
+    "Background mode does not change the gameplay C ABI. Native C++ player option/readiness types extend; no blanket binary compatibility claim.",
+    "Both new player mode and readiness metadata are outside the frozen authoring-core and runtime-game-session contracts."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": {
+      "bytes": 87488,
+      "sha256": "0b70289842f1225eac4f14be2c69dbd148a412d414558dd593c7be2da540ffdf"
+    },
+    "include/poima/player.hpp": {
+      "bytes": 12713,
+      "sha256": "733755ee12d31152e2c33dccf1bae1f9ace6d0391d6f3c6a75ef4180bc904af5"
+    },
+    "include/poima/player_readiness.hpp": {
+      "bytes": 2637,
+      "sha256": "50081ee3e1b08af0bacdd4344cb1f14311b1eec116cad5784cf0be1d2f67fe25"
+    },
+    "src/player.cpp": {
+      "bytes": 8077,
+      "sha256": "f76c1ce1763b5ffbb51d5451ad2374bed7c68ba252a68dfa7d78ee5d82e33ecf"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 342898,
+      "sha256": "186315c5057a915814c81b37006c1b524a18e8096ea50ed698ae7a143bbbf2f2"
+    },
+    "src/render_smoke_disabled.cpp": {
+      "bytes": 5578,
+      "sha256": "80966fc3cea26a0cbbb6bb38c2f7ec644ca3c545a39e4ad177b58d0414bf0ca6"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 62793,
+      "sha256": "6523bd87fb1c932588124145f20a750635d3e07b4fd8cf87891c18541bddd934"
+    },
+    "src/world_player_settings.inc": {
+      "bytes": 10945,
+      "sha256": "37aaa6d0440e1bed9f6d88d81b5a1e19166f6fea63e17b0a8d124f6552c47076"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 111733,
+      "sha256": "8dc6e8281bd73408aed343ab3f510910049c04ccd1c486954a030881230e583a"
+    },
+    "tests/player_readiness.cpp": {
+      "bytes": 6461,
+      "sha256": "524acb136c8b9c1411e6762c1a0812ffee316d135e2642823da318a7d9522ea3"
+    },
+    "tests/player_background_contract.py": {
+      "bytes": 29261,
+      "sha256": "77a867505412da486be78eecee36c915ea154f23f60fe693880c62b5c344dfc8"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "d11f7d9f114449519d5d19e36107838368271fd014c86bb0d7f5a57923350b81"
+    }
+  },
+  "original_report_identities": {
+    "windows_build": {
+      "bytes": 58560,
+      "sha256": "8ae1700bf306a0307ca6ae71217173e5061aa363ab2e3c4d4564054f00f76ba4"
+    },
+    "windows_sources": {
+      "bytes": 48723,
+      "sha256": "403fc1e723c227cf84fa0fafbb75244b8dbeccdc25f40e5e705476e3c897513e"
+    },
+    "windows_seals": {
+      "bytes": 3066,
+      "sha256": "add3d88b41adb72d5a51e5a7328f5c763c1f74a250379054626dedcc551f0450"
+    },
+    "windows_cpu_report": {
+      "bytes": 65635,
+      "sha256": "63b7f41df32c3aa12106706f7778f702accb64b72300b9ca7dafc4764bdfb351"
+    },
+    "windows_cpu_closure": {
+      "bytes": 2231,
+      "sha256": "34d736c85837d661b0ada49560e5199f2b77780507f7511929648f11cd36c9ce"
+    },
+    "windows_background_protocol": {
+      "bytes": 6879622,
+      "sha256": "97e49a88331f0f1011004f564954d1c3fe13f7c6c8267b1d0cab745ccf6412fb"
+    },
+    "windows_background_protocol_closure": {
+      "bytes": 2245,
+      "sha256": "9dfa98cd1f8d31c1fd0fdab1e77ae38f410636499f6f6879d5651470b2c3cf66"
+    },
+    "paused_background_bmp": {
+      "bytes": 230538,
+      "sha256": "6cbebfb6f593312ef4d810bc40a3c354dd1551165b7869bc70c88b005f199e78"
+    },
+    "protocol_native_requests": {
+      "bytes": 31508,
+      "sha256": "5118becbc6facc47bb37305cb54512249132da8b9f76345d09eb6f8b320c6f04"
+    },
+    "protocol_native_replies": {
+      "bytes": 1195750,
+      "sha256": "adb14ace6b7a7fd2ac59780df0b362f48e575b230fbaced3d94ba6323ebf4f68"
+    },
+    "protocol_native_stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "linux_report": {
+      "bytes": 59102,
+      "sha256": "caf67dfd7fbd38023150b12ea1793d9a4595d8fe5e115869ffcdba468c4ce258"
+    },
+    "linux_ctest": {
+      "bytes": 4362,
+      "sha256": "2ac2bf18d7a20682ac6a819637ea86a31ccb28dbc1288e24d2168f52175d45d6"
+    },
+    "fullgame_cycle1_original": {
+      "bytes": 2206613,
+      "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+    },
+    "fullgame_cycle1_paused": {
+      "bytes": 2206613,
+      "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+    },
+    "fullgame_cycle1_restored": {
+      "bytes": 2206613,
+      "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+    },
+    "fullgame_cycle1_load_retry": {
+      "bytes": 2206613,
+      "sha256": "88cd47ceac279878f01698d8fdad8108cd2fc16b320142a0513384bb4af55dfc"
+    },
+    "fullgame_cycle2_original": {
+      "bytes": 2209815,
+      "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+    },
+    "fullgame_cycle2_paused": {
+      "bytes": 2209815,
+      "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+    },
+    "fullgame_cycle2_restored": {
+      "bytes": 2209815,
+      "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+    },
+    "fullgame_cycle2_load_retry": {
+      "bytes": 2209815,
+      "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+    },
+    "fullgame_cold_restored": {
+      "bytes": 2209815,
+      "sha256": "af98aa60298e34afc5013f305b204a83ea1966212d988c2242eb68abdfd2f40c"
+    },
+    "fullgame_warm_memory": {
+      "bytes": 9405,
+      "sha256": "a7bf04caa489bb0ef511130e2e8454723cfedc1c5ba01ec8bf8c3648117b4fd4"
+    },
+    "fullgame_cold_memory": {
+      "bytes": 4478,
+      "sha256": "a99e31db907fefcf0a37c8f2eb54dc2c209784d8fa0bf6d2761f3b5c604a2a54"
+    },
+    "fullgame_warm_native_requests": {
+      "bytes": 28522,
+      "sha256": "3f7777fd2d28b0a1597044c6bc0b652eba9516257f4855c71435356f705c747c"
+    },
+    "fullgame_warm_native_replies": {
+      "bytes": 4645920,
+      "sha256": "5bc8be838017e6bd7b4e2667392f90cb16329ee200202838fb31259e75a34daa"
+    },
+    "fullgame_warm_native_stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullgame_warm_host_stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullgame_warm_host_stderr": {
+      "bytes": 74,
+      "sha256": "d29ac826b7aedad9248c6191aa6e284637d575ae88a42fdb2dba58fd7dd5994a"
+    },
+    "fullgame_cold_native_requests": {
+      "bytes": 8001,
+      "sha256": "74095bcb3599f19d99206699239998155b4c00ee3a147ee6e89eebb3f7cec557"
+    },
+    "fullgame_cold_native_replies": {
+      "bytes": 1267135,
+      "sha256": "fbe99ec64ac4f7029b859db2582982254d436e7e70c35aa2c93852923756e794"
+    },
+    "fullgame_cold_native_stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullgame_cold_host_stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullgame_cold_host_stderr": {
+      "bytes": 74,
+      "sha256": "60fb8fb344d02d9c0d076394f69fb4f38628df6e9ddd4847411adf73fa497ef2"
+    },
+    "fullgame_report": {
+      "bytes": 13430561,
+      "sha256": "1646fc95397e1e92752efa0863b0b2fac9d570e96671286b03746af775433e00"
+    },
+    "fullgame_closure": {
+      "bytes": 1995,
+      "sha256": "cb77b10bdc88f3e706011ef722d31ad1a5c5da136bc3e44852ed01297bfa38a9"
+    },
+    "expected_frozen_authoring": {
+      "bytes": 1911529,
+      "sha256": "904831ce36d90e793000400f54e884e877253ad829f10a1b7763d01fc743a8f9"
+    },
+    "authoring_freeze_proof": {
+      "bytes": 4434,
+      "sha256": "023ade46cfe82e33c034b359738256e6239a95853b99d85d29fa4159dbcbd9b9"
+    },
+    "independent_windows_audit": {
+      "bytes": 37539,
+      "sha256": "f8525078b244f47320bffbb1ecab3df10025947131e204e5e6e531b76db6c77a"
+    },
+    "independent_fullgame_audit": {
+      "bytes": 37539,
+      "sha256": "f8525078b244f47320bffbb1ecab3df10025947131e204e5e6e531b76db6c77a"
+    },
+    "retained_file_reader_failure": {
+      "bytes": 2464,
+      "sha256": "3197d8a1179743d9c4a4d76de3e94dbf7a62dc07599c6d62bac7326f3dd1e334"
+    },
+    "independent_linux_audit": {
+      "bytes": 10559,
+      "sha256": "40dc10b33ce613e3c7c007004bb134f4bbad164b7482a2a4bf9459b153fbe7de"
+    },
+    "retained_build_file_preflight_failure": {
+      "bytes": 364,
+      "sha256": "534951b726745ffab5c649f0e875adf685c62c98137876d71349c4fad2c44716"
+    },
+    "retained_workload_file_preflight_failure": {
+      "bytes": 1316,
+      "sha256": "e77c111e3cfb299209fdce2399c14e50e2f8c9b7b1cebfbd16cf7b5c2ce8c3f8"
+    }
+  }
+}
