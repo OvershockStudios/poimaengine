@@ -225,3 +225,8 @@ with complete state preserved. Retired contexts remain alive without a full
 collection; their unloadability and the earlier rendered memory growth remain
 separate investigations. This does not close rendered performance, observer cost
 or the broader reliability gate.
+
+The [separate explicit-collection diagnostic](MANAGED_MEMORY.md#explicit-collection-diagnostic)
+observes four retired contexts reclaimed while complete current saved state stays
+identical. This qualifies that selected unloading path; automatic GC timing,
+the earlier rendered memory growth and the wider reliability gate remain open.

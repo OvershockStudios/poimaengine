@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.183**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.184**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.184 qualifies a separate [explicit-collection diagnostic](MANAGED_MEMORY.md#explicit-collection-diagnostic)
+with the sealed 0.0.182 engine and full Performance Yard gameplay. Following two
+compatible reloads and two warm restores, all four retired contexts are observed
+alive before one collection request and absent afterward, with the active module
+retained. Complete saved bytes remain identical around the intervention.
+
+The naturally closed 6.978-second worker retains 112 original RPC pairs, nine
+complete v7 checkpoint references, three whole-state pairs and two full reload
+forecasts. Independent review preserves all fifty globals, four component schemas,
+fourteen snapshot members and the full authored/spawned world. Its two-process Job
+closes empty without forced termination. This demonstrates selected context
+reclamation; it does not qualify automatic GC timing, arbitrary game unloading,
+rendered memory growth, performance or the wider Alpha gate.
+[Results](evidence/m2-context-unloading.json).
 
 Version 0.0.183 integrates [passive memory observations into the full Performance
 Yard](MANAGED_MEMORY.md#full-workload-investigation), using the sealed 0.0.182

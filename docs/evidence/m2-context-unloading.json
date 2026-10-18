@@ -1,0 +1,207 @@
+{
+  "format": "poima.evidence.context-unloading.v1",
+  "checkpoint": "0.0.184",
+  "passed": true,
+  "scope": "Separate full-game explicit-collection diagnostic; not a passive memory or performance comparison.",
+  "measured_engine": {
+    "version": "0.0.182",
+    "cli": {
+      "bytes": 26304000,
+      "sha256": "98ecc9c8c4361318f38c8de451bfb1ca8a592cd09c40dd182416829dfac867d6"
+    },
+    "bridge": {
+      "Poima.Gameplay.dll": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "Poima.Gameplay.pdb": {
+        "bytes": 40360,
+        "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+      },
+      "Poima.ManagedBridge.deps.json": {
+        "bytes": 846,
+        "sha256": "8cfc18f62f0a37c83186370a260603cdbcbed96f1ae9d099608aa4c17cac812d"
+      },
+      "Poima.ManagedBridge.dll": {
+        "bytes": 64000,
+        "sha256": "74c5e25c1984c8e83f4dc7fcc8837ce4efbd834d7e73ab0d391d0150400df70b"
+      },
+      "Poima.ManagedBridge.pdb": {
+        "bytes": 21640,
+        "sha256": "76ab8a29d5750641a41f260b193442a516d420cdc8c49799472eeafc4398b314"
+      },
+      "Poima.ManagedBridge.runtimeconfig.json": {
+        "bytes": 377,
+        "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+      }
+    }
+  },
+  "workload": {
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_characters": 24,
+    "authored_lights": 64,
+    "globals": 50,
+    "component_schemas": 4,
+    "game_identity": "poima.examples.performance-yard",
+    "callback_profiling": false,
+    "world": {
+      "bytes": 3571587,
+      "sha256": "5c4d27817f7a5fce33476f36cb89606b43887a5157822fd09466b4869a471282"
+    },
+    "world_and_assets_files": 16,
+    "world_and_assets_bytes": 4199950
+  },
+  "schedule": {
+    "compatible_body_reloads": 2,
+    "warm_restores": 2,
+    "semantic_ticks": 2,
+    "discarded_ticks": 2,
+    "initialization_ticks": 1,
+    "explicit_collect_requests": 1,
+    "os_sampler": false,
+    "renderer": false,
+    "compiler": false
+  },
+  "verified": {
+    "raw_rpc_pairs": 112,
+    "complete_checkpoint_references": 9,
+    "unique_checkpoint_files": 6,
+    "complete_warm_pairs": 2,
+    "complete_collection_pairs": 1,
+    "complete_reload_forecasts": 2,
+    "snapshot_version": 7,
+    "snapshot_payload_members": 14,
+    "excluded_fields": [],
+    "submitted_ticks": 5,
+    "worker_seconds": 6.978226500003075,
+    "native_owners": 1,
+    "job_processes": 2,
+    "job_active_at_exit": 0,
+    "job_terminated_processes": 0,
+    "forced_cleanup": false,
+    "owned_output_files": 47,
+    "owned_output_bytes": 29366948
+  },
+  "collection_result": {
+    "active_modules": 1,
+    "retired_alive": 0
+  },
+  "original_before_memory": {
+    "active_modules": 1,
+    "format": "poima.managed-memory-snapshot.v1",
+    "gc": {
+      "gen0_collections": "0",
+      "gen1_collections": "0",
+      "gen2_collections": "0",
+      "total_allocated_bytes": "3645216",
+      "total_memory_bytes": "3653976"
+    },
+    "last_gc": {
+      "compacted": false,
+      "concurrent": false,
+      "fragmented_bytes": "0",
+      "generation": 0,
+      "heap_size_bytes": "0",
+      "high_memory_load_threshold_bytes": "14796431769",
+      "index": "0",
+      "memory_load_bytes": "0",
+      "total_available_memory_bytes": "16440479744",
+      "total_committed_bytes": "0"
+    },
+    "process_id": 32504,
+    "retired_contexts_alive": 4,
+    "retired_contexts_tracked": 4,
+    "timestamp_end": "496163301822",
+    "timestamp_frequency": "10000000",
+    "timestamp_start": "496163299664",
+    "version": 1
+  },
+  "original_after_memory": {
+    "active_modules": 1,
+    "format": "poima.managed-memory-snapshot.v1",
+    "gc": {
+      "gen0_collections": "2",
+      "gen1_collections": "2",
+      "gen2_collections": "2",
+      "total_allocated_bytes": "3868656",
+      "total_memory_bytes": "673872"
+    },
+    "last_gc": {
+      "compacted": false,
+      "concurrent": false,
+      "fragmented_bytes": "139272",
+      "generation": 2,
+      "heap_size_bytes": "760328",
+      "high_memory_load_threshold_bytes": "14796431769",
+      "index": "2",
+      "memory_load_bytes": "13974407782",
+      "total_available_memory_bytes": "16440479744",
+      "total_committed_bytes": "5398528"
+    },
+    "process_id": 32504,
+    "retired_contexts_alive": 0,
+    "retired_contexts_tracked": 0,
+    "timestamp_end": "496163877049",
+    "timestamp_frequency": "10000000",
+    "timestamp_start": "496163876128",
+    "version": 1
+  },
+  "diagnostic_completed": true,
+  "unloadability_observed": true,
+  "retention_observed": false,
+  "retention_observation_point": "passive_after",
+  "collect_contract": {
+    "request_fields": [
+      "session_id"
+    ],
+    "request_id": false,
+    "tick_guard": false,
+    "replay_receipt": false,
+    "managed_round_limit": 8,
+    "round": "GC.Collect, WaitForPendingFinalizers, GC.Collect while retired weak entries remain alive.",
+    "pruning": "Counts alive weak entries, then removes dead entries; these observations need not be simultaneous."
+  },
+  "interpretation": [
+    "Four retired contexts were observed alive before the sole explicit collection request; both tracked/alive counts were zero afterward, with one active game module retained.",
+    "Complete current saved bytes and all fourteen payload members remained identical around collection. Two warm restores and both whole reload forecasts also passed.",
+    "The three generation counters were zero before and two after the intervention bracket. One RPC is not one GC call.",
+    "This qualifies selected context reclamation, not automatic collection timing, arbitrary user-code unloadability or absence of other leaks.",
+    "It does not explain or regrade the passive0.0.183 or rendered0.0.169 cohorts. No frame-time, OS/GPU-memory, observer-cost or Alpha gate is closed."
+  ],
+  "retained_artifact_identities": {
+    "native_owner": {
+      "bytes": 1533,
+      "sha256": "5dc5d60e212ce3708232e0c6f65f2a770fe18ec2c8854381a64c098bd52c9d78"
+    },
+    "worker": {
+      "bytes": 179046,
+      "sha256": "dde72c08d97da5e8bbde56ee8c8b5e55c81db0269d7960948046ed5d381f7d77"
+    },
+    "independent_audit": {
+      "bytes": 14583,
+      "sha256": "1dbbf7eb4d1ff0c710e5faf66ca31a4e4a14f765839f8b4917e2526f657acbce"
+    },
+    "phase_log": {
+      "bytes": 7166,
+      "sha256": "43134f3904b5e5229391b9bfd59459e41974146a8126c1fbde21e65ae86a9d4b"
+    },
+    "raw_stdin": {
+      "bytes": 21603,
+      "sha256": "a07ba7ede1adb99b0a55b877c4c1f26b1055b2012f8d4140cbb2550b948ddeb2"
+    },
+    "raw_stdout": {
+      "bytes": 694431,
+      "sha256": "5f25405d713b637615b540a129aeb7d836b5e877aec7624cd40e8b359fce9892"
+    }
+  },
+  "limits": {
+    "outer_seconds": 60,
+    "worker_seconds": 50,
+    "whole_rpc": 160,
+    "whole_case_bytes": 33554432,
+    "whole_case_files": 256,
+    "checkpoint_capture_references": 9
+  },
+  "reproduction": "Exact original world, precompiled A/B images, matching bridge/dependencies and retained traces are required. This is a retained diagnostic cohort, not a clean-checkout benchmark."
+}

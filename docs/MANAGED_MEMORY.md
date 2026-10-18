@@ -155,3 +155,48 @@ closure, schedule and original traces; this is not a clean-checkout benchmark.
 For a new investigation, retain complete save operands and original observations,
 declare the workload and windows before running, and label explicit collection
 as a separate intervention.
+
+## Explicit collection diagnostic
+
+`runtime.gameplay.collect` accepts the current `session_id` only. It has no tick
+guard, request ID or replay receipt. For an initialized CoreCLR bridge it may
+run up to eight rounds, each calling `GC.Collect`, waiting for finalizers, then
+calling `GC.Collect` again. It checks remaining weak contexts between rounds.
+It counts `active_modules` and `retired_alive`, prunes dead weak entries, then
+returns the counts. The count and pruning passes are separate; a later query
+can see fewer entries. A Native AOT host, if initialized, has its own subsection.
+
+Use this as an explicit investigation outside performance measurements. An
+external diagnostic owner supplies the wall-clock limit; a bounded round count
+does not bound arbitrary game finalizer execution. Retain the original result or
+unknown outcome rather than automatically repeating the intervention. Ordinary
+memory queries continue to request neither collection nor pruning.
+
+Checkpoint 0.0.184 uses the same sealed 0.0.182 engine and bridge in a separate
+full Performance Yard process. Two compatible precompiled body replacements
+and two compiled warm restores create four tracked retired contexts. Exactly
+one collection request sits between complete saved-state operands, with no Tick,
+control callback or reload between them. Both reloads also have complete lexical
+state forecasts; both restores are compared before callbacks update the epoch.
+
+| Observation | Before | After |
+| --- | --- | --- |
+| Active modules | 1 | 1 |
+| Retired entries tracked / observed alive | 4 / 4 | 0 / 0 |
+| Generation 0 / 1 / 2 collection counts | 0 / 0 / 0 | 2 / 2 / 2 |
+| Managed-memory estimate, bytes | 3,653,976 | 673,872 |
+
+The worker closes naturally in 6.978 seconds. Independent review checks all 112
+original RPC pairs, nine complete v7 checkpoint references, three whole-byte/type
+pairs and two full reload forecasts. All fifty globals, four component schemas
+and fourteen saved payload members remain intact. The source has 2,394 entities;
+three normal template spawns bring live membership to 2,397. The two-process Job
+is empty without forced termination. Original output is 29,366,948 bytes, within
+the prospective 32 MiB limit.
+
+These observations demonstrate reclamation of the selected four contexts without
+changing current authoritative state. They do not guarantee arbitrary user-code
+unloadability, establish ordinary collection timing, explain the earlier rendered
+memory growth, or qualify performance. The passive 0.0.183 run remains separate.
+Nonzero retention would also be a diagnostic result, with no retry to force zero.
+[Original observations and limits](evidence/m2-context-unloading.json).

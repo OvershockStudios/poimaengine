@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.184
+
+- Verify collection-assisted reclamation of retired gameplay contexts in the full Performance Yard, with complete state preserved across reloads, warm restores and the diagnostic intervention. Document the collection request, pruning and retry boundaries. [Results](docs/MANAGED_MEMORY.md#explicit-collection-diagnostic).
+
 ## 0.0.183
 
 - Exercise passive CLR memory observations in the complete Performance Yard through six compatible reloads, twelve warm restores and unchanged advancing simulation. Verify complete saves and process closure; distinguish deferred context reclamation from leak evidence. [Findings and limits](docs/MANAGED_MEMORY.md#full-workload-investigation).
