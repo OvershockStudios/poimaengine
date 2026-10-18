@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.183
+
+- Exercise passive CLR memory observations in the complete Performance Yard through six compatible reloads, twelve warm restores and unchanged advancing simulation. Verify complete saves and process closure; distinguish deferred context reclamation from leak evidence. [Findings and limits](docs/MANAGED_MEMORY.md#full-workload-investigation).
+
 ## 0.0.182
 
 - Add a passive CoreCLR memory and collectible-context query for reliability investigations. Distinguish current estimates, latest-GC history and weak context observations; preserve saved state and report unavailable observers explicitly. [Contract](docs/MANAGED_MEMORY.md) and [checks](docs/evidence/m2-managed-memory.json).

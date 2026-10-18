@@ -116,3 +116,42 @@ real bridge load, query, retirement and negotiation paths. Native hosted RPC and
 complete-save preservation require separate execution with the selected engine,
 bridge and game artifacts. Helper checks alone do not qualify that integration,
 the cause of memory growth, observer overhead, or the Alpha reliability gate.
+
+## Full-workload investigation
+
+Checkpoint 0.0.183 exercises the observer with the sealed 0.0.182 Windows engine,
+the matching bridge and the original compiled Performance Yard gameplay. Its
+2,394 authored entities include 24 animated characters and 64 lights; three
+compiled template spawns bring live membership to 2,397. All fifty globals and
+four component schemas remain intact.
+
+This CPU-only run submits 60-tick batches on a one-second external schedule:
+30 seconds of warmup, twelve five-second cycles with six compatible body reloads
+and twelve compiled save/load operations, then six thirty-second intervals of
+unchanged advancing simulation. It uses no player window. This is explicit
+headless stepping, distinct from the native elapsed-time background player.
+Callback profiling stays off. Passive CLR queries do not request collection or
+prune retired entries.
+
+The 306.202-second worker retains 1,144 original RPC pairs, forty complete v7
+checkpoint references, fourteen whole-byte/type pairs and six complete lexical
+reload forecasts. A fresh owner restores the cycle-12 save before callbacks and
+continues gameplay. Thirty-four CLR snapshots accompany 304 OS queries; the six
+fixed tail windows contain 179 whole eligible queries. Both game owners and the
+three-process supervising Job close naturally.
+
+At the final warm query, all eighteen tracked retired contexts are still observed
+alive, with no generation-1 or generation-2 collection during the run. This leaves
+collection-assisted unloadability untested. The managed-memory estimate grows
+from about 3.4 to 6.4 MB during the tail; first-to-last window median process
+private commit grows by 1,441,792 bytes. These are different measurements and do
+not establish an allocation cause or leak. The historical rendered cohort,
+observation overhead and broader Alpha gates remain separate.
+
+The independently checked [results](evidence/m2-managed-memory-workload.json)
+retain all six windows and the earlier failed file-audit records. Exact cohort
+reproduction requires its retained world, compiled images, bridge/dependency
+closure, schedule and original traces; this is not a clean-checkout benchmark.
+For a new investigation, retain complete save operands and original observations,
+declare the workload and windows before running, and label explicit collection
+as a separate intervention.

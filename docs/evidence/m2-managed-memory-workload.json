@@ -1,0 +1,683 @@
+{
+  "format": "poima.evidence.managed-memory-workload.v1",
+  "checkpoint": "0.0.183",
+  "passed": true,
+  "scope": "Full Performance Yard CPU diagnostic using externally paced explicit fixed-tick batches.",
+  "measured_engine": {
+    "version": "0.0.182",
+    "cli": {
+      "bytes": 26304000,
+      "sha256": "98ecc9c8c4361318f38c8de451bfb1ca8a592cd09c40dd182416829dfac867d6"
+    },
+    "bridge": {
+      "Poima.Gameplay.dll": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "Poima.Gameplay.pdb": {
+        "bytes": 40360,
+        "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+      },
+      "Poima.ManagedBridge.deps.json": {
+        "bytes": 846,
+        "sha256": "8cfc18f62f0a37c83186370a260603cdbcbed96f1ae9d099608aa4c17cac812d"
+      },
+      "Poima.ManagedBridge.dll": {
+        "bytes": 64000,
+        "sha256": "74c5e25c1984c8e83f4dc7fcc8837ce4efbd834d7e73ab0d391d0150400df70b"
+      },
+      "Poima.ManagedBridge.pdb": {
+        "bytes": 21640,
+        "sha256": "76ab8a29d5750641a41f260b193442a516d420cdc8c49799472eeafc4398b314"
+      },
+      "Poima.ManagedBridge.runtimeconfig.json": {
+        "bytes": 377,
+        "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+      }
+    }
+  },
+  "workload": {
+    "world": {
+      "bytes": 3571587,
+      "sha256": "5c4d27817f7a5fce33476f36cb89606b43887a5157822fd09466b4869a471282"
+    },
+    "world_and_assets_files": 16,
+    "world_and_assets_bytes": 4199950,
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_characters": 24,
+    "authored_lights": 64,
+    "globals": 50,
+    "component_schemas": 4,
+    "game_type": "Poima.Examples.PerformanceGame",
+    "game_identity": "poima.examples.performance-yard",
+    "callback_profiling": false,
+    "game_images": {
+      "baseline.dll": {
+        "bytes": 58368,
+        "sha256": "6ab2372344d43be0ef851109f54e3334cfbb37d606444ce303e47f5d737dabe6"
+      },
+      "c2.dll": {
+        "bytes": 58368,
+        "sha256": "9fe1afd482d5717a7db7cd4074a2edb3375cd8f1a40b331d6c151d855efed955"
+      }
+    }
+  },
+  "schedule": {
+    "warmup_pacing_seconds": 30,
+    "cycles": 12,
+    "pacing_seconds_per_cycle": 5,
+    "compatible_reloads": 6,
+    "warm_restores": 12,
+    "discarded_ticks_per_cycle": 1,
+    "unchanged_advancing_tail_seconds": 180,
+    "tail_windows": 6,
+    "seconds_per_tail_window": 30,
+    "ticks_per_batch": 60,
+    "nominal_batch_period_seconds": 1,
+    "cold_continuation": "Fresh owner restores the complete cycle12 pre-tail save before callbacks, then executes one Tick."
+  },
+  "verified": {
+    "raw_rpc_pairs": 1144,
+    "native_step_requests": 291,
+    "paced_batch_ticks": 16200,
+    "total_submitted_ticks": 16221,
+    "checkpoint_references": 40,
+    "unique_checkpoint_files": 26,
+    "complete_pairs": 14,
+    "complete_reload_forecasts": 6,
+    "saved_payload_members": 14,
+    "snapshot_version": 7,
+    "excluded_fields": [],
+    "clr_snapshots": 34,
+    "os_queries": 304,
+    "native_owners": 2,
+    "owned_job_processes": 3,
+    "job_active_at_exit": 0,
+    "job_terminated_processes": 0,
+    "forced_cleanup": false,
+    "worker_seconds": 306.2017300000007,
+    "owned_output_files": 79,
+    "owned_output_bytes": 140135044
+  },
+  "selected_original_clr_snapshots": [
+    {
+      "label": "initial",
+      "owner": "warm",
+      "tick": 1,
+      "data": {
+        "active_modules": 1,
+        "format": "poima.managed-memory-snapshot.v1",
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "2035016",
+          "total_memory_bytes": "2040416"
+        },
+        "last_gc": {
+          "compacted": false,
+          "concurrent": false,
+          "fragmented_bytes": "0",
+          "generation": 0,
+          "heap_size_bytes": "0",
+          "high_memory_load_threshold_bytes": "14796431769",
+          "index": "0",
+          "memory_load_bytes": "0",
+          "total_available_memory_bytes": "16440479744",
+          "total_committed_bytes": "0"
+        },
+        "process_id": 7472,
+        "retired_contexts_alive": 0,
+        "retired_contexts_tracked": 0,
+        "timestamp_end": "481915022917",
+        "timestamp_frequency": "10000000",
+        "timestamp_start": "481915021566",
+        "version": 1
+      }
+    },
+    {
+      "label": "after-warmup",
+      "owner": "warm",
+      "tick": 1801,
+      "data": {
+        "active_modules": 1,
+        "format": "poima.managed-memory-snapshot.v1",
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "2717496",
+          "total_memory_bytes": "2724912"
+        },
+        "last_gc": {
+          "compacted": false,
+          "concurrent": false,
+          "fragmented_bytes": "0",
+          "generation": 0,
+          "heap_size_bytes": "0",
+          "high_memory_load_threshold_bytes": "14796431769",
+          "index": "0",
+          "memory_load_bytes": "0",
+          "total_available_memory_bytes": "16440479744",
+          "total_committed_bytes": "0"
+        },
+        "process_id": 7472,
+        "retired_contexts_alive": 0,
+        "retired_contexts_tracked": 0,
+        "timestamp_end": "482216127649",
+        "timestamp_frequency": "10000000",
+        "timestamp_start": "482216127250",
+        "version": 1
+      }
+    },
+    {
+      "label": "stationary-entry",
+      "owner": "warm",
+      "tick": 5407,
+      "data": {
+        "active_modules": 1,
+        "format": "poima.managed-memory-snapshot.v1",
+        "gc": {
+          "gen0_collections": "1",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "10969392",
+          "total_memory_bytes": "3414624"
+        },
+        "last_gc": {
+          "compacted": true,
+          "concurrent": false,
+          "fragmented_bytes": "11064",
+          "generation": 0,
+          "heap_size_bytes": "927832",
+          "high_memory_load_threshold_bytes": "14796431769",
+          "index": "1",
+          "memory_load_bytes": "14138812579",
+          "total_available_memory_bytes": "16440479744",
+          "total_committed_bytes": "9457664"
+        },
+        "process_id": 7472,
+        "retired_contexts_alive": 18,
+        "retired_contexts_tracked": 18,
+        "timestamp_end": "483122789552",
+        "timestamp_frequency": "10000000",
+        "timestamp_start": "483122789404",
+        "version": 1
+      }
+    },
+    {
+      "label": "stationary6",
+      "owner": "warm",
+      "tick": 16207,
+      "data": {
+        "active_modules": 1,
+        "format": "poima.managed-memory-snapshot.v1",
+        "gc": {
+          "gen0_collections": "1",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "13928456",
+          "total_memory_bytes": "6440768"
+        },
+        "last_gc": {
+          "compacted": true,
+          "concurrent": false,
+          "fragmented_bytes": "11064",
+          "generation": 0,
+          "heap_size_bytes": "927832",
+          "high_memory_load_threshold_bytes": "14796431769",
+          "index": "1",
+          "memory_load_bytes": "14138812579",
+          "total_available_memory_bytes": "16440479744",
+          "total_committed_bytes": "9457664"
+        },
+        "process_id": 7472,
+        "retired_contexts_alive": 18,
+        "retired_contexts_tracked": 18,
+        "timestamp_end": "484931836242",
+        "timestamp_frequency": "10000000",
+        "timestamp_start": "484931835417",
+        "version": 1
+      }
+    },
+    {
+      "label": "cold-before-callback",
+      "owner": "cold",
+      "tick": 5407,
+      "data": {
+        "active_modules": 1,
+        "format": "poima.managed-memory-snapshot.v1",
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "2443656",
+          "total_memory_bytes": "2449944"
+        },
+        "last_gc": {
+          "compacted": false,
+          "concurrent": false,
+          "fragmented_bytes": "0",
+          "generation": 0,
+          "heap_size_bytes": "0",
+          "high_memory_load_threshold_bytes": "14796431769",
+          "index": "0",
+          "memory_load_bytes": "0",
+          "total_available_memory_bytes": "16440479744",
+          "total_committed_bytes": "0"
+        },
+        "process_id": 10376,
+        "retired_contexts_alive": 1,
+        "retired_contexts_tracked": 1,
+        "timestamp_end": "484954083518",
+        "timestamp_frequency": "10000000",
+        "timestamp_start": "484954081267",
+        "version": 1
+      }
+    }
+  ],
+  "fixed_tail_windows": [
+    {
+      "window": 1,
+      "begin_ns": 48312855591100,
+      "end_ns": 48342855591100,
+      "segment_actual_end_ns": 48342873060900,
+      "declared_observation_end_ns": 48342903340400,
+      "eligible_queries": 30,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 134467584,
+          "median": 134496256.0,
+          "maximum": 134520832
+        },
+        "private_commit_bytes": {
+          "minimum": 128225280,
+          "median": 128307200.0,
+          "maximum": 128331776
+        }
+      }
+    },
+    {
+      "window": 2,
+      "begin_ns": 48342915087500,
+      "end_ns": 48372915087500,
+      "segment_actual_end_ns": 48372933227600,
+      "declared_observation_end_ns": 48372964405900,
+      "eligible_queries": 30,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 134549504,
+          "median": 134717440.0,
+          "maximum": 134860800
+        },
+        "private_commit_bytes": {
+          "minimum": 128389120,
+          "median": 128536576.0,
+          "maximum": 128630784
+        }
+      }
+    },
+    {
+      "window": 3,
+      "begin_ns": 48372979098900,
+      "end_ns": 48402979098900,
+      "segment_actual_end_ns": 48402999220200,
+      "declared_observation_end_ns": 48403023708200,
+      "eligible_queries": 29,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 134811648,
+          "median": 134811648,
+          "maximum": 134811648
+        },
+        "private_commit_bytes": {
+          "minimum": 128626688,
+          "median": 128626688,
+          "maximum": 128626688
+        }
+      }
+    },
+    {
+      "window": 4,
+      "begin_ns": 48403035821200,
+      "end_ns": 48433035821200,
+      "segment_actual_end_ns": 48433052921000,
+      "declared_observation_end_ns": 48433077537400,
+      "eligible_queries": 30,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 134811648,
+          "median": 134914048.0,
+          "maximum": 135147520
+        },
+        "private_commit_bytes": {
+          "minimum": 128626688,
+          "median": 128757760.0,
+          "maximum": 128954368
+        }
+      }
+    },
+    {
+      "window": 5,
+      "begin_ns": 48433089526000,
+      "end_ns": 48463089526000,
+      "segment_actual_end_ns": 48463108096500,
+      "declared_observation_end_ns": 48463133944200,
+      "eligible_queries": 30,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 135208960,
+          "median": 135411712.0,
+          "maximum": 135655424
+        },
+        "private_commit_bytes": {
+          "minimum": 129081344,
+          "median": 129257472.0,
+          "maximum": 129486848
+        }
+      }
+    },
+    {
+      "window": 6,
+      "begin_ns": 48463151274500,
+      "end_ns": 48493151274500,
+      "segment_actual_end_ns": 48493174308900,
+      "declared_observation_end_ns": 48493200958900,
+      "eligible_queries": 30,
+      "at_least20_queries_for_descriptive_trend": true,
+      "eligible_indices": [
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299
+      ],
+      "excluded_within_window": [],
+      "summary": {
+        "working_set_bytes": {
+          "minimum": 135671808,
+          "median": 135909376.0,
+          "maximum": 136306688
+        },
+        "private_commit_bytes": {
+          "minimum": 129486848,
+          "median": 129748992.0,
+          "maximum": 130076672
+        }
+      }
+    }
+  ],
+  "descriptive_process_trends": {
+    "working_set_bytes": {
+      "all_six_window_medians": [
+        134496256.0,
+        134717440.0,
+        134811648,
+        134914048.0,
+        135411712.0,
+        135909376.0
+      ],
+      "first_to_last_median_delta_bytes": 1413120.0,
+      "fixed_window_median_slope_bytes_per_second": 8810.300952380952,
+      "interpretation": "Descriptive only; no growth threshold affects readerpass or proves a leak."
+    },
+    "private_commit_bytes": {
+      "all_six_window_medians": [
+        128307200.0,
+        128536576.0,
+        128626688,
+        128757760.0,
+        129257472.0,
+        129748992.0
+      ],
+      "first_to_last_median_delta_bytes": 1441792.0,
+      "fixed_window_median_slope_bytes_per_second": 9050.209523809524,
+      "interpretation": "Descriptive only; no growth threshold affects readerpass or proves a leak."
+    }
+  },
+  "interpretation": [
+    "All18 tracked retired contexts were still observed alive at the final warm query; generation1 and generation2 collection counts stayed zero. This does not establish failed unloadability.",
+    "Managed allocated-memory estimates increased during the unchanged advancing tail. Allocation traffic, estimated heap, historical committed heap and OS private commit have different meanings.",
+    "The primary run requested no collection, finalizer wait or retired-entry pruning. Collection-assisted unloadability remains a separate diagnostic.",
+    "This workload differs from the rendered0.0.169 cohort in engine, clock, profiling, cadence and content interventions; differences are not a matched causal result.",
+    "Rendered memory growth, continuous peaks, observer overhead, representative graphics and the wider Alpha reliability gate remain open."
+  ],
+  "retained_artifact_identities": {
+    "owner": {
+      "bytes": 1540,
+      "sha256": "ea8db4d1e19dd6ee5d33c848ae887ba045f4e175049fcd95e65407f840b6d280"
+    },
+    "worker": {
+      "bytes": 1036261,
+      "sha256": "6212886134e50c4fc0c997e672a41ee90ca56a734000c644bf06ddad4df99592"
+    },
+    "independent_audit": {
+      "bytes": 92208,
+      "sha256": "ec68290ca196b8f0f7a912b63e37c428c3b13e8d251a125eb333a5998e064639"
+    },
+    "phase_log": {
+      "bytes": 33881,
+      "sha256": "f067b33b731e1c0188102883973887c8e7b29d8b2b8e0ed66cd60b96953aca27"
+    },
+    "warm_os": {
+      "bytes": 100037,
+      "sha256": "ba05809cfc941c1154be3a2cc9bb8b82da83a7ac03c650b60793e345774e69e2"
+    },
+    "cold_os": {
+      "bytes": 3127,
+      "sha256": "078878005beadd2a7f8a91509208974863433973cf31810cee675d7a9b44aa27"
+    }
+  },
+  "earlier_independent_reader_failures": [
+    {
+      "artifact": {
+        "bytes": 2256,
+        "sha256": "a30b6f30d5bd9c016c97992f0fcc461a1dc3fa5b64c2269104a94bb38c754d4c"
+      },
+      "reason": "Reader omitted the source-known closing runtime.save.status query."
+    },
+    {
+      "artifact": {
+        "bytes": 2276,
+        "sha256": "748563055e9959d4db5a192af6b74962a628353a75a780b053f769f306aaaa26"
+      },
+      "reason": "Reader incorrectly equated authored entity count with live membership, omitting three compiled template spawns."
+    }
+  ],
+  "evidence_policy": "Original native case and failed reader records retained. A corrected file-only audit does not rerun or alter the native workflow."
+}

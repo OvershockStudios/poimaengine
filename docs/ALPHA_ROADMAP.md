@@ -218,3 +218,10 @@ qualifies binary SDK/analyzer/generator publication, native component callbacks,
 full save continuation and relocated export on the development computer while
 the original checkout pathname is unavailable. This closes the engine-checkout dependency for that NativeAOT path; CoreCLR bridge packaging, clean-machine setup,
 physical interaction and the other Alpha delivery gates remain open.
+
+The [full-workload passive memory investigation](MANAGED_MEMORY.md#full-workload-investigation)
+adds CPU-only reload, warm/cold restore and unchanged advancing-tail observations
+with complete state preserved. Retired contexts remain alive without a full
+collection; their unloadability and the earlier rendered memory growth remain
+separate investigations. This does not close rendered performance, observer cost
+or the broader reliability gate.

@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.182**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.183**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.183 integrates [passive memory observations into the full Performance
+Yard](MANAGED_MEMORY.md#full-workload-investigation), using the sealed 0.0.182
+engine and original compiled gameplay. The CPU-only worker completes six body
+reloads, twelve warm restores and an unchanged advancing tail in 306.202 seconds.
+Independent file review checks 1,144 original RPC pairs, forty full v7 checkpoint
+references, fourteen complete pairs, six reload forecasts, 34 CLR snapshots and
+304 OS queries. Both game owners and their three-process Job close naturally.
+
+Eighteen retired contexts remain observed alive without any generation-1/2
+collection. The final managed-memory estimate is about 6.4 MB; the six fixed tail
+windows show a 1,441,792-byte first-to-last median private-commit increase.
+This does not identify a leak or explain the earlier rendered cohort. Two earlier
+file-audit attempts remain failed; their corrected successor checks the unchanged
+native case. Rendered performance, collection-assisted unloadability, matched
+observer cost and the wider Alpha reliability gate remain open.
+[Results](evidence/m2-managed-memory-workload.json).
 
 Version 0.0.182 adds [passive managed memory observations](MANAGED_MEMORY.md).
 The native `runtime.gameplay.memory` query joins the current module identity and
