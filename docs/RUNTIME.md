@@ -29,6 +29,25 @@ cmake --build --preset windows-runtime --target poima-runtime-test
 
 Both presets use two build workers. The physics baseline enables double-precision positions and Jolt's cross-platform determinism option, disables AVX/FMA and other optional CPU extensions, and uses a single-threaded job scheduler. Those choices simplify initial replay qualification; they are not a performance recommendation for every shipping game. The integration supplies `<type_traits>` when compiling the pinned Jolt release with LLVM-MinGW's newer libc++, through a compiler include. A narrow, hash-guarded Character constructor extension supplies explicit body IDs for atomic instance publication; original constructor behavior is retained. [Dependency notices](../THIRD_PARTY_NOTICES.md).
 
+### Physics errors in debug builds
+
+An exhausted physics update returns an error and restores the complete batch
+checkpoint. With Jolt assertions enabled, Poima logs the pinned library's final
+update-error summary and lets that return value reach the existing rollback
+path. The allowance exists only on the calling thread during the owned physics
+update and ends before error handling or restoration. It matches the exact
+expression, message and physics source-file suffix. Other Jolt assertions log
+their location and retain their breakpoint; assertions remain enabled.
+
+The policy test checks scope restoration, nesting, source-path matching and
+thread isolation by calling the callback directly. Real overlapping-body
+capacity fixtures separately exercise the returned error and complete saved-state
+rollback. Updating the pinned physics library requires reviewing its summary
+assertion again; an unrecognized assertion keeps the breakpoint.
+
+[Linux debug qualification](evidence/m2-linux-game-profile.json) retains the
+original silent trap and four real capacity errors that now reach full rollback.
+
 ## Character movement
 
 [Character input](CHARACTER_INPUT.md) controls players and camera-free actors.

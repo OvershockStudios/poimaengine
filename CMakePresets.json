@@ -52,6 +52,30 @@
       "cacheVariables": {
         "POIMA_ENABLE_SIMULATION": "ON"
       }
+    },
+    {
+      "name": "linux-game",
+      "displayName": "Linux headless game authoring and simulation",
+      "inherits": "runtime-headless",
+      "binaryDir": "${sourceDir}/build/linux-game",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "POIMA_ENABLE_NATIVE_GAMEPLAY": "ON",
+        "POIMA_ENABLE_MANAGED_GAMEPLAY": "ON",
+        "POIMA_ENABLE_NAVIGATION": "ON",
+        "POIMA_ENABLE_AUDIO": "ON",
+        "POIMA_ENABLE_GAME_UI": "ON",
+        "POIMA_DOTNET_HOST_HEADERS": "${sourceDir}/.cache/toolchains/dotnet-10.0.401/packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native",
+        "POIMA_BUILD_MODULE_LAB": "OFF",
+        "POIMA_USE_THIN_ARCHIVES": "OFF",
+        "POIMA_BUILD_RENDER_SMOKE": "OFF",
+        "POIMA_BUILD_EDITOR": "OFF",
+        "POIMA_BUILD_DESKTOP_BRIDGE": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -79,6 +103,11 @@
       "name": "windows-runtime",
       "configurePreset": "windows-runtime",
       "jobs": 2
+    },
+    {
+      "name": "linux-game",
+      "configurePreset": "linux-game",
+      "jobs": 2
     }
   ],
   "testPresets": [
@@ -99,6 +128,13 @@
     {
       "name": "runtime-headless",
       "configurePreset": "runtime-headless",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-game",
+      "configurePreset": "linux-game",
       "output": {
         "outputOnFailure": true
       }

@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.193
+
+- Preserve recoverable physics-capacity errors and batch rollback in assertion-enabled builds while keeping unexpected physics assertions diagnostic and fatal.
+
+## 0.0.192
+
+- Add a Linux headless game profile combining simulation, C# gameplay, navigation, logical game UI and audio without a window or graphics backend.
+
 ## 0.0.191
 
 - Skip batch-entry animation preparation when callers supply no animation, IK or root-motion commands; retain per-tick sampling and state recovery. [Matched measurements](docs/RUNTIME_ANIMATION_PREPARATION.md).

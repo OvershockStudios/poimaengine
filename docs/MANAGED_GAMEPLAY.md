@@ -24,7 +24,7 @@ cmake --build --preset runtime-headless
 ctest --preset runtime-headless
 ```
 
-For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The CMake presets leave managed gameplay and game UI off by default, and the authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
+For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The basic `headless`, `runtime-headless` and Windows presets leave managed gameplay and game UI off by default. The [Linux game profile](BUILD.md#headless-game-systems-on-linux) enables both with simulation, navigation and audio. The authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
 
 An [installed format-v2 authoring pack](AUTHORING_TOOLS.md#compile-and-reload-with-coreclr)
 provides the binary SDK, component analyzer and matching CoreCLR bridge without

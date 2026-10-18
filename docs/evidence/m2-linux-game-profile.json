@@ -1,0 +1,525 @@
+{
+  "format": "poima.evidence.linux-game-profile.v1",
+  "engine_version": "0.0.193",
+  "date": "2026-10-18",
+  "passed": true,
+  "scope": "Linux x64 CPU-only composed game profile, selected native contracts, fresh native project and retained compiled CoreCLR game continuation. Separate original failures remain failed.",
+  "environment": {
+    "host": "Kali Linux under WSL",
+    "cpu": "AMD Ryzen 7 8845HS",
+    "physical_ram_gib": 16,
+    "compiler": "GNU C++ 16",
+    "build_type": "Debug",
+    "c_and_cxx_debug_flags": "-O0 -g0",
+    "assertions_enabled": true,
+    "build_jobs": 2,
+    "native_job_workers": 2,
+    "dotnet_processor_count": 2,
+    "compile_nice": 10,
+    "dotnet_sdk": "10.0.401",
+    "coreclr": "10.0.12",
+    "steam_audio": "4.8.1",
+    "power_observation": {
+      "ac": 1,
+      "battery_percent": 100,
+      "scope": "Observed before the initial 0.0.192 build; not resampled during 0.0.193. No continuous power sampling."
+    }
+  },
+  "profile": {
+    "name": "linux-game",
+    "enabled": [
+      "simulation",
+      "native_gameplay",
+      "managed_gameplay",
+      "navigation",
+      "audio",
+      "game_ui"
+    ],
+    "disabled": [
+      "vulkan_probe",
+      "renderer",
+      "desktop",
+      "editor",
+      "module_lab",
+      "thin_archives"
+    ],
+    "default_build_type": "RelWithDebInfo",
+    "qualification_overrode_build_type": true
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 92799,
+      "sha256": "d7171d883c3817c20d8a3329b8656063038dcf82f26fc30fb77554a95c7999ee"
+    },
+    "CMakePresets.json": {
+      "bytes": 3671,
+      "sha256": "0751b923bf4911b0c201bac98f1a4bf544f1d696bcee23c068770487b950b9ac"
+    },
+    "src/runtime.cpp": {
+      "bytes": 149976,
+      "sha256": "e892af455d1559825b3154bef9d6bcadadc8c4941731316680755d4e4b8ac39a"
+    },
+    "src/runtime_assertions.hpp": {
+      "bytes": 2743,
+      "sha256": "77422ed77a6234b00678b93d7a0df0c1ce394dff932fd54e87e25fd93e02ad6b"
+    },
+    "tests/runtime_assertions.cpp": {
+      "bytes": 4467,
+      "sha256": "e72125e16d03b125feff6290803ae40b17b2d926ce774c30af85524642ab4191"
+    },
+    "tests/runtime_native.cpp": {
+      "bytes": 68676,
+      "sha256": "b7a36f4e63763142766f86f119dc72952f9eb10245cb740096ecd707ad1c849d"
+    }
+  },
+  "native_build": {
+    "passed": true,
+    "seconds": 808.1365743470087,
+    "configure_seconds": 22.190407832007622,
+    "build_seconds": 603.5836779919919,
+    "actions": 17,
+    "translation_units": [
+      "src/core.cpp",
+      "tests/runtime_assertions.cpp",
+      "src/runtime.cpp"
+    ],
+    "executable_count": 16,
+    "cli": {
+      "bytes": 35134264,
+      "sha256": "646ff1b0f4757432094079e23b4eea487cdceb776792a2a8d3153e0b105ec5fc"
+    },
+    "normal_static_core": {
+      "bytes": 142504242,
+      "sha256": "9cbfc5989b630c104c5f7b38970d923e09f522aa77fa3255662f63776228da32"
+    },
+    "natural_group_closures": 2,
+    "forced_cleanup": false,
+    "warnings": [
+      "CMake FetchContent_Populate deprecation in the existing navigation dependency setup."
+    ]
+  },
+  "physics_error_policy": {
+    "change": "During the owned physics Update only, the exact pinned Jolt update-error summary returns to existing error checking and complete batch rollback. Other assertions log bounded diagnostics and retain their breakpoint.",
+    "policy_test_scope": "Direct callback decisions, not an actual unexpected hardware breakpoint.",
+    "policy_cases": [
+      "default and scoped exact summary",
+      "wrong or null expression/message/file",
+      "Unix and Windows path separators",
+      "nested scope and exception unwinding",
+      "thread isolation"
+    ],
+    "real_capacity_error_diagnostics": 4,
+    "original_capacity_fixture_unchanged": true
+  },
+  "native_qa": {
+    "passed": true,
+    "seconds": 40.41823870901135,
+    "phases": 18,
+    "native_fixtures": [
+      "poima-runtime-assertions-test",
+      "poima-runtime-test",
+      "poima-runtime-animation-test",
+      "poima-runtime-animation-layers-test",
+      "poima-runtime-two-bone-ik-test",
+      "poima-runtime-root-motion-test",
+      "poima-runtime-animation-membership-test",
+      "poima-runtime-save-test",
+      "poima-runtime-components-test",
+      "poima-runtime-navigation-test",
+      "poima-runtime-ui-test",
+      "poima-ui-document-test",
+      "poima-ui-presenter-test",
+      "poima-ui-model-test",
+      "poima-runtime-jobs-test"
+    ],
+    "fixture_exit_codes": {
+      "poima-runtime-assertions-test": 0,
+      "poima-runtime-test": 0,
+      "poima-runtime-animation-test": 0,
+      "poima-runtime-animation-layers-test": 0,
+      "poima-runtime-two-bone-ik-test": 0,
+      "poima-runtime-root-motion-test": 0,
+      "poima-runtime-animation-membership-test": 0,
+      "poima-runtime-save-test": 0,
+      "poima-runtime-components-test": 0,
+      "poima-runtime-navigation-test": 0,
+      "poima-runtime-ui-test": 0,
+      "poima-ui-document-test": 0,
+      "poima-ui-presenter-test": 0,
+      "poima-ui-model-test": 0,
+      "poima-runtime-jobs-test": 0
+    },
+    "core_tests": 5,
+    "core_skips": 0,
+    "metadata_checks": 3,
+    "jobs_fixture_worker_variants": [
+      0,
+      1,
+      2,
+      4,
+      8
+    ],
+    "natural_empty_process_groups": 18,
+    "forced_cleanup": false,
+    "final_owned_children": 0
+  },
+  "fresh_native_project": {
+    "passed": true,
+    "seconds": 1.1428542020003079,
+    "rpc_count": 13,
+    "ticks": 120,
+    "native_exit_code": 0,
+    "authored_file_count": 3,
+    "authored_files_unchanged": true,
+    "stale_step_error_code": -32009,
+    "rejected_step_preserves_complete_entity_observation": true,
+    "exact_retry_does_not_advance_again": true,
+    "child_camera_follows_controller": true,
+    "scope": "Project creation, inspection and fixed-tick physics; no C# compilation or rendered/physical-input claim."
+  },
+  "composed_coreclr_workflow": {
+    "passed": true,
+    "owner_seconds": 79.36653181401198,
+    "worker_seconds": 74.97213339300652,
+    "rpc_count": 162,
+    "requested_ticks": 302,
+    "native_owners": [
+      {
+        "label": "warm",
+        "exit_code": 0,
+        "rpc_count": 98
+      },
+      {
+        "label": "cold",
+        "exit_code": 0,
+        "rpc_count": 32
+      },
+      {
+        "label": "relocated",
+        "exit_code": 0,
+        "rpc_count": 32
+      }
+    ],
+    "content": {
+      "authored_entities": 2394,
+      "live_entities": 2397,
+      "animation_rigs": 24,
+      "rig_nodes": 1464,
+      "lights": 64,
+      "cooked_input_files": 16,
+      "global_fields": 50,
+      "component_schemas": 4,
+      "payload_version": 7,
+      "payload_members": 14
+    },
+    "compiled_control_save_load_cycles": 1,
+    "compiled_control_save_generation": 1,
+    "compiled_control_load_replaces_runtime": true,
+    "terminal_save_load_tickets_retained": 2,
+    "checkpoint_references": 11,
+    "whole_file_equality_pairs": 5,
+    "complete_typed_and_lexical_continuation_forecasts": 2,
+    "state_exclusions": [],
+    "passive_reads": [
+      "runtime.gameplay.memory",
+      "world.navigation.path (same-point query)",
+      "runtime.audio.voices"
+    ],
+    "stage_rename_attempts": 1,
+    "stage_rename_errors": 0,
+    "staged_path_actually_absent_before_relocated_start": true,
+    "staged_directory_and_contents_restored": true,
+    "cooked_reopen_scope": "Only the owned staged world/assets directory was unavailable; original checkout and original inputs remained accessible. The relocated owner was supplied exact cooked content and precompiled IL, without raw models or C# source.",
+    "original_game_sdk": {
+      "bytes": 180224,
+      "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+    },
+    "unified_bridge_sdk": {
+      "bytes": 180224,
+      "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+    },
+    "sdk_scope": "Original 0.0.169 game IL with the qualified Linux 0.0.190 bridge; SDK images differ. This run verifies their selected real interoperability rather than inferring compatibility from ABI versions.",
+    "natural_group_closure": true,
+    "forced_cleanup": false,
+    "final_owned_children": 0
+  },
+  "checkpoint_identities": [
+    {
+      "label": "compiled-saved",
+      "owner": "warm",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2205113,
+        "sha256": "5dc5bf4569695b3f342c669f9b68ed5074377724f8895b71beb03a4557951717"
+      },
+      "gzip": {
+        "bytes": 402997,
+        "sha256": "80565aac7f0026d356cc980ef3a647f6ae4b9f790f51cffe8f120a094dd569b5"
+      }
+    },
+    {
+      "label": "compiled-restored",
+      "owner": "warm",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2205113,
+        "sha256": "5dc5bf4569695b3f342c669f9b68ed5074377724f8895b71beb03a4557951717"
+      },
+      "gzip": {
+        "bytes": 402997,
+        "sha256": "80565aac7f0026d356cc980ef3a647f6ae4b9f790f51cffe8f120a094dd569b5"
+      }
+    },
+    {
+      "label": "warm-saved",
+      "owner": "warm",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2204982,
+        "sha256": "5191e5c5b5a6b4f927ff728ae1af7ba93d76bba54b8defb84b4bd7ec447a1031"
+      },
+      "gzip": {
+        "bytes": 403009,
+        "sha256": "f81c7ede57ed80ee362a09744ecd4cf494428e439ed98df25685e996cce906c7"
+      }
+    },
+    {
+      "label": "warm-after-reads",
+      "owner": "warm",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2204982,
+        "sha256": "5191e5c5b5a6b4f927ff728ae1af7ba93d76bba54b8defb84b4bd7ec447a1031"
+      },
+      "gzip": {
+        "bytes": 403009,
+        "sha256": "f81c7ede57ed80ee362a09744ecd4cf494428e439ed98df25685e996cce906c7"
+      }
+    },
+    {
+      "label": "warm-diverged",
+      "owner": "warm",
+      "tick": 121,
+      "decoded": {
+        "bytes": 2204837,
+        "sha256": "845555339375631a022c66d511c1e07ff7921fe5749c3cdd45dff4c6da1a6c9f"
+      },
+      "gzip": {
+        "bytes": 403820,
+        "sha256": "296fdfbfa23015dae32192594a6d621010f5f3693a04ec77a66461c877ef3f67"
+      }
+    },
+    {
+      "label": "warm-restored",
+      "owner": "warm",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2204982,
+        "sha256": "5191e5c5b5a6b4f927ff728ae1af7ba93d76bba54b8defb84b4bd7ec447a1031"
+      },
+      "gzip": {
+        "bytes": 403009,
+        "sha256": "f81c7ede57ed80ee362a09744ecd4cf494428e439ed98df25685e996cce906c7"
+      }
+    },
+    {
+      "label": "warm-continued",
+      "owner": "warm",
+      "tick": 180,
+      "decoded": {
+        "bytes": 2205475,
+        "sha256": "99199badb3cd33736c922f6717cef60774f7f1be3fe8b03bec3c65dc2dd079cf"
+      },
+      "gzip": {
+        "bytes": 403185,
+        "sha256": "95f282a2096c570a141dcea308576bbbdb8002ddcb91d7b0421cb84a999c3cc4"
+      }
+    },
+    {
+      "label": "cold-restored",
+      "owner": "cold",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2204982,
+        "sha256": "5191e5c5b5a6b4f927ff728ae1af7ba93d76bba54b8defb84b4bd7ec447a1031"
+      },
+      "gzip": {
+        "bytes": 403009,
+        "sha256": "f81c7ede57ed80ee362a09744ecd4cf494428e439ed98df25685e996cce906c7"
+      }
+    },
+    {
+      "label": "cold-continued",
+      "owner": "cold",
+      "tick": 180,
+      "decoded": {
+        "bytes": 2205473,
+        "sha256": "3754919c025ed285701747f7eb41c4a1737a1807d414a51e33713ce957027667"
+      },
+      "gzip": {
+        "bytes": 403182,
+        "sha256": "0b4f58bf423563d55f6c5a963cff2caa04499f49dd4d4559530f8543e293955d"
+      }
+    },
+    {
+      "label": "relocated-restored",
+      "owner": "relocated",
+      "tick": 120,
+      "decoded": {
+        "bytes": 2204982,
+        "sha256": "5191e5c5b5a6b4f927ff728ae1af7ba93d76bba54b8defb84b4bd7ec447a1031"
+      },
+      "gzip": {
+        "bytes": 403009,
+        "sha256": "f81c7ede57ed80ee362a09744ecd4cf494428e439ed98df25685e996cce906c7"
+      }
+    },
+    {
+      "label": "relocated-continued",
+      "owner": "relocated",
+      "tick": 180,
+      "decoded": {
+        "bytes": 2205475,
+        "sha256": "cf24e2bd5b63fbbbbfcdb5398c4ea5376d0cff2bbfcc1fed1991e5705f5c5595"
+      },
+      "gzip": {
+        "bytes": 403185,
+        "sha256": "1b3eda5debeca543fd5adfcaa6a0cf71af73dfd8f3ad28ef2a9cf3d4f32ad85f"
+      }
+    }
+  ],
+  "prior_outcomes": [
+    {
+      "name": "initial 0.0.192 build",
+      "passed": false,
+      "seconds": 1761.0035299269948,
+      "cause": "Declared phase deadline before final two links; owner terminated its process group.",
+      "forced_cleanup": true,
+      "compiler_error_established": false
+    },
+    {
+      "name": "separate 0.0.192 incremental build recovery",
+      "passed": true,
+      "seconds": 241.11167035299877,
+      "scope": "Two links, unchanged completed artifacts; does not regrade the initial failed build."
+    },
+    {
+      "name": "initial 0.0.192 native QA",
+      "passed": false,
+      "cause": "First runtime fixture SIGTRAP from Jolt final update-error assertion during intentional capacity exhaustion.",
+      "fixture_exit_code": -5,
+      "forced_cleanup": false
+    },
+    {
+      "name": "GDB diagnostic",
+      "scope": "Captured exact assertion/stack; GDB deliberately killed its paused inferior after inspection. Not a passing physics fixture."
+    },
+    {
+      "name": "0.0.193 composed workflow 1",
+      "passed": false,
+      "seconds": 65.11345789401093,
+      "cause": "Verifier reused relocated content directory as native log directory; partial-startup cleanup also lacked a client.",
+      "forced_cleanup": false,
+      "staged_directory_restored_by_outer_owner": true
+    },
+    {
+      "name": "0.0.193 composed workflow 2",
+      "passed": false,
+      "seconds": 62.42325183299545,
+      "cause": "OS EACCES during owned stage rename after both native owners exited. Underlying filesystem cause is unproven.",
+      "forced_cleanup": false,
+      "staged_directory_restored": true
+    },
+    {
+      "name": "QA evidence reader",
+      "scope": "An initial comparison incorrectly equated optional raw error.data omission with the SDK data:null projection. The corrected reader preserves and explicitly checks both original shapes; no native records changed."
+    }
+  ],
+  "retained_report_identities": {
+    "initial_192_build": {
+      "bytes": 1088055,
+      "sha256": "4ba8c864184b4e7e88a676b6ba2cdcbe3d3ad5b4f8268e81655490c089dec806"
+    },
+    "recovered_192_build": {
+      "bytes": 1103897,
+      "sha256": "42dca6cbfc889580d3f1a5f4ac1e772fd1dbec215421c5b310a47336fca1eef5"
+    },
+    "failed_192_qa": {
+      "bytes": 30201,
+      "sha256": "1b43fee6e3fcac296d4b0a90f8263e137b4a323e768066cae4720f943397d865"
+    },
+    "debugger_diagnostic": {
+      "bytes": 1937,
+      "sha256": "7917389fae5cb0fe16bda1fd476228e32fc20a971a0816c3d37724e27341fdd6"
+    },
+    "native_193": {
+      "bytes": 1112309,
+      "sha256": "ce01b11821dd490a56119ab481cf9a281425483f640487fcfa8c1a08ab2760cb"
+    },
+    "qa_193": {
+      "bytes": 58992,
+      "sha256": "41242001ccd1b671054699a2b42d9606b38228aa6f9af3e5604abadb4b1f57d7"
+    },
+    "failed_workflow_1": {
+      "bytes": 24412,
+      "sha256": "2dd85999f0226be2996cf3b86bb6e6d392680da89aa0a38b163a5e5e7da646db"
+    },
+    "failed_workflow_2": {
+      "bytes": 24526,
+      "sha256": "60c46236265217e307fa64aa43337dae8ac7955ce6250bb47838ff5bad2b12bd"
+    },
+    "successful_workflow_3": {
+      "bytes": 23801,
+      "sha256": "1a4184880698d9353d14fa9ec65378ba967b6664e4bcf49953fe6f8c8b9fa46e"
+    },
+    "successful_workflow_worker": {
+      "bytes": 214398,
+      "sha256": "ea11c737bba3e91ad38594fb2a718911c33197e9e71b6e68eda4cb96ec4bc6df"
+    }
+  },
+  "bounds": {
+    "native_build_seconds": 1500,
+    "native_build_cleanup_reserve_seconds": 120,
+    "native_cache_bytes": 4294967296,
+    "native_retention_bytes": 268435456,
+    "qa_seconds": 390,
+    "qa_retention_bytes": 134217728,
+    "workflow_outer_seconds": 120,
+    "workflow_worker_seconds": 100,
+    "workflow_functional_seconds": 85,
+    "workflow_rpc_cap": 512,
+    "workflow_retention_bytes": 134217728,
+    "workflow_stage_rename_retry_seconds": 2,
+    "workflow_stage_rename_max_attempts": 40,
+    "storage_scope": "Observed selected owned outputs, not OS quotas or a drive-wide census."
+  },
+  "qualification_limits": [
+    "Selected native fixtures, not the complete CTest preset.",
+    "Debug CPU checks are not optimized performance or rendered FPS.",
+    "No GPU, desktop presentation, physical input, audio-device listening or clean-machine installation qualification.",
+    "No fresh agent workflow, new C# compilation, Native AOT game execution or whole-checkout source isolation in this cohort.",
+    "One laptop; no Alpha gate or whole-engine completion claim.",
+    "A single successful staged rename in workflow 3 does not establish the cause of the earlier EACCES."
+  ],
+  "retained_file_reviews": {
+    "scope": "Project-agent checks of retained records and selected source identities; no external third-party or clean-machine qualification.",
+    "identities": {
+      "native_build": {
+        "bytes": 31735,
+        "sha256": "efdeb51722974d552ab6be95c8b279a2bc5b966fb53a8e0ab9a8db70afd3ef83"
+      },
+      "native_qa": {
+        "bytes": 41498,
+        "sha256": "b7242b16d2d289815956f3ce1355bc632af97f6015634fd93606ce4f21fb0d85"
+      },
+      "complete_workflow": {
+        "bytes": 87943,
+        "sha256": "fa74b258c8a0b894d8b3d81cc73ce6dd5dfcea4e19184cfab870abc8f8319bfe"
+      },
+      "compiled_control_tickets": {
+        "bytes": 2062,
+        "sha256": "8e152e55e525905bc621530dfcd5b888e4b9c209c081c9b679f946be4b2b2bc1"
+      }
+    }
+  }
+}

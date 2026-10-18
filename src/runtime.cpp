@@ -7,6 +7,7 @@
 #include "runtime_body_ids.hpp"
 #include "runtime_entity_ids.hpp"
 #include "runtime_hit_regions.hpp"
+#include "runtime_assertions.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -53,7 +54,11 @@ void trace(const char* format, ...) {
     va_list args; va_start(args, format); std::vfprintf(stderr, format, args); va_end(args); std::fputc('\n', stderr);
 }
 struct Library {
-    Library() { JPH::RegisterDefaultAllocator(); JPH::Trace = trace; JPH::Factory::sInstance = new JPH::Factory; JPH::RegisterTypes(); }
+    Library() {
+        JPH::RegisterDefaultAllocator(); JPH::Trace = trace;
+        JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = runtime_assertions::assertion_failed;)
+        JPH::Factory::sInstance = new JPH::Factory; JPH::RegisterTypes();
+    }
     ~Library() { JPH::UnregisterTypes(); delete JPH::Factory::sInstance; JPH::Factory::sInstance = nullptr; }
 };
 struct BroadLayers final : JPH::BroadPhaseLayerInterface {
@@ -1545,6 +1550,7 @@ struct Runtime::Impl {
                 }
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
+                    JPH_IF_ENABLE_ASSERTS(runtime_assertions::PhysicsUpdateScope assertion_scope;)
                     return physics.Update(1.0f/60.0f,1,&allocator,&jobs);
                 }();
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");

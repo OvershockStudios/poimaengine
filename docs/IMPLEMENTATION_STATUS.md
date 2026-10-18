@@ -1,8 +1,42 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.191**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.193**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The new [Linux game profile](BUILD.md#headless-game-systems-on-linux) combines
+simulation, CoreCLR/native gameplay support, navigation, logical UI and audio
+without graphics or an editor. Its assertion-enabled Debug `-O0 -g0` build
+passes fifteen native fixtures, five authoring-core tests, three metadata checks
+and a fresh-project physics test. The latter retains thirteen original RPCs,
+checks stale-step rejection and exact retries, advances 120 ticks and preserves
+the three authored project files. These are selected CPU checks rather than the
+complete CTest preset or optimized performance measurements.
+
+The first simulation fixture exposed a silent Jolt debug breakpoint during
+deliberate contact-capacity exhaustion. Version 0.0.193 allows only the exact,
+thread-scoped update-error summary to reach the existing returned-error and
+complete batch-rollback path. Four real capacity failures now return through
+that path; unrelated assertions retain their breakpoint and diagnostic output.
+The separate policy fixture checks nesting, unwinding, path matching and
+thread isolation without executing a hardware breakpoint. The original failed
+fixture and initial build-timeout records remain unchanged.
+[Physics error policy](RUNTIME.md#physics-errors-in-debug-builds).
+
+A separate full Performance Yard run uses 2,394 authored entities, 2,397 live
+entities and twenty-four animated rigs with the original compiled C# game.
+Its three Linux native owners complete 162 RPCs and 302 requested ticks,
+including compiled-control Save/Load, cold continuation and relocated cooked
+reopening. Eleven complete checkpoint references supply five whole-file equality
+pairs and two complete typed-and-lexical continuation forecasts. All three
+owners exit successfully, the staged source directory is restored, and no
+forced cleanup occurs. The first two workflow attempts remain failed: a verifier
+log-directory collision, followed by an OS access-denied rename. The final run
+uses separate log/content namespaces and a bounded rename retry; its actual
+rename succeeds on the first call. Only the owned staged content was made
+unavailable; the original checkout remained accessible. These retained-IL CPU
+checks do not qualify a fresh agent workflow, graphics or the whole Alpha gate.
+[Results, bounds and original failures](evidence/m2-linux-game-profile.json).
 
 Version 0.0.191 skips redundant [batch-entry animation preparation](RUNTIME_ANIMATION_PREPARATION.md)
 when all three caller animation, IK and root-motion command lists are empty.

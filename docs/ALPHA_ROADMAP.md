@@ -93,6 +93,12 @@ native CLI authoring/simulation. Each needs a fresh-project regression and
 source-independent cooked-content reopen. Linux desktop rendering, browser and
 console deployment require later platform qualification.
 
+The [Linux game-profile cohort](evidence/m2-linux-game-profile.json) separately
+qualifies a fresh native project's physics and the full retained Performance
+Yard CoreCLR game's save/continuation/cooked reopen. The fresh-project physics
+check and retained-IL game are separate scopes; the complete Alpha gate remains
+open.
+
 Use a fixed, published small-game workload on the development laptop
 (Ryzen 7 8845HS, RTX 4070 Laptop 8 GB, 16 GB system RAM). Record laptop power
 mode, resolution, settings, asset/entity/light counts and cache state. Initial

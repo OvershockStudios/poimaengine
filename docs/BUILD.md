@@ -33,6 +33,45 @@ This route requires no display, graphics driver, .NET SDK, optional middleware o
 
 The dependency-free headless checks do not qualify simulation-enabled builds, Windows graphics drivers, either editor, or binary distribution. Optional GPU/GUI suites require a suitable machine and are run separately. Hosted CI is not currently configured in this public snapshot.
 
+### Headless game systems on Linux
+
+Use `linux-game` when a game needs physics, compiled C# gameplay, navigation,
+logical game UI and audio together. It adds those systems to `runtime-headless`
+without a window or graphics backend. It is separate from the dependency-free
+`headless` profile and uses a separate build directory.
+
+```sh
+python3 scripts/bootstrap_tools.py --only dotnet
+python3 scripts/bootstrap_tools.py --only audio
+cmake --preset linux-game
+cmake --build --preset linux-game
+ctest --preset linux-game
+./build/linux-game/poima capabilities
+```
+
+The profile uses the pinned Linux .NET SDK's host headers. Set
+`-DPOIMA_DOTNET_HOST_HEADERS=/path/to/native` at configuration if the SDK is
+installed elsewhere. Gameplay loading separately needs the chosen `libhostfxr.so`
+and complete managed bridge/game assemblies; enabling the build option does not
+load a game. See [managed gameplay](MANAGED_GAMEPLAY.md). Steam Audio and the
+pinned physics, navigation and UI dependencies are required. The first configure
+can fetch the source dependencies; subsequent offline configuration needs their
+verified caches. Ordinary CLI authoring and simulation need neither a display
+nor a graphics driver. Audio device playback and UI rendering require their
+separate platform integrations; logical state and offline audio processing do
+not prove presented or audible output.
+
+The normal profile inherits `RelWithDebInfo` and two build workers. A development
+qualification can explicitly select Debug and reduced debug information; report
+those flags with its results rather than using it as optimized performance
+evidence. Building selected targets and running focused checks also does not
+stand in for the complete CTest preset.
+
+The [0.0.193 qualification](evidence/m2-linux-game-profile.json) records the
+assertion-enabled build, fifteen native fixtures, a fresh-project physics check
+and the full retained CoreCLR game's warm/cold/relocated save continuation.
+Its original failed attempts and exact scope remain part of that record.
+
 ## Incremental version builds
 
 Compiled version and platform strings live in `src/core.cpp`. Other native
