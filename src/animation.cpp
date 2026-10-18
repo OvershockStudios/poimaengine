@@ -269,6 +269,63 @@ std::shared_ptr<const MeshAsset> deform_mesh(const MeshAsset& mesh,std::span<con
     }
     return result;
 }
+ModelBoundsSample sample_model_bounds(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop) {
+    // Validation admits the original hierarchy and primitive/skin bindings;
+    // this immutable sampler does not allocate deformed geometry.
+    const CompiledAnimation animation(model);
+    std::vector<std::vector<std::size_t>> children(model.nodes.size());
+    for(std::size_t i=0;i<model.nodes.size();++i)
+        if(model.nodes[i].parent>=0)children[static_cast<std::size_t>(model.nodes[i].parent)].push_back(i);
+    std::vector<bool> selected(model.nodes.size());
+    std::vector<std::size_t> pending(model.roots.begin(),model.roots.end());
+    while(!pending.empty()) {
+        const auto i=pending.back();pending.pop_back();selected[i]=true;
+        pending.insert(pending.end(),children[i].begin(),children[i].end());
+    }
+    ModelBoundsSample result;
+    // Sum the complete selected workload before evaluating/deforming even the
+    // first primitive. Subtraction guards keep both sums overflow-safe.
+    for(std::size_t i=0;i<model.nodes.size();++i)if(selected[i]) {
+        const auto& node=model.nodes[i];
+        check(node.primitives.size()<=max_model_bounds_primitive_instances-result.primitive_instances,
+            "Model bounds primitive-instance budget exceeded.");
+        result.primitive_instances+=node.primitives.size();
+        for(auto index:node.primitives) {
+            const auto count=model.primitives[index]->vertices.size();
+            check(count<=max_model_bounds_vertex_instances-result.vertex_instances,
+                "Model bounds vertex-instance budget exceeded.");
+            result.vertex_instances+=count;
+        }
+    }
+    const auto pose=animation.sample(clip,time,loop);result.effective_time=pose.time;
+    // Visit original node/primitive/vertex order, exactly as paged reference
+    // sampling. In particular, retain its float deformation before applying
+    // the same double-precision mesh-to-model-world arithmetic.
+    for(std::size_t i=0;i<model.nodes.size();++i)if(selected[i]) {
+        const auto& node=model.nodes[i];
+        std::vector<Matrix4> palette;
+        if(node.skin>=0)palette=skin_palette(model,pose,static_cast<std::uint32_t>(i));
+        for(auto index:node.primitives) {
+            const auto& mesh=*model.primitives[index];
+            const auto deformed=node.skin>=0 ? deform_mesh(mesh,palette) : std::shared_ptr<const MeshAsset>{};
+            const auto& vertices=deformed ? deformed->vertices : mesh.vertices;
+            for(const auto& vertex:vertices) {
+                std::array<double,3> world{};
+                for(std::size_t row=0;row<3;++row) {
+                    world[row]=pose.world[i][12+row];
+                    for(std::size_t k=0;k<3;++k)world[row]+=pose.world[i][k*4+row]*vertex.position[k];
+                    check(std::isfinite(world[row]),"Model bounds vertex is nonfinite.");
+                }
+                if(!result.bounds)result.bounds=Bounds{world,world};
+                else for(std::size_t axis=0;axis<3;++axis) {
+                    result.bounds->minimum[axis]=std::min(result.bounds->minimum[axis],world[axis]);
+                    result.bounds->maximum[axis]=std::max(result.bounds->maximum[axis],world[axis]);
+                }
+            }
+        }
+    }
+    return result;
+}
 SkinBounds skin_bounds(const MeshAsset& mesh) {
     check(!mesh.vertices.empty() && mesh.influences.size()==mesh.vertices.size(),"Skin bounds require vertex influences.");
     SkinBounds result;

@@ -231,12 +231,19 @@ class OwnedGame:
                 info['model_sha256'],guard_sources))
             profiles[name]=dict(source=str(path),info=info,reference=references[0],motion=motions[0],nodes=nodes,policy=policy)
         baseline=self.rpc('asset.import',base_import)
-        original_points=[]
-        for node in base_nodes:
-            for primitive in node['primitives']:
-                original_points.extend(v['world_position'] for v in self.page('asset.animation.sample',dict(asset=baseline['asset'],section='vertices',node=node['index'],primitive=primitive,time=0)))
-        if not original_points:raise ValueError('Original body has no observable vertices.')
-        bounds=dict(min=[min(p[k] for p in original_points) for k in range(3)],max=[max(p[k] for p in original_points) for k in range(3)])
+        native_bounds=None
+        if getattr(self.args,'native_bounds',False):
+            native_bounds=self.rpc('asset.animation.bounds',dict(asset=baseline['asset'],time=0))
+            if native_bounds['empty'] or native_bounds['bounds'] is None:
+                raise ValueError('Original body has no observable vertices.')
+            bounds=native_bounds['bounds']
+        else:
+            original_points=[]
+            for node in base_nodes:
+                for primitive in node['primitives']:
+                    original_points.extend(v['world_position'] for v in self.page('asset.animation.sample',dict(asset=baseline['asset'],section='vertices',node=node['index'],primitive=primitive,time=0)))
+            if not original_points:raise ValueError('Original body has no observable vertices.')
+            bounds=dict(min=[min(p[k] for p in original_points) for k in range(3)],max=[max(p[k] for p in original_points) for k in range(3)])
         capsule=dict(radius=CAPSULE_RADIUS,height=bounds['max'][1]-bounds['min'][1])
         if not 2*CAPSULE_RADIUS < capsule['height'] <= 4:raise ValueError('Unexpected original standing height.')
         attachment=dict(position=[0,-bounds['min'][1],0],rotation=[0,1,0,0],scale=[1,1,1])
@@ -256,6 +263,7 @@ class OwnedGame:
         self.authored=dict(revision=3,asset=asset,baseline=baseline['asset'],rig=uid(RIG),nodes=[node_id(uid(RIG),n['index']) for n in base_nodes],
             imported=imported,navigation=navigation,source_profiles=profiles,base_nodes=base_nodes,base_info=base_info,
             base_bounds=bounds,attachment=attachment,capsule=capsule,clips=by_name,source_files={name:sha(path) for name,path in source_files.items()})
+        if native_bounds is not None:self.authored['native_bounds']=native_bounds
         return self.authored
 
     def start(self):
@@ -362,6 +370,7 @@ def main():
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--source-profile', choices=('kenney-fbx', 'kaykit-knight-original-glb-v1'), default='kenney-fbx')
     parser.add_argument('--guard-sources', action='store_true', help='Require inspected normalized model fingerprints during source imports.')
+    parser.add_argument('--native-bounds', action='store_true', help='Measure rest geometry through asset.animation.bounds (requires native 0.0.178 or later).')
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=-1)
     args = parser.parse_args()

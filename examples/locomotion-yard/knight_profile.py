@@ -70,6 +70,14 @@ def author_knight(game,source_directory,launcher):
     asset=imported['asset'];need(asset==fingerprint,'Imported full-library fingerprint differs from inspected source')
     cooked=game.page('asset.inspect',dict(asset=asset,section='animations'))
     need(exact(cooked,takes) and len(cooked)==76,'Every original take must survive cooking unchanged')
+    native_bounds=None
+    if getattr(getattr(game,'args',None),'native_bounds',False):
+        native_bounds=game.rpc('asset.animation.bounds',dict(asset=asset,time=0))
+        need(not native_bounds['empty'] and native_bounds['bounds'] is not None,'Original library has no selected geometry')
+        measured=native_bounds['bounds']
+        need(abs(measured['min'][1]-REST_MIN_Y)<=2e-5 and
+             abs((measured['max'][1]-measured['min'][1])-REST_HEIGHT)<=2e-5,
+             'Measured whole-library standing bounds differ from the declared source profile')
     # SOURCE raw FK/skin arithmetic fixes these declarations before execution.
     # The independent consumer also checks native original standing bounds;
     # don't silently recalculate policy from an unexpected imported result.
@@ -87,6 +95,7 @@ def author_knight(game,source_directory,launcher):
     # 'Run' is only the existing sample's configuration dictionary key; its
     # whole original record remains name='Running_A', index48.
     game.authored=dict(revision=3,asset=asset,baseline=asset,rig=launcher.uid(launcher.RIG),nodes=[launcher.node_id(launcher.uid(launcher.RIG),n['index'])for n in nodes],imported=imported,navigation=navigation,source_profiles={'kind':'kaykit-knight-original-glb-v1','summary':info,'all_takes':takes},base_nodes=nodes,base_info=info,base_bounds={'min_y':REST_MIN_Y,'standing_height':REST_HEIGHT,'scope':'Original full-mesh rest bounds; includes helmet, weapons and cape.'},attachment=ATTACHMENT,capsule=capsule,clips={'Idle':takes[IDLE_INDEX],'Run':takes[RUN_INDEX]},source_files={name:v['sha256']for name,v in pins.items()},profile={'name':'kaykit-knight-original-glb-v1','source_inputs':pins,'selected_original_names':[IDLE_NAME,RUN_NAME],'retained_takes':76,'retained_channels':8712,'root_motion':'disabled; capsule owns travel','nominal_run_speed_mps':launcher.NOMINAL_RUN_SPEED,'calibrated_stride':False},receipts={'component_schema':schema,'authored':authored_receipt,'provenance':provenance,'final':final_receipt})
+    if native_bounds is not None:game.authored['native_bounds']=native_bounds
     # Fence caller originals again after all source-read operations; a failure
     # remains the actual outcome, never an automatic import/transaction retry.
     need(original(source,3659532,SOURCE_SHA)==pins['Knight.glb']and original(notice,891,LICENSE_SHA)==pins['LICENSE.txt'],'Caller originals changed')

@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-10-16 for **0.0.177**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-17 for **0.0.178**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.178 adds [posed model bounds](ANIMATION_ASSETS.md#measure-a-posed-model):
+one read-only query measures the selected scene's stored vertices at a rest or
+clip pose, including rigid accessories and repeated bindings. It uses the
+existing CPU reference deformation, with complete work preflight capped at
+10,000 primitive instances and one million vertex instances. The result is one
+pose's model-space extrema; it is neither a conservative animation bound nor
+a fitted collision shape. This evolving API leaves the frozen authoring/session
+contracts, native gameplay ABI and cooked model format unchanged.
+
+Both public [Locomotion Yard launchers](../examples/locomotion-yard/README.md#optional-native-dimensions)
+accept explicit `--native-bounds`, defaulting off. Kenney uses one measurement
+instead of all vertex pages; Knight checks its declared dimensions and keeps
+its collision/attachment policy. Native Windows qualification passes eighteen
+CPU stages. The new protocol retains 709 original request/reply pairs, including
+whole vertex-page comparisons for both unchanged character models. Guarded
+public Knight and Kenney verification passes with 587 and 591 pairs, respectively;
+each retains five complete checkpoints and two whole immediate restores using
+the unchanged 0.0.75 Native AOT gameplay. Later continuation checks selected
+observations, not complete cross-owner equality after callbacks.
+
+The separate Linux headless cohort passes all eighteen CTests; its protocol
+retains 385 native request/reply pairs, complete read/rejection preservation
+checks and source-absent cold reopening. Both platform owners close naturally.
+These are CPU query and bounded gameplay checks, not new rendering, contact/IK,
+physical input, export or representative-performance qualification. The original
+failed Linux 0.0.176 aggregate and its separately passing focused follow-up keep
+their original verdicts. [Evidence and reproduction](evidence/m2-posed-model-bounds.json).
 
 Version 0.0.177 adds a public [headless Locomotion Yard workflow](../examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window):
 author a project, adopt compiled gameplay, verify moving-fade checkpoints and

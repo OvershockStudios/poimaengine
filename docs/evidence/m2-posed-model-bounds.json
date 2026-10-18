@@ -1,0 +1,399 @@
+{
+  "format": "poima.posed-model-bounds-evidence",
+  "version": 1,
+  "source_checkpoint": "0.0.178",
+  "date": "2026-10-17",
+  "summary": "Native posed-model vertex-extrema query and optional character-workflow dimensions.",
+  "scope": {
+    "world_schema_revision": 106,
+    "coordinates": "model",
+    "one_sampled_pose": true,
+    "authoring_core_contract_changed": false,
+    "runtime_game_session_contract_changed": false,
+    "native_gameplay_abi_changed": false,
+    "cooked_model_format_changed": false,
+    "rendered_frame_coverage": false,
+    "collision_fit_claimed": false,
+    "performance_scaling_claimed": false,
+    "alpha_gate_closed": false
+  },
+  "implementation": {
+    "method": "asset.animation.bounds",
+    "request": {
+      "required": [
+        "asset",
+        "time"
+      ],
+      "optional": [
+        "clip",
+        "loop"
+      ],
+      "asset": "64 lowercase hexadecimal characters",
+      "clip": [
+        0,
+        255
+      ],
+      "time_seconds": [
+        0,
+        1000000000
+      ],
+      "loop_default": false,
+      "unknown_fields_accepted": false
+    },
+    "result_fields": [
+      "asset",
+      "clip",
+      "requested_time",
+      "sample_time",
+      "space",
+      "empty",
+      "bounds",
+      "primitive_instances",
+      "vertex_instances"
+    ],
+    "limits": {
+      "primitive_instances": 10000,
+      "vertex_instances": 1000000,
+      "preflight_before_deformation": true
+    },
+    "semantics": [
+      "Selected scene roots and descendants contribute geometry; full immutable model validation still applies.",
+      "Count every stored cooked vertex per node/primitive binding, including shared bindings, unused stored vertices and rigid accessories.",
+      "Use the existing CPU reference float skin deformation followed by double model-world point transforms.",
+      "No clip selects rest pose and preserves requested sample time; chosen takes use existing clamp/wrap/zero-duration policy.",
+      "Empty selected vertex set returns empty:true and bounds:null.",
+      "No authored world, history, cooked-store or source changes are permitted by reads/rejections."
+    ],
+    "errors": {
+      "malformed_request_or_invalid_selector": -32602,
+      "package_pose_or_work_budget_failure": -32050
+    },
+    "sample_opt_in": {
+      "flag": "--native-bounds",
+      "default": false,
+      "kenney": "One native rest-bounds query replaces full paged geometry measurement; same height/attachment policy.",
+      "knight": "Whole-model minimum-Y and height checked against declared source profile within2e-5; collision/attachment policy stays explicit.",
+      "raw_response": "authored.native_bounds",
+      "automatic_fallback": false,
+      "automatic_retry": false
+    }
+  },
+  "windows": {
+    "passed": true,
+    "operating_system": "Windows",
+    "architecture": "x86_64",
+    "native_engine_version": "0.0.178",
+    "cpu_stages": 18,
+    "owned_jobs": 18,
+    "all_jobs_natural_zero_empty": true,
+    "seconds": 49.20202650000283,
+    "bounds_native_groups": 6,
+    "protocol_rpc_pairs": 709,
+    "protocol_checks": 48,
+    "complete_state_snapshots": 114,
+    "full_page_extrema_comparisons": 8,
+    "protocol_owners": 2,
+    "protocol_seconds": 16.991283700001077,
+    "protocol_outcomes": {
+      "successes": 19,
+      "parameter_errors": 24,
+      "model_errors": 5
+    },
+    "original_report": {
+      "bytes": 108466,
+      "sha256": "d30ba12449305fcc347c47c8d89012b5db7387e5063bcdca0e5498e593cc3099"
+    },
+    "protocol_report": {
+      "bytes": 8248355,
+      "sha256": "05f76155279fb2a64bee9a9466695e45e767ec7b9476f8af98db53a08e49f130"
+    }
+  },
+  "linux_headless": {
+    "passed": true,
+    "engine_version": "0.0.178",
+    "ctests_passed": 18,
+    "ctests_total": 18,
+    "test_names": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "authoring_response_compatibility",
+      "authoring_contract_artifacts",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "python_response_contract",
+      "animation_native",
+      "model_bounds_native",
+      "model_source_fingerprint_native",
+      "model_bounds_contract",
+      "world_session_native",
+      "world_schema_native",
+      "mcp_native",
+      "mcp_contract",
+      "animation_contract",
+      "cli_contract",
+      "world_contract"
+    ],
+    "source_files": 347,
+    "sealed_artifacts": 9,
+    "forced_cleanup": false,
+    "seconds": 462.59797015899676,
+    "protocol_rpc_pairs": 385,
+    "protocol_checks": 45,
+    "complete_state_snapshots": 102,
+    "protocol_owners": 2,
+    "protocol_seconds": 5.753857183997752,
+    "full_page_extrema_comparisons": 5,
+    "original_temporary_retained": true,
+    "temporary_copy_byte_identical": true,
+    "original_report": {
+      "bytes": 64254,
+      "sha256": "ece494099cd5a2dc322868c107ea306cce05fea87ee93bb9cbf52f36a4a1ecae"
+    },
+    "protocol_report": {
+      "bytes": 1141820,
+      "sha256": "bb2117654831d2650042f41268a4ece0925078f329c7cf1fef39e0561bed2ea5"
+    }
+  },
+  "public_character_consumers": [
+    {
+      "profile": "kaykit-knight-original-glb-v1",
+      "stage": "verify",
+      "passed": true,
+      "guard_sources": true,
+      "native_bounds": true,
+      "gameplay_backend": "native_aot",
+      "gameplay_artifact_engine_version": "0.0.75",
+      "rpc_pairs": 587,
+      "rpc_pairs_by_client": {
+        "author": 15,
+        "warm": 416,
+        "cold": 156
+      },
+      "native_cli_commands": 2,
+      "owners": 3,
+      "all_native_owners_natural_zero": true,
+      "complete_v7_checkpoints": 5,
+      "whole_byte_and_typed_immediate_restores": 2,
+      "all_typed_gameplay_globals": 45,
+      "canonical_component_schemas": 2,
+      "deliveries": 2,
+      "admitted_source_and_project_paths_unavailable": true,
+      "caller_originals_preserved": true,
+      "measurement": {
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "bounds": {
+          "max": [
+            1.386649619336994,
+            2.4665521722183605,
+            1.9977467870164234
+          ],
+          "min": [
+            -1.3026425207422647,
+            -2.6835075914277695e-05,
+            -0.5794336886691509
+          ]
+        },
+        "clip": null,
+        "empty": false,
+        "primitive_instances": 15,
+        "requested_time": 0.0,
+        "sample_time": 0.0,
+        "space": "model",
+        "vertex_instances": 7962
+      },
+      "seconds": 4.42355569999927,
+      "original_report": {
+        "bytes": 3405273,
+        "sha256": "215ae5605f2694f39e8f94b7829ccd5207c151392ed7a22eda2b61d442f27b99"
+      }
+    },
+    {
+      "profile": "kenney-fbx",
+      "stage": "verify",
+      "passed": true,
+      "guard_sources": true,
+      "native_bounds": true,
+      "gameplay_backend": "native_aot",
+      "gameplay_artifact_engine_version": "0.0.75",
+      "rpc_pairs": 591,
+      "rpc_pairs_by_client": {
+        "author": 19,
+        "warm": 416,
+        "cold": 156
+      },
+      "native_cli_commands": 2,
+      "owners": 3,
+      "all_native_owners_natural_zero": true,
+      "complete_v7_checkpoints": 5,
+      "whole_byte_and_typed_immediate_restores": 2,
+      "all_typed_gameplay_globals": 45,
+      "canonical_component_schemas": 2,
+      "deliveries": 2,
+      "admitted_source_and_project_paths_unavailable": true,
+      "caller_originals_preserved": true,
+      "measurement": {
+        "asset": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8",
+        "bounds": {
+          "max": [
+            1.8095338717103004,
+            3.7653707001238383,
+            0.5142347309331975
+          ],
+          "min": [
+            -1.8090512603521347,
+            0.000683205381826199,
+            -0.5339091863890227
+          ]
+        },
+        "clip": null,
+        "empty": false,
+        "primitive_instances": 1,
+        "requested_time": 0.0,
+        "sample_time": 0.0,
+        "space": "model",
+        "vertex_instances": 1029
+      },
+      "seconds": 1.9972546999997576,
+      "original_report": {
+        "bytes": 3584299,
+        "sha256": "895f70e52d174fd4ccb1072e6ce8cd340c7c8ede33a36a849192ae2619f15461"
+      }
+    }
+  ],
+  "compatibility": {
+    "authoring_core_changed": false,
+    "runtime_game_session_changed": false,
+    "native_gameplay_abi_changed": false,
+    "cooked_model_format_changed": false,
+    "selected_windows_contract_stages_pass": true,
+    "selected_linux_contract_ctests_pass": true
+  },
+  "limitations": [
+    "CPU reference extrema for one sampled pose; no conservative/swept animation bound, anatomical measurement or automatic collider fitting.",
+    "No new renderer, player frame, GPU timing, hardware performance or physical-input qualification.",
+    "Public character checks use retained Native AOT gameplay and selected continuation observations; distinguish complete immediate save restore from later selected observation equality.",
+    "Method is evolving outside the two frozen request/response contracts."
+  ],
+  "reproduction": {
+    "native_unit": "model_bounds_native",
+    "service_protocol": "model_bounds_contract",
+    "protocol_command": "python3 tests/model_bounds_contract.py --binary <native-poima> --output <fresh-output>",
+    "optional_original_sources": [
+      "--knight-source <original-Knight.glb>",
+      "--kenney-source <original-characterMedium.fbx>"
+    ],
+    "windows_ownership": "Native Windows Python requires an actual caller-owned Job.",
+    "protocol_limits": {
+      "whole_seconds": 180,
+      "cleanup_reserve_seconds": 10,
+      "rpcs": 1000,
+      "output_bytes": 134217728,
+      "output_files": 4096
+    },
+    "public_sample": "examples/locomotion-yard/headless.py --native-bounds --stage verify"
+  },
+  "native_producer": {
+    "passed": true,
+    "source_files": 339,
+    "sealed_artifacts": 9,
+    "cache_generation": 39,
+    "forced_cleanup": false,
+    "seconds": 681.2299505569972,
+    "original_report": {
+      "bytes": 57151,
+      "sha256": "0975fa058ab08298d481d550f51d14298f7df751768efe555bc2ab9e6a7f9bbd"
+    },
+    "cli": {
+      "bytes": 26275840,
+      "sha256": "8f3e8ba078f411d2bd9faf14dc9d9542a8d52b4312545b4b8e24a62fa5591bf0"
+    }
+  },
+  "review": {
+    "independent_file_only": true,
+    "native": {
+      "bytes": 142609,
+      "sha256": "cf9571217200aebf924858d792d2b6dd2088991ffe30f2435045afbd2d9b440e"
+    },
+    "windows": {
+      "bytes": 134773,
+      "sha256": "3466ba5d117180d1825fc01283c7147f2942819275dfbf8ba563cff0e2b14476"
+    },
+    "linux": {
+      "bytes": 110306,
+      "sha256": "b3e587ebe85abcc3141e1c0f015a3a392effefdbd80ac91e50da834fb9469cee"
+    }
+  },
+  "retained_failures": [
+    {
+      "scope": "Initial standalone helper compile",
+      "outcome": "failed",
+      "reason": "The owner omitted the existing visibility translation unit, causing an unresolved transform_bounds symbol. The unit did not run; the corrected independent owner compiled and passed all six groups.",
+      "original_report": {
+        "bytes": 12540,
+        "sha256": "55380b6fa53aa6c75fbc12b7834c7b94852007e412e0cd52593ddea5fe0b8241"
+      }
+    },
+    {
+      "scope": "First Windows file-only reader",
+      "outcome": "failed",
+      "reason": "The reader incorrectly expected the previous authored payload to have the current revision. A separate reader verifies both complete original payloads at their actual revisions. No engine or workflow rerun.",
+      "original_report": {
+        "bytes": 94546,
+        "sha256": "b39fd4ef6711137367478bba9c900b4598014154076d592b7c6bc78ce65773c8"
+      }
+    },
+    {
+      "scope": "First Linux file-only reader",
+      "outcome": "failed",
+      "reason": "The reader incorrectly required the unchanged repository ribbon source to move with generated temporary fixtures. A separate reader verifies the exact pinned ribbon and every moved generated source. No engine or workflow rerun.",
+      "original_report": {
+        "bytes": 108676,
+        "sha256": "ecb3cc9f141cf0c1f6d0aaf1dc1e101bb3dc332caf6f2c0682a7d57503f8c3ab"
+      }
+    }
+  ],
+  "preservation": {
+    "original_linux_176_aggregate": "failed:35/36",
+    "separate_linux_176_focused": "passed:1/1",
+    "earlier_failures_regraded": false,
+    "prior_independent_seals_and_original_source_identities_retained": true
+  },
+  "source_pins": {
+    "include/poima/animation.hpp": {
+      "bytes": 3342,
+      "sha256": "fa23e91828f3f9cd076fb6eb351c387ef7b5af424678f989da08b25eb2548b0d"
+    },
+    "src/animation.cpp": {
+      "bytes": 26277,
+      "sha256": "1c12e304155fe61dab84831bfd2d26bbff81062d48ad8a391c5c3aa6b05f5ab5"
+    },
+    "src/world.cpp": {
+      "bytes": 333511,
+      "sha256": "c735096fd085320a8b9501c675684f80b1007920da2dae2277fbe6a8c8aa83a4"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 118539,
+      "sha256": "694bc1a68df9e505fa4b6b15aec5624ca0827db853513dff96544021faa04882"
+    },
+    "tests/model_bounds_native.cpp": {
+      "bytes": 12041,
+      "sha256": "774be4dcd05078bc60170c3f4f37c2a6ee0780952c8894ac16777bf72bcefaf7"
+    },
+    "tests/model_bounds_contract.py": {
+      "bytes": 28807,
+      "sha256": "1a4fa1ced3a4ee876ceb363ecda1de29887bad793d305729a1bc44d5b68ee6fc"
+    },
+    "examples/locomotion-yard/run.py": {
+      "bytes": 25800,
+      "sha256": "08ec1ac1a0875beed3af42be3996c7e3aa641ea218088f441732a0c32823319c"
+    },
+    "examples/locomotion-yard/knight_profile.py": {
+      "bytes": 8057,
+      "sha256": "070fa3d3394dd3f03b756f973c3a511041b2fa421c4e59d30c5ffed19dd4138c"
+    },
+    "examples/locomotion-yard/headless.py": {
+      "bytes": 47044,
+      "sha256": "a77d6a9784f149e7d3c8ab5af3ebc1eadbe6dc23f898bca06dabcec2e7ad2f8a"
+    }
+  }
+}

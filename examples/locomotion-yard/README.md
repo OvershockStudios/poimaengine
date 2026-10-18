@@ -99,6 +99,21 @@ source or inspect and select new content deliberately. See the
 [guard contract](../../docs/ANIMATION_ASSETS.md#bind-imports-to-inspected-original-models).
 The flag changes neither gameplay backend nor player mode.
 
+### Optional native dimensions
+
+Add `--native-bounds` to either launcher with **schema revision 106** (0.0.178
+or later). It defaults off. The Kenney profile replaces complete vertex-page
+measurement with one native rest-pose bounds query, using the same height and
+visual-offset arithmetic. Knight retains its declared capsule and attachment
+policy, checks the whole model's minimum and height within `2e-5`, and retains
+the complete result. When enabled, `authored.native_bounds` records the native
+response; there is no fallback or automatic retry on failure.
+
+The measurement includes rigid equipment and every stored vertex in the selected
+scene. It does not infer anatomy or fit a collision shape. See
+[posed model bounds](../../docs/ANIMATION_ASSETS.md#measure-a-posed-model) for
+coordinates, clip/time rules, work limits and errors.
+
 The helper's selected `snapshot()` observation follows the authored profile's
 node IDs: 57 for Knight and 61 for the retained Kenney fixture. It removes
 session fields and is not a complete native-checkpoint oracle.

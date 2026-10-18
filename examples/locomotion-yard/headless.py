@@ -180,7 +180,8 @@ class Workflow:
         self.descriptor = args.descriptor
         self.record = dict(format='poima.locomotion-yard.headless.v1', passed=False,
                            stage=args.stage, source_profile=args.source_profile,
-                           guard_sources=args.guard_sources, calls=[], owners=[], commands=[],
+                           guard_sources=args.guard_sources, native_bounds=args.native_bounds,
+                           calls=[], owners=[], commands=[],
                            checkpoints=[], immediate_restore_pairs=[], restores=[], observations=[],
                            errors=[], cleanup_errors=[], unknown_outcome=False,
                            scope='Native AOT headless authoring and manual-tick gameplay. Complete immediate '
@@ -824,6 +825,7 @@ def main():
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--source-profile', choices=('kenney-fbx', 'kaykit-knight-original-glb-v1'), default='kenney-fbx')
     parser.add_argument('--guard-sources', action='store_true')
+    parser.add_argument('--native-bounds', action='store_true', help='Use native rest-geometry measurement (requires 0.0.178 or later).')
     parser.add_argument('--stage', choices=('author', 'verify', 'export'), default='verify')
     parser.add_argument('--runtime', type=Path, help='Matching installed runtime; required for export.')
     parser.add_argument('--timeout', type=float, default=600, help='Whole-run seconds, including a 10-second cleanup reserve (60..1800).')

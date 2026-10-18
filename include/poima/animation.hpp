@@ -38,4 +38,16 @@ std::vector<Matrix4> skin_palette(const ModelAsset& model,const ModelPose& pose,
 // CPU reference for agent inspection/offline preview and future GPU comparison.
 // This does not select CPU skinning as the production character renderer.
 std::shared_ptr<const MeshAsset> deform_mesh(const MeshAsset& mesh,std::span<const Matrix4> palette);
+inline constexpr std::size_t max_model_bounds_primitive_instances=10000,max_model_bounds_vertex_instances=1000000;
+struct ModelBoundsSample {
+    double effective_time=0;
+    std::optional<Bounds> bounds;
+    std::size_t primitive_instances=0,vertex_instances=0;
+};
+// Tight CPU-reference model-world bounds at one pose, including every stored
+// vertex of each primitive binding below the selected scene roots. Shared
+// primitives count once per binding. Preflight rejects aggregate instance work
+// above the limits before any deformation allocation. No selected vertices
+// yields null bounds; these are not conservative animation/collision bounds.
+ModelBoundsSample sample_model_bounds(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop);
 }

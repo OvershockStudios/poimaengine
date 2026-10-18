@@ -1824,6 +1824,31 @@ public:
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
     Json animation_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.animation.bounds") {
+            fields(params,{"asset","clip","time","loop"},{"asset","time"});
+            require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
+            require(params.at("time").is_number(),"Sample time must be a number.");
+            const double time=params.at("time");
+            require(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be within 0..1e9 seconds.");
+            require(!params.contains("loop") || params.at("loop").is_boolean(),"Loop must be boolean.");
+            std::optional<std::uint64_t> selected;
+            if(params.contains("clip")) {
+                selected=revision(params.at("clip"));
+                require(*selected<max_model_clips,"Clip index is out of range.");
+            }
+            try {
+                const auto loaded=read_model_asset(asset_directory(),params.at("asset"));
+                if(selected)require(*selected<loaded.model->animations.size(),"Clip index is out of range.");
+                const auto clip=selected ? std::optional<std::uint32_t>(static_cast<std::uint32_t>(*selected)) : std::nullopt;
+                const auto sampled=sample_model_bounds(*loaded.model,clip,time,params.value("loop",false));
+                Json bounds=nullptr;
+                if(sampled.bounds)bounds={{"min",sampled.bounds->minimum},{"max",sampled.bounds->maximum}};
+                return {{"asset",loaded.id},{"clip",clip ? Json(*clip) : Json(nullptr)},
+                    {"requested_time",time},{"sample_time",sampled.effective_time},{"space","model"},
+                    {"empty",!sampled.bounds},{"bounds",std::move(bounds)},
+                    {"primitive_instances",sampled.primitive_instances},{"vertex_instances",sampled.vertex_instances}};
+            }catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+        }
         if(method=="asset.animation.channel")fields(params,{"asset","clip","channel","offset","limit"},{"asset","clip","channel"});
         else if(method=="asset.animation.skin")fields(params,{"asset","skin","offset","limit"},{"asset","skin"});
         else if(method=="asset.animation.sample")fields(params,{"asset","clip","time","loop","section","node","primitive","offset","limit"},{"asset","time"});

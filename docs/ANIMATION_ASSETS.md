@@ -36,6 +36,93 @@ Node sampling is the default: each item supplies local position/rotation/scale, 
 
 Invalid selectors/parameters return `-32602`; invalid packages or unevaluable poses return `-32050`. The sampler rejects a cubic quaternion that evaluates to zero, nonpositive evaluated scale, singular blended skin transforms or out-of-range coordinates. These are reported failures, not silently substituted poses.
 
+## Measure a posed model
+
+With native 0.0.178 / world schema revision 106, `asset.animation.bounds`
+measures a cooked model at one CPU-reference pose without opening a player or
+changing the authored world. Use it to inspect imported dimensions and placement
+before choosing gameplay geometry. This evolving method is outside the frozen
+authoring-core and runtime game-session contracts.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"asset.animation.bounds","params":{"asset":"<cooked model hash>","time":0}}
+{"jsonrpc":"2.0","id":2,"method":"asset.animation.bounds","params":{"asset":"<cooked model hash>","clip":0,"time":0.5,"loop":true}}
+```
+
+Replace the asset placeholder with the actual 64-character lowercase model
+hash returned by import. The required parameters are `asset` and `time`.
+Optional `clip` is a zero-based integer in `0..255` which must identify an
+existing take; `loop` is Boolean and defaults to false. No node, primitive,
+section, offset or pagination selector is accepted. Time must be finite and
+within `0..1e9` seconds.
+
+The result has exactly these members:
+
+| Member | Meaning |
+| --- | --- |
+| `asset` | The verified cooked model identity. |
+| `clip` | The chosen take index, or null for the authored rest pose. |
+| `requested_time` | The supplied time in seconds. |
+| `sample_time` | The effective time after the existing clip clamp/wrap policy. |
+| `space` | `"model"`: imported model-world coordinates, before an authored/runtime instance transform. |
+| `empty` | True when the selected scene has no stored vertices. |
+| `bounds` | `{ "min": [x,y,z], "max": [x,y,z] }`, or null when empty. |
+| `primitive_instances` | Primitive bindings beneath selected scene roots. Shared primitives count for each binding. |
+| `vertex_instances` | Stored cooked vertices summed across those bindings. |
+
+Omitting `clip` samples the rest hierarchy and retains the requested time as
+`sample_time`; it does not select the first take. Selected clips clamp to their
+duration or wrap when `loop:true`; a zero-duration clip stays at time zero.
+
+Only selected scene roots and their descendants contribute geometry. Rigid
+accessories, weighted meshes and repeated mesh bindings all contribute. Every
+stored cooked vertex counts, including vertices absent from the triangle index
+list. Full model/animation validation still applies before evaluation; geometry
+outside the selected scene is not an exemption from model validity.
+
+Bounds are the extrema of the existing reference vertex sampler's model-world
+positions. Weighted geometry uses its existing float deformation before the
+same double-precision model-world transform. The result is tight for these
+reference points at this pose, without the margins used by conservative render
+bounds. It is not a swept-animation bound, a GPU-rounding guarantee or a
+collision shape.
+
+The full selected workload is counted before any mesh deformation allocation:
+at most 10,000 primitive instances and 1,000,000 vertex instances. A shared mesh
+can exceed these limits through repeated bindings even when its unique stored
+geometry is small. Normal model/package validation and storage limits also
+apply; the work caps are not a process-memory guarantee.
+
+Malformed parameters, unknown fields and invalid clip selectors return
+`-32602`. Missing/corrupt packages, exceeded instance budgets and unevaluable
+poses return `-32050`. Preserve the actual error; the operation does not repair
+content, publish a replacement package or retry automatically. Reads and
+rejections leave authored state and cooked assets unchanged.
+
+### Verify posed bounds
+
+With Python 3.11+ and a built native Linux headless executable:
+
+```sh
+python3 tests/model_bounds_contract.py --binary build/headless/poima
+```
+
+The last JSON line identifies the retained evidence path. Native POSIX output defaults to Python's temporary directory, respecting `TMPDIR`;
+`--output` must name a fresh directory. The fixture retains original RPC streams,
+analytic geometry, complete authored-state/store observations and source-absent
+cold reopening. It compares full vertex pages with the new result and checks
+exact and over-budget shared instances. Optional `--knight-source` and
+`--kenney-source` accept the original files pinned by
+[Locomotion Yard](../examples/locomotion-yard/README.md#prerequisites-and-original-content).
+
+Bounds are 180 seconds, 1,000 requests and 128 MiB/4,096 retained files; ten
+seconds of the total are reserved for cleanup. Windows-native Python requires
+an actual caller-owned process-tree Job. Use the
+[supervisor pattern](CHARACTER_LIBRARY.md#run-the-independent-checks) with these
+arguments and a 210-second outer limit. CTest registers `model_bounds_native`
+and `model_bounds_contract`. The native unit checks six analytic groups; the
+protocol test verifies the real service. Neither checks a displayed frame.
+
 ## Bind imports to inspected original models
 
 With world schema revision **105**, `asset.import` accepts optional
@@ -144,7 +231,7 @@ The command samples curves on the CPU and defaults to GPU compute deformation (`
 - Mesh-local palettes use `inverse(mesh_world) * joint_world * inverse_bind`. Rendering applies `mesh_world` afterward, cancelling the skinned mesh node transform as required by glTF. CPU deformation blends matrices, transforms positions and inverse-transpose normals, then orthogonalizes tangents and preserves reflection handedness. It fails for singular blends.
 - Flat-normal expansion and MikkTSpace reindexing preserve weights, including distinct influences at otherwise identical vertices. Static vertices remain 48 bytes; skin influences are a separate array.
 
-These rules follow the [Khronos glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#skins) and its [animation interpolation appendix](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#appendix-c-interpolation). The reference sampler preserves source curves for import diagnostics. Compressed sampling and animation blending are not implemented.
+These rules follow the [Khronos glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#skins) and its [animation interpolation appendix](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#appendix-c-interpolation). The reference sampler preserves source curves for import diagnostics. These asset queries evaluate one take; crossfades, inertial transitions and masked layers use the separate [runtime animation](RUNTIME_ANIMATION.md) interface. Compressed curve storage is not implemented.
 
 Limits: 64 skins, 256 joints per skin, 4096 total joint references, 256 clips, 16,384 total channels, one million total keys and key times in 0–3600 seconds. Inverse-bind accessors may contain extra elements but are limited to 4096 matrices; only the referenced joint prefix is retained. Node/geometry/package limits from [Assets](ASSETS.md) also apply. Preview limits are 10,000 drawable instances, one million deformed vertices and three million deformed indices in aggregate. They are bounded bootstrap limits, not shipping content targets.
 

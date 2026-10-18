@@ -170,7 +170,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 105}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 106}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -615,6 +615,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});
     methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
     methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});
+    methods["asset.animation.bounds"]=object_schema({{"asset",asset_id},
+        {"clip",{{"type","integer"},{"minimum",0},{"maximum",max_model_clips-1}}},
+        {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},
+        {"loop",{{"type","boolean"},{"default",false}}}}, {"asset","time"});
+    result["limits"]["model_bounds_primitive_instances"]=max_model_bounds_primitive_instances;
+    result["limits"]["model_bounds_vertex_instances"]=max_model_bounds_vertex_instances;
+    result["invariants"].push_back("asset.animation.bounds is a read-only tight CPU-reference vertex-extrema query in model-world space at one sampled pose. Only selected scene roots and descendants contribute; every stored vertex counts per node/primitive binding, including rigid accessories and shared instances. Full work preflight permits at most 10000 primitive instances and 1000000 vertex instances before deformation. Geometryless selected scenes return empty:true and bounds:null. These are not conservative animation/collision bounds or anatomical measurements. Legacy animation inspection, authored state and cooked packages are unchanged.");
     auto preview=methods["world.capture"];
     preview["properties"]["skinning"]={{"enum",{"gpu","cpu"}},{"default","gpu"}};
     preview["properties"]["asset"]=asset_id;preview["properties"]["clip"]=model_index;

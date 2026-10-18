@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.178
+
+- Add read-only posed model bounds with explicit selected-scene and instance-work limits, avoiding vertex-page transfer for whole-model measurements. [Contract and checks](docs/ANIMATION_ASSETS.md#measure-a-posed-model).
+- Add opt-in native dimension measurement to both Locomotion Yard launchers while retaining explicit controller and attachment policies. [Workflow](examples/locomotion-yard/README.md#optional-native-dimensions).
+
 ## 0.0.177
 
 - Add public headless author, verify and export stages for Locomotion Yard, with project-owned Native AOT gameplay, complete immediate checkpoint restoration, fresh-owner continuation and a relocated bundled game service. [Workflow](examples/locomotion-yard/README.md#author-playtest-and-export-without-a-window).
