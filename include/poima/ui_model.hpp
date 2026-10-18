@@ -4,9 +4,28 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 namespace poima::ui {
+enum class ValidationKind { unknown,null_value,boolean,integer,number,string,array,object };
+enum class ValidationReason { invalid_value,type_mismatch,missing_field,unknown_field,out_of_range,invalid_hierarchy };
+const char* validation_kind_name(ValidationKind) noexcept;
+const char* validation_reason_name(ValidationReason) noexcept;
+struct ValidationDiagnostic {
+    std::optional<std::string> element_id;
+    // RFC 6901 pointer relative to the UI ID map. Empty means unknown context.
+    // Only valid IDs, known schema fields and fixed array indices are included.
+    std::string path;
+    ValidationReason reason=ValidationReason::invalid_value;
+    ValidationKind expected=ValidationKind::unknown,actual=ValidationKind::unknown;
+};
+class ValidationError final:public std::runtime_error {
+    ValidationDiagnostic diagnostic_;
+public:
+    ValidationError(const std::string& message,ValidationDiagnostic);
+    const ValidationDiagnostic& diagnostic() const noexcept {return diagnostic_;}
+};
 enum class Kind { panel,label,button };
 enum class LengthUnit { dp,percent };
 struct Length { double value=0;LengthUnit unit=LengthUnit::dp; };

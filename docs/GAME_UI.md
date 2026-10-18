@@ -147,6 +147,52 @@ and style participate in the trusted content hash, preventing a saved snapshot
 from being restored against a different embedded definition. Loading an older
 save still uses that save's frozen world, even when current authoring has changed.
 
+## Authoring validation diagnostics
+
+Rejected UI definitions retain their existing `-32602` code and human-readable
+message. When validation can identify an element or property, `error.data` adds
+a bounded diagnostic:
+
+```json
+{
+  "type": "ui_validation",
+  "format": "poima.ui-validation.v1",
+  "version": 1,
+  "element_id": "10000000000000000000000000000002",
+  "path": "/10000000000000000000000000000002/layout/gap",
+  "reason": "type_mismatch",
+  "expected": "number",
+  "actual": "object"
+}
+```
+
+Here `gap` received a Length object, but requires a scalar number in dp. Correct
+the property using focused `ui.element.set` discovery and resubmit the complete
+transaction at the still-current revision. A definitive validation rejection
+does not commit earlier operations in the batch or reserve its request ID. An
+unknown transport outcome still needs receipt/revision inspection before retry.
+
+`path` is an RFC 6901 pointer relative to the UI ID map, not to a transaction
+operation. Final-document validation can involve several operations; no
+operation index is inferred. Paths contain only valid IDs, known schema keys
+and fixed array indices, and are limited to 256 bytes. `element_id` is null and
+the path may be empty when no safe location is known. Rejected keys, text and
+values are not copied into this diagnostic.
+
+Reasons are `invalid_value`, `type_mismatch`, `missing_field`, `unknown_field`,
+`out_of_range` and `invalid_hierarchy`. Expected/actual kinds are `unknown`,
+`null`, `boolean`, `integer`, `number`, `string`, `array` and `object`. Unknown
+context is explicit; syntax/root errors and other validation paths can retain
+their ordinary errors without this data. Accepted definitions, layout bounds,
+transaction atomicity and checkpoint formats are unchanged.
+
+The native C++ API exposes `ui::ValidationError` and its
+`ValidationDiagnostic`. Locator strings are constructed on the failure path;
+successful validation does not build diagnostic paths. The focused
+[native and protocol tests](../tests/ui_authoring_contract.py) cover typed
+locations, hierarchy failures, complete rejected-state preservation and repair.
+[Qualification](evidence/m2-authoring-diagnostics.json).
+
 ## Compiled control callbacks
 
 Gameplay services ABI 7 is 176 bytes; the call structure remains 80 bytes. Engines, bridges and compiled modules must use matching rebuilt artifacts. Operation 6 invokes `Control`, separately from `Tick`. The default `Game<TState>.Control` throws when a game has no handler; it does not silently accept an action.

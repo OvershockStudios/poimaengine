@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.186
+
+- Publish imported audio through exclusive staging, preserving occupied staging files and rejecting linked asset stores. Document [publication and recovery](docs/AUDIO.md#publication-and-recovery).
+- Add bounded element and property diagnostics to invalid UI authoring requests, preserving strict validation, existing error messages and atomic transactions. [Diagnostic format](docs/GAME_UI.md#authoring-validation-diagnostics).
+
 ## 0.0.185
 
 - Recover managed load capacity when retired contexts are already dead, without forcing collection or pruning passive observations. Verify the real 1,024-context boundary against the retained bridge on Windows and Linux, then preserve complete game state with the corrected bridge in the native host. [Contract and checks](docs/MANAGED_MEMORY.md#load-capacity-recovery).

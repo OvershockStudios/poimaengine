@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import struct
 import subprocess
@@ -12,9 +13,16 @@ import unittest
 import uuid
 
 parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--evidence',type=Path)
+parser.add_argument('--publication-only',action='store_true',help='Run only asset publication admission/recovery groups')
+parser.add_argument('--scratch-root',type=Path,help='New fixture directory with an existing parent; never reuse output')
 parser.add_argument('--sound-game',type=Path);parser.add_argument('--hostfxr',type=Path);parser.add_argument('--bridge',type=Path);parser.add_argument('--game',type=Path)
 args=parser.parse_args();ROOT=Path(__file__).resolve().parents[1];BINARY=str(args.binary.resolve())
-SCRATCH=ROOT/'build/audio-contract'/uuid.uuid4().hex;SCRATCH.mkdir(parents=True)
+if args.scratch_root:
+    SCRATCH=args.scratch_root.absolute()
+    if not SCRATCH.parent.is_dir():parser.error('--scratch-root parent must already exist')
+    SCRATCH.mkdir()
+else:
+    SCRATCH=ROOT/'build/audio-contract'/uuid.uuid4().hex;SCRATCH.mkdir(parents=True)
 CAPS=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
 EVIDENCE=[]
 def uid(n):return f'{n:032x}'
@@ -75,6 +83,145 @@ class AudioContract(unittest.TestCase):
         if not asset.exists():asset=next(self.directory.rglob(self.asset+'.paudio'))
         original=asset.read_bytes();self.assertEqual(hashlib.sha256(original).hexdigest(),self.asset)
         asset.write_bytes(original[:-1]+bytes([original[-1]^1]));r=self.requests([rpc('asset.audio.inspect',{'asset':self.asset})]);self.error(r[0],-32050)
+
+    def publication_fixture(self):
+        info=self.import_clip([-.5,0,.5]);self.result(self.requests([self.room(False)])[0])
+        package=Path(str(self.world)+'.assets')/(self.asset+'.paudio')
+        original=package.read_bytes();self.assertEqual(hashlib.sha256(original).hexdigest(),self.asset)
+        return info,package,original
+    def publication_attempt(self,expected=None):
+        # A single native owner observes both sides, including its history. Exact
+        # persisted bytes additionally cover receipts and the prior generation.
+        paths=[Path(str(self.world)+suffix) for suffix in ('','.previous','.pending','.previous.pending')]
+        before={str(p):p.read_bytes() if p.exists() else None for p in paths}
+        responses=self.requests([rpc('world.inspect',{}),rpc('world.history',{}),
+            rpc('asset.audio.import',{'source':native(self.directory/'original.wav')}),
+            rpc('world.inspect',{}),rpc('world.history',{})])
+        self.assertEqual(self.result(responses[0]),self.result(responses[3]))
+        self.assertEqual(self.result(responses[1]),self.result(responses[4]))
+        self.assertEqual(before,{str(p):p.read_bytes() if p.exists() else None for p in paths})
+        if expected is None:self.error(responses[2],-32050)
+        else:self.assertEqual(self.result(responses[2]),expected)
+    def publication_recovered(self,info,package,original):
+        self.publication_attempt(info);self.assertEqual(package.read_bytes(),original)
+        self.assertFalse(package.with_suffix('.pending').exists())
+        self.assertEqual(self.result(self.requests([rpc('asset.audio.inspect',{'asset':self.asset})])[0]),info)
+    def require_native_links(self):
+        # WSL-created symlinks do not establish Windows reparse behavior.
+        if args.windows_interop:self.skipTest('Link qualification requires Python native to the engine OS')
+    def make_symlink(self,target,path,directory=False):
+        try:path.symlink_to(target,target_is_directory=directory)
+        except (OSError,NotImplementedError) as error:self.skipTest('OS symlink creation unavailable: '+str(error))
+
+    def test_audio_publication_occupied_pending_and_retry(self):
+        info,package,original=self.publication_fixture();package.unlink();pending=package.with_suffix('.pending')
+        sentinel=b'Existing caller-owned staging bytes';pending.write_bytes(sentinel)
+        self.publication_attempt();self.assertEqual(pending.read_bytes(),sentinel);self.assertFalse(package.exists())
+        pending.unlink();self.publication_recovered(info,package,original)
+        # A valid final package is idempotent even with an unrelated pending file.
+        pending.write_bytes(sentinel);self.publication_attempt(info)
+        self.assertEqual(pending.read_bytes(),sentinel);self.assertEqual(package.read_bytes(),original)
+        pending.unlink()
+
+    def test_audio_publication_preserves_nonempty_undo_history(self):
+        info,package,original=self.publication_fixture();package.unlink();pending=package.with_suffix('.pending')
+        pending.write_bytes(b'History-test staging blocker')
+        replies=self.requests([transaction(1,[create(300,'History witness')]),rpc('world.inspect',{}),rpc('world.history',{}),
+            rpc('asset.audio.import',{'source':native(self.directory/'original.wav')}),rpc('world.inspect',{}),
+            rpc('world.history',{}),rpc('world.undo',{'request_id':uuid.uuid4().hex,'base_revision':2}),
+            rpc('entity.get',{'id':uid(300)})])
+        self.result(replies[0]);self.assertEqual(self.result(replies[2])['undo_count'],1)
+        self.error(replies[3],-32050);self.assertEqual(self.result(replies[1]),self.result(replies[4]))
+        self.assertEqual(self.result(replies[2]),self.result(replies[5]));self.result(replies[6]);self.error(replies[7],-32004)
+        self.assertEqual(pending.read_bytes(),b'History-test staging blocker');self.assertFalse(package.exists())
+        pending.unlink();self.publication_recovered(info,package,original)
+
+    def test_audio_publication_directory_pending_and_retry(self):
+        info,package,original=self.publication_fixture();package.unlink();pending=package.with_suffix('.pending')
+        pending.mkdir();sentinel=pending/'keep.txt';sentinel.write_bytes(b'Owned directory member')
+        self.publication_attempt();self.assertEqual(sentinel.read_bytes(),b'Owned directory member');self.assertFalse(package.exists())
+        sentinel.unlink();pending.rmdir();self.publication_recovered(info,package,original)
+
+    def test_audio_publication_hardlink_pending_and_retry(self):
+        self.require_native_links();info,package,original=self.publication_fixture();package.unlink();pending=package.with_suffix('.pending')
+        victim=self.directory/'hardlink-victim';victim.write_bytes(b'Hardlink victim bytes')
+        try:os.link(victim,pending)
+        except (OSError,NotImplementedError) as error:self.skipTest('OS hardlink creation unavailable: '+str(error))
+        self.publication_attempt();self.assertEqual(victim.read_bytes(),b'Hardlink victim bytes')
+        self.assertTrue(pending.samefile(victim));self.assertFalse(package.exists())
+        pending.unlink();self.publication_recovered(info,package,original)
+
+    def test_audio_publication_symlink_pending_and_retry(self):
+        self.require_native_links();info,package,original=self.publication_fixture();package.unlink();pending=package.with_suffix('.pending')
+        for dangling in (False,True):
+            with self.subTest(dangling=dangling):
+                victim=self.directory/('missing-victim' if dangling else 'symlink-victim')
+                if not dangling:victim.write_bytes(b'Symlink victim bytes')
+                self.make_symlink(victim,pending);target=os.readlink(pending)
+                self.publication_attempt();self.assertTrue(pending.is_symlink());self.assertEqual(os.readlink(pending),target)
+                if dangling:self.assertFalse(victim.exists())
+                else:self.assertEqual(victim.read_bytes(),b'Symlink victim bytes')
+                self.assertFalse(package.exists());pending.unlink()
+        self.publication_recovered(info,package,original)
+
+    def test_audio_publication_symlink_package_and_retry(self):
+        self.require_native_links();info,package,original=self.publication_fixture();package.unlink()
+        for dangling in (False,True):
+            with self.subTest(dangling=dangling):
+                victim=self.directory/('missing-package' if dangling else 'valid-package-target')
+                if not dangling:victim.write_bytes(original)
+                self.make_symlink(victim,package);target=os.readlink(package)
+                self.publication_attempt();self.assertTrue(package.is_symlink());self.assertEqual(os.readlink(package),target)
+                if dangling:self.assertFalse(victim.exists())
+                else:self.assertEqual(victim.read_bytes(),original)
+                self.assertFalse(package.with_suffix('.pending').exists());package.unlink()
+        self.publication_recovered(info,package,original)
+
+    def test_audio_publication_invalid_existing_package_and_retry(self):
+        info,package,original=self.publication_fixture();sentinel=b'Existing invalid package bytes'
+        package.write_bytes(sentinel);self.publication_attempt();self.assertEqual(package.read_bytes(),sentinel)
+        self.assertFalse(package.with_suffix('.pending').exists());package.unlink()
+        package.mkdir();member=package/'keep.txt';member.write_bytes(sentinel)
+        self.publication_attempt();self.assertEqual(member.read_bytes(),sentinel)
+        self.assertFalse(package.with_suffix('.pending').exists());member.unlink();package.rmdir()
+        self.publication_recovered(info,package,original)
+
+    def test_audio_publication_linked_store_and_retry(self):
+        self.require_native_links();info,package,original=self.publication_fixture();store=package.parent
+        probe=self.directory/'symlink-capability';self.make_symlink(store,probe,True);probe.unlink()
+        retained=self.directory/'retained-assets';keep=store/'keep.txt';keep.write_bytes(b'Owned store sentinel')
+        for existing_package in (True,False):
+            with self.subTest(existing_package=existing_package):
+                if not existing_package:package.unlink()
+                store.rename(retained);self.make_symlink(retained,store,True)
+                self.publication_attempt();self.assertTrue(store.is_symlink())
+                self.assertEqual((retained/'keep.txt').read_bytes(),b'Owned store sentinel')
+                self.assertEqual(sorted(p.name for p in retained.iterdir()),sorted(['keep.txt']+([package.name] if existing_package else [])))
+                if existing_package:self.assertEqual((retained/package.name).read_bytes(),original)
+                else:self.assertFalse((retained/package.name).exists())
+                store.unlink();retained.rename(store);self.publication_recovered(info,package,original)
+                self.assertEqual(keep.read_bytes(),b'Owned store sentinel')
+
+    @unittest.skipUnless(os.name=='nt','Native Windows junction qualification only')
+    def test_audio_publication_junction_store_and_retry(self):
+        info,package,original=self.publication_fixture();store=package.parent
+        retained=self.directory/'junction-target';keep=store/'keep.txt';keep.write_bytes(b'Owned junction sentinel')
+        for existing_package in (True,False):
+            with self.subTest(existing_package=existing_package):
+                if not existing_package:package.unlink()
+                store.rename(retained)
+                created=subprocess.run(['cmd.exe','/d','/c','mklink','/J',str(store),str(retained)],capture_output=True,text=True,timeout=10)
+                EVIDENCE.append({'test':self._testMethodName,'existing_package':existing_package,'junction_creation':{'returncode':created.returncode,'stdout':created.stdout,'stderr':created.stderr}})
+                if created.returncode!=0:
+                    retained.rename(store)
+                    self.skipTest('Windows junction creation unavailable: '+created.stderr)
+                self.publication_attempt();self.assertEqual((retained/'keep.txt').read_bytes(),b'Owned junction sentinel')
+                self.assertEqual(sorted(p.name for p in retained.iterdir()),sorted(['keep.txt']+([package.name] if existing_package else [])))
+                if existing_package:self.assertEqual((retained/package.name).read_bytes(),original)
+                else:self.assertFalse((retained/package.name).exists())
+                # rmdir removes only this owned junction, not its target directory.
+                os.rmdir(store);retained.rename(store);self.publication_recovered(info,package,original)
+                self.assertEqual(keep.read_bytes(),b'Owned junction sentinel')
 
     def test_wav_validation_and_pcm16(self):
         good=self.directory/'pcm16.wav';good.write_bytes(wave([-32768,0,32767],kind=1))
@@ -254,8 +401,9 @@ class AudioContract(unittest.TestCase):
 
 if __name__=='__main__':
     import sys
-    result=unittest.main(argv=['audio_contract'],verbosity=2,exit=False).result
+    selected=['AudioContract.'+name for name in dir(AudioContract) if name.startswith('test_audio_publication')] if args.publication_only else []
+    result=unittest.main(argv=['audio_contract',*selected],verbosity=2,exit=False).result
     if args.evidence:
         images={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in SCRATCH.rglob('*.wav')}
-        args.evidence.parent.mkdir(parents=True,exist_ok=True);args.evidence.write_text(json.dumps({'binary':BINARY,'binary_sha256':hashlib.sha256(Path(BINARY).read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'passed':result.wasSuccessful(),'tests_run':result.testsRun,'skips':[(str(test),reason) for test,reason in result.skipped],'run':str(SCRATCH),'calls':EVIDENCE,'wave_files':images},indent=2)+'\n')
+        args.evidence.parent.mkdir(parents=True,exist_ok=True);args.evidence.write_text(json.dumps({'binary':BINARY,'binary_sha256':hashlib.sha256(Path(BINARY).read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'passed':result.wasSuccessful(),'scope':'publication_only' if args.publication_only else 'audio_contract','tests_run':result.testsRun,'skips':[(str(test),reason) for test,reason in result.skipped],'run':str(SCRATCH),'calls':EVIDENCE,'wave_files':images},indent=2)+'\n')
     sys.exit(0 if result.wasSuccessful() else 1)

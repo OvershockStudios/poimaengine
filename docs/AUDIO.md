@@ -29,6 +29,35 @@ Capabilities distinguish `audio_authoring`, `wav_import`, frozen `audio_capture`
 
 Import writes a canonical `poima.audio.v1` package beside the world's existing asset store, identified by its SHA-256. Reimporting equivalent samples gives the same identity. `asset.audio.inspect {"asset":"<64 lowercase hex digits>"}` returns format, package bytes, frames, duration, channel count and sample rate. Loading verifies the package hash; the original WAV can be removed after import. The version-one binary contains the eight-byte `PAUDIO1\0` signature, a little-endian uint32 frame count and mono IEEE float32 samples at 48 kHz. Signed zero is canonicalized on import.
 
+### Publication and recovery
+
+Audio publication requires a regular asset-store directory. Symbolic links and
+Windows reparse points, including directory junctions, are rejected. Existing
+packages are checked through the same regular-file and content-hash path used
+by inspection; an invalid package is reported rather than replaced.
+
+When the final package is absent, import creates `<hash>.pending` exclusively,
+flushes and closes its owned staging file, then publishes it as `<hash>.paudio`.
+An occupied staging entry is an error (`-32050`), including an ordinary file,
+directory, hard link or symbolic link. Import does not truncate that entry or
+its target. A valid existing final package remains idempotent even if an
+unrelated staging entry is present. Failure during final publication attempts
+to remove only the newly created staging file.
+
+For recovery, inspect the reported store and staging path. Remove an entry only
+after establishing that it belongs to an abandoned operation, or restore the
+intended ordinary store directory, then retry the import. A rejected publication
+does not commit authored edits or consume undo history. These checks do not
+establish protection against an external process replacing ancestor directories
+during the operation, or universal power-loss durability.
+
+The focused native checks are available through
+`tests/audio_contract.py ENGINE --publication-only --evidence NEW_REPORT.json`.
+Use `--scratch-root NEW_DIRECTORY` under an existing parent to retain fixtures
+inside an owned test case. Native-OS link support is reported explicitly; a
+skipped symbolic-link case does not qualify that platform behavior.
+[Qualification](evidence/m2-authoring-diagnostics.json).
+
 Both new components use existing `component.set`, `component.remove`, preview transactions, hierarchy queries and `entity.get`. `world.describe` schema revision **14** supplies their full parameter schemas.
 
 ```json

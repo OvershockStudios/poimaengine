@@ -6,10 +6,13 @@ No graphics, provider, compiled gameplay or physical input is exercised here.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import copy
+import ctypes
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
+import stat
 import sys
 import tempfile
 import unittest
@@ -92,6 +95,7 @@ class AuthoringContract(unittest.TestCase):
         with self.assertRaises(RpcError) as caught:
             self.call(method, **params)
         self.assertEqual(caught.exception.code, code)
+        return caught.exception
 
     def tx(self, revision, ops=None, **extra):
         return self.client.transact(operations() if ops is None else ops, revision, timeout=12, **extra)
@@ -217,6 +221,111 @@ class AuthoringContract(unittest.TestCase):
         self.assertEqual(self.call('world.ui.get', id=uid(1))['element'], legacy)
         self.assertEqual(self.world.read_bytes(), source)
         self.assertEqual(frozen_hash(json.loads(self.world.read_bytes())), digest)
+
+    def test_bounded_validation_locator_preserves_rejected_batch_and_unused_request(self):
+        self.tx(0)
+        state, history = self.client.inspect(), self.client.history()
+        def files():
+            result = {}
+            for p in self.world.parent.rglob('*'):
+                if not p.is_file():
+                    continue
+                name = p.relative_to(self.world.parent).as_posix()
+                try:
+                    result[name] = p.read_bytes()
+                except PermissionError as error:
+                    info = p.lstat()
+                    if not (os.name == 'nt' and
+                            p == self.world.with_name(self.world.name + '.lock') and
+                            stat.S_ISREG(info.st_mode) and not p.is_symlink() and
+                            not getattr(info, 'st_file_attributes', 0) & 0x400 and info.st_size == 0):
+                        raise
+                    # CPython's CRT open may report errno13 without winerror.
+                    # Confirm the Windows cause rather than translating errno.
+                    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+                    kernel.CreateFileW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32,
+                        ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p]
+                    kernel.CreateFileW.restype = ctypes.c_void_p
+                    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+                    kernel.CloseHandle.restype = ctypes.c_int
+                    handle = kernel.CreateFileW(str(p), 0x80000000, 7, None, 3, 0x80, None)
+                    if handle != ctypes.c_void_p(-1).value:
+                        self.assertTrue(kernel.CloseHandle(handle))
+                        raise
+                    probe_error = ctypes.get_last_error()
+                    if probe_error != 32:
+                        raise
+                    # CreateFileW sharing=0 prevents a live byte read. Preserve
+                    # membership/type/size honestly, then read actual bytes at EOF.
+                    result[name] = dict(type='regular', size_bytes=0,
+                        byte_capture_unavailable=True,
+                        python_errno=error.errno, python_winerror=getattr(error, 'winerror', None),
+                        windows_probe=dict(api='CreateFileW', access=0x80000000, share=7,
+                                           creation=3, error=probe_error))
+            return result
+        original = files()  # Complete filenames; readable persisted bytes include receipts.
+        panel = copy.deepcopy(definition()[uid(110)])
+        first = copy.deepcopy(definition()[uid(201)])
+        first['text'] = 'Only publish after repair'
+        cases = []
+        def case(mutate, path, reason, expected, actual, message):
+            value = copy.deepcopy(panel)
+            mutate(value)
+            cases.append((value, path, reason, expected, actual, message))
+        case(lambda v: v['layout'].update(gap={'unit': 'dp', 'value': 4}),
+             '/layout/gap', 'type_mismatch', 'number', 'object', 'UI finite number type required.')
+        case(lambda v: v['layout'].update(width={'unit': 'dp', 'value': 'not a number'}),
+             '/layout/width/value', 'type_mismatch', 'number', 'string', 'UI finite number type required.')
+        case(lambda v: v['layout'].update(padding=[0, False, 0, 0]),
+             '/layout/padding/1', 'type_mismatch', 'number', 'boolean', 'UI finite number type required.')
+        case(lambda v: v['layout'].update(min_width={'unit': 'dp', 'value': 200},
+                                         max_width={'unit': 'dp', 'value': 100}),
+             '/layout/min_width', 'invalid_value', 'object', 'object', 'UI minimum dimension exceeds maximum.')
+        case(lambda v: v.update(parent=uid(999)),
+             '/parent', 'invalid_hierarchy', 'string', 'string', 'Unknown UI element ID.')
+        case(lambda v: v.update(parent=uid(110)),
+             '/parent', 'invalid_hierarchy', 'string', 'string', 'UI hierarchy depth/cycle invalid.')
+        case(lambda v: v.pop('name'), '/name', 'missing_field', 'unknown', 'unknown', 'Missing UI object field.')
+        untrusted = 'never_echo/~' + 'x' * 8192
+        case(lambda v: v['layout'].update({untrusted: 'private payload'}),
+             '/layout', 'unknown_field', 'object', 'object', 'Unexpected UI layout/style field.')
+        unused = None
+        for index, (value, path, reason, expected, actual, message) in enumerate(cases):
+            request = uuid.uuid4().hex
+            if index == 0:
+                unused = request
+            error = self.reject('world.transact', request_id=request, base_revision=1,
+                ops=[dict(op='ui.element.set', id=uid(201), element=first),
+                     dict(op='ui.element.set', id=uid(110), element=value)])
+            self.assertEqual(error.message, message)
+            self.assertEqual(error.data, dict(type='ui_validation', format='poima.ui-validation.v1',
+                version=1, element_id=uid(110), path='/' + uid(110) + path,
+                reason=reason, expected=expected, actual=actual))
+            self.assertNotIn('op_index', error.data)
+            self.assertLessEqual(len(error.data['path']), 256)
+            self.assertLess(len(json.dumps(error.data)), 1024)
+            self.assertNotIn(untrusted, json.dumps(error.data))
+            self.assertEqual(files(), original)
+            self.assertEqual(self.client.inspect(), state)
+            self.assertEqual(self.client.history(), history)
+        repaired = copy.deepcopy(panel)
+        repaired['layout']['gap'] = 4
+        accepted = self.tx(1, [dict(op='ui.element.set', id=uid(201), element=first),
+                               dict(op='ui.element.set', id=uid(110), element=repaired)],
+                           request_id=unused)
+        self.assertTrue(accepted['committed'])
+        self.assertFalse(accepted['replayed'])
+        self.assertEqual(self.call('world.ui.get', id=uid(110))['element'], repaired)
+        self.assertEqual(self.call('world.ui.get', id=uid(201))['element'], first)
+        self.assertEqual(json.loads(self.world.read_bytes())['receipts'][-1]['params']['request_id'], unused)
+        self.client.close()
+        self.assertEqual(self.client.transport.returncode, 0)
+        closed = files()
+        for name, value in original.items():
+            if isinstance(value, dict) and value.get('byte_capture_unavailable'):
+                self.assertIn(name, closed)
+                self.assertIsInstance(closed[name], bytes)
+                self.assertEqual(len(closed[name]), value['size_bytes'])
 
     def test_layout_availability_and_invalid_queries_are_observational(self):
         self.tx(0)

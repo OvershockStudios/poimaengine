@@ -1,0 +1,324 @@
+{
+  "format": "poima.authoring-diagnostics-evidence.v1",
+  "engine_version": "0.0.186",
+  "date": "2026-10-18",
+  "summary": "Exclusive audio publication and bounded UI validation locators, qualified through native Windows and Linux headless authoring.",
+  "contracts": {
+    "audio": {
+      "staging": "Exclusive creation; occupied entries rejected without truncation. Linked stores and invalid final packages rejected; existing valid finals remain idempotent.",
+      "error_code": -32050,
+      "codec_unchanged": true
+    },
+    "ui": {
+      "error_code": -32602,
+      "message_preserved": true,
+      "diagnostic_format": "poima.ui-validation.v1",
+      "path_byte_limit": 256,
+      "raw_rejected_keys_and_values_echoed": false,
+      "accepted_definition_and_checkpoint_formats_unchanged": true
+    }
+  },
+  "source_inputs": {
+    "include/poima/ui_model.hpp": {
+      "bytes": 5453,
+      "sha256": "4260c44974ca7a0c1beb8be23b41f86db2320751ac8f0bc9e22354622e2341e7"
+    },
+    "src/ui_model.cpp": {
+      "bytes": 28306,
+      "sha256": "46b9ff855550204a78b5a0b4a9e1b1ec05ad96c32195a8d45ec5d2e805a39c41"
+    },
+    "src/world.cpp": {
+      "bytes": 334113,
+      "sha256": "07cc2bfa995383ca154f038a0c365b161adee6b277caadd5d004da3d4fb35730"
+    },
+    "src/asset_store.hpp": {
+      "bytes": 17100,
+      "sha256": "625cde4f8418a85f93494364469609fc70d32dee40f03f9fca18b344849584f5"
+    },
+    "tests/ui_model.cpp": {
+      "bytes": 17255,
+      "sha256": "395769393474a76156399edfdf1731e29a4e7e1aeabd85de8093057519bc70ac"
+    },
+    "tests/ui_authoring_contract.py": {
+      "bytes": 27910,
+      "sha256": "73575ca2edee677f201c2fe34bbf31424de060e9188c73d4ffc396695f2b232a"
+    },
+    "tests/audio_contract.py": {
+      "bytes": 39222,
+      "sha256": "481f083f2f0e5d7aa57c99bb94881b4826e978725c10a21fa9dd84e20f87c249"
+    }
+  },
+  "native_builds": {
+    "windows": {
+      "passed": true,
+      "seconds": 631.2050530269989,
+      "source_inputs_unchanged": true,
+      "forced_cleanup": false,
+      "artifacts": {
+        "bin/poima.exe": {
+          "bytes": 26463232,
+          "sha256": "1f4ecc7fb1e5e0c9d67e24dccb5ca17f87fb9c42f9349ed07041e7c2b235818a"
+        },
+        "bin/poima-ui-model-test.exe": {
+          "bytes": 1627648,
+          "sha256": "d71263e716f012784f8bfb873462255f17767e33ef596a81727d260e59566014"
+        },
+        "library/libpoima_core.a.gz": {
+          "bytes": 49465846,
+          "sha256": "10916d727aa6b8f65e316ac6b963f871980f7b6d8aeca6342d2f8836a311dc4d"
+        }
+      },
+      "commands": [
+        {
+          "exit_code": 0,
+          "natural_group_closure": true
+        },
+        {
+          "exit_code": 0,
+          "natural_group_closure": true
+        }
+      ]
+    },
+    "linux": {
+      "passed": true,
+      "seconds": 356.7005333279958,
+      "source_inputs_unchanged": true,
+      "forced_cleanup": false,
+      "artifacts": {
+        "bin/poima": {
+          "bytes": 19516264,
+          "sha256": "0b7355445de8f0daf422a1048bd0a4dd2bff33ac178bbae25c815871cfb8216a"
+        },
+        "bin/poima-ui-model-test": {
+          "bytes": 1641472,
+          "sha256": "217dd3ad0d5e24e6170856235dc5a6827d78c0c4740d1c061b149ef2b73f6c26"
+        },
+        "library/libpoima_core.a.gz": {
+          "bytes": 17525992,
+          "sha256": "d428277baea2ef9848d3c91fac573591ac90928839a6361f310692b5792bfe17"
+        }
+      },
+      "commands": [
+        {
+          "exit_code": 0,
+          "natural_group_closure": true
+        },
+        {
+          "exit_code": 0,
+          "natural_group_closure": true
+        }
+      ]
+    }
+  },
+  "audio_regression": {
+    "legacy_windows": {
+      "engine_version": "0.0.182",
+      "original_suite_passed": false,
+      "original_test_exit_code": 1,
+      "original_test_methods": 9,
+      "skip_records": 5,
+      "observed_incorrect_successes": [
+        "Occupied regular staging file overwritten",
+        "Hard-linked staging target overwritten",
+        "Occupied staging with nonempty undo history overwritten",
+        "Absent final package published through a Windows directory junction"
+      ],
+      "expected_regression_supervisor_passed": true,
+      "scope": "The original tests remain failed. The supervisor only qualifies reproduction and owned closure."
+    },
+    "corrected_windows_publication": {
+      "passed": true,
+      "test_methods": 9,
+      "skip_records": 5,
+      "skipped_families": [
+        "Symbolic-link store",
+        "Live/dangling symbolic-link package",
+        "Live/dangling symbolic-link staging"
+      ],
+      "skip_reason": "Windows symbolic-link creation privilege unavailable (WinError1314).",
+      "fully_exercised_families": 6,
+      "decoded_rpc_pairs": 120,
+      "same_owner_observation_pairs": 17,
+      "nonempty_history_pairs": 1,
+      "actual_junction_subcases": [
+        "Valid final package",
+        "Absent final package"
+      ],
+      "job_total_processes": 50,
+      "job_active_at_closure": 0,
+      "forced_cleanup": false
+    },
+    "windows_full": {
+      "passed": true,
+      "test_methods": 26,
+      "skip_records": 7,
+      "skip_scope": "Five Windows symbolic-link skip records, including four parameterized subtest skips, and two unavailable explicit CoreCLR fixtures; no executed-method count inferred by subtraction.",
+      "decoded_rpc_pairs": 512
+    },
+    "linux_full": {
+      "passed": true,
+      "test_methods": 26,
+      "skip_records": 15,
+      "skip_scope": "Windows junction and audio/simulation or explicit CoreCLR cases unavailable in this OFF-feature headless build. Native Linux symlink/hard-link publication cases executed.",
+      "decoded_rpc_pairs": 159,
+      "publication_families_exercised": 8,
+      "publication_rejections": 12,
+      "recovered_packages": 8
+    }
+  },
+  "ui_validation": {
+    "windows_legacy": {
+      "passed": true,
+      "legacy": true,
+      "raw_rpc_pairs": 35,
+      "rejected_batches": 6,
+      "cases": [
+        "gap-object",
+        "width-value",
+        "min-max",
+        "missing-parent",
+        "parent-cycle",
+        "unknown-key"
+      ],
+      "complete_authoritative_files_and_history_preserved": true,
+      "repair_uses_previously_rejected_unused_request_id": true,
+      "native_exit_codes": [
+        0
+      ],
+      "live_lock_capture": "Windows exclusive zero-byte sidecar retains actual membership/type/size and raw Python error plus independent Win32 sharing-error32; actual bytes captured only after EOF. Linux files are readable and captured directly."
+    },
+    "windows_current": {
+      "passed": true,
+      "legacy": false,
+      "raw_rpc_pairs": 35,
+      "rejected_batches": 6,
+      "cases": [
+        "gap-object",
+        "width-value",
+        "min-max",
+        "missing-parent",
+        "parent-cycle",
+        "unknown-key"
+      ],
+      "complete_authoritative_files_and_history_preserved": true,
+      "repair_uses_previously_rejected_unused_request_id": true,
+      "native_exit_codes": [
+        0
+      ],
+      "live_lock_capture": "Windows exclusive zero-byte sidecar retains actual membership/type/size and raw Python error plus independent Win32 sharing-error32; actual bytes captured only after EOF. Linux files are readable and captured directly."
+    },
+    "linux_current": {
+      "passed": true,
+      "legacy": false,
+      "raw_rpc_pairs": 35,
+      "rejected_batches": 6,
+      "cases": [
+        "gap-object",
+        "width-value",
+        "min-max",
+        "missing-parent",
+        "parent-cycle",
+        "unknown-key"
+      ],
+      "complete_authoritative_files_and_history_preserved": true,
+      "repair_uses_previously_rejected_unused_request_id": true,
+      "native_exit_codes": [
+        0
+      ],
+      "live_lock_capture": "Windows exclusive zero-byte sidecar retains actual membership/type/size and raw Python error plus independent Win32 sharing-error32; actual bytes captured only after EOF. Linux files are readable and captured directly."
+    },
+    "native_model_unit_passed_on": [
+      "Windows",
+      "Linux"
+    ],
+    "public_protocol_suite": {
+      "windows": {
+        "passed": true,
+        "test_methods": 10,
+        "skips": 0,
+        "layout_available": true,
+        "runtime_available": true
+      },
+      "linux": {
+        "passed": true,
+        "test_methods": 10,
+        "skips": 4,
+        "layout_available": false,
+        "runtime_available": false
+      }
+    }
+  },
+  "conformance": {
+    "windows": {
+      "passed": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "linux": {
+      "passed": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "metadata": [
+      "Compiled CLI version and executable target",
+      "MCP initialize version",
+      "Authoring capture profiler version"
+    ]
+  },
+  "ownership": {
+    "windows_remaining_batch": {
+      "passed": true,
+      "commands": 3,
+      "total_job_processes": 96,
+      "active_job_processes_at_exit": 0,
+      "terminated_job_processes": 0,
+      "forced_cleanup": false
+    },
+    "linux": {
+      "passed": true,
+      "commands": 6,
+      "subreaper_observed_enabled": true,
+      "all_command_groups_empty": true,
+      "adopted_children_observed": [],
+      "final_children": [],
+      "forced_cleanup": false
+    }
+  },
+  "retained_failure": {
+    "windows_first_batch": {
+      "passed": false,
+      "cause": "Live output census raced an intentional audio fixture directory rename and raised FileNotFoundError.",
+      "forced_cleanup": true,
+      "job_active_at_failure": 2,
+      "job_active_after_cleanup": 0,
+      "completed_before_failure": [
+        "Native UI model unit",
+        "Legacy UI raw protocol case",
+        "Current UI raw protocol case",
+        "Ten-test public UI contract suite"
+      ],
+      "scope": "Earlier UI records retain complete traces and local native exit0. The enclosing batch still failed; no independent per-UI Job closure is invented. A separate successor runs the remaining full audio/core/metadata checks with rename-tolerant live sampling and a strict final census."
+    }
+  },
+  "reproduce": [
+    "Build native poima and poima-ui-model-test targets for the selected platform.",
+    "Run poima-ui-model-test.",
+    "python tests/ui_authoring_contract.py ENGINE --layout-available 0 --runtime-available 0 (use 1/1 for the qualified full Windows feature build).",
+    "python tests/audio_contract.py ENGINE --publication-only --scratch-root NEW_DIRECTORY --evidence NEW_REPORT.json",
+    "python tests/audio_contract.py ENGINE --scratch-root NEW_DIRECTORY --evidence NEW_REPORT.json",
+    "python tests/authoring_core_conformance.py ENGINE --evidence NEW_REPORT.json",
+    "python tests/build_metadata_contract.py --binary ENGINE --expected-version 0.0.186 --output NEW_DIRECTORY"
+  ],
+  "limits": [
+    "Tiny bounded native authoring fixtures; no renderer, desktop, provider, physical-input, performance or Alpha qualification.",
+    "Windows symbolic links remain unqualified when OS privilege prevents setup; Linux link behavior does not qualify Windows reparse behavior.",
+    "Audio records retain decoded native requests/responses; UI companion records additionally retain exact original pipe bytes.",
+    "Live file-size monitoring is a best-effort observation during deliberate directory moves; it is not an OS disk quota. Final closed inventories are strict.",
+    "No hostile external ancestor-directory replacement or universal power-loss durability claim.",
+    "The Python lock-capture helper was corrected after Windows compilation; native production inputs stayed unchanged and the original fixture source remains preserved."
+  ]
+}

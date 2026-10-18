@@ -27,7 +27,7 @@ inline std::filesystem::path asset_package_path(const std::filesystem::path& dir
     };
     regular(directory,true);const auto path=directory/(id+extension);regular(path,false);return path;
 }
-// Defined below; model and image publication share exclusive staging.
+// Defined below; asset publication shares exclusive staging.
 inline void write_asset_pending_exclusive(const std::filesystem::path& path,const std::string& bytes);
 struct LoadedModel { std::string id; std::size_t bytes=0; std::shared_ptr<const ModelAsset> model; };
 inline LoadedModel read_model_asset(const std::filesystem::path& directory,const std::string& id) {
@@ -120,8 +120,22 @@ inline LoadedAudio store_audio_asset(const std::filesystem::path& directory,cons
     if(!input.read(encoded.data(),static_cast<std::streamsize>(length)))throw std::runtime_error("WAV source read failed.");
     const auto imported=decode_wave(std::as_bytes(std::span(encoded.data(),encoded.size())));const auto bytes=encode_audio(*imported);
     const auto clip=decode_audio(bytes);const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
-    const auto path=directory/(id+".paudio");if(std::filesystem::exists(path))return read_audio_asset(directory,id);
-    const auto pending=directory/(id+".pending");world_detail::write_flushed(pending,bytes);world_detail::replace_file(pending,path);return {id,bytes.size(),clip};
+    // Match model/image admission: never follow a linked store or truncate a
+    // pre-existing staging entry, including dangling links.
+    std::error_code error;const auto status=std::filesystem::symlink_status(directory,error);
+    if(error || !std::filesystem::is_directory(status) || std::filesystem::is_symlink(status))throw std::runtime_error("Asset store must be a regular directory.");
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(directory.c_str());
+    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset store cannot be a reparse point.");
+#endif
+    const auto path=directory/(id+".paudio");
+    if(std::filesystem::exists(std::filesystem::symlink_status(path)))return read_audio_asset(directory,id);
+    const auto pending=directory/(id+".pending");
+    if(std::filesystem::exists(std::filesystem::symlink_status(pending)))throw std::runtime_error("Audio staging path already exists; remove only an abandoned regular staging file before retrying.");
+    write_asset_pending_exclusive(pending,bytes);
+    try {world_detail::replace_file(pending,path);}
+    catch(...) {std::error_code unused;std::filesystem::remove(pending,unused);throw;}
+    return {id,bytes.size(),clip};
 }
 struct AudioCache {
     std::map<std::string,LoadedAudio> clips;std::size_t bytes=0;

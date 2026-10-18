@@ -73,5 +73,55 @@ void state() {
     j=Json::parse(before);j["revision"]=9007199254740991ULL;restored.load(j.dump());const auto terminal=restored.save();rejects([&]{restored.edit(restored.revision(),{{c,"No"}});});check(restored.save()==terminal,"Exhausted revision mutated UI.");
     Model empty({});empty.load(empty.save());const auto empty_saved=empty.save();rejects([&]{empty.edit(0,{},std::string{});});check(empty.inspect().empty() && empty.save()==empty_saved,"Empty UI edit changed omitted snapshot state.");
 }
+void diagnostics() {
+    auto authored=Json::parse(definition_json(fixture()));
+    auto expect=[&](const Json& input,const std::string& element,const std::string& path,
+                    ValidationReason reason,ValidationKind expected,ValidationKind actual,const char* message) {
+        bool failed=false;
+        try {parse_definition(input.dump());}
+        catch(const ValidationError& error) {
+            failed=true;const auto& d=error.diagnostic();
+            check(error.what()==std::string(message),"UI diagnostic changed the original error message.");
+            check(d.element_id==element && d.path=="/"+element+path && d.reason==reason &&
+                  d.expected==expected && d.actual==actual,"UI diagnostic locator/type differs.");
+            check(d.path.size()<=256,"Unbounded UI diagnostic pointer.");
+        }
+        check(failed,"Expected typed UI validation error.");
+    };
+    auto bad=authored;bad[a]["layout"]={{"gap",{{"unit","dp"},{"value",1}}}};
+    expect(bad,a,"/layout/gap",ValidationReason::type_mismatch,ValidationKind::number,ValidationKind::object,"UI finite number type required.");
+    bad=authored;bad[a]["layout"]={{"width",{{"unit","dp"},{"value","private text"}}}};
+    expect(bad,a,"/layout/width/value",ValidationReason::type_mismatch,ValidationKind::number,ValidationKind::string,"UI finite number type required.");
+    bad=authored;bad[a]["layout"]={{"padding",{0,0,false,0}}};
+    expect(bad,a,"/layout/padding/2",ValidationReason::type_mismatch,ValidationKind::number,ValidationKind::boolean,"UI finite number type required.");
+    bad=authored;bad[b]["style"]={{"hover",{{"color",false}}}};
+    expect(bad,b,"/style/hover/color",ValidationReason::type_mismatch,ValidationKind::string,ValidationKind::boolean,"UI string type required.");
+    bad=authored;bad[a]["layout"]={{"min_width",{{"unit","dp"},{"value",20}}},{"max_width",{{"unit","dp"},{"value",10}}}};
+    expect(bad,a,"/layout/min_width",ValidationReason::invalid_value,ValidationKind::object,ValidationKind::object,"UI minimum dimension exceeds maximum.");
+    bad=authored;bad[a]["parent"]=std::string(32,'5');
+    expect(bad,a,"/parent",ValidationReason::invalid_hierarchy,ValidationKind::string,ValidationKind::string,"Unknown UI element ID.");
+    bad=authored;bad[a]["parent"]=a;
+    expect(bad,a,"/parent",ValidationReason::invalid_hierarchy,ValidationKind::string,ValidationKind::string,"UI hierarchy depth/cycle invalid.");
+    bad=authored;bad[b].erase("name");
+    expect(bad,b,"/name",ValidationReason::missing_field,ValidationKind::unknown,ValidationKind::unknown,"Missing UI object field.");
+    const auto untrusted="unknown/~"+std::string(8192,'x');bad=authored;bad[a]["layout"]={{untrusted,1}};
+    expect(bad,a,"/layout",ValidationReason::unknown_field,ValidationKind::object,ValidationKind::object,"Unexpected UI layout/style field.");
+    bad=authored;bad[a][untrusted]=1;
+    expect(bad,a,"",ValidationReason::unknown_field,ValidationKind::object,ValidationKind::object,"Unexpected UI layout/style field.");
+    auto direct=fixture();direct[0].layout=Layout{};direct[0].layout->gap=257;
+    try {validate_definition(direct);check(false,"Direct C++ range error accepted.");}
+    catch(const ValidationError& error) {check(error.diagnostic().element_id==a && error.diagnostic().path=="/"+a+"/layout/gap" && error.diagnostic().reason==ValidationReason::out_of_range,"Direct validation lost known property context.");}
+    bad=Json::object();bad[untrusted]=authored[a];bad[untrusted]["layout"]={{"gap",false}};
+    try {parse_definition(bad.dump());check(false,"Invalid ID and value accepted.");}
+    catch(const ValidationError& error) {check(!error.diagnostic().element_id && error.diagnostic().path.empty(),"Invalid ID leaked into a diagnostic pointer.");}
+    for(const auto& raw:{std::string("{"),std::string("[]")}) {
+        bool failed=false;
+        try {parse_definition(raw);}
+        catch(const ValidationError&) {check(false,"Unknown root/syntax claimed an authored property locator.");}
+        catch(const std::exception&) {failed=true;}
+        check(failed,"Malformed root accepted.");
+    }
+    check(definition_json(parse_definition(authored.dump()))==authored.dump(),"Diagnostics changed successful canonical bytes.");
 }
-int main() {try{validation();metadata();state();std::cout<<"Logical UI definition, frozen typed layout/style, modal eligibility, atomic edits, UTF-8 budgets and strict snapshots passed.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main() {try{validation();metadata();state();diagnostics();std::cout<<"Logical UI definition, frozen typed layout/style, modal eligibility, atomic edits, UTF-8 budgets, strict snapshots and bounded diagnostics passed.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

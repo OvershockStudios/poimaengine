@@ -730,7 +730,14 @@ std::string custom_type(const std::string& type) {
     require(custom_component(type),"Custom component type needs game: prefix.");return identifier(type.substr(5));
 }
 template<class F> auto component_checked(F&& f) {
-    try { return f(); }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32602,e.what()); }
+    try { return f(); }catch(const Error&) { throw; }
+    catch(const ui::ValidationError& e) {
+        const auto& d=e.diagnostic();
+        throw Error(-32602,e.what(),{{"type","ui_validation"},{"format","poima.ui-validation.v1"},{"version",1},
+            {"element_id",d.element_id ? Json(*d.element_id) : Json(nullptr)},{"path",d.path},
+            {"reason",ui::validation_reason_name(d.reason)},{"expected",ui::validation_kind_name(d.expected)},
+            {"actual",ui::validation_kind_name(d.actual)}});
+    }catch(const std::exception& e) { throw Error(-32602,e.what()); }
 }
 std::vector<components::Schema> authored_component_schemas(const Json& doc) {
     if(!doc.contains("component_schemas"))return {};

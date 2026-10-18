@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.185**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.186**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.186 hardens [audio publication](AUDIO.md#publication-and-recovery)
+with exclusive staging and regular-store checks. Occupied staging entries remain
+untouched, including hard-linked targets; invalid existing packages are rejected.
+[UI validation diagnostics](GAME_UI.md#authoring-validation-diagnostics) now identify
+bounded element/property locations while preserving strict inputs, existing
+messages and atomic rejection.
+
+Native Windows and Linux headless builds pass the UI model and authoring checks,
+five core conformance tests per platform and CLI/MCP/profiler metadata checks.
+The audio suites select 26 tests each; platform, feature and explicit CoreCLR
+skips are recorded rather than counted as passes. Windows junctions and Linux
+symbolic links have native publication coverage. Separate old/new Windows UI
+traces retain 35 RPC pairs each, full rejected-state preservation and correction
+using an unused rejected request ID. The retained old-engine audio regression and a later
+test-runner census failure remain failed records. These are bounded authoring
+checks, separate from graphics, physical interaction and Alpha qualification.
+[Results and limits](evidence/m2-authoring-diagnostics.json).
 
 Version 0.0.185 fixes [managed load-capacity recovery](MANAGED_MEMORY.md#load-capacity-recovery).
 At the tracking limit, a load can remove retired weak entries already reclaimed
