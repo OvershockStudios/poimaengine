@@ -55,9 +55,11 @@ def generated_requirements(path):
 
 
 def run(command, cwd, *, capture=False):
+    # Supervised publication does not need opportunistic SDK update advertising.
     result = subprocess.run([str(p) for p in command], cwd=cwd, text=True,
                             stdout=subprocess.PIPE if capture else None, check=True,
-                            env=dict(os.environ, DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_GENERATE_ASPNET_CERTIFICATE='false'))
+                            env=dict(os.environ, DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_GENERATE_ASPNET_CERTIFICATE='false',
+                                     DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE='true'))
     return result.stdout.strip() if capture else None
 
 

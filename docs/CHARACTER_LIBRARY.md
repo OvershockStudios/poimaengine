@@ -125,6 +125,13 @@ completion after relocation. Settled runtime joints are compared with the
 original curve arrays. Contact solving, IK and rendered appearance need their
 own qualification; intake alone does not establish them.
 
+[Knight: Two Signals](evidence/fixtures/agent-character-intake/README.md) is a
+separate agent-authored route game with public C# source, cooked content and a
+publish/adopt/export recipe. Its portable source rebuild and independent native
+gameplay/save continuation pass with the original library intact. The original
+fresh task failed a marker-placement requirement; the published fixture retains
+an explicitly assisted two-value correction. [Results and limits](evidence/m2-agent-character-intake.json).
+
 ## Limits and recovery
 
 The [animation profile](ANIMATION_ASSETS.md#supported-profile-and-mathematics)

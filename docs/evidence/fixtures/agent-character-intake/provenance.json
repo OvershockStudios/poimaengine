@@ -1,0 +1,116 @@
+{
+  "adaptations": [
+    "Route.cs preserves the original agent-authored source byte-for-byte; no gameplay source or saved-state field is changed.",
+    "The assisted authored world corrects only the two marker centre Y values from 0.005 to 0 through the guarded authoring transaction. Its original fresh outcome remains failed.",
+    "world.json retains assisted world identity, revision 3, all 81 entities, all 10 UI elements, all typed components, authored transforms and empty retired/schema/template bookkeeping. Only its three authoring receipts are removed; sorted JSON formatting changes bytes without changing the retained authored values.",
+    "project.json retains identity, title, entry camera/controller/world, audio flag and input selector. Version 1 removes the earlier local adopted gameplay descriptor and its empty initial values; documented fresh publication/adoption installs a verified selection.",
+    "settings/route.poima-input.json preserves exact original bytes, revision 0, action route.use on E and its empty receipt array.",
+    "gameplay/Route.csproj preserves the SDK, Knight.Route assembly name and default source inclusion; its machine-specific props import becomes $(PoimaAuthoringPack)/build/Poima.Gameplay.props, supplied by the documented installed-pack environment property.",
+    "The single referenced cooked model is copied byte-for-byte with its embedded atlas/mips and all 57 nodes, 41-joint skin, 15 primitives and 76 original takes. No raw GLB, compiled gameplay descriptor/library, runtime, previous-world file, lock or adoption journal is included.",
+    "content/character/LICENSE.txt preserves the exact original CC0 notice; source URLs and hashes identify the separately obtained original model.",
+    "README.md documents portable installed-pack publication, the qualified per-shell official linker selection, controls and the separately qualified source-build/gameplay scopes; it is not a byte copy of the private draft guide."
+  ],
+  "assisted_inputs": {
+    "project.json": {
+      "bytes": 477,
+      "sha256": "472d6ad846011d76b6d7cd142b2135b7ac10e10ef15fd7e0c1da0c11b247e9e7"
+    },
+    "route.poima-input.json": {
+      "bytes": 1135,
+      "sha256": "3c2e62770f3a98ec2ee8bb1d8b618a3164cee3ad66687c7f7856319120daf1c5"
+    },
+    "world.json": {
+      "bytes": 89472,
+      "sha256": "f25cac284520f9d14a8d216dc74ea76ba3afa44ad957069a672f9e27b34e056d"
+    }
+  },
+  "content": [
+    {
+      "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+      "cooked_file": "world.json.assets/c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7.pmodel",
+      "cooked_identity": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "creator": "Kay Lousberg",
+      "license": "CC0-1.0",
+      "license_url": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/LICENSE.txt",
+      "notice": "content/character/LICENSE.txt",
+      "notice_identity": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47",
+      "source_file": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
+      "source_identity": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "title": "KayKit Adventurers 1.0 Knight"
+    }
+  ],
+  "format": "poima.agent-character-intake-public-source-provenance.v1",
+  "game_identity": "knight.two-signals.original.v1",
+  "game_type": "KnightRoute.RouteGame",
+  "origin": "Assisted portable adaptation of an agent-authored project; not an original fresh-workflow success.",
+  "original_fresh_outcome": {
+    "passed": false,
+    "reason": "The two route marker centres were at Y=0.005 instead of the fixed Y=0 requirement."
+  },
+  "original_gameplay": {
+    "Route.cs": {
+      "bytes": 4566,
+      "sha256": "d49ebf6a58d2112c32479b28f0dab5ddb08c5447b1a5a31e7186830b52a68e99"
+    },
+    "Route.csproj": {
+      "bytes": 222,
+      "sha256": "9e4d0f037283398558a317d487a7e950685c335796976b51083e1aa3bf0a27eb"
+    }
+  },
+  "portable_files": {
+    "README.md": {
+      "bytes": 9398,
+      "sha256": "7ff459f3c21599f743f78825f1d0d4fb323f30fe06db01c97439603eec171c3b"
+    },
+    "content/character/LICENSE.txt": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "gameplay/Route.cs": {
+      "bytes": 4566,
+      "sha256": "d49ebf6a58d2112c32479b28f0dab5ddb08c5447b1a5a31e7186830b52a68e99"
+    },
+    "gameplay/Route.csproj": {
+      "bytes": 192,
+      "sha256": "ab55ad549e8dbf517469e52e872846018031926cf2108b064e756a7b4bf8f058"
+    },
+    "project.json": {
+      "bytes": 349,
+      "sha256": "092407ff44b6f6cc00ca4da0f23cee14b154af40a4b1b9049536fbc1376bee49"
+    },
+    "settings/route.poima-input.json": {
+      "bytes": 1135,
+      "sha256": "3c2e62770f3a98ec2ee8bb1d8b618a3164cee3ad66687c7f7856319120daf1c5"
+    },
+    "world.json": {
+      "bytes": 63967,
+      "sha256": "ab306c1a585f7d0d23ff977a832ced2bbebf08f7bec21292e77a24369e1c2b55"
+    },
+    "world.json.assets/c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7.pmodel": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    }
+  },
+  "qualification": {
+    "assisted_original_module_campaign_passed": true,
+    "authoring_pack_version": "0.0.181",
+    "evidence": "../../m2-agent-character-intake.json",
+    "interactive_or_rendered_player": "not-qualified-by-the-headless-source-build-or-campaign",
+    "native_runtime_version": "0.0.180",
+    "new_module_engine_version": "0.0.180",
+    "original_fresh_task_passed": false,
+    "portable_source_build_adopt_export_passed": true,
+    "portable_source_new_module_campaign_passed": true,
+    "scope": "The public source and commands reproduce publication/adoption/export. Recorded independent private gameplay/save/original-curve checks are separately summarized in the evidence; their complete harness is not distributed here."
+  }
+}

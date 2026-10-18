@@ -8,3 +8,5 @@ docs/evidence/fixtures/agent-switchback/content/*/License.txt -text -whitespace
 # Preserve upstream license bytes, including its original line endings/spacing.
 third_party/source_sans/LICENSE.md -text -whitespace
 docs/evidence/fixtures/agent-switchback-fresh/content/*/License.txt -text -whitespace
+# Preserve the recorded input profile's original CRLF bytes across checkouts.
+docs/evidence/fixtures/agent-character-intake/settings/route.poima-input.json -text whitespace=cr-at-eol

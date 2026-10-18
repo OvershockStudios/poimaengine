@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.180.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.181.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -37,6 +37,11 @@ Three game families now have qualifying fresh agent workflows, with independent 
 Each has rendered observations with its declared original project paths unavailable. These are small demonstrations under documented SDK/toolchain contexts, not a controlled agent success-rate experiment or an Alpha release. Earlier failed attempts remain recorded. Switchback's published source also [rebuilds independently](docs/evidence/m2-agent-switchback-fresh-rebuild.json); Beacon's minimal public source record has a separate, unqualified rebuild boundary. The [Alpha roadmap](docs/ALPHA_ROADMAP.md) tracks the remaining performance, content, interaction and delivery gates.
 
 Earlier exercises include an [escape room](docs/evidence/fixtures/agent-escape/README.md), [wave defense](docs/evidence/fixtures/agent-defense/README.md), [Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) and [DEPOT RUN](docs/evidence/fixtures/agent-depot/README.md). The [original](docs/evidence/fixtures/agent-switchback/README.md) and [additional](docs/evidence/fixtures/agent-switchback-repeat/README.md) Switchback records distinguish independent game passes from failed original automation workflows.
+
+[Knight: Two Signals](docs/evidence/fixtures/agent-character-intake/README.md)
+adds public C# source and an intact 76-take character library, with a verified
+source rebuild and native save/export continuation. It is an assisted fixture;
+the original fresh attempt remains failed. [Results](docs/evidence/m2-agent-character-intake.json).
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 

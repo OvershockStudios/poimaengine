@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.180**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.181**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.181 publishes [Knight: Two Signals](evidence/fixtures/agent-character-intake/README.md),
+an assisted portable source fixture with unchanged agent-authored C# and the
+original 76-take CC0 Knight library. The original fresh attempt remains failed:
+both marker centres missed the fixed Y=0 placement requirement by 5 mm.
+A separate guarded transaction corrects those two values; its independently
+verified gameplay is an assisted result, not a fresh-workflow success.
+
+A new installed authoring pack builds the portable source, adopts its Native AOT
+module and exports a matching standalone Windows game. The seven-phase build
+closes naturally in 35.953 seconds. A separate native campaign and file-only
+audit verify 4,151 original RPC pairs, 1,345 causally joined ticks, four complete
+115,816-byte v9 checkpoint pairs and six original-curve observations covering
+all 57 nodes. Source, cold-owner and relocated read-only game-service runs
+complete the route; the complete 84-file candidate inventory is restored.
+The pack records 0.0.181; the newly compiled module and reused native runtime
+target 0.0.180, with actual descriptor, service-prefix and feature checks.
+
+Pack compilation and native publication disable SDK workload-update advertising
+in their child environments. Focused tests preserve the caller's environment,
+command arguments and failure propagation. An earlier source build and a
+separate process diagnostic remain failed after forced cleanup; the successful
+build uses an isolated copy of the official linker dependencies. These results
+do not qualify rendered appearance, physical controls, clean-machine setup or
+the outstanding fresh character-intake gate. [Results, failures and scope](evidence/m2-agent-character-intake.json).
 
 Version 0.0.180 gives Windows build children a bounded opportunity to finish
 before forced cleanup: up to one second after leader exit, within the original

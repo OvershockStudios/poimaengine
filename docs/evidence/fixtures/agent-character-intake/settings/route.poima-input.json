@@ -1,0 +1,59 @@
+{
+  "format": "poima.input.v3",
+  "revision": 0,
+  "profile": {
+    "bindings": {
+      "backward": [
+        "key.s"
+      ],
+      "forward": [
+        "key.w"
+      ],
+      "jump": [
+        "key.space",
+        "gamepad.south"
+      ],
+      "left": [
+        "key.a"
+      ],
+      "right": [
+        "key.d"
+      ],
+      "use": []
+    },
+    "gamepad": {
+      "look": {
+        "inner_deadzone": 0.15,
+        "invert_x": false,
+        "invert_y": false,
+        "outer_deadzone": 0.95,
+        "response": 1.0,
+        "stick": "right"
+      },
+      "look_degrees_per_second": [
+        180.0,
+        120.0
+      ],
+      "move": {
+        "inner_deadzone": 0.15,
+        "invert_x": false,
+        "invert_y": false,
+        "outer_deadzone": 0.95,
+        "response": 1.0,
+        "stick": "left"
+      },
+      "trigger_press": 0.55,
+      "trigger_release": 0.45
+    },
+    "invert_x": false,
+    "invert_y": false,
+    "sensitivity_x": 0.1,
+    "sensitivity_y": 0.1,
+    "actions": {
+      "route.use": [
+        "key.e"
+      ]
+    }
+  },
+  "receipts": []
+}

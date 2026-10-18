@@ -1,0 +1,2778 @@
+{
+  "component_schemas": {},
+  "entities": {
+    "00000000000000000000000000000001": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 10,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.14,
+            0.2,
+            0.24
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.25,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            8,
+            0.5,
+            12
+          ]
+        }
+      },
+      "name": "Floor",
+      "parent": null
+    },
+    "00000000000000000000000000000002": {
+      "components": {
+        "CharacterController": {
+          "camera": "00000000000000000000000000000003",
+          "height": 2.466579007294275,
+          "jump_speed": 0,
+          "locomotion": {},
+          "radius": 0.35,
+          "speed": 2
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.1,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player",
+      "parent": null
+    },
+    "00000000000000000000000000000003": {
+      "components": {
+        "Camera": {
+          "far": 200,
+          "near": 0.1,
+          "vertical_fov": 70
+        },
+        "Transform": {
+          "position": [
+            0,
+            5.5,
+            8
+          ],
+          "rotation": [
+            -0.21822962308086932,
+            0,
+            0,
+            0.9758974493306055
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player camera",
+      "parent": "00000000000000000000000000000002"
+    },
+    "00000000000000000000000000000004": {
+      "components": {
+        "LightingEnvironment": {
+          "ambient": [
+            0.12,
+            0.14,
+            0.18
+          ],
+          "exposure": 1,
+          "shadow_filter": "pcf3_fractional",
+          "shadow_resolution": 1024,
+          "sky": {
+            "enabled": true,
+            "ground": [
+              0.12,
+              0.1,
+              0.08
+            ],
+            "horizon": [
+              0.55,
+              0.7,
+              0.85
+            ],
+            "horizon_falloff": 0.35,
+            "sun": "00000000000000000000000000000005",
+            "sun_intensity": 20,
+            "sun_size_degrees": 0.53,
+            "zenith": [
+              0.06,
+              0.22,
+              0.55
+            ]
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Environment",
+      "parent": null
+    },
+    "00000000000000000000000000000005": {
+      "components": {
+        "Light": {
+          "color": [
+            1,
+            0.95,
+            0.85
+          ],
+          "enabled": true,
+          "intensity": 3.5,
+          "kind": "directional",
+          "shadow": {
+            "bias": 0.0001,
+            "distance": 80,
+            "enabled": true,
+            "normal_bias": 0.005
+          }
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -0.9614638770465722,
+            -0.0375843445352855,
+            -0.16953202249987687,
+            0.2131514098652129
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Sun",
+      "parent": null
+    },
+    "00000000000000000000000000000010": {
+      "components": {
+        "AnimationRig": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "clip": 36,
+          "loop": true,
+          "playing": true,
+          "speed": 1,
+          "time": 0
+        },
+        "Transform": {
+          "position": [
+            0,
+            2.6835075914277695e-05,
+            0
+          ],
+          "rotation": [
+            0,
+            1,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Original Knight - full library",
+      "parent": "00000000000000000000000000000002"
+    },
+    "00000000000000000000000000000011": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 10,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.8,
+            0.3,
+            0.08
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.8,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            1.6,
+            0.4
+          ]
+        }
+      },
+      "name": "Central amber barrier",
+      "parent": null
+    },
+    "00000000000000000000000000000012": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.05,
+            0.7,
+            0.8
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -2,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.01,
+            1.2
+          ]
+        }
+      },
+      "name": "Pad 1 - cyan",
+      "parent": null
+    },
+    "00000000000000000000000000000013": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.9,
+            0.7,
+            0.08
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            2,
+            0,
+            -5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.01,
+            1.2
+          ]
+        }
+      },
+      "name": "Pad 2 - gold",
+      "parent": null
+    },
+    "0baa2a919db97b035c7ff03d0b9b7ef3": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 55,
+          "primitive": 14,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "f36e39695ae4e00bbea19a9f3000604e"
+    },
+    "0e40d3568f1a6fbf51b01c022698acf9": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 1,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "33f47ce34295acae4dd457821f3f1b12"
+    },
+    "144ee1c041a863981e1366e8f9170c19": {
+      "components": {
+        "RigNode": {
+          "node": 56,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Rig",
+      "parent": "00000000000000000000000000000010"
+    },
+    "1484bfb4a557d19bfa5e7d315a01517c": {
+      "components": {
+        "RigNode": {
+          "node": 40,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -2.1212436251971667e-08,
+            0.16565003991127014,
+            1.366076585185283e-09
+          ],
+          "rotation": [
+            0.9999999999999811,
+            4.4408645699297566e-16,
+            1.9470719792024825e-07,
+            6.917388749250845e-22
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "IK-foot.r",
+      "parent": "39a2966aed0b0282f2bef556e10a0e68"
+    },
+    "15a22aa17d6fb903645351f134016ead": {
+      "components": {
+        "RigNode": {
+          "node": 39,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -6.311275058124011e-09,
+            0.16565003991127014,
+            1.366082358345011e-09
+          ],
+          "rotation": [
+            -0.39108434304188133,
+            -6.88500136633307e-08,
+            -6.562875396116844e-08,
+            0.9203548427793984
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "heelIK.r",
+      "parent": "39a2966aed0b0282f2bef556e10a0e68"
+    },
+    "1624e46ed061bf4aeac2c8d8d51699cb": {
+      "components": {
+        "RigNode": {
+          "node": 8,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -3.219664979070558e-09,
+            0.24189729988574982,
+            -1.1940561250867177e-07
+          ],
+          "rotation": [
+            1.6480537742903329e-09,
+            -5.950362226986114e-08,
+            -0.05528551983695433,
+            0.9984705860947304
+          ],
+          "scale": [
+            1.000000238418579,
+            0.9999998807907104,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "lowerarm.l",
+      "parent": "bc5488eaf1abc69cfc0a2dd54d662651"
+    },
+    "2863efd97eea9bc223e8095cd2567d53": {
+      "components": {
+        "RigNode": {
+          "node": 15,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -7.121856576697283e-11,
+            0.2418973296880722,
+            -1.1940561250867177e-07
+          ],
+          "rotation": [
+            1.648053552245732e-09,
+            5.950362937528837e-08,
+            0.05528551983695433,
+            0.9984705860947304
+          ],
+          "scale": [
+            1.000000238418579,
+            0.9999998807907104,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "lowerarm.r",
+      "parent": "72a478a08d1ac0d96c3a8e15d3bb679c"
+    },
+    "2b6f4e4deb4113fffe22d7959069e208": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 5,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "e6e14f580aef78f2af7371673935481c"
+    },
+    "33f47ce34295acae4dd457821f3f1b12": {
+      "components": {
+        "RigNode": {
+          "node": 0,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.01701178587973118,
+            -2.736658455404495e-09
+          ],
+          "rotation": [
+            -3.3860982323173575e-14,
+            -1.6519722123575405e-07,
+            1.3270667409414886e-07,
+            0.9999999999999776
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "1H_Sword_Offhand",
+      "parent": "d00fe4f82a767026dc9dd15819164664"
+    },
+    "34d0f57f8a177d9f11cc722d7ba9b6c2": {
+      "components": {
+        "RigNode": {
+          "node": 38,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.1709451824426651,
+            0.29231026768684387,
+            0.5758123397827148
+          ],
+          "rotation": [
+            0.7071067811865397,
+            -3.8238494244551455e-08,
+            1.450086460081351e-07,
+            0.7071067811865397
+          ],
+          "scale": [
+            1.0,
+            0.9999998807907104,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "kneeIK.r",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "37b87ceb43bfb02533b996a9712fb3cc": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 54,
+          "primitive": 13,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "b7236fda728aa6a1b609ec60828b9a43"
+    },
+    "39a2966aed0b0282f2bef556e10a0e68": {
+      "components": {
+        "RigNode": {
+          "node": 41,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            3.752941513113228e-09,
+            0.21343614161014557,
+            0.0
+          ],
+          "rotation": [
+            1.0403522306226071e-07,
+            -0.3910843430418808,
+            -0.9203548427793972,
+            2.952605270233347e-08
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "control-foot-roll.r",
+      "parent": "6823693ddb95ea742647736aef72cd08"
+    },
+    "3fcb6f6535308eb84289f6064c834d92": {
+      "components": {
+        "RigNode": {
+          "node": 31,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.1709449142217636,
+            0.29231026768684387,
+            0.5758124589920044
+          ],
+          "rotation": [
+            0.7071067811865281,
+            -2.2930231460821097e-07,
+            -4.6055181460954284e-08,
+            0.7071067811865281
+          ],
+          "scale": [
+            1.0,
+            0.9999998807907104,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "kneeIK.l",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "41d9102f6920bdf199d0d9dc69d9a360": {
+      "components": {
+        "RigNode": {
+          "node": 42,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -4.556945487621533e-09,
+            7.950362035380465e-10,
+            -1.862645149230957e-09
+          ],
+          "rotation": [
+            1.3700850373812043e-22,
+            -6.74098664101473e-17,
+            -1.946692052001708e-08,
+            0.9999999999999998
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "IK-toe.r",
+      "parent": "6823693ddb95ea742647736aef72cd08"
+    },
+    "437cb3106f1f62b4c80594fe5a070bad": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 2,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "9a1db776fbc6dfe52e04f2b71e54696c"
+    },
+    "4502a0673ccac77c192d34593e09ec63": {
+      "components": {
+        "RigNode": {
+          "node": 27,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -1.832210216878849e-10,
+            0.14943702518939972,
+            9.665415134918476e-10
+          ],
+          "rotation": [
+            -0.4552390150447906,
+            1.6598240896312128e-07,
+            2.2509515845329195e-09,
+            0.8903692712470604
+          ],
+          "scale": [
+            1.0,
+            1.0000008344650269,
+            0.9999987483024597
+          ]
+        }
+      },
+      "name": "foot.r",
+      "parent": "976bbf356d1d7f3230d8ae8f50b81721"
+    },
+    "49225b0f7d4a7fdc34d196325a6ac80c": {
+      "components": {
+        "RigNode": {
+          "node": 20,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.37498795986175537,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "chest",
+      "parent": "eb1aff6c2de29a130b8fcee764d5174f"
+    },
+    "4a46bbac79d84a5d069ed6e511bd72bd": {
+      "components": {
+        "RigNode": {
+          "node": 19,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            1.998904568454266e-21,
+            0.2432623654603958,
+            -1.406604042131221e-07
+          ],
+          "rotation": [
+            4.4484787892440694e-36,
+            -7.105427357601002e-15,
+            -6.2606778228725875e-22,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_Cape",
+      "parent": "49225b0f7d4a7fdc34d196325a6ac80c"
+    },
+    "4bfc96bdb92e61b3fdc964c7a3b5134f": {
+      "components": {
+        "RigNode": {
+          "node": 33,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            8.589881694831547e-09,
+            0.16565003991127014,
+            -5.0913655513795675e-09
+          ],
+          "rotation": [
+            -0.9999999999999811,
+            3.1086270100492213e-15,
+            -1.9470719792024825e-07,
+            6.917388749250845e-22
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "IK-foot.l",
+      "parent": "91ac7b32bbf5ff832002fcbe6790da59"
+    },
+    "5621e592e54a311281ec0dbde7fa5cb6": {
+      "components": {
+        "RigNode": {
+          "node": 49,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            1.1920927533992569e-07,
+            0.0,
+            0.9999999999999929
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "root",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "56fcb18ec225785759fcb4f067c3af46": {
+      "components": {
+        "RigNode": {
+          "node": 51,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_ArmRight",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "57632b2ef1f15e14b25dca8f62cafaab": {
+      "components": {
+        "RigNode": {
+          "node": 7,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            8.719291955117114e-09,
+            0.26004382967948914,
+            -1.5019517574099694e-10
+          ],
+          "rotation": [
+            -9.737838160593157e-11,
+            -2.984370546522175e-10,
+            0.026658096826570204,
+            0.9996446097856904
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999999403953552,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "wrist.l",
+      "parent": "1624e46ed061bf4aeac2c8d8d51699cb"
+    },
+    "6206a2fe6dc1f2dc72251819e06dba89": {
+      "components": {
+        "RigNode": {
+          "node": 48,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.7131815552711487,
+            1.10676109790802,
+            -8.515731053648778e-08
+          ],
+          "rotation": [
+            -0.5000000447034798,
+            0.4999999254941938,
+            0.4999999850988368,
+            0.5000000447034798
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "handIK.r",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "6823693ddb95ea742647736aef72cd08": {
+      "components": {
+        "RigNode": {
+          "node": 43,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            1.945810623737998e-08,
+            0.3628326654434204,
+            2.42861286636753e-15
+          ],
+          "rotation": [
+            -7.105437521996369e-15,
+            1.3832106731021235e-22,
+            -1.0,
+            2.3398304592726387e-34
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "control-heel-roll.r",
+      "parent": "dea387f64a3dd6a250dd9a77f615ff0c"
+    },
+    "6b4981db654be23d5a5f66a4bb6499c5": {
+      "components": {
+        "RigNode": {
+          "node": 26,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            2.1305768260759805e-10,
+            0.16565002501010895,
+            5.171739481113491e-09
+          ],
+          "rotation": [
+            -3.0479086160908995e-08,
+            -0.9203547907552831,
+            0.3910844654723496,
+            6.94848628535159e-08
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "toes.r",
+      "parent": "4502a0673ccac77c192d34593e09ec63"
+    },
+    "6e47ccf11872e41e7659916b5d987948": {
+      "components": {
+        "RigNode": {
+          "node": 10,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.03330930694937706,
+            -1.2071546962033608e-07
+          ],
+          "rotation": [
+            -1.3270667409414997e-07,
+            -0.999999999999986,
+            1.0331601174584504e-07,
+            2.2765134222168763e-09
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "1H_Sword",
+      "parent": "c9b8aabf78d4aeaac94a5f73f169f16f"
+    },
+    "700fb06d9c4ee3e1c8cdba5da5f1bfb3": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 7,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "b66b449e0c76e84c229dc16e2552427d"
+    },
+    "72a478a08d1ac0d96c3a8e15d3bb679c": {
+      "components": {
+        "RigNode": {
+          "node": 16,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.21200737357139587,
+            0.13413214683532715,
+            8.40246201505579e-08
+          ],
+          "rotation": [
+            -0.514121394427303,
+            0.4854677141970604,
+            0.48546774399938175,
+            0.5141219308690863
+          ],
+          "scale": [
+            0.9999993443489075,
+            0.9999993443489075,
+            0.9999997615814209
+          ]
+        }
+      },
+      "name": "upperarm.r",
+      "parent": "49225b0f7d4a7fdc34d196325a6ac80c"
+    },
+    "761fd2059b393de3ec3e1438e29d6d20": {
+      "components": {
+        "RigNode": {
+          "node": 13,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            1.3322676295501878e-15,
+            0.07382583618164062,
+            2.220446049250313e-16
+          ],
+          "rotation": [
+            1.1999315985099668e-09,
+            -8.931858985628273e-08,
+            5.455195605382622e-06,
+            0.9999999999851166
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "hand.r",
+      "parent": "fda228dd0a1d3d6b9810f7aafc508d33"
+    },
+    "7b26738133160a4d560583bf5df7925a": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 52,
+          "primitive": 11,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "bc2aca1d8e25261eec05d32dc2dd2b3a"
+    },
+    "8762cad82c101351ffa41bd769edb322": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 8,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "db335eda44d6c6d9ef3f8b5586d0ea55"
+    },
+    "8fa1d74e6e6c0daf7d7b88608381f3ff": {
+      "components": {
+        "RigNode": {
+          "node": 36,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            1.945810979009366e-08,
+            0.3628326654434204,
+            -2.42861286636753e-15
+          ],
+          "rotation": [
+            -7.105437521996369e-15,
+            1.3832116828440821e-22,
+            -1.0,
+            2.339829540917677e-34
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "control-heel-roll.l",
+      "parent": "b1be0b6922ee10b3ab659ed3ec33b39b"
+    },
+    "90e2fdfe2b07d8f8064af4fc69afe4d1": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 6,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "6e47ccf11872e41e7659916b5d987948"
+    },
+    "91ac7b32bbf5ff832002fcbe6790da59": {
+      "components": {
+        "RigNode": {
+          "node": 34,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -1.1148216572109959e-08,
+            0.21343614161014557,
+            -2.50941980953559e-15
+          ],
+          "rotation": [
+            1.0403525148397013e-07,
+            -0.3910843430418808,
+            -0.9203548427793972,
+            2.9526043820549277e-08
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            0.9999998807907104
+          ]
+        }
+      },
+      "name": "control-foot-roll.l",
+      "parent": "8fa1d74e6e6c0daf7d7b88608381f3ff"
+    },
+    "976bbf356d1d7f3230d8ae8f50b81721": {
+      "components": {
+        "RigNode": {
+          "node": 28,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -3.5798182196344897e-09,
+            0.22707749903202057,
+            -6.1398597317463555e-09
+          ],
+          "rotation": [
+            0.10622512940484892,
+            -6.865285940136196e-08,
+            7.376986791077155e-08,
+            0.9943421050538456
+          ],
+          "scale": [
+            1.0,
+            1.0000004768371582,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "lowerleg.r",
+      "parent": "e1467d72ae2dedfb435fa2cdaeafb1f5"
+    },
+    "99d40d20a23cc253fba9a2db2c06c9ce": {
+      "components": {
+        "RigNode": {
+          "node": 46,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.7131814956665039,
+            1.10676109790802,
+            2.5491414135103696e-07
+          ],
+          "rotation": [
+            -0.4999999254941938,
+            -0.5000000447034798,
+            -0.5000000447034798,
+            0.4999999850988368
+          ],
+          "scale": [
+            0.9999998807907104,
+            0.9999997615814209,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "handIK.l",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "9a1db776fbc6dfe52e04f2b71e54696c": {
+      "components": {
+        "RigNode": {
+          "node": 1,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.01701178587973118,
+            0.15588533878326416
+          ],
+          "rotation": [
+            -1.0331633148997427e-07,
+            1.6853415729639412e-07,
+            1.4002976058677273e-06,
+            0.9999999999990001
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Badge_Shield",
+      "parent": "d00fe4f82a767026dc9dd15819164664"
+    },
+    "adfa4c5aa826aec4d03aa5f59b6f98b0": {
+      "components": {
+        "RigNode": {
+          "node": 50,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_ArmLeft",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "b0c67e9e3a9663813b2f67e936fd6c6e": {
+      "components": {
+        "RigNode": {
+          "node": 18,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.26879656314849854,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "head",
+      "parent": "49225b0f7d4a7fdc34d196325a6ac80c"
+    },
+    "b1be0b6922ee10b3ab659ed3ec33b39b": {
+      "components": {
+        "RigNode": {
+          "node": 37,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.1709449738264084,
+            0.025990262627601624,
+            0.24578937888145447
+          ],
+          "rotation": [
+            -0.707106781186544,
+            -7.052849563519278e-08,
+            -7.052848142433901e-08,
+            0.707106781186544
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "control-toe-roll.l",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "b66b449e0c76e84c229dc16e2552427d": {
+      "components": {
+        "RigNode": {
+          "node": 11,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.03330930694937706,
+            -1.2071546962033608e-07
+          ],
+          "rotation": [
+            -1.4007341064825384e-07,
+            -0.9999999999999849,
+            1.0331601174584492e-07,
+            9.119507815569113e-09
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "2H_Sword",
+      "parent": "c9b8aabf78d4aeaac94a5f73f169f16f"
+    },
+    "b7236fda728aa6a1b609ec60828b9a43": {
+      "components": {
+        "RigNode": {
+          "node": 54,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_LegLeft",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "bade5243a0929e1bb728b2158145a735": {
+      "components": {
+        "RigNode": {
+          "node": 47,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.4535071849822998,
+            1.10676109790802,
+            -0.5888596177101135
+          ],
+          "rotation": [
+            -0.7071067811865437,
+            -7.279510549371583e-08,
+            -7.279508417743519e-08,
+            0.7071067811865437
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "elbowIK.r",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "bc2aca1d8e25261eec05d32dc2dd2b3a": {
+      "components": {
+        "RigNode": {
+          "node": 52,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_Body",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "bc5488eaf1abc69cfc0a2dd54d662651": {
+      "components": {
+        "RigNode": {
+          "node": 9,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.21200737357139587,
+            0.13413214683532715,
+            8.40246201505579e-08
+          ],
+          "rotation": [
+            -0.514121439155275,
+            -0.4854677597541582,
+            -0.48546772995183773,
+            0.514121856387761
+          ],
+          "scale": [
+            0.9999993443489075,
+            0.9999993443489075,
+            0.9999997615814209
+          ]
+        }
+      },
+      "name": "upperarm.l",
+      "parent": "49225b0f7d4a7fdc34d196325a6ac80c"
+    },
+    "bd3390806882b13ded8a256e5516e044": {
+      "components": {
+        "RigNode": {
+          "node": 23,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            1.8322229844436322e-10,
+            0.14943702518939972,
+            9.665366285105392e-10
+          ],
+          "rotation": [
+            -0.4552390150447966,
+            1.6197126743391094e-08,
+            -3.435684352250078e-08,
+            0.8903692712470721
+          ],
+          "scale": [
+            1.0,
+            1.0000008344650269,
+            0.9999987483024597
+          ]
+        }
+      },
+      "name": "foot.l",
+      "parent": "c29c1456eb5553415a11e2694b27b320"
+    },
+    "bec4f9a59d14c740f50a7709943b5ad5": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 4,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "fc117a64f4d5e601eed6b10cea8e6cb3"
+    },
+    "c29c1456eb5553415a11e2694b27b320": {
+      "components": {
+        "RigNode": {
+          "node": 24,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            3.5798182196344897e-09,
+            0.22707749903202057,
+            -6.1398597317463555e-09
+          ],
+          "rotation": [
+            0.10622512940484892,
+            6.865284519050871e-08,
+            -7.376986791077155e-08,
+            0.9943421050538456
+          ],
+          "scale": [
+            1.0,
+            1.0000004768371582,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "lowerleg.l",
+      "parent": "d759941043fb120c311f8649e7efdefe"
+    },
+    "c9b8aabf78d4aeaac94a5f73f169f16f": {
+      "components": {
+        "RigNode": {
+          "node": 12,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -8.348148838877023e-10,
+            0.09612506628036499,
+            -0.05750012397766113
+          ],
+          "rotation": [
+            1.6097330411016744e-09,
+            -1.6097329300793698e-09,
+            0.7071068407911908,
+            0.7071067215818992
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "handslot.r",
+      "parent": "761fd2059b393de3ec3e1438e29d6d20"
+    },
+    "ce15664bd29f47411d57771943017c04": {
+      "components": {
+        "RigNode": {
+          "node": 53,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_Head",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "d00fe4f82a767026dc9dd15819164664": {
+      "components": {
+        "RigNode": {
+          "node": 5,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            8.348148838877023e-10,
+            0.09612506628036499,
+            -0.05750012397766113
+          ],
+          "rotation": [
+            1.609753136138764e-09,
+            1.6097530251164595e-09,
+            -0.7071068407911908,
+            0.7071067215818992
+          ],
+          "scale": [
+            0.9999999403953552,
+            1.0,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "handslot.l",
+      "parent": "ec59fb82c5cc8f824432c4420d52ad1e"
+    },
+    "d35de6d94c06836f3a5c53b68c905938": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 50,
+          "primitive": 0,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "adfa4c5aa826aec4d03aa5f59b6f98b0"
+    },
+    "d759941043fb120c311f8649e7efdefe": {
+      "components": {
+        "RigNode": {
+          "node": 25,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.17094506323337555,
+            0.11358726024627686,
+            1.392327231286572e-08
+          ],
+          "rotation": [
+            0.9998490747265741,
+            -7.132756207268958e-08,
+            -1.2042738286048052e-08,
+            0.017373191083055177
+          ],
+          "scale": [
+            1.0,
+            0.9999998211860657,
+            1.0000011920928955
+          ]
+        }
+      },
+      "name": "upperleg.l",
+      "parent": "f7584cffc6c0748d0e18471409bc42a3"
+    },
+    "d86e98ef55607c81c92dd758dde090fb": {
+      "components": {
+        "RigNode": {
+          "node": 2,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.01701178587973118,
+            0.15588533878326416
+          ],
+          "rotation": [
+            -1.0331633148997427e-07,
+            1.6853415729639412e-07,
+            1.4002976058677273e-06,
+            0.9999999999990001
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Rectangle_Shield",
+      "parent": "d00fe4f82a767026dc9dd15819164664"
+    },
+    "db335eda44d6c6d9ef3f8b5586d0ea55": {
+      "components": {
+        "RigNode": {
+          "node": 17,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            4.76837158203125e-07,
+            -0.02553432807326317,
+            -1.0854230936274689e-07
+          ],
+          "rotation": [
+            -7.85025605384411e-37,
+            -7.1054265105680546e-15,
+            1.1048254461819734e-22,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_Helmet",
+      "parent": "b0c67e9e3a9663813b2f67e936fd6c6e"
+    },
+    "db69871632e9d7a034f03f14a2c6bb04": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 51,
+          "primitive": 10,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "56fcb18ec225785759fcb4f067c3af46"
+    },
+    "dc8a868cc8d2bbcfbdbda77423c836f7": {
+      "components": {
+        "RigNode": {
+          "node": 22,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -2.1305965325346676e-10,
+            0.16565002501010895,
+            5.171735040221392e-09
+          ],
+          "rotation": [
+            -3.047908260819528e-08,
+            0.9203547907552831,
+            -0.3910844654723496,
+            6.948484864266108e-08
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0000001192092896
+          ]
+        }
+      },
+      "name": "toes.l",
+      "parent": "bd3390806882b13ded8a256e5516e044"
+    },
+    "dea387f64a3dd6a250dd9a77f615ff0c": {
+      "components": {
+        "RigNode": {
+          "node": 44,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.17094509303569794,
+            0.025990262627601624,
+            0.2457892894744873
+          ],
+          "rotation": [
+            -0.707106781186544,
+            -7.052850274061966e-08,
+            -7.052849563519278e-08,
+            0.707106781186544
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "control-toe-roll.r",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "e1467d72ae2dedfb435fa2cdaeafb1f5": {
+      "components": {
+        "RigNode": {
+          "node": 29,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -0.17094506323337555,
+            0.11358726024627686,
+            1.392327231286572e-08
+          ],
+          "rotation": [
+            0.9998490747265735,
+            7.426564205565235e-08,
+            -3.1726272963854054e-08,
+            0.017373191083055167
+          ],
+          "scale": [
+            1.0,
+            0.9999998211860657,
+            1.0000011920928955
+          ]
+        }
+      },
+      "name": "upperleg.r",
+      "parent": "f7584cffc6c0748d0e18471409bc42a3"
+    },
+    "e2b80c471e3bb42a6c63936f8bfbbd2e": {
+      "components": {
+        "RigNode": {
+          "node": 45,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.4535074830055237,
+            1.10676109790802,
+            -0.5888593792915344
+          ],
+          "rotation": [
+            -0.7071067811865437,
+            -7.279510549371583e-08,
+            -7.279508417743519e-08,
+            0.7071067811865437
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "elbowIK.l",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "e397dc71a42f1012c0dc38c2a5a383bd": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 3,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "d86e98ef55607c81c92dd758dde090fb"
+    },
+    "e6e14f580aef78f2af7371673935481c": {
+      "components": {
+        "RigNode": {
+          "node": 4,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.01701178587973118,
+            0.15588533878326416
+          ],
+          "rotation": [
+            -1.0331633148997427e-07,
+            1.6853415729639412e-07,
+            1.4002976058677273e-06,
+            0.9999999999990001
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Spike_Shield",
+      "parent": "d00fe4f82a767026dc9dd15819164664"
+    },
+    "e834fcabdb4ae20a31316797bdb956af": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "SkinnedMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "node": 53,
+          "primitive": 12,
+          "rig": "00000000000000000000000000000010",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "ce15664bd29f47411d57771943017c04"
+    },
+    "eb1aff6c2de29a130b8fcee764d5174f": {
+      "components": {
+        "RigNode": {
+          "node": 21,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.19197750091552734,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            7.105427357601002e-15,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "spine",
+      "parent": "f7584cffc6c0748d0e18471409bc42a3"
+    },
+    "eba4579c1b94d0b316ce8d62d0a7139f": {
+      "components": {
+        "RigNode": {
+          "node": 35,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -4.556949040335212e-09,
+            -7.950292091329914e-10,
+            -1.862645149230957e-09
+          ],
+          "rotation": [
+            1.3700857946876733e-22,
+            -6.74097803833636e-17,
+            -1.9466934730871796e-08,
+            0.9999999999999998
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "IK-toe.l",
+      "parent": "8fa1d74e6e6c0daf7d7b88608381f3ff"
+    },
+    "ec59fb82c5cc8f824432c4420d52ad1e": {
+      "components": {
+        "RigNode": {
+          "node": 6,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            9.08162434143378e-13,
+            0.07382583618164062,
+            2.220446049250313e-16
+          ],
+          "rotation": [
+            1.2001791782444487e-09,
+            1.3310183532923578e-07,
+            -5.455195605382595e-06,
+            0.9999999999851117
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "hand.l",
+      "parent": "57632b2ef1f15e14b25dca8f62cafaab"
+    },
+    "f1ede3f870676a499acf0af759679d25": {
+      "components": {
+        "RigNode": {
+          "node": 32,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            8.589881694831547e-09,
+            0.16565003991127014,
+            -5.0913655513795675e-09
+          ],
+          "rotation": [
+            -0.39108434304188133,
+            -6.884999945247598e-08,
+            -6.562877527745051e-08,
+            0.9203548427793984
+          ],
+          "scale": [
+            1.0,
+            0.9999999403953552,
+            1.0
+          ]
+        }
+      },
+      "name": "heelIK.l",
+      "parent": "91ac7b32bbf5ff832002fcbe6790da59"
+    },
+    "f36e39695ae4e00bbea19a9f3000604e": {
+      "components": {
+        "RigNode": {
+          "node": 55,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Knight_LegRight",
+      "parent": "144ee1c041a863981e1366e8f9170c19"
+    },
+    "f6908f8078b63088c4de4e07bdbc693e": {
+      "components": {
+        "PbrMaterial": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "double_sided": true,
+          "emissive": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.5
+        },
+        "StaticMesh": {
+          "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "primitive": 9,
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Primitive 0",
+      "parent": "4a46bbac79d84a5d069ed6e511bd72bd"
+    },
+    "f7584cffc6c0748d0e18471409bc42a3": {
+      "components": {
+        "RigNode": {
+          "node": 30,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.4056634306907654,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            -1.1920927533992569e-07,
+            0.0,
+            0.9999999999999929
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "hips",
+      "parent": "5621e592e54a311281ec0dbde7fa5cb6"
+    },
+    "fc117a64f4d5e601eed6b10cea8e6cb3": {
+      "components": {
+        "RigNode": {
+          "node": 3,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            0.0,
+            0.01701178587973118,
+            0.15588533878326416
+          ],
+          "rotation": [
+            -1.0331633148997427e-07,
+            1.6853415729639412e-07,
+            1.4002976058677273e-06,
+            0.9999999999990001
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "name": "Round_Shield",
+      "parent": "d00fe4f82a767026dc9dd15819164664"
+    },
+    "fda228dd0a1d3d6b9810f7aafc508d33": {
+      "components": {
+        "RigNode": {
+          "node": 14,
+          "rig": "00000000000000000000000000000010"
+        },
+        "Transform": {
+          "position": [
+            -8.718383348593761e-09,
+            0.26004382967948914,
+            -1.5019517574099694e-10
+          ],
+          "rotation": [
+            -9.737838160593157e-11,
+            2.984370546522175e-10,
+            -0.026658096826570204,
+            0.9996446097856904
+          ],
+          "scale": [
+            0.9999999403953552,
+            0.9999999403953552,
+            0.9999999403953552
+          ]
+        }
+      },
+      "name": "wrist.r",
+      "parent": "2863efd97eea9bc223e8095cd2567d53"
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 3,
+  "templates": {},
+  "ui": {
+    "00000000000000000000000000000100": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "layout": {
+        "gap": 7,
+        "left": {
+          "unit": "dp",
+          "value": 16
+        },
+        "padding": [
+          14,
+          14,
+          14,
+          14
+        ],
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 16
+        },
+        "width": {
+          "unit": "dp",
+          "value": 390
+        }
+      },
+      "name": "panel",
+      "parent": null,
+      "style": {
+        "background_color": "#101c2de8",
+        "color": "#edf5ff",
+        "font_size": 16
+      },
+      "text": "",
+      "visible": true
+    },
+    "00000000000000000000000000000101": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "title",
+      "parent": "00000000000000000000000000000100",
+      "text": "KNIGHT / TWO SIGNALS",
+      "visible": true
+    },
+    "00000000000000000000000000000102": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "instructions",
+      "parent": "00000000000000000000000000000100",
+      "text": "WASD move | E signal | cyan 1 then gold 2",
+      "visible": true
+    },
+    "00000000000000000000000000000103": {
+      "action": "begin",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 32
+        }
+      },
+      "name": "begin",
+      "parent": "00000000000000000000000000000100",
+      "style": {
+        "background_color": "#284d68",
+        "color": "#ffffff",
+        "font_size": 17
+      },
+      "text": "Begin",
+      "visible": true
+    },
+    "00000000000000000000000000000104": {
+      "action": "save",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 32
+        }
+      },
+      "name": "save",
+      "parent": "00000000000000000000000000000100",
+      "style": {
+        "background_color": "#284d68",
+        "color": "#ffffff",
+        "font_size": 17
+      },
+      "text": "Save",
+      "visible": true
+    },
+    "00000000000000000000000000000105": {
+      "action": "load",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 32
+        }
+      },
+      "name": "load",
+      "parent": "00000000000000000000000000000100",
+      "style": {
+        "background_color": "#284d68",
+        "color": "#ffffff",
+        "font_size": 17
+      },
+      "text": "Load",
+      "visible": true
+    },
+    "00000000000000000000000000000106": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "phase",
+      "parent": "00000000000000000000000000000100",
+      "text": "Phase: Ready",
+      "visible": true
+    },
+    "00000000000000000000000000000107": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "progress",
+      "parent": "00000000000000000000000000000100",
+      "text": "Progress: 0 / 2",
+      "visible": true
+    },
+    "00000000000000000000000000000108": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "refusals",
+      "parent": "00000000000000000000000000000100",
+      "text": "Refusals: 0",
+      "visible": true
+    },
+    "00000000000000000000000000000109": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "save_status",
+      "parent": "00000000000000000000000000000100",
+      "text": "No checkpoint requested",
+      "visible": true
+    }
+  },
+  "version": 4,
+  "world_id": "ebcd5af3ab5778a99ad49fdc2991ff0f"
+}

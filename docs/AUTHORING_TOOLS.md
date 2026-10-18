@@ -14,6 +14,13 @@ on Windows. The compiler and .NET framework/runtime packages remain explicit
 development prerequisites. The pack builder does not install them or download
 packages. The optional bridge does not include a .NET runtime or SDK.
 
+Pack compilation and native publication set
+`DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=true` in their child environments.
+This suppresses the SDK's opportunistic workload-update advertising during
+these commands. The caller's environment and machine-wide settings are
+unchanged; project restore and build requirements still apply.
+[SDK setting](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables#dotnet_cli_workload_update_notify_disable).
+
 ## Build and inspect a pack
 
 From a source checkout, select the installed .NET executable and new output and

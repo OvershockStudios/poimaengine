@@ -55,6 +55,44 @@ def save(root, value):
     (root/'authoring.json').write_bytes((json.dumps(value, indent=2)+'\n').encode())
 
 
+class BuilderChildEnvironment(unittest.TestCase):
+    def test_sdk_advertising_disabled_only_in_child_environment(self):
+        variable = 'DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE'
+        for setting in (None, 'false', 'true'):
+            environment = {'POIMA_TEST_VALUE': 'literal $(no-shell) & value',
+                           'DOTNET_CLI_TELEMETRY_OPTOUT': '0',
+                           'DOTNET_GENERATE_ASPNET_CERTIFICATE': 'true'}
+            if setting is not None:
+                environment[variable] = setting
+            with self.subTest(setting=setting), patch.dict(os.environ, environment, clear=True):
+                before = dict(os.environ)
+                work = Path('owned work')
+                with patch.object(builder.subprocess, 'run') as child:
+                    output = builder._build(Path('selected dotnet'), Path('game project.csproj'), work, 'generator')
+                self.assertEqual(output, work/'generator-output')
+                self.assertEqual(child.call_count, 1)
+                command = child.call_args.args[0]
+                self.assertEqual(command[:3], ['selected dotnet', 'build', 'game project.csproj'])
+                for flag in ('--disable-build-servers', '-nodeReuse:false', '-p:UseSharedCompilation=false'):
+                    self.assertIn(flag, command)
+                self.assertEqual(child.call_args.kwargs, dict(cwd=work, check=True,
+                    env={**before, variable: 'true', 'DOTNET_CLI_TELEMETRY_OPTOUT': '1',
+                         'DOTNET_GENERATE_ASPNET_CERTIFICATE': 'false'}))
+                self.assertEqual(dict(os.environ), before)
+
+    def test_child_failure_propagates_without_changing_parent_environment(self):
+        with patch.dict(os.environ, {'DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE': 'false',
+                                    'POIMA_TEST_VALUE': 'kept'}, clear=True):
+            before = dict(os.environ)
+            error = builder.subprocess.CalledProcessError(7, ['dotnet', 'build'])
+            with patch.object(builder.subprocess, 'run', side_effect=error) as child:
+                with self.assertRaises(builder.subprocess.CalledProcessError) as failure:
+                    builder._build(Path('dotnet'), Path('game.csproj'), Path('owned work'), 'generator')
+            self.assertIs(failure.exception, error)
+            self.assertEqual(child.call_args.kwargs['env']['DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE'], 'true')
+            self.assertEqual(dict(os.environ), before)
+
+
 class PackContract(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='poima-pack-contract-')

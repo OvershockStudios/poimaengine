@@ -1,0 +1,13 @@
+{
+  "audio": false,
+  "entry": {
+    "camera": "00000000000000000000000000000003",
+    "controller": "00000000000000000000000000000002",
+    "world": "world.json"
+  },
+  "format": "poima.project",
+  "input_profile": "settings/route.poima-input.json",
+  "name": "Knight Two Pads",
+  "project_id": "97991024cd8edf859db27303b0e06f7f",
+  "version": 1
+}

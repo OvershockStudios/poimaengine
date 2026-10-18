@@ -32,6 +32,43 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+class PublisherChildEnvironment(unittest.TestCase):
+    def test_sdk_advertising_disabled_only_in_child_environment(self):
+        variable = 'DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE'
+        for setting in (None, 'false', 'true'):
+            for capture in (False, True):
+                environment = {'POIMA_TEST_VALUE': 'literal $(no-shell) & value',
+                               'DOTNET_CLI_TELEMETRY_OPTOUT': '0',
+                               'DOTNET_GENERATE_ASPNET_CERTIFICATE': 'true'}
+                if setting is not None:
+                    environment[variable] = setting
+                with self.subTest(setting=setting, capture=capture), patch.dict(os.environ, environment, clear=True):
+                    before = dict(os.environ)
+                    command = [Path('selected dotnet'), 'publish', Path('game project.csproj')]
+                    completed = publish.subprocess.CompletedProcess(command, 0, stdout='  result\n')
+                    with patch.object(publish.subprocess, 'run', return_value=completed) as child:
+                        result = publish.run(command, Path('owned work'), capture=capture)
+                    self.assertEqual(result, 'result' if capture else None)
+                    child.assert_called_once_with([str(value) for value in command], cwd=Path('owned work'),
+                        text=True, stdout=publish.subprocess.PIPE if capture else None, check=True,
+                        env={**before, variable: 'true', 'DOTNET_CLI_TELEMETRY_OPTOUT': '1',
+                             'DOTNET_GENERATE_ASPNET_CERTIFICATE': 'false'})
+                    self.assertEqual(dict(os.environ), before)
+
+    def test_child_failure_propagates_without_changing_parent_environment(self):
+        for capture in (False, True):
+            with self.subTest(capture=capture), patch.dict(os.environ,
+                    {'DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE': 'false', 'POIMA_TEST_VALUE': 'kept'}, clear=True):
+                before = dict(os.environ)
+                error = publish.subprocess.CalledProcessError(7, ['dotnet', 'publish'])
+                with patch.object(publish.subprocess, 'run', side_effect=error) as child:
+                    with self.assertRaises(publish.subprocess.CalledProcessError) as failure:
+                        publish.run(['dotnet', 'publish'], Path('owned work'), capture=capture)
+                self.assertIs(failure.exception, error)
+                self.assertEqual(child.call_args.kwargs['env']['DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE'], 'true')
+                self.assertEqual(dict(os.environ), before)
+
+
 class PublisherPack(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

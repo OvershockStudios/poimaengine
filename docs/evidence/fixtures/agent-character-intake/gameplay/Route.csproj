@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(PoimaAuthoringPack)/build/Poima.Gameplay.props" />
+  <PropertyGroup><AssemblyName>Knight.Route</AssemblyName></PropertyGroup>
+</Project>

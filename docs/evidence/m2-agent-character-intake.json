@@ -1,0 +1,962 @@
+{
+  "format": "poima.agent-character-intake.evidence.v1",
+  "checkpoint_version": "0.0.181",
+  "date": "2026-10-18",
+  "scope": "Bounded original-character compiled C# route task: failed fresh attempt, explicitly assisted original-module campaign, separate portable source rebuild and new-module Windows headless campaign.",
+  "verdicts": {
+    "original_fresh_task_passed": false,
+    "original_provider_completed": true,
+    "assisted_original_module_qualified": true,
+    "portable_build_adoption_export_qualified": true,
+    "portable_rebuilt_module_campaign_qualified": true,
+    "whole_engine_or_alpha_qualified": false
+  },
+  "versions": {
+    "public_source_and_new_authoring_pack": "0.0.181",
+    "qualified_engine_runtime": "0.0.180",
+    "original_authoring_pack": "0.0.164",
+    "dotnet_sdk": "10.0.401",
+    "dotnet_nativeaot_runtime": "10.0.12",
+    "msvc_linker": "14.44.35207",
+    "target": "win-x64"
+  },
+  "task": {
+    "fixture": "fixtures/agent-character-intake/README.md",
+    "requirements": "Inspect/import the intact original Knight, derive controller dimensions from bounds, and create an ordered two-pad signalling route. Begin/Save/Load are native UI callbacks. Named logical input drives movement and signalling. Idle/Running_A follows committed displacement in all phases, including collision and Complete.",
+    "input_scope": "Pressed/Held/Released via native input sampling; no physical-input claim.",
+    "simulation_hz": 60,
+    "inertial_transition_ticks": 12,
+    "gameplay_type": "KnightRoute.RouteGame",
+    "state_schema": {
+      "identity": "knight.two-signals.original.v1",
+      "bytes": 96,
+      "fields": [
+        {
+          "name": "ActiveTicks",
+          "kind": "int32",
+          "offset": 12,
+          "bytes": 4
+        },
+        {
+          "name": "EpochHigh",
+          "kind": "int64",
+          "offset": 48,
+          "bytes": 8
+        },
+        {
+          "name": "EpochLow",
+          "kind": "int64",
+          "offset": 56,
+          "bytes": 8
+        },
+        {
+          "name": "HavePrevious",
+          "kind": "int32",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "name": "Notice",
+          "kind": "int32",
+          "offset": 92,
+          "bytes": 4
+        },
+        {
+          "name": "Phase",
+          "kind": "int32",
+          "offset": 0,
+          "bytes": 4
+        },
+        {
+          "name": "PreviousX",
+          "kind": "float64",
+          "offset": 24,
+          "bytes": 8
+        },
+        {
+          "name": "PreviousZ",
+          "kind": "float64",
+          "offset": 32,
+          "bytes": 8
+        },
+        {
+          "name": "Progress",
+          "kind": "int32",
+          "offset": 4,
+          "bytes": 4
+        },
+        {
+          "name": "Refusals",
+          "kind": "int32",
+          "offset": 8,
+          "bytes": 4
+        },
+        {
+          "name": "SelectedClip",
+          "kind": "int32",
+          "offset": 40,
+          "bytes": 4
+        },
+        {
+          "name": "TicketHigh",
+          "kind": "int64",
+          "offset": 64,
+          "bytes": 8
+        },
+        {
+          "name": "TicketKind",
+          "kind": "int32",
+          "offset": 88,
+          "bytes": 4
+        },
+        {
+          "name": "TicketLow",
+          "kind": "int64",
+          "offset": 72,
+          "bytes": 8
+        },
+        {
+          "name": "TicketSequence",
+          "kind": "int64",
+          "offset": 80,
+          "bytes": 8
+        }
+      ]
+    }
+  },
+  "original_fresh_attempt": {
+    "passed": false,
+    "provider_process_completed": true,
+    "provider_turns": 1,
+    "automatic_retry": false,
+    "provider_seconds": 619.0799058640041,
+    "typed_submissions": {
+      "development.publish": 2,
+      "development.export": 1,
+      "development.compile": 0
+    },
+    "guarded_original_import_qualified": true,
+    "failure": {
+      "required_marker_y_metres": 0,
+      "actual_marker_y_metres": 0.005,
+      "deviation_mm": 5,
+      "affected_markers": 2,
+      "admission": "Failed fixed court placement before native gameplay campaign."
+    },
+    "interpretation": "Completed provider, real NativeAOT publications and export do not establish task success."
+  },
+  "content": {
+    "character": "KayKit Adventurers 1.0 Knight",
+    "author": "Kay Lousberg",
+    "license": "CC0-1.0",
+    "original_glb": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_license": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "cooked_model": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    },
+    "importer": "cgltf-1.15/poima-animation-reference-1",
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76,
+    "selected_clips": {
+      "Idle": 36,
+      "Running_A": 48
+    },
+    "intake": "Native inspection fingerprint joined guarded import of the same source. Native rest bounds informed controller fitting; tangent fallback diagnostics retained.",
+    "reference": "Independent original GLB decoder accounts for cgltf float32 transforms and normalized rotations; source curves provide settled-pose comparisons."
+  },
+  "assisted_original_module": {
+    "classification": "assisted-recovery",
+    "original_fresh_task_passed": false,
+    "changes": "Two guarded native Transform Y edits from0.005 to0 and new export; original C#, compiled image and cooked model retained.",
+    "image_sha256": "e5e0f92f746d6a9eddb9f475da973e730a807883ec00410d7d0a92bf1be46072",
+    "checks": 569,
+    "rpc_pairs": 4151,
+    "causal_ticks": 1345,
+    "whole_v9_pairs": 4,
+    "whole_checkpoint": {
+      "bytes": 115814,
+      "sha256": "13d654d11f040887737dfe23eb5a8d64f2d365c2e4b3c05d63d1a826f2e4bf19"
+    },
+    "settled_poses": 6,
+    "nodes_per_pose": 57,
+    "candidate_files_restored": 83,
+    "native_members": 4,
+    "job_total_including_worker": 5,
+    "seconds": 15.693220599998313,
+    "scope": "Original-module outcome, separate from the later newly compiled portable module."
+  },
+  "retained_failures": [
+    {
+      "stage": "Assisted campaign1",
+      "outcome": "Whole inventory failed: native input inspection created a documented zero-byte profile lock beyond the82-file baseline. No deletion/exclusion/regrading; a separate initialized83-file campaign followed."
+    },
+    {
+      "stage": "Initial assisted campaign2 reader",
+      "outcome": "Consumed observation was reused across same-tick Begin. Successor fixed association and reread identical native records, with no native rerun or tick/state exclusions. Original failure retained."
+    },
+    {
+      "stage": "Portable source build1",
+      "outcome": "Publisher leader exited0; retirement failed. Outer Job total25/active1 required forced cleanup to active0. Original receipt has no descendant PID/image; survivor identity remains unqualified."
+    },
+    {
+      "stage": "Separate publisher diagnostic",
+      "outcome": "Three owned-Job snapshots at leader exit, approximately+1s and+5s observed the same vctip.exe PID/creation identity. Diagnostic remained failed with forced cleanup. No retrospective identity for build1, direct parent-chain proof or SDK-advertising causality is inferred."
+    },
+    {
+      "stage": "Initial portable input inspection and preparation",
+      "outcome": "input.inspect without required path returned-32602; host.shutdown on a dedicated world returned-32080. EOF closed the native owner naturally, but the operation failed. Opening the world created its documented lock. A later source-baseline assertion and missing stdin redirect failed separately before another native launch. A new inspection with explicit path then closed naturally; both actual locks were pinned in the final84-file baseline."
+    }
+  ],
+  "portable_source_rebuild": {
+    "classification": "portable-source-rebuild-assisted",
+    "passed": true,
+    "independent_checks": 248,
+    "selected_input_pins": 128,
+    "managed_source_members": 33,
+    "public_fixture_content_inputs": {
+      "project.json": {
+        "bytes": 349,
+        "sha256": "092407ff44b6f6cc00ca4da0f23cee14b154af40a4b1b9049536fbc1376bee49"
+      },
+      "world.json": {
+        "bytes": 63967,
+        "sha256": "ab306c1a585f7d0d23ff977a832ced2bbebf08f7bec21292e77a24369e1c2b55"
+      },
+      "gameplay/Route.cs": {
+        "bytes": 4566,
+        "sha256": "d49ebf6a58d2112c32479b28f0dab5ddb08c5447b1a5a31e7186830b52a68e99"
+      },
+      "gameplay/Route.csproj": {
+        "bytes": 192,
+        "sha256": "ab55ad549e8dbf517469e52e872846018031926cf2108b064e756a7b4bf8f058"
+      },
+      "settings/route.poima-input.json": {
+        "bytes": 1135,
+        "sha256": "3c2e62770f3a98ec2ee8bb1d8b618a3164cee3ad66687c7f7856319120daf1c5"
+      },
+      "content/character/LICENSE.txt": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "world.json.assets/c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7.pmodel": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      }
+    },
+    "source_scope": "Seven content files match selected pre-adoption sources. README/provenance metadata are separate. Only guarded native adoption changes project selection/version. Source-to-artifact lineage is not a hermetic compiler-input attestation.",
+    "adopted_project": {
+      "bytes": 477,
+      "sha256": "7a16ef6d2c9c40840208cbaea5e354c648d3eb2d64b1cd6c93d12fee5c6e974b"
+    },
+    "authoring_pack": {
+      "format_version": 2,
+      "engine_version": "0.0.181",
+      "files_including_manifest": 18,
+      "inventory": {
+        "authoring.json": {
+          "bytes": 3456,
+          "sha256": "ff237204c7fab87e09127d6df919cbe033baa3a09579bdd1a419feee0e78018f"
+        },
+        "analyzers/Poima.Components.Generator.dll": {
+          "bytes": 49152,
+          "sha256": "9d1294523efc1c34c437896937a71ed9f84306c4ff74461ff02cefe8ddfd4887"
+        },
+        "bridge/Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "aafeb56bbb7a818ef58c8da8948ef02d51f1e15e1a4d9579d1b8dbfb02652d77"
+        },
+        "bridge/Poima.ManagedBridge.deps.json": {
+          "bytes": 846,
+          "sha256": "8cfc18f62f0a37c83186370a260603cdbcbed96f1ae9d099608aa4c17cac812d"
+        },
+        "bridge/Poima.ManagedBridge.dll": {
+          "bytes": 50688,
+          "sha256": "1a6a147afaeee6d8243d380dd1f295db7ae736fa69276946525e547e7cd442b2"
+        },
+        "bridge/Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 377,
+          "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+        },
+        "build/Poima.Components.targets": {
+          "bytes": 148,
+          "sha256": "777f19e398203d11f430ec029ff40795c468698c8316941c26ea59d2775c84ae"
+        },
+        "build/Poima.Gameplay.props": {
+          "bytes": 658,
+          "sha256": "d692fd23a81e2174770127803f94e67c7f1d4e01766a6b39f1cb9ff9552b0843"
+        },
+        "native/Entry.cs": {
+          "bytes": 6712,
+          "sha256": "ba78b92aec1f54e0a8b1a4faf9910617175a4d578a1124c0d87744b5f259722c"
+        },
+        "notices/POIMA-LICENSE.txt": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": {
+          "bytes": 21435,
+          "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+        },
+        "sdk/Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "aafeb56bbb7a818ef58c8da8948ef02d51f1e15e1a4d9579d1b8dbfb02652d77"
+        },
+        "tools/authoring_pack.py": {
+          "bytes": 9960,
+          "sha256": "5423825b75a468abd59f527f8ec02e36b9fdaa109966b145fd1d0201f0b57843"
+        },
+        "tools/native-generator/Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "aafeb56bbb7a818ef58c8da8948ef02d51f1e15e1a4d9579d1b8dbfb02652d77"
+        },
+        "tools/native-generator/Poima.NativeGame.Generator.deps.json": {
+          "bytes": 875,
+          "sha256": "c86efda4df65e9d113663094d53242c1798c0bbd5d1700f13232b54047f7ade0"
+        },
+        "tools/native-generator/Poima.NativeGame.Generator.dll": {
+          "bytes": 31232,
+          "sha256": "1cfe67aa775797ed157f17b0efd78612cea4fc3db734959f4f38601557e5bd0b"
+        },
+        "tools/native-generator/Poima.NativeGame.Generator.runtimeconfig.json": {
+          "bytes": 342,
+          "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+        },
+        "tools/publish_native_gameplay.py": {
+          "bytes": 20136,
+          "sha256": "4b76ddc828e82436f72d948d3754cf3b81c12e324b3a2db246c7a740c44a33b8"
+        }
+      }
+    },
+    "compiler_policy": {
+      "child_sdk_advertising_disabled": true,
+      "telemetry_certificate_overrides_retained": true,
+      "build_servers_disabled": true,
+      "node_reuse_disabled": true,
+      "shared_compilation_disabled": true,
+      "below_normal_priority": true,
+      "linker_selection": "Seven byte-for-byte official dependencies in per-job PATH, without adjacent vctip.exe; no installed-tool, registry or global changes.",
+      "linker_members": [
+        "link.exe",
+        "tbbmalloc.dll",
+        "1033/linkui.dll",
+        "mspdbcore.dll",
+        "mspdb140.dll",
+        "msobj140.dll",
+        "mspdbsrv.exe"
+      ],
+      "causal_limit": "Advertising suppression is independent of the observed vctip lifetime; this pass does not retroactively identify the earlier survivor.",
+      "debug_symbol_settings_unchanged": true,
+      "dotnet_processor_count_override": 2
+    },
+    "phases": [
+      {
+        "operation": "package CoreCLR authoring tools",
+        "exit_code": 0,
+        "seconds": 12.4486751000004,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "validate new installed pack",
+        "exit_code": 0,
+        "seconds": 0.21140910000394797,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "publish NativeAOT gameplay",
+        "exit_code": 0,
+        "seconds": 12.190455199997814,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "guarded gameplay adoption",
+        "exit_code": 0,
+        "seconds": 1.7845611000011559,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "inspect adopted project",
+        "exit_code": 0,
+        "seconds": 0.719430299999658,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "export standalone player",
+        "exit_code": 0,
+        "seconds": 5.330052599994815,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      },
+      {
+        "operation": "inspect exported bundle",
+        "exit_code": 0,
+        "seconds": 1.6836761000013212,
+        "forced_requests": 0,
+        "retirement_active_including_worker": 1,
+        "retirement_terminated": 0
+      }
+    ],
+    "native_commands": 4,
+    "new_module": {
+      "descriptor": {
+        "bytes": 3856,
+        "sha256": "9ae9a5d155c9612d0c509fa722dc5244d5783ac2a88f2b248468b92333d3b3be"
+      },
+      "image": {
+        "bytes": 1361408,
+        "sha256": "e5d6ea5beac08a92eb4b7339006a57bb21dc5e9df4a19e1f10426a4efb31a64c"
+      },
+      "engine_version": "0.0.180",
+      "call_version": 1,
+      "call_bytes": 80,
+      "services_version": 7,
+      "minimum_services_bytes": 264,
+      "required_features": [
+        "baseline_v7",
+        "animation_inertial_v1",
+        "input_actions_v1"
+      ]
+    },
+    "ownership": {
+      "passed": true,
+      "worker_exit_code": 0,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "actual_total_job_processes": 46,
+      "active_at_worker_exit": 0,
+      "terminated_at_worker_exit": 0,
+      "active_after_cleanup": 0,
+      "seconds": 35.95272990000376
+    },
+    "bundle": {
+      "files": 62,
+      "bytes": 107668003,
+      "inventory": {
+        "game.json": {
+          "bytes": 13467,
+          "sha256": "6139b70ec3ebf4fb8139756b6a7437470378141353a4d7e474199083899e252f"
+        },
+        "content/default.poima-input.json": {
+          "bytes": 1135,
+          "sha256": "3c2e62770f3a98ec2ee8bb1d8b618a3164cee3ad66687c7f7856319120daf1c5"
+        },
+        "content/world.json": {
+          "bytes": 63967,
+          "sha256": "e6d101206ec13947b33a44d000275110c84786cfe53d9a5b2ba8f0bc787f1bb4"
+        },
+        "content/world.json.assets/c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7.pmodel": {
+          "bytes": 8464853,
+          "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+        },
+        "gameplay/Poima.NativeGame.dll": {
+          "bytes": 1361408,
+          "sha256": "e5d6ea5beac08a92eb4b7339006a57bb21dc5e9df4a19e1f10426a4efb31a64c"
+        },
+        "gameplay/native-gameplay.json": {
+          "bytes": 3856,
+          "sha256": "9ae9a5d155c9612d0c509fa722dc5244d5783ac2a88f2b248468b92333d3b3be"
+        },
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": {
+          "bytes": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": {
+          "bytes": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": {
+          "bytes": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": {
+          "bytes": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        "gameplay/notices/POIMA-LICENSE.txt": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": {
+          "bytes": 21435,
+          "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+        },
+        "launch.cmd": {
+          "bytes": 151,
+          "sha256": "3e51ef62be2468ec2315bee6e52582b90bc44c3b3c6a5af59db880a7709a8769"
+        },
+        "runtime/bin/phonon.dll": {
+          "bytes": 52950168,
+          "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+        },
+        "runtime/bin/poima.exe": {
+          "bytes": 22495232,
+          "sha256": "03299334d1ca7bf60ea4d45b8d65b5740804d86fdd66ec5a316b62186abb7af1"
+        },
+        "runtime/bin/poima_desktop.dll": {
+          "bytes": 21510656,
+          "sha256": "76dc4bfdeb8da2182919f0bfff7f0dc9f9e87fe1ce99d720bd08e5bfe6b23de5"
+        },
+        "runtime/runtime.json": {
+          "bytes": 890,
+          "sha256": "fdc2b1e68a755ba3877dcc0542e1decc2df54daad2e15b44c7f4daa4c9d94017"
+        },
+        "runtime/share/poima/LICENSE": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": {
+          "bytes": 21435,
+          "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+        },
+        "runtime/share/poima/TRADEMARKS.md": {
+          "bytes": 512,
+          "sha256": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+        },
+        "runtime/share/poima/fonts/Inter-Regular.ttf": {
+          "bytes": 411640,
+          "sha256": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+        },
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": {
+          "bytes": 1083,
+          "sha256": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf"
+        },
+        "runtime/share/poima/licenses/EnTT/LICENSE": {
+          "bytes": 1097,
+          "sha256": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+        },
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": {
+          "bytes": 1115,
+          "sha256": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a"
+        },
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": {
+          "bytes": 4380,
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        "runtime/share/poima/licenses/Jolt/LICENSE": {
+          "bytes": 1052,
+          "sha256": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": {
+          "bytes": 2326,
+          "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": {
+          "bytes": 12155,
+          "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": {
+          "bytes": 5905,
+          "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": {
+          "bytes": 2883,
+          "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": {
+          "bytes": 1099,
+          "sha256": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36"
+        },
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": {
+          "bytes": 15141,
+          "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+        },
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": {
+          "bytes": 1090,
+          "sha256": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a"
+        },
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": {
+          "bytes": 877,
+          "sha256": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e"
+        },
+        "runtime/share/poima/licenses/SDL3/HIDAPI/HIDAPI-LICENSE-SELECTION.txt": {
+          "bytes": 267,
+          "sha256": "8c3c695f04951ac933fb27d3b22192664efd1dfbc5c96576c81b80aa846ddd0b"
+        },
+        "runtime/share/poima/licenses/SDL3/HIDAPI/LICENSE-bsd.txt": {
+          "bytes": 1534,
+          "sha256": "30eb1bef29b46f8ba7ab8b416035dbd93cb034a45481dd97815b944284582cd2"
+        },
+        "runtime/share/poima/licenses/SDL3/HIDAPI/LICENSE.txt": {
+          "bytes": 530,
+          "sha256": "7d3b087c34f35d4d538e3bcddd1ff8f66e92f9ef336881999482800ddf840913"
+        },
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": {
+          "bytes": 884,
+          "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+        },
+        "runtime/share/poima/licenses/SDL3/yuv2rgb/LICENSE": {
+          "bytes": 1480,
+          "sha256": "f7d74004cc75778cae46c5f0139f244d67c07ef64cf51937e8272352197dcb18"
+        },
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": {
+          "bytes": 4486,
+          "sha256": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5"
+        },
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": {
+          "bytes": 36284,
+          "sha256": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+        },
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": {
+          "bytes": 458,
+          "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+        },
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": {
+          "bytes": 1084,
+          "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+        },
+        "runtime/share/poima/licenses/cgltf/LICENSE": {
+          "bytes": 1066,
+          "sha256": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": {
+          "bytes": 5972,
+          "sha256": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": {
+          "bytes": 6743,
+          "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": {
+          "bytes": 1148,
+          "sha256": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": {
+          "bytes": 1197,
+          "sha256": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": {
+          "bytes": 2149,
+          "sha256": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": {
+          "bytes": 3311,
+          "sha256": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": {
+          "bytes": 1232,
+          "sha256": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d"
+        },
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": {
+          "bytes": 1328,
+          "sha256": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+        },
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": {
+          "bytes": 3022,
+          "sha256": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+        },
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": {
+          "bytes": 2549,
+          "sha256": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6"
+        },
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": {
+          "bytes": 1172,
+          "sha256": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e"
+        },
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": {
+          "bytes": 881,
+          "sha256": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+        },
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": {
+          "bytes": 8209,
+          "sha256": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+        },
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": {
+          "bytes": 1076,
+          "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+        },
+        "runtime/share/poima/licenses/stb/LICENSE": {
+          "bytes": 2510,
+          "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+        },
+        "runtime/share/poima/licenses/ufbx/LICENSE": {
+          "bytes": 2631,
+          "sha256": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+        }
+      }
+    }
+  },
+  "rebuilt_module_native_campaign": {
+    "classification": "portable-source-rebuild-assisted",
+    "passed": true,
+    "original_fresh_task_passed": false,
+    "checks": 648,
+    "rpc_pairs": 4151,
+    "causally_checked_ticks": 1345,
+    "phase_counts": [
+      {
+        "phase": "warm source",
+        "rpc_pairs": 2340,
+        "ticks": 763
+      },
+      {
+        "phase": "fresh cold source",
+        "rpc_pairs": 907,
+        "ticks": 291
+      },
+      {
+        "phase": "relocated host and connector",
+        "rpc_pairs": 904,
+        "ticks": 291
+      }
+    ],
+    "causal_method": "Every single-tick step has fresh complete before/after pairs matched by revision/session/tick. Controls invalidate cached observations; diagnostics cannot license steps. Missing/stale/mismatched pairs fail. No tick exclusions.",
+    "checkpoint": {
+      "format_version": 9,
+      "identity": {
+        "bytes": 115816,
+        "sha256": "e4a4e7eeb2d288f01127b7a5c18ffa2b4a0dc46f8dd4a654f9de1e397bd10f1b"
+      },
+      "whole_bytes_and_typed_document_equal": true,
+      "field_exclusions": [],
+      "four_immediate_pairs": [
+        "save-control-immediate",
+        "same-owner-load-immediate",
+        "cold-source-load-immediate",
+        "relocated-export-load-immediate"
+      ],
+      "saved_during_active_transition": true,
+      "compared_before_next_callback": true,
+      "continuation": "Cold source and relocated host finish the route; later complete checkpoints are fully validated, not equated to the earlier partial checkpoint."
+    },
+    "poses": {
+      "nodes_each": 57,
+      "count": 6,
+      "page_sizes": [
+        32,
+        25
+      ],
+      "tolerance": 3e-05,
+      "maximum_world_matrix_error": 1.7701131671543635e-09,
+      "samples": [
+        {
+          "label": "initial-settled-idle",
+          "tick": 8,
+          "clip": 36,
+          "sample_time": 0.13333333333333333,
+          "maximum_world_matrix_error": 1.7527681528406447e-09
+        },
+        {
+          "label": "ready-interrupted-then-settled-idle",
+          "tick": 36,
+          "clip": 36,
+          "sample_time": 0.2833333333333333,
+          "maximum_world_matrix_error": 1.7701131671543635e-09
+        },
+        {
+          "label": "settled-running",
+          "tick": 105,
+          "clip": 48,
+          "sample_time": 0.29999998807907113,
+          "maximum_world_matrix_error": 1.419949047232194e-09
+        },
+        {
+          "label": "blocked-intent-settled-idle",
+          "tick": 625,
+          "clip": 36,
+          "sample_time": 0.9333333333333333,
+          "maximum_world_matrix_error": 1.751395917182208e-09
+        },
+        {
+          "label": "complete-walk-and-settled-idle",
+          "tick": 1043,
+          "clip": 36,
+          "sample_time": 0.25,
+          "maximum_world_matrix_error": 1.7467671753479408e-09
+        },
+        {
+          "label": "complete-walk-and-settled-idle",
+          "tick": 1043,
+          "clip": 36,
+          "sample_time": 0.25,
+          "maximum_world_matrix_error": 1.7467671753479408e-09
+        }
+      ]
+    },
+    "relocation": {
+      "read_only_bundle": true,
+      "unrelated_cwd": true,
+      "original_source_player_roots_absent_during_host": true,
+      "candidate_files_restored": 84,
+      "original_roots_restored": true,
+      "relocated_bundle_unchanged": true,
+      "native_operational_locks_in_baseline": true,
+      "inventory_exclusions": []
+    },
+    "ownership": {
+      "native_lifetimes": 4,
+      "actual_charged_members": 4,
+      "actual_total_members_including_proved_worker": 5,
+      "native_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "all_native_closed": true,
+      "forced_cleanup": false,
+      "job_empty_before_restore": true,
+      "raw_active_at_worker_exit": 0,
+      "raw_terminated_at_worker_exit": 0,
+      "seconds": 15.341442899996764
+    },
+    "caps": {
+      "native_members": 8,
+      "rpc": 6000,
+      "ticks": 8000,
+      "whole_seconds": 1200,
+      "cleanup_seconds": 60,
+      "output_bytes": 536870912,
+      "output_files": 4096,
+      "stream_bytes": 33554432
+    }
+  },
+  "pure_tests": {
+    "scope": "Mocked subprocess and file/schema contracts, separate from native execution. Windows and CoreCLR counts were observed in tool results; no standalone raw-output file is referenced.",
+    "columns": [
+      "tests_run",
+      "passed",
+      "skipped",
+      "seconds"
+    ],
+    "linux_publisher": [
+      13,
+      13,
+      0,
+      0.269
+    ],
+    "linux_authoring_pack": [
+      20,
+      20,
+      0,
+      0.156
+    ],
+    "windows_publisher": [
+      13,
+      13,
+      0,
+      2.022
+    ],
+    "windows_authoring_pack": [
+      20,
+      19,
+      1,
+      1.417
+    ],
+    "linux_coreclr_authoring_pack": [
+      19,
+      19,
+      0,
+      0.2
+    ],
+    "test_files": [
+      "tests/publisher_authoring_pack.py",
+      "tests/authoring_pack.py",
+      "tests/coreclr_authoring_pack.py"
+    ],
+    "private_reader_regressions_passed": 31
+  },
+  "retained_record_identities": {
+    "original_provider_audit": {
+      "bytes": 3716664,
+      "sha256": "f51986856b2bb8e24b7bf0cf8cbed0f34e8c680dc14512e32f0d9541508d2cf9"
+    },
+    "original_content_provenance_audit": {
+      "bytes": 133662,
+      "sha256": "8f28c63ce0c875b589d82186fdd08332e9734f85da4b3ed4e078f378f6eaefa0"
+    },
+    "original_fresh_admission_failure": {
+      "bytes": 2019,
+      "sha256": "739193a0bcb98e1453aad65efe965e47563d3d4da723ecc2a50afe38a6c0539a"
+    },
+    "assisted_guarded_correction_audit": {
+      "bytes": 39416,
+      "sha256": "e2dad63c3f0a4d4af9c56b86475f1e3417169a0ca8f818b16689db33bbf6c61f"
+    },
+    "assisted_original_module_audit": {
+      "bytes": 180354,
+      "sha256": "474970314077c7eda9179a8faa5c83976a51b7fd6ac53309200a20a4e7b66595"
+    },
+    "source_build1_failed_owner": {
+      "bytes": 4118,
+      "sha256": "13ea2e11b989c481509fa323591e3cfa9721d05706cde01338d660e01e50b86d"
+    },
+    "separate_publisher_diagnostic_audit": {
+      "bytes": 42292,
+      "sha256": "8c260bdb635578b164f24629a960f606def1c21cd7c239e913e771b427d39aab"
+    },
+    "source_build2_independent_audit": {
+      "bytes": 139627,
+      "sha256": "65490353900f718d60fd192104daf0b840450db8249f1f5c231a5aeaaeeaad7c"
+    },
+    "source_build2_owner": {
+      "bytes": 2545,
+      "sha256": "b33dde09429f7a23688afdd1d977f845ea3f8ae3bbe6c0bb7516a97aedc5ca25"
+    },
+    "source_build2_worker": {
+      "bytes": 22055,
+      "sha256": "462bfa0cc0eda8a6d72e2626e563705025278f702ada7ee927408b3854243892"
+    },
+    "new_module_campaign_audit": {
+      "bytes": 193869,
+      "sha256": "6da2794e8f4949b4d3dacf2f99512b2bf6cf2babeff9a3f42a85f91678bbf9c4"
+    },
+    "new_module_campaign_owner": {
+      "bytes": 15305,
+      "sha256": "c592ed7a71c99f1292f8c21602ae672bdadd7cd06a7b51b9399e1ea8b2841392"
+    },
+    "new_module_campaign_worker": {
+      "bytes": 559434,
+      "sha256": "e6e90167e8d2f85ea79a6386b3169604e0aac63a40067d421e6bef2a012736fe"
+    },
+    "portable_initial_operational_failure": {
+      "bytes": 1368,
+      "sha256": "5c4ce9ecd4e94a2d00e25ae479360d10f3d0ed9c1c4d14012859ac168f3e5a42"
+    },
+    "portable_initialized_profile_audit": {
+      "bytes": 5463,
+      "sha256": "e612c9496fffeb34c335de8f2c10a9b8926c9c8060d8067458ab401025959d96"
+    }
+  },
+  "reproduction": {
+    "public_recipe": "fixtures/agent-character-intake/README.md",
+    "scope": "Source rebuild/adoption/export commands are distributed; retained independent warm/cold/relocated campaign harness is not. Interactive launch in the recipe is not qualified by these headless checks.",
+    "notice": "Keep supplied character license with player; runtime/gameplay dependency notices included separately."
+  },
+  "limits": [
+    "Original fresh task remains failed; assisted and rebuilt passes are separate outcomes, not a model success-rate estimate.",
+    "No whole-engine/Alpha completion, broad asset conformance or production scalability claim.",
+    "Headless simulation/state only: no GPU, rendered/presented frame, physical input, subjective appearance or audio qualification.",
+    "Six settled poses do not validate every take or active inertial-pose equality.",
+    "Natural owner closure and empty raw Job counters do not establish individual OS exit causes.",
+    "Same-host relocation is not clean-machine deployment.",
+    "Times are one small fixture on one laptop, not representative engine or cross-engine performance.",
+    "128 selected inputs/33 managed sources do not pin every transitive SDK/tool/cache byte.",
+    "Qualified runtime/toolchain/complete pack required; version/ABI labels alone do not establish compatibility."
+  ]
+}
