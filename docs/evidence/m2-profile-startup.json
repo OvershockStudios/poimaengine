@@ -1,0 +1,193 @@
+{
+  "format": "poima.profile-startup-qualification",
+  "version": 1,
+  "source_checkpoint": "0.0.179",
+  "date": "2026-10-18",
+  "scope": "Explicit Python development-profile and command-prefix launch factories, native CLI argument diagnostics and bounded native startup. Original incomplete agent workflow is retained separately.",
+  "implemented": {
+    "python_open_profile_keyword": "development_profiles",
+    "python_explicit_command_prefix": "WorldClient.open_command",
+    "native_profile_option": "--development-profiles",
+    "legacy_default_argv_unchanged": true,
+    "prefix_copied_without_parsing_or_shell": true,
+    "invalid_factory_arguments_reject_before_transport_or_trace": true,
+    "automatic_retry_or_reconnect": false,
+    "rpc_and_unknown_error_classification_unchanged": true,
+    "native_argument_diagnostics": "Unsupported world/serve option and missing profile path are distinct."
+  },
+  "original_fresh_agent_attempt": {
+    "native_engine_version": "0.0.178",
+    "reference_sdk_checkpoint": "0.0.178",
+    "provider": "Codex CLI 0.162.1",
+    "selected_model": "gpt-6.1-sol",
+    "model_identity_scope": "Explicit CLI selection; event format does not identify actual model.",
+    "provider_process_completed": true,
+    "workflow_passed": false,
+    "verdict": "incomplete_stopped_on_unknown_outcome",
+    "project_creation_passed": true,
+    "discovery_passed": false,
+    "actual_cause": "One unsupported --profiles flag, not duplicate profile arguments. The original agent self-diagnosis is retained without adopting it.",
+    "native_exit_code": 2,
+    "native_stdout_kind": "CLI error envelope, not a JSON-RPC terminal response",
+    "client_error": "OutcomeUnknown",
+    "provider_seconds": 76.01520277300006,
+    "supervisor_seconds": 99.91867282900057,
+    "script_owners": 2,
+    "native_owners": 2,
+    "natural_owned_closure": true,
+    "publication_submissions": 0,
+    "export_submissions": 0,
+    "automatic_retry": false,
+    "locator_or_gameplay_artifact_or_export_produced": false,
+    "independent_character_game_oracle_executed": false,
+    "usage": {
+      "input_tokens": 870565,
+      "cached_input_tokens": 799360,
+      "output_tokens": 2710,
+      "reasoning_output_tokens": 194
+    },
+    "usage_scope": "Original CLI-reported cumulative usage; no monetary cost or comparative efficiency estimate."
+  },
+  "factory_tests": {
+    "linux": {
+      "tests": 10,
+      "passed": true
+    },
+    "windows": {
+      "tests": 10,
+      "passed": true
+    },
+    "scope": "Fake factory/transport tests: literal defaults, text/path-like profiles, argument rejection, prefix copying, forwarding and unchanged error propagation. These are not native execution evidence."
+  },
+  "windows": {
+    "native_version": "0.0.179",
+    "cache_generation": 40,
+    "build_passed": true,
+    "build_seconds": 177.24963417000254,
+    "compiled_translation_units": [
+      "src/main.cpp",
+      "src/core.cpp"
+    ],
+    "other_operations": [
+      "core archive",
+      "CLI link"
+    ],
+    "vendor_rebuild_qualified": false,
+    "whole_build_output_bytes": 80230008,
+    "whole_build_output_files": 15,
+    "core_retention": "Independent gzip level1, mtime0; complete streamed decompression verifies original bytes and SHA-256.",
+    "core_decoded_bytes": 229698644,
+    "native_cli": {
+      "bytes": 26275840,
+      "sha256": "97d021b5ad037bf7ff6e540bd3007199d591b9a649ea0210c61ac217f1deff4a"
+    },
+    "original_dependency_reused_without_copy": "Qualified 0.0.178 phonon.dll",
+    "startup": {
+      "passed": true,
+      "seconds": 0.4979008000009344,
+      "cli_argument_rejections": 8,
+      "sdk_profile_opens": 2,
+      "raw_rpc_pairs": 6,
+      "native_cli_processes": 10,
+      "job_total_processes": 11,
+      "job_active_after_closure": 0,
+      "job_terminated_after_closure": 0,
+      "forced_cleanup": false
+    }
+  },
+  "linux": {
+    "native_version": "0.0.179",
+    "build_and_ctest_passed": true,
+    "seconds": 229.22243373799938,
+    "tests": [
+      {
+        "name": "python_response_contract",
+        "seconds": 0.362428,
+        "passed": true
+      },
+      {
+        "name": "python_client_contract",
+        "seconds": 6.53619,
+        "passed": true
+      },
+      {
+        "name": "python_client_trace",
+        "seconds": 0.444539,
+        "passed": true
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.916866,
+        "passed": true
+      }
+    ],
+    "native_cli": {
+      "bytes": 19183528,
+      "sha256": "21596f70cb242b7b6629c53b6352da812570e704b2a3d515eb44347a1280a99e"
+    },
+    "startup": {
+      "passed": true,
+      "seconds": 1.2545123720010452,
+      "cli_argument_rejections": 8,
+      "sdk_profile_opens": 2,
+      "raw_rpc_pairs": 6,
+      "native_cli_processes": 10,
+      "client_exit_codes": [
+        0,
+        0
+      ],
+      "client_forced_cleanup": [
+        [],
+        []
+      ]
+    }
+  },
+  "retained_qualification_failures": [
+    {
+      "scope": "Windows regression launcher preflight",
+      "cause": "Missing output parent directory; Python failed before creating the Job or launching a native engine.",
+      "original_verdict": "failed",
+      "later_check": "Separate fresh output and admission, same immutable worker, after explicit parent preparation."
+    }
+  ],
+  "boundaries": [
+    "The original failed fresh workflow is not repaired, resumed or regraded. Startup checks use empty development-profile catalogs, not character games or compilation.",
+    "Native queries, compiler execution, provider completion and independently verified gameplay remain separate scopes.",
+    "No game save/continuation, export, renderer, GUI, physical input, audio listening, representative performance, clean-machine installation or whole Alpha release is qualified here.",
+    "Explicit prefixes establish no sandbox or descendant ownership. Windows Job closure is observed; global process absence is not claimed."
+  ],
+  "reproduce": {
+    "factory_tests": "python tests/python_client_contract.py OpenClientContract",
+    "native_sdk_regression": "python tests/python_client_contract.py --engine /absolute/native/poima",
+    "transport_trace_regression": "python tests/python_client_trace.py",
+    "cli_regression": "Run the existing cli_contract CTest against the matching configured native build.",
+    "profile_startup": "Create a profile JSON with format poima.development-profiles, version 1 and profiles []; use both documented factories with development_profiles, discover the world and development.profiles, and retain bounded raw traces.",
+    "guide": "docs/PYTHON_CLIENT.md"
+  },
+  "source_identities": {
+    "src/main.cpp": {
+      "bytes": 22523,
+      "sha256": "8db619dd7aaa8ad36b398c3baf871f244a0bfc9ff8f91b65910e9fb07aceee0f"
+    },
+    "tools/python/poima_client/client.py": {
+      "bytes": 20619,
+      "sha256": "3e43b5140d185457c8a6821f5ebfbb465ebaa441c460a63f7caa9eb0fb08cec0"
+    },
+    "tests/cli_contract.py": {
+      "bytes": 8678,
+      "sha256": "b3f896ee5e32a369fe0ad5485a0d19cf0bccf4b3d93871c8c87b9d5ef98720df"
+    },
+    "tests/python_client_contract.py": {
+      "bytes": 49797,
+      "sha256": "e153e525d5b15407a2a76b053aa2ba3e56184d462f0bb036ceef6ea1ab3652c7"
+    },
+    "docs/PYTHON_CLIENT.md": {
+      "bytes": 26835,
+      "sha256": "b10e7d4fdde458c83529a13e31a1608042b25a8f39961958174e331082895146"
+    },
+    "docs/DEVELOPMENT_PROFILES.md": {
+      "bytes": 12551,
+      "sha256": "adf0516f6f4a913467eca47474bc5eee5d166c34665e0a434a5a4be4029b31b2"
+    }
+  }
+}

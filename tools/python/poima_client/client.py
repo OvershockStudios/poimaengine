@@ -76,17 +76,56 @@ class WorldClient:
         self._cleanup_error = None
 
     @classmethod
-    def open(cls, binary, world_path, *, cwd=None, validate_responses=True, **transport_options):
+    def open(cls, binary, world_path, *, development_profiles=None, cwd=None,
+             validate_responses=True, **transport_options):
         """Launch ``binary world world_path`` with explicit paths and no shell.
 
-        Paths use the executable's platform conventions; WSL does not translate
-        Windows world paths automatically. Startup errors may surface on the
-        first request. No discovery or extra mutation is performed implicitly.
+        ``development_profiles`` selects a native development profile file;
+        omission preserves the ordinary world command. Paths use the executable's
+        platform conventions and are not resolved or translated. Startup errors
+        may surface on the first request; no discovery or retry is implicit.
         """
         if not isinstance(validate_responses, bool):
             raise ValueError("validate_responses must be a boolean")
-        transport = JsonRpcProcess([os.fspath(binary), "world", os.fspath(world_path)],
-                                   cwd=cwd, **transport_options)
+        return cls.open_command([os.fspath(binary)], world_path,
+                                development_profiles=development_profiles, cwd=cwd,
+                                validate_responses=validate_responses, **transport_options)
+
+    @classmethod
+    def open_command(cls, argv_prefix, world_path, *, development_profiles=None,
+                     cwd=None, validate_responses=True, **transport_options):
+        """Append a world command to an explicit executable/wrapper argv prefix.
+
+        The prefix is copied verbatim, not inspected or repaired. It must already
+        contain any required wrapper flags and delimiter. Supplying a prefix does
+        not establish process ownership or a sandbox. Use the caller's admitted
+        owned execution route where required; this helper launches no shell.
+
+        Profile paths must be nonempty text paths without NUL or a leading ``--``.
+        Use an explicit ``./--name`` string for such a filename. The native host
+        reads the profile; the client does not open it or change path resolution.
+        Invalid profile/prefix inputs reject before process or trace creation.
+        """
+        if not isinstance(validate_responses, bool):
+            raise ValueError("validate_responses must be a boolean")
+        if not isinstance(argv_prefix, (list, tuple)) or not argv_prefix:
+            raise ValueError("argv_prefix must be a nonempty explicit list or tuple")
+        command = list(argv_prefix)
+        if any(not isinstance(value, str) or "\0" in value for value in command) or not command[0]:
+            raise ValueError("argv_prefix entries must be strings without NUL, with a nonempty executable")
+        profiles = None
+        if development_profiles is not None:
+            try:
+                profiles = os.fspath(development_profiles)
+            except TypeError as error:
+                raise ValueError("development_profiles must be a filesystem path") from error
+            if (not isinstance(profiles, str) or not profiles or "\0" in profiles or
+                    profiles.startswith("--")):
+                raise ValueError("development_profiles must be a nonempty text path without NUL or a leading --")
+        command.extend(["world", os.fspath(world_path)])
+        if profiles is not None:
+            command.extend(["--development-profiles", profiles])
+        transport = JsonRpcProcess(command, cwd=cwd, **transport_options)
         return cls(transport, validate_responses=validate_responses)
 
     @classmethod

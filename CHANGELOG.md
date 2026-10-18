@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.179
+
+- Add explicit development-profile paths and literal command-prefix launches to the Python client, with prelaunch argument validation and unchanged retry/error behavior. [Client guide](docs/PYTHON_CLIENT.md#open-with-development-profiles-or-an-owned-command-prefix).
+- Distinguish unsupported world/serve options from missing profile paths. Verify Windows/Linux startup and SDK regressions while retaining the incomplete fresh-agent attempt separately. [Results and scope](docs/evidence/m2-profile-startup.json).
+
 ## 0.0.178
 
 - Add read-only posed model bounds with explicit selected-scene and instance-work limits, avoiding vertex-page transfer for whole-model measurements. [Contract and checks](docs/ANIMATION_ASSETS.md#measure-a-posed-model).

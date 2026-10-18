@@ -604,6 +604,127 @@ class RpcDiagnosticsContract(unittest.TestCase):
         self.assertIsNone(transport.error.params_json)
 
 
+class OpenClientContract(unittest.TestCase):
+    """Factory boundary checks use a fake transport and launch no process."""
+    def patch_transport(self, **options):
+        from unittest import mock
+        return mock.patch.object(sys.modules[WorldClient.__module__], 'JsonRpcProcess', **options)
+
+    def test_default_and_none_preserve_legacy_world_argv(self):
+        for options in ({}, {'development_profiles': None}):
+            with self.subTest(options=options), self.patch_transport(return_value=ScriptedTransport()) as factory:
+                WorldClient.open(Path('engine'), Path('world space.json'), **options)
+                factory.assert_called_once_with(['engine', 'world', 'world space.json'], cwd=None)
+
+    def test_profile_text_pathlike_and_optionlike_filenames_stay_literal(self):
+        class TextPath:
+            def __fspath__(self):
+                return 'profiles/世界 profiles.json'
+        for value, expected in [('D:\\profiles & tools\\native.json', 'D:\\profiles & tools\\native.json'),
+                                (Path('profiles/native.json'), os.fspath(Path('profiles/native.json'))),
+                                (TextPath(), 'profiles/世界 profiles.json'), ('-profiles.json', '-profiles.json'),
+                                ('./--profiles.json', './--profiles.json')]:
+            with self.subTest(value=expected), self.patch_transport(return_value=ScriptedTransport()) as factory:
+                WorldClient.open('engine', './world.json', development_profiles=value)
+                factory.assert_called_once_with(['engine', 'world', './world.json',
+                    '--development-profiles', expected], cwd=None)
+
+    def test_explicit_owned_prefix_cloned_without_repair_or_mutation(self):
+        for container in (list, tuple):
+            prefix = container(['python.exe', '-I', '-B', 'owned.py', '--plan', 'plan.json', '--'])
+            original = list(prefix)
+            with self.patch_transport(return_value=ScriptedTransport()) as factory:
+                WorldClient.open_command(prefix, 'D:\\world file.json', development_profiles='native.json')
+                factory.assert_called_once_with(original + ['world', 'D:\\world file.json',
+                    '--development-profiles', 'native.json'], cwd=None)
+                self.assertEqual(list(prefix), original)
+                self.assertIsNot(factory.call_args.args[0], prefix)
+        # An ordinary empty argument is valid literal argv, unlike an empty executable.
+        with self.patch_transport(return_value=ScriptedTransport()) as factory:
+            WorldClient.open_command(['wrapper', ''], 'world.json')
+            factory.assert_called_once_with(['wrapper', '', 'world', 'world.json'], cwd=None)
+
+    def test_default_prefix_command_has_no_profile_flag(self):
+        with self.patch_transport(return_value=ScriptedTransport()) as factory:
+            WorldClient.open_command(('wrapper', '--'), 'unchanged/../world.json', development_profiles=None)
+            factory.assert_called_once_with(['wrapper', '--', 'world', 'unchanged/../world.json'], cwd=None)
+
+    def test_constructor_options_and_cwd_forward_unchanged(self):
+        cwd, trace = Path('working directory'), Path('trace directory')
+        transport = ScriptedTransport()
+        with self.patch_transport(return_value=transport) as factory:
+            client = WorldClient.open_command(['owned', '--'], './world.json',
+                development_profiles='profiles.json', cwd=cwd, validate_responses=False,
+                max_pending=3, stderr_limit=99, close_timeout=1.25,
+                trace_directory=trace, trace_limit_bytes=4096)
+            factory.assert_called_once_with(['owned', '--', 'world', './world.json',
+                '--development-profiles', 'profiles.json'], cwd=cwd, max_pending=3, stderr_limit=99,
+                close_timeout=1.25, trace_directory=trace, trace_limit_bytes=4096)
+            self.assertIs(client.transport, transport)
+            self.assertFalse(client.validate_responses)
+            self.assertIs(factory.call_args.kwargs['cwd'], cwd)
+            self.assertIs(factory.call_args.kwargs['trace_directory'], trace)
+
+    def test_invalid_profile_never_creates_process_or_trace(self):
+        class BytesPath:
+            def __fspath__(self):
+                return b'profiles.json'
+        class InvalidPath:
+            def __fspath__(self):
+                return 42
+        values = [True, False, b'profiles.json', 0, 1, [], {}, object(), '',
+                  'bad\0profile', '--', '--profiles', '--development-profiles',
+                  BytesPath(), InvalidPath()]
+        with tempfile.TemporaryDirectory() as temporary:
+            trace = Path(temporary)/'never-created'
+            for value in values:
+                for method, first in [(WorldClient.open, 'engine'), (WorldClient.open_command, ['owned', '--'])]:
+                    with self.subTest(value=repr(value), method=method.__name__), self.patch_transport() as factory:
+                        with self.assertRaises(ValueError):
+                            method(first, 'world.json', development_profiles=value, trace_directory=trace)
+                        factory.assert_not_called()
+                        self.assertFalse(trace.exists())
+
+    def test_invalid_prefix_never_creates_process_or_trace(self):
+        values = [None, '', b'engine', [], (), [''], [True], [Path('engine')],
+                  ['engine', b'arg'], ['engine', None], ['engine\0'], ['engine', 'bad\0arg']]
+        with tempfile.TemporaryDirectory() as temporary:
+            trace = Path(temporary)/'never-created'
+            for value in values:
+                with self.subTest(value=repr(value)), self.patch_transport() as factory:
+                    with self.assertRaises(ValueError):
+                        WorldClient.open_command(value, 'world.json', trace_directory=trace)
+                    factory.assert_not_called()
+                    self.assertFalse(trace.exists())
+
+    def test_invalid_response_validation_never_creates_transport(self):
+        for method, first in [(WorldClient.open, 'engine'), (WorldClient.open_command, ['owned'])]:
+            with self.patch_transport() as factory:
+                with self.assertRaises(ValueError):
+                    method(first, 'world.json', development_profiles='profile.json', validate_responses=1)
+                factory.assert_not_called()
+
+    def test_constructor_failure_propagates_without_retry(self):
+        failure = OSError('original constructor failure')
+        with self.patch_transport(side_effect=failure) as factory:
+            with self.assertRaises(OSError) as caught:
+                WorldClient.open_command(['owned', '--'], 'world.json', development_profiles='profile.json')
+            self.assertIs(caught.exception, failure)
+            self.assertEqual(factory.call_count, 1)
+
+    def test_native_errors_and_unknown_outcomes_are_not_reclassified_or_retried(self):
+        for failure in (RpcError(-32050, 'original native error'), OutcomeUnknown('original unknown outcome')):
+            transport = ScriptedTransport(error=failure)
+            with self.patch_transport(return_value=transport) as factory:
+                client = WorldClient.open_command(['owned', '--'], 'world.json', development_profiles='profile.json')
+                with self.assertRaises(type(failure)) as caught:
+                    client.call('custom.operation', {'original': True})
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(factory.call_count, 1)
+                self.assertEqual(transport.calls, [('custom.operation', {'original': True})])
+                self.assertFalse(transport.closed)
+
+
 @unittest.skipIf(BINARY is None, 'Supply --engine for real native qualification.')
 class NativeContract(unittest.TestCase):
     def test_terminal_error_context_from_native_process(self):

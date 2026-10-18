@@ -46,6 +46,48 @@ with WorldClient.open(binary, world) as engine:
 Startup errors can surface on the first call; there is no implicit handshake or
 discovery request. Context-manager exit closes and reaps the owned CLI process.
 
+### Open with development profiles or an owned command prefix
+
+Pass a [development profile file](DEVELOPMENT_PROFILES.md) explicitly:
+
+```python
+with WorldClient.open(binary, world,
+                      development_profiles=Path("profiles.json")) as engine:
+    print(engine.discover())
+```
+
+The client emits `--development-profiles` once after the world path. `None`
+preserves the original command. A profile is a nonempty text path or path-like
+object returning text, without NUL or a leading `--`. A filename beginning
+with `--` can use an explicit `./--profiles.json` string. Paths remain literal
+argv entries; the client does not resolve them, open the profile, translate WSL
+paths or change the supplied working directory. Invalid profile arguments reject
+before starting a process or creating traces.
+
+When a host supplies an approved wrapper command, use `open_command` with that
+exact prefix. This example assumes the host has supplied `command_prefix`,
+`world` and `profiles` with native platform paths:
+
+```python
+with WorldClient.open_command(command_prefix, world,
+                              development_profiles=profiles,
+                              trace_directory=Path("run-wire")) as engine:
+    print(engine.discover())
+```
+
+The prefix must be a nonempty list or tuple of text argv entries, including its
+executable and any wrapper flags or delimiter. The helper copies it unchanged,
+then appends the world command and optional profile flag. It launches no shell,
+infers no wrapper behavior and grants no process-tree ownership or sandbox.
+Keep using the host's admitted execution route and lifecycle checks. Trace and
+other transport options work as with `open`.
+
+`--profiles` is unsupported. A CLI startup error is not a JSON-RPC response;
+requests already written to that channel can still raise `OutcomeUnknown`.
+Retain the original bytes and inspect the actual command and owner outcome.
+These helpers do not retry, reconnect or reinterpret an uncertain result as a
+successful or rejected RPC.
+
 ## Retain the original RPC streams
 
 Opt into raw traces when a workflow needs records independent of decoded

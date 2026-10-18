@@ -74,6 +74,33 @@ class CliContract(unittest.TestCase):
         result = self.invoke("schema", name, expected=2)
         self.assertEqual(result["diagnostics"][0]["message"], "Unknown schema command: " + name)
 
+    def test_wrong_profile_flags_report_the_supported_option_before_opening(self):
+        with tempfile.TemporaryDirectory() as directory:
+            world = Path(directory) / "unopened.world.json"
+            profiles = Path(directory) / "profiles.json"
+            for command, prefix in (("world", ["world", str(world)]),
+                                    ("serve", ["serve", str(world), "--endpoint", "profile-argument-check"])):
+                for flag in ("--profiles", "--unknown"):
+                    with self.subTest(command=command, flag=flag):
+                        result = self.invoke(*prefix, flag, str(profiles), expected=2)
+                        self.assertEqual(result["diagnostics"][0]["code"], "invalid_arguments")
+                        self.assertEqual(result["diagnostics"][0]["message"],
+                            "Unknown " + command + " option. Use --development-profiles <file.json>.")
+                        self.assertFalse(world.exists())
+                        self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_profile_option_requires_one_path_before_opening(self):
+        with tempfile.TemporaryDirectory() as directory:
+            world = Path(directory) / "unopened.world.json"
+            for prefix in (["world", str(world)],
+                           ["serve", str(world), "--endpoint", "profile-path-check"]):
+                for path in ("", "--another-option"):
+                    with self.subTest(prefix=prefix, path=path):
+                        result = self.invoke(*prefix, "--development-profiles", path, expected=2)
+                        self.assertEqual(result["diagnostics"][0]["message"],
+                                         "Missing path for --development-profiles.")
+                        self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_render_arguments_fail_before_opening_a_window(self):
         for args in [("--frames", "0"), ("--frames", "10001"), ("--frames", "-1"),
                      ("--width", "127"), ("--height", "4097"), ("--gpu", "4096"),

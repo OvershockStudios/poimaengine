@@ -91,6 +91,11 @@ poima serve world.json --endpoint authoring --development-profiles profiles.json
 poima mcp --world world.json --development-profiles profiles.json
 ```
 
+The [Python client](PYTHON_CLIENT.md#open-with-development-profiles-or-an-owned-command-prefix)
+accepts `development_profiles=...` on `WorldClient.open` and `open_command`,
+including an explicitly supplied owned wrapper prefix. The CLI option is
+`--development-profiles`; `--profiles` is unsupported.
+
 An MCP client connecting to an existing endpoint uses that host's profiles.
 It cannot configure tools through `mcp --endpoint`. The native owner API
 `WorldSession::configure_development_profiles` applies the same loader and policy.

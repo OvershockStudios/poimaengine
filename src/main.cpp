@@ -167,7 +167,8 @@ poima::Reply run(int argc, char** argv) {
             return poima::usage_error("Use: serve <world.json> --endpoint <name> [--development-profiles file.json].");
         std::string profiles;
         if(argc==7) {
-            if(std::string_view(argv[5])!="--development-profiles" || !*argv[6] || std::string_view(argv[6]).starts_with("--"))return poima::usage_error("Serve accepts only one development profile file.");
+            if(std::string_view(argv[5])!="--development-profiles")return poima::usage_error("Unknown serve option. Use --development-profiles <file.json>.");
+            if(!*argv[6] || std::string_view(argv[6]).starts_with("--"))return poima::usage_error("Missing path for --development-profiles.");
             profiles=argv[6];
         }
         return {poima::run_shared_world(argv[2],argv[4],profiles),{}};
@@ -176,7 +177,8 @@ poima::Reply run(int argc, char** argv) {
         if((argc!=3 && argc!=5) || !*argv[2] || std::string_view(argv[2]).starts_with("--"))return poima::usage_error("Use: world <world.json> [--development-profiles file.json].");
         std::string profiles;
         if(argc==5) {
-            if(std::string_view(argv[3])!="--development-profiles" || !*argv[4] || std::string_view(argv[4]).starts_with("--"))return poima::usage_error("World accepts only one development profile file.");
+            if(std::string_view(argv[3])!="--development-profiles")return poima::usage_error("Unknown world option. Use --development-profiles <file.json>.");
+            if(!*argv[4] || std::string_view(argv[4]).starts_with("--"))return poima::usage_error("Missing path for --development-profiles.");
             profiles=argv[4];
         }
         return {poima::run_world_session(argv[2],profiles),{}};

@@ -1,8 +1,12 @@
 # Implementation status
 
-Updated 2026-10-17 for **0.0.178**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.179**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.179 adds explicit [profile-aware Python launch factories](PYTHON_CLIENT.md#open-with-development-profiles-or-an-owned-command-prefix), including literal owned-wrapper command prefixes. Invalid profile/prefix arguments reject before transport creation; omitted profiles retain the original command. Native world/serve diagnostics distinguish an unsupported flag from a missing path. RPC errors and unknown outcomes retain their existing meaning; there is no automatic repair or retry.
+
+Both Windows and Linux pass eight native argument rejections, two profile-aware client startups and six original RPC pairs. Ten factory tests pass separately on each platform; all four selected Linux CTests pass. The original fresh character workflow remains incomplete: one unsupported `--profiles` flag caused CLI exit 2 and SDK `OutcomeUnknown` before intake, publication or export. Its natural process closure does not qualify gameplay, and the subsequent startup fixtures are separate checks. [Results and limits](evidence/m2-profile-startup.json).
 
 Version 0.0.178 adds [posed model bounds](ANIMATION_ASSETS.md#measure-a-posed-model):
 one read-only query measures the selected scene's stored vertices at a rest or
