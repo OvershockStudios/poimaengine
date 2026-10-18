@@ -1,0 +1,386 @@
+{
+  "format": "poima.development-retirement.evidence.v1",
+  "engine_version": "0.0.180",
+  "date": "2026-10-18",
+  "scope": "Bounded Windows build-job retirement and opt-in raw final Job accounting, with focused Windows and Linux production-library regressions.",
+  "source_inputs": {
+    "include/poima/development_jobs.hpp": {
+      "bytes": 8534,
+      "sha256": "9886c1d7445b4ad39ba0f4b86761b193f7cd9392f147412cefee1c189933964f"
+    },
+    "src/development_jobs.cpp": {
+      "bytes": 43004,
+      "sha256": "221aabe8ef7492b7472ab1daef64e30b9bf276be803c98ca28ed5f71a10e02b8"
+    },
+    "src/development_service.cpp": {
+      "bytes": 36399,
+      "sha256": "9cc2e5db9edbd2572c3b9efaf36e8c8dba31278a4b3c0c7e31da303f9e724676"
+    },
+    "tests/development_jobs.cpp": {
+      "bytes": 46395,
+      "sha256": "7449f61cf17b8ebd0c6c57d9c5de6dd265944074e73e721583a90ab6d97fac4b"
+    },
+    "tests/development_service.cpp": {
+      "bytes": 27182,
+      "sha256": "c522a119b42fddbd1ed656a0deddfbd69d5eafa06ded7c6b6b73127c13e37d8d"
+    }
+  },
+  "behavior": {
+    "windows_natural_retirement_ms": 1000,
+    "bounded_by_original_request_deadline": true,
+    "forced_cleanup_fence_seconds": 5,
+    "drain_pump_cancel_during_retirement": true,
+    "skip_termination_for_observed_empty_job": true,
+    "process_final_group_accounting": "Raw Windows counters at the completed retirement fence; null on POSIX or unobserved.",
+    "persistent_compiler_server_lifetime_unchanged": true,
+    "posix_process_group_policy_unchanged": true,
+    "default_rpc_response_shape_unchanged": true
+  },
+  "platforms": {
+    "windows": {
+      "passed": true,
+      "scope": "Separate focused build of the four production development-library translation units and three public test executables; four test invocations, including capture reentry.",
+      "compiler": "Clang 23.1.2 / LLVM-MinGW",
+      "build_workers": 2,
+      "owner_report": {
+        "path": "build/development-retirement-0.0.180/windows-2/report.json",
+        "bytes": 8610,
+        "sha256": "661c3274a1812995b5e172ef95c67bf24efac632a34981ff31e35442d0ba1132"
+      },
+      "source_inputs_unchanged": true,
+      "build_and_test_seconds": 78.94468559600136,
+      "test_invocations": [
+        {
+          "name": "jobs",
+          "exit_code": 0,
+          "seconds": 8.257037899998977
+        },
+        {
+          "name": "capture",
+          "exit_code": 0,
+          "seconds": 0.13660039999740548
+        },
+        {
+          "name": "service",
+          "exit_code": 0,
+          "seconds": 8.973546099998202
+        },
+        {
+          "name": "compact_poll",
+          "exit_code": 0,
+          "seconds": 0.39135520000127144
+        }
+      ],
+      "binaries": {
+        "poima-development-compact_poll-test.exe": {
+          "bytes": 2314752,
+          "sha256": "cabe2df70b87079cf7ff2360b9b73bc3158697018db39c1419f12cf51263dafa"
+        },
+        "poima-development-jobs-test.exe": {
+          "bytes": 2013184,
+          "sha256": "d5524b730de9163458810c8ab17f297c1dd25f92154c05d509d222171db7fb55"
+        },
+        "poima-development-service-test.exe": {
+          "bytes": 2436096,
+          "sha256": "3d4dba525966dd22816f98526cbe40b9f54626f2093b2e93064a82505bf44f5b"
+        }
+      },
+      "command_logs": {
+        "build.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "build.stdout.txt": {
+          "bytes": 1095,
+          "sha256": "d59cc24377ed4636157c95a080a574881f98df7b7d4c6262f81a562c2ca5dd67"
+        },
+        "configure.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "configure.stdout.txt": {
+          "bytes": 828,
+          "sha256": "c754871e977c5410bea0fef2c6f9f0023432ab0bfc6b3590c78cdd18c830c7ab"
+        },
+        "windows-tests.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "windows-tests.stdout.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "outer_windows_job": {
+        "passed": true,
+        "forced_cleanup": false,
+        "exit_code": 0,
+        "job_accounting_at_child_exit": {
+          "user_time": 24687500,
+          "kernel_time": 28750000,
+          "period_user_time": 24687500,
+          "period_kernel_time": 28750000,
+          "page_faults": 860597,
+          "total_processes": 432,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "job_accounting_after_cleanup": {
+          "user_time": 24687500,
+          "kernel_time": 28750000,
+          "period_user_time": 24687500,
+          "period_kernel_time": 28750000,
+          "page_faults": 860597,
+          "total_processes": 432,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "interpretation": "Raw outer ownership only; intentional inner cleanup of lingering fixtures is tested separately."
+      },
+      "test_logs": {
+        "tests/capture.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/capture.stdout.txt": {
+          "bytes": 132,
+          "sha256": "6ee1697b93603785512dbe81b72218baea32a65b5acb03aa1832678f4a7736a5"
+        },
+        "tests/compact_poll.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/compact_poll.stdout.txt": {
+          "bytes": 98,
+          "sha256": "2940c56583f6d547e69a0fb5a45ebcf3f4b80864a31b5f0118d24afb9dcce1d9"
+        },
+        "tests/jobs.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/jobs.stdout.txt": {
+          "bytes": 191,
+          "sha256": "5f74f8cca3d1d599690a4d0f968f499a5541d1e6f0ec75b642ba79550e71b822"
+        },
+        "tests/service.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/service.stdout.txt": {
+          "bytes": 1257,
+          "sha256": "f7a26b13bd1ba63868b95d3b7bda63c30e364973551f9c28ec4a813a00b1a176"
+        }
+      }
+    },
+    "linux": {
+      "passed": true,
+      "scope": "Separate focused build of the four production development-library translation units and three public test executables; four test invocations, including capture reentry.",
+      "compiler": "GCC 16.2.0",
+      "build_workers": 2,
+      "owner_report": {
+        "path": "build/development-retirement-0.0.180/linux-1/report.json",
+        "bytes": 8340,
+        "sha256": "d592bfd889ba96dad4a395867845e13b54f672b826fb56c72ccfe1d1e61f1c5c"
+      },
+      "source_inputs_unchanged": true,
+      "build_and_test_seconds": 36.43719474499812,
+      "test_invocations": [
+        {
+          "name": "jobs",
+          "exit_code": 0,
+          "seconds": 3.3144318140002724
+        },
+        {
+          "name": "capture",
+          "exit_code": 0,
+          "seconds": 0.11485468899991247
+        },
+        {
+          "name": "service",
+          "exit_code": 0,
+          "seconds": 3.417666454999562
+        },
+        {
+          "name": "compact_poll",
+          "exit_code": 0,
+          "seconds": 0.21436137599812355
+        }
+      ],
+      "binaries": {
+        "poima-development-compact_poll-test": {
+          "bytes": 618848,
+          "sha256": "9a38051c3c4b45cc82f3f4383e39d045cff7fe09697adef9dbc2030875ece37b"
+        },
+        "poima-development-jobs-test": {
+          "bytes": 291616,
+          "sha256": "26b6d35ee6cca5822c8041b54e5cc8628a80994411b4723355ecd80b1b4561cb"
+        },
+        "poima-development-service-test": {
+          "bytes": 722520,
+          "sha256": "1b8cd361f1b51c2e8a7bd6ea745e83e2e5dbd42bc95c4afac3f33c8d65ebbf79"
+        }
+      },
+      "command_logs": {
+        "build.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "build.stdout.txt": {
+          "bytes": 1069,
+          "sha256": "dfa813efc58bcd1e129bb80043b50f4fe658bf048a447ba7543ba2bae11999f3"
+        },
+        "capture.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "capture.stdout.txt": {
+          "bytes": 130,
+          "sha256": "4fe306c6e1317e6010a06f17a3959a7093bd0a7b6af9dc22c290f96d74570b00"
+        },
+        "compact_poll.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "compact_poll.stdout.txt": {
+          "bytes": 97,
+          "sha256": "1615e433b7ad00ad9b0b8a708fe233b0b6fe675e3d5b941e3a553dc182c49d66"
+        },
+        "configure.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "configure.stdout.txt": {
+          "bytes": 538,
+          "sha256": "a910e7d0747608ee14379c6f3492d1d8ccc083305e7c50fd8765b459682fcaa9"
+        },
+        "jobs.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "jobs.stdout.txt": {
+          "bytes": 189,
+          "sha256": "1286c46d60274a18a06d265e8eb8ef63c6a36735b07e18e010f3a30800a0888c"
+        },
+        "service.stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "service.stdout.txt": {
+          "bytes": 1216,
+          "sha256": "18386b6477ef6ac951b284cc9946c84279aa49dfc8419584e4eab1ce0ff38519"
+        }
+      }
+    }
+  },
+  "coverage": [
+    "argument, environment and cwd fidelity",
+    "bounded stdout/stderr and overflow draining",
+    "zero and nonzero leader exits with naturally completing Windows descendants",
+    "natural descendant completion markers and both output streams",
+    "lingering child completion cleanup",
+    "timeout and cancellation after actual Windows leader exit",
+    "active cancellation, worker destruction and child cleanup",
+    "zero-action final Windows Job accounting and null POSIX accounting",
+    "full and compact opt-in process observation equality",
+    "default inspection, validation, retry receipts, diagnostics and capture-destructor reentry"
+  ],
+  "earlier_failed_check": {
+    "verdict": "failed; preserved separately",
+    "owner_report": {
+      "path": "build/development-retirement-0.0.180/windows-1/report.json",
+      "bytes": 8020,
+      "sha256": "12b3b7cfc53c9b80e66563a75345bad67eff1e774d7673a0bd6b00479d7dc28c"
+    },
+    "seconds": 64.01860035500067,
+    "failure": "A newly added test expected exactly one Job member for the echo fixture. The observed empty Job recorded two members and zero termination requests.",
+    "diagnostic_raw_observation": "state=succeeded cleanup_count=0 total=2 active=0 terminated=0",
+    "diagnostic_stdout": {
+      "bytes": 63,
+      "sha256": "6c7bfd247dd5f4bc4c23dd7e6df5d503c8cb0817d816c58df54020af9d8cc365"
+    },
+    "correction": "Remove the unsupported exact-member-count assumption; retain no-termination, empty-Job, native exit, descendant marker/output, deadline and cancellation checks. No engine behavior changed between the failed and passing Windows builds."
+  },
+  "not_qualified": [
+    "Actual SDK/NativeAOT publication by this checkpoint",
+    "A fresh agent-created game or complete Alpha workflow",
+    "Rendering, physical input, clean-machine delivery or representative performance",
+    "Individual descendant exit causes or a complete process-tree census"
+  ],
+  "reproduce": {
+    "configure": "cmake --preset headless",
+    "build": "cmake --build build/headless --target poima-development-jobs-test poima-development-service-test poima-development-compact-poll-test --parallel 2",
+    "tests": "ctest --test-dir build/headless -R \"^(development_jobs|development_capture_reentry|development_service|development_compact_poll)$\" --output-on-failure",
+    "windows": "Build the same targets for Windows using cmake/windows-llvm-mingw.cmake, then run the three executables and the jobs executable with --capture-reentry under an owned Windows process supervisor.",
+    "actual_qualification": "Recorded runs used separate focused CMake builds containing exactly the four production development-library translation units; they did not mutate the shared engine build cache."
+  },
+  "linked_windows_cli": {
+    "passed": true,
+    "scope": "Normal selected CLI target in the existing incremental Windows CMake cache; no Desktop, install or renderer execution.",
+    "build_report": {
+      "path": "build/native-snapshot-0.0.180/native-build-1/build-result.json",
+      "bytes": 47157,
+      "sha256": "005497144720538e1b90e642415d758b65de4744dfc4c3cd78d3ad4c3d9906be"
+    },
+    "seconds": 204.5694310839972,
+    "workers": 2,
+    "priority_nice": 10,
+    "observed_translation_units": [
+      "[1/10] Building CXX object CMakeFiles/poima_development.dir/src/development_jobs.cpp.obj",
+      "[2/10] Building CXX object CMakeFiles/poima_development.dir/src/development_service.cpp.obj",
+      "[3/10] Building CXX object CMakeFiles/poima_development.dir/src/development_compiler_owned.cpp.obj",
+      "[5/10] Building CXX object CMakeFiles/poima_core.dir/src/core.cpp.obj",
+      "[6/10] Building CXX object CMakeFiles/poima_core.dir/src/development_profiles.cpp.obj",
+      "[7/10] Building CXX object CMakeFiles/poima_core.dir/src/world.cpp.obj"
+    ],
+    "cli": {
+      "bytes": 26277888,
+      "sha256": "08c5810edc931379a62f8ed772eb4936185e7252d38b017d093efba5b8cc4848"
+    },
+    "core_preservation": {
+      "encoding": "gzip",
+      "stored_identity": {
+        "bytes": 49065781,
+        "sha256": "5f9bf6c9219583afe410745a4f663896a4b9142ee36dd8213670c6d22b9ab934"
+      },
+      "decoded_identity": {
+        "bytes": 229698644,
+        "sha256": "707127b537e04b8c8b31157fb5ab67ed6ff77754c56be0b19bc2a423c8402d3a"
+      },
+      "streamed_decode_verified": true
+    },
+    "output_bytes": 80223183,
+    "source_inputs_unchanged": true,
+    "prior_artifacts_preserved": true,
+    "forced_cleanup": false,
+    "qualification_boundary": "Incremental selected build and at-run tools/source pins; inherited vendor dependencies are not a clean rebuild.",
+    "startup": {
+      "passed": true,
+      "scope": "Unchanged profile-startup fixture, eight CLI argument rejections, two real client startups and six original RPC pairs. No compiler, gameplay or renderer.",
+      "report": {
+        "path": "build/development-retirement-0.0.180/startup-1/result.json",
+        "bytes": 25255,
+        "sha256": "d01554f021a5f938877e2782f4fed926578e2ee6b623ed76b1f1f025544463e4"
+      },
+      "owner_report": {
+        "path": "build/development-retirement-0.0.180/startup-1/owner-result.json",
+        "bytes": 1547,
+        "sha256": "18d09b09823814b8694c1dfda800924c1002d27d4f2268cf05d603655507d7b3"
+      },
+      "cli_cases": 8,
+      "clients": 2,
+      "original_rpc_pairs": 6,
+      "seconds": 0.46043920000010985,
+      "outer_job_accounting": {
+        "user_time": 3437500,
+        "kernel_time": 3281250,
+        "period_user_time": 3437500,
+        "period_kernel_time": 3281250,
+        "page_faults": 37013,
+        "total_processes": 11,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    }
+  }
+}

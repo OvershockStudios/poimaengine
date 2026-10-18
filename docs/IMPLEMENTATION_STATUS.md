@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.179**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.180**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.180 gives Windows build children a bounded opportunity to finish
+before forced cleanup: up to one second after leader exit, within the original
+request deadline, with output draining, cancellation and compiler-server health
+checks still active. An observed empty Job receives no termination request.
+Opt-in process inspection adds raw `final_group_accounting`, including jobs
+with an empty cleanup-request array. Default inspection and the separate
+persistent compiler-server lifetime retain their existing contracts.
+
+Four focused production-library checks pass on each of Windows and Linux:
+ordinary jobs, capture-destructor reentry, development service and compact
+polling. Windows checks include naturally completing children after zero and
+nonzero leader exits, lingering-child cleanup, and timeout/cancellation after
+leader exit. The first Windows run remains failed because a new test assumed an
+exact Job-member count; an independent observation showed two members with no
+termination request. The corrected test preserves the actual exit, output,
+empty-Job and cleanup requirements. These checks do not qualify SDK publication,
+a fresh agent game, rendering or the wider Alpha workflow.
+[Contract](DEVELOPMENT_JOBS.md) and [checks and limits](evidence/m2-development-retirement.json).
 
 Version 0.0.179 adds explicit [profile-aware Python launch factories](PYTHON_CLIENT.md#open-with-development-profiles-or-an-owned-command-prefix), including literal owned-wrapper command prefixes. Invalid profile/prefix arguments reject before transport creation; omitted profiles retain the original command. Native world/serve diagnostics distinguish an unsupported flag from a missing path. RPC errors and unknown outcomes retain their existing meaning; there is no automatic repair or retry.
 

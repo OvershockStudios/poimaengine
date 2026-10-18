@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.180
+
+- Let Windows build children finish within a bounded retirement window before requesting forced cleanup. Preserve cancellation, deadlines, output draining and the separate compiler-server lifetime. [Development jobs](docs/DEVELOPMENT_JOBS.md).
+- Expose raw final Windows Job counters through opt-in process inspection, including completed jobs with no termination request. [Checks and limits](docs/evidence/m2-development-retirement.json).
+
 ## 0.0.179
 
 - Add explicit development-profile paths and literal command-prefix launches to the Python client, with prelaunch argument validation and unchanged retry/error behavior. [Client guide](docs/PYTHON_CLIENT.md#open-with-development-profiles-or-an-owned-command-prefix).

@@ -312,13 +312,19 @@ struct Jobs::Impl {
         };
         std::optional<State> reason;std::string server_error;
         auto terminate_group=[&] {
+            const auto before=group_accounting(group.value);
+            if(!before)throw std::runtime_error("Cannot observe child group before cleanup.");
+            // Query the held Job before requesting destructive cleanup. Even
+            // after its leader signals, normal descendants may still retire.
+            // An already empty Job needs no fabricated termination request.
+            if(before->active_processes==0)return true;
             auto* event=cleanup_request(observed,ProcessCleanupAction::windows_job_terminate,cleanup_reason(reason));
-            if(event)event->before=group_accounting(group.value);
+            if(event)event->before=before;
             const auto stopped=TerminateJobObject(group.value,1);const auto error=stopped?0:GetLastError();
             if(event) {event->succeeded=bool(stopped);if(!stopped)event->error_code=error;event->after=group_accounting(group.value);}
             return bool(stopped);
         };
-        while(true) {
+        auto pump_and_stop=[&] {
             drain(output_read.value,false);drain(error_read.value,true);
             reason=stop_reason(job);
             if(!reason && server_pump){
@@ -328,12 +334,35 @@ struct Jobs::Impl {
                 catch(const std::exception& e){reason=stop_reason(job).value_or(State::failed);server_error=e.what();}
                 catch(...){reason=State::failed;server_error="Unknown compiler server pump failure.";}
             }
-            if(reason) { if(!terminate_group())throw std::runtime_error("Cannot terminate child process group.");break; }
+            // Preserve a server failure; cancellation/timeout can still win
+            // after a successful pump that consumed the request's last time.
+            if(!reason)reason=stop_reason(job);
+        };
+        while(true) {
+            pump_and_stop();
+            if(reason)break;
             const auto waited=WaitForSingleObject(process.value,10);
             if(waited==WAIT_OBJECT_0) {observe_windows_leader(observed,process.value);break;}
             if(waited==WAIT_FAILED)throw std::runtime_error("Cannot observe child exit.");
         }
-        // A completed build must not leave children holding pipes/processes.
+        if(!reason) {
+            // The ordinary request owns its descendants, independently of any
+            // opt-in persistent compiler server. Allow at most one second for
+            // natural retirement after either a zero or nonzero leader exit,
+            // never extending the original request deadline. Keep pumping and
+            // honoring cancellation while descendants can still hold pipes.
+            const auto retirement_deadline=std::min(job.started+job.request.timeout,Clock::now()+std::chrono::seconds(1));
+            while(true) {
+                pump_and_stop();
+                const auto accounting=group_accounting(group.value);
+                if(!accounting)throw std::runtime_error("Cannot observe retiring child process group.");
+                if(accounting->active_processes==0 || reason || Clock::now()>=retirement_deadline)break;
+                std::this_thread::sleep_until(std::min(retirement_deadline,Clock::now()+std::chrono::milliseconds(10)));
+            }
+            if(!reason)reason=stop_reason(job);
+        }
+        // Lingering descendants still pass the existing forced-cleanup fence.
+        // The helper records a real request only when the held Job is nonempty.
         if(!terminate_group())throw std::runtime_error("Cannot clean child process group.");
         const auto cleanup_deadline=Clock::now()+std::chrono::seconds(5);
         while(true) {
@@ -353,6 +382,9 @@ struct Jobs::Impl {
             std::chrono::ceil<std::chrono::milliseconds>(cleanup_deadline-settled_at).count()):0;
         if(WaitForSingleObject(process.value,remaining)!=WAIT_OBJECT_0)
             throw std::runtime_error("Child process retirement timed out or failed.");
+        observed.final_group_accounting=group_accounting(group.value);
+        if(!observed.final_group_accounting || observed.final_group_accounting->active_processes!=0)
+            throw std::runtime_error("Cannot verify final child group accounting.");
         observed.leader_exit_observed=true;observed.cleanup_finished=true;
         drain(output_read.value,false);drain(error_read.value,true);
         DWORD code=0;if(!GetExitCodeProcess(process.value,&code))throw std::runtime_error("Cannot read process exit code.");

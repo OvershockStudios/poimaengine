@@ -32,15 +32,18 @@ const dev::ProcessObservation& observed_process(const dev::Status& status) {
     const auto& value=*status.process;
     check(value.launched && value.leader_pid && *value.leader_pid>0 && value.group_assigned==true &&
         value.leader_exit_observed && value.termination && value.cleanup_finished &&
-        !value.cleanup_requests_overflow && value.cleanup_count>=1 && value.cleanup_count<=4,"Incomplete retained process boundary.");
+        !value.cleanup_requests_overflow && value.cleanup_count<=4,"Incomplete retained process boundary.");
 #ifdef _WIN32
     check(value.platform==dev::ProcessPlatform::windows && !value.leader_reaped &&
         value.termination->kind==dev::ProcessTerminationKind::windows_exit && value.termination->windows_exit_code &&
         !value.termination->posix_wait_status && !value.termination->exit_status && !value.termination->signal && !value.termination->core_dumped,
         "Windows observations inferred a POSIX status or exception cause.");
-    check(value.cleanup_requests[0].before && value.cleanup_requests[value.cleanup_count-1].after &&
+    check(value.final_group_accounting && value.final_group_accounting->active_processes==0 &&
+        value.final_group_accounting->total_processes>=1,"Windows final raw group observation missing.");
+    if(value.cleanup_count)check(value.cleanup_requests[0].before && value.cleanup_requests[value.cleanup_count-1].after &&
         value.cleanup_requests[value.cleanup_count-1].after->active_processes==0,"Windows before/after group observation missing.");
 #else
+    check(value.cleanup_count>=1 && !value.final_group_accounting,"POSIX cleanup or unknown group boundary changed.");
     check(value.platform==dev::ProcessPlatform::posix && value.leader_reaped==true &&
         value.termination->posix_wait_status && !value.termination->windows_exit_code,"POSIX raw wait/reap observation missing.");
     for(std::size_t i=0;i<value.cleanup_count;++i)
@@ -245,12 +248,40 @@ int peer(int argc,char** argv) {
         std::cout<<"output-end";std::cerr<<"error-end";return 0;
     }
     if(mode=="sleep") { std::cout<<"ready\n"<<std::flush;std::this_thread::sleep_for(60s);return 0; }
-    if(mode=="tree" || mode=="orphan") {
+#ifdef _WIN32
+    if(mode=="retirement-cancel") {
+        // Give the descendant a held, inherited wait handle to THIS leader.
+        // Its readiness signal therefore follows the real leader exit without
+        // sleeps, PID reuse assumptions or inspection of an unrelated process.
+        HANDLE leader_wait=nullptr;
+        check(DuplicateHandle(GetCurrentProcess(),GetCurrentProcess(),GetCurrentProcess(),&leader_wait,SYNCHRONIZE,TRUE,0)!=0,
+            "Cannot create inherited leader wait handle.");
+        const auto executable=utf8_path(argv[0]).wstring();
+        auto command=L"\""+executable+L"\" --peer retirement-watch \""+utf8_path(argv[3]).wstring()+L"\" "+
+            std::to_wstring(reinterpret_cast<std::uintptr_t>(leader_wait));
+        STARTUPINFOW startup{};startup.cb=sizeof(startup);startup.dwFlags=STARTF_USESTDHANDLES;
+        startup.hStdInput=GetStdHandle(STD_INPUT_HANDLE);startup.hStdOutput=GetStdHandle(STD_OUTPUT_HANDLE);startup.hStdError=GetStdHandle(STD_ERROR_HANDLE);
+        PROCESS_INFORMATION process{};
+        const auto launched=CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,TRUE,CREATE_NO_WINDOW,nullptr,nullptr,&startup,&process);
+        CloseHandle(leader_wait);check(launched!=0,"Cannot create retirement-cancellation descendant.");
+        CloseHandle(process.hThread);CloseHandle(process.hProcess);return 0;
+    }
+    if(mode=="retirement-watch") {
+        const auto leader_wait=reinterpret_cast<HANDLE>(static_cast<std::uintptr_t>(std::stoull(argv[4])));
+        const auto exited=WaitForSingleObject(leader_wait,5000);CloseHandle(leader_wait);
+        check(exited==WAIT_OBJECT_0,"Descendant did not observe its actual leader exit.");
+        std::cout<<"retirement-parent-exited\n"<<std::flush;
+        std::this_thread::sleep_for(2s);std::ofstream(utf8_path(argv[3]))<<"leaked";return 0;
+    }
+#endif
+    if(mode=="tree" || mode=="orphan" || mode=="natural-orphan" || mode=="natural-failed-orphan") {
         const auto marker=utf8_path(argv[3]);
 #ifdef _WIN32
         std::wstring executable=utf8_path(argv[0]).wstring();
-        std::wstring command=L"\""+executable+L"\" --peer linger \""+marker.wstring()+L"\"";
-        STARTUPINFOW startup{};startup.cb=sizeof(startup);PROCESS_INFORMATION process{};
+        std::wstring command=L"\""+executable+L"\" --peer "+((mode=="natural-orphan" || mode=="natural-failed-orphan")?L"retire":L"linger")+L" \""+marker.wstring()+L"\"";
+        STARTUPINFOW startup{};startup.cb=sizeof(startup);startup.dwFlags=STARTF_USESTDHANDLES;
+        startup.hStdInput=GetStdHandle(STD_INPUT_HANDLE);startup.hStdOutput=GetStdHandle(STD_OUTPUT_HANDLE);startup.hStdError=GetStdHandle(STD_ERROR_HANDLE);
+        PROCESS_INFORMATION process{};
         check(CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,TRUE,CREATE_NO_WINDOW,nullptr,nullptr,&startup,&process)!=0,"Peer cannot create descendant.");
         std::cout<<"child="<<process.dwProcessId<<'\n'<<std::flush;CloseHandle(process.hThread);CloseHandle(process.hProcess);
 #else
@@ -259,7 +290,12 @@ int peer(int argc,char** argv) {
         std::cout<<"child="<<child<<'\n'<<std::flush;
 #endif
         if(mode=="tree")std::this_thread::sleep_for(60s);
-        return 0;
+        return mode=="natural-failed-orphan"?7:0;
+    }
+    if(mode=="retire") {
+        std::this_thread::sleep_for(150ms);
+        std::ofstream marker(utf8_path(argv[3]));marker<<"retired";marker.close();check(bool(marker),"Cannot retain natural descendant marker.");
+        std::cout<<"natural-descendant-output\n"<<std::flush;std::cerr<<"natural-descendant-error\n"<<std::flush;return 0;
     }
     if(mode=="linger") { std::this_thread::sleep_for(2s);std::ofstream(utf8_path(argv[3]))<<"leaked";return 0; }
     throw std::runtime_error("Unknown peer mode.");
@@ -297,6 +333,10 @@ int test_main(int argc,char** argv) {
         check(echoed.standard_output.find(path_text(root/"cwd space"))!=std::string::npos,"Cwd was not applied.");
         check(echoed.standard_error=="diagnostic\n","Separate stderr not captured.");
         observed_process(echoed);
+#ifdef _WIN32
+        check(echoed.process->cleanup_count==0,
+            "An already empty ordinary Windows Job received destructive cleanup.");
+#endif
         check(jobs.poll_summary(echoed.id)->process==echoed.process,"Compact poll lost immutable process facts.");
         check(!jobs.cancel(echoed.id) && jobs.forget(echoed.id) && !jobs.poll(echoed.id),"Terminal lifecycle failed.");
         {
@@ -518,13 +558,49 @@ int test_main(int argc,char** argv) {
         const auto& orphan_observation=observed_process(orphaned);
         check(orphan_observation.cleanup_requests[0].reason==dev::ProcessCleanupReason::completion,"Completed orphan cleanup cause changed.");
 #ifdef _WIN32
-        check(orphan_observation.cleanup_requests[0].before->active_processes>=1 && orphan_observation.cleanup_requests[0].before->total_processes>=2,
+        check(orphan_observation.cleanup_count==1 && orphan_observation.cleanup_requests[0].action==dev::ProcessCleanupAction::windows_job_terminate &&
+            orphan_observation.cleanup_requests[0].succeeded==true && orphan_observation.cleanup_requests[0].before->active_processes>=1 && orphan_observation.cleanup_requests[0].before->total_processes>=2,
             "Successful orphan fixture lost actual active descendant observation.");
+        for(int expected:{0,7}) {
+            const auto natural_marker=root/(expected==0?"natural-descendant":"natural-failed-descendant");
+            auto natural=request(expected==0?"natural-orphan":"natural-failed-orphan");natural.arguments.push_back(path_text(natural_marker));
+            const auto naturally_retired=await(jobs,jobs.submit(natural));const auto& natural_observation=observed_process(naturally_retired);
+            check(naturally_retired.state==(expected==0?dev::State::succeeded:dev::State::failed) && naturally_retired.exit_code==expected &&
+                natural_observation.cleanup_count==0 && natural_observation.final_group_accounting->total_processes>=2 &&
+                naturally_retired.standard_output.find("natural-descendant-output")!=std::string::npos &&
+                naturally_retired.standard_error.find("natural-descendant-error")!=std::string::npos,
+                "Naturally retiring Windows descendant was terminated or its leader status/pipes changed.");
+            std::ifstream marker(natural_marker);std::string retired;marker>>retired;marker.close();
+            check(retired=="retired","Natural descendant did not complete its own work.");jobs.forget(naturally_retired.id);
+        }
+        const auto deadline_marker=root/"deadline-descendant";auto retiring_timeout=request("orphan");
+        retiring_timeout.arguments.push_back(path_text(deadline_marker));retiring_timeout.timeout=500ms;
+        const auto retirement_timeout=await(jobs,jobs.submit(retiring_timeout));const auto& timeout_observation=observed_process(retirement_timeout);
+        check(retirement_timeout.state==dev::State::timed_out && retirement_timeout.exit_code==0 &&
+            timeout_observation.cleanup_count==1 && timeout_observation.cleanup_requests[0].reason==dev::ProcessCleanupReason::timed_out &&
+            timeout_observation.cleanup_requests[0].before->active_processes>=1 &&
+            timeout_observation.cleanup_requests[0].before->total_processes>=2,
+            "Descendant retirement extended the original request deadline or rewrote the completed leader exit.");
+        jobs.forget(retirement_timeout.id);
+        const auto retirement_cancel_marker=root/"retirement-cancel-descendant";auto retiring_cancel=request("retirement-cancel");
+        retiring_cancel.arguments.push_back(path_text(retirement_cancel_marker));const auto retirement_cancel_id=jobs.submit(retiring_cancel);
+        await_output(jobs,retirement_cancel_id,"retirement-parent-exited");check(jobs.cancel(retirement_cancel_id),"Cannot cancel post-leader descendant retirement.");
+        const auto retirement_cancelled=await(jobs,retirement_cancel_id);const auto& cancelled_retirement=observed_process(retirement_cancelled);
+        check(retirement_cancelled.state==dev::State::cancelled && retirement_cancelled.exit_code==0 &&
+            cancelled_retirement.cleanup_count==1 && cancelled_retirement.cleanup_requests[0].reason==dev::ProcessCleanupReason::cancelled &&
+            cancelled_retirement.cleanup_requests[0].before->active_processes>=1 &&
+            cancelled_retirement.cleanup_requests[0].before->total_processes>=2,
+            "Cancellation during actual post-leader retirement lost its exit status or forced-cleanup cause.");
+        jobs.forget(retirement_cancel_id);
 #endif
         const auto destruction_marker=root/"destruction-descendant";
         { dev::Jobs scoped;auto scoped_tree=request("tree");scoped_tree.arguments.push_back(path_text(destruction_marker));const auto id=scoped.submit(scoped_tree);await_output(scoped,id,"child="); }
         std::this_thread::sleep_for(2200ms);
         check(!std::filesystem::exists(tree_marker) && !std::filesystem::exists(orphan_marker) && !std::filesystem::exists(destruction_marker),"Owned descendants survived cleanup.");
+#ifdef _WIN32
+        check(!std::filesystem::exists(deadline_marker),"Timed-out retiring descendant survived cleanup.");
+        check(!std::filesystem::exists(retirement_cancel_marker),"Cancelled retiring descendant survived cleanup.");
+#endif
         { dev::Jobs limited({1,32});const auto id=limited.submit(request("sleep"));bool rejected=false;try { limited.submit(request("echo")); }catch(const std::runtime_error&) { rejected=true; }check(rejected,"Capacity bound was not enforced.");limited.cancel(id);await(limited,id); }
         bool invalid=false;try { jobs.submit(dev::Request{"relative",root,{},1s}); }catch(const std::invalid_argument&) { invalid=true; }check(invalid,"Relative executable accepted.");
         auto invalid_utf8=request("echo");invalid_utf8.arguments.push_back(std::string(1,static_cast<char>(0xff)));

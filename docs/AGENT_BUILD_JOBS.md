@@ -200,6 +200,13 @@ an exit cause. Keep this inner runner record separate from the external
 supervisor's closure evidence. See
 [process observation semantics](DEVELOPMENT_JOBS.md#process-and-cleanup-observations).
 
+Windows builds from 0.0.180 can finish with no cleanup request. Check the
+retained `final_group_accounting` for the completed Job's raw counters instead
+of requiring a termination entry. An absent/null observation is unknown;
+`total_terminated_processes:0` alone does not prove that no termination was
+requested. Keep actual cleanup requests even when the leader and artifact
+verification succeeded.
+
 The SDK's offline checks exercise lifecycle records, deadlines, detached timeout
 context and unchanged error propagation. The explicit
 [native fixture](../tests/python_development_jobs_native.py) builds package-free

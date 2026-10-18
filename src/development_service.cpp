@@ -204,6 +204,7 @@ Json process_observation(const std::optional<ProcessObservation>& observed) {
     return Json{{"version",1},{"platform",value.platform==ProcessPlatform::windows?"windows":"posix"},
         {"launched",value.launched},{"leader_pid",number(value.leader_pid)},{"group_assigned",number(value.group_assigned)},
         {"leader_exit_observed",value.leader_exit_observed},{"leader_reaped",number(value.leader_reaped)},{"termination",termination},
+        {"final_group_accounting",accounting(value.final_group_accounting)},
         {"cleanup",{{"requests",requests},{"requests_overflow",value.cleanup_requests_overflow},{"finished",value.cleanup_finished}}}};
 }
 Json object(Json properties,Json required=Json::array()) { return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; }

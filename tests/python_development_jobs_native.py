@@ -158,9 +158,18 @@ def main():
                          process["termination"]["kind"] == "posix_exit" and
                          process["termination"]["exit_status"] == full["exit_code"],
                          "Actual POSIX SDK termination differs")
-                need(process["cleanup"]["requests"] and all(
+                requests = process["cleanup"]["requests"]
+                if os.name == "nt" and "final_group_accounting" in process:
+                    final = process["final_group_accounting"]
+                    need(isinstance(final, dict) and
+                         type(final.get("active_processes")) is int and final["active_processes"] == 0 and
+                         type(final.get("total_processes")) is int and final["total_processes"] >= 1,
+                         "Actual Windows SDK final Job accounting is missing or nonempty")
+                else:
+                    need(requests, "Legacy/POSIX SDK completion cleanup is missing")
+                need(all(
                     row["reason"] == "completion" and row["succeeded"] is True
-                    for row in process["cleanup"]["requests"]), "SDK completion cleanup differs")
+                    for row in requests), "SDK completion cleanup differs")
                 compact_process = client.wait_for_development(receipt["job_id"], timeout=5,
                                                               include_process=True)
                 need(compact_process == {key: value for key, value in enriched.items()

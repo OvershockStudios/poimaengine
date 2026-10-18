@@ -100,6 +100,10 @@ struct ProcessObservation {
     std::optional<std::uint32_t> leader_pid;
     std::optional<bool> group_assigned,leader_reaped;
     std::optional<ProcessTermination> termination;
+    // Raw Windows Job accounting at the completed retirement fence, including
+    // an empty Job requiring no termination request. Null on POSIX/unobserved.
+    // These counters do not attribute exits or prove every member's exit cause.
+    std::optional<ProcessGroupAccounting> final_group_accounting;
     std::array<ProcessCleanupRequest,4> cleanup_requests{};
     std::uint32_t cleanup_count=0;
     bool cleanup_requests_overflow=false,cleanup_finished=false;

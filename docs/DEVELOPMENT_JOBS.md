@@ -55,9 +55,13 @@ terminal observation. It distinguishes a polling timeout from a native job
 timeout and preserves uncertain transport outcomes.
 
 Windows starts children suspended, restricts inherited handles, assigns a
-kill-on-close Job Object, then resumes them. Completion and cancellation terminate
-remaining owned children and wait up to five seconds for zero active processes;
-failure is reported explicitly. Linux redirects standard streams, closes all
+kill-on-close Job Object, then resumes them. After the leader exits, the worker
+allows up to one second for its children to finish, bounded by the original
+request deadline. It continues draining output and checking cancellation and
+compiler-server health. An empty Job needs no termination request. Remaining
+children, cancellation and timeout use the forced-cleanup path, which waits up
+to five seconds for zero active processes; failure is reported explicitly.
+Linux redirects standard streams, closes all
 other child descriptors, creates a separate process group and sends `SIGKILL`
 to that group before reaping the direct child. The leader stays unreaped until
 the group signal, preventing PID-reuse cleanup races. Linux uses the libc
@@ -390,8 +394,10 @@ completed process observations. The separate compiler-server lifetime retains
 its existing metadata.
 
 The version-1 record contains `platform`, `launched`, `leader_pid`,
-`group_assigned`, `leader_exit_observed`, `leader_reaped`, `termination` and
-`cleanup`. Unobserved or inapplicable values are null. Windows termination keeps
+`group_assigned`, `leader_exit_observed`, `leader_reaped`, `termination`,
+`final_group_accounting` and `cleanup`. Older builds omit
+`final_group_accounting`; current builds return null when it is unobserved or
+inapplicable. Windows termination keeps
 the unsigned `windows_exit_code`; POSIX keeps `posix_wait_status` and explicitly
 distinguishes `posix_exit`, `posix_signal` and `posix_other`, with applicable
 `exit_status`, `signal` and `core_dumped` values. The existing top-level
@@ -408,7 +414,10 @@ Actions are `windows_job_terminate`, `windows_process_terminate`,
 `total_processes`, `active_processes` and `total_terminated_processes`; those
 counters do not attribute exits to a particular request. POSIX group counts
 remain null. `cleanup.finished` means the existing cleanup sequence completed,
-not that every descendant was observed or reaped.
+not that every descendant was observed or reaped. A naturally emptied Windows
+Job has an empty `cleanup.requests` array. Its `final_group_accounting` retains
+the raw counters checked at the completed retirement fence, including zero
+active processes. POSIX does not synthesize Job counters.
 
 These facts do not change job success: a successful leader can still require
 termination of remaining children. An external supervisor's empty Job Object

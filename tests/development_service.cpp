@@ -169,19 +169,26 @@ int main(int argc,char** argv) {
                 "Default/false process selector changed legacy full status.");
             auto enriched=service.dispatch("development.inspect",{{"job_id",id},{"include_process",true}});
             const auto& process=enriched.at("process");
-            check(process.is_object() && process.size()==9 && process.at("version")==1 && process.at("launched")==true &&
+            check(process.is_object() && process.size()==10 && process.at("version")==1 && process.at("launched")==true &&
                 process.at("leader_pid").is_number_integer() && process.at("leader_pid")>0 && process.at("group_assigned")==true &&
                 process.at("leader_exit_observed")==true && process.at("cleanup").at("finished")==true &&
-                process.at("cleanup").at("requests_overflow")==false && process.at("cleanup").at("requests").size()>=1,
+                process.at("cleanup").at("requests_overflow")==false && process.at("cleanup").at("requests").size()<=4,
                 "Opt-in completed process observation incomplete.");
 #ifdef _WIN32
             check(process.at("platform")=="windows" && process.at("leader_reaped").is_null() &&
                 process.at("termination").at("kind")=="windows_exit" && process.at("termination").at("windows_exit_code")==0 &&
-                process.at("termination").at("posix_wait_status").is_null(),"Windows process JSON loses raw exit provenance.");
+                process.at("termination").at("posix_wait_status").is_null() &&
+                process.at("cleanup").at("requests").empty() && process.at("final_group_accounting").is_object() &&
+                process.at("final_group_accounting").size()==3 && process.at("final_group_accounting").at("active_processes")==0 &&
+                process.at("final_group_accounting").at("total_processes")>=1 &&
+                process.at("final_group_accounting").at("total_terminated_processes").is_number_unsigned(),
+                "Windows process JSON loses raw exit/group facts or invents empty-Job termination.");
 #else
             check(process.at("platform")=="posix" && process.at("leader_reaped")==true &&
                 process.at("termination").at("kind")=="posix_exit" && process.at("termination").at("exit_status")==0 &&
-                process.at("termination").at("signal").is_null() && process.at("termination").at("windows_exit_code").is_null(),"POSIX process JSON loses exit provenance.");
+                process.at("termination").at("signal").is_null() && process.at("termination").at("windows_exit_code").is_null() &&
+                process.at("final_group_accounting").is_null() && process.at("cleanup").at("requests").size()>=1,
+                "POSIX process JSON loses exit provenance or invents raw group counters.");
             for(const auto& cleanup:process.at("cleanup").at("requests"))check(cleanup.at("before").is_null() && cleanup.at("after").is_null(),"POSIX JSON fabricated group accounting.");
 #endif
             auto compact=service.dispatch("development.inspect",{{"job_id",id},{"include_output",false},{"include_process",true}});
