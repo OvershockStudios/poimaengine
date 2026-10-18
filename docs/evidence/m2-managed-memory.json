@@ -1,0 +1,366 @@
+{
+  "format": "poima.evidence.managed-memory.v1",
+  "checkpoint": "0.0.182",
+  "date": "2026-10-18",
+  "feature": {
+    "method": "runtime.gameplay.memory",
+    "schema_revision": 107,
+    "bridge_operation": 8,
+    "bridge_negotiation_version": 1,
+    "wrapper_format": "poima.gameplay-memory-snapshot.v1",
+    "data_format": "poima.managed-memory-snapshot.v1",
+    "scope": "Process-global CLR estimates and bridge registry/weak context observations through the current module; sequential sampling; no requested collection, retirement pruning, simulation or saved-state edits.",
+    "wire_capacity_bytes": 8192,
+    "query_data_requires_negotiation": true,
+    "callback_profiling_required": false,
+    "older_bridge": {
+      "supported": null,
+      "unavailable_reason": "bridge_not_negotiated",
+      "data": null
+    },
+    "native_aot": {
+      "supported": false,
+      "unavailable_reason": "native_aot_not_supported",
+      "data": null
+    }
+  },
+  "toolchain": {
+    "sdk": "Microsoft .NET 10.0.401",
+    "clr": "10.0.12",
+    "windows_engine": "x64 Windows CLI, Vulkan/simulation/audio/CoreCLR/NativeAOT enabled; headless CPU qualification here",
+    "linux": "Actual managed bridge/helper and production wire parser; disabled-runtime production TU syntax check. Full native Linux RPC not qualified by this cohort."
+  },
+  "native_build": {
+    "passed": true,
+    "seconds": 442.7024158659988,
+    "cache_generation": 42,
+    "translation_units": 29,
+    "build_steps": 32,
+    "cli": {
+      "bytes": 26304000,
+      "sha256": "98ecc9c8c4361318f38c8de451bfb1ca8a592cd09c40dd182416829dfac867d6"
+    },
+    "core_decoded": {
+      "bytes": 230376268,
+      "sha256": "b076bdae30d0474648b4d59fc7fc9fde8d208a232c127b74ec9a8856b688c832"
+    },
+    "new_output_files": 15,
+    "new_output_bytes": 80571577,
+    "independent_checks": 66,
+    "prior_qualified_artifacts_preserved": true,
+    "scope": "Normal selected incremental CLI build with actual source/configuration/tool identities. No full vendor/toolchain rebuild or installed runtime/editor release qualification."
+  },
+  "compiled_helpers": {
+    "linux": {
+      "passed": true,
+      "whole_owner_seconds": 62.937932192995504,
+      "managed_assertions": 1881,
+      "wire_cases": 344,
+      "natural_group_closure": true,
+      "forced_cleanup": false
+    },
+    "windows": {
+      "passed": true,
+      "managed_assertions": 1881,
+      "wire_cases": 344,
+      "prebuilt_managed_artifacts_reused": true,
+      "new_static_parser": true,
+      "outer_job": {
+        "user_time": 2187500,
+        "kernel_time": 2500000,
+        "period_user_time": 2187500,
+        "period_kernel_time": 2500000,
+        "page_faults": 20512,
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "forced_cleanup": false
+    },
+    "linux_disabled_runtime_compile": {
+      "passed": true,
+      "seconds": 1.870717486999638,
+      "syntax_only": true
+    },
+    "scope": "Real managed Entry.Invoke with independent 80-byte call declaration, actual load/Initialize/release and controlled retained context; explicit operation-5 collection phases are separated from passive reads. Exact production wire parser receives valid/malformed input. These helpers alone are not native hosting evidence."
+  },
+  "native_rpc": {
+    "passed": true,
+    "seconds": 2.3967144999987795,
+    "native_owners": 3,
+    "raw_request_reply_pairs": 206,
+    "whole_checkpoints": 14,
+    "whole_equal_pairs": [
+      {
+        "label": "eight passive reads preserve every save field and byte",
+        "left": {
+          "bytes": 1158,
+          "sha256": "8df27efdd91604502edf83d39984176ebcef13f2f88f596c170dc48bf3807c20"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "8df27efdd91604502edf83d39984176ebcef13f2f88f596c170dc48bf3807c20"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "initialize-failure",
+        "left": {
+          "bytes": 1158,
+          "sha256": "5f8b1febccf40e80b74473e59a7e4a15813ed91ff3ece6957f447d32e95108c4"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "5f8b1febccf40e80b74473e59a7e4a15813ed91ff3ece6957f447d32e95108c4"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "throwing-tick",
+        "left": {
+          "bytes": 1158,
+          "sha256": "9f372395d554f58bd48fb97c7ae1a74d06f7b96c845befbb63c82e964ef5a133"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "9f372395d554f58bd48fb97c7ae1a74d06f7b96c845befbb63c82e964ef5a133"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "rejected reads preserve complete native saves",
+        "left": {
+          "bytes": 1158,
+          "sha256": "1abcfd6332ea6dd11084b0b1e5f8aa39f1132d482c92646a47cb48d991175451"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "1abcfd6332ea6dd11084b0b1e5f8aa39f1132d482c92646a47cb48d991175451"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "older bridge unavailable reads preserve complete state",
+        "left": {
+          "bytes": 1158,
+          "sha256": "7940cbb6a39cf1327396aa93d64690fbc619d64aa291e9beca1d7f3dce74f2b0"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "7940cbb6a39cf1327396aa93d64690fbc619d64aa291e9beca1d7f3dce74f2b0"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "AOT unavailable reads preserve complete state",
+        "left": {
+          "bytes": 1634041,
+          "sha256": "595d57d348f95bb35e13ce54eb0ee7cfc3525fe45d9e6c9f8b408e74d3c19423"
+        },
+        "right": {
+          "bytes": 1634041,
+          "sha256": "595d57d348f95bb35e13ce54eb0ee7cfc3525fe45d9e6c9f8b408e74d3c19423"
+        },
+        "exclusions": []
+      }
+    ],
+    "compatible_reload_forecasts": 1,
+    "supported_snapshots": 13,
+    "unloaded_snapshots": 1,
+    "older_bridge_unavailable_snapshots": 1,
+    "native_aot_unavailable_snapshots": 1,
+    "expected_request_errors": 7,
+    "expected_callback_errors": 2,
+    "fixture": {
+      "type": "Poima.Qualification.MemoryProbe",
+      "global_fields": [
+        "Ticks",
+        "Mode",
+        "Witness"
+      ],
+      "global_kinds": [
+        "int32",
+        "int32",
+        "int32"
+      ],
+      "global_bytes": 12,
+      "snapshot_version": 1,
+      "whole_snapshot_bytes": 1158
+    },
+    "retained_aot": {
+      "snapshot_version": 7,
+      "whole_snapshot_bytes": 1634041
+    },
+    "outer_job": {
+      "user_time": 14062500,
+      "kernel_time": 10312500,
+      "period_user_time": 14062500,
+      "period_kernel_time": 10312500,
+      "page_faults": 94579,
+      "total_processes": 5,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "forced_cleanup": false,
+    "input_files_unchanged": true,
+    "coverage": [
+      "unloaded module",
+      "default CoreCLR negotiation without callback profiling",
+      "eight repeated passive reads",
+      "compatible reload with full saved-state revision forecast",
+      "rejected Initialize candidate and retained old state",
+      "throwing Tick with complete native rollback",
+      "strict integer Tick, stale Tick, unknown field and wrong session errors",
+      "older bridge load and Tick with unavailable data",
+      "Native AOT unavailable data",
+      "complete original save documents and bytes, without omitted fields"
+    ],
+    "sdk_identity_scope": "New bridge and current game share SDK bytes; the older bridge has different SDK bytes. Actual old-bridge load/Tick compatibility is tested; cross-version SDK byte identity is not claimed.",
+    "example_original_snapshot": {
+      "active_modules": 1,
+      "format": "poima.managed-memory-snapshot.v1",
+      "gc": {
+        "gen0_collections": "0",
+        "gen1_collections": "0",
+        "gen2_collections": "0",
+        "total_allocated_bytes": "968320",
+        "total_memory_bytes": "971104"
+      },
+      "last_gc": {
+        "compacted": false,
+        "concurrent": false,
+        "fragmented_bytes": "0",
+        "generation": 0,
+        "heap_size_bytes": "0",
+        "high_memory_load_threshold_bytes": "14796431769",
+        "index": "0",
+        "memory_load_bytes": "0",
+        "total_available_memory_bytes": "16440479744",
+        "total_committed_bytes": "0"
+      },
+      "process_id": 35112,
+      "retired_contexts_alive": 0,
+      "retired_contexts_tracked": 0,
+      "timestamp_end": "462933056537",
+      "timestamp_frequency": "10000000",
+      "timestamp_start": "462933052757",
+      "version": 1
+    }
+  },
+  "retained_failures": [
+    {
+      "case": "First Linux compiled-helper aggregate",
+      "passed": false,
+      "forced_cleanup": false,
+      "cause": "Test assumed all GetGCMemoryInfo byte fields were zero at index zero. Raw diagnostic and native CLR source show independently populated threshold/available-memory values.",
+      "correction": "Keep raw runtime observations; require zero only for historical heap/fragmentation/committed/load fields at index zero. Preserve the failed original and separate diagnostic."
+    },
+    {
+      "case": "First Windows aggregate",
+      "passed": false,
+      "forced_cleanup": true,
+      "cause": "Dynamically linked standalone parser did not exit within its original deadline; the import table listed unsupplied C++ runtime DLLs. The exact stall cause was not proven.",
+      "correction": "Build a separate parser with the project toolchain static-link policy and run a new owned cohort with the unchanged compiled managed helper. Process-local error-mode suppression prevents dependency-load dialogs. The original aggregate remains failed."
+    },
+    {
+      "case": "Independent file-reader attempts before final RPC audit",
+      "passed": false,
+      "cause": "An initial reader syntax error and a later unsupported old/new SDK-byte-equality assumption were retained.",
+      "correction": "Use explicit independent artifact closure/image joins; retain the old SDK difference and all original raw types, state fields and assertions. No native case rerun or original game regrade."
+    }
+  ],
+  "independent_review": {
+    "native_build_audit": {
+      "bytes": 152921,
+      "sha256": "2441b61c7bc7fca54c27267f6aef67269df6849597915f893c448f6b02de1944"
+    },
+    "rpc_audit": {
+      "bytes": 304570,
+      "sha256": "4b5a214e178675531015c6755c17b84f2d182c00005d4f18f19a13daf58eb2fd"
+    },
+    "rpc_lineage_audit": {
+      "bytes": 4504,
+      "sha256": "ecda31f184fdf17d3f97c0556fcb4628eda52aea8b4ad5bf5d78b1fa26117630"
+    },
+    "rpc_checks": 2472,
+    "all_original_raw_pairs_and_complete_checkpoints_reviewed": true
+  },
+  "source_files": {
+    "include/poima/gameplay.hpp": {
+      "bytes": 2840,
+      "sha256": "df278d11ff10325d859606084b61f56dbe98c55940b02acc2501a72079358dd0"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 25776,
+      "sha256": "cdaa3ecfb1842aa11946a17a93947f6e87cf93b1bcdbd686ad14170293107e8d"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 14557,
+      "sha256": "e9b57d6d5a028b6c8d64ac5734c8df652a1d8afdf062ed8c0402c15335d54128"
+    },
+    "managed/Poima.ManagedBridge/MemorySnapshot.cs": {
+      "bytes": 4081,
+      "sha256": "8b63431b8cd3bddd9aa6ebe638f1ec15c07b9d3e23acadb60679e8b6b2f87e1b"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 68141,
+      "sha256": "fc566acfac740d7e20168d2b66b2907bacef87667f7978c4e9921b49a5cf6a63"
+    },
+    "src/managed_memory_json.hpp": {
+      "bytes": 6355,
+      "sha256": "61f191a8a0d685ee135a7d5082172c9e640520c86d952ca2b37254094c284bfc"
+    },
+    "src/runtime.cpp": {
+      "bytes": 149620,
+      "sha256": "f79eb4018351333f48d1c2b82e4b775822b3f15e0031061d9bac3df23d9291a6"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 9297,
+      "sha256": "be6acac60b0e71968dd4284156df959733fccc11cd58badc0a259f749e860b93"
+    },
+    "src/world.cpp": {
+      "bytes": 333647,
+      "sha256": "a50031edb46bf2e618044d36fd6227038eab455fa46feec7bafbc3a7d678daf2"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 62846,
+      "sha256": "4eaeb2808c83c6d3f7f7fb1d5a247e69e44ab0da5d6ad253bfb021874b032c64"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 119150,
+      "sha256": "e7d7fb0394c9dd963dc1aa5353627aa1dde33c3145bacde2407aa72f83160bef"
+    },
+    "tests/managed_memory_json.cpp": {
+      "bytes": 7626,
+      "sha256": "c44444b472d088d063b765bd73e75e325a1ca7cac1c12320e7edadb59db69107"
+    },
+    "tests/gameplay_memory_contract.py": {
+      "bytes": 13943,
+      "sha256": "b19e07b315bf619c2224f3800131cc1e496df7f507403edc48b386260debfbd1"
+    },
+    "tests/managed_memory_snapshot/Program.cs": {
+      "bytes": 16027,
+      "sha256": "4a328653b776f9460af1e2d962b3aa9c668ee9eb5c13e24099761144162f1bc8"
+    },
+    "tests/managed_memory_snapshot/Fixture/MemoryProbe.cs": {
+      "bytes": 1305,
+      "sha256": "71afff65d695f334264c5f4a738afa8adb737e97339d226ada4715d676749bd9"
+    }
+  },
+  "reproduction": {
+    "contract": "../MANAGED_MEMORY.md",
+    "managed_checks": "../../tests/managed_memory_snapshot/README.md",
+    "native_wire_test": "../../tests/managed_memory_json.cpp",
+    "native_rpc_fixture": "../../tests/gameplay_memory_contract.py",
+    "native_prerequisites": "Compiled selected engine/current bridge/MemoryProbe, retained older bridge and complete trusted Native AOT world; externally supervising Windows Job. The fixture never compiles, renders, force-collects or cleans unknown processes."
+  },
+  "not_qualified": [
+    "Exact reachable objects or per-game heap attribution",
+    "Cause or absence of sustained memory growth",
+    "Matched observer overhead or representative frame/memory budgets",
+    "New runtime restore, cold continuation or standalone export coverage",
+    "Rendered observations, foreground/physical input or GUI",
+    "Full native Linux RPC, console or browser support",
+    "Whole Alpha reliability gate or whole engine completion"
+  ]
+}

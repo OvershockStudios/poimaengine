@@ -3084,12 +3084,13 @@ public:
     }
     Json gameplay_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Gameplay requests require session_id.");runtime_guard(params);
-        if(method=="runtime.gameplay.metrics") {
+        if(method=="runtime.gameplay.metrics" || method=="runtime.gameplay.memory") {
             fields(params,{"session_id","tick"},{"session_id"});
             if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             try {
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"revision",runtime_->gameplay_revision()},
-                    {"structure_revision",runtime_->structure_revision()},{"module",Json::parse(runtime_->gameplay_callback_metrics())}};
+                    {"structure_revision",runtime_->structure_revision()},{"module",Json::parse(method=="runtime.gameplay.memory" ?
+                        runtime_->gameplay_memory_snapshot() : runtime_->gameplay_callback_metrics())}};
             }catch(const std::exception& e) {throw Error(-32060,e.what());}
         }
         if(method=="runtime.gameplay.inspect") {

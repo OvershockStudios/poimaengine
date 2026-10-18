@@ -4,7 +4,9 @@ CoreCLR gameplay can opt into cached diagnostics for `Initialize`, `Tick` and
 `Control`. Each loaded module owns three fixed counter buckets. The ordinary
 load path leaves measurement disabled; NativeAOT has no matching observer.
 These observations complement the [native profiler](PROFILER.md) and
-[process-memory timeline](MEMORY_TIMELINE.md).
+[process-memory timeline](MEMORY_TIMELINE.md). The separate
+[managed memory query](MANAGED_MEMORY.md) observes process-global heap estimates
+and weak context counts; callback allocation traffic is not retained heap size.
 
 ## Enable and read
 

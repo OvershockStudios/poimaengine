@@ -522,6 +522,7 @@ public:
     std::uint64_t gameplay_revision() const;
     std::string gameplay_inspect() const;
     std::string gameplay_callback_metrics() const;
+    std::string gameplay_memory_snapshot() const;
     void gameplay_load(const GameplayConfig& config,const std::string& values="{}");
     void gameplay_edit(const std::string& values);
     const SoundState& sound_state() const;

@@ -2,6 +2,7 @@
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_compatibility.hpp"
 #include "poima/assets.hpp"
+#include "managed_memory_json.hpp"
 #include <nlohmann/json.hpp>
 #include <array>
 #include <algorithm>
@@ -494,6 +495,17 @@ std::string invoke_callback_metrics(Entry entry,std::uint64_t handle) {
     if(code!=0)throw std::runtime_error("C# gameplay callback metrics: "+text);
     return text;
 }
+std::string invoke_memory_snapshot(Entry entry,std::uint64_t handle) {
+    check(entry!=nullptr && handle!=0,"Gameplay memory snapshot bridge/module is unavailable.");
+    std::array<char,detail::managed_memory_wire_capacity> buffer{};PoimaGameCall call{};
+    call.version=1;call.operation=8;call.handle=handle;call.output=buffer.data();call.output_capacity=static_cast<std::uint32_t>(buffer.size());
+    const auto code=entry(&call,sizeof(call));
+    const auto end=std::find(buffer.begin(),buffer.end(),'\0');
+    check(end!=buffer.end(),"Gameplay memory snapshot bridge returned unterminated output.");
+    const std::string text(buffer.begin(),end);
+    if(code!=0)throw std::runtime_error("C# gameplay memory snapshot: "+text);
+    return text;
+}
 template<class T>T read(const std::vector<std::uint64_t>& data,std::size_t offset) { T value;std::memcpy(&value,reinterpret_cast<const std::byte*>(data.data())+offset,sizeof(T));return value; }
 template<class T>void write(std::vector<std::uint64_t>& data,std::size_t offset,T value) { std::memcpy(reinterpret_cast<std::byte*>(data.data())+offset,&value,sizeof(T)); }
 }
@@ -584,6 +596,7 @@ void validate_gameplay_schema(const std::string& schema) {
 struct Gameplay::Impl {
     Entry entry=nullptr;Json diagnostics=Json::object();
     bool callback_metrics_negotiated=false;
+    bool memory_snapshot_negotiated=false;
     std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
@@ -623,8 +636,10 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     const auto offered=config.native_aot ? config.native_requirements.value_or(gameplay_abi::Contract{}) : host_available;
     Json load={{"assembly",config.assembly},{"type",config.type},{"host_contract",service_contract_json(offered)}};
     if(config.profile_callbacks)load["profile_callbacks"]=true;
+    if(!config.native_aot)load["memory_snapshot_version"]=1;
     const auto text=load.dump();call.text=text.c_str();
     impl_->manifest=parse_control_manifest(invoke(impl_->entry,call,true));impl_->handle=impl_->manifest.at("handle");impl_->manifest.erase("handle");
+    impl_->memory_snapshot_negotiated=detail::take_memory_snapshot_negotiation(impl_->manifest,config.native_aot);
     if(impl_->manifest.contains("callback_metrics_version")) {
         const auto& version=impl_->manifest.at("callback_metrics_version");
         check(config.profile_callbacks && !config.native_aot && version.is_number_integer() && version==1,
@@ -685,6 +700,17 @@ std::string Gameplay::callback_metrics() const {
         {"unavailable_reason",impl_->callback_metrics_negotiated ? Json(nullptr) : impl_->config.native_aot ? Json("native_aot_not_supported") : Json("not_requested")},
         {"data",nullptr}};
     if(impl_->callback_metrics_negotiated)result["data"]=parse_callback_metrics(invoke_callback_metrics(impl_->entry,impl_->handle),impl_->handle);
+    return result.dump();
+}
+std::string Gameplay::memory_snapshot() const {
+    Json result={{"format","poima.gameplay-memory-snapshot.v1"},{"version",1},
+        {"backend",impl_->config.native_aot ? "native_aot" : "coreclr"},
+        {"identity",impl_->manifest.at("identity")},{"assembly_sha256",impl_->assembly_hash},
+        {"supported",impl_->config.native_aot ? Json(false) : impl_->memory_snapshot_negotiated ? Json(true) : Json(nullptr)},
+        {"unavailable_reason",impl_->memory_snapshot_negotiated ? Json(nullptr) : impl_->config.native_aot ?
+            Json("native_aot_not_supported") : Json("bridge_not_negotiated")},{"data",nullptr}};
+    if(impl_->memory_snapshot_negotiated)
+        result["data"]=detail::parse_managed_memory_snapshot(invoke_memory_snapshot(impl_->entry,impl_->handle));
     return result.dump();
 }
 void Gameplay::validate_services(const gameplay_abi::Contract& available) const {require_compatible(impl_->requirements,available);}

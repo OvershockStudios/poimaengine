@@ -133,6 +133,12 @@ allocation/GC observations for the mixed-reload investigation. Their bounded
 fixture qualification does not close the representative-game, recording-overhead
 or thirty-minute reliability gates.
 
+[Passive managed memory snapshots](MANAGED_MEMORY.md) add context counts and
+CLR heap estimates without forcing collection. Their compiled helper, strict
+wire parser and bounded Windows RPC/save checks provide an observation
+prerequisite for investigating the mixed-reload result. Memory-growth causes,
+matched observation cost and representative reliability remain open.
+
 The [0.0.168 CoreCLR integration](PERFORMANCE_YARD_CORECLR.md) exercises the
 complete Performance Yard with actual compile/error/repair, compatible reload,
 eight complete checkpoints and fresh-process continuation. Five fixed play

@@ -1,8 +1,29 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.181**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.182**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.182 adds [passive managed memory observations](MANAGED_MEMORY.md).
+The native `runtime.gameplay.memory` query joins the current module identity and
+runtime revisions to process-global CLR estimates and weak context counts.
+It neither requests collection nor prunes retired entries. Latest-GC history
+and runtime memory limits keep their raw meanings; neither is an exact live
+object census or a per-game memory total. Older bridges and Native AOT return
+explicitly unavailable data.
+
+Compiled bridge checks pass 1,881 assertions on each platform, and the exact
+native wire parser passes 344 cases on Windows and Linux. A separate Windows
+engine cohort retains 206 original RPC pairs from three naturally closed
+owners, fourteen complete checkpoints and six byte-identical save pairs.
+It checks compatible reload, rejected initialization, Tick rollback, malformed
+reads and unavailable observers. Current/older-bridge fixtures use complete
+1,158-byte v1 saves; the retained Native AOT pair uses complete 1,634,041-byte
+v7 saves. These bounded checks do not qualify representative memory growth,
+observer overhead, rendered performance or the Alpha reliability gate.
+The first helper test and first Windows aggregate remain failed; their
+separately passing successors preserve the original records.
+[Results and scope](evidence/m2-managed-memory.json).
 
 Version 0.0.181 publishes [Knight: Two Signals](evidence/fixtures/agent-character-intake/README.md),
 an assisted portable source fixture with unchanged agent-authored C# and the

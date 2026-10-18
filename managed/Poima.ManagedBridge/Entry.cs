@@ -32,9 +32,10 @@ internal sealed record Manifest(ulong handle,string identity,string assembly_sha
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null,
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? persistent=null,
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? requirements=null,
-    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] int? callback_metrics_version=null);
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] int? callback_metrics_version=null,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] int? memory_snapshot_version=null);
 internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes,GameplayRequiredFeatures RequiredFeatures,
-    CallbackMetrics? Metrics=null);
+    CallbackMetrics? Metrics=null,bool MemorySnapshot=false);
 public static unsafe class Entry
 {
     private static readonly Dictionary<ulong,Module> modules=[];
@@ -65,6 +66,10 @@ public static unsafe class Entry
                 case 7:
                     var metrics=modules[call->Handle].Metrics ?? throw new InvalidOperationException("Callback metrics were not requested for this module.");
                     Write(call,metrics.Serialize());break;
+                case 8:
+                    if(!modules.ContainsKey(call->Handle) || !modules[call->Handle].MemorySnapshot)
+                        throw new InvalidOperationException("Memory snapshots were not requested for this live module.");
+                    Write(call,MemorySnapshot.Serialize(modules.Count,retired));break;
                 default: throw new ArgumentException("Unknown managed bridge operation.");
             }
             return 0;
@@ -102,6 +107,7 @@ public static unsafe class Entry
     private static void Load(NativeCall* call)
     {
         using var request=JsonDocument.Parse(Marshal.PtrToStringUTF8((nint)call->Text) ?? "");
+        bool memorySnapshot=MemorySnapshot.Requested(request.RootElement);
         bool profileCallbacks=false;
         if(request.RootElement.TryGetProperty("profile_callbacks",out var profile))
         {
@@ -152,10 +158,10 @@ public static unsafe class Entry
             JsonElement? requirements=null;
             if(required!=GameplayRequiredFeatures.None) { using var declaration=JsonDocument.Parse(GameplayRequirements.Json(required));requirements=declaration.RootElement.Clone(); }
             ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent,requirements,
-                profileCallbacks ? 1 : null);
+                profileCallbacks ? 1 : null,memorySnapshot ? 1 : null);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
             var metrics=profileCallbacks ? new CallbackMetrics(handle,Environment.CurrentManagedThreadId) : null;
-            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required,metrics));published=true;
+            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required,metrics,memorySnapshot));published=true;
         }
         finally { if(!published) { retired.Add(new(context));context.Unload(); } }
     }

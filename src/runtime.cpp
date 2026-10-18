@@ -1904,6 +1904,7 @@ const GameplaySaveQueue& Runtime::gameplay_saves() const { return impl_->save_qu
 std::uint64_t Runtime::gameplay_revision() const { return impl_->game_revision; }
 std::string Runtime::gameplay_inspect() const { return impl_->game ? impl_->game->inspect() : "null"; }
 std::string Runtime::gameplay_callback_metrics() const { return impl_->game ? impl_->game->callback_metrics() : "null"; }
+std::string Runtime::gameplay_memory_snapshot() const { return impl_->game ? impl_->game->memory_snapshot() : "null"; }
 void Runtime::gameplay_load(const GameplayConfig& config,const std::string& values) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before code reload.");
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");

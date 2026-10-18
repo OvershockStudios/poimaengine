@@ -56,6 +56,7 @@ const GameplaySaveQueue& Runtime::gameplay_saves() const { throw std::runtime_er
 std::uint64_t Runtime::gameplay_revision() const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::gameplay_inspect() const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::gameplay_callback_metrics() const { throw std::runtime_error("Simulation is not built."); }
+std::string Runtime::gameplay_memory_snapshot() const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_load(const GameplayConfig&,const std::string&) { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_edit(const std::string&) { throw std::runtime_error("Simulation is not built."); }
 const std::vector<components::Schema>& Runtime::component_schemas() const { throw std::runtime_error("Simulation is not built."); }

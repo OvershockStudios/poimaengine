@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.182
+
+- Add a passive CoreCLR memory and collectible-context query for reliability investigations. Distinguish current estimates, latest-GC history and weak context observations; preserve saved state and report unavailable observers explicitly. [Contract](docs/MANAGED_MEMORY.md) and [checks](docs/evidence/m2-managed-memory.json).
+
 ## 0.0.181
 
 - Publish [Knight: Two Signals](docs/evidence/fixtures/agent-character-intake/README.md), an assisted agent-authored C# game with the complete original CC0 character library, portable source and a publish/adopt/export recipe. Verify a newly compiled module, full native checkpoints and relocated game-service continuation while retaining the failed original fresh attempt. [Results and limits](docs/evidence/m2-agent-character-intake.json).
