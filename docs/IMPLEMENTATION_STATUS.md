@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.186**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.187**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.187 records a [matched CPU stepping investigation](RUNTIME_BATCHING.md)
+using the sealed 0.0.186 Windows engine, qualified 0.0.185 bridge and original
+Performance Yard gameplay. Six fresh owners alternate one-tick and sixty-tick
+batches, retaining 4,788 RPC pairs, thirty profiler captures, thirty-six complete
+checkpoint references and eighteen prospective full-state forecasts. All owners
+close naturally; all forecasts match with their declared host-epoch differences.
+
+Mean inclusive native batch time per committed tick is 2.470 ms for one-tick
+calls and 0.826 ms for sixty-tick calls. The measured checkpoint-region difference
+is about 9.4% of that difference; extra animation/hierarchy work and different
+RPC observation frequencies also matter. These overlapping timings are not a
+causal decomposition. The next source-supported target is repeated authored
+state comparison in runtime inspection. No runtime optimization is implemented
+in this checkpoint. These short CPU measurements do not qualify FPS, memory-growth
+causes or the broader Alpha reliability gate. [Results](evidence/m2-runtime-batching.json).
 
 Version 0.0.186 hardens [audio publication](AUDIO.md#publication-and-recovery)
 with exclusive staging and regular-store checks. Occupied staging entries remain

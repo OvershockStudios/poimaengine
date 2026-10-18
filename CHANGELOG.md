@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.187
+
+- Compare one-tick and sixty-tick CPU stepping in the full Performance Yard with unchanged gameplay, complete state forecasts and independently checked profiler captures. Separate RPC, checkpoint and animation/hierarchy costs before selecting runtime optimizations. [Findings and measurement boundaries](docs/RUNTIME_BATCHING.md).
+
 ## 0.0.186
 
 - Publish imported audio through exclusive staging, preserving occupied staging files and rejecting linked asset stores. Document [publication and recovery](docs/AUDIO.md#publication-and-recovery).

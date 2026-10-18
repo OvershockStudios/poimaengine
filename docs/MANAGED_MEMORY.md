@@ -148,6 +148,13 @@ private commit grows by 1,441,792 bytes. These are different measurements and do
 not establish an allocation cause or leak. The historical rendered cohort,
 observation overhead and broader Alpha gates remain separate.
 
+The later [CPU batching investigation](RUNTIME_BATCHING.md) keeps the original
+full workload and compares one-tick with sixty-tick calls. It demonstrates that
+batch size changes rollback preparation, animation/hierarchy work and observer
+frequency. Consequently, the CPU-only cohort above cannot isolate the effect of
+removing rendering from the earlier mixed workflow. The batching investigation
+measures timing rather than CLR retention or memory-growth causes.
+
 The independently checked [results](evidence/m2-managed-memory-workload.json)
 retain all six windows and the earlier failed file-audit records. Exact cohort
 reproduction requires its retained world, compiled images, bridge/dependency
