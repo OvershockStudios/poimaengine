@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.185
+
+- Recover managed load capacity when retired contexts are already dead, without forcing collection or pruning passive observations. Verify the real 1,024-context boundary against the retained bridge on Windows and Linux, then preserve complete game state with the corrected bridge in the native host. [Contract and checks](docs/MANAGED_MEMORY.md#load-capacity-recovery).
+
 ## 0.0.184
 
 - Verify collection-assisted reclamation of retired gameplay contexts in the full Performance Yard, with complete state preserved across reloads, warm restores and the diagnostic intervention. Document the collection request, pruning and retry boundaries. [Results](docs/MANAGED_MEMORY.md#explicit-collection-diagnostic).

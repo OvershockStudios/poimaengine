@@ -118,6 +118,9 @@ public static unsafe class Entry
         string path=Path.GetFullPath(request.RootElement.GetProperty("assembly").GetString()!);
         string typeName=request.RootElement.GetProperty("type").GetString()!;
         if(new FileInfo(path).Length>64*1024*1024)throw new ArgumentException("Game assembly exceeds 64 MiB.");
+        // Reclaim bookkeeping for already-dead contexts only at load capacity.
+        // Passive snapshots still retain entries; no collection is requested.
+        if(modules.Count<32 && retired.Count>=1024)retired.RemoveAll(static reference=>!reference.IsAlive);
         if(modules.Count>=32 || retired.Count>=1024)throw new InvalidOperationException("Managed context budget reached; collect diagnostics or restart the session.");
         var context=new GameLoadContext(path);bool published=false;
         try

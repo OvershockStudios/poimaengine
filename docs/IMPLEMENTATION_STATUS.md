@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.184**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.185**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.185 fixes [managed load-capacity recovery](MANAGED_MEMORY.md#load-capacity-recovery).
+At the tracking limit, a load can remove retired weak entries already reclaimed
+by GC. It requests no collection; passive observations and existing active/live
+capacity guards remain unchanged.
+
+Separate compiled Windows and Linux processes build 1,024 real retirements and
+reproduce the old dead-entry refusal, then verify recovery, initialization and
+the active-module limit in the corrected bridge. Each platform passes 14,609
+legacy checks, 15,024 candidate checks and the existing 1,881 passive-memory checks.
+A separate native Windows host with the new bridge preserves complete state
+across two reloads, two warm restores and one collection diagnostic: 112 RPC
+pairs, nine checkpoint references, three whole-state pairs and two forecasts.
+The first build-supervisor failure remains recorded. This does not qualify
+1,024 native reloads, arbitrary unloadability, rendered memory growth or Alpha.
+[Results](evidence/m2-managed-reload-capacity.json).
 
 Version 0.0.184 qualifies a separate [explicit-collection diagnostic](MANAGED_MEMORY.md#explicit-collection-diagnostic)
 with the sealed 0.0.182 engine and full Performance Yard gameplay. Following two

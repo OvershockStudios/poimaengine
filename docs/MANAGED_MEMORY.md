@@ -55,7 +55,7 @@ comparisons still retain every authoritative field and byte.
 | `process_id` | CLR process ID. Keep the external process creation identity when joining captures; a PID can be reused. |
 | `timestamp_start`, `timestamp_end`, `timestamp_frequency` | Monotonic `Stopwatch` bracket around sampling, in process-local timestamp ticks and ticks per second. Serialization and transport occur outside the bracket. |
 | `active_modules` | Modules currently registered in this bridge, across its runtimes; at most 32. |
-| `retired_contexts_tracked` | Retired weak-reference entries retained by this bridge; at most 1,024. Sampling does not remove dead entries. |
+| `retired_contexts_tracked` | Retired weak-reference entries retained by this bridge. The accepted snapshot range is 0–1,024, rather than a global invariant over all release patterns; see [load capacity](#load-capacity-recovery). Sampling does not remove dead entries. |
 | `retired_contexts_alive` | Entries whose weak references were observed alive during this read. This is not proof of a leak or an inability to unload. |
 
 These counts cover this bridge's registry, not every assembly load context in
@@ -200,3 +200,39 @@ unloadability, establish ordinary collection timing, explain the earlier rendere
 memory growth, or qualify performance. The passive 0.0.183 run remains separate.
 Nonzero retention would also be a diagnostic result, with no retry to force zero.
 [Original observations and limits](evidence/m2-context-unloading.json).
+
+## Load capacity recovery
+
+From 0.0.185, load admission can recover when ordinary GC has reclaimed retired
+contexts but their weak-reference entries still fill the tracking budget. If
+fewer than 32 modules are active and at least 1,024 retired entries are recorded,
+the bridge removes entries already observed dead before checking the existing
+capacity guard. It does not scan this list on every load below capacity.
+
+This pass requests no collection, finalizer wait or unloading. Passive memory
+queries still neither collect nor prune; the explicit collection operation
+remains a separate intervention. Removing a dead weak entry is bookkeeping,
+not evidence that this load caused its context to be reclaimed.
+
+The original refusal remains when 32 modules are active or at least 1,024
+entries remain after the capacity pass:
+`Managed context budget reached; collect diagnostics or restart the session.`
+Release active owners where appropriate, use the separately bounded explicit
+collection diagnostic, or restart the process. Collection cannot force a context
+to unload while game code or another owner retains it.
+
+The accepted observer range is not a global retirement invariant. Several
+already admitted active modules can subsequently be released and push the list
+beyond 1,024 entries. A snapshot outside its accepted range reports an error;
+this targeted load fix does not change that behavior. Arbitrary multi-module
+release overshoot remains a separate boundary outside this qualification.
+
+The [focused fixture](../tests/managed_reload_capacity/README.md) builds its
+capacity precondition from 1,024 real accepted loads and releases. Controlled
+strong roots keep those contexts alive until a no-inline test frame returns;
+test-host GC then establishes dead entries without invoking bridge operation 5.
+Repeated passive queries must preserve that history. The retained bridge rejects
+the next valid load, while the corrected bridge admits it and executes the
+fixture's initialization. Active-module limits are checked afterward, separately
+from that comparison. [Qualification records](evidence/m2-managed-reload-capacity.json)
+distinguish these managed checks from native hosting and broader reliability.

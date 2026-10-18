@@ -230,3 +230,9 @@ The [separate explicit-collection diagnostic](MANAGED_MEMORY.md#explicit-collect
 observes four retired contexts reclaimed while complete current saved state stays
 identical. This qualifies that selected unloading path; automatic GC timing,
 the earlier rendered memory growth and the wider reliability gate remain open.
+
+The [load-capacity fix](MANAGED_MEMORY.md#load-capacity-recovery) prevents already-dead
+retired entries from permanently blocking load admission. Paired compiled tests
+cover the real tracking boundary on Windows and Linux; a separate native host
+with the corrected bridge preserves complete reload/restore state. The wider
+reliability and rendered-memory investigations remain open.

@@ -1,0 +1,331 @@
+{
+  "format": "poima.evidence.managed-reload-capacity.v1",
+  "checkpoint": "0.0.185",
+  "passed": true,
+  "behavior": {
+    "change": "At load admission capacity, remove already-dead retired weak entries before applying the existing budget guard.",
+    "conditional": "active_modules < 32 and retired_entries >= 1024",
+    "forced_gc": false,
+    "passive_query_pruning": false,
+    "preserved": [
+      "32-active refusal",
+      "1024-still-live retirement refusal",
+      "original budget error",
+      "gameplay SDK binary",
+      "native ABI",
+      "checkpoint formats"
+    ],
+    "source_entry": {
+      "bytes": 14824,
+      "sha256": "8f8506167aebe574c5e8308dd1d0d22f1acf5735cc198fd56c2e3774bd0f62ad"
+    }
+  },
+  "managed": {
+    "windows": {
+      "passed": true,
+      "scope": "Actual compiled managed bridge and helper; not native engine capacity stress.",
+      "binary_sdk": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "legacy_bridge": {
+        "bytes": 64000,
+        "sha256": "74c5e25c1984c8e83f4dc7fcc8837ce4efbd834d7e73ab0d391d0150400df70b"
+      },
+      "candidate_bridge_files": {
+        "Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+        },
+        "Poima.Gameplay.pdb": {
+          "bytes": 40360,
+          "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+        },
+        "Poima.ManagedBridge.deps.json": {
+          "bytes": 854,
+          "sha256": "ac9c021dd722bb1bc5dda50e42a1f86fdf8c87ff266a74d4c557a4794d00b1d2"
+        },
+        "Poima.ManagedBridge.dll": {
+          "bytes": 64512,
+          "sha256": "58a026aaf70f6932d881e664512f5461b946495b77719cee7937406f58be9b17"
+        },
+        "Poima.ManagedBridge.pdb": {
+          "bytes": 32524,
+          "sha256": "2adf55dddfe38d96e005af59b316592ecebf6f64fa047c0944e4a889fd7f1059"
+        },
+        "Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 377,
+          "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+        }
+      },
+      "memory_probe": {
+        "bytes": 5120,
+        "sha256": "358b643ba71acbb4535474e4256e370c70148d1689dc4687ce491145885d296e"
+      },
+      "outcomes": {
+        "legacy": {
+          "checks": 14609,
+          "original_raw_calls": 2060,
+          "accepted_loads": 1025,
+          "releases": 1025,
+          "test_host_gc_rounds": 1,
+          "helper_seconds": 2.5226017,
+          "real_collectible_retirements": 1024,
+          "alive_capacity_rejected": true,
+          "precondition": {
+            "active_modules": 1,
+            "retired_tracked": 1024,
+            "retired_alive": 0
+          },
+          "dead_capacity_result": "original_budget_rejection",
+          "active_32_then_33rd_rejection": false,
+          "operation5_before_decisive_probe": 0,
+          "raw_stdout": {
+            "bytes": 6629,
+            "sha256": "9f2698240a260985ad4183abb400888e6e6e4dcafd49ff5fa6b5fce71fe35f90"
+          },
+          "raw_stderr": {
+            "bytes": 1191140,
+            "sha256": "1e4911f1200f72256cc7af51d64634e0813f4c0714bfb58c8c370cd3a3749c11"
+          }
+        },
+        "candidate": {
+          "checks": 15024,
+          "original_raw_calls": 2128,
+          "accepted_loads": 1057,
+          "releases": 1057,
+          "test_host_gc_rounds": 1,
+          "helper_seconds": 2.519697,
+          "real_collectible_retirements": 1024,
+          "alive_capacity_rejected": true,
+          "precondition": {
+            "active_modules": 1,
+            "retired_tracked": 1024,
+            "retired_alive": 0
+          },
+          "dead_capacity_result": "accepted_and_initialized_witness_17",
+          "active_32_then_33rd_rejection": true,
+          "operation5_before_decisive_probe": 0,
+          "raw_stdout": {
+            "bytes": 9258,
+            "sha256": "a207a283c39808c639936c181631b066d6cf3f090b005092bb50cd13ce4d34b0"
+          },
+          "raw_stderr": {
+            "bytes": 1231978,
+            "sha256": "d78d5f618c5df1a2b16cc61416455d1b3d99691b2b973a36f5db04cbf0873eee"
+          }
+        }
+      },
+      "passive_memory_regression_checks": 1881,
+      "worker_seconds": 19.47123830000055,
+      "process_closure": "Windows Job empty without forced cleanup",
+      "owned_files": 156,
+      "owned_bytes": 5592295,
+      "retained_worker": {
+        "bytes": 44437,
+        "sha256": "b9294294488184f62145a4834e9fa7c65db6a921c1789f27b13668bff42cae55"
+      },
+      "independent_audit": {
+        "bytes": 131579,
+        "sha256": "ab03bccb6fd395b5a9b8f698f9a7bcd3b83ab648a0235fbdb0759044f507d7c7"
+      }
+    },
+    "linux": {
+      "passed": true,
+      "scope": "Actual compiled managed bridge and helper; not native engine capacity stress.",
+      "binary_sdk": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "legacy_bridge": {
+        "bytes": 64000,
+        "sha256": "74c5e25c1984c8e83f4dc7fcc8837ce4efbd834d7e73ab0d391d0150400df70b"
+      },
+      "candidate_bridge_files": {
+        "Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+        },
+        "Poima.Gameplay.pdb": {
+          "bytes": 40360,
+          "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+        },
+        "Poima.ManagedBridge.deps.json": {
+          "bytes": 816,
+          "sha256": "4515a42731ae54ca9869e4bb0071d4a5c2dd446dd30910d394306507ccaa8fc6"
+        },
+        "Poima.ManagedBridge.dll": {
+          "bytes": 64512,
+          "sha256": "d0d20ef8e9983dbe40f06571da1c6630daa7e6d5eb2e98a8a297e58bde40f8f8"
+        },
+        "Poima.ManagedBridge.pdb": {
+          "bytes": 32568,
+          "sha256": "b133e22ad7c11176c172833cd6e6e1c43fa70038375d2856b3023b584d1d0f6b"
+        },
+        "Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 364,
+          "sha256": "29ad26ea2193b41244bb055eb0fb499a4b878854601f33bf46869377a674eeab"
+        }
+      },
+      "memory_probe": {
+        "bytes": 5120,
+        "sha256": "358b643ba71acbb4535474e4256e370c70148d1689dc4687ce491145885d296e"
+      },
+      "outcomes": {
+        "legacy": {
+          "checks": 14609,
+          "original_raw_calls": 2060,
+          "accepted_loads": 1025,
+          "releases": 1025,
+          "test_host_gc_rounds": 1,
+          "helper_seconds": 76.307247,
+          "real_collectible_retirements": 1024,
+          "alive_capacity_rejected": true,
+          "precondition": {
+            "active_modules": 1,
+            "retired_tracked": 1024,
+            "retired_alive": 0
+          },
+          "dead_capacity_result": "original_budget_rejection",
+          "active_32_then_33rd_rejection": false,
+          "operation5_before_decisive_probe": 0,
+          "raw_stdout": {
+            "bytes": 6606,
+            "sha256": "5c6b09acf5bf0f5fe264a67abad7c119cad7d8b5a4d8916eee5d3f938a35663b"
+          },
+          "raw_stderr": {
+            "bytes": 1162355,
+            "sha256": "7d4d2e273a65381307afff809d11108a94c7c5007966f13e1c1a16a00d6eef62"
+          }
+        },
+        "candidate": {
+          "checks": 15024,
+          "original_raw_calls": 2128,
+          "accepted_loads": 1057,
+          "releases": 1057,
+          "test_host_gc_rounds": 1,
+          "helper_seconds": 20.8446717,
+          "real_collectible_retirements": 1024,
+          "alive_capacity_rejected": true,
+          "precondition": {
+            "active_modules": 1,
+            "retired_tracked": 1024,
+            "retired_alive": 0
+          },
+          "dead_capacity_result": "accepted_and_initialized_witness_17",
+          "active_32_then_33rd_rejection": true,
+          "operation5_before_decisive_probe": 0,
+          "raw_stdout": {
+            "bytes": 9243,
+            "sha256": "5ccaacf35332b1ae0980f8249ee9066d168270b44678e0f14f250a6cd4282c20"
+          },
+          "raw_stderr": {
+            "bytes": 1202299,
+            "sha256": "c260fa5f93304dd1fd80f2790ffec4d3f779a359d2d20243078250f2a2c09212"
+          }
+        }
+      },
+      "passive_memory_regression_checks": 1881,
+      "worker_seconds": 156.5697728640007,
+      "process_closure": "Every POSIX process group naturally empty",
+      "owned_files": 150,
+      "owned_bytes": 5016312,
+      "retained_worker": {
+        "bytes": 41705,
+        "sha256": "f395c2a28fb15f3e3b035b8459c0da0b366609d65b2a0d843827ec02615772be"
+      },
+      "independent_audit": {
+        "bytes": 125894,
+        "sha256": "8c96aa59fb02a54660cd3d60ed457390f5b55b1364181327baacb444313b113a"
+      }
+    }
+  },
+  "native_integration": {
+    "passed": true,
+    "native_engine_checkpoint": "0.0.182",
+    "bridge_source_checkpoint": "0.0.185",
+    "cli": {
+      "bytes": 26304000,
+      "sha256": "98ecc9c8c4361318f38c8de451bfb1ca8a592cd09c40dd182416829dfac867d6"
+    },
+    "scope": "Current corrected bridge hosted by the retained native engine in the full Performance Yard; not 1024 native reloads.",
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_characters": 24,
+    "lights": 64,
+    "globals": 50,
+    "component_schemas": 4,
+    "body_reloads": 2,
+    "warm_restores": 2,
+    "explicit_collection_requests": 1,
+    "raw_rpc_pairs": 112,
+    "complete_checkpoint_references": 9,
+    "unique_checkpoint_files": 6,
+    "complete_warm_pairs": 2,
+    "complete_collection_pairs": 1,
+    "complete_reload_forecasts": 2,
+    "snapshot_version": 7,
+    "payload_members": 14,
+    "excluded_fields": [],
+    "worker_seconds": 7.300907799995912,
+    "job_processes": 2,
+    "job_active_at_exit": 0,
+    "job_terminated_processes": 0,
+    "forced_cleanup": false,
+    "owned_files": 47,
+    "owned_bytes": 29367329,
+    "retained_worker": {
+      "bytes": 179264,
+      "sha256": "743cd1d22181732fed5029e5a6eb1de1610c32354fcbc083f97897a341673501"
+    },
+    "retained_owner": {
+      "bytes": 1550,
+      "sha256": "7205229cd1d7e2dfd3156b4529527385524d1572c4a2b72bfa10b4873671e05b"
+    },
+    "independent_audit": {
+      "bytes": 14583,
+      "sha256": "7590ff297396fd1acafb69d8c5c09fb7a05f31a4a4fe39cc9daadcbb3ec6ea3d"
+    },
+    "raw_streams": {
+      "connect-stdin.ndjson": {
+        "bytes": 21661,
+        "sha256": "8c05f83005163ac642c83a00661ae718feb285de4e11f709184eaddfac104763"
+      },
+      "connect-stdout.ndjson": {
+        "bytes": 694435,
+        "sha256": "ef12e0f9212c623ef8d8b47ca563a89eca224021fe5dd43f770894858d5e9fd9"
+      },
+      "transcript.json": {
+        "bytes": 3144067,
+        "sha256": "5ca1708c943ab527552ee0431a46cb9edbe6b85d37d001b6d1ba080c711da1b8"
+      }
+    }
+  },
+  "retained_failed_attempts": [
+    {
+      "scope": "First Windows build supervisor, before any capacity helper execution.",
+      "passed": false,
+      "cause": "Live output hashing attempted to open an exclusive compiler cache file.",
+      "seconds": 1.9351926000017556,
+      "forced_cleanup": true,
+      "job_empty_after_cleanup": true,
+      "capacity_verdict": null,
+      "retained_owner": {
+        "bytes": 2067,
+        "sha256": "e2d3cb2d709c992099a608d98b38823fedc1f8ff33a1a0c47beefd1f0d171a20"
+      },
+      "retained_worker": {
+        "bytes": 10425,
+        "sha256": "a0cd5dc2135ffbb4f6f841cf78207ea2e32e9d4e6cee3373c3351c66bbf2f5a8"
+      },
+      "successor": "Stat-only live census, terminal hashes and process/tool/deadline fences; original case remains failed."
+    }
+  ],
+  "limits": [
+    "Controlled test-host GC establishes the dead-entry precondition; neither production Load nor passive queries request collection.",
+    "Actual helper IL checks inspect Load, its generated lambdas and passive snapshot methods, not all transitive framework or arbitrary guest code.",
+    "Already-active multi-module releases can exceed the observer tracking range; this fix does not qualify that separate boundary.",
+    "No ordinary collection timing, general guest unloadability, memory-leak cause, frame-time, renderer, input, installation or Alpha gate claim."
+  ],
+  "reproduction": "The public helper README describes fresh-process legacy/candidate checks. Exact original native integration needs its retained world, A/B images and dependency closure."
+}
