@@ -1056,6 +1056,7 @@ class World {
     std::size_t control_receipt_next_=0;
 
     mutable ModelCache model_cache_;
+    mutable std::optional<std::set<std::string>> authored_model_cache_references_;
     mutable std::optional<SceneSnapshot> authored_cache_;
     const std::string presentation_source_id_=new_presentation_source_id();
     std::uint64_t presentation_generation_=0,presentation_incarnation_cursor_=0;
@@ -1103,12 +1104,19 @@ class World {
         std::size_t bytes=0;for(const auto& e:first)bytes+=e->bytes;for(const auto& e:second)bytes+=e->bytes;return bytes;
     }
     void prune_model_cache() const {
-        std::set<std::string> referenced;
-        std::function<void(const Json&)> visit=[&](const Json& value) {
-            if(value.is_string()) { const auto& text=value.get_ref<const std::string&>();if(valid_asset_id(text))referenced.insert(text); }
-            else if(value.is_structured())for(const auto& item:value)visit(item);
-        };
-        visit(doc_.at("entities"));if(doc_.contains("templates"))visit(doc_.at("templates"));
+        if(model_cache_.models.empty() && model_cache_.images.empty())return;
+        if(!authored_model_cache_references_) {
+            std::set<std::string> referenced;
+            std::function<void(const Json&)> visit=[&](const Json& value) {
+                if(value.is_string()) { const auto& text=value.get_ref<const std::string&>();if(valid_asset_id(text))referenced.insert(text); }
+                else if(value.is_structured())for(const auto& item:value)visit(item);
+            };
+            visit(doc_.at("entities"));if(doc_.contains("templates"))visit(doc_.at("templates"));
+            authored_model_cache_references_.emplace(std::move(referenced));
+        }
+        // Candidate validation can insert assets without publishing authoring.
+        // Reuse only the authored references; prune both live maps every time.
+        const auto& referenced=*authored_model_cache_references_;
         for(auto it=model_cache_.models.begin();it!=model_cache_.models.end();) {
             if(referenced.contains(it->first))++it;else { model_cache_.bytes-=it->second.bytes;it=model_cache_.models.erase(it); }
         }
@@ -1156,6 +1164,7 @@ class World {
         // All potentially failing preparation precedes publication. Swapping
         // state after rename cannot accidentally roll back a committed request.
         doc_.swap(candidate);
+        authored_model_cache_references_.reset();
         invalidate_runtime_source_stale();
         presentation_shapes_.swap(presentation_shapes);presentation_incarnation_cursor_=presentation_cursor;
         disk_.swap(bytes);

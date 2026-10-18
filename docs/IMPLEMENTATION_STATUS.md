@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.188**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.189**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.189 reuses the exact [authored asset-reference set](ASSETS.md#authoring-cache-and-fresh-verification)
+between committed edits. Model/image eviction and cooked-byte accounting still
+run on every nonempty prune, including after failed candidate validation. Fresh
+content freezing continues to verify original package bytes independently.
+
+Native Windows and Linux headless regressions pass 548 cache-fixture checks per
+platform, retaining 82 literal RPC pairs, four complete rejected-operation file
+pairs and two fresh-freeze pairs each. Windows passes nine qualification phases;
+Linux passes six, with the older runtime source-staleness test explicitly skipped
+under Simulation OFF. The new authoring-cache test actually runs in both builds.
+The first Windows fixture failed on an overlong archive path; its unchanged
+failed record remains separate from the corrected test-only rebuild and fresh run.
+
+A separate six-owner Performance Yard comparison retains 6,048 RPC pairs,
+eighteen captures, twenty-four complete v7 checkpoints and twelve whole-state
+epoch forecasts. Mean native `runtime.inspect` time falls from 2.353 to 0.027 ms;
+the external guarded helper loop falls from 16.756 to 11.911 ms per tick.
+These are warm CPU service-command observations, not rendered FPS or pure
+simulation timings. Complete forecasts agree; all six native owners exit
+successfully and their enclosing Job closes empty without forced termination.
+Remaining runtime, memory-growth, interaction and Alpha gates remain open.
+[Results and scope](evidence/m2-asset-reference-cache.json).
 
 Version 0.0.188 caches the exact [authored-source staleness comparison](RUNTIME_SOURCE_STATE.md)
 until either committed document changes. Runtime start, save activation, live

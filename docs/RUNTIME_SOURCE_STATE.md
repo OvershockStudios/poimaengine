@@ -123,6 +123,8 @@ hashes and separately qualified actual native-host consumption.
 The [selected evidence](evidence/m2-runtime-inspection.json) separates native
 tests, platform skips, full-state forecasts and timing scopes. The result does
 not establish rendered FPS, input latency, memory-growth causes, thirty-minute
-reliability or Alpha completion. A remaining source-supported candidate is the
-unconditional authored model-cache reference scan before RPC dispatch; its
-exclusive timing cost has not been isolated.
+reliability or Alpha completion. The subsequent 0.0.189
+[authored asset-reference cache](ASSETS.md#authoring-cache-and-fresh-verification)
+addresses repeated reference scans before ordinary dispatch. Its separate
+comparison retains the same command cadence; these earlier timings remain the
+original 0.0.186/0.0.188 cohort.

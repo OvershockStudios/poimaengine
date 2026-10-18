@@ -52,6 +52,80 @@ Only the selected glTF scene is instantiated. If there is no default scene, all 
 
 Animated models have a [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md) and [explicit rig instantiation with fixed-tick playback](RUNTIME_ANIMATION.md), including crossfades, inertial transitions and masked layers. Retargeting, IK, root motion and broader character workflows remain unfinished.
 
+## Authoring cache and fresh verification
+
+The native world owner keeps decoded model and image caches for
+authoring work. Ordinary dispatch removes unreferenced entries from both maps
+and subtracts their cooked byte counts. Asset admission retains its existing
+256 MiB cooked-source budget; this is not total decoded memory or GPU residency.
+
+From 0.0.189, the owner reuses the reference set while its committed authored
+document is unchanged. It invalidates the set after successful authored
+publication, including undo and redo. A new owner starts without a set. The
+visitor retains the existing conservative policy: any valid asset-hash string
+value inside authored entities or templates counts. It does not scan object
+keys, receipts, history or the running world's saved baseline. This policy is
+separate from the typed [asset dependency query](ASSET_REFERENCES.md).
+
+Eviction still runs on every prune call. A rejected candidate can insert a
+model or image during validation without publishing authoring; the next prune
+must remove that unreferenced entry. Reusing a reference set therefore does not
+mean reusing a conclusion that cache contents have stayed unchanged. Cached
+reference membership is bounded by the authored document; it does not add
+decoded models or change asset admission.
+
+Runtime freezing and package export still verify original packages with fresh
+local caches. A warm authoring cache cannot authorize missing, corrupted or
+linked package bytes. Referenced cached objects can remain usable for authoring
+until eviction; that observation is not fresh package validation.
+
+Build and run the focused regression in an existing configured build:
+
+```sh
+cmake --build build/headless --target poima-world-asset-cache-test -j 2
+ctest --test-dir build/headless -R '^world_asset_cache_native$' --output-on-failure
+```
+
+Substitute your configured build directory. The test also runs with simulation
+disabled. To retain its cooked packages, literal requests/responses and rejected
+operation file captures, invoke the test executable with `--output` and a fresh
+directory whose parent exists. It checks model/image lifetime, undo/redo,
+template references, rejected candidate inserts and fresh content verification.
+
+### Recorded CPU comparison
+
+A matched 0.0.188/0.0.189 Windows Performance Yard cohort uses six fresh serial
+owners, 2,394 authored entities, 24 animated characters and the same one-tick
+command cadence. Each owner warms up for 120 ticks and records three 120-tick
+windows. All fifty gameplay globals, four component schemas and fourteen v7
+snapshot members remain included.
+
+| Observation | 0.0.188 | 0.0.189 |
+| --- | ---: | ---: |
+| Native `runtime.inspect` mean, ms/call | 2.353 | 0.027 |
+| Native `runtime.inspect` p95, ms/call | 5.018 | 0.042 |
+| Native `runtime.step` mean, ms/call | 4.622 | 2.461 |
+| Native `runtime.batch` mean, ms/tick | 2.450 | 2.377 |
+| Native `runtime.tick` mean, ms/tick | 0.945 | 0.953 |
+| External guarded helper loop, ms/tick | 16.756 | 11.911 |
+
+The inspection and helper-loop means improve in all three pairs. Native request
+regions include dispatch work; they start after incoming JSON parsing and end
+before final response serialization and transport. Nested timings overlap.
+The external helper includes Python, guard/step transport, validation and retained
+writes. This does not establish rendered FPS or a pure simulation speedup; the
+pooled inner tick mean rises slightly.
+
+These are warm unchanged-authoring measurements, excluding first reference-set
+construction and edit invalidation cost. The run retains 6,048 original RPC pairs,
+eighteen captures, twenty-four complete checkpoints and twelve prospective
+whole-state epoch forecasts. Every forecast agrees and all six owners close
+naturally. Original cross-owner payload equality remains false: separate complete
+expected operands forecast only the two host-epoch halves, preserving all actual
+fields and bytes. Exact reproduction needs the retained world/game/bridge
+closures and traces; it is not a clean-checkout benchmark. See the
+[selected results and limits](evidence/m2-asset-reference-cache.json).
+
 ## Matrix-authored transforms
 
 A glTF node may supply local TRS values or a column-major `matrix`. The importer

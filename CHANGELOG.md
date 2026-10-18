@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.189
+
+- Reuse the authored model/image reference set between committed edits while still evicting unreferenced assets on every prune. Preserve rejected-edit recovery, undo/redo and fresh package verification. [Cache contract](docs/ASSETS.md#authoring-cache-and-fresh-verification).
+
 ## 0.0.188
 
 - Reuse unchanged authored-source comparisons across runtime inspection, observation and material/texture reads. Invalidate on every relevant committed document replacement, including same-revision save restores; preserve live summary fields and complete saved state. [Contract and checks](docs/RUNTIME_SOURCE_STATE.md).

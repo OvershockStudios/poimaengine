@@ -1,0 +1,814 @@
+{
+  "format": "poima.evidence.asset-reference-cache.v1",
+  "checkpoint": "0.0.189",
+  "date": "2026-10-18",
+  "passed": true,
+  "summary": "Reuse exact committed authored reference membership while retaining per-call model/image eviction and fresh package verification; native Windows/Linux checks and matched CPU command measurements.",
+  "implemented": {
+    "reference_policy": "Existing recursive valid-asset-hash string VALUES in entities/templates; object keys, receipts, history and runtime baseline excluded.",
+    "cache": "Private optional reference set; skip scan if both decoded maps are empty; otherwise compute lazily and reuse until authored publication.",
+    "invalidation": "Reset after committed authored document swap, including undo/redo; no revision-only decision.",
+    "eviction": "Existing model/image erase loops and cooked-byte subtraction run on every nonempty prune, including after rejected candidate insertion.",
+    "fresh_freeze": "Separate fresh local model/image resolver; warm authoring objects cannot qualify corrupted original package bytes.",
+    "public_api_abi_schema_and_save_formats": "Unchanged",
+    "source_staleness": "Separate 0.0.188 exact comparison cache retained."
+  },
+  "source_inputs": {
+    "src/world.cpp": {
+      "bytes": 335380,
+      "sha256": "299454999268524127f7cbc473f1aae1582c942aaacb8b65aa3b9495198791a6"
+    },
+    "tests/world_asset_cache.cpp": {
+      "bytes": 18269,
+      "sha256": "406539a84bf1f24d87f18a532c53c728955abc391b29ffb43fe3712a7533fe30"
+    },
+    "CMakeLists.txt": {
+      "bytes": 91995,
+      "sha256": "460406757b99f9ac0511442bc6e85db07a2d3c7c9308c4ebba4ac171af577ca7"
+    }
+  },
+  "native_builds": {
+    "windows": {
+      "passed": true,
+      "seconds": 225.14564122600132,
+      "source_files": 303,
+      "observed_build": {
+        "translation_units": 3,
+        "numbered_actions_printed": 12,
+        "ninja_action_denominators": [
+          13
+        ],
+        "preliminary_checks": [
+          "[0/2] Re-checking globbed directories..."
+        ],
+        "executable_links": 8,
+        "archive_links": 1,
+        "warning_count": 3,
+        "warning_scope": "Existing aggregate-initializer warnings; original compiler logs retained."
+      },
+      "cli": {
+        "bytes": 26463744,
+        "sha256": "9629a6f4c65151445b599329b1f64fe0f7a8c2429f60ade1e448016dafaf6a93"
+      },
+      "core_decoded": {
+        "bytes": 231526640,
+        "sha256": "244fca9eef95393f2bb4aaaef0a23bd067be0204e019b20ce69d051165293a28"
+      },
+      "scope": "Incremental native production CLI and seven test targets; first cache-test fixture had a later corrected archive-path issue."
+    },
+    "windows_test_supplement": {
+      "passed": true,
+      "seconds": 63.674963070996455,
+      "core_generation": 45,
+      "source_before": {
+        "bytes": 17615,
+        "sha256": "a3c11d67da8df8b2d7401204db21042950fae4d0051142ce7b9c043c2acd8da4"
+      },
+      "source_after": {
+        "bytes": 18269,
+        "sha256": "406539a84bf1f24d87f18a532c53c728955abc391b29ffb43fe3712a7533fe30"
+      },
+      "test_before": {
+        "bytes": 24982016,
+        "sha256": "f694f418dd2373e3b33a723c08bc96cb2e18591c6b129ce401b16c034c9819e0"
+      },
+      "test_after": {
+        "bytes": 24984576,
+        "sha256": "7a0c4685729e110a076b813b86c31dbe0bd86fe73cbee206e9b2bfc8c85d6b20"
+      },
+      "translation_units": 1,
+      "executable_links": 1,
+      "configuration_and_core_rebuilt": false,
+      "original_core_and_other_executables_preserved": true
+    },
+    "linux": {
+      "passed": true,
+      "seconds": 402.0505323899997,
+      "source_files": 301,
+      "translation_units": 3,
+      "printed_actions": 9,
+      "executable_count": 5,
+      "cli": {
+        "bytes": 19523240,
+        "sha256": "da76dfb521fca3a9eff8aacd676f830412054def7006f3a2f03a04cbeecf2ab9"
+      },
+      "core_decoded": {
+        "bytes": 126435826,
+        "sha256": "5c40688fc760fa495b9fbd96f89c27beff546033819809e3b82deb4fe9e904c1"
+      },
+      "scope": "Incremental OFF/debug native headless authoring CLI and four tests; no graphics backend execution."
+    }
+  },
+  "qualification": {
+    "windows": {
+      "passed": true,
+      "seconds": 15.047615899995435,
+      "phases": [
+        "poima-world-source-stale-test",
+        "poima-world-asset-cache-test",
+        "poima-world-session-test",
+        "poima-world-material-test",
+        "poima-world-texture-test",
+        "poima-world-save-test",
+        "poima-world-schema-test",
+        "core-conformance",
+        "metadata"
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cache_test": {
+        "observations_checks_before_final_write": 547,
+        "terminal_checks": 548,
+        "rpc_pairs": 82,
+        "rejected_groups": [
+          "late-model-primitive",
+          "unchanged-document-model-eviction",
+          "late-image-color-space",
+          "unchanged-document-image-eviction"
+        ],
+        "full_rejected_namespace_pairs": 4,
+        "fresh_closure_pairs": 2,
+        "original_packages": {
+          "14f5cb5300012b04a0b086b8427c1b976d95378a504cee1f308fdd574fef08a9.pmodel": {
+            "bytes": 685,
+            "sha256": "14f5cb5300012b04a0b086b8427c1b976d95378a504cee1f308fdd574fef08a9"
+          },
+          "24ebfaec496556ccd5c66f0c412f656966da7a0dda638209266393c792e62d48.pimage": {
+            "bytes": 87,
+            "sha256": "24ebfaec496556ccd5c66f0c412f656966da7a0dda638209266393c792e62d48"
+          },
+          "76ab4457fe2debeaaadc8fa4ec652291efd5b9c368ec0f3056cb928501a9616e.pimage": {
+            "bytes": 87,
+            "sha256": "76ab4457fe2debeaaadc8fa4ec652291efd5b9c368ec0f3056cb928501a9616e"
+          },
+          "eca57d350bd63ec71084a8865ae1da9385644ea5d64e46e5a0807673fb7646b3.pmodel": {
+            "bytes": 692,
+            "sha256": "eca57d350bd63ec71084a8865ae1da9385644ea5d64e46e5a0807673fb7646b3"
+          }
+        },
+        "scope": "Three tiny authored worlds with real cooked models/images, native immutable snapshots and fresh package freezes; separate from runtime save forecasts."
+      },
+      "core_tests": 5,
+      "metadata_checks": 3,
+      "original_requests_and_responses_retained": true,
+      "closure": {
+        "total_processes": 19,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "source_staleness": "Native simulation-enabled focused regression passed, including whole saved bytes; independently retained in source-state artifacts."
+    },
+    "linux": {
+      "passed": true,
+      "seconds": 77.1603156860001,
+      "phases": [
+        "poima-world-source-stale-test",
+        "poima-world-asset-cache-test",
+        "poima-world-session-test",
+        "poima-world-schema-test",
+        "core-conformance",
+        "metadata"
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cache_test": {
+        "observations_checks_before_final_write": 547,
+        "terminal_checks": 548,
+        "rpc_pairs": 82,
+        "rejected_groups": [
+          "late-model-primitive",
+          "unchanged-document-model-eviction",
+          "late-image-color-space",
+          "unchanged-document-image-eviction"
+        ],
+        "full_rejected_namespace_pairs": 4,
+        "fresh_closure_pairs": 2,
+        "original_packages": {
+          "14f5cb5300012b04a0b086b8427c1b976d95378a504cee1f308fdd574fef08a9.pmodel": {
+            "bytes": 685,
+            "sha256": "14f5cb5300012b04a0b086b8427c1b976d95378a504cee1f308fdd574fef08a9"
+          },
+          "24ebfaec496556ccd5c66f0c412f656966da7a0dda638209266393c792e62d48.pimage": {
+            "bytes": 87,
+            "sha256": "24ebfaec496556ccd5c66f0c412f656966da7a0dda638209266393c792e62d48"
+          },
+          "76ab4457fe2debeaaadc8fa4ec652291efd5b9c368ec0f3056cb928501a9616e.pimage": {
+            "bytes": 87,
+            "sha256": "76ab4457fe2debeaaadc8fa4ec652291efd5b9c368ec0f3056cb928501a9616e"
+          },
+          "eca57d350bd63ec71084a8865ae1da9385644ea5d64e46e5a0807673fb7646b3.pmodel": {
+            "bytes": 692,
+            "sha256": "eca57d350bd63ec71084a8865ae1da9385644ea5d64e46e5a0807673fb7646b3"
+          }
+        },
+        "scope": "Three tiny authored worlds with real cooked models/images, native immutable snapshots and fresh package freezes; separate from runtime save forecasts."
+      },
+      "core_tests": 5,
+      "metadata_checks": 3,
+      "original_requests_and_responses_retained": true,
+      "closure": {
+        "final_children": [],
+        "forced_cleanup": false,
+        "adopted_children": 0
+      },
+      "source_staleness": "Explicit SKIP: simulation unavailable. The new asset-cache test actually passed under Simulation OFF."
+    }
+  },
+  "matched_workload": {
+    "baseline_version": "0.0.188",
+    "baseline_cli": {
+      "bytes": 26463744,
+      "sha256": "0a8c1e7c08ef48387dfbf6f013ac3e41e3a1329d38808e6f7bc43b6134ffaec2"
+    },
+    "candidate_version": "0.0.189",
+    "candidate_cli": {
+      "bytes": 26463744,
+      "sha256": "9629a6f4c65151445b599329b1f64fe0f7a8c2429f60ade1e448016dafaf6a93"
+    },
+    "bridge_checkpoint": "0.0.185",
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "58a026aaf70f6932d881e664512f5461b946495b77719cee7937406f58be9b17"
+    },
+    "hostfxr_version": "10.0.12",
+    "hostfxr": {
+      "bytes": 379688,
+      "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+    },
+    "world": {
+      "bytes": 3571587,
+      "sha256": "5c4d27817f7a5fce33476f36cb89606b43887a5157822fd09466b4869a471282"
+    },
+    "game_assembly": {
+      "bytes": 58368,
+      "sha256": "6ab2372344d43be0ef851109f54e3334cfbb37d606444ce303e47f5d737dabe6"
+    },
+    "world_and_assets_files": 16,
+    "world_and_assets_bytes": 4199950,
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_characters": 24,
+    "authored_lights": 64,
+    "gameplay_globals": 50,
+    "component_schemas": 4,
+    "snapshot_version": 7,
+    "snapshot_payload_members": 14,
+    "excluded_fields": [],
+    "callback_profiling": false,
+    "sdk_lineage": {
+      "original169_game_closure": {
+        "bytes": 180224,
+        "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+      },
+      "qualified183_and185_bridge": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "identical": false,
+      "policy": "CoreCLR unifies Poima SDK to the bridge assembly; differing original169 SDK remains pinned, and its IL on the selected SDK has separate185 native qualification."
+    }
+  },
+  "environment": {
+    "os": "Windows x64",
+    "cpu": "Ryzen 7 8845HS",
+    "system_ram_gb": 16,
+    "power_before": {
+      "ac": 1,
+      "battery": 100
+    },
+    "power_after": {
+      "ac": 1,
+      "battery": 100
+    },
+    "explicit_worker_environment": {
+      "DOTNET_PROCESSOR_COUNT": "2",
+      "POIMA_JOB_WORKERS": "2"
+    },
+    "physics_jobs": "Jolt single-threaded",
+    "rendering": false,
+    "compilation_during_cohort": false,
+    "reload_during_cohort": false,
+    "explicit_collection": false,
+    "ordinary_gc_controlled": false
+  },
+  "schedule": {
+    "order": [
+      "0.0.188",
+      "0.0.189",
+      "0.0.189",
+      "0.0.188",
+      "0.0.188",
+      "0.0.189"
+    ],
+    "ticks_per_call": 1,
+    "warmup_ticks": 120,
+    "window_ticks": 120,
+    "windows": 3,
+    "profiler_capacity": 65536
+  },
+  "matched_verified": {
+    "worker_seconds": 65.85843140000361,
+    "rpc_pairs": 6048,
+    "single_tick_step_requests": 2880,
+    "total_fixed_ticks": 2880,
+    "profile_captures": 18,
+    "profile_events": 159840,
+    "complete_v7_checkpoint_references": 24,
+    "prospective_complete_payload_forecasts": 12,
+    "original_cross_owner_payload_equality": false,
+    "prospective_full_typed_and_lexical_payload_agreement": true,
+    "epoch_policy": "Separate complete expected operands forecast only ObservedEpochHigh/Low before counterpart first tick; every original actual field/type/byte remains retained.",
+    "native_owners_exit0": 6,
+    "outer_job": {
+      "user_time": 564531250,
+      "kernel_time": 118750000,
+      "period_user_time": 564531250,
+      "period_kernel_time": 118750000,
+      "page_faults": 1300595,
+      "total_processes": 7,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "forced_cleanup": false,
+    "final_owned_output": {
+      "files": 109,
+      "bytes": 79508967
+    }
+  },
+  "measurements": {
+    "unit": "nanoseconds",
+    "native_scopes": "Inclusive elapsed wall time, including scheduling and waits; nested scopes overlap. Do not add rows.",
+    "percentiles": "Nearest-rank over pooled original region invocations within the declared engine/trial; not per-frame percentiles.",
+    "arms": {
+      "0.0.188": {
+        "owners": 3,
+        "ticks": 1080,
+        "rpc_wall_ns_per_tick": 16755688.796296297,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 149237.77777777778,
+          "runtime.batch": 2450440.5555555555,
+          "runtime.tick": 944835.1851851852,
+          "runtime.hierarchy": 1242603.4259259258,
+          "runtime.sync": 1328719.0740740742,
+          "runtime.animation.sample": 839317.1296296297,
+          "runtime.animation.wait": 308536.2962962963,
+          "animation.sample.rig": 796797.7777777778,
+          "runtime.gameplay.tick": 57803.51851851852,
+          "runtime.inspect": 2353359.6296296297,
+          "runtime.step": 4621599.537037037,
+          "owner.advance": 2452539.074074074,
+          "runtime.physics.update": 27679.814814814814
+        },
+        "native_per_invocation_stats": {
+          "runtime.checkpoint": {
+            "samples": 1080,
+            "total_ns": 161176800,
+            "ns_per_tick": 149237.77777777778,
+            "min_ns": 63500,
+            "p50_ns": 113700,
+            "p95_ns": 277700,
+            "p99_ns": 299100,
+            "max_ns": 382300,
+            "mean_ns": 149237.77777777778
+          },
+          "runtime.batch": {
+            "samples": 1080,
+            "total_ns": 2646475800,
+            "ns_per_tick": 2450440.5555555555,
+            "min_ns": 1750300,
+            "p50_ns": 2246900,
+            "p95_ns": 3392300,
+            "p99_ns": 3841500,
+            "max_ns": 4491900,
+            "mean_ns": 2450440.5555555555
+          },
+          "runtime.tick": {
+            "samples": 1080,
+            "total_ns": 1020422000,
+            "ns_per_tick": 944835.1851851852,
+            "min_ns": 745500,
+            "p50_ns": 897100,
+            "p95_ns": 1205400,
+            "p99_ns": 2212900,
+            "max_ns": 2518800,
+            "mean_ns": 944835.1851851852
+          },
+          "runtime.hierarchy": {
+            "samples": 4320,
+            "total_ns": 1342011700,
+            "ns_per_tick": 1242603.4259259258,
+            "min_ns": 185900,
+            "p50_ns": 233600,
+            "p95_ns": 766400,
+            "p99_ns": 880800,
+            "max_ns": 1735700,
+            "mean_ns": 310650.85648148146
+          },
+          "runtime.sync": {
+            "samples": 4320,
+            "total_ns": 1435016600,
+            "ns_per_tick": 1328719.0740740742,
+            "min_ns": 200400,
+            "p50_ns": 250000,
+            "p95_ns": 813600,
+            "p99_ns": 950300,
+            "max_ns": 1751000,
+            "mean_ns": 332179.76851851854
+          },
+          "runtime.animation.sample": {
+            "samples": 2160,
+            "total_ns": 906462500,
+            "ns_per_tick": 839317.1296296297,
+            "min_ns": 230900,
+            "p50_ns": 389300,
+            "p95_ns": 731500,
+            "p99_ns": 844700,
+            "max_ns": 2032900,
+            "mean_ns": 419658.56481481483
+          },
+          "runtime.animation.wait": {
+            "samples": 2160,
+            "total_ns": 333219200,
+            "ns_per_tick": 308536.2962962963,
+            "min_ns": 71700,
+            "p50_ns": 140600,
+            "p95_ns": 271000,
+            "p99_ns": 304900,
+            "max_ns": 1286100,
+            "mean_ns": 154268.14814814815
+          },
+          "animation.sample.rig": {
+            "samples": 51840,
+            "total_ns": 860541600,
+            "ns_per_tick": 796797.7777777778,
+            "min_ns": 6500,
+            "p50_ns": 14500,
+            "p95_ns": 31800,
+            "p99_ns": 41200,
+            "max_ns": 1208700,
+            "mean_ns": 16599.953703703704
+          },
+          "runtime.gameplay.tick": {
+            "samples": 1080,
+            "total_ns": 62427800,
+            "ns_per_tick": 57803.51851851852,
+            "min_ns": 38100,
+            "p50_ns": 49200,
+            "p95_ns": 83000,
+            "p99_ns": 97800,
+            "max_ns": 254300,
+            "mean_ns": 57803.51851851852
+          },
+          "runtime.inspect": {
+            "samples": 1080,
+            "total_ns": 2541628400,
+            "ns_per_tick": 2353359.6296296297,
+            "min_ns": 901100,
+            "p50_ns": 1475400,
+            "p95_ns": 5017800,
+            "p99_ns": 5208700,
+            "max_ns": 6090100,
+            "mean_ns": 2353359.6296296297
+          },
+          "runtime.step": {
+            "samples": 1080,
+            "total_ns": 4991327500,
+            "ns_per_tick": 4621599.537037037,
+            "min_ns": 2617700,
+            "p50_ns": 3855700,
+            "p95_ns": 7902800,
+            "p99_ns": 8402700,
+            "max_ns": 9107500,
+            "mean_ns": 4621599.537037037
+          },
+          "owner.advance": {
+            "samples": 1080,
+            "total_ns": 2648742200,
+            "ns_per_tick": 2452539.074074074,
+            "min_ns": 1751700,
+            "p50_ns": 2249000,
+            "p95_ns": 3395200,
+            "p99_ns": 3845600,
+            "max_ns": 4494800,
+            "mean_ns": 2452539.074074074
+          },
+          "runtime.physics.update": {
+            "samples": 1080,
+            "total_ns": 29894200,
+            "ns_per_tick": 27679.814814814814,
+            "min_ns": 13000,
+            "p50_ns": 23700,
+            "p95_ns": 39900,
+            "p99_ns": 49300,
+            "max_ns": 123000,
+            "mean_ns": 27679.814814814814
+          }
+        }
+      },
+      "0.0.189": {
+        "owners": 3,
+        "ticks": 1080,
+        "rpc_wall_ns_per_tick": 11910531.75925926,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 139712.22222222222,
+          "runtime.batch": 2377496.574074074,
+          "runtime.tick": 952576.3888888889,
+          "runtime.hierarchy": 1228388.9814814816,
+          "runtime.sync": 1313999.1666666667,
+          "runtime.animation.sample": 799539.9074074074,
+          "runtime.animation.wait": 286377.4074074074,
+          "animation.sample.rig": 736990.6481481482,
+          "runtime.gameplay.tick": 54412.31481481482,
+          "runtime.inspect": 26953.703703703704,
+          "runtime.step": 2461435.0,
+          "owner.advance": 2379226.203703704,
+          "runtime.physics.update": 26180.0
+        },
+        "native_per_invocation_stats": {
+          "runtime.checkpoint": {
+            "samples": 1080,
+            "total_ns": 150889200,
+            "ns_per_tick": 139712.22222222222,
+            "min_ns": 49800,
+            "p50_ns": 116700,
+            "p95_ns": 261000,
+            "p99_ns": 302300,
+            "max_ns": 380200,
+            "mean_ns": 139712.22222222222
+          },
+          "runtime.batch": {
+            "samples": 1080,
+            "total_ns": 2567696300,
+            "ns_per_tick": 2377496.574074074,
+            "min_ns": 1634300,
+            "p50_ns": 2241000,
+            "p95_ns": 3311400,
+            "p99_ns": 3920100,
+            "max_ns": 4859600,
+            "mean_ns": 2377496.574074074
+          },
+          "runtime.tick": {
+            "samples": 1080,
+            "total_ns": 1028782500,
+            "ns_per_tick": 952576.3888888889,
+            "min_ns": 730600,
+            "p50_ns": 918300,
+            "p95_ns": 1222000,
+            "p99_ns": 1720000,
+            "max_ns": 2780700,
+            "mean_ns": 952576.3888888889
+          },
+          "runtime.hierarchy": {
+            "samples": 4320,
+            "total_ns": 1326660100,
+            "ns_per_tick": 1228388.9814814816,
+            "min_ns": 188400,
+            "p50_ns": 241900,
+            "p95_ns": 659600,
+            "p99_ns": 868700,
+            "max_ns": 2177600,
+            "mean_ns": 307097.2453703704
+          },
+          "runtime.sync": {
+            "samples": 4320,
+            "total_ns": 1419119100,
+            "ns_per_tick": 1313999.1666666667,
+            "min_ns": 202700,
+            "p50_ns": 260000,
+            "p95_ns": 703100,
+            "p99_ns": 932300,
+            "max_ns": 2204900,
+            "mean_ns": 328499.7916666667
+          },
+          "runtime.animation.sample": {
+            "samples": 2160,
+            "total_ns": 863503100,
+            "ns_per_tick": 799539.9074074074,
+            "min_ns": 230600,
+            "p50_ns": 364400,
+            "p95_ns": 689000,
+            "p99_ns": 786300,
+            "max_ns": 1859300,
+            "mean_ns": 399769.9537037037
+          },
+          "runtime.animation.wait": {
+            "samples": 2160,
+            "total_ns": 309287600,
+            "ns_per_tick": 286377.4074074074,
+            "min_ns": 73100,
+            "p50_ns": 132500,
+            "p95_ns": 250400,
+            "p99_ns": 277700,
+            "max_ns": 838800,
+            "mean_ns": 143188.7037037037
+          },
+          "animation.sample.rig": {
+            "samples": 51840,
+            "total_ns": 795949900,
+            "ns_per_tick": 736990.6481481482,
+            "min_ns": 6300,
+            "p50_ns": 13600,
+            "p95_ns": 28300,
+            "p99_ns": 38000,
+            "max_ns": 162700,
+            "mean_ns": 15353.971836419752
+          },
+          "runtime.gameplay.tick": {
+            "samples": 1080,
+            "total_ns": 58765300,
+            "ns_per_tick": 54412.31481481482,
+            "min_ns": 27300,
+            "p50_ns": 49000,
+            "p95_ns": 83900,
+            "p99_ns": 97700,
+            "max_ns": 264400,
+            "mean_ns": 54412.31481481482
+          },
+          "runtime.inspect": {
+            "samples": 1080,
+            "total_ns": 29110000,
+            "ns_per_tick": 26953.703703703704,
+            "min_ns": 14400,
+            "p50_ns": 24900,
+            "p95_ns": 42100,
+            "p99_ns": 48500,
+            "max_ns": 174800,
+            "mean_ns": 26953.703703703704
+          },
+          "runtime.step": {
+            "samples": 1080,
+            "total_ns": 2658349800,
+            "ns_per_tick": 2461435.0,
+            "min_ns": 1688000,
+            "p50_ns": 2319900,
+            "p95_ns": 3428300,
+            "p99_ns": 4007100,
+            "max_ns": 4999100,
+            "mean_ns": 2461435.0
+          },
+          "owner.advance": {
+            "samples": 1080,
+            "total_ns": 2569564300,
+            "ns_per_tick": 2379226.203703704,
+            "min_ns": 1635500,
+            "p50_ns": 2242600,
+            "p95_ns": 3314000,
+            "p99_ns": 3921900,
+            "max_ns": 4863900,
+            "mean_ns": 2379226.203703704
+          },
+          "runtime.physics.update": {
+            "samples": 1080,
+            "total_ns": 28274400,
+            "ns_per_tick": 26180.0,
+            "min_ns": 10200,
+            "p50_ns": 23700,
+            "p95_ns": 39900,
+            "p99_ns": 45900,
+            "max_ns": 130500,
+            "mean_ns": 26180.0
+          }
+        }
+      }
+    },
+    "pairs": [
+      {
+        "pair": 1,
+        "execution_order": [
+          "0.0.188",
+          "0.0.189"
+        ],
+        "rpc_wall_ns_per_tick": {
+          "0.0.188": 16631125.555555556,
+          "0.0.189": 12077884.166666666
+        },
+        "inspect_mean_ns": {
+          "0.0.188": 2345659.722222222,
+          "0.0.189": 26837.5
+        },
+        "step_request_mean_ns": {
+          "0.0.188": 4680798.055555556,
+          "0.0.189": 2506950.8333333335
+        }
+      },
+      {
+        "pair": 2,
+        "execution_order": [
+          "0.0.189",
+          "0.0.188"
+        ],
+        "rpc_wall_ns_per_tick": {
+          "0.0.189": 11816469.722222222,
+          "0.0.188": 16791108.055555556
+        },
+        "inspect_mean_ns": {
+          "0.0.189": 26624.166666666668,
+          "0.0.188": 2381157.222222222
+        },
+        "step_request_mean_ns": {
+          "0.0.189": 2453503.888888889,
+          "0.0.188": 4601129.166666667
+        }
+      },
+      {
+        "pair": 3,
+        "execution_order": [
+          "0.0.188",
+          "0.0.189"
+        ],
+        "rpc_wall_ns_per_tick": {
+          "0.0.188": 16844832.777777776,
+          "0.0.189": 11837241.388888888
+        },
+        "inspect_mean_ns": {
+          "0.0.188": 2333261.9444444445,
+          "0.0.189": 27399.444444444445
+        },
+        "step_request_mean_ns": {
+          "0.0.188": 4582871.388888889,
+          "0.0.189": 2423850.277777778
+        }
+      }
+    ],
+    "export_reconstruction": {
+      "export_unit": "microseconds",
+      "native_summary_unit": "nanoseconds",
+      "derived_method": "round(original_export_dur_us*1000), validated against every original CPU summary statistic; original responses untouched",
+      "maximum_rounding_residual_ns": 9.313225746154785e-10
+    },
+    "rpc_wall_scope": "Nine 120-tick loop brackets per arm; includes Python, guard/step transport, response checks and retained writes. Not an individual RPC percentile or frame time."
+  },
+  "observed_reductions": {
+    "inspect_mean_fraction": 0.9885467128082138,
+    "step_request_mean_fraction": 0.4674062561512945,
+    "external_helper_loop_fraction": 0.2891648977216632
+  },
+  "original_failed_run": {
+    "platform": "Windows",
+    "stage": "First native regression batch",
+    "outcome": "FAILED; new fixture archive path repeated asset hashes and exceeded ordinary Windows pathname limits after 44 checks and 29 RPC pairs.",
+    "recovery": "Preserved original source, artifacts and failed case. Shortened only archive selectors, retained full filenames and all compared file operands, added write diagnostics, rebuilt only the test executable and ran a separate nine-phase batch.",
+    "regraded": false,
+    "forced_cleanup": false
+  },
+  "retained_reader_failures": [
+    "File-only report reader rejected its own relative-case path before auditing the case; corrected successor resolves the path.",
+    "File-only report reader wrongly required an earlier legitimately committed rename to be globally absent; corrected successor checks the current rejected target/receipt and retains complete before/after namespace equality."
+  ],
+  "file_only_reviews": {
+    "windows_build_actual_v1.json": {
+      "bytes": 10185,
+      "sha256": "2399ec996051a2ab3f6404453a974902a84003e6063d37c402770e42cb5968c0"
+    },
+    "supplemental_build_actual_v1.json": {
+      "bytes": 3363,
+      "sha256": "c9eb6296250a7e12c42ab0cecc48239bcede081d4d45c32ae436a3ecdbfa2486"
+    },
+    "linux_actual_v1.json": {
+      "bytes": 43237,
+      "sha256": "9ce074cd1661854e8e609fc36d3b431c2f393a68ad4b2c05683857c9fb6c0664"
+    },
+    "windows_contracts_actual_v3.json": {
+      "bytes": 125365,
+      "sha256": "d3e2bcf98e2e564b3a99cafece27e7bf1d3d8b0eee7f9a727a63652b704eac21"
+    },
+    "linux_contracts_actual_v1.json": {
+      "bytes": 115999,
+      "sha256": "a03f62d2872e17a73c8fcd8c13ab1707b3ab62502ae3228d0ab47696bd7ae0e8"
+    },
+    "guard_actual_v1.json": {
+      "bytes": 49211,
+      "sha256": "a3e1a1c976368767e21807bc75ca8941c05f41fd7aa7dc7a8b19fd53e8938396"
+    },
+    "guard_profile_actual_v1.json": {
+      "bytes": 144517,
+      "sha256": "6e00f92609cd0df6bded6fe4dbb9c0a3a0831d43674ef23e9e997b2f88a9dd39"
+    }
+  },
+  "limits": [
+    "One short profiled CPU cohort on one laptop; thermals, OS scheduling, JIT, caches and ordinary GC are not isolated.",
+    "Warm unchanged-authoring observations; does not measure first-miss or edit invalidation cost.",
+    "Native runtime.step is an inclusive request region containing dispatch work, not pure simulation time; nested native timings overlap and must not be added.",
+    "Native runtime.tick mean rises slightly in the pooled measurement; the result is not a universal simulation speedup.",
+    "A continuous native player can advance outside ordinary RPC dispatch; this is not a rendered FPS or player input-latency qualification.",
+    "No GPU/physical-input/audio-listening/provider workflow, memory-growth cause, long reliability or Alpha completion is established.",
+    "Tiny authored-cache fixtures and full fourteen-member v7 runtime forecasts are separate evidence scopes.",
+    "Exact comparison reproduction needs retained original world/assets, compiled gameplay, bridge/SDK/hostfxr closures and traces; this is not a clean-checkout benchmark."
+  ]
+}
