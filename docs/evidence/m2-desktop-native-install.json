@@ -1,0 +1,582 @@
+{
+  "format": "poima.evidence.desktop-native-install.v1",
+  "checkpoint": "0.0.191",
+  "passed": true,
+  "behavior": {
+    "change": "Select desktop native binaries and dependencies from a fresh CMake strip-install tree before managed restore/publication; no flat-build fallback.",
+    "required": [
+      "Windows x86_64 runtime descriptor matching source version",
+      "simulation, renderer and managed enabled with Boolean feature flags",
+      "bin/poima.exe and bin/poima_desktop.dll",
+      "bin/phonon.dll when audio is enabled",
+      "LICENSE, THIRD_PARTY_NOTICES.md and TRADEMARKS.md"
+    ],
+    "staging": "Preflight payload hashes, reject changed inputs and occupied native destinations, verify copied hashes. Existing managed publication and launcher activation safeguards remain."
+  },
+  "sources": {
+    "scripts/build_desktop.py": {
+      "bytes": 20508,
+      "sha256": "67b9d9b1e346b977435bc2342deb81d3d697d459afb36d3b0d09bf69f5c8635e"
+    },
+    "tests/desktop_native_payload.py": {
+      "bytes": 9134,
+      "sha256": "e999616c2d56af4544348a1d907433b695db0c2eb766d96e363e3e8d8161c324"
+    },
+    "CMakeLists.txt": {
+      "bytes": 92210,
+      "sha256": "fb9675b9b9224f08826b6929dbd3fc1f0bd5ce8f364052c83c207b05983e3e33"
+    }
+  },
+  "models": {
+    "linux": {
+      "passed": true,
+      "methods": 11,
+      "seconds": 0.3058701289992314,
+      "report": {
+        "bytes": 1385,
+        "sha256": "74a56c3c07aa269461fbc8e8157e0fe28ee215a9df1a25cdd2cdebc9178ae457"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 1695,
+        "sha256": "698a9ad7bfb2a602619e313e3994dea26f294e227147ed79ec08f7624a2dded8"
+      },
+      "scope": "Eleven portable unittest methods and mocked publication path; not native execution, managed publication, GUI or install evidence."
+    },
+    "windows": {
+      "passed": true,
+      "methods": 11,
+      "seconds": 1.2894933000061428,
+      "report": {
+        "bytes": 1424,
+        "sha256": "b2bb03b666c155205530958629a3a3273e7d08873c155e1b2cdd802007c08335"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 1711,
+        "sha256": "2ccbc8405cf2bce3605c48006c78a491e2da3272167c3da0996f2931ec21e712"
+      },
+      "scope": "Eleven portable unittest methods and mocked publication path; not native execution, managed publication, GUI or install evidence."
+    }
+  },
+  "installation": {
+    "passed": true,
+    "seconds": 65.6165099350037,
+    "command": "cmake --install <qualified-native-build> --prefix <fresh-runtime> --strip",
+    "command_exit_code": 0,
+    "natural_group_closure": true,
+    "forced_cleanup": false,
+    "files": 49,
+    "bytes": 97921805,
+    "manifest_entries": 49,
+    "literal_runtime_descriptor_manifest_suffix": "/./runtime.json",
+    "inputs_unchanged": true,
+    "native_payload": {
+      "engine_version": "0.0.191",
+      "features": {
+        "asset_provenance": true,
+        "simulation": true,
+        "renderer": true,
+        "audio": true,
+        "managed": true,
+        "native_gameplay": true,
+        "game_ui": true,
+        "navigation": true,
+        "editor": true
+      },
+      "descriptor_sha256": "e329ff19104b4839ab1c8e5570976a8b25ac39b282653ea7a7e676db3ed65776",
+      "files": {
+        "poima.exe": {
+          "bytes": 22654464,
+          "sha256": "250f9e83d73cc77f97f5b8b0e05622b2dae6a0c29b5aad24f20cb62ff593579f"
+        },
+        "poima_desktop.dll": {
+          "bytes": 21705216,
+          "sha256": "b44c815db37d1aedd3df16f9614915cce46dccee0429fcf7433dd945a7147733"
+        },
+        "phonon.dll": {
+          "bytes": 52950168,
+          "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+        }
+      }
+    },
+    "pe_equivalence": {
+      "bin/poima.exe": {
+        "passed": true,
+        "source": {
+          "bytes": 26463744,
+          "sha256": "57131fa7b231f606f0ddbadfa3ce1976f6aa44d44a2c25baee3d2afecb30e15d"
+        },
+        "installed": {
+          "bytes": 22654464,
+          "sha256": "250f9e83d73cc77f97f5b8b0e05622b2dae6a0c29b5aad24f20cb62ff593579f"
+        },
+        "retained_sections": {
+          ".text": {
+            "rva": 4096,
+            "virtual_bytes": 14236966,
+            "raw_bytes": 14237184,
+            "characteristics": 1610612768,
+            "sha256": "0eea802b28332e56c3e43cdca00536f5c125b5cbe2a06ba90e0625d54bb702e5"
+          },
+          ".rdata": {
+            "rva": 14241792,
+            "virtual_bytes": 8070132,
+            "raw_bytes": 8070144,
+            "characteristics": 1073741888,
+            "sha256": "ea97b4451716d15f69dd86a0a014d54c6876c5bdcc93a9779ffdcbca9f9b0df8"
+          },
+          ".data": {
+            "rva": 22315008,
+            "virtual_bytes": 146664,
+            "raw_bytes": 50688,
+            "characteristics": 3221225536,
+            "sha256": "f80ecb25706fa81832a68d003cbfa344f69c1a1130907dab8d98959eb5595bf9"
+          },
+          ".pdata": {
+            "rva": 22462464,
+            "virtual_bytes": 241476,
+            "raw_bytes": 241664,
+            "characteristics": 1073741888,
+            "sha256": "f93af51a5eb273f0b549bc2dd7ecb1343ff8ef1cebb9a4130a58403c0691231e"
+          },
+          ".tls": {
+            "rva": 22704128,
+            "virtual_bytes": 280,
+            "raw_bytes": 512,
+            "characteristics": 3221225536,
+            "sha256": "89641e0d370a07060a7b8c0528250d6d60b078efa11c2da351f468f13c5e2ac4"
+          },
+          ".reloc": {
+            "rva": 22708224,
+            "virtual_bytes": 53096,
+            "raw_bytes": 53248,
+            "characteristics": 1107296320,
+            "sha256": "d4530da2f9f7c9b4883f15d5f9617dda65a85346818d0b9757be5227a7f7cbfe"
+          }
+        },
+        "scope": "Mapped code/data sections and loader semantics verified by the retained PE strip guard; debug and non-mapped bytes may differ."
+      },
+      "bin/poima_desktop.dll": {
+        "passed": true,
+        "source": {
+          "bytes": 302615552,
+          "sha256": "168dfbe80a2bed587b3a54f18f09c37fd8fb773a877e73c78e7895bf902c50e0"
+        },
+        "installed": {
+          "bytes": 21705216,
+          "sha256": "b44c815db37d1aedd3df16f9614915cce46dccee0429fcf7433dd945a7147733"
+        },
+        "retained_sections": {
+          ".text": {
+            "rva": 4096,
+            "virtual_bytes": 14194662,
+            "raw_bytes": 14194688,
+            "characteristics": 1610612768,
+            "sha256": "d6c3b7df95bfc9271171539921434fe5115e3fccea52a6e9e842301130f7f038"
+          },
+          ".rdata": {
+            "rva": 14200832,
+            "virtual_bytes": 7163180,
+            "raw_bytes": 7163392,
+            "characteristics": 1073741888,
+            "sha256": "e5b125c4cedc0664c90d0d6ae2d789804ee988fc645f684cf4a908f38eeab803"
+          },
+          ".buildid": {
+            "rva": 21364736,
+            "virtual_bytes": 53,
+            "raw_bytes": 512,
+            "characteristics": 1073741888,
+            "sha256": "d29105a495a51193cb2d23982eb32a11b63982854fb2f952d93aec6b7bc3253f"
+          },
+          ".data": {
+            "rva": 21368832,
+            "virtual_bytes": 146616,
+            "raw_bytes": 50688,
+            "characteristics": 3221225536,
+            "sha256": "0728da25de0262b872525422d87ed4ea810278b782b831ec75ac595b27cead98"
+          },
+          ".pdata": {
+            "rva": 21516288,
+            "virtual_bytes": 240648,
+            "raw_bytes": 241152,
+            "characteristics": 1073741888,
+            "sha256": "fca2d3b65ddb7d13379f399a87f7ea609299c7298af36b7b73d23f5402a70ab3"
+          },
+          ".tls": {
+            "rva": 21757952,
+            "virtual_bytes": 312,
+            "raw_bytes": 512,
+            "characteristics": 3221225536,
+            "sha256": "2900522bde170b4e1f7cc9983dc5a0737a9d524ba8fe2f4327a782b26719d2c8"
+          },
+          ".reloc": {
+            "rva": 21762048,
+            "virtual_bytes": 52800,
+            "raw_bytes": 53248,
+            "characteristics": 1107296320,
+            "sha256": "6831b14902e27ffa60aa6eec660e24f5531c684575ae9579c5aedc23d74b3c6c"
+          }
+        },
+        "scope": "Mapped code/data sections and loader semantics verified by the retained PE strip guard; debug and non-mapped bytes may differ."
+      }
+    },
+    "installed_notices": {
+      "share/poima/LICENSE": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "share/poima/THIRD_PARTY_NOTICES.md": {
+        "bytes": 21435,
+        "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62"
+      },
+      "share/poima/TRADEMARKS.md": {
+        "bytes": 512,
+        "sha256": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "share/poima/fonts/Inter-Regular.ttf": {
+        "bytes": 411640,
+        "sha256": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+      },
+      "share/poima/licenses/cgltf/LICENSE": {
+        "bytes": 1066,
+        "sha256": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+      },
+      "share/poima/licenses/DearImGui/LICENSE.txt": {
+        "bytes": 1083,
+        "sha256": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf"
+      },
+      "share/poima/licenses/EnTT/LICENSE": {
+        "bytes": 1097,
+        "sha256": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+      },
+      "share/poima/licenses/FidelityFX-SDK/LICENSE.txt": {
+        "bytes": 1115,
+        "sha256": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a"
+      },
+      "share/poima/licenses/game_ui/FreeType-BDF.txt": {
+        "bytes": 5972,
+        "sha256": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe"
+      },
+      "share/poima/licenses/game_ui/FreeType-FTL.TXT": {
+        "bytes": 6743,
+        "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+      },
+      "share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": {
+        "bytes": 1148,
+        "sha256": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302"
+      },
+      "share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": {
+        "bytes": 1197,
+        "sha256": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d"
+      },
+      "share/poima/licenses/game_ui/FreeType-hash.txt": {
+        "bytes": 1232,
+        "sha256": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d"
+      },
+      "share/poima/licenses/game_ui/FreeType-LICENSE.TXT": {
+        "bytes": 2149,
+        "sha256": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b"
+      },
+      "share/poima/licenses/game_ui/FreeType-PCF.txt": {
+        "bytes": 3311,
+        "sha256": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b"
+      },
+      "share/poima/licenses/game_ui/FreeType-zlib.txt": {
+        "bytes": 1328,
+        "sha256": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+      },
+      "share/poima/licenses/game_ui/PROVENANCE.json": {
+        "bytes": 3022,
+        "sha256": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+      },
+      "share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": {
+        "bytes": 2549,
+        "sha256": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6"
+      },
+      "share/poima/licenses/game_ui/RmlUi-LICENSE.txt": {
+        "bytes": 1172,
+        "sha256": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e"
+      },
+      "share/poima/licenses/Inter/LICENSE.txt": {
+        "bytes": 4380,
+        "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+      },
+      "share/poima/licenses/Jolt/LICENSE": {
+        "bytes": 1052,
+        "sha256": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3"
+      },
+      "share/poima/licenses/LLVM-MinGW/COPYING": {
+        "bytes": 2326,
+        "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+      },
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": {
+        "bytes": 12155,
+        "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+      },
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": {
+        "bytes": 5905,
+        "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+      },
+      "share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": {
+        "bytes": 2883,
+        "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      },
+      "share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": {
+        "bytes": 1099,
+        "sha256": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36"
+      },
+      "share/poima/licenses/LLVM-MinGW/LICENSE.TXT": {
+        "bytes": 15141,
+        "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+      },
+      "share/poima/licenses/lodepng/LICENSE.txt": {
+        "bytes": 881,
+        "sha256": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+      },
+      "share/poima/licenses/mikktspace/mikktspace.h": {
+        "bytes": 8209,
+        "sha256": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+      },
+      "share/poima/licenses/nlohmann-json/LICENSE.MIT": {
+        "bytes": 1076,
+        "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+      },
+      "share/poima/licenses/NVRHI/LICENSE.txt": {
+        "bytes": 1090,
+        "sha256": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a"
+      },
+      "share/poima/licenses/RecastNavigation/License.txt": {
+        "bytes": 877,
+        "sha256": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e"
+      },
+      "share/poima/licenses/SDL3/LICENSE.txt": {
+        "bytes": 884,
+        "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd"
+      },
+      "share/poima/licenses/SDL3/HIDAPI/HIDAPI-LICENSE-SELECTION.txt": {
+        "bytes": 267,
+        "sha256": "8c3c695f04951ac933fb27d3b22192664efd1dfbc5c96576c81b80aa846ddd0b"
+      },
+      "share/poima/licenses/SDL3/HIDAPI/LICENSE-bsd.txt": {
+        "bytes": 1534,
+        "sha256": "30eb1bef29b46f8ba7ab8b416035dbd93cb034a45481dd97815b944284582cd2"
+      },
+      "share/poima/licenses/SDL3/HIDAPI/LICENSE.txt": {
+        "bytes": 530,
+        "sha256": "7d3b087c34f35d4d538e3bcddd1ff8f66e92f9ef336881999482800ddf840913"
+      },
+      "share/poima/licenses/SDL3/yuv2rgb/LICENSE": {
+        "bytes": 1480,
+        "sha256": "f7d74004cc75778cae46c5f0139f244d67c07ef64cf51937e8272352197dcb18"
+      },
+      "share/poima/licenses/SourceSans3/LICENSE.md": {
+        "bytes": 4486,
+        "sha256": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5"
+      },
+      "share/poima/licenses/stb/LICENSE": {
+        "bytes": 2510,
+        "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+      },
+      "share/poima/licenses/SteamAudio/LICENSE.md": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "share/poima/licenses/SteamAudio/THIRDPARTY.md": {
+        "bytes": 36284,
+        "sha256": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+      },
+      "share/poima/licenses/ufbx/LICENSE": {
+        "bytes": 2631,
+        "sha256": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+      },
+      "share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "share/poima/licenses/Vulkan-Headers/LICENSE.md": {
+        "bytes": 458,
+        "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+      },
+      "share/poima/licenses/Vulkan-Headers/MIT.txt": {
+        "bytes": 1084,
+        "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+      }
+    }
+  },
+  "consumption": {
+    "passed": true,
+    "worker_seconds": 2.3451805999939097,
+    "owner_seconds": 3.2464906999957748,
+    "commands": [
+      {
+        "label": "staged-version",
+        "exit_code": 0,
+        "seconds": 0.14227699999173637,
+        "stdout": {
+          "bytes": 216,
+          "sha256": "b6dc42c87fd8f6ae13ec3cdf1cfcf591162aff765066d53c86f1d39b9a41cd26"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "label": "staged-core",
+        "exit_code": 0,
+        "seconds": 0.5633444999984931,
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 968,
+          "sha256": "5c8f829e2ca92a282148c958ea95de076c932857739652266a04e3284086ac38"
+        }
+      },
+      {
+        "label": "staged-metadata",
+        "exit_code": 0,
+        "seconds": 0.36352859999169596,
+        "stdout": {
+          "bytes": 452,
+          "sha256": "1574a6db795b11206c7bc2f8fce9e61dcf39f58f89c25ce0e1a8bcc58032c36c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "core_tests": 5,
+    "core_errors": 0,
+    "core_failures": 0,
+    "core_skips": 0,
+    "metadata_checks": {
+      "typed_cli_metadata_matches_expected_version_and_executable_target": true,
+      "actual_mcp_initialize_version_matches_cli": true,
+      "actual_authoring_capture_exports_matching_engine_version": true
+    },
+    "unattached_desktop": {
+      "passed": true,
+      "frames_presented": 0,
+      "poll_count": 1,
+      "explicit_close": true
+    },
+    "native_payload_unchanged": true,
+    "installed_runtime_unchanged": true,
+    "job": {
+      "exit_code": 0,
+      "passed": true,
+      "forced_cleanup": false,
+      "at_child_exit": {
+        "user_time": 7812500,
+        "kernel_time": 12812500,
+        "period_user_time": 7812500,
+        "period_kernel_time": 12812500,
+        "page_faults": 220089,
+        "total_processes": 13,
+        "active_processes": 0,
+        "terminated_processes": 0
+      },
+      "after_cleanup": {
+        "user_time": 7812500,
+        "kernel_time": 12812500,
+        "period_user_time": 7812500,
+        "period_kernel_time": 12812500,
+        "page_faults": 220089,
+        "total_processes": 13,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    }
+  },
+  "first_attempt": {
+    "passed": false,
+    "cmake_exit_code": 0,
+    "forced_cleanup": false,
+    "seconds": 53.4327923469973,
+    "original_report": {
+      "bytes": 45903,
+      "sha256": "dd49adf2ad668994065f44a255cff00315f498c3e90b9a3aad5fd9ea4da9b3f5"
+    },
+    "original_manifest": {
+      "bytes": 5415,
+      "sha256": "8039e171d0286ff9364e95140c9fe5f9d5446cdb88a97b8009033203f6e223bc"
+    },
+    "failure": "The verifier expected a normalized runtime.json path; CMake emits literal /./runtime.json for DESTINATION dot. The actual install command succeeded. PE equivalence and terminal full-input checks were not reached in this attempt.",
+    "recovery": "Preserve original failed report/output. Correct only the exact expected literal in the qualifier and use a separate fresh install tree with unchanged binaries, checks and limits. No observed manifest or failed verdict is rewritten."
+  },
+  "records": {
+    "install-report.json": {
+      "bytes": 71329,
+      "sha256": "21d8b46a62b399e18541bddf8d7a0490949335e8fe099c3a28e6b5d414a3d3ac"
+    },
+    "stage-report.json": {
+      "bytes": 25002,
+      "sha256": "494c542c9564eb43997f29402149aab18f1349be94733e040032b1c5bfb936c5"
+    },
+    "windows-owner.json": {
+      "bytes": 23334,
+      "sha256": "9e23d24f95f00d8759aa0c04c47f5b022785e3a6749ef02f239b54df67690fe4"
+    },
+    "staged-core.json": {
+      "bytes": 452,
+      "sha256": "579b26313136c1dc0e61c1bf00041b2cb35056e34a7ce91e7d528e3e646e4c37"
+    },
+    "staged-metadata/evidence.json": {
+      "bytes": 7704,
+      "sha256": "693f68942df92036b447a90d53d79c7ad1bb955c58ac9cbc5eea7e076eb2b7ad"
+    },
+    "desktop-1.request.json": {
+      "bytes": 71,
+      "sha256": "e9c725f8884d177fbffbe4db10d95f347a37def1ece5512f6a45bd5d7baa8b46"
+    },
+    "desktop-1.response.json": {
+      "bytes": 26262,
+      "sha256": "6cdec4e9a5894c794fa85ccc7f03e71165ea8c62a8a4c5d5c984fceec183e81b"
+    },
+    "desktop-2.request.json": {
+      "bytes": 68,
+      "sha256": "9655e171984af8f786c19d19d9ff9a2627433b8892cfde71f473ad48dd7c5b3b"
+    },
+    "desktop-2.response.json": {
+      "bytes": 248,
+      "sha256": "91ff487714d535516e1dc6f047483231650cc6454dcb771991445673f266142b"
+    },
+    "desktop-3.request.json": {
+      "bytes": 70,
+      "sha256": "a6cc18a8158356f8f9f5dd60775496f414a59774ffde319daa81247d82a4b7eb"
+    },
+    "desktop-3.response.json": {
+      "bytes": 2744,
+      "sha256": "7e56e090038eea638c2b583ddfbf2a3314e218b7d2745e89fd9ed9256a4c94a3"
+    },
+    "desktop-4.request.json": {
+      "bytes": 74,
+      "sha256": "8a12c89c00209052a94c9d6768caea12b7ad5cc74a11c98c0cbc721c2c6e9547"
+    },
+    "desktop-4.response.json": {
+      "bytes": 2741,
+      "sha256": "7260edd08a3a5873461eb8cf3b6bcca2781a3977c117c115c06d5c4bb601e2c5"
+    },
+    "desktop-close-polls.json": {
+      "bytes": 3100,
+      "sha256": "c5d06bba062f0df9416030d77e4f88619f5b0ac4bc4febf8b72ecb389c53c3b7"
+    }
+  },
+  "limits": [
+    "Portable tests use model payloads and a mocked main path; they are separate from actual native installation and consumption.",
+    "Actual Windows consumption covers the staged CLI and unattached desktop C ABI, with zero presented frames. No managed GUI publication, launcher activation, rendered/physical interaction or clean-machine qualification is claimed.",
+    "The source-version descriptor check does not prove fresh compilation. --skip-native still requires a correctly built native cache.",
+    "Installation and staged-consumption commands run under their retained process ownership and bounds. Core-conformance temporary scratch is outside the retained-case census; no OS storage quota or all-temporary-bytes bound is claimed.",
+    "This does not close the broader Alpha delivery or engine-completion gates."
+  ]
+}

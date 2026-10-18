@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
@@ -62,6 +63,74 @@ def inventory(directory):
         elif not file.is_dir():
             raise RuntimeError('Unexpected desktop output entry: '+str(file))
     return files
+
+
+def source_engine_version():
+    match = re.search(r'\bproject\(Poima\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)\s',
+                      (ROOT/'CMakeLists.txt').read_text())
+    if match is None:
+        raise RuntimeError('Cannot identify the source engine version.')
+    return match.group(1)
+
+
+def installed_native_payload(installed, expected_version):
+    """Inspect the fresh CMake install; never guess paths in its build tree."""
+    installed = Path(installed)
+
+    def ordinary(path):
+        try:
+            value = path.lstat()
+        except FileNotFoundError as error:
+            raise RuntimeError('Missing installed native payload: '+str(path)) from error
+        if not stat.S_ISREG(value.st_mode) or getattr(value, 'st_file_attributes', 0) & 0x400:
+            raise RuntimeError('Installed native payload must be an ordinary file: '+str(path))
+
+    descriptor = installed/'runtime.json'
+    ordinary(descriptor)
+    runtime = json.loads(descriptor.read_text())
+    if (not isinstance(runtime, dict) or runtime.get('format') != 'poima.runtime'
+            or type(runtime.get('version')) is not int or runtime['version'] != 1
+            or runtime.get('engine_version') != expected_version
+            or runtime.get('target_os') != 'Windows' or runtime.get('target_arch') != 'x86_64'
+            or runtime.get('executable') != 'bin/poima.exe'):
+        raise RuntimeError('Installed native runtime must match the selected source version and Windows x86_64 layout.')
+    features = runtime.get('features')
+    if (not isinstance(features, dict)
+            or any(type(value) is not bool for value in features.values())
+            or any(features.get(name) is not True for name in ('simulation', 'renderer', 'managed'))
+            or type(features.get('audio')) is not bool):
+        raise RuntimeError('Installed desktop runtime requires simulation, renderer and managed gameplay with Boolean feature flags.')
+    names = ['poima.exe', 'poima_desktop.dll']
+    if features['audio']:
+        names.append('phonon.dll')
+    files = {}
+    for name in names:
+        path = installed/'bin'/name
+        ordinary(path)
+        files[name] = {'bytes': path.stat().st_size, 'sha256': digest(path)}
+    for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md', 'TRADEMARKS.md'):
+        ordinary(installed/'share/poima'/name)
+    return {'engine_version': runtime['engine_version'], 'features': features,
+            'descriptor_sha256': digest(descriptor), 'files': files}
+
+
+def copy_installed_native(installed, stage, expected_version, expected=None):
+    """Copy only admitted install files into a new managed publication stage."""
+    installed, stage = Path(installed), Path(stage)
+    payload = installed_native_payload(installed, expected_version)
+    if expected is not None and payload != expected:
+        raise RuntimeError('Installed native payload changed after preflight.')
+    for name in payload['files']:
+        if os.path.lexists(stage/name):
+            raise RuntimeError('Managed stage already contains a native payload: '+name)
+    for name, identity in payload['files'].items():
+        with (installed/'bin'/name).open('rb') as source, (stage/name).open('xb') as target:
+            shutil.copyfileobj(source, target)
+        if (stage/name).stat().st_size != identity['bytes'] or digest(stage/name) != identity['sha256']:
+            raise RuntimeError('Copied installed native payload differs: '+name)
+    if installed_native_payload(installed, expected_version) != payload:
+        raise RuntimeError('Installed native payload changed while staging.')
+    return payload
 
 
 def prior_output(directory):
@@ -191,18 +260,17 @@ def main():
              '-DPOIMA_ENABLE_MANAGED_GAMEPLAY=ON', '-DPOIMA_DOTNET_HOST_HEADERS='+str(host_headers)])
         run(['cmake', '--build', '--preset', 'windows-runtime', '--target', 'poima_desktop', 'poima'])
     native = ROOT/'build/windows-runtime'
-    for name in ('poima_desktop.dll', 'poima.exe'):
-        if not (native/name).is_file():
-            parser.error('Missing native artifact: '+name)
-    native_features = json.loads((native/'runtime.json').read_text())['features']
-    if not native_features.get('managed') or not native_features.get('simulation'):
-        parser.error('The desktop C# gameplay workflow requires native managed gameplay and simulation; rebuild without --skip-native.')
+    expected_version = source_engine_version()
     project = ROOT/'desktop/Poima.Editor/Poima.Editor.csproj'
-    run([sdk, 'restore', project, '-r', 'win-x64', '-p:SelfContained=true', '--locked-mode'])
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.desktop-publish-', dir=output.parent) as temporary:
         stage = Path(temporary)/'payload'
         installed = Path(temporary)/'native-install'
+        # CMake knows the actual target output paths, including an explicitly
+        # configured bin directory. Validate before any managed publication.
+        run(['cmake', '--install', native, '--prefix', installed, '--strip'])
+        native_payload = installed_native_payload(installed, expected_version)
+        run([sdk, 'restore', project, '-r', 'win-x64', '-p:SelfContained=true', '--locked-mode'])
         run([sdk, 'publish', project, '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '--no-restore', '-o', stage])
         # The reloadable game bridge is a framework-dependent component hosted
         # by the editor's existing CoreCLR. Keep it outside the editor's own
@@ -218,11 +286,8 @@ def main():
             if not source.is_file():
                 raise RuntimeError('Missing managed gameplay bridge artifact: '+name)
             shutil.copy2(source, gameplay/name)
-        for name in ('poima_desktop.dll', 'poima.exe', 'phonon.dll'):
-            if (native/name).is_file():
-                shutil.copy2(native/name, stage/name)
+        copy_installed_native(installed, stage, expected_version, native_payload)
         # A fresh install tree also prevents obsolete native notices persisting.
-        run(['cmake', '--install', native, '--prefix', installed])
         shutil.copytree(installed/'share/poima', stage/'licenses/engine')
         # Inter is embedded in the desktop resources; Source Sans remains in
         # the optional native ImGui editor shipped alongside the desktop host.
@@ -293,7 +358,7 @@ def main():
             runtime_rows.append(package_notice(package, stage/'licenses/dotnet'/relative, identity,
                                                sums[0].read_text().strip(), fallback))
         manifest = {'format': 'poima.desktop-build', 'version': 1,
-                    'native_version': json.loads((installed/'runtime.json').read_text())['engine_version'],
+                    'native_version': native_payload['engine_version'],
                     'runtime': rid+', self-contained CoreCLR', 'packages': package_rows, 'runtime_packs': runtime_rows,
                     'gameplay_bridge': 'gameplay/Poima.ManagedBridge.dll',
                     'limitations': ['Prototype; complete source-level license audit and clean-machine distribution qualification remain required.',

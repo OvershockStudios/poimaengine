@@ -1375,7 +1375,9 @@ struct Runtime::Impl {
         components->begin_batch();
         try {
             apply_camera_lenses(lens_commands);
-            animations->apply(animation_commands,tick);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
+            if(!animation_commands.empty() || !ik_commands.empty() || !root_commands.empty()) {
+                animations->apply(animation_commands,tick);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
+            }
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));

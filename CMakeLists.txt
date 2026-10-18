@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.190 LANGUAGES C CXX)
+project(Poima VERSION 0.0.191 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -1141,6 +1141,9 @@ if(POIMA_BUILD_TESTS)
     add_test(NAME shadow_math COMMAND poima-shadow-math-test)
     add_test(NAME gpu_memory COMMAND poima-gpu-memory-test)
     add_test(NAME managed_memory_json COMMAND poima-managed-memory-json-test)
+    add_test(NAME desktop_native_payload COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_native_payload.py")
+    set_tests_properties(desktop_native_payload PROPERTIES TIMEOUT 30)
     add_executable(poima-visibility-math-test tests/visibility_math.cpp)
     target_link_libraries(poima-visibility-math-test PRIVATE poima_core)
     add_test(NAME visibility_math COMMAND poima-visibility-math-test)

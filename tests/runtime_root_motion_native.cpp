@@ -2,11 +2,13 @@
 #include "poima/runtime_animation.hpp"
 #include "poima/runtime_root_motion.hpp"
 #include "poima/jobs.hpp"
+#include "poima/profiler.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 using namespace poima;
 namespace {
 using Json=nlohmann::json;using P=root_motion::Planar;
@@ -138,5 +140,96 @@ void late_failure_and_template_lifetime(){
     const auto saved=live.save_snapshot(hash);auto fresh=Runtime::from_snapshot(d,hash,saved);check(fresh->save_snapshot(hash)==saved,"Root template fresh restore differs.");live.step(1,{});fresh->step(1,{});check(live.save_snapshot(hash)==fresh->save_snapshot(hash),"Root template fresh continuation differs.");
     live.change_structure(1,{}, {first});rejects([&]{live.root_motion(rig1);});check(live.root_motion(rig2)->enabled,"Despawn changed surviving driver.");const auto reborn=live.change_structure(2,{{recipe.id,first_pose}},{}).spawned[0];check(reborn!=first,"Root actor identity resurrected.");const auto rig3=live.instance(reborn).nodes.at(id(1));check(live.root_motion(rig3)->enabled&&live.root_motion(rig3)->from_tick==live.inspect().tick&&live.root_motion(rig3)->from_tick==live.root_motion(rig3)->to_tick,"Reborn root did not use frozen defaults/neutral cursor.");
 }
+void caller_preparation_boundaries(){
+    // Count genuine evaluations, not elapsed-time thresholds. Construction and
+    // serialization are outside these captures; every real Tick must sample.
+    const auto sampled_step=[](Runtime& runtime,std::uint32_t ticks,
+        const std::vector<RuntimeInput>& inputs=std::vector<RuntimeInput>{},
+        const std::vector<AnimationCommand>& animation=std::vector<AnimationCommand>{},
+        const std::vector<RuntimeIkCommand>& ik=std::vector<RuntimeIkCommand>{},
+        const std::vector<RuntimeRootMotionCommand>& roots=std::vector<RuntimeRootMotionCommand>{}) {
+        profiling::Recorder recorder;recorder.start(4096);
+        {profiling::Binding binding(&recorder);runtime.step(ticks,inputs,{}, {},animation,{},ik,roots);}
+        recorder.stop();const auto status=recorder.status();
+        check(!status.recording&&status.open==0&&status.dropped==0&&!status.clock_saturated,
+            "Caller preparation capture was incomplete.");
+        std::size_t samples=0,committed_ticks=0;
+        for(const auto& event:recorder.events()) {
+            check(event.complete&&!event.failed,"Successful caller preparation emitted a failed/open event.");
+            const std::string_view name(event.name.data());
+            if(name=="runtime.animation.sample")++samples;
+            if(name=="runtime.tick")++committed_ticks;
+        }
+        check(committed_ticks==ticks,"Caller preparation changed real Tick membership.");
+        return samples;
+    };
+    const auto equal_runtime=[](const Runtime& a,const Runtime& b,const RuntimeDefinition& d) {
+        check(a.save_snapshot(hash)==b.save_snapshot(hash),"Caller preparation changed complete saved state.");
+        for(const auto& entity:d.entities) {
+            const auto x=a.entity(entity.id),y=b.entity(entity.id);
+            check(x.world==y.world&&x.local.position==y.local.position&&x.local.rotation==y.local.rotation&&
+                x.local.scale==y.local.scale&&x.velocity==y.velocity,"Caller preparation changed committed poses.");
+        }
+    };
+    auto d=definition();auto& rig=*d.entities[0].animation_rig;
+    rig.root_motion.reset();RuntimeAnimationLayer layer;layer.clip=3;layer.playing=true;layer.mask={{2,1}};
+    rig.layers={layer};Runtime grouped(d),partitioned(d);
+    check(sampled_step(grouped,3)==3,"Empty caller lists resampled the committed boundary.");
+    partitioned.step(1,{});partitioned.step(2,{});equal_runtime(grouped,partitioned,d);
+    AnimationCommand fade{id(1),2,0,1,true,true};fade.blend_ticks=12;fade.transition_mode=AnimationTransitionMode::Inertial;
+    check(sampled_step(grouped,2,{}, {fade})==3,"Explicit animation lost same-tick preparation.");
+    partitioned.step(1,{}, {}, {},{fade});partitioned.step(1,{});equal_runtime(grouped,partitioned,d);
+    check(grouped.animation(id(1))->clip==2&&grouped.animation(id(1))->transition.has_value(),
+        "Explicit inertial destination did not publish.");
+    auto weight=fade;weight.layer=1;weight.clip=3;weight.weight=.25;weight.weight_blend_ticks=8;
+    check(sampled_step(grouped,1,{}, {weight})==2,"Layer-only caller lost same-tick preparation.");
+    partitioned.step(1,{}, {}, {},{weight});equal_runtime(grouped,partitioned,d);
+    const auto changed_layer=grouped.animation_layer(id(1),1);
+    check(changed_layer&&changed_layer->target_weight==.25,"Layer-only destination did not publish.");
+    // Restore while both base inertial history and a layer-weight ramp are live.
+    const auto saved=grouped.save_snapshot(hash);auto restored=Runtime::from_snapshot(d,hash,saved);
+    check(restored->save_snapshot(hash)==saved,"Active transition restore changed complete bytes.");
+    check(sampled_step(*restored,3)==3,"First empty caller step after restore resampled its boundary.");
+    grouped.step(3,{});equal_runtime(grouped,*restored,d);
+    const auto before=grouped.save_snapshot(hash);
+    auto absent=fade;absent.entity=id(999);
+    rejects([&]{grouped.step(2,{}, {}, {},{fade,absent});});
+    check(grouped.save_snapshot(hash)==before,"Rejected explicit preparation changed complete state.");
+    grouped.step(2,{});restored->step(2,{});equal_runtime(grouped,*restored,d);
+
+    // An IK-only list must be sufficient to trigger preparation. The target is
+    // world-space on a moving/yawing physical wrapper; no new goal is needed on
+    // subsequent empty-list calls, but end-of-Tick solving must still run.
+    auto moving=definition(true);auto& moving_rig=*moving.entities[1].animation_rig;
+    moving_rig.root_motion.reset();moving_rig.ik={{1,0,1,2,false,IkSpace::World,{.5,1.2,0},{0,0,1},1}};
+    Runtime physical(moving),physical_partitioned(moving);
+    RuntimeIkCommand goal{id(1),1,true,IkSpace::World,{.5,1.2,0},{0,0,1},1};
+    check(sampled_step(physical,1,{}, {},{goal})==2,"IK-only caller lost same-tick preparation.");
+    physical_partitioned.step(1,{}, {}, {},{}, {},{goal});equal_runtime(physical,physical_partitioned,moving);
+    RuntimeInput input;input.entity=id(100);input.move={1,0};input.look={20,0};
+    check(sampled_step(physical,3,{input})==3,"World IK forced an unnecessary batch-entry sample.");
+    physical_partitioned.step(1,{input});input.look={0,0};physical_partitioned.step(2,{input});
+    equal_runtime(physical,physical_partitioned,moving);
+    const auto solved=physical.ik(id(1),1);check(solved&&solved->enabled,"World IK was not retained.");
+    near(solved->end_position[0],.5,2e-6);near(solved->end_position[1],1.2,2e-6);near(solved->end_position[2],0,2e-6);
+    const auto physical_save=physical.save_snapshot(hash);auto physical_restored=Runtime::from_snapshot(moving,hash,physical_save);
+    check(physical_restored->save_snapshot(hash)==physical_save,"World IK restore changed complete bytes.");
+    physical.step(1,{});physical_restored->step(1,{});equal_runtime(physical,*physical_restored,moving);
+    const auto physical_before=physical.save_snapshot(hash);auto invalid_goal=goal;invalid_goal.slot=8;
+    rejects([&]{physical.step(1,{}, {}, {},{}, {},{goal,invalid_goal});});
+    check(physical.save_snapshot(hash)==physical_before,"Rejected IK preparation changed complete state.");
+
+    auto rooted=definition();Runtime root(rooted),root_partitioned(rooted);
+    check(sampled_step(root,1,{}, {}, {},{{id(1),false}})==2,"Root-only caller lost same-tick preparation.");
+    root_partitioned.step(1,{}, {}, {},{}, {},{},{{id(1),false}});equal_runtime(root,root_partitioned,rooted);
+    check(!root.root_motion(id(1))->enabled&&root.root_motion(id(1))->local_delta==std::array<double,3>{},
+        "Root-only disable missed the current interval.");
+    const auto root_before=root.save_snapshot(hash);
+    rejects([&]{root.step(1,{}, {}, {},{}, {},{},{{id(1),true},{id(999),true}});});
+    check(root.save_snapshot(hash)==root_before,"Rejected root preparation changed complete state.");
+    auto rooted_save=Runtime::from_snapshot(rooted,hash,root_before);
+    check(sampled_step(root,3)==3,"Empty root caller resampled the committed boundary.");
+    rooted_save->step(3,{});equal_runtime(root,*rooted_save,rooted);
 }
-int main(){try{algebra_and_metric();straight_loops_and_read_purity();nonzero_heading_turn_and_cycles();commands_fades_and_inertial();layers_masks_and_yaw_admission();strict_profiles_and_saved_state();jobs_membership_and_aliases();if(Runtime::available()){character_physics_and_conflicts();wall_yaw_pivot_and_atomic_batch();late_failure_and_template_lifetime();std::cout<<"10 native root motion groups passed\n";}else std::cout<<"7 portable root motion groups passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main(){try{algebra_and_metric();straight_loops_and_read_purity();nonzero_heading_turn_and_cycles();commands_fades_and_inertial();layers_masks_and_yaw_admission();strict_profiles_and_saved_state();jobs_membership_and_aliases();if(Runtime::available()){character_physics_and_conflicts();wall_yaw_pivot_and_atomic_batch();late_failure_and_template_lifetime();caller_preparation_boundaries();std::cout<<"11 native root motion groups passed\n";}else std::cout<<"7 portable root motion groups passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

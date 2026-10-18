@@ -1,8 +1,43 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.190**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.191**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.191 skips redundant [batch-entry animation preparation](RUNTIME_ANIMATION_PREPARATION.md)
+when all three caller animation, IK and root-motion command lists are empty.
+Per-tick sampling, explicit caller commands, gameplay commands, structural
+changes and recovery keep their existing evaluation boundaries. Seven Windows
+native executables, five core tests and three metadata checks pass. The
+root-motion executable includes eleven native groups. Linux's simulation-disabled
+build passes seven portable root-motion groups, core and metadata checks; it
+does not execute the new simulation-only integration group.
+
+A matched six-owner Windows Performance Yard comparison retains 6,048 RPC pairs,
+eighteen captures, twenty-four complete checkpoints and twelve complete
+prospective state forecasts. Animation sampling halves from 2,160 to 1,080
+passes per version's 1,080 measured ticks. Mean inclusive native batch time falls
+from 2.400 to 1.880 ms, while the inner `runtime.tick` mean rises from 0.941 to
+1.466 ms. The external guarded helper loop falls from 11.931 to 11.293 ms per
+tick. Complete state forecasts agree and all owners close naturally. These
+short CPU observations are neither rendered FPS nor a causal decomposition;
+memory-growth causes, interaction and broader Alpha qualification remain open.
+[Results and scope](evidence/m2-animation-preparation.json).
+
+Desktop packaging now selects native binaries and dependencies from a fresh
+`cmake --install --strip` tree before managed restore or publication. It rejects
+missing or mismatched installed payloads instead of guessing flat build paths.
+Eleven portable model tests pass on each host. An actual 49-file install verifies
+stripped executable/DLL equivalence to the qualified native build, dependencies
+and notices. The staged Windows CLI passes core and metadata checks; the staged
+unattached desktop bridge creates, responds and closes with zero presented
+frames. Its thirteen-process Job closes empty without forced termination.
+
+The first install command succeeded but its verifier rejected CMake's literal
+`/./runtime.json` manifest spelling. That failed record is preserved separately
+from the fresh successful run with the corrected expected literal. These checks
+do not qualify managed GUI publication, physical interaction or a clean-machine
+installation. [Results and scope](evidence/m2-desktop-native-install.json).
 
 Version 0.0.190 extends [passive managed-memory reporting](MANAGED_MEMORY.md#retirement-observation-bounds)
 to the reachable retired-context range. Load admission stays at 32 active modules

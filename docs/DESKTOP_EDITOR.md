@@ -17,6 +17,19 @@ The packaging script enables `POIMA_BUILD_DESKTOP_BRIDGE` and native CoreCLR gam
 
 Publication uses a fresh staging directory and a fresh native install tree. An existing destination is replaceable only when its recorded `poima-desktop-build.json` inventory still matches. Added, modified or missing files cause a refusal; retain that directory and choose a new output. This prevents a repeated build from silently retaining obsolete binaries or deleting unrelated files. A partially published folder without a build manifest is not treated as disposable.
 
+Native payloads come from `cmake --install --strip`, using CMake's configured
+target paths. The publisher selects the installed `bin/poima.exe` and
+`bin/poima_desktop.dll`, plus `bin/phonon.dll` when audio is enabled; flat files
+beside the build cache are not fallback candidates. Before managed restore or
+publication, it checks the installed descriptor's source version, Windows x64
+layout, required features, binaries and notices. Staging retains their selected
+hashes and rejects changed inputs or occupied native destinations. `--skip-native`
+still requires the caller to have built the intended native sources; descriptor
+validation alone does not prove a fresh compilation.
+The [install and staging checks](evidence/m2-desktop-native-install.json) cover
+portable failure models and actual installed native consumption; GUI publication
+and clean-machine qualification remain separate.
+
 After packaging, double-click **`launch-editor.cmd`** (or `launch-desktop.cmd`) from Windows. It opens `projects/desktop-sandbox/world.json` with endpoint `poima-desktop`; the optional first argument selects another world. The launcher waits for the GUI and does not build it automatically. To launch directly:
 
 ```text

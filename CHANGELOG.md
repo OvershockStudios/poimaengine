@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.191
+
+- Skip batch-entry animation preparation when callers supply no animation, IK or root-motion commands; retain per-tick sampling and state recovery. [Matched measurements](docs/RUNTIME_ANIMATION_PREPARATION.md).
+- Stage desktop native binaries and dependencies from the fresh CMake install tree, rejecting incomplete or mismatched native payloads before managed publication. [Install and staging checks](docs/evidence/m2-desktop-native-install.json).
+
 ## 0.0.190
 
 - Extend passive managed-memory observations to the reachable retired-context range while preserving module admission, collection policy, strict wire validation and saved state. [Bounds and compatibility](docs/MANAGED_MEMORY.md#retirement-observation-bounds).

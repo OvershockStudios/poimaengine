@@ -49,6 +49,16 @@ Commands apply before the first requested tick. After N ticks, playing time is t
 
 Set `playing:false` with a chosen time to seek or hold a pose. Null clip always normalizes to time zero and `playing:false`, selecting the authored baseline as the destination. With no blend it restores that baseline immediately. Each sample starts from that baseline; clip channels replace only their targeted local translation, rotation or scale. Switching clips cannot accidentally preserve a field animated only by the previous clip. Playback clocks use a command anchor tick/time, so partitioning identical fixed ticks into different requests does not accumulate different time increments.
 
+When caller animation, IK and root-motion command lists are all empty, a step
+keeps its last committed pose until normal tick evaluation rather than sampling
+it again at batch entry. Animation still samples every committed tick. Any
+nonempty caller list retains the preparation pass before the first tick;
+gameplay commands, pre-gameplay IK, structural changes and state restoration
+retain their own evaluation boundaries. This avoids duplicate work without
+changing playback clocks or introducing a general pose cache.
+The [matched preparation comparison](RUNTIME_ANIMATION_PREPARATION.md) records
+work counts, complete state forecasts, timings and remaining limits.
+
 The step's existing expected-tick check and retained in-session retry receipts also cover animation commands. Replaying a retained successful request does not advance the clock again. Omitted and explicit zero `blend_ticks` normalize to the same receipt parameters. Omitted and explicit `crossfade` modes also normalize together; changing the mode on a retained retry rejects it.
 
 ## Timed crossfades
