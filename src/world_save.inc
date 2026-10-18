@@ -140,7 +140,7 @@
     }
     void activate_runtime_load(PreparedLoad& load) noexcept {
         runtime_.swap(load.runtime);runtime_id_.swap(load.session);runtime_definition_=std::move(load.frozen.definition);
-        runtime_document_.swap(load.frozen.document);runtime_content_hash_.swap(load.frozen.hash);
+        runtime_document_.swap(load.frozen.document);invalidate_runtime_source_stale();runtime_content_hash_.swap(load.frozen.hash);
         runtime_gameplay_config_=std::move(load.gameplay);used_runtime_ids_.swap(load.used);
         runtime_receipts_.swap(load.empty_receipts);runtime_start_params_.swap(load.start_params);runtime_start_result_.swap(load.start_result);
     }

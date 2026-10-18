@@ -1,0 +1,2312 @@
+{
+  "format": "poima.evidence.runtime-inspection.v1",
+  "checkpoint": "0.0.188",
+  "date": "2026-10-18",
+  "passed": true,
+  "summary": "Private exact authored-source staleness cache with committed publication invalidation, semantic regression qualification and matched full-workload CPU inspection measurements.",
+  "implemented": {
+    "predicate_preserved": true,
+    "cache": "World-local optional Boolean, including computed false",
+    "invalidation": [
+      "authored persist",
+      "runtime start",
+      "successful save activation",
+      "successful scalar material adoption",
+      "successful texture adoption",
+      "actual runtime stop"
+    ],
+    "shared_current_read_methods": [
+      "runtime.inspect",
+      "runtime.observe",
+      "runtime.material.inspect",
+      "runtime.texture.inspect"
+    ],
+    "prepared_save_comparison": "Still compares its separate prospective frozen document directly.",
+    "other_live_summary_fields": "Read fresh; not cached.",
+    "public_schemas_save_formats_and_gameplay_abi": "Unchanged.",
+    "revision_only_equality": false
+  },
+  "source_inputs": {
+    "src/world.cpp": {
+      "bytes": 334784,
+      "sha256": "fe41d9adca9b1a3493c8e5a584333bfd5d194b8fa817c9a1d3d8d40426546bc7"
+    },
+    "src/world_save.inc": {
+      "bytes": 26378,
+      "sha256": "b29bb929bae66c13b05d5bc0ff68cd58e47eb4f37509e32795568cba9285f96f"
+    },
+    "src/world_material.inc": {
+      "bytes": 10428,
+      "sha256": "dfb65100da87072bdad13d79007fa114137d1b1b0620813d8509fc4207e7a54a"
+    },
+    "src/world_texture.inc": {
+      "bytes": 15331,
+      "sha256": "af8c30f47e0f6468e8921de7aef9e2aedc3101e4776e12ebfcf930042551387f"
+    },
+    "src/world_observe.inc": {
+      "bytes": 8650,
+      "sha256": "bf0add80648990d6faba72f9082753ed8b268be5327b253d6047213ae5e3cfd0"
+    },
+    "tests/world_source_stale.cpp": {
+      "bytes": 15843,
+      "sha256": "a9952bb5dacddb54ffd9c1e4fdd4e3372b9457f5943bf09fdfa8833b38ff7a0e"
+    },
+    "CMakeLists.txt": {
+      "bytes": 91477,
+      "sha256": "2289da2fdb3b78c05ec35f85634c93bc901fc60467c064c76d74b3f25a5a01ef"
+    }
+  },
+  "native_builds": {
+    "windows": {
+      "version": "0.0.188",
+      "passed": true,
+      "seconds": 230.1468051579941,
+      "translation_units": 8,
+      "numbered_printed_actions": 16,
+      "ninja_reported_denominator": 17,
+      "independent_executables": 7,
+      "artifacts": {
+        "bin/poima.exe": {
+          "bytes": 26463744,
+          "sha256": "0a8c1e7c08ef48387dfbf6f013ac3e41e3a1329d38808e6f7bc43b6134ffaec2"
+        },
+        "bin/poima-world-source-stale-test.exe": {
+          "bytes": 24959488,
+          "sha256": "c7dd70d2bc94272dd44cc659dd9013bb728c52b9ed21b5706db157dcf418f380"
+        },
+        "bin/poima-world-session-test.exe": {
+          "bytes": 25384960,
+          "sha256": "a81a65456cca12a8f4a9796a0a12070e22589cc2d5eef284e6de455dac7cdf7d"
+        },
+        "bin/poima-world-material-test.exe": {
+          "bytes": 25032192,
+          "sha256": "fbbf518a42a78fc8fbb0a27f314f4c17d21465c1e114ce716e6acfa1f3dc6f66"
+        },
+        "bin/poima-world-texture-test.exe": {
+          "bytes": 25148928,
+          "sha256": "5f46eed0c5a5a4a0949b654e53771bbe97d13bc6219198656411102719a4d0b1"
+        },
+        "bin/poima-world-save-test.exe": {
+          "bytes": 24923648,
+          "sha256": "fc3f95ad5fb4029e48cee671c848c0d524db1de075c463844404708300d5a673"
+        },
+        "bin/poima-world-schema-test.exe": {
+          "bytes": 24983040,
+          "sha256": "70c2646fccf5af3bc9b2f0f0c1a7165b8627e3dfb96d03009cc45975adada6ba"
+        },
+        "library/libpoima_core.a.gz": {
+          "bytes": 49464535,
+          "sha256": "296875368e981084e4b12ca40c829f46964613baa215ea5caa3bab130a2666a4"
+        }
+      },
+      "source_inputs_unchanged": true,
+      "forced_cleanup": false
+    },
+    "linux": {
+      "version": "0.0.188",
+      "passed": true,
+      "seconds": 333.77879814300104,
+      "profile": "Simulation/audio/graphics disabled headless Debug",
+      "translation_units": 5,
+      "numbered_printed_actions": 10,
+      "independent_executables": 4,
+      "artifacts": {
+        "bin/poima": {
+          "bytes": 19516872,
+          "sha256": "cb7a204f7785a09ee759b667633e47606e89ccd7fc26ec08ad76561ed447f66a"
+        },
+        "bin/poima-world-source-stale-test": {
+          "bytes": 18984088,
+          "sha256": "c2a7880e301a3257261763a04345aedcf37b4011a6feb3958ffe0ddbc6666ef2"
+        },
+        "bin/poima-world-session-test": {
+          "bytes": 19418440,
+          "sha256": "abad5fcc9b798f66e7b831bc6e984bc2983a9f60001ab2c3fe8d3cb94fb20832"
+        },
+        "bin/poima-world-schema-test": {
+          "bytes": 19002200,
+          "sha256": "d21c11071f437279ab0e9466e79c5b4b0b2b294df5c46cfa70b2618fe397520d"
+        },
+        "library/libpoima_core.a.gz": {
+          "bytes": 17525745,
+          "sha256": "7694f2aaab93c764fb9368d0298061deecd75b73371dd6492c18e5335de19907"
+        }
+      },
+      "source_inputs_unchanged": true,
+      "forced_cleanup": false
+    }
+  },
+  "qualification": {
+    "windows": {
+      "phase_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "focused_source_stale_checks_terminal": 1939,
+      "focused_source_stale_checks_before_observations_publication": 1937,
+      "difference": "Two fixture-publication checks occur after observation JSON serialization. Both original counts retained.",
+      "complete_original_saved_byte_pairs": 9,
+      "native_save_records": 20,
+      "focused_snapshot_version": 1,
+      "focused_snapshot_payload_members": 9,
+      "focused_drawables": 1,
+      "coverage": [
+        "four current read surfaces",
+        "false and true cached results",
+        "preview and late invalid transaction rejection",
+        "unused rejected request ID correction",
+        "receipt replay",
+        "undo/redo revision semantics",
+        "restart",
+        "same-revision different frozen definitions",
+        "warm/stopped/cold save activation",
+        "failed restore preserves selected runtime",
+        "whole saved bytes and authored/history/storage preservation"
+      ],
+      "other_native_groups": [
+        "session",
+        "scalar material adoption",
+        "texture adoption",
+        "save slots",
+        "schema discovery"
+      ],
+      "schema_discovery_responses": 1329,
+      "core_tests_passed": 5,
+      "metadata_checks_passed": 3,
+      "job_total_processes": 18,
+      "job_active_at_exit": 0,
+      "job_terminated_processes": 0,
+      "forced_cleanup": false,
+      "seconds": 14.373799599998165,
+      "session_storage_retry": "An original native session stderr records an access-denied publication attempt and successful bounded recovery."
+    },
+    "linux": {
+      "phase_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "runtime_source_stale": "Skipped explicitly: simulation unavailable in selected OFF profile.",
+      "native_session": "Passed within actual build capabilities.",
+      "schema_discovery_responses": 1323,
+      "core_tests_passed": 5,
+      "metadata_checks_passed": 3,
+      "forced_cleanup": false,
+      "adopted_children_or_cleanup": false,
+      "final_children": [],
+      "seconds": 64.12985229500191
+    }
+  },
+  "matched_workload": {
+    "baseline_version": "0.0.186",
+    "baseline_cli": {
+      "bytes": 26463232,
+      "sha256": "1f4ecc7fb1e5e0c9d67e24dccb5ca17f87fb9c42f9349ed07041e7c2b235818a"
+    },
+    "candidate_version": "0.0.188",
+    "candidate_cli": {
+      "bytes": 26463744,
+      "sha256": "0a8c1e7c08ef48387dfbf6f013ac3e41e3a1329d38808e6f7bc43b6134ffaec2"
+    },
+    "bridge_checkpoint": "0.0.185",
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "58a026aaf70f6932d881e664512f5461b946495b77719cee7937406f58be9b17"
+    },
+    "hostfxr_version": "10.0.12",
+    "hostfxr": {
+      "bytes": 379688,
+      "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+    },
+    "world": {
+      "bytes": 3571587,
+      "sha256": "5c4d27817f7a5fce33476f36cb89606b43887a5157822fd09466b4869a471282"
+    },
+    "game_assembly": {
+      "bytes": 58368,
+      "sha256": "6ab2372344d43be0ef851109f54e3334cfbb37d606444ce303e47f5d737dabe6"
+    },
+    "world_and_assets_files": 16,
+    "world_and_assets_bytes": 4199950,
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_characters": 24,
+    "authored_lights": 64,
+    "gameplay_globals": 50,
+    "component_schemas": 4,
+    "snapshot_version": 7,
+    "snapshot_payload_members": 14,
+    "excluded_fields": [],
+    "callback_profiling": false,
+    "sdk_lineage": {
+      "original169_game_closure": {
+        "bytes": 180224,
+        "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+      },
+      "qualified183_and185_bridge": {
+        "bytes": 180224,
+        "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+      },
+      "identical": false,
+      "policy": "CoreCLR unifies Poima SDK to the bridge assembly; differing original169 SDK remains pinned, and its IL on the selected SDK has separate185 native qualification."
+    }
+  },
+  "environment": {
+    "os": "Windows x64",
+    "cpu": "Ryzen 7 8845HS",
+    "system_ram_gb": 16,
+    "power_before": {
+      "ac": 1,
+      "battery": 100
+    },
+    "power_after": {
+      "ac": 1,
+      "battery": 100
+    },
+    "explicit_worker_environment": {
+      "DOTNET_PROCESSOR_COUNT": "2",
+      "POIMA_JOB_WORKERS": "2"
+    },
+    "physics_jobs": "Jolt single-threaded",
+    "rendering": false,
+    "compilation_during_cohort": false,
+    "reload_during_cohort": false,
+    "explicit_collection": false,
+    "ordinary_gc_controlled": false
+  },
+  "schedule": {
+    "order": [
+      "0.0.186",
+      "0.0.188",
+      "0.0.188",
+      "0.0.186",
+      "0.0.186",
+      "0.0.188"
+    ],
+    "ticks_per_call": 1,
+    "warmup_ticks": 120,
+    "window_ticks": 120,
+    "windows": 3,
+    "profiler_capacity": 65536,
+    "owners_serial": true,
+    "measured_ticks_per_owner": 360,
+    "measured_ticks_per_engine": 1080,
+    "ticks_including_warmup": 2880,
+    "guard": "runtime.inspect before every one-tick runtime.step request in both treatments",
+    "paced": false,
+    "source_comparison": "Warm after initial load and 120 warmup ticks; does not isolate first cache-miss cost."
+  },
+  "matched_verified": {
+    "worker_seconds": 75.30209589999868,
+    "rpc_pairs": 6048,
+    "single_tick_step_requests": 2880,
+    "profile_captures": 18,
+    "profile_events": 159840,
+    "profile_dropped_open_failed": 0,
+    "complete_v7_checkpoint_references": 24,
+    "prospective_complete_payload_forecasts": 12,
+    "original_cross_owner_payload_equality": false,
+    "prospective_full_typed_and_lexical_payload_agreement": true,
+    "epoch_policy": "Only separate prospective expected operands substitute ObservedEpochHigh/ObservedEpochLow from the destination host epoch before its first tick. All actual bytes/types/fields and every other expected field remain retained.",
+    "native_owners_exit0": 6,
+    "job_total_processes": 7,
+    "job_active_at_exit": 0,
+    "job_terminated_processes": 0,
+    "forced_cleanup": false,
+    "final_owned_output_files": 109,
+    "final_owned_output_bytes": 79524743
+  },
+  "measurements": {
+    "unit": "nanoseconds",
+    "native_scopes": "Inclusive elapsed wall time, including scheduling and waits; nested scopes overlap. Do not add rows.",
+    "percentiles": "Nearest-rank over pooled original region invocations within the declared engine/trial; not per-frame percentiles.",
+    "arms": {
+      "0.0.186": {
+        "owners": 3,
+        "measured_ticks": 1080,
+        "rpc_wall_ns_per_tick": 19314812.685185187,
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 1080,
+            "total_ns": 5755140400,
+            "ns_per_tick": 5328833.703703703,
+            "min_ns": 3078800,
+            "p50_ns": 3982100,
+            "p95_ns": 10387900,
+            "p99_ns": 11240700,
+            "max_ns": 11828500,
+            "mean_ns": 5328833.703703703
+          },
+          "runtime.step": {
+            "samples": 1080,
+            "total_ns": 4600426500,
+            "ns_per_tick": 4259654.166666667,
+            "min_ns": 2735700,
+            "p50_ns": 3531000,
+            "p95_ns": 7540400,
+            "p99_ns": 8403500,
+            "max_ns": 9389900,
+            "mean_ns": 4259654.166666667
+          },
+          "runtime.batch": {
+            "samples": 1080,
+            "total_ns": 2653573200,
+            "ns_per_tick": 2457012.222222222,
+            "min_ns": 1859600,
+            "p50_ns": 2266400,
+            "p95_ns": 3428400,
+            "p99_ns": 3831400,
+            "max_ns": 5047800,
+            "mean_ns": 2457012.222222222
+          },
+          "runtime.tick": {
+            "samples": 1080,
+            "total_ns": 1013954600,
+            "ns_per_tick": 938846.8518518518,
+            "min_ns": 744800,
+            "p50_ns": 879600,
+            "p95_ns": 1211400,
+            "p99_ns": 2123000,
+            "max_ns": 2875900,
+            "mean_ns": 938846.8518518518
+          },
+          "runtime.checkpoint": {
+            "samples": 1080,
+            "total_ns": 161990800,
+            "ns_per_tick": 149991.4814814815,
+            "min_ns": 94500,
+            "p50_ns": 119000,
+            "p95_ns": 257400,
+            "p99_ns": 288700,
+            "max_ns": 472600,
+            "mean_ns": 149991.4814814815
+          }
+        },
+        "native_inclusive_ns_per_tick": {
+          "runtime.inspect": 5328833.703703703,
+          "runtime.step": 4259654.166666667,
+          "runtime.batch": 2457012.222222222,
+          "runtime.tick": 938846.8518518518,
+          "runtime.checkpoint": 149991.4814814815
+        }
+      },
+      "0.0.188": {
+        "owners": 3,
+        "measured_ticks": 1080,
+        "rpc_wall_ns_per_tick": 16057639.537037037,
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 1080,
+            "total_ns": 2362954100,
+            "ns_per_tick": 2187920.462962963,
+            "min_ns": 929200,
+            "p50_ns": 1450200,
+            "p95_ns": 4953100,
+            "p99_ns": 5179300,
+            "max_ns": 5961100,
+            "mean_ns": 2187920.462962963
+          },
+          "runtime.step": {
+            "samples": 1080,
+            "total_ns": 4708567200,
+            "ns_per_tick": 4359784.444444444,
+            "min_ns": 2645600,
+            "p50_ns": 3627800,
+            "p95_ns": 7679300,
+            "p99_ns": 8389700,
+            "max_ns": 8942900,
+            "mean_ns": 4359784.444444444
+          },
+          "runtime.batch": {
+            "samples": 1080,
+            "total_ns": 2551907300,
+            "ns_per_tick": 2362877.1296296297,
+            "min_ns": 1739400,
+            "p50_ns": 2163900,
+            "p95_ns": 3304300,
+            "p99_ns": 3832700,
+            "max_ns": 4985200,
+            "mean_ns": 2362877.1296296297
+          },
+          "runtime.tick": {
+            "samples": 1080,
+            "total_ns": 993495900,
+            "ns_per_tick": 919903.6111111111,
+            "min_ns": 745300,
+            "p50_ns": 866100,
+            "p95_ns": 1168300,
+            "p99_ns": 1812000,
+            "max_ns": 3938200,
+            "mean_ns": 919903.6111111111
+          },
+          "runtime.checkpoint": {
+            "samples": 1080,
+            "total_ns": 149686800,
+            "ns_per_tick": 138598.88888888888,
+            "min_ns": 65800,
+            "p50_ns": 108800,
+            "p95_ns": 274300,
+            "p99_ns": 294200,
+            "max_ns": 722700,
+            "mean_ns": 138598.88888888888
+          }
+        },
+        "native_inclusive_ns_per_tick": {
+          "runtime.inspect": 2187920.462962963,
+          "runtime.step": 4359784.444444444,
+          "runtime.batch": 2362877.1296296297,
+          "runtime.tick": 919903.6111111111,
+          "runtime.checkpoint": 138598.88888888888
+        }
+      }
+    },
+    "trials": [
+      {
+        "owner": "pair1-engine186",
+        "engine_version": "0.0.186",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 6877542600,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 1945579000,
+            "ns_per_tick": 5404386.111111111,
+            "min_ns": 3103400,
+            "p50_ns": 3918400,
+            "p95_ns": 10858800,
+            "p99_ns": 11335300,
+            "max_ns": 11828500,
+            "mean_ns": 5404386.111111111
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1514494100,
+            "ns_per_tick": 4206928.055555556,
+            "min_ns": 2757500,
+            "p50_ns": 3479500,
+            "p95_ns": 7331300,
+            "p99_ns": 8346100,
+            "max_ns": 8566300,
+            "mean_ns": 4206928.055555556
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 891345600,
+            "ns_per_tick": 2475960.0,
+            "min_ns": 1875800,
+            "p50_ns": 2266400,
+            "p95_ns": 3486300,
+            "p99_ns": 4150100,
+            "max_ns": 5001500,
+            "mean_ns": 2475960.0
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 346514300,
+            "ns_per_tick": 962539.7222222222,
+            "min_ns": 754000,
+            "p50_ns": 889500,
+            "p95_ns": 1271100,
+            "p99_ns": 2402700,
+            "max_ns": 2870800,
+            "mean_ns": 962539.7222222222
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 52883300,
+            "ns_per_tick": 146898.05555555556,
+            "min_ns": 95300,
+            "p50_ns": 118300,
+            "p95_ns": 256100,
+            "p99_ns": 284300,
+            "max_ns": 422500,
+            "mean_ns": 146898.05555555556
+          }
+        }
+      },
+      {
+        "owner": "pair1-engine188",
+        "engine_version": "0.0.188",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 5796792500,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 809186900,
+            "ns_per_tick": 2247741.388888889,
+            "min_ns": 929200,
+            "p50_ns": 1406800,
+            "p95_ns": 4994200,
+            "p99_ns": 5179300,
+            "max_ns": 5961100,
+            "mean_ns": 2247741.388888889
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1558013600,
+            "ns_per_tick": 4327815.555555556,
+            "min_ns": 2645600,
+            "p50_ns": 3549600,
+            "p95_ns": 7747400,
+            "p99_ns": 8488800,
+            "max_ns": 8670700,
+            "mean_ns": 4327815.555555556
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 849542700,
+            "ns_per_tick": 2359840.8333333335,
+            "min_ns": 1739400,
+            "p50_ns": 2168700,
+            "p95_ns": 3322700,
+            "p99_ns": 3738500,
+            "max_ns": 4985200,
+            "mean_ns": 2359840.8333333335
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 333577800,
+            "ns_per_tick": 926605.0,
+            "min_ns": 745300,
+            "p50_ns": 874700,
+            "p95_ns": 1186000,
+            "p99_ns": 1958700,
+            "max_ns": 3938200,
+            "mean_ns": 926605.0
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 49558000,
+            "ns_per_tick": 137661.11111111112,
+            "min_ns": 65800,
+            "p50_ns": 106400,
+            "p95_ns": 274500,
+            "p99_ns": 293800,
+            "max_ns": 722700,
+            "mean_ns": 137661.11111111112
+          }
+        }
+      },
+      {
+        "owner": "pair2-engine188",
+        "engine_version": "0.0.188",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 5844398700,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 808611800,
+            "ns_per_tick": 2246143.888888889,
+            "min_ns": 1010100,
+            "p50_ns": 1491700,
+            "p95_ns": 4973800,
+            "p99_ns": 5243300,
+            "max_ns": 5515800,
+            "mean_ns": 2246143.888888889
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1591537600,
+            "ns_per_tick": 4420937.777777778,
+            "min_ns": 2723500,
+            "p50_ns": 3741600,
+            "p95_ns": 7565000,
+            "p99_ns": 8398000,
+            "max_ns": 8683000,
+            "mean_ns": 4420937.777777778
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 845894500,
+            "ns_per_tick": 2349706.9444444445,
+            "min_ns": 1790700,
+            "p50_ns": 2193100,
+            "p95_ns": 3207700,
+            "p99_ns": 3772100,
+            "max_ns": 4344400,
+            "mean_ns": 2349706.9444444445
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 328181400,
+            "ns_per_tick": 911615.0,
+            "min_ns": 746300,
+            "p50_ns": 858000,
+            "p95_ns": 1119000,
+            "p99_ns": 1590600,
+            "max_ns": 2579600,
+            "mean_ns": 911615.0
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 49350600,
+            "ns_per_tick": 137085.0,
+            "min_ns": 74000,
+            "p50_ns": 111100,
+            "p95_ns": 251500,
+            "p99_ns": 283000,
+            "max_ns": 387200,
+            "mean_ns": 137085.0
+          }
+        }
+      },
+      {
+        "owner": "pair2-engine186",
+        "engine_version": "0.0.186",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 7039106700,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 1952840700,
+            "ns_per_tick": 5424557.5,
+            "min_ns": 3111400,
+            "p50_ns": 4091000,
+            "p95_ns": 10249700,
+            "p99_ns": 11122500,
+            "max_ns": 11312000,
+            "mean_ns": 5424557.5
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1547633400,
+            "ns_per_tick": 4298981.666666667,
+            "min_ns": 2735700,
+            "p50_ns": 3518100,
+            "p95_ns": 7804500,
+            "p99_ns": 8427700,
+            "max_ns": 8930700,
+            "mean_ns": 4298981.666666667
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 877045400,
+            "ns_per_tick": 2436237.222222222,
+            "min_ns": 1859600,
+            "p50_ns": 2240800,
+            "p95_ns": 3379900,
+            "p99_ns": 3618600,
+            "max_ns": 3692000,
+            "mean_ns": 2436237.222222222
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 330078000,
+            "ns_per_tick": 916883.3333333334,
+            "min_ns": 749900,
+            "p50_ns": 867800,
+            "p95_ns": 1157400,
+            "p99_ns": 1236900,
+            "max_ns": 2205000,
+            "mean_ns": 916883.3333333334
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 55225500,
+            "ns_per_tick": 153404.16666666666,
+            "min_ns": 94500,
+            "p50_ns": 118500,
+            "p95_ns": 258200,
+            "p99_ns": 282500,
+            "max_ns": 385500,
+            "mean_ns": 153404.16666666666
+          }
+        }
+      },
+      {
+        "owner": "pair3-engine186",
+        "engine_version": "0.0.186",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 6943348400,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 1856720700,
+            "ns_per_tick": 5157557.5,
+            "min_ns": 3078800,
+            "p50_ns": 3852700,
+            "p95_ns": 10052100,
+            "p99_ns": 11292000,
+            "max_ns": 11790800,
+            "mean_ns": 5157557.5
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1538299000,
+            "ns_per_tick": 4273052.777777778,
+            "min_ns": 2757500,
+            "p50_ns": 3579600,
+            "p95_ns": 7322500,
+            "p99_ns": 8601800,
+            "max_ns": 9389900,
+            "mean_ns": 4273052.777777778
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 885182200,
+            "ns_per_tick": 2458839.4444444445,
+            "min_ns": 1893800,
+            "p50_ns": 2280800,
+            "p95_ns": 3418900,
+            "p99_ns": 3657300,
+            "max_ns": 5047800,
+            "mean_ns": 2458839.4444444445
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 337362300,
+            "ns_per_tick": 937117.5,
+            "min_ns": 744800,
+            "p50_ns": 877500,
+            "p95_ns": 1224700,
+            "p99_ns": 1656000,
+            "max_ns": 2875900,
+            "mean_ns": 937117.5
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 53882000,
+            "ns_per_tick": 149672.22222222222,
+            "min_ns": 95300,
+            "p50_ns": 119500,
+            "p95_ns": 255900,
+            "p99_ns": 306600,
+            "max_ns": 472600,
+            "mean_ns": 149672.22222222222
+          }
+        }
+      },
+      {
+        "owner": "pair3-engine188",
+        "engine_version": "0.0.188",
+        "measured_ticks": 360,
+        "measured_rpc_wall_ns": 5701059500,
+        "native": {
+          "runtime.inspect": {
+            "samples": 360,
+            "total_ns": 745155400,
+            "ns_per_tick": 2069876.111111111,
+            "min_ns": 982000,
+            "p50_ns": 1402400,
+            "p95_ns": 4811600,
+            "p99_ns": 5067400,
+            "max_ns": 5150700,
+            "mean_ns": 2069876.111111111
+          },
+          "runtime.step": {
+            "samples": 360,
+            "total_ns": 1559016000,
+            "ns_per_tick": 4330600.0,
+            "min_ns": 2681000,
+            "p50_ns": 3551400,
+            "p95_ns": 7749300,
+            "p99_ns": 8368700,
+            "max_ns": 8942900,
+            "mean_ns": 4330600.0
+          },
+          "runtime.batch": {
+            "samples": 360,
+            "total_ns": 856470100,
+            "ns_per_tick": 2379083.611111111,
+            "min_ns": 1763100,
+            "p50_ns": 2133200,
+            "p95_ns": 3344900,
+            "p99_ns": 4388400,
+            "max_ns": 4957100,
+            "mean_ns": 2379083.611111111
+          },
+          "runtime.tick": {
+            "samples": 360,
+            "total_ns": 331736700,
+            "ns_per_tick": 921490.8333333334,
+            "min_ns": 749800,
+            "p50_ns": 860500,
+            "p95_ns": 1174900,
+            "p99_ns": 1812000,
+            "max_ns": 2670900,
+            "mean_ns": 921490.8333333334
+          },
+          "runtime.checkpoint": {
+            "samples": 360,
+            "total_ns": 50778200,
+            "ns_per_tick": 141050.55555555556,
+            "min_ns": 66300,
+            "p50_ns": 106400,
+            "p95_ns": 279400,
+            "p99_ns": 299900,
+            "max_ns": 384800,
+            "mean_ns": 141050.55555555556
+          }
+        }
+      }
+    ],
+    "windows": [
+      {
+        "owner": "pair1-engine186",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 658897100,
+            "ns_per_tick": 5490809.166666667,
+            "min_ns": 3103400,
+            "p50_ns": 3882400,
+            "p95_ns": 10690600,
+            "p99_ns": 11349100,
+            "max_ns": 11828500,
+            "mean_ns": 5490809.166666667
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 508200100,
+            "ns_per_tick": 4235000.833333333,
+            "min_ns": 2783400,
+            "p50_ns": 3474800,
+            "p95_ns": 7556400,
+            "p99_ns": 8346100,
+            "max_ns": 8403500,
+            "mean_ns": 4235000.833333333
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 296818600,
+            "ns_per_tick": 2473488.3333333335,
+            "min_ns": 1901300,
+            "p50_ns": 2291100,
+            "p95_ns": 3501100,
+            "p99_ns": 4150100,
+            "max_ns": 4153200,
+            "mean_ns": 2473488.3333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 117020900,
+            "ns_per_tick": 975174.1666666666,
+            "min_ns": 764800,
+            "p50_ns": 895500,
+            "p95_ns": 1265000,
+            "p99_ns": 2439400,
+            "max_ns": 2569200,
+            "mean_ns": 975174.1666666666
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "ee8035544f404600bd4e2cd3c16bd759",
+        "rpc_wall_ns": 2298905600,
+        "rpc_wall_ns_per_tick": 19157546.666666668,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 146325.83333333334,
+          "runtime.batch": 2473488.3333333335,
+          "runtime.tick": 975174.1666666666,
+          "runtime.hierarchy": 1293383.3333333333,
+          "runtime.sync": 1378700.0,
+          "runtime.animation.sample": 815938.3333333334,
+          "runtime.animation.wait": 310516.6666666667,
+          "animation.sample.rig": 807346.6666666666,
+          "runtime.gameplay.tick": 57929.166666666664,
+          "runtime.inspect": 5490809.166666667,
+          "runtime.step": 4235000.833333333,
+          "owner.advance": 2475365.0,
+          "runtime.physics.update": 28033.333333333332
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair1-engine186",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 651811900,
+            "ns_per_tick": 5431765.833333333,
+            "min_ns": 3168100,
+            "p50_ns": 3882400,
+            "p95_ns": 10858800,
+            "p99_ns": 11219800,
+            "max_ns": 11240700,
+            "mean_ns": 5431765.833333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 497464000,
+            "ns_per_tick": 4145533.3333333335,
+            "min_ns": 2820600,
+            "p50_ns": 3430000,
+            "p95_ns": 7280300,
+            "p99_ns": 8292800,
+            "max_ns": 8420000,
+            "mean_ns": 4145533.3333333335
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 300552400,
+            "ns_per_tick": 2504603.3333333335,
+            "min_ns": 1926000,
+            "p50_ns": 2288600,
+            "p95_ns": 3442800,
+            "p99_ns": 3790800,
+            "max_ns": 3824300,
+            "mean_ns": 2504603.3333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 114630400,
+            "ns_per_tick": 955253.3333333334,
+            "min_ns": 757600,
+            "p50_ns": 900200,
+            "p95_ns": 1308400,
+            "p99_ns": 2123000,
+            "max_ns": 2402700,
+            "mean_ns": 955253.3333333334
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "9c6461e7d8404757a692f63192c8e746",
+        "rpc_wall_ns": 2285221700,
+        "rpc_wall_ns_per_tick": 19043514.166666668,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 148948.33333333334,
+          "runtime.batch": 2504603.3333333335,
+          "runtime.tick": 955253.3333333334,
+          "runtime.hierarchy": 1263911.6666666667,
+          "runtime.sync": 1349048.3333333333,
+          "runtime.animation.sample": 862994.1666666666,
+          "runtime.animation.wait": 336289.1666666667,
+          "animation.sample.rig": 863046.6666666666,
+          "runtime.gameplay.tick": 61056.666666666664,
+          "runtime.inspect": 5431765.833333333,
+          "runtime.step": 4145533.3333333335,
+          "owner.advance": 2506495.0,
+          "runtime.physics.update": 32409.166666666668
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair1-engine186",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 634870000,
+            "ns_per_tick": 5290583.333333333,
+            "min_ns": 3167900,
+            "p50_ns": 3930600,
+            "p95_ns": 10605100,
+            "p99_ns": 11335300,
+            "max_ns": 11501700,
+            "mean_ns": 5290583.333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 508830000,
+            "ns_per_tick": 4240250.0,
+            "min_ns": 2757500,
+            "p50_ns": 3526300,
+            "p95_ns": 7360200,
+            "p99_ns": 7964600,
+            "max_ns": 8566300,
+            "mean_ns": 4240250.0
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 293974600,
+            "ns_per_tick": 2449788.3333333335,
+            "min_ns": 1875800,
+            "p50_ns": 2175200,
+            "p95_ns": 3470400,
+            "p99_ns": 4178500,
+            "max_ns": 5001500,
+            "mean_ns": 2449788.3333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 114863000,
+            "ns_per_tick": 957191.6666666666,
+            "min_ns": 754000,
+            "p50_ns": 866600,
+            "p95_ns": 1240600,
+            "p99_ns": 2368900,
+            "max_ns": 2870800,
+            "mean_ns": 957191.6666666666
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "bd903dd63f1441b8a45ba1254f1c830b",
+        "rpc_wall_ns": 2293415300,
+        "rpc_wall_ns_per_tick": 19111794.166666668,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 145420.0,
+          "runtime.batch": 2449788.3333333335,
+          "runtime.tick": 957191.6666666666,
+          "runtime.hierarchy": 1262170.0,
+          "runtime.sync": 1348220.0,
+          "runtime.animation.sample": 825954.1666666666,
+          "runtime.animation.wait": 304906.6666666667,
+          "animation.sample.rig": 793499.1666666666,
+          "runtime.gameplay.tick": 56834.166666666664,
+          "runtime.inspect": 5290583.333333333,
+          "runtime.step": 4240250.0,
+          "owner.advance": 2451635.8333333335,
+          "runtime.physics.update": 26967.5
+        },
+        "export_original_response_id": 1001
+      },
+      {
+        "owner": "pair1-engine188",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 260827300,
+            "ns_per_tick": 2173560.8333333335,
+            "min_ns": 1034900,
+            "p50_ns": 1367400,
+            "p95_ns": 4932400,
+            "p99_ns": 5179300,
+            "max_ns": 5309800,
+            "mean_ns": 2173560.8333333335
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 512557700,
+            "ns_per_tick": 4271314.166666667,
+            "min_ns": 2700700,
+            "p50_ns": 3478500,
+            "p95_ns": 7511800,
+            "p99_ns": 8182200,
+            "max_ns": 8315600,
+            "mean_ns": 4271314.166666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 284395600,
+            "ns_per_tick": 2369963.3333333335,
+            "min_ns": 1739400,
+            "p50_ns": 2157300,
+            "p95_ns": 3394300,
+            "p99_ns": 3828600,
+            "max_ns": 4985200,
+            "mean_ns": 2369963.3333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 114951100,
+            "ns_per_tick": 957925.8333333334,
+            "min_ns": 745300,
+            "p50_ns": 876200,
+            "p95_ns": 1266100,
+            "p99_ns": 2036100,
+            "max_ns": 3938200,
+            "mean_ns": 957925.8333333334
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "1e9cc4d4e87b4d309b2f2613c8f572a6",
+        "rpc_wall_ns": 1943350000,
+        "rpc_wall_ns_per_tick": 16194583.333333334,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 129638.33333333333,
+          "runtime.batch": 2369963.3333333335,
+          "runtime.tick": 957925.8333333334,
+          "runtime.hierarchy": 1221395.0,
+          "runtime.sync": 1305504.1666666667,
+          "runtime.animation.sample": 806422.5,
+          "runtime.animation.wait": 287525.0,
+          "animation.sample.rig": 744975.0,
+          "runtime.gameplay.tick": 56063.333333333336,
+          "runtime.inspect": 2173560.8333333335,
+          "runtime.step": 4271314.166666667,
+          "owner.advance": 2371711.6666666665,
+          "runtime.physics.update": 27030.0
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair1-engine188",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 264618100,
+            "ns_per_tick": 2205150.8333333335,
+            "min_ns": 995900,
+            "p50_ns": 1406900,
+            "p95_ns": 4959200,
+            "p99_ns": 5150600,
+            "max_ns": 5961100,
+            "mean_ns": 2205150.8333333335
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 517460200,
+            "ns_per_tick": 4312168.333333333,
+            "min_ns": 2731600,
+            "p50_ns": 3521300,
+            "p95_ns": 8086500,
+            "p99_ns": 8606600,
+            "max_ns": 8642100,
+            "mean_ns": 4312168.333333333
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 283331800,
+            "ns_per_tick": 2361098.3333333335,
+            "min_ns": 1796900,
+            "p50_ns": 2137900,
+            "p95_ns": 3249700,
+            "p99_ns": 3689400,
+            "max_ns": 4389600,
+            "mean_ns": 2361098.3333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 110582500,
+            "ns_per_tick": 921520.8333333334,
+            "min_ns": 758900,
+            "p50_ns": 871200,
+            "p95_ns": 1184900,
+            "p99_ns": 1465400,
+            "max_ns": 2361100,
+            "mean_ns": 921520.8333333334
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "7409b23cfa4749dbae2949d883c89ebd",
+        "rpc_wall_ns": 1902118200,
+        "rpc_wall_ns_per_tick": 15850985.0,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 138801.66666666666,
+          "runtime.batch": 2361098.3333333335,
+          "runtime.tick": 921520.8333333334,
+          "runtime.hierarchy": 1197012.5,
+          "runtime.sync": 1279415.8333333333,
+          "runtime.animation.sample": 810700.8333333334,
+          "runtime.animation.wait": 305668.3333333333,
+          "animation.sample.rig": 786735.0,
+          "runtime.gameplay.tick": 57112.5,
+          "runtime.inspect": 2205150.8333333335,
+          "runtime.step": 4312168.333333333,
+          "owner.advance": 2362801.6666666665,
+          "runtime.physics.update": 27353.333333333332
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair1-engine188",
+        "pair": 1,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 283741500,
+            "ns_per_tick": 2364512.5,
+            "min_ns": 929200,
+            "p50_ns": 1443800,
+            "p95_ns": 5019000,
+            "p99_ns": 5145200,
+            "max_ns": 5220500,
+            "mean_ns": 2364512.5
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 527995700,
+            "ns_per_tick": 4399964.166666667,
+            "min_ns": 2645600,
+            "p50_ns": 3568800,
+            "p95_ns": 7513400,
+            "p99_ns": 8371300,
+            "max_ns": 8670700,
+            "mean_ns": 4399964.166666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 281815300,
+            "ns_per_tick": 2348460.8333333335,
+            "min_ns": 1760600,
+            "p50_ns": 2189400,
+            "p95_ns": 3199400,
+            "p99_ns": 3656800,
+            "max_ns": 3738500,
+            "mean_ns": 2348460.8333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 108044200,
+            "ns_per_tick": 900368.3333333334,
+            "min_ns": 772800,
+            "p50_ns": 874600,
+            "p95_ns": 1129800,
+            "p99_ns": 1226700,
+            "max_ns": 1255700,
+            "mean_ns": 900368.3333333334
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "a33163388dbe47b395a00d6fc2ebf4bf",
+        "rpc_wall_ns": 1951324300,
+        "rpc_wall_ns_per_tick": 16261035.833333334,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 144543.33333333334,
+          "runtime.batch": 2348460.8333333335,
+          "runtime.tick": 900368.3333333334,
+          "runtime.hierarchy": 1191582.5,
+          "runtime.sync": 1273955.8333333333,
+          "runtime.animation.sample": 798226.6666666666,
+          "runtime.animation.wait": 294708.3333333333,
+          "animation.sample.rig": 763941.6666666666,
+          "runtime.gameplay.tick": 58798.333333333336,
+          "runtime.inspect": 2364512.5,
+          "runtime.step": 4399964.166666667,
+          "owner.advance": 2350188.3333333335,
+          "runtime.physics.update": 27118.333333333332
+        },
+        "export_original_response_id": 1001
+      },
+      {
+        "owner": "pair2-engine188",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 256800300,
+            "ns_per_tick": 2140002.5,
+            "min_ns": 1114100,
+            "p50_ns": 1512400,
+            "p95_ns": 4802300,
+            "p99_ns": 5008300,
+            "max_ns": 5243300,
+            "mean_ns": 2140002.5
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 522083100,
+            "ns_per_tick": 4350692.5,
+            "min_ns": 2897900,
+            "p50_ns": 3799100,
+            "p95_ns": 7565000,
+            "p99_ns": 8125200,
+            "max_ns": 8683000,
+            "mean_ns": 4350692.5
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 274207200,
+            "ns_per_tick": 2285060.0,
+            "min_ns": 1836300,
+            "p50_ns": 2163900,
+            "p95_ns": 3069700,
+            "p99_ns": 3277300,
+            "max_ns": 3625000,
+            "mean_ns": 2285060.0
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 108808800,
+            "ns_per_tick": 906740.0,
+            "min_ns": 758400,
+            "p50_ns": 867500,
+            "p95_ns": 1118000,
+            "p99_ns": 1184900,
+            "max_ns": 1231200,
+            "mean_ns": 906740.0
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "1b1371690d6c43e595fc5db95db7147f",
+        "rpc_wall_ns": 1918093300,
+        "rpc_wall_ns_per_tick": 15984110.833333334,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 130181.66666666667,
+          "runtime.batch": 2285060.0,
+          "runtime.tick": 906740.0,
+          "runtime.hierarchy": 1155079.1666666667,
+          "runtime.sync": 1233657.5,
+          "runtime.animation.sample": 794949.1666666666,
+          "runtime.animation.wait": 296782.5,
+          "animation.sample.rig": 764464.1666666666,
+          "runtime.gameplay.tick": 54660.0,
+          "runtime.inspect": 2140002.5,
+          "runtime.step": 4350692.5,
+          "owner.advance": 2286927.5,
+          "runtime.physics.update": 26281.666666666668
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair2-engine188",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 286980200,
+            "ns_per_tick": 2391501.6666666665,
+            "min_ns": 1077300,
+            "p50_ns": 1510300,
+            "p95_ns": 5001000,
+            "p99_ns": 5228600,
+            "max_ns": 5266900,
+            "mean_ns": 2391501.6666666665
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 535881500,
+            "ns_per_tick": 4465679.166666667,
+            "min_ns": 2812400,
+            "p50_ns": 3673500,
+            "p95_ns": 7428000,
+            "p99_ns": 8214200,
+            "max_ns": 8660700,
+            "mean_ns": 4465679.166666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 283357300,
+            "ns_per_tick": 2361310.8333333335,
+            "min_ns": 1790700,
+            "p50_ns": 2134000,
+            "p95_ns": 3228300,
+            "p99_ns": 4226400,
+            "max_ns": 4344400,
+            "mean_ns": 2361310.8333333335
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 110088900,
+            "ns_per_tick": 917407.5,
+            "min_ns": 763500,
+            "p50_ns": 854300,
+            "p95_ns": 1116600,
+            "p99_ns": 2198200,
+            "max_ns": 2579600,
+            "mean_ns": 917407.5
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "1bb6f2bfda8440a788b0214b3f73a6b4",
+        "rpc_wall_ns": 1976223500,
+        "rpc_wall_ns_per_tick": 16468529.166666666,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 140300.83333333334,
+          "runtime.batch": 2361310.8333333335,
+          "runtime.tick": 917407.5,
+          "runtime.hierarchy": 1190265.8333333333,
+          "runtime.sync": 1271644.1666666667,
+          "runtime.animation.sample": 815785.8333333334,
+          "runtime.animation.wait": 312345.8333333333,
+          "animation.sample.rig": 798778.3333333334,
+          "runtime.gameplay.tick": 56753.333333333336,
+          "runtime.inspect": 2391501.6666666665,
+          "runtime.step": 4465679.166666667,
+          "owner.advance": 2363090.8333333335,
+          "runtime.physics.update": 29259.166666666668
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair2-engine188",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 264831300,
+            "ns_per_tick": 2206927.5,
+            "min_ns": 1010100,
+            "p50_ns": 1445400,
+            "p95_ns": 5035000,
+            "p99_ns": 5291000,
+            "max_ns": 5515800,
+            "mean_ns": 2206927.5
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 533573000,
+            "ns_per_tick": 4446441.666666667,
+            "min_ns": 2723500,
+            "p50_ns": 3717500,
+            "p95_ns": 7707300,
+            "p99_ns": 8398000,
+            "max_ns": 8601800,
+            "mean_ns": 4446441.666666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 288330000,
+            "ns_per_tick": 2402750.0,
+            "min_ns": 1812600,
+            "p50_ns": 2267100,
+            "p95_ns": 3296900,
+            "p99_ns": 3516300,
+            "max_ns": 3772100,
+            "mean_ns": 2402750.0
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 109283700,
+            "ns_per_tick": 910697.5,
+            "min_ns": 746300,
+            "p50_ns": 850500,
+            "p95_ns": 1136200,
+            "p99_ns": 1270100,
+            "max_ns": 2153500,
+            "mean_ns": 910697.5
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "cf05221c2fd145ffb9899e44ca5a2c83",
+        "rpc_wall_ns": 1950081900,
+        "rpc_wall_ns_per_tick": 16250682.5,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 140772.5,
+          "runtime.batch": 2402750.0,
+          "runtime.tick": 910697.5,
+          "runtime.hierarchy": 1234266.6666666667,
+          "runtime.sync": 1317346.6666666667,
+          "runtime.animation.sample": 813065.8333333334,
+          "runtime.animation.wait": 301233.3333333333,
+          "animation.sample.rig": 783135.0,
+          "runtime.gameplay.tick": 57723.333333333336,
+          "runtime.inspect": 2206927.5,
+          "runtime.step": 4446441.666666667,
+          "owner.advance": 2404446.6666666665,
+          "runtime.physics.update": 27120.0
+        },
+        "export_original_response_id": 1001
+      },
+      {
+        "owner": "pair2-engine186",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 646297300,
+            "ns_per_tick": 5385810.833333333,
+            "min_ns": 3151700,
+            "p50_ns": 4483900,
+            "p95_ns": 9386900,
+            "p99_ns": 9565800,
+            "max_ns": 10314100,
+            "mean_ns": 5385810.833333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 514130500,
+            "ns_per_tick": 4284420.833333333,
+            "min_ns": 2759500,
+            "p50_ns": 3525000,
+            "p95_ns": 7540400,
+            "p99_ns": 8228800,
+            "max_ns": 8930700,
+            "mean_ns": 4284420.833333333
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 291782000,
+            "ns_per_tick": 2431516.6666666665,
+            "min_ns": 1924300,
+            "p50_ns": 2219800,
+            "p95_ns": 3392300,
+            "p99_ns": 3647900,
+            "max_ns": 3680200,
+            "mean_ns": 2431516.6666666665
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 110876900,
+            "ns_per_tick": 923974.1666666666,
+            "min_ns": 767200,
+            "p50_ns": 871900,
+            "p95_ns": 1207100,
+            "p99_ns": 1231800,
+            "max_ns": 1500200,
+            "mean_ns": 923974.1666666666
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "6b8ad5e88544485da99f2ba36ce420d7",
+        "rpc_wall_ns": 2401894000,
+        "rpc_wall_ns_per_tick": 20015783.333333332,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 150275.83333333334,
+          "runtime.batch": 2431516.6666666665,
+          "runtime.tick": 923974.1666666666,
+          "runtime.hierarchy": 1245750.0,
+          "runtime.sync": 1330020.8333333333,
+          "runtime.animation.sample": 815675.8333333334,
+          "runtime.animation.wait": 307825.0,
+          "animation.sample.rig": 801125.0,
+          "runtime.gameplay.tick": 58979.166666666664,
+          "runtime.inspect": 5385810.833333333,
+          "runtime.step": 4284420.833333333,
+          "owner.advance": 2433555.8333333335,
+          "runtime.physics.update": 27968.333333333332
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair2-engine186",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 649189600,
+            "ns_per_tick": 5409913.333333333,
+            "min_ns": 3172100,
+            "p50_ns": 3948800,
+            "p95_ns": 10403200,
+            "p99_ns": 11122500,
+            "max_ns": 11292800,
+            "mean_ns": 5409913.333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 520417500,
+            "ns_per_tick": 4336812.5,
+            "min_ns": 2748800,
+            "p50_ns": 3473600,
+            "p95_ns": 7892700,
+            "p99_ns": 8427700,
+            "max_ns": 8742100,
+            "mean_ns": 4336812.5
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 296212800,
+            "ns_per_tick": 2468440.0,
+            "min_ns": 1859600,
+            "p50_ns": 2242500,
+            "p95_ns": 3418600,
+            "p99_ns": 3570500,
+            "max_ns": 3692000,
+            "mean_ns": 2468440.0
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 109803200,
+            "ns_per_tick": 915026.6666666666,
+            "min_ns": 749900,
+            "p50_ns": 858700,
+            "p95_ns": 1163600,
+            "p99_ns": 1236900,
+            "max_ns": 1407700,
+            "mean_ns": 915026.6666666666
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "5649e8ba108f48eab20b5756d4297e6e",
+        "rpc_wall_ns": 2311019600,
+        "rpc_wall_ns_per_tick": 19258496.666666668,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 158940.83333333334,
+          "runtime.batch": 2468440.0,
+          "runtime.tick": 915026.6666666666,
+          "runtime.hierarchy": 1258039.1666666667,
+          "runtime.sync": 1346839.1666666667,
+          "runtime.animation.sample": 825885.8333333334,
+          "runtime.animation.wait": 315685.0,
+          "animation.sample.rig": 816690.0,
+          "runtime.gameplay.tick": 60266.666666666664,
+          "runtime.inspect": 5409913.333333333,
+          "runtime.step": 4336812.5,
+          "owner.advance": 2470415.0,
+          "runtime.physics.update": 28431.666666666668
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair2-engine186",
+        "pair": 2,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 657353800,
+            "ns_per_tick": 5477948.333333333,
+            "min_ns": 3111400,
+            "p50_ns": 4195000,
+            "p95_ns": 10359800,
+            "p99_ns": 11231300,
+            "max_ns": 11312000,
+            "mean_ns": 5477948.333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 513085400,
+            "ns_per_tick": 4275711.666666667,
+            "min_ns": 2735700,
+            "p50_ns": 3494100,
+            "p95_ns": 7414100,
+            "p99_ns": 7965100,
+            "max_ns": 8529100,
+            "mean_ns": 4275711.666666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 289050600,
+            "ns_per_tick": 2408755.0,
+            "min_ns": 1907100,
+            "p50_ns": 2270800,
+            "p95_ns": 3180700,
+            "p99_ns": 3471800,
+            "max_ns": 3478600,
+            "mean_ns": 2408755.0
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 109397900,
+            "ns_per_tick": 911649.1666666666,
+            "min_ns": 769100,
+            "p50_ns": 880700,
+            "p95_ns": 1092500,
+            "p99_ns": 1176000,
+            "max_ns": 2205000,
+            "mean_ns": 911649.1666666666
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "f8fc80b57edc46438071d05826d64621",
+        "rpc_wall_ns": 2326193100,
+        "rpc_wall_ns_per_tick": 19384942.5,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 150995.83333333334,
+          "runtime.batch": 2408755.0,
+          "runtime.tick": 911649.1666666666,
+          "runtime.hierarchy": 1231861.6666666667,
+          "runtime.sync": 1314065.8333333333,
+          "runtime.animation.sample": 807005.0,
+          "runtime.animation.wait": 308660.8333333333,
+          "animation.sample.rig": 794878.3333333334,
+          "runtime.gameplay.tick": 61244.166666666664,
+          "runtime.inspect": 5477948.333333333,
+          "runtime.step": 4275711.666666667,
+          "owner.advance": 2410719.1666666665,
+          "runtime.physics.update": 28371.666666666668
+        },
+        "export_original_response_id": 1001
+      },
+      {
+        "owner": "pair3-engine186",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 592990000,
+            "ns_per_tick": 4941583.333333333,
+            "min_ns": 3078800,
+            "p50_ns": 3744900,
+            "p95_ns": 9465400,
+            "p99_ns": 11153800,
+            "max_ns": 11537400,
+            "mean_ns": 4941583.333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 491301400,
+            "ns_per_tick": 4094178.3333333335,
+            "min_ns": 2786700,
+            "p50_ns": 3532300,
+            "p95_ns": 6679300,
+            "p99_ns": 8141300,
+            "max_ns": 8300200,
+            "mean_ns": 4094178.3333333335
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 291299600,
+            "ns_per_tick": 2427496.6666666665,
+            "min_ns": 1893800,
+            "p50_ns": 2285800,
+            "p95_ns": 3255000,
+            "p99_ns": 3480200,
+            "max_ns": 3624900,
+            "mean_ns": 2427496.6666666665
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 111355000,
+            "ns_per_tick": 927958.3333333334,
+            "min_ns": 766800,
+            "p50_ns": 883200,
+            "p95_ns": 1170600,
+            "p99_ns": 1314400,
+            "max_ns": 1347900,
+            "mean_ns": 927958.3333333334
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "108c7105a4674180b8434cd7303c6179",
+        "rpc_wall_ns": 2248845300,
+        "rpc_wall_ns_per_tick": 18740377.5,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 144520.0,
+          "runtime.batch": 2427496.6666666665,
+          "runtime.tick": 927958.3333333334,
+          "runtime.hierarchy": 1247822.5,
+          "runtime.sync": 1331425.8333333333,
+          "runtime.animation.sample": 822664.1666666666,
+          "runtime.animation.wait": 301410.0,
+          "animation.sample.rig": 774364.1666666666,
+          "runtime.gameplay.tick": 56879.166666666664,
+          "runtime.inspect": 4941583.333333333,
+          "runtime.step": 4094178.3333333335,
+          "owner.advance": 2429686.6666666665,
+          "runtime.physics.update": 27737.5
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair3-engine186",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 592592200,
+            "ns_per_tick": 4938268.333333333,
+            "min_ns": 3161300,
+            "p50_ns": 3727100,
+            "p95_ns": 8863300,
+            "p99_ns": 11378100,
+            "max_ns": 11790800,
+            "mean_ns": 4938268.333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 515400700,
+            "ns_per_tick": 4295005.833333333,
+            "min_ns": 2757500,
+            "p50_ns": 3462400,
+            "p95_ns": 7472000,
+            "p99_ns": 8608800,
+            "max_ns": 8901600,
+            "mean_ns": 4295005.833333333
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 297392000,
+            "ns_per_tick": 2478266.6666666665,
+            "min_ns": 1894200,
+            "p50_ns": 2237400,
+            "p95_ns": 3475300,
+            "p99_ns": 3587800,
+            "max_ns": 4018700,
+            "mean_ns": 2478266.6666666665
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 113985700,
+            "ns_per_tick": 949880.8333333334,
+            "min_ns": 744800,
+            "p50_ns": 872600,
+            "p95_ns": 1273800,
+            "p99_ns": 1691500,
+            "max_ns": 2277200,
+            "mean_ns": 949880.8333333334
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "258466cec08f43f7b3706cb77bbaeb1d",
+        "rpc_wall_ns": 2338816100,
+        "rpc_wall_ns_per_tick": 19490134.166666668,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 153772.5,
+          "runtime.batch": 2478266.6666666665,
+          "runtime.tick": 949880.8333333334,
+          "runtime.hierarchy": 1262094.1666666667,
+          "runtime.sync": 1345478.3333333333,
+          "runtime.animation.sample": 845720.0,
+          "runtime.animation.wait": 307648.3333333333,
+          "animation.sample.rig": 790813.3333333334,
+          "runtime.gameplay.tick": 58736.666666666664,
+          "runtime.inspect": 4938268.333333333,
+          "runtime.step": 4295005.833333333,
+          "owner.advance": 2480218.3333333335,
+          "runtime.physics.update": 28590.833333333332
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair3-engine186",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.186",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 671138500,
+            "ns_per_tick": 5592820.833333333,
+            "min_ns": 3175800,
+            "p50_ns": 4361300,
+            "p95_ns": 10559800,
+            "p99_ns": 11116300,
+            "max_ns": 11207400,
+            "mean_ns": 5592820.833333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 531596900,
+            "ns_per_tick": 4429974.166666667,
+            "min_ns": 2808400,
+            "p50_ns": 3842700,
+            "p95_ns": 7000500,
+            "p99_ns": 7870800,
+            "max_ns": 9389900,
+            "mean_ns": 4429974.166666667
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 296490600,
+            "ns_per_tick": 2470755.0,
+            "min_ns": 1928400,
+            "p50_ns": 2287600,
+            "p95_ns": 3299800,
+            "p99_ns": 3845000,
+            "max_ns": 5047800,
+            "mean_ns": 2470755.0
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 112021600,
+            "ns_per_tick": 933513.3333333334,
+            "min_ns": 769000,
+            "p50_ns": 866800,
+            "p95_ns": 1204200,
+            "p99_ns": 1656000,
+            "max_ns": 2875900,
+            "mean_ns": 933513.3333333334
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "bdad92a5135b491092b22070af4378f6",
+        "rpc_wall_ns": 2355687000,
+        "rpc_wall_ns_per_tick": 19630725.0,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 150724.16666666666,
+          "runtime.batch": 2470755.0,
+          "runtime.tick": 933513.3333333334,
+          "runtime.hierarchy": 1267269.1666666667,
+          "runtime.sync": 1352695.8333333333,
+          "runtime.animation.sample": 832356.6666666666,
+          "runtime.animation.wait": 306799.1666666667,
+          "animation.sample.rig": 795481.6666666666,
+          "runtime.gameplay.tick": 59932.5,
+          "runtime.inspect": 5592820.833333333,
+          "runtime.step": 4429974.166666667,
+          "owner.advance": 2472725.8333333335,
+          "runtime.physics.update": 28155.833333333332
+        },
+        "export_original_response_id": 1001
+      },
+      {
+        "owner": "pair3-engine188",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 219338800,
+            "ns_per_tick": 1827823.3333333333,
+            "min_ns": 982000,
+            "p50_ns": 1367900,
+            "p95_ns": 4635500,
+            "p99_ns": 4983300,
+            "max_ns": 5037800,
+            "mean_ns": 1827823.3333333333
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 495424200,
+            "ns_per_tick": 4128535.0,
+            "min_ns": 2681000,
+            "p50_ns": 3451700,
+            "p95_ns": 7749300,
+            "p99_ns": 8032800,
+            "max_ns": 8530800,
+            "mean_ns": 4128535.0
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 276696500,
+            "ns_per_tick": 2305804.1666666665,
+            "min_ns": 1772300,
+            "p50_ns": 2107500,
+            "p95_ns": 3196000,
+            "p99_ns": 3573800,
+            "max_ns": 3662700,
+            "mean_ns": 2305804.1666666665
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 108998700,
+            "ns_per_tick": 908322.5,
+            "min_ns": 763800,
+            "p50_ns": 856400,
+            "p95_ns": 1153600,
+            "p99_ns": 1252500,
+            "max_ns": 1266600,
+            "mean_ns": 908322.5
+          }
+        },
+        "window": 1,
+        "ticks": [
+          120,
+          240
+        ],
+        "events": 8880,
+        "capture_id": "6be28a3f48714365ac88c0b421283a7f",
+        "rpc_wall_ns": 1845288800,
+        "rpc_wall_ns_per_tick": 15377406.666666666,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 130030.0,
+          "runtime.batch": 2305804.1666666665,
+          "runtime.tick": 908322.5,
+          "runtime.hierarchy": 1177902.5,
+          "runtime.sync": 1260172.5,
+          "runtime.animation.sample": 791304.1666666666,
+          "runtime.animation.wait": 290702.5,
+          "animation.sample.rig": 755178.3333333334,
+          "runtime.gameplay.tick": 54073.333333333336,
+          "runtime.inspect": 1827823.3333333333,
+          "runtime.step": 4128535.0,
+          "owner.advance": 2307359.1666666665,
+          "runtime.physics.update": 26449.166666666668
+        },
+        "export_original_response_id": 503
+      },
+      {
+        "owner": "pair3-engine188",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 269615700,
+            "ns_per_tick": 2246797.5,
+            "min_ns": 1013600,
+            "p50_ns": 1402400,
+            "p95_ns": 4941800,
+            "p99_ns": 5067400,
+            "max_ns": 5102800,
+            "mean_ns": 2246797.5
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 523482600,
+            "ns_per_tick": 4362355.0,
+            "min_ns": 2686100,
+            "p50_ns": 3548900,
+            "p95_ns": 7723400,
+            "p99_ns": 8307200,
+            "max_ns": 8389700,
+            "mean_ns": 4362355.0
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 287169500,
+            "ns_per_tick": 2393079.1666666665,
+            "min_ns": 1763100,
+            "p50_ns": 2164400,
+            "p95_ns": 3317700,
+            "p99_ns": 4388400,
+            "max_ns": 4500400,
+            "mean_ns": 2393079.1666666665
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 110535200,
+            "ns_per_tick": 921126.6666666666,
+            "min_ns": 749800,
+            "p50_ns": 860100,
+            "p95_ns": 1174900,
+            "p99_ns": 1282400,
+            "max_ns": 2192600,
+            "mean_ns": 921126.6666666666
+          }
+        },
+        "window": 2,
+        "ticks": [
+          240,
+          360
+        ],
+        "events": 8880,
+        "capture_id": "229a8ca47e3945bb91869ce8292fcaa3",
+        "rpc_wall_ns": 1918939300,
+        "rpc_wall_ns_per_tick": 15991160.833333334,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 144410.83333333334,
+          "runtime.batch": 2393079.1666666665,
+          "runtime.tick": 921126.6666666666,
+          "runtime.hierarchy": 1214423.3333333333,
+          "runtime.sync": 1300131.6666666667,
+          "runtime.animation.sample": 815412.5,
+          "runtime.animation.wait": 298344.1666666667,
+          "animation.sample.rig": 783778.3333333334,
+          "runtime.gameplay.tick": 57175.0,
+          "runtime.inspect": 2246797.5,
+          "runtime.step": 4362355.0,
+          "owner.advance": 2394742.5,
+          "runtime.physics.update": 28647.5
+        },
+        "export_original_response_id": 752
+      },
+      {
+        "owner": "pair3-engine188",
+        "pair": 3,
+        "batch": 1,
+        "engine_version": "0.0.188",
+        "native_per_invocation_stats": {
+          "runtime.inspect": {
+            "samples": 120,
+            "total_ns": 256200900,
+            "ns_per_tick": 2135007.5,
+            "min_ns": 1003800,
+            "p50_ns": 1404700,
+            "p95_ns": 4722300,
+            "p99_ns": 5139500,
+            "max_ns": 5150700,
+            "mean_ns": 2135007.5
+          },
+          "runtime.step": {
+            "samples": 120,
+            "total_ns": 540109200,
+            "ns_per_tick": 4500910.0,
+            "min_ns": 2793000,
+            "p50_ns": 3657900,
+            "p95_ns": 7576200,
+            "p99_ns": 8368700,
+            "max_ns": 8942900,
+            "mean_ns": 4500910.0
+          },
+          "runtime.batch": {
+            "samples": 120,
+            "total_ns": 292604100,
+            "ns_per_tick": 2438367.5,
+            "min_ns": 1837600,
+            "p50_ns": 2133700,
+            "p95_ns": 3462800,
+            "p99_ns": 4604000,
+            "max_ns": 4957100,
+            "mean_ns": 2438367.5
+          },
+          "runtime.tick": {
+            "samples": 120,
+            "total_ns": 112202800,
+            "ns_per_tick": 935023.3333333334,
+            "min_ns": 777200,
+            "p50_ns": 868100,
+            "p95_ns": 1217300,
+            "p99_ns": 2193400,
+            "max_ns": 2670900,
+            "mean_ns": 935023.3333333334
+          }
+        },
+        "window": 3,
+        "ticks": [
+          360,
+          480
+        ],
+        "events": 8880,
+        "capture_id": "0a0932aaf2274ae0b1b614d7c1591214",
+        "rpc_wall_ns": 1936831400,
+        "rpc_wall_ns_per_tick": 16140261.666666666,
+        "native_inclusive_ns_per_tick": {
+          "runtime.checkpoint": 148710.83333333334,
+          "runtime.batch": 2438367.5,
+          "runtime.tick": 935023.3333333334,
+          "runtime.hierarchy": 1215382.5,
+          "runtime.sync": 1299361.6666666667,
+          "runtime.animation.sample": 855413.3333333334,
+          "runtime.animation.wait": 308594.1666666667,
+          "animation.sample.rig": 804952.5,
+          "runtime.gameplay.tick": 58577.5,
+          "runtime.inspect": 2135007.5,
+          "runtime.step": 4500910.0,
+          "owner.advance": 2440098.3333333335,
+          "runtime.physics.update": 27350.833333333332
+        },
+        "export_original_response_id": 1001
+      }
+    ],
+    "export_reconstruction": {
+      "export_unit": "microseconds",
+      "native_summary_unit": "nanoseconds",
+      "derived_method": "round(original_export_dur_us*1000), validated against every original CPU summary statistic; original responses untouched",
+      "maximum_rounding_residual_ns": 9.313225746154785e-10
+    },
+    "rpc_wall_scope": "External helper includes Python, guard and step transport, response validation and retained writes."
+  },
+  "observed_reductions": {
+    "inspect_mean_fraction": 0.5894185135778789,
+    "rpc_loop_fraction": 0.16863602051116244,
+    "all_three_pairs_inspect_and_loop_means_improve": true,
+    "native_step_mean_increases_slightly": true,
+    "universal_simulation_or_fps_improvement": false
+  },
+  "independent_reviews": {
+    "windows_build_actual_v1.json": {
+      "report": {
+        "bytes": 9742,
+        "sha256": "6546c1190fce96cecf5b1aa8294f65c3566335f2010f11a8011845c4876e8e46"
+      },
+      "scope": "Actual sources/tools/configuration/executables/core and prior artifact preservation."
+    },
+    "windows_contracts_actual_v1.json": {
+      "report": {
+        "bytes": 87207,
+        "sha256": "258afc3e5d04efafbf501f4aecefe52d98a04fa729ca5f764bebef1027bd3b69"
+      },
+      "scope": "Actual eight Windows QA phases, original focused saved operands and owned closure."
+    },
+    "linux_actual_v1.json": {
+      "report": {
+        "bytes": 12880,
+        "sha256": "9c1b79c8d03bacbca3f536f1b1faa102816a7b11915aa8500a002d8f7c7cdee7"
+      },
+      "scope": "Actual Linux build and five QA phases, explicit capability skip and subreaper closure."
+    },
+    "guard_actual_v1.json": {
+      "report": {
+        "bytes": 49170,
+        "sha256": "0efa04b6c5dc95239f04e83cfb8df4d52d168df179fb9d6d959ee093c1c9ffdc"
+      },
+      "scope": "All 103 inputs, original RPCs, complete snapshots, prospective forecasts and actual Job closure."
+    },
+    "guard_profile_actual_v1.json": {
+      "report": {
+        "bytes": 144323,
+        "sha256": "dbea96ef63470704a5545ef364e955b2bc258404bcffa33aef81a94334fd446e"
+      },
+      "scope": "Original 18 captures, 159840 events, summaries and all selected statistics reconstructed."
+    }
+  },
+  "failed_file_only_attempts": [
+    {
+      "stage": "Guard plan preparation",
+      "outcome": "Windows Python invocation rejected mounted-path conversion before output or any engine actor.",
+      "successor": "Same unchanged preparer ran through Linux Python with an absolute mounted output."
+    },
+    {
+      "stage": "Windows build audit reader",
+      "outcome": "Reader assumed a newer errors field in the retained 0.0.182 result format. No artifact or engine failure.",
+      "successor": "Reader uses that original format's passed, unforced and unchanged-input fields; original receipts remain intact."
+    }
+  ],
+  "limits": [
+    "One short CPU cohort on one laptop, with profiling; no rendered FPS, input latency, first-miss cost or general throughput guarantee.",
+    "Same fixed one-tick observer cadence in both arms; durations include unisolated caches, thermals, OS scheduling, JIT and ordinary GC.",
+    "Native step mean rises slightly; inspection improvement does not prove every simulation region improved.",
+    "No memory-growth cause, rendered observer-overhead, thirty-minute reliability, physical input, clean-install or Alpha closure.",
+    "Exact reproduction needs retained world/assets, original compiled gameplay closure, bridge/SDK closure, hostfxr and original traces; not a clean-checkout benchmark.",
+    "Original game and selected bridge SDK hashes differ; separately qualified actual consumption, not ABI-number inference.",
+    "Remaining unconditional model-cache reference scanning is a source-supported candidate, not an isolated timing cause in this measurement."
+  ]
+}

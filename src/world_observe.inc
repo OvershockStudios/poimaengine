@@ -25,7 +25,7 @@
             {"component_revision",runtime_->component_revision()},{"gameplay_revision",runtime_->gameplay_revision()},
             {"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()},
             {"authored_revision",runtime_definition_.authored_revision},{"current_authored_revision",doc_.at("revision")},
-            {"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
+            {"source_stale",runtime_source_stale()},
             {"entities",Json::array()},{"component_types",Json::array()},{"query",nullptr}};
         for(const auto* key:{"structure_revision","component_revision","gameplay_revision","ui_revision","control_sequence"})
             if(params.contains(key))require(revision(params.at(key))==result.at(key),std::string("Runtime observation revision conflict: ")+key,-32009);

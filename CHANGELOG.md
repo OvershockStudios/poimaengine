@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.188
+
+- Reuse unchanged authored-source comparisons across runtime inspection, observation and material/texture reads. Invalidate on every relevant committed document replacement, including same-revision save restores; preserve live summary fields and complete saved state. [Contract and checks](docs/RUNTIME_SOURCE_STATE.md).
+- Compare the retained and updated native engines at identical one-tick cadence in Performance Yard. Mean native inspection falls from 5.329 to 2.188 ms in this bounded CPU workload; keep simulation and rendered-performance claims separate. [Results](docs/evidence/m2-runtime-inspection.json).
+
 ## 0.0.187
 
 - Compare one-tick and sixty-tick CPU stepping in the full Performance Yard with unchanged gameplay, complete state forecasts and independently checked profiler captures. Separate RPC, checkpoint and animation/hierarchy costs before selecting runtime optimizations. [Findings and measurement boundaries](docs/RUNTIME_BATCHING.md).

@@ -1,8 +1,29 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.187**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.188**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.188 caches the exact [authored-source staleness comparison](RUNTIME_SOURCE_STATE.md)
+until either committed document changes. Runtime start, save activation, live
+material/texture adoption and authored persistence invalidate it; revision equality
+alone never decides content equality. Other live summary fields remain fresh.
+
+Windows native qualification passes 1,939 focused checks and nine complete
+saved-byte pairs, including different frozen content at the same authored revision.
+Session, material, texture, save, schema, core and metadata checks also pass.
+The Linux headless build passes its authoring/core/metadata checks; its
+simulation-disabled runtime test is explicitly skipped.
+
+A separate full Performance Yard comparison uses six fresh owners at identical
+one-tick cadence. It retains 6,048 RPC pairs, eighteen profiler captures,
+twenty-four complete v7 checkpoints and twelve whole-state epoch forecasts.
+Mean native inspection falls from 5.329 to 2.188 ms; external helper time per tick
+falls from 19.315 to 16.058 ms. Native step mean rises slightly, so this is no
+general simulation-speed or FPS claim. All processes close naturally and the
+full forecasts agree. Remaining observation costs, rendered performance,
+memory-growth causes and the broader Alpha gate stay open.
+[Results and scope](evidence/m2-runtime-inspection.json).
 
 Version 0.0.187 records a [matched CPU stepping investigation](RUNTIME_BATCHING.md)
 using the sealed 0.0.186 Windows engine, qualified 0.0.185 bridge and original

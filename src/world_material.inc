@@ -43,7 +43,7 @@
             }
             return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"material_revision",runtime_->material_revision()},
                 {"authored_revision",runtime_definition_.authored_revision},{"current_authored_revision",doc_.at("revision")},
-                {"content_sha256",runtime_content_hash_},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
+                {"content_sha256",runtime_content_hash_},{"source_stale",runtime_source_stale()},
                 {"materials",std::move(rows)}};
         }
         require(method=="runtime.material.apply","Unknown runtime material operation.",-32601);
@@ -104,6 +104,6 @@
         auto receipts=runtime_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",result}});
         static_assert(std::is_nothrow_move_assignable_v<RuntimeDefinition>);
         if(!runtime_->commit_materials(std::move(prepared)))throw Error(-32009,"Runtime changed during material preparation.");
-        runtime_definition_=std::move(definition);runtime_document_.swap(target.document);runtime_content_hash_.swap(target.hash);runtime_receipts_.swap(receipts);
+        runtime_definition_=std::move(definition);runtime_document_.swap(target.document);invalidate_runtime_source_stale();runtime_content_hash_.swap(target.hash);runtime_receipts_.swap(receipts);
         return result;
     }

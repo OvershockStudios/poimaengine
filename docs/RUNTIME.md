@@ -7,6 +7,8 @@ Poima 0.0.5 adds an optional EnTT/Jolt runtime alongside authored-world editing.
 For the cost of explicit stepping, observation frequency and rollback preparation,
 see the [full-workload batching investigation](RUNTIME_BATCHING.md). Grouped
 headless stepping and interactive player frames have different timing boundaries.
+The [source-state contract](RUNTIME_SOURCE_STATE.md) explains `source_stale`
+and repeated observations across edits, saves and live adoption.
 
 ```sh
 cmake --preset runtime-headless

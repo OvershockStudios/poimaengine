@@ -995,6 +995,15 @@ class World {
     std::shared_ptr<GamepadHost> gamepad_host_;
     RuntimeDefinition runtime_definition_;
     Json runtime_document_;
+    // Both documents publish on the owner thread. Runtime ticks do not change
+    // either authored baseline, so cache only this predicate, not the summary.
+    mutable std::optional<bool> runtime_source_stale_cache_;
+    void invalidate_runtime_source_stale() noexcept { runtime_source_stale_cache_.reset(); }
+    bool runtime_source_stale() const {
+        if(!runtime_source_stale_cache_.has_value())
+            runtime_source_stale_cache_=runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_);
+        return *runtime_source_stale_cache_;
+    }
     std::string runtime_content_hash_;
     std::optional<GameplayConfig> runtime_gameplay_config_;
     fs::path protected_root_,save_root_;
@@ -1147,6 +1156,7 @@ class World {
         // All potentially failing preparation precedes publication. Swapping
         // state after rename cannot accidentally roll back a committed request.
         doc_.swap(candidate);
+        invalidate_runtime_source_stale();
         presentation_shapes_.swap(presentation_shapes);presentation_incarnation_cursor_=presentation_cursor;
         disk_.swap(bytes);
         exists_ = true;
@@ -2786,7 +2796,7 @@ public:
     Json runtime_summary() const {
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
-            {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
+            {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_source_stale()},
             {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"material_revision",runtime_->material_revision()},{"content_sha256",runtime_content_hash_},{"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
@@ -3293,13 +3303,16 @@ public:
             Json result={{"session_id",id},{"authored_revision",definition.authored_revision},{"tick",0},{"started",true},{"replayed",false}};
             auto start_params=params,start_result=result;auto session_id=id;auto used=used_runtime_ids_;used.insert(id);Json receipts=Json::array();
             runtime_start_params_.swap(start_params);runtime_start_result_.swap(start_result);runtime_id_.swap(session_id);
-            used_runtime_ids_.swap(used);runtime_receipts_.swap(receipts);runtime_definition_=std::move(definition);runtime_document_.swap(frozen.document);runtime_content_hash_.swap(frozen.hash);runtime_gameplay_config_.reset();runtime_.swap(candidate);
+            used_runtime_ids_.swap(used);runtime_receipts_.swap(receipts);runtime_definition_=std::move(definition);runtime_document_.swap(frozen.document);
+            invalidate_runtime_source_stale();
+            runtime_content_hash_.swap(frozen.hash);runtime_gameplay_config_.reset();runtime_.swap(candidate);
             return result;
         }
         if(method=="runtime.stop") {
             fields(params,{"session_id"},{"session_id"}); const auto id=identifier(params.at("session_id"));
             if(!runtime_ && stopped_runtime_id_==id) return {{"session_id",id},{"stopped",true},{"replayed",true}};
             runtime_guard(params);require(!runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before stopping the runtime.",-32070); stopped_runtime_id_=id; runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
+            invalidate_runtime_source_stale();
             return {{"session_id",id},{"stopped",true},{"replayed",false}};
         }
         if(method=="runtime.inspect") { fields(params,{"session_id"},{"session_id"}); runtime_guard(params); return runtime_summary(); }
