@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.190
+
+- Extend passive managed-memory observations to the reachable retired-context range while preserving module admission, collection policy, strict wire validation and saved state. [Bounds and compatibility](docs/MANAGED_MEMORY.md#retirement-observation-bounds).
+
 ## 0.0.189
 
 - Reuse the authored model/image reference set between committed edits while still evicting unreferenced assets on every prune. Preserve rejected-edit recovery, undo/redo and fresh package verification. [Cache contract](docs/ASSETS.md#authoring-cache-and-fresh-verification).

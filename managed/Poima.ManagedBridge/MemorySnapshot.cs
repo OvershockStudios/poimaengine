@@ -19,6 +19,10 @@ internal sealed record MemorySnapshotDocument(string format,int version,int proc
 // liveness is sampled without Target access, collection or list pruning.
 internal static class MemorySnapshot
 {
+    // Admission limits active modules to 32 and rejects new loads at 1024
+    // retired entries. Releasing the other admitted modules can retain 1055
+    // weak entries; observation must not collect or prune to fit admission.
+    private const int MaximumObservedRetiredContexts=1024+32-1;
     internal static bool Requested(JsonElement request)
     {
         if(!request.TryGetProperty("memory_snapshot_version",out var version))return false;
@@ -39,7 +43,7 @@ internal static class MemorySnapshot
     internal static string Serialize(int activeModules,IReadOnlyList<WeakReference> retired)
     {
         long start=Stopwatch.GetTimestamp();
-        if(activeModules is <0 or >32 || retired.Count>1024)
+        if(activeModules is <0 or >32 || retired.Count>MaximumObservedRetiredContexts)
             throw new InvalidOperationException("Managed memory context counts exceed their bounds.");
         int tracked=retired.Count,alive=0;
         foreach(var reference in retired)if(reference.IsAlive)++alive;

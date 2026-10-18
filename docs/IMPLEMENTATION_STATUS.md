@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.189**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.190**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.190 extends [passive managed-memory reporting](MANAGED_MEMORY.md#retirement-observation-bounds)
+to the reachable retired-context range. Load admission stays at 32 active modules
+and 1,024 retired entries. Releases of already admitted modules can leave 1,055
+retired entries, or 1,054 while an observer is still live. Both the matching bridge
+and native parser accept the expanded diagnostic range; older consumers can still
+reject it. The gameplay ABI, save formats and collection policy are unchanged.
+
+Actual compiled Windows and Linux lifetime fixtures each compare the retained
+bridge with the corrected bridge, using 1,055 real accepted contexts per run.
+The retained bridge refuses observations above 1,024; the corrected bridge
+reports 1,054 without changing the complete twelve-byte gameplay state, then
+successfully executes Tick. Controlled strong roots establish the test condition;
+they do not demonstrate a game leak. Explicit collection occurs only in separate
+teardown after the decisive probes.
+
+Both native builds pass 349 parser cases, two complete replays of their actual
+managed 1,054-context observations, five core tests and three metadata checks.
+A separate Windows hosted regression retains 206 RPC pairs, fourteen complete
+checkpoint references and six whole-state equality pairs across current CoreCLR,
+older-bridge and Native AOT cases. All original owners close naturally without
+forced cleanup. These focused checks do not close representative performance,
+memory-growth causes, interaction or the broader Alpha gates.
+[Results and scope](evidence/m2-managed-retirement-bounds.json).
 
 Version 0.0.189 reuses the exact [authored asset-reference set](ASSETS.md#authoring-cache-and-fresh-verification)
 between committed edits. Model/image eviction and cooked-byte accounting still

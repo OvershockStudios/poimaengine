@@ -1,0 +1,769 @@
+{
+  "format": "poima.evidence.managed-retirement-bounds.v1",
+  "checkpoint": "0.0.190",
+  "passed": true,
+  "behavior": {
+    "active_module_admission_limit": 32,
+    "retired_entry_load_admission_limit": 1024,
+    "observed_retired_global_limit": 1055,
+    "maximum_retired_with_live_observer": 1054,
+    "load_admission_changed": false,
+    "passive_collection": false,
+    "passive_pruning": false,
+    "abi_changed": false,
+    "checkpoint_format_changed": false,
+    "diagnostic_negotiation_version_changed": false,
+    "wire_capacity_bytes": 8192,
+    "compatibility": "Both updated bridge and native parser are needed above 1024. This evolving diagnostic is outside frozen authoring-core and runtime-game-session v1; older consumers can reject the expanded range."
+  },
+  "sources": {
+    "managed/Poima.ManagedBridge/MemorySnapshot.cs": {
+      "bytes": 4400,
+      "sha256": "78113628a3d9b9ddad3b52c9da73875c6be49e87dd815973503569946907d57f"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 14824,
+      "sha256": "8f8506167aebe574c5e8308dd1d0d22f1acf5735cc198fd56c2e3774bd0f62ad"
+    },
+    "src/managed_memory_json.hpp": {
+      "bytes": 6631,
+      "sha256": "7305199496d0c028bd450faf7f8786af38a228a65eda1f55e734bbdbf2d10148"
+    },
+    "tests/managed_memory_json.cpp": {
+      "bytes": 9934,
+      "sha256": "15fda2c02b18e93f2166c5367eb817617672c084eafae968f11333d427c23eb4"
+    },
+    "tests/managed_retirement_bounds/Program.cs": {
+      "bytes": 27278,
+      "sha256": "11554203636bf62374d28472b8bba7316a114793a4e636fe5eb65036236befb0"
+    },
+    "tests/managed_retirement_bounds/ManagedRetirementBounds.csproj": {
+      "bytes": 863,
+      "sha256": "ed7e4efb44f911598836466ec2b0bfad534dbcee3b299e5ac3f801a366e1f6cb"
+    }
+  },
+  "toolchain": {
+    "dotnet_sdk": "10.0.401",
+    "managed_runtime": "10.0.12",
+    "sdk_rebuilt": false
+  },
+  "managed": {
+    "windows": {
+      "passed": true,
+      "owner_seconds": 28.363432600002852,
+      "worker_seconds": 21.369280200000503,
+      "report": {
+        "bytes": 946524,
+        "sha256": "ce154b0e30f1a827da11a4bfbdb5174af5d09f480b5bb9bc5bd20e240c18e4b4"
+      },
+      "owner": {
+        "bytes": 37195,
+        "sha256": "6b04fb307b762b49e81ee5d8b257a24d246a19ab452c2c177f039a1dcd983b36"
+      },
+      "candidate_bridge_files": {
+        "Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+        },
+        "Poima.Gameplay.pdb": {
+          "bytes": 40360,
+          "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+        },
+        "Poima.ManagedBridge.deps.json": {
+          "bytes": 854,
+          "sha256": "ac9c021dd722bb1bc5dda50e42a1f86fdf8c87ff266a74d4c557a4794d00b1d2"
+        },
+        "Poima.ManagedBridge.dll": {
+          "bytes": 64512,
+          "sha256": "689c72206d0374597ecb30803636be8f618ecdfb6872fd92e2f14ede352a89b8"
+        },
+        "Poima.ManagedBridge.pdb": {
+          "bytes": 32664,
+          "sha256": "9e8cd897005eeea659b6dbd6afc3d3cc647e9a4597feffc0704473b2cfb479eb"
+        },
+        "Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 377,
+          "sha256": "70d94956032a361e9979c6d79cf50287a0d4ec74fabb90bd831f4728c3b6ab94"
+        }
+      },
+      "phases": {
+        "bridge-build": 0,
+        "legacy-build": 0,
+        "legacy-boundary": 0,
+        "candidate-build": 0,
+        "candidate-boundary": 0,
+        "snapshot-build": 0,
+        "snapshot-regression": 0
+      },
+      "outcomes": {
+        "legacy": {
+          "checks": 18130,
+          "rawcall_count": 2122,
+          "accepted_loads": 1055,
+          "releases": 1055,
+          "collect_calls_total": 1,
+          "seconds": 2.5840258,
+          "receipt": {
+            "bytes": 7029,
+            "sha256": "f827aabeb444d2ab9b0206f42deff708be601111409a3e35c07f9409c328129b"
+          },
+          "literal_call_stream": {
+            "bytes": 1399113,
+            "sha256": "5d37f00eef238d072c3f8f079094333f5795fc943dd8750ed3e407712ce36bda"
+          },
+          "stages": {
+            "real-contexts": {
+              "accepted_loads": 1055,
+              "releases": 1055,
+              "distinct_contexts": 1055,
+              "actual_handles": 1055,
+              "controlled_root_count": 1055,
+              "operation5_during_decisive": 0
+            },
+            "tick-after-boundary": {
+              "code": 0,
+              "text": "",
+              "before_hex": "000000000000000011000000",
+              "after_hex": "010000000000000017000000",
+              "services_epoch": 7,
+              "services_bytes": 176,
+              "unexpected_service_calls": 0
+            },
+            "global1055-expired-handle": {
+              "active": 0,
+              "tracked": 1055,
+              "code": -1,
+              "text": "Memory snapshots were not requested for this live module."
+            },
+            "explicit-teardown-after-root-frame": {
+              "active_modules": 0,
+              "retired_alive": 0
+            }
+          },
+          "queries": {
+            "retired-1024": {
+              "code": 0,
+              "scenario_active": 31,
+              "scenario_tracked": 1024,
+              "observed_dto": {
+                "active_modules": 31,
+                "retired_contexts_tracked": 1024,
+                "retired_contexts_alive": 1024
+              },
+              "raw_file": {
+                "bytes": 691,
+                "sha256": "2c78fcc0573411715f898bed7a3ea55b42cde8bef2333dd55732414bb09446e6"
+              }
+            },
+            "retired-1025": {
+              "code": -1,
+              "scenario_active": 30,
+              "scenario_tracked": 1025,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            },
+            "retired-1054": {
+              "code": -1,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            },
+            "retired-1054-repeat": {
+              "code": -1,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            }
+          }
+        },
+        "candidate": {
+          "checks": 18330,
+          "rawcall_count": 2122,
+          "accepted_loads": 1055,
+          "releases": 1055,
+          "collect_calls_total": 1,
+          "seconds": 2.4648954,
+          "receipt": {
+            "bytes": 11360,
+            "sha256": "30cd527b4a602f38e079b6db1a90d576fd589407d4f23f40475cfb24d522f027"
+          },
+          "literal_call_stream": {
+            "bytes": 1403370,
+            "sha256": "ed71d944f09246003793151ce56f7c7890c2c87c639004edfb4652e5e6f3c97e"
+          },
+          "stages": {
+            "real-contexts": {
+              "accepted_loads": 1055,
+              "releases": 1055,
+              "distinct_contexts": 1055,
+              "actual_handles": 1055,
+              "controlled_root_count": 1055,
+              "operation5_during_decisive": 0
+            },
+            "tick-after-boundary": {
+              "code": 0,
+              "text": "",
+              "before_hex": "000000000000000011000000",
+              "after_hex": "010000000000000017000000",
+              "services_epoch": 7,
+              "services_bytes": 176,
+              "unexpected_service_calls": 0
+            },
+            "global1055-expired-handle": {
+              "active": 0,
+              "tracked": 1055,
+              "code": -1,
+              "text": "Memory snapshots were not requested for this live module."
+            },
+            "explicit-teardown-after-root-frame": {
+              "active_modules": 0,
+              "retired_alive": 0
+            }
+          },
+          "queries": {
+            "retired-1024": {
+              "code": 0,
+              "scenario_active": 31,
+              "scenario_tracked": 1024,
+              "observed_dto": {
+                "active_modules": 31,
+                "retired_contexts_tracked": 1024,
+                "retired_contexts_alive": 1024
+              },
+              "raw_file": {
+                "bytes": 692,
+                "sha256": "375230add17e2596356dba7320f87667c5456020f2dbe0fb81c4b7a3443d1b2a"
+              }
+            },
+            "retired-1025": {
+              "code": 0,
+              "scenario_active": 30,
+              "scenario_tracked": 1025,
+              "observed_dto": {
+                "active_modules": 30,
+                "retired_contexts_tracked": 1025,
+                "retired_contexts_alive": 1025
+              },
+              "raw_file": {
+                "bytes": 692,
+                "sha256": "cf77405512f4ae7538615498dbef49400bed2a36a9a5bcdfab8c43f1d541a88e"
+              }
+            },
+            "retired-1054": {
+              "code": 0,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": {
+                "active_modules": 1,
+                "retired_contexts_tracked": 1054,
+                "retired_contexts_alive": 1054
+              },
+              "raw_file": {
+                "bytes": 691,
+                "sha256": "11477ee1eb7d51ecc59779b39a16e90c51fe76462e975e9ec4fbd220de58973f"
+              }
+            },
+            "retired-1054-repeat": {
+              "code": 0,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": {
+                "active_modules": 1,
+                "retired_contexts_tracked": 1054,
+                "retired_contexts_alive": 1054
+              },
+              "raw_file": {
+                "bytes": 691,
+                "sha256": "bb565644e48ad3a00251ca694d9b5e66ccb4c18de5a2c3ea797b9fa095f91314"
+              }
+            }
+          }
+        }
+      }
+    },
+    "linux": {
+      "passed": true,
+      "owner_seconds": 467.83368876500026,
+      "worker_seconds": 287.90728687500086,
+      "report": {
+        "bytes": 926901,
+        "sha256": "6b3fe4fa52a2e7cdfb6ef0a1f9e8fac1790aa77f64126264160a2d2971b224a2"
+      },
+      "owner": {
+        "bytes": 34150,
+        "sha256": "4f73a69343c9f11f5e72449d5367dc7862b19250fdd7104de50ccbdae6a1d951"
+      },
+      "candidate_bridge_files": {
+        "Poima.Gameplay.dll": {
+          "bytes": 180224,
+          "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+        },
+        "Poima.Gameplay.pdb": {
+          "bytes": 40360,
+          "sha256": "b8e92232ca014e6d40998c7ce629aa1696ba0d4a7ca9bd227a5a22e2961f5bd6"
+        },
+        "Poima.ManagedBridge.deps.json": {
+          "bytes": 816,
+          "sha256": "4515a42731ae54ca9869e4bb0071d4a5c2dd446dd30910d394306507ccaa8fc6"
+        },
+        "Poima.ManagedBridge.dll": {
+          "bytes": 64512,
+          "sha256": "da3980c4d8501cc8bda7b8aab3dee68e29bf92ad0ef4a1fa17f1a02b412bc415"
+        },
+        "Poima.ManagedBridge.pdb": {
+          "bytes": 32720,
+          "sha256": "52682b9ed495865686c7d4226bd81c3f268a9c9f8db039ad9a007af89bed73ca"
+        },
+        "Poima.ManagedBridge.runtimeconfig.json": {
+          "bytes": 364,
+          "sha256": "29ad26ea2193b41244bb055eb0fb499a4b878854601f33bf46869377a674eeab"
+        }
+      },
+      "phases": {
+        "bridge-build": 0,
+        "legacy-build": 0,
+        "legacy-boundary": 0,
+        "candidate-build": 0,
+        "candidate-boundary": 0,
+        "snapshot-build": 0,
+        "snapshot-regression": 0
+      },
+      "outcomes": {
+        "legacy": {
+          "checks": 18130,
+          "rawcall_count": 2122,
+          "accepted_loads": 1055,
+          "releases": 1055,
+          "collect_calls_total": 1,
+          "seconds": 71.4380755,
+          "receipt": {
+            "bytes": 7008,
+            "sha256": "0dce4e91921981a6fae642d2ba662a29013f25fbe24713c699777cd86e7b596c"
+          },
+          "literal_call_stream": {
+            "bytes": 1369513,
+            "sha256": "5e07b17efb5262c9127d6debbeb892af6720fefcd3cf386d6c2cc6e24badea0d"
+          },
+          "stages": {
+            "real-contexts": {
+              "accepted_loads": 1055,
+              "releases": 1055,
+              "distinct_contexts": 1055,
+              "actual_handles": 1055,
+              "controlled_root_count": 1055,
+              "operation5_during_decisive": 0
+            },
+            "tick-after-boundary": {
+              "code": 0,
+              "text": "",
+              "before_hex": "000000000000000011000000",
+              "after_hex": "010000000000000017000000",
+              "services_epoch": 7,
+              "services_bytes": 176,
+              "unexpected_service_calls": 0
+            },
+            "global1055-expired-handle": {
+              "active": 0,
+              "tracked": 1055,
+              "code": -1,
+              "text": "Memory snapshots were not requested for this live module."
+            },
+            "explicit-teardown-after-root-frame": {
+              "active_modules": 0,
+              "retired_alive": 0
+            }
+          },
+          "queries": {
+            "retired-1024": {
+              "code": 0,
+              "scenario_active": 31,
+              "scenario_tracked": 1024,
+              "observed_dto": {
+                "active_modules": 31,
+                "retired_contexts_tracked": 1024,
+                "retired_contexts_alive": 1024
+              },
+              "raw_file": {
+                "bytes": 695,
+                "sha256": "e5d791354774b0646871ea28082c60928a5f019d038cc2a0ca208235543cd795"
+              }
+            },
+            "retired-1025": {
+              "code": -1,
+              "scenario_active": 30,
+              "scenario_tracked": 1025,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            },
+            "retired-1054": {
+              "code": -1,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            },
+            "retired-1054-repeat": {
+              "code": -1,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": null,
+              "raw_file": null,
+              "original_error": "Managed memory context counts exceed their bounds."
+            }
+          }
+        },
+        "candidate": {
+          "checks": 18330,
+          "rawcall_count": 2122,
+          "accepted_loads": 1055,
+          "releases": 1055,
+          "collect_calls_total": 1,
+          "seconds": 75.4232375,
+          "receipt": {
+            "bytes": 11348,
+            "sha256": "9b947a48d6686522fb07999ed4065fcece88226697923ed4631fbb392255ccdc"
+          },
+          "literal_call_stream": {
+            "bytes": 1373779,
+            "sha256": "bfed58deb13c5f6f291d80dccde15a33f063b82ee3477f91eaa1813270a671f5"
+          },
+          "stages": {
+            "real-contexts": {
+              "accepted_loads": 1055,
+              "releases": 1055,
+              "distinct_contexts": 1055,
+              "actual_handles": 1055,
+              "controlled_root_count": 1055,
+              "operation5_during_decisive": 0
+            },
+            "tick-after-boundary": {
+              "code": 0,
+              "text": "",
+              "before_hex": "000000000000000011000000",
+              "after_hex": "010000000000000017000000",
+              "services_epoch": 7,
+              "services_bytes": 176,
+              "unexpected_service_calls": 0
+            },
+            "global1055-expired-handle": {
+              "active": 0,
+              "tracked": 1055,
+              "code": -1,
+              "text": "Memory snapshots were not requested for this live module."
+            },
+            "explicit-teardown-after-root-frame": {
+              "active_modules": 0,
+              "retired_alive": 0
+            }
+          },
+          "queries": {
+            "retired-1024": {
+              "code": 0,
+              "scenario_active": 31,
+              "scenario_tracked": 1024,
+              "observed_dto": {
+                "active_modules": 31,
+                "retired_contexts_tracked": 1024,
+                "retired_contexts_alive": 1024
+              },
+              "raw_file": {
+                "bytes": 695,
+                "sha256": "9efff1964ef0a3098e979c1f2d01bcd5b387b9f3c7d079d9c8c1d7b9e9f9435e"
+              }
+            },
+            "retired-1025": {
+              "code": 0,
+              "scenario_active": 30,
+              "scenario_tracked": 1025,
+              "observed_dto": {
+                "active_modules": 30,
+                "retired_contexts_tracked": 1025,
+                "retired_contexts_alive": 1025
+              },
+              "raw_file": {
+                "bytes": 695,
+                "sha256": "92fda31a614bf921177491405dfb8220905c98b17575b60c4919eda64cc9a0d6"
+              }
+            },
+            "retired-1054": {
+              "code": 0,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": {
+                "active_modules": 1,
+                "retired_contexts_tracked": 1054,
+                "retired_contexts_alive": 1054
+              },
+              "raw_file": {
+                "bytes": 694,
+                "sha256": "6264bb7e9b7b4b66312d0d5e04d8b75677d35cd2e4254ca547004acf0f60edeb"
+              }
+            },
+            "retired-1054-repeat": {
+              "code": 0,
+              "scenario_active": 1,
+              "scenario_tracked": 1054,
+              "observed_dto": {
+                "active_modules": 1,
+                "retired_contexts_tracked": 1054,
+                "retired_contexts_alive": 1054
+              },
+              "raw_file": {
+                "bytes": 694,
+                "sha256": "b28af04de5fd18d083173f12e1bb02625c3194a6f2341b266e4c31ae95bda5bc"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "native": {
+    "windows": {
+      "passed": true,
+      "configuration": "Windows native simulation enabled",
+      "build_seconds": 186.87075936100155,
+      "build_report": {
+        "bytes": 133911,
+        "sha256": "75da3386d465e17e173ef25d11e14d52ec7099118e7e478fcacd39fcfdecaabd"
+      },
+      "binaries": {
+        "bin/poima.exe": {
+          "bytes": 26463744,
+          "sha256": "a39910706e1bf0e38082dab84a78988dc48b9e4c0967e77a01850e2657dcd748"
+        },
+        "bin/poima-managed-memory-json-test.exe": {
+          "bytes": 1493504,
+          "sha256": "b4053dcdcf55638bfed34ac7cba806b83086240fdfd9d4eb7291272b960b4249"
+        }
+      },
+      "qa_seconds": 1.329824300002656,
+      "qa_report": {
+        "bytes": 8825,
+        "sha256": "b6a3a33a2b17e5e99f7216319374f94348e2837229b7b148fa403f2969794138"
+      },
+      "phase_exit_codes": {
+        "parser-default": 0,
+        "parser-actual": 0,
+        "parser-actual-repeat": 0,
+        "core-conformance": 0,
+        "metadata": 0
+      },
+      "synthetic_parser_cases": 349,
+      "synthetic_retired_boundaries": [
+        1024,
+        1025,
+        1054,
+        1055
+      ],
+      "actual_1054_replays": [
+        {
+          "original_dto": {
+            "bytes": 691,
+            "sha256": "11477ee1eb7d51ecc59779b39a16e90c51fe76462e975e9ec4fbd220de58973f"
+          },
+          "parser_output": {
+            "bytes": 1715,
+            "sha256": "1bee1bfa197b21306f7fc379d4a4ec2307e1b360cf472ceb2747cd2ab3f62f2a"
+          },
+          "complete_dto_equal": true
+        },
+        {
+          "original_dto": {
+            "bytes": 691,
+            "sha256": "bb565644e48ad3a00251ca694d9b5e66ccb4c18de5a2c3ea797b9fa095f91314"
+          },
+          "parser_output": {
+            "bytes": 1715,
+            "sha256": "9b83aed3e19db6ed3fc43034d31df4ca9e20971173ff1a28c280f2c458cff8d5"
+          },
+          "complete_dto_equal": true
+        }
+      ],
+      "core_tests": 5,
+      "metadata_checks": 3
+    },
+    "linux": {
+      "passed": true,
+      "configuration": "Linux headless Debug, simulation disabled",
+      "build_seconds": 260.5514557849965,
+      "build_report": {
+        "bytes": 135638,
+        "sha256": "ddd5e81087169f4b0572701b41869c099c841007a1d5977f7b0da96d765d251c"
+      },
+      "binaries": {
+        "bin/poima": {
+          "bytes": 19523240,
+          "sha256": "cd805c166815c70749cd73d65116a5d675c1120ae28e4ab862f69ecc4294db8d"
+        },
+        "bin/poima-managed-memory-json-test": {
+          "bytes": 1557792,
+          "sha256": "25d34924344e4df7517c8da16dad256b5beca74a840afbb8360dbcad2b263ece"
+        }
+      },
+      "qa_seconds": 6.18994656400173,
+      "qa_report": {
+        "bytes": 15100,
+        "sha256": "95a24b7f6e47ae83aa2f6edbcfa097cb8ec091ce91601735e082d606a4278abe"
+      },
+      "phase_exit_codes": {
+        "parser-default": 0,
+        "parser-actual": 0,
+        "parser-actual-repeat": 0,
+        "core-conformance": 0,
+        "metadata": 0
+      },
+      "synthetic_parser_cases": 349,
+      "synthetic_retired_boundaries": [
+        1024,
+        1025,
+        1054,
+        1055
+      ],
+      "actual_1054_replays": [
+        {
+          "original_dto": {
+            "bytes": 694,
+            "sha256": "6264bb7e9b7b4b66312d0d5e04d8b75677d35cd2e4254ca547004acf0f60edeb"
+          },
+          "parser_output": {
+            "bytes": 1720,
+            "sha256": "80d0d41ecbad741ce5739fc6da5b16c12f832750096c509aaf55201a2b3476d7"
+          },
+          "complete_dto_equal": true
+        },
+        {
+          "original_dto": {
+            "bytes": 694,
+            "sha256": "b28af04de5fd18d083173f12e1bb02625c3194a6f2341b266e4c31ae95bda5bc"
+          },
+          "parser_output": {
+            "bytes": 1720,
+            "sha256": "82e4e7115538770f4147e9e3ffbe66872bd69713498481279e41f111fff41134"
+          },
+          "complete_dto_equal": true
+        }
+      ],
+      "core_tests": 5,
+      "metadata_checks": 3
+    }
+  },
+  "hosted_native_rpc": {
+    "passed": true,
+    "platform": "Windows",
+    "scope": "Separate tiny hosted CoreCLR fixture plus retained older bridge and Native AOT cases; not native world stress at 1,054 retirements.",
+    "owner_seconds": 3.4758298999950057,
+    "owner": {
+      "bytes": 1344,
+      "sha256": "720cb875eb9728fd6ff194a45ec0257402dd001c7d572867e4fd666f958ed0a9"
+    },
+    "report": {
+      "bytes": 27337,
+      "sha256": "601e3942cd3a10b9067b19a9cb34c28a1546c32ab0f31f709f2beb9e05f2a170"
+    },
+    "original_rpc_pairs": 206,
+    "native_owners": 3,
+    "whole_checkpoint_references": 14,
+    "whole_state_pairs": [
+      {
+        "label": "eight passive reads preserve every save field and byte",
+        "left": {
+          "bytes": 1158,
+          "sha256": "a5d3e52c84451a22c561a76d8d85592cf2eb4f1afba37d3d6b67bac503e46cf2"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "a5d3e52c84451a22c561a76d8d85592cf2eb4f1afba37d3d6b67bac503e46cf2"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "initialize-failure",
+        "left": {
+          "bytes": 1158,
+          "sha256": "fed52c670f1f2d0605aa6f8a74b46a5730fd95d8eb95de7c61e873ef1494deff"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "fed52c670f1f2d0605aa6f8a74b46a5730fd95d8eb95de7c61e873ef1494deff"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "throwing-tick",
+        "left": {
+          "bytes": 1158,
+          "sha256": "51233d5ad7c5fe84d9bc3fc912d2094de518b544339d71ab97e95d205e24fb90"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "51233d5ad7c5fe84d9bc3fc912d2094de518b544339d71ab97e95d205e24fb90"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "rejected reads preserve complete native saves",
+        "left": {
+          "bytes": 1158,
+          "sha256": "6d9d85fdbe102ebca26e70be6272d5b4581798b2342256e366714213c51a2cb2"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "6d9d85fdbe102ebca26e70be6272d5b4581798b2342256e366714213c51a2cb2"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "older bridge unavailable reads preserve complete state",
+        "left": {
+          "bytes": 1158,
+          "sha256": "b420027655f5632a8f6cc9ea0fe0abe270a903cac0d5a649a5e49a6791da50df"
+        },
+        "right": {
+          "bytes": 1158,
+          "sha256": "b420027655f5632a8f6cc9ea0fe0abe270a903cac0d5a649a5e49a6791da50df"
+        },
+        "exclusions": []
+      },
+      {
+        "label": "AOT unavailable reads preserve complete state",
+        "left": {
+          "bytes": 1634041,
+          "sha256": "595d57d348f95bb35e13ce54eb0ee7cfc3525fe45d9e6c9f8b408e74d3c19423"
+        },
+        "right": {
+          "bytes": 1634041,
+          "sha256": "595d57d348f95bb35e13ce54eb0ee7cfc3525fe45d9e6c9f8b408e74d3c19423"
+        },
+        "exclusions": []
+      }
+    ],
+    "recovery": "Compatible reload complete revision-only forecast; failed Initialize and throwing Tick preserve complete saved state.",
+    "older_bridge": "Unnegotiated: supported:null, data:null.",
+    "native_aot": "Unsupported: supported:false, data:null.",
+    "job_processes": 5,
+    "job_active_after_exit": 0,
+    "forced_cleanup": false
+  },
+  "qualification_scope": [
+    "Each lifetime-fixture retirement comes from an actual accepted collectible context. A no-inline frame holds real contexts strongly; this is not a game leak diagnosis.",
+    "No operation 5 or forced collection establishes decisive probes. Exactly one explicit operation 5 runs after the root frame returns; retained-alive need not be zero. The separate older snapshot regression also performs explicit collection.",
+    "A successful live query at 1,054 differs from the final 1,055-entry registry after observer release and synthetic parser acceptance at 1,055.",
+    "Successful complete DTOs, original refusals and complete twelve-byte callback states are retained. Refused legacy probes have no observed DTO.",
+    "Both native/managed builds and qualification owners closed naturally without forced cleanup. Linux native parser replay uses actual Linux compiled managed output despite CLI simulation being disabled.",
+    "No GPU, physical-input, installation, representative frame-time, memory-growth cause or Alpha release qualification is claimed."
+  ],
+  "reproduction": {
+    "fixture": "tests/managed_retirement_bounds/README.md",
+    "parser": "Build poima-managed-memory-json-test; run defaults, then --input against each unchanged emitted retired-1054 DTO.",
+    "hosted_rpc": "tests/gameplay_memory_contract.py requires selected native engine, matching compiled bridge, MemoryProbe, hostfxr, retained old bridge and NativeAOT world.",
+    "records": "Selected results and hashes are published here. Exact historical binary comparison requires the retained artifacts identified by those hashes; a fresh source build is a new run."
+  }
+}

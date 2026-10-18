@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // This exercises the exact production bridge-wire parser without hosting CLR.
 #include "../src/managed_memory_json.hpp"
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -29,7 +31,8 @@ Json valid() {
             {"memory_load_bytes","0"},{"high_memory_load_threshold_bytes","0"},{"total_available_memory_bytes","0"}}}};
 }
 }
-int main() {try {
+int main(int argc,char** argv) {try {
+    need(argc==1 || (argc==3 && std::string(argv[1])=="--input"),"Usage: poima-managed-memory-json-test [--input ACTUAL_1054_DTO.json]");
     const auto original=valid();
     need(poima::detail::parse_managed_memory_snapshot(original.dump())==original,"Complete raw DTO changed.");++cases;
     // These are non-atomic current observations and older last-GC history.
@@ -41,6 +44,11 @@ int main() {try {
     raw=original;raw["active_modules"]=0;raw["retired_contexts_tracked"]=1024;raw["retired_contexts_alive"]=1024;
     raw["timestamp_start"]="0";raw["timestamp_end"]="0";
     need(poima::detail::parse_managed_memory_snapshot(raw.dump())==raw,"Boundary values rejected.");++cases;
+    // Synthetic wire boundaries, separate from the optional actual CLR replay.
+    for(const int retired:{1024,1025,1054,1055}) {
+        raw=original;raw["retired_contexts_tracked"]=retired;raw["retired_contexts_alive"]=retired;
+        need(poima::detail::parse_managed_memory_snapshot(raw.dump())==raw,"Legitimate retired-context observation rejected or changed.");++cases;
+    }
     const auto mutate=[&](const std::function<void(Json&)>& change) {auto sample=original;change(sample);rejects(sample.dump());};
     for(const auto& [key,value]:original.items()) {
         (void)value;mutate([&](Json& sample){sample.erase(key);});
@@ -56,8 +64,9 @@ int main() {try {
     mutate([](Json& sample){sample["process_id"]=0;});
     mutate([](Json& sample){sample["process_id"]=2147483648ULL;});
     mutate([](Json& sample){sample["active_modules"]=33;});
-    mutate([](Json& sample){sample["retired_contexts_tracked"]=1025;});
+    mutate([](Json& sample){sample["retired_contexts_tracked"]=1056;});
     mutate([](Json& sample){sample["retired_contexts_alive"]=3;});
+    mutate([](Json& sample){sample["retired_contexts_tracked"]=1055;sample["retired_contexts_alive"]=1056;});
     std::vector<Json::json_pointer> counters;
     for(const auto* key:{"timestamp_start","timestamp_end","timestamp_frequency"})counters.emplace_back(std::string("/")+key);
     for(const auto& [key,value]:original.at("gc").items()) {(void)value;counters.emplace_back("/gc/"+key);}
@@ -103,5 +112,20 @@ int main() {try {
     negotiated=schema;negotiated["memory_snapshot_version"]=1;bool rejected=false;
     try {(void)poima::detail::take_memory_snapshot_negotiation(negotiated,true);}catch(const std::exception&){rejected=true;}
     need(rejected,"NativeAOT accepted a managed-only handshake.");++cases;
-    std::cout<<"Managed memory wire checks passed: "<<cases<<'\n';return 0;
+    if(argc==3) {
+        // Root-owned qualification supplies the actual emitted DTO and retains
+        // its external provenance. Reading a file alone does not prove CLR use.
+        const auto path=std::filesystem::path(std::u8string(argv[2],argv[2]+std::char_traits<char>::length(argv[2])));
+        std::ifstream input(path,std::ios::binary|std::ios::ate);need(bool(input),"Cannot open actual memory snapshot input.");
+        const auto length=input.tellg();need(length>=0 && length<static_cast<std::streamoff>(poima::detail::managed_memory_wire_capacity),"Actual memory snapshot input exceeds wire bound.");
+        std::string text(static_cast<std::size_t>(length),'\0');input.seekg(0);
+        need(bool(input.read(text.data(),static_cast<std::streamsize>(text.size()))) && input.peek()==std::char_traits<char>::eof(),"Actual memory snapshot input changed or could not be read completely.");
+        const auto parsed=poima::detail::parse_managed_memory_snapshot(text),original_input=Json::parse(text);
+        need(parsed==original_input && parsed.dump()==original_input.dump(),"Actual complete DTO changed in production parser.");
+        need(parsed.at("retired_contexts_tracked")==1054,"Actual replay requires the emitted 1054-retirement DTO.");
+        std::cout<<Json{{"format","poima.managed-memory-wire-replay.v1"},{"passed",true},
+            {"synthetic_cases",cases},{"input_bytes",text.size()},{"original_text",text},{"snapshot",parsed},
+            {"scope","Production parser replay of supplied 1054 DTO; actual CLR origin requires independent input provenance."}}.dump()<<'\n';
+    }else std::cout<<"Managed memory wire checks passed: "<<cases<<'\n';
+    return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

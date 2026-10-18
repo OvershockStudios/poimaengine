@@ -90,8 +90,8 @@ class MemoryProbe(Probe):
              decimal(data['timestamp_frequency']) > 0, 'CLR identity and sample bracket')
         need(data['process_id'] == self.transport.process.pid,
              'Snapshot belongs to the actual owned native process')
-        for key, maximum in [('active_modules', 32), ('retired_contexts_tracked', 1024),
-                             ('retired_contexts_alive', 1024)]:
+        for key, maximum in [('active_modules', 32), ('retired_contexts_tracked', 1055),
+                             ('retired_contexts_alive', 1055)]:
             need(type(data[key]) is int and 0 <= data[key] <= maximum, 'Context bounds')
         need(data['active_modules'] == 1 and
              data['retired_contexts_alive'] <= data['retired_contexts_tracked'],

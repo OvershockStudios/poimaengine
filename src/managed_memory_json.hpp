@@ -14,6 +14,9 @@
 
 namespace poima::detail {
 inline constexpr std::size_t managed_memory_wire_capacity=8192;
+// Releases can transfer all 32 admitted modules after a load at 1023 retired
+// entries. This observation bound is distinct from the 1024 load-admission cap.
+inline constexpr std::uint32_t managed_memory_retired_context_capacity=1024+32-1;
 inline void memory_wire_require(bool value,const char* message) {
     if(!value)throw std::runtime_error(message);
 }
@@ -80,7 +83,7 @@ inline nlohmann::json parse_managed_memory_snapshot(std::string_view text) {
     const auto begin=counter(value.at("timestamp_start")),end=counter(value.at("timestamp_end"));
     memory_wire_require(end>=begin && counter(value.at("timestamp_frequency"))>0,"Invalid gameplay memory snapshot clock bracket.");
     integer(value.at("active_modules"),0,32);
-    const auto tracked=integer(value.at("retired_contexts_tracked"),0,1024);
+    const auto tracked=integer(value.at("retired_contexts_tracked"),0,managed_memory_retired_context_capacity);
     integer(value.at("retired_contexts_alive"),0,tracked);
     const auto& gc=value.at("gc");
     fields(gc,{"total_memory_bytes","total_allocated_bytes","gen0_collections","gen1_collections","gen2_collections"});

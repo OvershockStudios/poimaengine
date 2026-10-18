@@ -55,7 +55,7 @@ comparisons still retain every authoritative field and byte.
 | `process_id` | CLR process ID. Keep the external process creation identity when joining captures; a PID can be reused. |
 | `timestamp_start`, `timestamp_end`, `timestamp_frequency` | Monotonic `Stopwatch` bracket around sampling, in process-local timestamp ticks and ticks per second. Serialization and transport occur outside the bracket. |
 | `active_modules` | Modules currently registered in this bridge, across its runtimes; at most 32. |
-| `retired_contexts_tracked` | Retired weak-reference entries retained by this bridge. The accepted snapshot range is 0–1,024, rather than a global invariant over all release patterns; see [load capacity](#load-capacity-recovery). Sampling does not remove dead entries. |
+| `retired_contexts_tracked` | Retired weak-reference entries retained by this bridge. The accepted snapshot range is 0–1,055, covering releases of already admitted modules; see [retirement bounds](#retirement-observation-bounds). Sampling does not remove dead entries. |
 | `retired_contexts_alive` | Entries whose weak references were observed alive during this read. This is not proof of a leak or an inability to unload. |
 
 These counts cover this bridge's registry, not every assembly load context in
@@ -91,6 +91,65 @@ and GC `generation` are JSON integers; `concurrent` and `compacted` are Booleans
 The native boundary checks exact field membership and types, canonical ranges,
 context-count bounds and timestamp ordering within an 8 KiB response budget.
 Malformed observations fail instead of becoming zero-valued measurements.
+
+## Retirement observation bounds
+
+From 0.0.190, the managed serializer and native parser accept up to 1,055 tracked
+retired contexts. This is an observation limit, separate from the unchanged load
+admission limits of 32 active modules and 1,024 retired entries.
+
+On the serialized owner thread, a new load can start with at most 31 active
+modules and 1,023 retired entries. Creating one context brings their combined
+count to at most `31 + 1,023 + 1 = 1,055`. Release transfers an admitted context
+to the retired list; it does not create another context. Releasing all admitted
+modules can therefore leave 1,055 retired entries. With one live observer still
+registered, at most 1,054 can be retired. The parser's global upper bound does
+not mean that a live query can report 1,055.
+
+Passive observation neither removes entries nor collects contexts to fit a
+budget. Alive counts remain bounded by the actual tracked count. All existing
+field, type, canonical-counter, clock and 8 KiB wire checks remain in effect.
+This change affects diagnostic availability rather than game load capacity,
+state serialization or whether retired code can be reclaimed.
+
+The query remains an evolving version-1 diagnostic outside the frozen authoring
+and game-session contracts. Both the bridge and native parser need the expanded
+bound: older consumers can still reject counts above 1,024. The gameplay C ABI,
+checkpoint formats and optional negotiation field are unchanged; no broader
+mixed-version compatibility is implied.
+
+The [compiled lifetime fixture](../tests/managed_retirement_bounds/README.md)
+builds the boundary from actual admitted modules and releases, holding their
+real collectible contexts in a no-inline test frame. Its controlled roots make
+liveness reproducible; they do not demonstrate a game leak. Native parser unit
+cases at 1,055 are synthetic wire checks, distinct from a live 1,054-context
+query and from the final 1,055-entry registry after its observer is released.
+
+### Recorded checks
+
+The 0.0.190 Windows and Linux runs each execute the same lifetime sequence in
+separate retained-bridge and corrected-bridge processes. Each process accepts
+and releases 1,055 real contexts and retains 2,122 literal bridge calls. The
+retained bridge returns its original bounds error above 1,024. The corrected
+bridge returns complete observations at 1,025 and 1,054, including repeated
+reads that preserve all twelve gameplay-state bytes. Initialize and a subsequent
+Tick both execute successfully. One explicitly labeled collection call follows
+the root frame's return; it establishes none of the decisive preconditions.
+
+Both native parser executables pass 349 synthetic cases and replay both actual
+1,054-context DTOs without changing any field. Core conformance and metadata
+checks also pass. A separate Windows hosted regression checks current CoreCLR,
+an older nonnegotiating bridge and Native AOT through 206 original RPC pairs,
+fourteen complete checkpoint references and six complete saved-byte equality
+pairs. Its smaller live registry does not qualify native world hosting at the
+1,054-retirement boundary.
+
+All original owners close naturally without forced cleanup. The gameplay SDK
+binary is reused; only the bridge and native parser need this correction.
+[Selected results and artifact identities](evidence/m2-managed-retirement-bounds.json)
+record the distinction between actual lifetime observations, synthetic wire
+boundaries and hosted-world regressions. The fixture README gives reproduction
+steps; exact historical comparisons require the identified retained binaries.
 
 ## Observation effects and limits
 
@@ -228,11 +287,10 @@ Release active owners where appropriate, use the separately bounded explicit
 collection diagnostic, or restart the process. Collection cannot force a context
 to unload while game code or another owner retains it.
 
-The accepted observer range is not a global retirement invariant. Several
-already admitted active modules can subsequently be released and push the list
-beyond 1,024 entries. A snapshot outside its accepted range reports an error;
-this targeted load fix does not change that behavior. Arbitrary multi-module
-release overshoot remains a separate boundary outside this qualification.
+The 0.0.185 capacity qualification does not cover releases of multiple already
+admitted modules above 1,024 retired entries. The separate 0.0.190
+[observation bound](#retirement-observation-bounds) covers that diagnostic range;
+load admission and its dead-entry recovery remain unchanged.
 
 The [focused fixture](../tests/managed_reload_capacity/README.md) builds its
 capacity precondition from 1,024 real accepted loads and releases. Controlled

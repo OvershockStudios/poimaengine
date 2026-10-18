@@ -85,7 +85,7 @@ static unsafe class Program
         Check(start>=(ulong)before && end>=start && end<=(ulong)after &&
               Decimal(value.GetProperty("timestamp_frequency"))==(ulong)Stopwatch.Frequency,"Raw capture bracket differs.");
         int active=value.GetProperty("active_modules").GetInt32(),tracked=value.GetProperty("retired_contexts_tracked").GetInt32(),alive=value.GetProperty("retired_contexts_alive").GetInt32();
-        Check(active is >=0 and <=32 && tracked is >=0 and <=1024 && alive>=0 && alive<=tracked,"Context bounds differ.");
+        Check(active is >=0 and <=32 && tracked is >=0 and <=1055 && alive>=0 && alive<=tracked,"Context bounds differ.");
         var gc=value.GetProperty("gc");
         Fields(gc,"total_memory_bytes","total_allocated_bytes","gen0_collections","gen1_collections","gen2_collections");
         foreach(var property in gc.EnumerateObject())_ = Decimal(property.Value);
