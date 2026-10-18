@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==336u &&
+    check(capable.services_version==7 && capable.services_bytes==352u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
@@ -120,6 +120,7 @@ void policy() {
     std::erase(synthetic.features,std::string(root_motion_feature));
     std::erase(synthetic.features,std::string(camera_lens_feature));
     std::erase(synthetic.features,std::string(character_stance_feature));
+    std::erase(synthetic.features,std::string(two_bone_ik_orientation_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -248,6 +249,19 @@ void policy() {
             check(!compatibility_error(wrong,all).empty(),"IK accepted wrong prefix.");
         }
     }
+    auto oriented=ik;oriented.services_bytes=352;oriented.features.push_back(two_bone_ik_orientation_feature);
+    check(compatibility_error(oriented,oriented).empty() && compatibility_error(oriented,capable).empty(),"Oriented IK requires unrelated services.");
+    auto point_only=capable;std::erase(point_only.features,std::string(two_bone_ik_orientation_feature));
+    check(!compatibility_error(oriented,point_only).empty(),"Opaque extent grants unnamed IK orientation.");
+    auto no_point=oriented;std::erase(no_point.features,std::string(two_bone_ik_feature));
+    check(!compatibility_error(no_point,capable).empty(),"Orientation silently grants point IK rights.");
+    for(unsigned bytes:{176u,288u,304u,320u,336u,344u,351u,353u}) {auto wrong=oriented;wrong.services_bytes=bytes;check(!compatibility_error(wrong,capable).empty(),"Wrong orientation prefix accepted.");}
+    auto invalid_orientation_host=oriented;invalid_orientation_host.services_bytes=336;
+    check(!compatibility_error(baseline,invalid_orientation_host).empty(),"Orientation advertised past readable extent.");
+    auto missing_point_host=oriented;std::erase(missing_point_host.features,std::string(two_bone_ik_feature));
+    check(!compatibility_error(baseline,missing_point_host).empty(),"Orientation advertised without point IK dependency.");
+    auto duplicate_orientation=oriented;duplicate_orientation.features.push_back(two_bone_ik_orientation_feature);
+    check(!compatibility_error(duplicate_orientation,capable).empty(),"Duplicate orientation feature accepted.");
     auto stance=baseline;stance.services_bytes=336;stance.features.push_back(character_stance_feature);
     check(compatibility_error(stance,stance).empty() && compatibility_error(stance,capable).empty(),"Independent stance profile gained unrelated dependencies.");
     auto unnamed_stance=capable;std::erase(unnamed_stance.features,std::string(character_stance_feature));

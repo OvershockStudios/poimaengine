@@ -355,6 +355,26 @@ typedef struct PoimaGameCharacterStanceServicesV1 {
 } PoimaGameCharacterStanceServicesV1;
 
 
+// animation_ik_end_orientation_v1: V1 point prefixes retain every offset.
+// Header version=2 identifies these complete replacements. Present=0 requires
+// the entire appended payload to be zero. Goal rotation is always rig-space.
+typedef struct PoimaGameTwoBoneIkCommandV2 {
+    PoimaGameTwoBoneIkCommandV1 point;
+    uint32_t end_orientation_present,reserved_end_orientation;
+    double end_rotation[4],end_weight;
+} PoimaGameTwoBoneIkCommandV2;
+typedef struct PoimaGameTwoBoneIkStateV2 {
+    PoimaGameTwoBoneIkStateV1 point;
+    uint32_t end_orientation_present,reserved_end_orientation;
+    double end_rotation[4],end_weight,actual_end_rotation[4],end_angular_error;
+} PoimaGameTwoBoneIkStateV2;
+typedef struct PoimaGameTwoBoneIkOrientationServicesV1 {
+    PoimaGameCharacterStanceServicesV1 character_stance;
+    int32_t (POIMA_CALL *ik_orientation_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameTwoBoneIkStateV2*,PoimaGameError*);
+    int32_t (POIMA_CALL *ik_orientation_set)(void*,const PoimaGameTwoBoneIkCommandV2*,PoimaGameError*);
+} PoimaGameTwoBoneIkOrientationServicesV1;
+
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -367,6 +387,11 @@ static_assert(sizeof(PoimaGameInputActionServicesV1)==264 && offsetof(PoimaGameI
 static_assert(sizeof(PoimaGameHitRegionResultV1)==192 && alignof(PoimaGameHitRegionResultV1)==8 && offsetof(PoimaGameHitRegionResultV1,hit)==8 && offsetof(PoimaGameHitRegionResultV1,region_entity)==96);
 static_assert(offsetof(PoimaGameHitRegionResultV1,region_name_bytes)==112 && offsetof(PoimaGameHitRegionResultV1,triangle_present)==116 && offsetof(PoimaGameHitRegionResultV1,triangle)==120 && offsetof(PoimaGameHitRegionResultV1,reserved)==124 && offsetof(PoimaGameHitRegionResultV1,region_name)==128);
 static_assert(sizeof(PoimaGameHitRegionServicesV1)==272 && offsetof(PoimaGameHitRegionServicesV1,actions)==0 && offsetof(PoimaGameHitRegionServicesV1,hit_test)==264);
+static_assert(sizeof(PoimaGameTwoBoneIkCommandV2)==144 && alignof(PoimaGameTwoBoneIkCommandV2)==8 && offsetof(PoimaGameTwoBoneIkCommandV2,point)==0);
+static_assert(offsetof(PoimaGameTwoBoneIkCommandV2,end_orientation_present)==96 && offsetof(PoimaGameTwoBoneIkCommandV2,reserved_end_orientation)==100 && offsetof(PoimaGameTwoBoneIkCommandV2,end_rotation)==104 && offsetof(PoimaGameTwoBoneIkCommandV2,end_weight)==136);
+static_assert(sizeof(PoimaGameTwoBoneIkStateV2)==248 && alignof(PoimaGameTwoBoneIkStateV2)==8 && offsetof(PoimaGameTwoBoneIkStateV2,point)==0);
+static_assert(offsetof(PoimaGameTwoBoneIkStateV2,end_orientation_present)==160 && offsetof(PoimaGameTwoBoneIkStateV2,reserved_end_orientation)==164 && offsetof(PoimaGameTwoBoneIkStateV2,end_rotation)==168 && offsetof(PoimaGameTwoBoneIkStateV2,end_weight)==200 && offsetof(PoimaGameTwoBoneIkStateV2,actual_end_rotation)==208 && offsetof(PoimaGameTwoBoneIkStateV2,end_angular_error)==240);
+static_assert(sizeof(PoimaGameTwoBoneIkOrientationServicesV1)==352 && offsetof(PoimaGameTwoBoneIkOrientationServicesV1,character_stance)==0 && offsetof(PoimaGameTwoBoneIkOrientationServicesV1,ik_orientation_get)==336 && offsetof(PoimaGameTwoBoneIkOrientationServicesV1,ik_orientation_set)==344);
 static_assert(sizeof(PoimaGameTwoBoneIkCommandV1)==96 && alignof(PoimaGameTwoBoneIkCommandV1)==8);
 static_assert(offsetof(PoimaGameTwoBoneIkCommandV1,entity)==8 && offsetof(PoimaGameTwoBoneIkCommandV1,slot)==24 && offsetof(PoimaGameTwoBoneIkCommandV1,enabled)==28 && offsetof(PoimaGameTwoBoneIkCommandV1,space)==32 && offsetof(PoimaGameTwoBoneIkCommandV1,reserved)==36);
 static_assert(offsetof(PoimaGameTwoBoneIkCommandV1,weight)==40 && offsetof(PoimaGameTwoBoneIkCommandV1,target)==48 && offsetof(PoimaGameTwoBoneIkCommandV1,pole)==72);

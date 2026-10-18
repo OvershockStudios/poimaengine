@@ -17,6 +17,15 @@ class Requirements(unittest.TestCase):
         self.baseline=dict(call_version=1,call_bytes=80,services_version=7,services_bytes=176,features=['baseline_v7'])
     def read(self,data):
         self.path.write_text(json.dumps(data));return publish.generated_requirements(self.path)
+    def test_ik_end_orientation_named_prefix_and_point_dependency(self):
+        value=dict(self.baseline,services_bytes=352,features=['animation_ik_end_orientation_v1','animation_ik_v1','baseline_v7'])
+        self.assertEqual(self.read(value),value)
+        for extent in [176,288,304,320,336,344,351,353]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(value,services_bytes=extent))
+        for features in [['baseline_v7','animation_ik_end_orientation_v1'],
+                         ['baseline_v7','animation_ik_v1'],
+                         value['features']+['animation_ik_end_orientation_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(value,features=features))
     def test_baseline_and_named_extension(self):
         self.assertEqual(self.read(self.baseline),self.baseline)
         extended=dict(self.baseline,services_bytes=192,features=['animation_inertial_v1','baseline_v7'])

@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.195**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.196**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.196 adds an independent [end-joint orientation goal](TWO_BONE_IK.md)
+after two-bone positional IK, allowing games to specify a sole or grip frame.
+Point-only controls, default query shapes and legacy animation saves retain
+their existing behavior. Selected Linux headless checks pass sixteen native
+fixtures, thirteen IK groups and 94 managed ABI checks. Actual CoreCLR and
+Native AOT consumers verify shared budgets, transactional rollback, complete
+save restoration and fresh-process continuation. The unchanged compiled
+Performance Yard game also passes warm, cold and relocated cooked reopening
+with five whole-save comparisons and two complete state forecasts.
+Original build, fixture-expectation and publisher-ownership failures remain
+failed; separate artifact recovery and successful consumer runs are recorded.
+This checkpoint does not qualify automatic contacts, foot locking, new Windows
+or GPU execution, or overall Alpha completion.
+[Results and boundaries](evidence/m2-two-bone-ik-orientation.json).
 
 Version 0.0.195 adds an [opt-in Linux LLD preset](BUILD.md#optional-llvm-linker)
 with one linker thread and two build workers. It preserves the compiler,

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.196
+
+- Add independent rig-space end-joint orientation to two-bone IK, with persistent controls, cached diagnostics and a separately negotiated C# extension.
+
 ## 0.0.195
 
 - Add an opt-in Linux LLD build preset with one linker thread, retaining the existing compiler, normal archives and system-linker preset.

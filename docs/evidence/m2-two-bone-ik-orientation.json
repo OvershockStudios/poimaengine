@@ -1,0 +1,398 @@
+{
+  "format": "poima.evidence.two-bone-ik-orientation.v1",
+  "engine_version": "0.0.196",
+  "date": "2026-10-18",
+  "passed": true,
+  "scope": "Selected Linux headless end-orientation implementation, native and CoreCLR/NativeAOT consumers, complete rollback/save continuation, and a separate retained compiled full-game consumer. Earlier failed producers and fixture expectations remain failed.",
+  "contract": {
+    "goal": "Optional canonical XYZW quaternion and independent weight in logical rig coordinates; caller supplies the desired frame.",
+    "compatibility": "Point-only omission and validated zero-weight goals use the existing solve and legacy animation serialization paths. Existing point response shape is unchanged unless orientation is requested.",
+    "state": "Opt-in runtime.ik end_orientation reports goal, cached actual_rotation and angular_error without advancing simulation.",
+    "saved_animation": "Nonzero retained orientation selects nested animation state version 6; legacy versions 1\u20135 restore absent orientation. This nested version is distinct from the enclosing runtime snapshot version.",
+    "gameplay": {
+      "feature": "animation_ik_end_orientation_v1",
+      "epoch": 7,
+      "minimum_services_bytes": 352,
+      "command_bytes": 144,
+      "state_bytes": 248,
+      "requirements": [
+        "baseline_v7",
+        "animation_ik_v1",
+        "animation_ik_end_orientation_v1"
+      ],
+      "limits": {
+        "shared_writes_per_tick": 64,
+        "shared_reads_per_tick": 1024
+      }
+    }
+  },
+  "environment": {
+    "platform": "Linux headless under WSL",
+    "build_type": "Debug",
+    "c_and_cxx_debug_flags": "-O0 -g0",
+    "assertions_enabled": true,
+    "build_jobs": 2,
+    "linker_threads": 1,
+    "runtime_workers": 2,
+    "dotnet_processor_count": 2,
+    "graphics": false,
+    "source_scope": "Selected production and fixture identities below; this is not an exhaustive compiler/toolchain closure.",
+    "dotnet_sdk": "10.0.401",
+    "coreclr": "10.0.12",
+    "native_aot_runtime": "10.0.12"
+  },
+  "selected_source_identities": {
+    "include/poima/runtime.hpp": {
+      "bytes": 26333,
+      "sha256": "14b53c75774700d319cfcc2cddbe1a3459002a78dd1357daa2d72658011e7a8a"
+    },
+    "include/poima/runtime_ik.hpp": {
+      "bytes": 1193,
+      "sha256": "6765f0620c22b670701b3173bc1f385cf5fa5316bd9c4bcba503b523dfa6329f"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 40819,
+      "sha256": "2c967b4adee82f24c864bf4cb82fd85422356606611f1d09d0672f7defb6f9f0"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 14825,
+      "sha256": "1b54505227449e614acf2bde73301c3ece7aee7c7af5f2dd1bc23041660e56fc"
+    },
+    "src/runtime_ik.cpp": {
+      "bytes": 13727,
+      "sha256": "14a50cf60c2d34ee9f04337981747ac9a8704341b330b956b6221684606e932c"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 93114,
+      "sha256": "311679076e14533932eb2495b2bf56dac417e053956c4b900bac440ffd4a16af"
+    },
+    "src/runtime_two_bone_ik.inc": {
+      "bytes": 9161,
+      "sha256": "d53a901c6cde9f41777d49cc8c8afbd8e915a7acca03d60d2f9da211f66b237b"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 72335,
+      "sha256": "0092dc349389cae89b0663a42b5572d87352b2b4a5b94b1a56b0c30f37d303f9"
+    },
+    "src/world.cpp": {
+      "bytes": 337391,
+      "sha256": "ad371576f41758ff910ea6e262465ff5ce6a584dc473d7ca69c61486f74f12d4"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 119847,
+      "sha256": "23ffc8c2c74bd8dc3412d70c2765422217b58293480c3ba8e2e45ee11aeb495a"
+    },
+    "managed/Poima.Gameplay/TwoBoneIkOrientation.cs": {
+      "bytes": 9704,
+      "sha256": "210da4017c4f5c8b8db13af4658a5f23bc1a99b1bef30eea14aefdcd42bb568f"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 23465,
+      "sha256": "4d068602319a5021b1ca3554ddc8ce79c98f908aabeb94a22c2947f93e1d9f2a"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 14976,
+      "sha256": "a5a8d2313b6e68393ff955f1b1707ebc3b143ae989b6f8380faaa8d0bea1d568"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 6761,
+      "sha256": "f714e20529bd922db1203d3334379411c857e339636dbc02f875bd0d61b74627"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7211,
+      "sha256": "ee9c73d7bc34871bd6d95baf71100e95802153bcc4101bba4e2151aecd03bace"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 20415,
+      "sha256": "2317eb6c5736ea5566059bde986eda6857f724d74a26043bba52083732ead9a6"
+    },
+    "tests/runtime_two_bone_ik_native.cpp": {
+      "bytes": 39396,
+      "sha256": "4fb16859cfcd8bb5ec77206d7ff0f0c301a632457e92af703c2275e0adcd2798"
+    },
+    "tests/runtime_two_bone_ik_orientation.py": {
+      "bytes": 30110,
+      "sha256": "8a7589482a68ff2af8f71e89895d8e471611c77ffcf8b300d5b5e9577555caca"
+    },
+    "tests/runtime_two_bone_ik.py": {
+      "bytes": 17207,
+      "sha256": "582873a7215c234d6601b77172bcd1a7b3107801215e37017442de2a2d716bf1"
+    },
+    "tests/managed_service_abi/TwoBoneIkOrientationExtension.cs": {
+      "bytes": 16098,
+      "sha256": "ef20aaab8600bde477b42b27988794b48a3a842257353b6acae82b5cc5122e39"
+    },
+    "tests/managed_two_bone_ik_orientation_gameplay/ManagedTwoBoneIkOrientationGame.cs": {
+      "bytes": 5303,
+      "sha256": "ed269b3806d58708ab0650844cb96d29a8e52a37214cc30afda6049a0fe81387"
+    },
+    "tests/managed_two_bone_ik_orientation_gameplay/Poima.ManagedTwoBoneIkOrientationGame.csproj": {
+      "bytes": 211,
+      "sha256": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a"
+    }
+  },
+  "native_artifacts": {
+    "qualified": true,
+    "classification": "Separate file-only artifact sealing after a successful incremental build command whose producer failed its fresh-link receipt assumption.",
+    "fresh_build_pass": false,
+    "compiler_execution_by_sealer": false,
+    "native_execution_by_sealer": false,
+    "selected_executables": 17,
+    "new_executable_links": 13,
+    "reused_standalone_executables": 4,
+    "cli": {
+      "bytes": 35272624,
+      "sha256": "39a846cc69ef793c424312c9a6fb802fe53a303a6e11fe12c667df88970ba600"
+    },
+    "normal_core": {
+      "bytes": 142661152,
+      "sha256": "46d0d523f05f6a198315bc9b8dbe889c6a2ac9298b5547480602c6ac696f3efe"
+    },
+    "preservation": "Both failed producer reports remain failed. Sealed bytes and source identities were joined to actual QA input bytes; earlier QA executed the cache CLI, not the later independently stored CLI path."
+  },
+  "native_qa": {
+    "passed": true,
+    "native_cases": 16,
+    "ik_native_groups": 13,
+    "core_conformance_checks": 5,
+    "metadata_checks": 3,
+    "fresh_project_rpc": 13,
+    "fresh_project_ticks": 120,
+    "authored_files_unchanged": 3,
+    "commands": 4,
+    "closure": "Original four phases returned zero with no forced cleanup and empty owned descendants/groups."
+  },
+  "managed_abi": {
+    "passed": true,
+    "commands": 4,
+    "checks": 94,
+    "selected_output_files": 13,
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "ecbc97c8d2e1968315d2f7d3ad5fec2a556911de7d1b51f66a74744b94be5000"
+    },
+    "bridge_sdk": {
+      "bytes": 192512,
+      "sha256": "9dd4812b708b21efed9f6f81f1b41abcb2713d6564872e94bd3bda6d181b52be"
+    },
+    "consumer": {
+      "bytes": 10240,
+      "sha256": "5943a62a51b5171749b8e11613aa1f5dfffa2200d5952d0c2556b082fa8d6cf8"
+    },
+    "consumer_sdk": {
+      "bytes": 192512,
+      "sha256": "39d62a15ea27bfeab30ce9f7107aae7b957fd5ae1657a1e4527bd61f0999f9f7"
+    },
+    "sdk_scope": "Bridge and consumer SDK images were built separately and have distinct byte identities. The actual negotiated consumer run qualifies this selected combination."
+  },
+  "orientation_protocol": {
+    "passed": true,
+    "phases": 3,
+    "rpc_pairs": 473,
+    "native_owners": 6,
+    "new_fixture_checkpoints": 44,
+    "new_fixture_whole_byte_pairs": 23,
+    "breakdown": {
+      "json": {
+        "rpc_pairs": 120,
+        "native_owners": 2,
+        "checkpoints": 13,
+        "whole_byte_pairs": 7
+      },
+      "coreclr": {
+        "rpc_pairs": 265,
+        "native_owners": 2,
+        "checkpoints": 31,
+        "whole_byte_pairs": 16
+      },
+      "legacy_point_json": {
+        "rpc_pairs": 88,
+        "native_owners": 2
+      }
+    },
+    "observations": [
+      "Analytic end and attachment geometry; independent positional/orientation weights; canonical sign and strict malformed goals.",
+      "V1/V2 clear semantics, exact64 writes and mixed1024 reads, rejected65/1025, same-slot/caller conflicts, second-Tick rollback, durable save result and pending birth.",
+      "Complete original checkpoint bytes and recursive JSON types agree for every claimed pair, including warm restore, cold restore and cold continuation.",
+      "Authored source and full retry-history boundaries are retained separately. Frozen saves contain explicit empty canonical history arrays under the existing world-freeze contract."
+    ],
+    "runtime_snapshot_scope": "The analytic pre-structure snapshot uses version1 with nine payload members. Hierarchical birth uses version6 with thirteen members. Every member is retained and validated per its source-defined version.",
+    "closure": "Six local native processes returned zero; the three enclosing protocol phases closed with empty owned descendants/groups and no forced cleanup.",
+    "wire_scope": "Correlated original logical UTF-8 JSONL requests/results, not a cross-platform OS pipe-byte identity claim.",
+    "closed_output": {
+      "files": 188,
+      "bytes": 16226152
+    }
+  },
+  "full_game_regression": {
+    "passed": true,
+    "source_entities": 2394,
+    "live_entities": 2397,
+    "animation_rigs": 24,
+    "rig_nodes": 1464,
+    "typed_globals": 50,
+    "component_types": 4,
+    "rpc_pairs": 162,
+    "requested_ticks": 302,
+    "native_owners": 3,
+    "checkpoint_references": 11,
+    "unique_checkpoint_archives": 6,
+    "whole_byte_pairs": 5,
+    "prospective_full_forecasts": 2,
+    "runtime_snapshot_version": 7,
+    "payload_members": 14,
+    "compiled_save_load_cycles": 1,
+    "scope": "Unchanged precompiled original Performance Yard game, with all50 typed globals/four component schemas and all14 enclosing snapshot members retained. Warm/cold/relocated roots and compiled save/load succeed. Only the owned staged source copy becomes unavailable; the checkout remains readable. This is a regression consumer, not an orientation content scene, fresh-agent task, OS sandbox or performance result."
+  },
+  "native_aot_consumer": {
+    "passed": true,
+    "rpc_pairs": 265,
+    "native_owners": 2,
+    "checkpoints": 31,
+    "whole_byte_pairs": 16,
+    "native_diagnostics": {
+      "dynamic_code_supported": false,
+      "dynamic_code_compiled": false
+    },
+    "services_bytes": 352,
+    "artifact_files": 8,
+    "artifact_bytes": 1822059,
+    "library": {
+      "bytes": 1628008,
+      "sha256": "5a6fccb4066137f14da25e10334029f4cc591cd4e57747e2aaf2e97cb1da7395"
+    },
+    "descriptor": {
+      "bytes": 5780,
+      "sha256": "3eca6358a5685e1f30f2f43a2a5f796c2e6ab2921b0cd376bbedf7f1762d5284"
+    },
+    "artifact_recovery_qualified": true,
+    "fresh_publication_owner_pass": false,
+    "scope": "Actual native-hosted orientation game, exact descriptor/image/schema identity, shared budgets and whole late-Tick rollback, pending-birth publication, warm/cold complete save restoration and fresh-process continuation. Artifact qualification is separate from the failed original publisher owner. No compiler repeat or same-schema hot reload."
+  },
+  "retained_failures": [
+    {
+      "scope": "First native compile",
+      "result": "failed",
+      "cause": "The new native test passed a const checkpoint to the consuming mutable restore API.",
+      "followup": "A mutable copy preserves the original checkpoint operand; later compilation and the same native assertions passed."
+    },
+    {
+      "scope": "Incremental native producer verification",
+      "result": "failed",
+      "cause": "The actual compiler command completed, but the producer required17 new linker receipts although four unchanged standalone targets were reused.",
+      "followup": "Separate file-only qualification joins13 new links and four exact retained executable/source witnesses; the failed producer is not regraded."
+    },
+    {
+      "scope": "First JSON protocol fixture expectation",
+      "result": "failed",
+      "rpc_pairs": 30,
+      "cause": "The fixture expected authored retry history in a frozen runtime document, contrary to the existing canonical empty-history contract.",
+      "followup": "Fresh-case successor retains complete original authored history separately, checks every saved key/type and canonical history slot, and keeps all original whole saved operands untouched."
+    },
+    {
+      "scope": "Native AOT publisher ownership",
+      "result": "failed",
+      "publisher_exit_code": 0,
+      "adopted_children_reaped": 2,
+      "adopted_wait_statuses": [
+        0,
+        0
+      ],
+      "forced_cleanup": false,
+      "followup": "Separate retained-file qualification verifies the exact completed descriptor, generated schema, declared artifact membership, selected package resolution and input identities. The actual native consumer then passes its full save/rollback cohort. Original strict owner remains failed and is not regraded."
+    }
+  ],
+  "reproducible_public_checks": {
+    "prerequisites": "A matching built simulation-enabled CLI, matching SDK/bridge and supplied compiled test consumer; run subprocess fixtures under a finite external process-tree owner. Outputs must be fresh.",
+    "recipes": [
+      [
+        "ctest",
+        "--test-dir",
+        "build/linux-game",
+        "-R",
+        "^runtime_two_bone_ik_native$",
+        "--output-on-failure"
+      ],
+      [
+        "python3",
+        "-B",
+        "tests/runtime_two_bone_ik_orientation.py",
+        "--binary",
+        "build/linux-game/poima",
+        "--output",
+        "build/ik-orientation-json-check"
+      ],
+      [
+        "python3",
+        "-B",
+        "tests/runtime_two_bone_ik_orientation.py",
+        "--binary",
+        "build/linux-game/poima",
+        "--hostfxr",
+        "<matching-hostfxr>",
+        "--bridge",
+        "<matching-bridge>",
+        "--assembly",
+        "<compiled-orientation-consumer>",
+        "--output",
+        "build/ik-orientation-coreclr-check"
+      ],
+      [
+        "python3",
+        "-B",
+        "tests/runtime_two_bone_ik_orientation.py",
+        "--binary",
+        "build/linux-game/poima",
+        "--native-descriptor",
+        "<published-native-game>/native-gameplay.json",
+        "--output",
+        "build/ik-orientation-native-aot-check"
+      ]
+    ],
+    "compiled_consumer_project": "tests/managed_two_bone_ik_orientation_gameplay/Poima.ManagedTwoBoneIkOrientationGame.csproj"
+  },
+  "selected_record_identities": {
+    "native_seals": {
+      "bytes": 1319598,
+      "sha256": "fda4afe6ba0fc4a65927217943c32e629b3223401fb9e071be1040e8cd9ecf4e"
+    },
+    "native_qa": {
+      "bytes": 4671,
+      "sha256": "6a88eb2b77bcb577c2bed1beadf3d98728e796142fd4d9eab31980cdfe745d80"
+    },
+    "managed_abi": {
+      "bytes": 9793,
+      "sha256": "7bd39b37fc34210a2a7c274734d1120295d083430d667a8ae63bb8b71a1b279d"
+    },
+    "protocol_file_review": {
+      "bytes": 5591,
+      "sha256": "f0f98d3e116913145b18ffbf3449318ae083e82a6edff454f1b2af47fb8c3667"
+    },
+    "full_game_file_review": {
+      "bytes": 115987,
+      "sha256": "27925db98683683e8bfe20925f4eab0f8bb6637a3eb442a804b6a00f46163ae0"
+    },
+    "native_aot_artifact_recovery": {
+      "bytes": 47740,
+      "sha256": "c13b6457e161ad586b99bb7405bc2edd20116c4640b326b328b6055151c3bf52"
+    },
+    "native_aot_consumer_owner": {
+      "bytes": 5528,
+      "sha256": "c4c14a37f62408029f358ade7978c3adf93e54f284494524b95c3fe221bbc2b6"
+    },
+    "native_aot_consumer_evidence": {
+      "bytes": 1103154,
+      "sha256": "0b17f0f2e3472853ca5185e3b5535d85f3594f4edc58e8d7e3b56e06e85a56e9"
+    },
+    "native_aot_consumer_file_review": {
+      "bytes": 4827,
+      "sha256": "bc29a51a3a8287de6ef5da763adf61940b32cd6c0ba8b7df01f5689b5a341cde"
+    }
+  },
+  "limitations": [
+    "Native Linux headless evidence; no Windows consumer qualification in this checkpoint.",
+    "No renderer, physical contacts, automatic ground detection, foot locking, pelvis correction, joint limits, GPU or foreground-input qualification.",
+    "No same-schema reload qualification by the orientation fixture; saves and continuation are separate evidence.",
+    "No optimized performance, clean-machine installation, new agent-authored game or overall Alpha completion claim."
+  ]
+}

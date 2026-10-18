@@ -281,7 +281,8 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
     if(compiled_cache)for(const auto& rig:compiled_cache->rigs)compiled.emplace(rig.model.get(),rig.compiled);
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto& source=*entity.animation_rig;Rig rig;rig.entity=entity.id;rig.model=source.model;
-        rig.ik=source.ik;rig.root_motion=source.root_motion;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
+        rig.ik=source.ik;for(auto& chain:rig.ik)chain.end_orientation=canonical_ik_end_orientation(chain.end_orientation);
+        rig.root_motion=source.root_motion;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
         rig.compiled=compiled.at(rig.model.get());
         rig.parents.emplace_back(entity.id,entity.parent);
@@ -315,7 +316,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
             rig.root_rest=root_motion::selected(rig.compiled->sample({},0,false,rig.baseline),rig.model_parents,root.node,root.yaw);
         }
         for(const auto& chain:rig.ik) {
-            ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight});
+            ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight,chain.end_orientation});
             RuntimeIkState state{entity.id,chain.slot,chain.root,chain.middle,chain.end,chain.enabled,chain.space,chain.target,chain.pole};state.weight=chain.weight;
             ik_states_[index].push_back(state);
         }
@@ -355,7 +356,8 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     };
     auto ik_equal=[](const std::vector<RuntimeTwoBoneIk>& a,const std::vector<RuntimeTwoBoneIk>& b) {
         if(a.size()!=b.size())return false;
-        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight)return false;}
+        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.end_orientation.has_value()!=y.end_orientation.has_value()||
+            (x.end_orientation&&(x.end_orientation->rotation!=y.end_orientation->rotation||x.end_orientation->weight!=y.end_orientation->weight)))return false;}
         return true;
     };
     for(const auto& [entity,index]:candidate.membership_->indices) {
@@ -633,7 +635,7 @@ void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) 
         validate_ik_command(command);check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"IK command entity has no AnimationRig.");
         auto& controls=candidate[found->second];const auto control=std::find_if(controls.begin(),controls.end(),[&](const auto& c){return c.slot==command.slot;});
-        check(control!=controls.end(),"IK command slot is not configured.");*control=command;
+        check(control!=controls.end(),"IK command slot is not configured.");*control=command;control->end_orientation=canonical_ik_end_orientation(command.end_orientation);
     }
     ik_.swap(candidate);
 }
@@ -848,6 +850,9 @@ RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::stri
 std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
     const bool configured_ik=has_ik(),configured_root=has_root_motion();
+    // Orientation is persistent control, not animation history. Clearing the
+    // last goal returns to the original closed version without an ever-used flag.
+    const bool oriented=std::any_of(ik_.begin(),ik_.end(),[](const auto& controls){return std::any_of(controls.begin(),controls.end(),[](const auto& control){return control.end_orientation.has_value();});});
     const bool layered=configured_ik || configured_root || std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
     const bool modern=layered || std::any_of(clocks_.begin(),clocks_.end(),[](const Clock& clock) { return clock.inertial_ever_used; });
     auto save_clock=[&](std::size_t index,const Clock& clock,const std::string& entity) {
@@ -901,17 +906,18 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
                 saved.push_back({{"slot",frozen.slot},{"root",frozen.root},{"middle",frozen.middle},{"end",frozen.end},
                     {"enabled",control.enabled},{"space",control.space==IkSpace::World?"world":"rig"},
                     {"target",control.target},{"pole",control.pole},{"weight",control.weight}});
+                if(oriented)saved.back()["end_orientation"]=control.end_orientation ? StateJson{{"rotation",control.end_orientation->rotation},{"weight",control.end_orientation->weight}} : StateJson(nullptr);
             }
             record["ik"]=std::move(saved);
         }
-        if(configured_root) {
+        if(configured_root||oriented) {
             const auto& frozen=membership_->rigs[index].root_motion;
             if(frozen){check(roots_[index].state.to_tick==tick,"Root motion save requires the committed boundary.");record["root_motion"]=save_root(roots_[index],*frozen);}
             else record["root_motion"]=nullptr;
         }
         records.push_back(std::move(record));
     }
-    auto result=StateJson{{"format","poima.animation-state"},{"version",configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
+    auto result=StateJson{{"format","poima.animation-state"},{"version",oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
 void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
@@ -933,14 +939,15 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     };
     const auto document=StateJson::parse(text,callback);
     state_fields(document,{"format","version","tick","rigs"});
-    const auto version=state_uint(document.at("version"),5);
-    check(document.at("format")=="poima.animation-state" && version>=1 && version<=5,"Unsupported animation state format/version.");
+    const auto version=state_uint(document.at("version"),6);
+    check(document.at("format")=="poima.animation-state" && version>=1 && version<=6,"Unsupported animation state format/version.");
+    const bool oriented=version==6;
     const bool modern=version>=2;const bool layered=version>=3;
-    check((version==5)==configured_root && (version==5 || ((version==4)==configured_ik && (version==4 || layered==configured))),"Animation state version does not match configured layers/IK/root motion.");
+    check(oriented ? configured_ik : ((version==5)==configured_root && (version==5 || ((version==4)==configured_ik && (version==4 || layered==configured)))),"Animation state version does not match configured layers/IK/root motion.");
     check(layered || text.size()<=animation_state_bytes,"Legacy animation state exceeds 16 MiB.");
     check(state_uint(document.at("tick"),animation_state_max_tick)==tick,"Animation state tick differs from restore boundary.");
     const auto& records=document.at("rigs");check(records.is_array() && records.size()==membership_->rigs.size(),"Animation state must contain every current rig exactly once.");
-    bool any_inertial=false;
+    bool any_inertial=false,any_orientation=false;
     auto read_clock=[&](const StateJson& record,std::size_t index,const std::string& entity) {
         const auto& rig=membership_->rigs[index];Clock next;
         next.control=read_control(record.at("control"),entity,rig.clip_durations.size(),modern);
@@ -999,7 +1006,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     };
     auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;auto candidate_roots=roots_;std::set<std::string> seen;
     for(const auto& record:records) {
-        if(configured_root)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"});
+        if(configured_root||oriented)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"});
         else if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
         else if(layered)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"});
         else if(modern)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history"});
@@ -1045,12 +1052,21 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             check(saved.is_array()&&saved.size()==rig.ik.size(),"Animation state must contain every configured IK chain exactly once.");
             for(std::size_t i=0;i<saved.size();++i) {
                 const auto& value=saved[i];const auto& frozen=rig.ik[i];
-                state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"});
+                if(oriented)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation"});
+                else state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"});
                 check(state_uint(value.at("slot"),8)==frozen.slot&&state_uint(value.at("root"),UINT32_MAX)==frozen.root&&
                     state_uint(value.at("middle"),UINT32_MAX)==frozen.middle&&state_uint(value.at("end"),UINT32_MAX)==frozen.end,"Animation state IK chain differs from frozen configuration.");
                 check(value.at("space")=="world"||value.at("space")=="rig","Unknown animation state IK space.");
                 RuntimeIkCommand control{entity,frozen.slot,state_bool(value.at("enabled")),value.at("space")=="world"?IkSpace::World:IkSpace::Rig,
                     state_vector<3>(value.at("target")),state_vector<3>(value.at("pole")),state_number(value.at("weight"))};
+                if(oriented&&!value.at("end_orientation").is_null()) {
+                    const auto& saved_goal=value.at("end_orientation");state_fields(saved_goal,{"rotation","weight"});
+                    RuntimeIkEndOrientation goal{state_vector<4>(saved_goal.at("rotation")),state_number(saved_goal.at("weight"))};
+                    const auto canonical=canonical_ik_end_orientation(goal);
+                    check(canonical&&canonical->rotation==goal.rotation,"Animation state end orientation must be canonical and nonzero-weight.");
+                    for(std::size_t component=0;component<4;++component)check(std::signbit(canonical->rotation[component])==std::signbit(goal.rotation[component]),"Animation state end orientation has noncanonical signed zero.");
+                    control.end_orientation=canonical;any_orientation=true;
+                }
                 validate_ik_command(control);candidate_ik[index][i]=std::move(control);
             }
             // Validate the evaluated model metric now; world-space diagnostics
@@ -1059,9 +1075,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             strip_root(index,pose);
             for(std::size_t i=0;i<rig.ik.size();++i)(void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
         }
-        if(configured_root){const auto& root=membership_->rigs[index].root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root)candidate_roots[index]=read_root(saved,entity,*root,membership_->rigs[index].clip_durations.size(),tick,candidate[index]);}
+        if(configured_root||oriented){const auto& root=membership_->rigs[index].root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root)candidate_roots[index]=read_root(saved,entity,*root,membership_->rigs[index].clip_durations.size(),tick,candidate[index]);}
     }
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
+    check(!oriented||any_orientation,"Version 6 animation state requires at least one retained end orientation.");
     clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(candidate_ik);roots_.swap(candidate_roots);
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {

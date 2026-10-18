@@ -103,12 +103,23 @@ struct RuntimeAnimationLayer {
     double reference_time=0;
 };
 enum class IkSpace : std::uint32_t { World=0, Rig=1 };
+struct RuntimeIkEndOrientation {
+    // Model/rig quaternion frame, independent of the target point's IkSpace.
+    std::array<double,4> rotation{0,0,0,1};
+    double weight=1;
+};
+struct RuntimeIkEndOrientationState {
+    RuntimeIkEndOrientation goal;
+    std::array<double,4> actual_rotation{0,0,0,1};
+    double angular_error=0;
+};
 struct RuntimeTwoBoneIk {
     std::uint32_t slot=1,root=0,middle=0,end=0;
     bool enabled=true;
     IkSpace space=IkSpace::World;
     std::array<double,3> target{},pole{0,0,1};
     double weight=1;
+    std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
 };
 struct RuntimeIkCommand {
     std::string entity;
@@ -117,6 +128,7 @@ struct RuntimeIkCommand {
     IkSpace space=IkSpace::World;
     std::array<double,3> target{},pole{0,0,1};
     double weight=1;
+    std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
 };
 struct RuntimeIkState {
     std::string entity;
@@ -126,6 +138,7 @@ struct RuntimeIkState {
     std::array<double,3> target{},pole{0,0,1},end_position{};
     double weight=1,target_error=0;
     bool clamped=false,pole_fallback=false;
+    std::optional<RuntimeIkEndOrientationState> end_orientation=std::nullopt;
 };
 enum class RootMotionMode : std::uint32_t { Extract=0, Character=1 };
 struct RuntimeRootMotionDefinition {

@@ -6,6 +6,7 @@
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
+#include "poima/runtime_ik.hpp"
 #include "poima/ui_model.hpp"
 #if POIMA_GAME_UI
 #include "poima/ui_presenter.hpp"
@@ -453,15 +454,30 @@ RuntimeIkCommand ik_control_value(const Json& value) {
         require(value.at("weight").is_number() && std::isfinite(value.at("weight").get<double>()) && value.at("weight")>=0 && value.at("weight")<=1,"IK weight must be within0..1.");
         result.weight=value.at("weight").get<double>();
     }
+    if(value.contains("end_orientation")) {
+        const auto& goal=value.at("end_orientation");
+        fields(goal,{"rotation","weight"},{"rotation","weight"});
+        const auto& rotation=goal.at("rotation");
+        require(rotation.is_array() && rotation.size()==4,"IK end orientation rotation requires four XYZW components.");
+        for(const auto& x:rotation)require(x.is_number() && std::isfinite(x.get<double>()),"IK end orientation rotation must contain finite numbers.");
+        require(goal.at("weight").is_number() && std::isfinite(goal.at("weight").get<double>()) && goal.at("weight")>=0 && goal.at("weight")<=1,"IK end orientation weight must be within0..1.");
+        RuntimeIkEndOrientation orientation;
+        orientation.rotation=rotation.get<std::array<double,4>>();orientation.weight=goal.at("weight").get<double>();
+        const auto& q=orientation.rotation;
+        const auto norm=std::hypot(std::hypot(q[0],q[1]),std::hypot(q[2],q[3]));
+        require(std::isfinite(norm) && norm>0,"IK end orientation requires a nonzero finite quaternion norm.");
+        result.end_orientation=canonical_ik_end_orientation(orientation);
+    }
     return result;
 }
 std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     require(values.is_array() && values.size()<=8,"AnimationRig IK permits at most eight chains.");
     std::vector<RuntimeTwoBoneIk> result;std::set<std::uint32_t> slots;
     for(const auto& value:values) {
-        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight"},{"slot","root","middle","end","target","pole"});
+        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight","end_orientation"},{"slot","root","middle","end","target","pole"});
         const auto control=ik_control_value(value);require(slots.insert(control.slot).second,"Duplicate authored IK slot.");
         RuntimeTwoBoneIk chain;chain.slot=control.slot;chain.enabled=control.enabled;chain.space=control.space;chain.target=control.target;chain.pole=control.pole;chain.weight=control.weight;
+        chain.end_orientation=control.end_orientation;
         const auto root=revision(value.at("root")),middle=revision(value.at("middle")),end=revision(value.at("end"));
         require(root<10000 && middle<10000 && end<10000 && root!=middle && root!=end && middle!=end,"IK chain requires three distinct model indices0..9999.");
         chain.root=static_cast<std::uint32_t>(root);chain.middle=static_cast<std::uint32_t>(middle);chain.end=static_cast<std::uint32_t>(end);result.push_back(chain);
@@ -2891,7 +2907,7 @@ public:
         require(raw.is_array() && raw.size()<=64,"IK must contain at most64 complete commands.");
         std::vector<RuntimeIkCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
         for(const auto& value:raw) {
-            fields(value,{"entity","slot","target","pole","enabled","space","weight"},{"entity","slot","target","pole"});
+            fields(value,{"entity","slot","target","pole","enabled","space","weight","end_orientation"},{"entity","slot","target","pole"});
             auto command=ik_control_value(value);command.entity=identifier(value.at("entity"));
             require(seen.emplace(command.entity,command.slot).second,"Duplicate IK command target.");result.push_back(std::move(command));
         }
@@ -3404,7 +3420,8 @@ public:
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.ik") {
-            fields(params,{"session_id","tick","entity","slot"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            fields(params,{"session_id","tick","entity","slot","include_end_orientation"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");
             try { (void)runtime_->entity(entity); }catch(const std::runtime_error& error){throw Error(-32004,error.what());}
@@ -3413,6 +3430,14 @@ public:
                 if(state)value={{"entity",state->entity},{"slot",state->slot},{"root",state->root},{"middle",state->middle},{"end",state->end},
                     {"enabled",state->enabled},{"space",state->space==IkSpace::Rig ? "rig" : "world"},{"target",state->target},{"pole",state->pole},{"weight",state->weight},
                     {"end_position",state->end_position},{"target_error",state->target_error},{"clamped",state->clamped},{"pole_fallback",state->pole_fallback}};
+                if(state && params.value("include_end_orientation",false)) {
+                    value["end_orientation"]=nullptr;
+                    if(state->end_orientation) {
+                        const auto& orientation=*state->end_orientation;
+                        value["end_orientation"]={{"rotation",orientation.goal.rotation},{"weight",orientation.goal.weight},
+                            {"actual_rotation",orientation.actual_rotation},{"angular_error",orientation.angular_error}};
+                    }
+                }
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }

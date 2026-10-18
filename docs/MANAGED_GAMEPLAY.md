@@ -148,7 +148,7 @@ Invalid commands, failed curve samples and managed exceptions restore animation 
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, 320 named camera lenses, and 336 named character stance; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, 320 named camera lenses, 336 named character stance, and 352 named IK end orientation plus IK; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
 
 ## Control masked layers from C#
 
@@ -374,6 +374,33 @@ full-body solving, joint limits or root motion. The [0.0.118 qualification](evid
 records actual CoreCLR and Native AOT consumers, including complete rollback
 and fresh saved continuation; compatible reload is checked only with CoreCLR.
 
+
+### Independently orient the final IK joint
+
+Declare `ITwoBoneIkOrientationGame`, which inherits `ITwoBoneIkGame`. It requests
+`animation_ik_end_orientation_v1` together with `animation_ik_v1` through the
+352-byte epoch-7 prefix. It grants no unrelated intermediate extension rights.
+`GetTwoBoneIkOrientation` reads the committed point state and optional rig-frame
+orientation diagnostics. `SetTwoBoneIkOrientation` stages one complete
+`IkOrientedCommand`, including all positional controls and its nullable goal.
+
+```csharp
+// The game class declares ITwoBoneIkOrientationGame.
+context.SetTwoBoneIkOrientation(new IkOrientedCommand(
+    state.Rig, 1, new(1, 1, 0), new(0, 0, 1),
+    true, IkSpace.Rig, 1,
+    new IkEndOrientationGoal(new Quaterniond(0, 0, 0, 1), 1)));
+```
+
+The goal is a final rig-space XYZW quaternion with an independent 0–1 weight;
+position weight zero can still apply orientation. Null or zero clears the goal.
+The existing `SetTwoBoneIk` remains a complete point-only replacement and also
+clears a previously oriented slot. Both paths share the existing read/write
+budgets, pending-birth checks, conflict rules and whole-batch rollback.
+The new setter has a distinct name so old target-typed `new(...)` calls remain
+unambiguous. Existing command/state constructors and prefix layouts are unchanged.
+See [end-joint control and persistence](TWO_BONE_IK.md#align-the-end-joint) for
+normalization, scale restrictions, cached diagnostics and nested version-6 saves.
 
 ## Control planar root motion from C#
 

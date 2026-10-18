@@ -2,6 +2,7 @@
 #include "poima/runtime_ik.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <set>
 #include <stdexcept>
 
@@ -39,12 +40,34 @@ void metric(std::span<const int> parents,const ModelPose& pose,const RuntimeTwoB
 }
 void wrapper(const Matrix4& m){for(auto x:m)check(std::isfinite(x),"IK wrapper matrix must be finite.");check(m[3]==0&&m[7]==0&&m[11]==0&&m[15]==1,"IK wrapper must be affine.");const auto determinant=m[0]*(m[5]*m[10]-m[9]*m[6])-m[4]*(m[1]*m[10]-m[9]*m[2])+m[8]*(m[1]*m[6]-m[5]*m[2]);check(std::isfinite(determinant)&&determinant>0,"IK wrapper must be an invertible positive affine transform.");}
 }
-void validate_ik_command(const RuntimeIkCommand& c){check(c.slot>=1&&c.slot<=8,"IK slot must be 1..8.");check(c.space==IkSpace::World||c.space==IkSpace::Rig,"Unknown IK space.");check(std::isfinite(c.weight)&&c.weight>=0&&c.weight<=1,"IK weight must be finite in 0..1.");for(const auto& v:{c.target,c.pole})for(auto x:v)check(std::isfinite(x)&&std::abs(x)<=1e6,"IK target/pole coordinates must be finite within +/-1000000.");}
+std::optional<RuntimeIkEndOrientation> canonical_ik_end_orientation(std::optional<RuntimeIkEndOrientation> value){
+    if(!value)return {};
+    check(std::isfinite(value->weight)&&value->weight>=0&&value->weight<=1,"IK end orientation weight must be finite in 0..1.");
+    for(const auto x:value->rotation)check(std::isfinite(x),"IK end orientation quaternion must be finite.");
+    const auto n=std::hypot(std::hypot(value->rotation[0],value->rotation[1]),std::hypot(value->rotation[2],value->rotation[3]));
+    check(std::isfinite(n)&&n>0,"IK end orientation quaternion must have finite nonzero norm.");
+    // Preserving already-unit components makes repeated admission and saved
+    // reconstruction idempotent instead of accumulating normalization ULPs.
+    if(std::abs(n-1)>8*std::numeric_limits<double>::epsilon()){
+        // A rounded subnormal norm can equal a single input component. Scale
+        // first so dividing by that norm cannot leave a nonunit quaternion.
+        double scale=0;for(const auto x:value->rotation)scale=std::max(scale,std::abs(x));
+        for(auto& x:value->rotation)x/=scale;
+        const auto scaled=std::hypot(std::hypot(value->rotation[0],value->rotation[1]),std::hypot(value->rotation[2],value->rotation[3]));
+        for(auto& x:value->rotation)x/=scaled;
+    }
+    for(const auto i:{3u,0u,1u,2u})if(value->rotation[i]!=0){if(value->rotation[i]<0)for(auto& x:value->rotation)x=-x;break;}
+    for(auto& x:value->rotation)if(x==0)x=0;
+    // Even zero-weight requests must pass all of the validation above.
+    if(value->weight==0)return {};
+    return value;
+}
+void validate_ik_command(const RuntimeIkCommand& c){check(c.slot>=1&&c.slot<=8,"IK slot must be 1..8.");check(c.space==IkSpace::World||c.space==IkSpace::Rig,"Unknown IK space.");check(std::isfinite(c.weight)&&c.weight>=0&&c.weight<=1,"IK weight must be finite in 0..1.");for(const auto& v:{c.target,c.pole})for(auto x:v)check(std::isfinite(x)&&std::abs(x)<=1e6,"IK target/pole coordinates must be finite within +/-1000000.");(void)canonical_ik_end_orientation(c.end_orientation);}
 namespace ik {
 void validate_chains(std::span<const int> parents,std::span<const NodePose> rest,std::span<const RuntimeTwoBoneIk> chains){
     check(chains.size()<=8,"AnimationRig permits at most eight IK chains.");if(chains.empty())return;
     ModelPose pose;pose.local.assign(rest.begin(),rest.end());compose(parents,pose);std::uint32_t previous=0;
-    for(const auto& c:chains){validate_ik_command({{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
+    for(const auto& c:chains){validate_ik_command({{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight,c.end_orientation});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
         check(c.root<parents.size()&&c.middle<parents.size()&&c.end<parents.size()&&c.root!=c.middle&&c.middle!=c.end&&c.root!=c.end,"IK chain indices must be distinct existing nodes.");
         check(parents[c.middle]==static_cast<int>(c.root)&&parents[c.end]==static_cast<int>(c.middle),"IK chain must have direct model root/middle/end parent correspondence.");metric(parents,pose,c);
     }
@@ -72,6 +95,25 @@ RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeT
         const auto middle_parent=orientation(parents,pose.local,parents[chain.middle]),middle_q=orientation(parents,pose.local,static_cast<int>(chain.middle));
         pose.local[chain.middle].rotation=product(inverse(middle_parent),product(swing(sub(position(pose.world[chain.end]),position(pose.world[chain.middle])),sub(wanted_end,position(pose.world[chain.middle])),plane),middle_q));
         if(control.weight<1){pose.local[chain.root].rotation=blend(original_root,pose.local[chain.root].rotation,control.weight);pose.local[chain.middle].rotation=blend(original_middle,pose.local[chain.middle].rotation,control.weight);}compose(parents,pose);
+    }
+    const auto end_orientation=canonical_ik_end_orientation(control.end_orientation);
+    if(end_orientation){
+        // Use the actual parent after positional blending. This final local
+        // rotation leaves the end joint's translation and its ancestors alone.
+        if(control.enabled){
+            if(control.weight==0)metric(parents,pose,chain);
+            const auto parent=orientation(parents,pose.local,parents[chain.end]);
+            const auto goal=product(inverse(parent),end_orientation->rotation);
+            pose.local[chain.end].rotation=blend(pose.local[chain.end].rotation,goal,end_orientation->weight);
+            compose(parents,pose);
+        }
+        // Disabled retained intent still has an opt-in cached diagnostic, but
+        // never acquires active metric checks or modifies the incoming pose.
+        const auto actual=canonical_ik_end_orientation(RuntimeIkEndOrientation{orientation(parents,pose.local,static_cast<int>(chain.end)),1})->rotation;
+        const auto relative=product(inverse(actual),end_orientation->rotation);
+        const auto error=2*std::atan2(std::hypot(relative[0],relative[1],relative[2]),std::abs(relative[3]));
+        check(std::isfinite(error),"IK end orientation error exceeds numeric range.");
+        result.end_orientation=RuntimeIkEndOrientationState{*end_orientation,actual,error};
     }
     result.end_position=point(world,position(pose.world[chain.end]));result.target_error=length(sub(result.end_position,requested));check(std::isfinite(result.target_error),"IK target error exceeds numeric range.");return result;
 }
