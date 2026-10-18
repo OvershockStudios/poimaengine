@@ -57,3 +57,6 @@ __pycache__/
 /tests/managed_navigation_gameplay/**/obj/
 /tests/managed_navigation_entry/**/bin/
 /tests/managed_navigation_entry/**/obj/
+
+/tests/managed_two_bone_ik_orientation_gameplay/**/bin/
+/tests/managed_two_bone_ik_orientation_gameplay/**/obj/
