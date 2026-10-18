@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.195
+
+- Add an opt-in Linux LLD build preset with one linker thread, retaining the existing compiler, normal archives and system-linker preset.
+
 ## 0.0.194
 
 - Measure callback allocation traffic in the complete headless C# game with profiling off/on, preserving full saved-state forecasts and original traces. [Results](docs/evidence/m2-callback-allocation-workload.json).

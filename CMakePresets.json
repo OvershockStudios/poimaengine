@@ -76,6 +76,17 @@
         "POIMA_BUILD_EDITOR": "OFF",
         "POIMA_BUILD_DESKTOP_BRIDGE": "OFF"
       }
+    },
+    {
+      "name": "linux-game-lld",
+      "displayName": "Linux headless game with the LLVM linker",
+      "inherits": "linux-game",
+      "cacheVariables": {
+        "CMAKE_LINKER_TYPE": "LLD",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--threads=1",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--threads=1",
+        "CMAKE_MODULE_LINKER_FLAGS": "-Wl,--threads=1"
+      }
     }
   ],
   "buildPresets": [
@@ -108,6 +119,11 @@
       "name": "linux-game",
       "configurePreset": "linux-game",
       "jobs": 2
+    },
+    {
+      "name": "linux-game-lld",
+      "configurePreset": "linux-game-lld",
+      "jobs": 2
     }
   ],
   "testPresets": [
@@ -135,6 +151,13 @@
     {
       "name": "linux-game",
       "configurePreset": "linux-game",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-game-lld",
+      "configurePreset": "linux-game-lld",
       "output": {
         "outputOnFailure": true
       }

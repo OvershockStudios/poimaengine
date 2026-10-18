@@ -72,6 +72,50 @@ assertion-enabled build, fifteen native fixtures, a fresh-project physics check
 and the full retained CoreCLR game's warm/cold/relocated save continuation.
 Its original failed attempts and exact scope remain part of that record.
 
+### Optional LLVM linker
+
+`linux-game-lld` selects LLD through CMake's standard `CMAKE_LINKER_TYPE`.
+It requires CMake 3.29 or newer and an ELF-capable `ld.lld` on `PATH`.
+The checked route uses native Linux GNU C/C++ and Ninja. It keeps the compiler,
+compile flags and normal static archives, with one linker thread per
+executable, shared library or module and two build workers.
+
+```sh
+cmake --preset linux-game-lld
+cmake --build --preset linux-game-lld
+ctest --preset linux-game-lld
+```
+
+This preset shares `build/linux-game` with `linux-game`, avoiding a second
+dependency and object cache. A linker change relinks affected outputs; it does
+not require a clean build. Each configure with these presets reasserts
+`RelWithDebInfo`. For an existing Debug cache, repeat your explicit
+`-DCMAKE_BUILD_TYPE=Debug` and any compile-flag overrides on each configure,
+including when restoring the system linker, to preserve its compile recipes.
+
+Linker selection and flags remain in the cache. Rerunning `linux-game` alone
+does not undo them. For a cache whose previous linker flags were empty, restore
+the system defaults with:
+
+```sh
+cmake --preset linux-game \
+  -U CMAKE_LINKER_TYPE \
+  -U CMAKE_EXE_LINKER_FLAGS \
+  -U CMAKE_SHARED_LINKER_FLAGS \
+  -U CMAKE_MODULE_LINKER_FLAGS
+```
+
+If the cache had custom linker flags, restore those saved values instead.
+Keep `ld.lld` available during subsequent builds, or restore the system-linker
+configuration before removing that tool. LLD is a build-time dependency.
+
+The [0.0.195 qualification](evidence/m2-linux-lld-build.json) uses GNU 16 and
+LLD 23.1.2 with explicit Debug `-O0 -g0` flags. Selected native fixtures and
+the retained compiled C# game's complete save/continuation checks pass against
+the recovered artifacts. The original tool-probe and receipt-verifier failures
+remain separate. This does not qualify the complete CTest preset or establish
+a matched build-speed comparison.
+
 ## Incremental version builds
 
 Compiled version and platform strings live in `src/core.cpp`. Other native

@@ -1,0 +1,412 @@
+{
+  "format": "poima.evidence.linux-lld-build.v1",
+  "engine_version": "0.0.195",
+  "date": "2026-10-18",
+  "passed": true,
+  "scope": "Opt-in Linux GNU/LLD headless game build, separately recovered artifact sealing, selected native regression checks and retained compiled C# game continuation. Original producer failures remain failed.",
+  "environment": {
+    "host": "Kali Linux under WSL",
+    "cpu": "AMD Ryzen 7 8845HS",
+    "physical_ram_gib": 16,
+    "compiler": "GNU C/C++ 16",
+    "cmake": "4.3.4",
+    "linker": "LLD 23.1.2",
+    "build_type": "Debug",
+    "c_and_cxx_debug_flags": "-O0 -g0",
+    "assertions_enabled": true,
+    "build_jobs": 2,
+    "linker_threads": 1,
+    "runtime_workers": 2,
+    "dotnet_processor_count": 2,
+    "dotnet_sdk": "10.0.401",
+    "coreclr": "10.0.12",
+    "steam_audio": "4.8.1",
+    "power": "AC connected and battery 100 percent observed before this checkpoint; no continuous sampling."
+  },
+  "preset": {
+    "name": "linux-game-lld",
+    "opt_in": true,
+    "inherits": "linux-game",
+    "shared_cache": true,
+    "project_minimum_cmake": "3.24",
+    "lld_minimum_cmake": "3.29",
+    "existing_presets_unchanged": true,
+    "selection": "CMAKE_LINKER_TYPE=LLD; GCC driver uses -fuse-ld=lld",
+    "exe_shared_module_linker_flags": "-Wl,--threads=1",
+    "default_build_type": "RelWithDebInfo",
+    "qualification_overrode_build_type": true,
+    "compile_and_normal_archive_recipes_unchanged": true,
+    "normal_archive_toolchain": "Existing GNU ar/ranlib, without thin archives or LTO",
+    "dependency_tracking": "Actual LLD dependency files matched explicit object/archive/shared input order. Ninja keepdepfile retained those original files for inspection.",
+    "qualification_tool_lookup": "Private directory containing only ld.lld forwarded to the pinned cached host ELF linker. No compiler/toolchain replacement or global PATH mutation.",
+    "compile_command_records_preserved": 599
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 92960,
+      "sha256": "c819e04da2f39e2487d04d8c83e7eff959b9d55c73e8bb084bdbca9f19d490e8"
+    },
+    "CMakePresets.json": {
+      "bytes": 4297,
+      "sha256": "48ac04b03eaf30d9b88891b6f31de4e75a24e5941e485d5228c96bb867540864"
+    },
+    "src/core.cpp": {
+      "bytes": 19942,
+      "sha256": "0f63cd21a63df69cd55e1fd7381c5883961afb6c218dde81255d2c6ec0e5c2d9"
+    }
+  },
+  "completed_native_commands": {
+    "original_producer_passed": false,
+    "original_producer_regraded": false,
+    "all_three_commands_exit_zero": true,
+    "linker_version_seconds": 5.607672719008406,
+    "configure_seconds": 22.366437737000524,
+    "build_seconds": 175.903612212991,
+    "original_producer_total_seconds": 358.9328784660029,
+    "actions": 18,
+    "translation_units": [
+      "src/core.cpp"
+    ],
+    "normal_core_archives": 1,
+    "executable_links": 16,
+    "original_selected_linker_receipts": 16,
+    "one_thread_receipts": 16,
+    "observed_phase_and_linker_groups_later_absent": 19,
+    "ownership_limit": "Original records prove natural closure of the three directly owned leader groups. Later PID/group absence is a separate observation; historical Ninja child ancestry and natural closure of all child groups were not recorded.",
+    "warning": "Existing Recast FetchContent_Populate deprecation; build stderr empty.",
+    "original_directly_owned_group_natural_closures": 3,
+    "post_build_compiler_or_linker_retries": 0
+  },
+  "recovered_artifacts": {
+    "passed": true,
+    "fresh_build_pass": false,
+    "seconds": 173.6789392639912,
+    "subcommands": 0,
+    "compiler_execution": false,
+    "native_execution": false,
+    "executable_count": 16,
+    "stored_seals": 17,
+    "cli": {
+      "bytes": 35222824,
+      "sha256": "5d64b2e7365b186cb2889b8d12a75cd09c1f7bde4fb01799064a817cd19d999b"
+    },
+    "normal_static_core": {
+      "bytes": 142504242,
+      "sha256": "5de6501d3d3856b88ee7f3210c09a2f9659dd371d0b93029c98a3f1d10936ae6"
+    },
+    "retention": "Raw CLI, fifteen independently compressed ELF files and a compressed normal core archive. Complete streamed decode identities and current raw files matched an independent post-build capture.",
+    "cache_handoff": "Owner marker changes only after all seals and final unchanged-input checks pass. Original failed reports, plans, streams and receipts remain unchanged."
+  },
+  "native_qa": {
+    "passed": true,
+    "seconds": 72.16900630701275,
+    "phases": 18,
+    "native_fixtures": [
+      "poima-runtime-assertions-test",
+      "poima-runtime-test",
+      "poima-runtime-animation-test",
+      "poima-runtime-animation-layers-test",
+      "poima-runtime-two-bone-ik-test",
+      "poima-runtime-root-motion-test",
+      "poima-runtime-animation-membership-test",
+      "poima-runtime-save-test",
+      "poima-runtime-components-test",
+      "poima-runtime-navigation-test",
+      "poima-runtime-ui-test",
+      "poima-ui-document-test",
+      "poima-ui-presenter-test",
+      "poima-ui-model-test",
+      "poima-runtime-jobs-test"
+    ],
+    "all_fixture_exit_codes_zero": true,
+    "core_tests": 5,
+    "core_skips": 0,
+    "metadata_checks": 3,
+    "fresh_project_ticks": 120,
+    "fresh_project_rpc_pairs": 13,
+    "authored_project_files_unchanged": true,
+    "natural_phase_group_closures": 18,
+    "adopted_cleanup_actions": 0,
+    "forced_cleanup": false,
+    "final_children": [],
+    "fixture_workers": "Runtime jobs fixture explicitly exercises its own 0/1/2/4/8 worker variants; this is not a two-worker scaling result.",
+    "scope": "Selected native fixtures and checks, not the complete CTest preset."
+  },
+  "retained_coreclr_workflow": {
+    "passed": true,
+    "owner_seconds": 84.54975368799933,
+    "worker_seconds": 78.68727198499255,
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_rigs": 24,
+    "rig_nodes": 1464,
+    "lights": 64,
+    "globals": 50,
+    "component_schemas": 4,
+    "payload_version": 7,
+    "complete_payload_members": 14,
+    "requested_ticks": 302,
+    "raw_rpc_pairs": 162,
+    "owners": [
+      {
+        "label": "warm",
+        "exit_code": 0,
+        "rpc_pairs": 98
+      },
+      {
+        "label": "cold",
+        "exit_code": 0,
+        "rpc_pairs": 32
+      },
+      {
+        "label": "relocated",
+        "exit_code": 0,
+        "rpc_pairs": 32
+      }
+    ],
+    "original_game_assembly": {
+      "bytes": 58368,
+      "sha256": "6ab2372344d43be0ef851109f54e3334cfbb37d606444ce303e47f5d737dabe6"
+    },
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "da3980c4d8501cc8bda7b8aab3dee68e29bf92ad0ef4a1fa17f1a02b412bc415"
+    },
+    "original_game_sdk": {
+      "bytes": 180224,
+      "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+    },
+    "bridge_sdk": {
+      "bytes": 180224,
+      "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+    },
+    "compiled_control_save_load": true,
+    "complete_checkpoint_references": 11,
+    "whole_file_comparisons": 5,
+    "complete_prospective_typed_and_lexical_forecasts": 2,
+    "excluded_state_fields": [],
+    "stage_rename_attempts": 1,
+    "sources_restored": true,
+    "forced_cleanup": false,
+    "final_children": [],
+    "relocated_scope": "Only owned stagedworld/assets unavailable. Originalcheckout/research/source inputs remain untouched and are not sandboxblocked. Relocated session supplied exactcookedworld/assets and compiledIL, noC#/rawmodelsource.",
+    "scope": "Three fresh native consumers use unchanged original 0.0.169 compiled game IL and the qualified Linux 0.0.190 bridge. Different original game/bridge SDK bytes are retained and disclosed; this is actual selected interop coverage, not universal ABI compatibility or a fresh gameplay compile."
+  },
+  "checkpoints": [
+    {
+      "label": "compiled-saved",
+      "owner": "warm",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2205113,
+        "sha256": "7c94bed2378a33b489fd7e7a29b34a9344af7073754e11943f0fad7526696eea"
+      },
+      "stored_identity": {
+        "bytes": 403001,
+        "sha256": "11c342ec2470ede66aff142462d21a902c26e4b332ddea57628a9994310d9d2d"
+      }
+    },
+    {
+      "label": "compiled-restored",
+      "owner": "warm",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2205113,
+        "sha256": "7c94bed2378a33b489fd7e7a29b34a9344af7073754e11943f0fad7526696eea"
+      },
+      "stored_identity": {
+        "bytes": 403001,
+        "sha256": "11c342ec2470ede66aff142462d21a902c26e4b332ddea57628a9994310d9d2d"
+      }
+    },
+    {
+      "label": "warm-saved",
+      "owner": "warm",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2204983,
+        "sha256": "947f935469a2d72ab74661a2d72f01a7563ef0979c65a574c1e3866495d9f384"
+      },
+      "stored_identity": {
+        "bytes": 403018,
+        "sha256": "3726244d4eedffc9ce2e9e770f6558e7d5ce973bc4e80e28cf92cb28f97baa78"
+      }
+    },
+    {
+      "label": "warm-after-reads",
+      "owner": "warm",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2204983,
+        "sha256": "947f935469a2d72ab74661a2d72f01a7563ef0979c65a574c1e3866495d9f384"
+      },
+      "stored_identity": {
+        "bytes": 403018,
+        "sha256": "3726244d4eedffc9ce2e9e770f6558e7d5ce973bc4e80e28cf92cb28f97baa78"
+      }
+    },
+    {
+      "label": "warm-diverged",
+      "owner": "warm",
+      "tick": 121,
+      "decoded_identity": {
+        "bytes": 2204838,
+        "sha256": "ae261a58d3b83957af6812b2c41f28e74955296792fb4167d355752eb94f7f01"
+      },
+      "stored_identity": {
+        "bytes": 403824,
+        "sha256": "c20d6c231dd627fb642dcc9930b0e5c13ad0dc53dbd8a82a3b20e4ee0a3c2ec7"
+      }
+    },
+    {
+      "label": "warm-restored",
+      "owner": "warm",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2204983,
+        "sha256": "947f935469a2d72ab74661a2d72f01a7563ef0979c65a574c1e3866495d9f384"
+      },
+      "stored_identity": {
+        "bytes": 403018,
+        "sha256": "3726244d4eedffc9ce2e9e770f6558e7d5ce973bc4e80e28cf92cb28f97baa78"
+      }
+    },
+    {
+      "label": "warm-continued",
+      "owner": "warm",
+      "tick": 180,
+      "decoded_identity": {
+        "bytes": 2205475,
+        "sha256": "d021ace8e58c6e71c3019412af275dfb7323929c7a4afc1e3a1db661b612522e"
+      },
+      "stored_identity": {
+        "bytes": 403183,
+        "sha256": "89f63d1e728afa4c2c3a0cfa9373325c6c977b8824686188f66e2fc699d36d5c"
+      }
+    },
+    {
+      "label": "cold-restored",
+      "owner": "cold",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2204983,
+        "sha256": "947f935469a2d72ab74661a2d72f01a7563ef0979c65a574c1e3866495d9f384"
+      },
+      "stored_identity": {
+        "bytes": 403018,
+        "sha256": "3726244d4eedffc9ce2e9e770f6558e7d5ce973bc4e80e28cf92cb28f97baa78"
+      }
+    },
+    {
+      "label": "cold-continued",
+      "owner": "cold",
+      "tick": 180,
+      "decoded_identity": {
+        "bytes": 2205474,
+        "sha256": "84569339df28728a3cf427e0597af04842f6e3f6457092dbb87959935c4d068a"
+      },
+      "stored_identity": {
+        "bytes": 403180,
+        "sha256": "c889972ff909236e0a23fe7e8a2a88108a4be817e6e13fbb2b526a4d3c284a0f"
+      }
+    },
+    {
+      "label": "relocated-restored",
+      "owner": "relocated",
+      "tick": 120,
+      "decoded_identity": {
+        "bytes": 2204983,
+        "sha256": "947f935469a2d72ab74661a2d72f01a7563ef0979c65a574c1e3866495d9f384"
+      },
+      "stored_identity": {
+        "bytes": 403018,
+        "sha256": "3726244d4eedffc9ce2e9e770f6558e7d5ce973bc4e80e28cf92cb28f97baa78"
+      }
+    },
+    {
+      "label": "relocated-continued",
+      "owner": "relocated",
+      "tick": 180,
+      "decoded_identity": {
+        "bytes": 2205474,
+        "sha256": "828327cf65534a3060589f1a8cb4176e56e23423eebb0bf4d312881b50ec60a6"
+      },
+      "stored_identity": {
+        "bytes": 403187,
+        "sha256": "d1f9ae1a4cc5aab9e8fe0af966471c57d6e836a1f095c97caf956ecd9683428b"
+      }
+    }
+  ],
+  "original_failures": [
+    {
+      "case": "native-1",
+      "passed": false,
+      "regraded": false,
+      "cause": "Version probe invoked generic lld instead of the selected ld.lld entry point. It exited 1 naturally before configure or compilation.",
+      "forced_cleanup": false
+    },
+    {
+      "case": "native-2",
+      "passed": false,
+      "regraded": false,
+      "cause": "Version/configure/build commands succeeded, but the verifier incorrectly required every Ninja linker job process group to equal the CMake leader group. Original sixteen receipts retain their actual separate groups.",
+      "forced_cleanup": false
+    }
+  ],
+  "bounds": {
+    "sealer_seconds": 300,
+    "sealer_reserve_seconds": 30,
+    "sealer_output_bytes": 268435456,
+    "native_qa_seconds": 390,
+    "native_qa_output_bytes": 134217728,
+    "consumer": {
+      "outer_seconds": 120,
+      "worker_seconds": 100,
+      "functional_seconds": 85,
+      "max_rpc": 512,
+      "max_bytes": 134217728,
+      "max_files": 512,
+      "max_owners": 3,
+      "max_checkpoints": 12
+    },
+    "scope": "Observed counters and finite deadlines, not OS quotas or whole-system memory limits."
+  },
+  "retained_report_identities": {
+    "original_preflight": {
+      "bytes": 1107222,
+      "sha256": "b9202cf58f5eae3eccaeb69e70680c5cc840c01477f99d3ee61b5d7b059034c3"
+    },
+    "original_completed_build_with_failed_verifier": {
+      "bytes": 1159831,
+      "sha256": "20bd6a10300cb841375cd679f3341ac7836c5eae3700060d7035d171cca41625"
+    },
+    "separate_recovered_sealing": {
+      "bytes": 1273691,
+      "sha256": "afc3f2511bbd6133ebb6967ca255eff1a344e3363cc6ad0c616b4ec5e1860d94"
+    },
+    "seals": {
+      "bytes": 13229,
+      "sha256": "22b64320f69e95459b5055495f43ab980bd62dcc72a4f31ee8b3a61ac34c8eab"
+    },
+    "native_qa": {
+      "bytes": 70612,
+      "sha256": "b45dc14f34f0f796f45fdd549baf91286201ed7a35c30ecb703472c9a4951785"
+    },
+    "consumer_owner": {
+      "bytes": 31231,
+      "sha256": "fdfc60f3c40cd3c91c095574d3c250294eb59a41f461003c577fc145953fa9bf"
+    },
+    "consumer_worker": {
+      "bytes": 221667,
+      "sha256": "41f8fba4ecbc3d8a2484ced058b4b3b6b56bd8ff7bdbb98b8ce471234d7fc6d2"
+    }
+  },
+  "limits": [
+    "No matched BFD/LLD timing comparison or speed ratio: the earlier BFD trial was deadline-censored, and 0.0.193/0.0.195 build action sets differ.",
+    "No optimized runtime, rendered frame rate, aggregate memory, native bridge/shared/module rebuild, full CTest or clean-machine qualification.",
+    "This checkpoint changes build tooling and version metadata; it adds no engine runtime feature or graphics backend.",
+    "No fresh agent game workflow, NativeAOT shipping, physical input, audible output, native Linux graphics or complete Alpha claim.",
+    "Native1/native2 original verdicts and earlier 0.0.193/0.0.194 failures remain unchanged.",
+    "After opt-in configuration, linker cache variables persist. Follow BUILD.md to restore system-linker flags and repeat explicit build-type/compile overrides."
+  ]
+}

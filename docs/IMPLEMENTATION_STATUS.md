@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.194**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.195**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.195 adds an [opt-in Linux LLD preset](BUILD.md#optional-llvm-linker)
+with one linker thread and two build workers. It preserves the compiler,
+all 599 compile-command records and normal static-archive recipes. The selected
+Debug `-O0 -g0` build completes one metadata compilation, one core archive and
+sixteen executable links. Separately preserved artifacts pass fifteen native
+fixtures, five authoring-core tests, three metadata checks and the fresh-project
+physics test. The unchanged compiled C# game also passes warm save/load, cold
+continuation and relocated cooked reopening across three fresh owners, with
+eleven complete checkpoint references, five whole-file comparisons and two
+complete typed-and-lexical forecasts. Original tool-probe and receipt-verifier
+failures remain failed; recovery seals the completed files without rebuilding.
+These are selected CPU checks, not the full CTest preset, a matched linker
+speed comparison or broader Alpha qualification.
+[Results and recovery scope](evidence/m2-linux-lld-build.json).
 
 Version 0.0.194 measures [full-game callback allocation traffic](MANAGED_CALLBACK_METRICS.md#full-game-allocation-traffic)
 with two fresh Linux owners of the unchanged Performance Yard game and the
