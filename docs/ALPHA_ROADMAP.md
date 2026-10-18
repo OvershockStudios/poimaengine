@@ -242,3 +242,9 @@ retired entries from permanently blocking load admission. Paired compiled tests
 cover the real tracking boundary on Windows and Linux; a separate native host
 with the corrected bridge preserves complete reload/restore state. The wider
 reliability and rendered-memory investigations remain open.
+
+The [full-game callback allocation cohort](evidence/m2-callback-allocation-workload.json)
+separately records profiling-off/on Linux owners, complete saved-state forecasts
+and about 273 allocated bytes per measured callback tick. This measures a
+bounded amount of current-thread traffic; it does not establish retained memory
+growth or close the broader reliability gate.

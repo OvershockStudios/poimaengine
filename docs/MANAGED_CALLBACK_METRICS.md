@@ -143,3 +143,33 @@ minutes of real unpaused play. It verifies fresh counter lifetimes alongside
 complete authoritative saves; cold trusted configuration defaults profiling off.
 The record does not turn callback allocation counts into retained-heap size or
 qualify observer overhead.
+
+## Full-game allocation traffic
+
+The [0.0.194 headless cohort](evidence/m2-callback-allocation-workload.json)
+compares two fresh Linux owners of the unchanged Performance Yard game, with
+profiling explicitly off and on. Each advances 120 warmup ticks followed by
+five 120-tick windows, using one-tick requests. Metrics and ordinary CLR memory
+queries occur between windows. The native engine is 0.0.193; the game uses its
+retained compiled IL and qualified Linux bridge, without recompilation.
+
+The measured 600 callbacks allocate 163,568 bytes: about 273 bytes per tick.
+All samples are valid and return successfully; no collections occur in those
+windows. Six complete prospective payload comparisons agree across the owners,
+including the actual differences in their two host-epoch globals. Twelve full
+saves and 3,046 raw RPC pairs are retained, and both owners exit normally.
+
+These counters measure allocation traffic. They do not explain the earlier
+rendered process-memory growth. Approximate process-wide allocation deltas also
+include query serialization, JIT and work outside callbacks. Source inspection
+identifies status formatting and string-valued UI reads as possible steady
+traffic; this cohort does not provide allocation stacks or exact attribution.
+
+For a game-specific check, opt into profiling at load, warm the game, then read
+`runtime.gameplay.metrics` before and after a declared tick interval. Verify the
+same session, module handle and owner thread, unsaturated counters and zero
+invalid samples before subtracting cumulative `allocated_bytes` and `calls`.
+Divide those deltas for bytes per attempted callback. Keep complete saves to
+check state independently. Do not subtract lifetime maxima to invent a window
+maximum, force collection during passive sampling, or compare counters across
+a reload or restore.

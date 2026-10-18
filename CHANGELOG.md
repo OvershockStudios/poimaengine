@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.194
+
+- Measure callback allocation traffic in the complete headless C# game with profiling off/on, preserving full saved-state forecasts and original traces. [Results](docs/evidence/m2-callback-allocation-workload.json).
+
 ## 0.0.193
 
 - Preserve recoverable physics-capacity errors and batch rollback in assertion-enabled builds while keeping unexpected physics assertions diagnostic and fatal.

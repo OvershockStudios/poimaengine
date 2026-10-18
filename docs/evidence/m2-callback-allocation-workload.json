@@ -1,0 +1,688 @@
+{
+  "format": "poima.callback-allocation-workload-evidence.v1",
+  "checkpoint": "0.0.194",
+  "passed": true,
+  "environment": {
+    "host": "Linux headless under WSL",
+    "native_engine": "0.0.193",
+    "native_build": "Debug -O0 -g0, simulation/navigation/UI/audio/CoreCLR enabled; no graphics",
+    "managed_bridge": "qualified Linux 0.0.190 closure",
+    "managed_runtime": ".NET 10.0.12",
+    "game": "unchanged retained compiled Performance Yard game from 0.0.169",
+    "power": "AC connected and battery100 observed before this checkpoint; no continuous power sampling",
+    "runtime_workers": 2,
+    "dotnet_processor_count": 2
+  },
+  "workload": {
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_rigs": 24,
+    "rig_nodes": 1464,
+    "lights": 64,
+    "gameplay_globals": 50,
+    "component_schemas": 4,
+    "snapshot_payload_members": 14,
+    "engine": {
+      "bytes": 35134264,
+      "sha256": "646ff1b0f4757432094079e23b4eea487cdceb776792a2a8d3153e0b105ec5fc"
+    },
+    "assembly": {
+      "bytes": 58368,
+      "sha256": "6ab2372344d43be0ef851109f54e3334cfbb37d606444ce303e47f5d737dabe6"
+    },
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "da3980c4d8501cc8bda7b8aab3dee68e29bf92ad0ef4a1fa17f1a02b412bc415"
+    },
+    "original_game_sdk": {
+      "bytes": 180224,
+      "sha256": "5b7e1db7be29ddb87c0f95bb518503a48d5c0ec8679501351471ec40311f65e4"
+    },
+    "selected_bridge_sdk": {
+      "bytes": 180224,
+      "sha256": "e67a60f677e75075624219feb7806425dd415d29b47390122f5474fc5dffd627"
+    }
+  },
+  "method": {
+    "owners": 2,
+    "order": [
+      "profile_off",
+      "profile_on"
+    ],
+    "fresh_process_each": true,
+    "profile_flag_explicit": true,
+    "warmup_ticks_per_owner": 120,
+    "measured_windows_per_owner": 5,
+    "ticks_per_window": 120,
+    "step_batch_ticks": 1,
+    "total_requested_ticks": 1440,
+    "raw_rpc_pairs": 3046,
+    "observations": "Metrics and ordinary CLR memory queries at six boundaries per owner, outside tick windows. No reload or explicit collection.",
+    "state": "Twelve complete durable version7 saves. All six expected complete payloads were prepared before the on-owner first Tick, changing only the two source-defined host-epoch globals with their actual destination values. No fields excluded.",
+    "timing": "One ordered two-process diagnostic; not a randomized overhead or causal timing experiment."
+  },
+  "result": {
+    "owner_seconds": 102.34871199099871,
+    "worker_seconds": 97.46673792900401,
+    "measured_callback_ticks": 600,
+    "allocated_bytes": 163568,
+    "allocated_bytes_per_tick": 272.61333333333334,
+    "window_deltas": [
+      {
+        "window": 1,
+        "tick_before": 120,
+        "tick_after": 240,
+        "counters": {
+          "allocated_bytes": "32640",
+          "gen0_collections": "0",
+          "threw": "0",
+          "returned": "120",
+          "samples": "120",
+          "calls": "120",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "invalid_samples": "0",
+          "lifetime_max_allocated_bytes_before": "2352",
+          "lifetime_max_allocated_bytes_after": "2352"
+        }
+      },
+      {
+        "window": 2,
+        "tick_before": 240,
+        "tick_after": 360,
+        "counters": {
+          "allocated_bytes": "32640",
+          "gen0_collections": "0",
+          "threw": "0",
+          "returned": "120",
+          "samples": "120",
+          "calls": "120",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "invalid_samples": "0",
+          "lifetime_max_allocated_bytes_before": "2352",
+          "lifetime_max_allocated_bytes_after": "2352"
+        }
+      },
+      {
+        "window": 3,
+        "tick_before": 360,
+        "tick_after": 480,
+        "counters": {
+          "allocated_bytes": "32824",
+          "gen0_collections": "0",
+          "threw": "0",
+          "returned": "120",
+          "samples": "120",
+          "calls": "120",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "invalid_samples": "0",
+          "lifetime_max_allocated_bytes_before": "2352",
+          "lifetime_max_allocated_bytes_after": "2352"
+        }
+      },
+      {
+        "window": 4,
+        "tick_before": 480,
+        "tick_after": 600,
+        "counters": {
+          "allocated_bytes": "32640",
+          "gen0_collections": "0",
+          "threw": "0",
+          "returned": "120",
+          "samples": "120",
+          "calls": "120",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "invalid_samples": "0",
+          "lifetime_max_allocated_bytes_before": "2352",
+          "lifetime_max_allocated_bytes_after": "2352"
+        }
+      },
+      {
+        "window": 5,
+        "tick_before": 600,
+        "tick_after": 720,
+        "counters": {
+          "allocated_bytes": "32824",
+          "gen0_collections": "0",
+          "threw": "0",
+          "returned": "120",
+          "samples": "120",
+          "calls": "120",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "invalid_samples": "0",
+          "lifetime_max_allocated_bytes_before": "2352",
+          "lifetime_max_allocated_bytes_after": "2352"
+        }
+      }
+    ],
+    "initialize_calls": 1,
+    "begin_control_calls": 1,
+    "total_tick_calls": 720,
+    "invalid_samples": 0,
+    "thrown_callbacks": 0,
+    "saturated": false,
+    "lifetime_max_tick_allocated_bytes": 2352,
+    "window_maximum": "Not derived from subtraction of lifetime maxima.",
+    "gen0_gen1_gen2_collections_during_measured_callbacks": [
+      0,
+      0,
+      0
+    ],
+    "passive_boundaries": [
+      {
+        "treatment": "profile_off",
+        "tick": 120,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1492408",
+          "total_memory_bytes": "1496176"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 240,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1704624",
+          "total_memory_bytes": "1717168"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 360,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1737424",
+          "total_memory_bytes": "1750064"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 480,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1778168",
+          "total_memory_bytes": "1790928"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 600,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1810968",
+          "total_memory_bytes": "1823824"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 720,
+        "metrics_supported": null,
+        "metrics_enabled": false,
+        "unavailable_reason": "not_requested",
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1843512",
+          "total_memory_bytes": "1856464"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 120,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1631296",
+          "total_memory_bytes": "1635472"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 240,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1835320",
+          "total_memory_bytes": "1848248"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 360,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1876320",
+          "total_memory_bytes": "1889368"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 480,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1908864",
+          "total_memory_bytes": "1922008"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 600,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1949864",
+          "total_memory_bytes": "1963128"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 720,
+        "metrics_supported": true,
+        "metrics_enabled": true,
+        "unavailable_reason": null,
+        "active_modules": 1,
+        "retired_contexts_tracked": 0,
+        "retired_contexts_alive": 0,
+        "gc": {
+          "gen0_collections": "0",
+          "gen1_collections": "0",
+          "gen2_collections": "0",
+          "total_allocated_bytes": "1990608",
+          "total_memory_bytes": "2003992"
+        }
+      }
+    ],
+    "whole_checkpoints": [
+      {
+        "treatment": "profile_off",
+        "tick": 120,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402991,
+          "sha256": "443f3f13e956811c745f6c8ad7b3fcb970a90d9af01de7d4885a647bc87d092b"
+        },
+        "decoded": {
+          "bytes": 2205039,
+          "sha256": "5b26afdfe83153d7d4396ea24c9da7de09f1207fa8b1846a91818e589aff3576"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 240,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402242,
+          "sha256": "02841f0808a440e4617788fcd01887eb3f4d58b44f314104396f0291f6b72dbf"
+        },
+        "decoded": {
+          "bytes": 2205866,
+          "sha256": "96c4d815d3603f2a7ddab77dd3a7b97963a9d126cdb68f64c8fa8a63ca1115f2"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 360,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 403991,
+          "sha256": "9fc6a3c8575e6d7e06d9144c4a2563aa78a46a72b771dc466ea52171bf2b0daf"
+        },
+        "decoded": {
+          "bytes": 2207170,
+          "sha256": "12b48eccdd84a07947ab12811a7be29d4c12adbe4288bb15f13eb565ee9d7ba7"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 480,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 403488,
+          "sha256": "cf32cb66c92e9a7e780aed46c160f2f613126c161639e8c568f7f6ebf664e15e"
+        },
+        "decoded": {
+          "bytes": 2208281,
+          "sha256": "babb9c8d7e1f9c644aaba5ae9069f7d3198a02168187b888541a4458f6fde67c"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 600,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402095,
+          "sha256": "e9ccba94527dd1fc343f85930776942757d62c9e85d5f26229dbca6a3e295bf1"
+        },
+        "decoded": {
+          "bytes": 2209633,
+          "sha256": "0cc8f3740cf8ba1d42eb36877a4a921c1145fc5aa939974ca838bd2a31eb4c66"
+        }
+      },
+      {
+        "treatment": "profile_off",
+        "tick": 720,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402555,
+          "sha256": "b45dd03598340ea6256c926ecd4c3f654cbf2afb4b6bedbfe9b9f1890e22094d"
+        },
+        "decoded": {
+          "bytes": 2210579,
+          "sha256": "6a1553b87e4d3ebc2a950a2a4b7d5beb792c2b5c84023aa3abbfee653641edf8"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 120,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402993,
+          "sha256": "7b5b0a95a35fe99dff3ab7684168babfdaa5add473b976cb6873a49c08ac949b"
+        },
+        "decoded": {
+          "bytes": 2205037,
+          "sha256": "b87f17f19ba1ee8142e0ed0306b9b33eb35c588bebd334fe6ce46848e62b5405"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 240,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402243,
+          "sha256": "58d6a667b300ed77b1f691b7916cba6bdd611c3a19efbdd21428821d7c12cf8a"
+        },
+        "decoded": {
+          "bytes": 2205864,
+          "sha256": "e57ffb083a9f8dacd95421cf84d97f8b409d7024c143422ab461cfc2b7f2bc98"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 360,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 403992,
+          "sha256": "6cd3d9c261dc32bf51c1157db5bbfbca6ccc53b628afa3b095503605dcad4a57"
+        },
+        "decoded": {
+          "bytes": 2207168,
+          "sha256": "b05578197029e7ed05a6b219c90a31c8c849c28624ef55613eb55db8e3c9da85"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 480,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 403486,
+          "sha256": "7f8250493d576eb28845c729ec2dc5411df4099f19fb160e313220b2ceb27d8b"
+        },
+        "decoded": {
+          "bytes": 2208279,
+          "sha256": "51c5bbf48bc6d487c853ffed1e353ae7095bb3741b21712eff3299732b12c312"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 600,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402099,
+          "sha256": "7fabea3bb564ceb795d08e412accb3d0278a8807728c213e0fb9d70bac6167b3"
+        },
+        "decoded": {
+          "bytes": 2209631,
+          "sha256": "d7182307e60f8e062d222ae84b4f7f6d2421cea77c427ffedf566a0dfa70e746"
+        }
+      },
+      {
+        "treatment": "profile_on",
+        "tick": 720,
+        "snapshot_version": 7,
+        "stored": {
+          "bytes": 402560,
+          "sha256": "9c63ab4ab92928e8b08849f0cffffaa12ae88883c3be7651dc16e4448bab9fba"
+        },
+        "decoded": {
+          "bytes": 2210577,
+          "sha256": "83280bcaa0f8a5431fd1b400df85ceecabfe0a3faca2674b409204779e421f43"
+        }
+      }
+    ],
+    "complete_prospective_forecasts": [
+      {
+        "point": 0,
+        "stored": {
+          "bytes": 257515,
+          "sha256": "2b9558dab5638fd733babdc589ffaf64f0e6e79407f318422e3bf533ad136712"
+        },
+        "decoded": {
+          "bytes": 1317740,
+          "sha256": "1771e1f03859a136363465f2a82480521aef68dbd9eb0f0db570faf379416c4f"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      },
+      {
+        "point": 1,
+        "stored": {
+          "bytes": 258422,
+          "sha256": "1e09c8872fb7013b426a8f227e65dfc761a62de28f49eed416028538719f3393"
+        },
+        "decoded": {
+          "bytes": 1318645,
+          "sha256": "eadc14d634aaf4bc3b624d7c8c939f8bc6aa4dc3c72fd0f874ba5b6abf90356c"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      },
+      {
+        "point": 2,
+        "stored": {
+          "bytes": 258242,
+          "sha256": "6a8a465d2d87f0c92da9d20ef41ef6e0513a8bc2297e5a38fadc4949beb57d86"
+        },
+        "decoded": {
+          "bytes": 1320053,
+          "sha256": "5ea9119dac66d881768da3566eeb835801d7cbc48e32311edcd4ce369b650129"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      },
+      {
+        "point": 3,
+        "stored": {
+          "bytes": 258533,
+          "sha256": "62294b00f7ebd18a1854442d3d11d8e3c27faf06b7beedd6d675b8fec6af13eb"
+        },
+        "decoded": {
+          "bytes": 1321242,
+          "sha256": "944aa6e2e0371d9f9a2564d34009c2a990da9d159dafe90af326e3933c5f6b2b"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      },
+      {
+        "point": 4,
+        "stored": {
+          "bytes": 256732,
+          "sha256": "89b93aa02b382e03c67071227aca1513d77cd1b71171594ce5c39e67d5b20a75"
+        },
+        "decoded": {
+          "bytes": 1322698,
+          "sha256": "8db07b6c5b05b241de98943ea1fd2e9b1cea19bf2ea5cee5092caf7084daf9ae"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      },
+      {
+        "point": 5,
+        "stored": {
+          "bytes": 257070,
+          "sha256": "4120afcbf5eace5ce3385a2c05641c70d417346d76cea378f2952fadf74cc93f"
+        },
+        "decoded": {
+          "bytes": 1323722,
+          "sha256": "ddf8724889dcbd73c726913156942e84f079ee33a3a77f454a8f54b6d919c19e"
+        },
+        "full_typed": true,
+        "full_lexical": true,
+        "raw_original_payload_bytes_equal": false,
+        "raw_original_payload_typed_values_equal": false
+      }
+    ],
+    "closures": [
+      {
+        "treatment": "profile_off",
+        "returncode": 0,
+        "raw_calls": 1523
+      },
+      {
+        "treatment": "profile_on",
+        "returncode": 0,
+        "raw_calls": 1523
+      }
+    ],
+    "outer_group_empty": true,
+    "forced_cleanup": false,
+    "final_children": [],
+    "input_pins_unchanged": true
+  },
+  "retained_reports": {
+    "owner": {
+      "bytes": 19847,
+      "sha256": "11ab8ea23fb50dda339093c66efef7ba009f03196e9f9a755c81c4b9b8239c51"
+    },
+    "worker": {
+      "bytes": 740723,
+      "sha256": "be3f71220d2685b7c5fda983a5ed54fd949e885cb95a7bd369127b643b180132"
+    },
+    "independent_source_review": {
+      "bytes": 6015,
+      "sha256": "74be1732daf1b74c75578495248558dd223840e0f3aae44b82b6e2d8f5b0567a"
+    },
+    "independent_actual_review": {
+      "bytes": 100791,
+      "sha256": "f2e271cf2057574e7c8ec89c5200404ace49f5431a013e71333285bcb069e069"
+    }
+  },
+  "bounds": {
+    "outer_seconds": 200,
+    "worker_seconds": 180,
+    "functional_seconds": 150,
+    "max_rpc": 4000,
+    "max_output_bytes": 134217728,
+    "max_output_files": 512,
+    "actual_output_files": 64,
+    "actual_output_bytes": 19454224
+  },
+  "conclusions": [
+    "Observed current-thread gameplay callback allocation traffic, not retained heap size.",
+    "Source inspection identifies status formatting and string-valued UI reads as plausible steady traffic; no allocation-stack attribution experiment was run.",
+    "Approximate process-wide allocated-byte deltas are351104 with profiling off and359312 with profiling on; queries, JIT and other work outside callbacks are included. They must not be equated to or exactly apportioned by callback counters.",
+    "No retired contexts or collections were observed in this no-reload cohort. That does not establish automatic context reclamation or explain the earlier rendered process-memory growth.",
+    "The small observed callback traffic does not establish a new engine ownership defect or justify changing the benchmark game to remove measured cost."
+  ],
+  "limits": [
+    "Retained IL and a qualified bridge SDK with different bytes from the original game SDK; actual hosted consumption verified, no universal ABI-only compatibility claim.",
+    "No fresh compilation, code reload, save restoration, standalone export, rendered frames, physical input or audible output in this cohort.",
+    "No OS process-memory timeline, native heap trace, peak-memory measurement, thirty-minute reliability, matched headless/rendered comparison or whole Alpha closure."
+  ]
+}

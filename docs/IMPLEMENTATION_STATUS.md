@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.193**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-18 for **0.0.194**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.194 measures [full-game callback allocation traffic](MANAGED_CALLBACK_METRICS.md#full-game-allocation-traffic)
+with two fresh Linux owners of the unchanged Performance Yard game and the
+qualified 0.0.193 native engine. Profiling is explicitly off and on; each owner
+advances 120 warmup ticks and five 120-tick windows at one-tick cadence.
+The measured 600 callbacks allocate 163,568 bytes, about 273 bytes per tick,
+with no invalid samples, exceptions or collections during those windows.
+All six complete typed-and-lexical state forecasts agree, twelve complete
+saves and 3,046 raw RPC pairs are retained, and both owners exit normally.
+These are allocation-traffic observations, not retained-memory measurements or
+an explanation of earlier rendered memory growth. No benchmark gameplay or
+runtime behavior changes in this checkpoint.
+[Results and boundaries](evidence/m2-callback-allocation-workload.json).
 
 The new [Linux game profile](BUILD.md#headless-game-systems-on-linux) combines
 simulation, CoreCLR/native gameplay support, navigation, logical UI and audio
