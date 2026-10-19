@@ -238,9 +238,118 @@ void native_physical_wrapper_and_templates(){
     const auto saved=spawned.save_snapshot(hash);auto restored=Runtime::from_snapshot(template_def,hash,saved);check(restored->save_snapshot(hash)==saved&&equal(*restored->ik(first,1),*spawned.ik(first,1)),"Spawned IK restore lost remapped controls.");
     spawned.change_structure(1,{}, {first});rejects([&]{spawned.ik(first,1);});check(equal(*spawned.ik(second,1),second_state),"Removal altered surviving IK state.");const auto reborn=spawned.change_structure(2,{{recipe.id,{}}},{}).spawned[0];check(reborn!=first,"Retired IK identity reused.");near(spawned.ik(reborn,1)->target,{1,1,0});
 }
+
+// Independent full affine FK for the metric profile. Expected matrices are
+// formed from test quaternion-vector rotation, not production local_matrix,
+// compose, quaternion or metric helpers. No original scale is rounded away.
+std::vector<Matrix4> reference_fk(const std::vector<int>& ps,const std::vector<NodePose>& locals){
+    std::vector<Matrix4> result(locals.size());std::vector<bool> done(locals.size());
+    auto visit=[&](auto&& self,unsigned n)->void {
+        if(done[n])return;const auto& t=locals[n];Matrix4 local{};local[15]=1;
+        for(unsigned c=0;c<3;++c){V axis{};axis[c]=t.scale[c];const auto v=rotated(t.rotation,axis);for(unsigned r=0;r<3;++r)local[c*4+r]=v[r];}
+        for(unsigned r=0;r<3;++r)local[12+r]=t.position[r];
+        if(ps[n]<0)result[n]=local;
+        else {self(self,static_cast<unsigned>(ps[n]));const auto& a=result[static_cast<unsigned>(ps[n])];for(unsigned c=0;c<4;++c)for(unsigned r=0;r<4;++r){double sum=0;for(unsigned k=0;k<4;++k)sum+=a[k*4+r]*local[c*4+k];result[n][c*4+r]=sum;}}
+        done[n]=true;
+    };
+    for(unsigned n=0;n<locals.size();++n)visit(visit,n);return result;
+}
+double distance(const V& a,const V& b){return std::hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);}
+std::array<double,3> reference_metric(const std::vector<int>& ps,const ModelPose& pose,unsigned middle){
+    const auto worlds=reference_fk(ps,pose.local);std::array<double,3> worst{};
+    for(int node=static_cast<int>(middle);node>=0;node=ps[static_cast<unsigned>(node)]){
+        const auto& scales=pose.local[static_cast<unsigned>(node)].scale;
+        worst[0]=std::max(worst[0],*std::max_element(scales.begin(),scales.end())/ *std::min_element(scales.begin(),scales.end())-1);
+        const auto q=rig_rotation(ps,pose,static_cast<unsigned>(node));std::array<V,3> columns;
+        for(unsigned c=0;c<3;++c){V axis{};axis[c]=1;columns[c]=rotated(q,axis);}
+        const auto& a=worlds[static_cast<unsigned>(node)];double s=0;
+        for(unsigned c=0;c<3;++c)for(unsigned r=0;r<3;++r)s+=columns[c][r]*a[c*4+r];s/=3;
+        check(s>0,"Independent metric fixture is not positive.");
+        for(unsigned c=0;c<3;++c)for(unsigned r=0;r<3;++r)worst[1]=std::max(worst[1],std::abs(a[c*4+r]/s-columns[c][r]));
+        for(unsigned c=0;c<3;++c)for(unsigned j=0;j<3;++j){double gram=0;for(unsigned r=0;r<3;++r)gram+=(a[c*4+r]/s)*(a[j*4+r]/s);worst[2]=std::max(worst[2],std::abs(gram-(c==j?1.:0.)));}
+    }
+    return worst;
+}
+RuntimeTwoBoneIk near_chain(){auto c=chain();c.metric_policy=RuntimeIkMetricPolicy::NearUniformV1;return c;}
+void metric_profile_geometry_and_admission(){
+    auto incoming=pose();incoming.local[0].rotation=axis({1,2,3},.43);incoming.local[1].rotation=axis({2,1,0},-.37);
+    incoming.local[0].scale={1,1+2e-6,1-1e-6};incoming.local[1].scale={1-2e-6,1+1e-6,1};
+    const auto untouched=incoming.local;rejects([&]{ik::validate_chains(parents,untouched,std::vector<RuntimeTwoBoneIk>{chain()});});
+    rejects([&]{auto strict=incoming;ik::solve(parents,strict,chain(),goal(),identity_matrix());});
+    ik::validate_chains(parents,untouched,std::vector<RuntimeTwoBoneIk>{near_chain()});
+    auto expected=reference_metric(parents,incoming,1);auto control=goal({.4,1.2,.2});
+    auto full=incoming;const auto solved=ik::solve(parents,full,near_chain(),control,identity_matrix());
+    check(solved.metric&&solved.metric->evaluated,"Opt-in incoming metric was not cached.");
+    const auto published=reference_metric(parents,full,1);for(unsigned k=0;k<3;++k)expected[k]=std::max(expected[k],published[k]);
+    near(solved.metric->local_scale_error,expected[0],2e-14);near(solved.metric->frame_error,expected[1],2e-14);near(solved.metric->gram_error,expected[2],2e-14);
+    const auto before=reference_fk(parents,untouched),after=reference_fk(parents,full.local);
+    const double a=distance(pos(before[1]),pos(before[0])),b=distance(pos(before[2]),pos(before[1]));
+    const auto root=pos(before[0]);const double length=distance(control.target,root),reach=std::clamp(length,std::abs(a-b),a+b);V clamped=root;
+    for(unsigned k=0;k<3;++k)clamped[k]+=(control.target[k]-root[k])*reach/length;
+    const double error=distance(pos(after[2]),clamped),limit=std::max(1e-9,1e-4*(a+b));
+    check(solved.metric->unweighted_position_error&&solved.metric->unweighted_position_limit,"Full solve omitted bounded residual.");
+    near(*solved.metric->unweighted_position_error,error,2e-12);near(*solved.metric->unweighted_position_limit,limit,2e-14);check(error<=limit,"Actual affine endpoint exceeds the declared unweighted limit.");
+    near(solved.target_error,distance(pos(after[2]),control.target),2e-12);
+    for(unsigned n=0;n<full.local.size();++n){check(full.local[n].position==untouched[n].position&&full.local[n].scale==untouched[n].scale,"Profile unitized original affine input.");for(unsigned k=0;k<16;++k)near(full.world[n][k],after[n][k],2e-12);}
+    // The metric describes the unweighted solution, even when a partial weight
+    // intentionally publishes a different endpoint.
+    auto partial=incoming;control.weight=.37;const auto weighted=ik::solve(parents,partial,near_chain(),control,identity_matrix());
+    near(*weighted.metric->unweighted_position_error,error,2e-12);check(distance(pos(reference_fk(parents,partial.local)[2]),pos(after[2]))>.01,"Partial positional fixture did not distinguish the two endpoints.");
+    auto rotation_only=incoming;auto turn=oriented(axis({2,3,1},.7),1,0);const auto oriented_state=ik::solve(parents,rotation_only,near_chain(),turn,identity_matrix());
+    check(oriented_state.metric&&oriented_state.metric->evaluated&&!oriented_state.metric->unweighted_position_error&&!oriented_state.metric->unweighted_position_limit,"Orientation-only solve fabricated positional diagnostics.");
+    for(bool enabled:{false,true}){auto inactive=incoming;inactive.local[0].scale={2,1,1};const auto bytes=inactive.local;auto off=goal();off.enabled=enabled;off.weight=0;const auto state=ik::solve(parents,inactive,near_chain(),off,identity_matrix());local_bytes(inactive.local,bytes);check(state.metric&&!state.metric->evaluated&&state.metric->local_scale_error==0&&state.metric->frame_error==0&&state.metric->gram_error==0&&!state.metric->unweighted_position_error&&!state.metric->unweighted_position_limit,"Inactive profile sampled/fabricated a metric.");}
+    auto invalid=near_chain();invalid.metric_policy=static_cast<RuntimeIkMetricPolicy>(99);invalid.enabled=false;rejects([&]{ik::validate_chains(parents,untouched,std::vector<RuntimeTwoBoneIk>{invalid});});rejects([&]{auto p=incoming;auto c=goal();c.enabled=false;ik::solve(parents,p,invalid,c,identity_matrix());});
+    for(V bad:{V{1,1.001,1},V{1,-1,1},V{1,0,1},V{1,std::numeric_limits<double>::infinity(),1}}){auto p=pose();p.local[0].scale=bad;rejects([&]{ik::validate_chains(parents,p.local,std::vector<RuntimeTwoBoneIk>{near_chain()});});rejects([&]{ik::solve(parents,p,near_chain(),goal(),identity_matrix());});}
+    // Each local passes by a wide margin while their true cumulative metric
+    // exceeds the bound. A local-only tolerance is therefore insufficient.
+    std::vector<int> deep_parents(15);ModelPose deep;deep.local.resize(15);for(unsigned n=0;n<15;++n){deep_parents[n]=n?static_cast<int>(n-1):-1;deep.local[n].scale={1+5e-6,1-5e-6,1};}
+    deep.local[13].position={0,1,0};deep.local[14].position={0,1,0};auto deep_chain=near_chain();deep_chain.root=12;deep_chain.middle=13;deep_chain.end=14;
+    const auto cumulative=reference_metric(deep_parents,deep,13);check(cumulative[0]<1e-4&&(cumulative[1]>1e-4||cumulative[2]>1e-4),"Deep fixture did not isolate cumulative distortion.");rejects([&]{ik::validate_chains(deep_parents,deep.local,std::vector<RuntimeTwoBoneIk>{deep_chain});});
+    // Input cancellation does not guarantee that rotating the actual chain
+    // preserves its metric. The independent quarter-turn result has a valid
+    // positional residual but exceeds the published Gram bound.
+    const double e=3e-5;const std::vector<int> cps{-1,0,1,2};ModelPose cancelled;cancelled.local.resize(4);cancelled.local[0].scale={1+e,1-e,1};cancelled.local[1].scale={1/(1+e),1/(1-e),1};cancelled.local[2].position=cancelled.local[3].position={0,1,0};
+    auto cc=near_chain();cc.root=1;cc.middle=2;cc.end=3;const auto admitted=reference_metric(cps,cancelled,2);check(*std::max_element(admitted.begin(),admitted.end())<1e-4,"Cancellation fixture input is already unsupported.");ik::validate_chains(cps,cancelled.local,std::vector<RuntimeTwoBoneIk>{cc});
+    auto quarter=cancelled;quarter.local[1].rotation=axis({0,0,1},-std::acos(-1.)/2);const auto bad_metric=reference_metric(cps,quarter,2);const auto quarter_end=pos(reference_fk(cps,quarter.local)[3]);check(bad_metric[2]>1e-4&&distance(quarter_end,{2,0,0})<2e-4,"Cancellation fixture did not isolate published metric from residual.");
+    bool published_rejected=false;try{ik::solve(cps,cancelled,cc,goal({2,0,0}),identity_matrix());}catch(const std::exception& error){published_rejected=std::string(error.what()).find("cumulative Gram error")!=std::string::npos;}check(published_rejected,"Published metric counterexample did not reach the Gram guard.");
+    // Uniform geometry at a large admitted model offset isolates the residual
+    // guard from all anisotropy guards. Sequential actual affine additions lose
+    // one ULP relative to the independently clamped goal; no endpoint is snapped.
+    auto numeric=pose(.0002,.0002);numeric.local[0].position={1e9,0,0};const auto numeric_metric=reference_metric(parents,numeric,1);check(*std::max_element(numeric_metric.begin(),numeric_metric.end())<1e-14,"Residual fixture has a metric error.");
+    auto predicted=numeric;predicted.local[0].rotation=axis({0,0,1},std::acos(-1.)/2);const auto predicted_end=pos(reference_fk(parents,predicted.local)[2]);const V wanted{1e9-.0004,0,0};check(distance(predicted_end,wanted)>4e-8,"Residual fixture did not isolate finite affine rounding.");
+    bool residual_rejected=false;try{ik::solve(parents,numeric,near_chain(),goal({0,0,0}),identity_matrix());}catch(const std::exception& error){residual_rejected=std::string(error.what()).find("unweighted position residual")!=std::string::npos;}check(residual_rejected,"Large-offset finite fixture did not reach the residual guard.");
+    auto uniform=pose();const auto strict=ik::solve(parents,uniform,chain(),goal(),identity_matrix());check(!strict.metric,"Strict legacy path gained diagnostics.");
+}
+void native_metric_profile_save_and_late_rollback(){
+    auto strict=definition(),d=definition();d.entities[0].animation_rig->ik[0].metric_policy=RuntimeIkMetricPolicy::NearUniformV1;
+    RuntimeAnimations legacy(strict),profile(d);legacy.sample(0);profile.sample(0);check(legacy.save_state(0)==profile.save_state(0)&&Json::parse(profile.save_state(0))["version"]==4,"Policy alone changed the legacy animation blob.");
+    auto changed=d;changed.entities[0].animation_rig->ik[0].metric_policy=RuntimeIkMetricPolicy::Uniform;const auto old=profile.save_state(0);rejects([&]{profile.rebind(changed,0);});check(profile.save_state(0)==old,"Rejected frozen policy edit changed animation controls/history.");
+    // Original imported-sized scale differences are retained in the authored
+    // binding. Add a real falling body so failure must roll physics back too.
+    d.entities[1].transform.scale={1,1+2e-6,1-1e-6};d.entities[2].transform.scale={1-2e-6,1+1e-6,1};
+    RuntimeEntityDefinition body;body.id=id(90);body.transform.position={5,10,0};body.collider=BoxCollider{};body.collider->motion=BodyMotion::Dynamic;d.entities.push_back(body);
+    Runtime value(d);const auto original=value.save_snapshot(hash);const auto original_pose=value.entity(body.id).world;
+    Runtime witness(d);witness.step(1,{});check(witness.entity(body.id).world!=original_pose,"Late failure fixture did not exercise moving physics.");
+    AnimationCommand invalid{id(1),1,0,1,false,true};rejects([&]{value.step(3,{}, {}, {},{invalid});});check(value.save_snapshot(hash)==original&&value.entity(body.id).world==original_pose,"Later metric failure lost complete physics/animation/state rollback.");
+    value.step(1,{}, {}, {}, {}, {},{oriented(axis({1,2,3},.8),.6,.4)});const auto active=value.save_snapshot(hash);check(Json::parse(active)["payload"]["animation"]["version"]==6,"Oriented profile lost nested v6.");
+    auto restored=Runtime::from_snapshot(d,hash,active);check(restored->save_snapshot(hash)==active,"Complete profile cold save roundtrip differs.");const auto observed=value.ik(id(1),1),copy=restored->ik(id(1),1);check(observed->metric&&copy->metric&&observed->metric->evaluated&&copy->metric->evaluated,"Restored profile lacks evaluated cached metric.");near(*observed->metric->unweighted_position_error,*copy->metric->unweighted_position_error,2e-12);
+    value.step(2,{});restored->step(1,{});restored->step(1,{});check(value.save_snapshot(hash)==restored->save_snapshot(hash),"Complete batched/cold profile continuation differs.");
+    // A physical wrapper and explicit world pole give a safe correction on
+    // tick1, then the unsupported 90-degree published metric on
+    // tick2. Actual physics and the first accepted correction must roll back.
+    auto cancellation=definition();auto m=std::make_shared<ModelAsset>(*cancellation.entities[0].animation_rig->model);m->nodes.resize(4);m->roots={3};m->nodes[0].parent=3;m->nodes[3].name="Cancellation ancestor";m->nodes[3].parent=-1;
+    const double e=3e-5;m->nodes[3].scale={1+e,1-e,1};m->nodes[0].scale={1/(1+e),1/(1-e),1};cancellation.entities[0].animation_rig->model=m;
+    auto& binding=cancellation.entities[0].animation_rig->ik[0];binding.metric_policy=RuntimeIkMetricPolicy::NearUniformV1;binding.enabled=false;
+    cancellation.entities[1].parent=id(7);cancellation.entities[1].transform.scale=m->nodes[0].scale;RuntimeEntityDefinition ancestor;ancestor.id=id(7);ancestor.parent=id(1);ancestor.transform.scale=m->nodes[3].scale;ancestor.rig_node=RuntimeRigNode{id(1),3};cancellation.entities.push_back(ancestor);
+    RuntimeEntityDefinition mover;mover.id=id(8);mover.collider=BoxCollider{};mover.collider->motion=BodyMotion::Kinematic;mover.collider->half_extents={.1,.1,.1};cancellation.entities[0].parent=mover.id;cancellation.entities.push_back(mover);cancellation.entities.push_back(body);
+    auto world_goal=goal({0,2,0},{0,3,1},1,IkSpace::World);KinematicTarget motion;motion.entity=mover.id;motion.position={-2,2,0};motion.duration_ticks=2;
+    Runtime first(cancellation);first.step(1,{}, {motion},{},{},{},{world_goal});check(first.ik(id(1),1)->metric->gram_error<1e-4&&first.entity(mover.id).world[12]<-.9,"First cancellation tick did not commit its safe physical move.");
+    Runtime rejected(cancellation);const auto all_before=rejected.save_snapshot(hash);rejects([&]{rejected.step(2,{}, {motion},{},{},{},{world_goal});});check(rejected.save_snapshot(hash)==all_before,"Published-metric second-Tick failure lost complete physical/control/history rollback.");
+}
 }
 int main(){try{
     reachable_and_clamp();fold_antipodal_and_pole();weight_and_field_fidelity();affine_spaces();malformed_and_metric();animation_state_and_jobs();layers_histories_and_membership();orientation_geometry_and_independent_weights();orientation_canonical_validation_and_old_paths();orientation_animation_history_and_versions();
-    if(Runtime::available()){native_pose_skin_hit_and_rollback();native_physical_wrapper_and_templates();native_orientation_save_batch_and_rollback();std::cout<<"13 native two-bone IK groups passed\n";}
-    else std::cout<<"10 portable two-bone IK groups passed\n";return 0;
+    metric_profile_geometry_and_admission();
+    if(Runtime::available()){native_pose_skin_hit_and_rollback();native_physical_wrapper_and_templates();native_orientation_save_batch_and_rollback();native_metric_profile_save_and_late_rollback();std::cout<<"15 native two-bone IK groups passed (13 retained, 2 metric profile)\n";}
+    else std::cout<<"11 portable two-bone IK groups passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

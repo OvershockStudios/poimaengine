@@ -11,6 +11,12 @@ production character rendering or general FBX exporter compatibility.
 The [qualification record](evidence/m2-character-library-intake.json) separates
 the original failed checker from successful follow-up observations.
 
+The original Knight contains small nonuniform rest and animated bone scales.
+Use an explicitly inspected [IK metric profile](IK_METRIC_PROFILES.md) when
+configuring its leg chains; default strict IK requires exact uniform scales.
+Importing the library alone does not establish that its poses satisfy an IK
+profile, or that contacts and foot locking are configured.
+
 ## Original source
 
 The reference is **KayKit Adventurers 1.0 Knight**, by Kay Lousberg, from the

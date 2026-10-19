@@ -474,10 +474,15 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     require(values.is_array() && values.size()<=8,"AnimationRig IK permits at most eight chains.");
     std::vector<RuntimeTwoBoneIk> result;std::set<std::uint32_t> slots;
     for(const auto& value:values) {
-        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight","end_orientation"},{"slot","root","middle","end","target","pole"});
+        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight","end_orientation","metric"},{"slot","root","middle","end","target","pole"});
         const auto control=ik_control_value(value);require(slots.insert(control.slot).second,"Duplicate authored IK slot.");
         RuntimeTwoBoneIk chain;chain.slot=control.slot;chain.enabled=control.enabled;chain.space=control.space;chain.target=control.target;chain.pole=control.pole;chain.weight=control.weight;
         chain.end_orientation=control.end_orientation;
+        if(value.contains("metric")) {
+            require(value.at("metric").is_string() && (value.at("metric")=="uniform" || value.at("metric")=="near-uniform-v1"),
+                "IK metric must be uniform or near-uniform-v1.");
+            chain.metric_policy=value.at("metric")=="near-uniform-v1" ? RuntimeIkMetricPolicy::NearUniformV1 : RuntimeIkMetricPolicy::Uniform;
+        }
         const auto root=revision(value.at("root")),middle=revision(value.at("middle")),end=revision(value.at("end"));
         require(root<10000 && middle<10000 && end<10000 && root!=middle && root!=end && middle!=end,"IK chain requires three distinct model indices0..9999.");
         chain.root=static_cast<std::uint32_t>(root);chain.middle=static_cast<std::uint32_t>(middle);chain.end=static_cast<std::uint32_t>(end);result.push_back(chain);
@@ -3420,8 +3425,9 @@ public:
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.ik") {
-            fields(params,{"session_id","tick","entity","slot","include_end_orientation"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric"},{"session_id","tick","entity","slot"});runtime_guard(params);
             if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");
+            if(params.contains("include_metric"))require(params.at("include_metric").is_boolean(),"include_metric must be boolean.");
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");
             try { (void)runtime_->entity(entity); }catch(const std::runtime_error& error){throw Error(-32004,error.what());}
@@ -3436,6 +3442,19 @@ public:
                         const auto& orientation=*state->end_orientation;
                         value["end_orientation"]={{"rotation",orientation.goal.rotation},{"weight",orientation.goal.weight},
                             {"actual_rotation",orientation.actual_rotation},{"angular_error",orientation.angular_error}};
+                    }
+                }
+                if(state && params.value("include_metric",false)) {
+                    value["metric"]=nullptr;
+                    if(state->metric) {
+                        const auto& metric=*state->metric;
+                        value["metric"]={{"profile","near-uniform-v1"},{"evaluated",metric.evaluated},
+                            {"relative_limit",ik_near_uniform_metric_limit},
+                            {"local_scale_error",metric.evaluated ? Json(metric.local_scale_error) : Json(nullptr)},
+                            {"frame_error",metric.evaluated ? Json(metric.frame_error) : Json(nullptr)},
+                            {"gram_error",metric.evaluated ? Json(metric.gram_error) : Json(nullptr)},
+                            {"unweighted_position_error",metric.unweighted_position_error ? Json(*metric.unweighted_position_error) : Json(nullptr)},
+                            {"unweighted_position_limit",metric.unweighted_position_limit ? Json(*metric.unweighted_position_limit) : Json(nullptr)}};
                     }
                 }
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};

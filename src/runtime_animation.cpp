@@ -318,6 +318,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
         for(const auto& chain:rig.ik) {
             ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight,chain.end_orientation});
             RuntimeIkState state{entity.id,chain.slot,chain.root,chain.middle,chain.end,chain.enabled,chain.space,chain.target,chain.pole};state.weight=chain.weight;
+            if(chain.metric_policy==RuntimeIkMetricPolicy::NearUniformV1)state.metric=RuntimeIkMetricState{};
             ik_states_[index].push_back(state);
         }
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){ return a.slot<b.slot; });
@@ -356,7 +357,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     };
     auto ik_equal=[](const std::vector<RuntimeTwoBoneIk>& a,const std::vector<RuntimeTwoBoneIk>& b) {
         if(a.size()!=b.size())return false;
-        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.end_orientation.has_value()!=y.end_orientation.has_value()||
+        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.metric_policy!=y.metric_policy||x.end_orientation.has_value()!=y.end_orientation.has_value()||
             (x.end_orientation&&(x.end_orientation->rotation!=y.end_orientation->rotation||x.end_orientation->weight!=y.end_orientation->weight)))return false;}
         return true;
     };

@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-18 for **0.0.196**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.197**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.197 adds an explicit [near-uniform IK scale profile](IK_METRIC_PROFILES.md)
+for small imported scale differences. It preserves source data and rejects
+incoming or solved poses outside fixed frame and endpoint bounds. CLI and
+CoreCLR consumers each pass 86 finite poses across all 76 original Knight takes,
+with all 57 nodes observed and complete rollback, warm saves and cold continuation.
+Original scales and translations remain exact. Eighteen selected native cases
+are qualified through seventeen unchanged passes and a corrected fifteen-group
+IK case; the original test-pole failure remains failed. The separate full-game
+regression reaches warm/cold checks but hits its 85-second harness deadline
+during relocated restoration. That attempt does not qualify complete relocated
+continuation. Automatic contacts, new Windows/GPU execution and overall Alpha
+completion remain outside this checkpoint's evidence.
+[Results and boundaries](evidence/m2-ik-metric-profile.json).
 
 Version 0.0.196 adds an independent [end-joint orientation goal](TWO_BONE_IK.md)
 after two-bone positional IK, allowing games to specify a sole or grip frame.

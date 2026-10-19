@@ -103,6 +103,7 @@ struct RuntimeAnimationLayer {
     double reference_time=0;
 };
 enum class IkSpace : std::uint32_t { World=0, Rig=1 };
+enum class RuntimeIkMetricPolicy { Uniform, NearUniformV1 };
 struct RuntimeIkEndOrientation {
     // Model/rig quaternion frame, independent of the target point's IkSpace.
     std::array<double,4> rotation{0,0,0,1};
@@ -120,6 +121,7 @@ struct RuntimeTwoBoneIk {
     std::array<double,3> target{},pole{0,0,1};
     double weight=1;
     std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
+    RuntimeIkMetricPolicy metric_policy=RuntimeIkMetricPolicy::Uniform;
 };
 struct RuntimeIkCommand {
     std::string entity;
@@ -130,6 +132,13 @@ struct RuntimeIkCommand {
     double weight=1;
     std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
 };
+struct RuntimeIkMetricState {
+    // Opt-in worst errors of the incoming and final published model poses.
+    bool evaluated=false;
+    double local_scale_error=0,frame_error=0,gram_error=0;
+    // Model-space residual of the full solve before positional weight blending.
+    std::optional<double> unweighted_position_error,unweighted_position_limit;
+};
 struct RuntimeIkState {
     std::string entity;
     std::uint32_t slot=1,root=0,middle=0,end=0;
@@ -139,6 +148,7 @@ struct RuntimeIkState {
     double weight=1,target_error=0;
     bool clamped=false,pole_fallback=false;
     std::optional<RuntimeIkEndOrientationState> end_orientation=std::nullopt;
+    std::optional<RuntimeIkMetricState> metric=std::nullopt;
 };
 enum class RootMotionMode : std::uint32_t { Extract=0, Character=1 };
 struct RuntimeRootMotionDefinition {

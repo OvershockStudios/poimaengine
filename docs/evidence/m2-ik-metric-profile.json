@@ -1,0 +1,286 @@
+{
+  "format": "poima.evidence.ik-metric-profile.v1",
+  "engine_version": "0.0.197",
+  "date": "2026-10-19",
+  "passed": true,
+  "scope": "Selected explicit near-uniform IK implementation and actual original-character native/JSON/CoreCLR consumers. The separate first full-game regression hit its harness deadline; that failed attempt remains failed and does not qualify relocated continuation. This is not overall Alpha qualification.",
+  "contract": {
+    "default": "Exact positive uniform local ancestor/root/middle scales; previous strict path and default response shape retained.",
+    "opt_in": "Frozen AnimationRig.ik[].metric=near-uniform-v1; runtime commands cannot change the profile.",
+    "relative_limit": 0.0001,
+    "checks": [
+      "Positive finite original scales; local max/min spread.",
+      "Same fitted scale for quaternion-frame and cumulative Gram errors.",
+      "Both incoming and final published poses, including positional weighting.",
+      "Actual full affine endpoint residual before positional weighting: max(1e-9,1e-4*(a+b)) in model units."
+    ],
+    "inspection": "Opt-in include_metric reads cached measurements; inactive errors are null, strict profile metric is null.",
+    "persistence": "Frozen authored profile; unchanged point/orientation dynamic animation versions4/6. No new managed SDK service layout; existing352-byte orientation extension used."
+  },
+  "environment": {
+    "platform": "Linux x64 headless",
+    "cxx_standard": 20,
+    "build_type": "Debug",
+    "debug_flags": "-O0 -g0",
+    "assertions_enabled": true,
+    "build_workers": 2,
+    "linker_threads": 1,
+    "runtime_workers": 2,
+    "graphics_executed": false,
+    "dotnet_sdk": "10.0.401",
+    "coreclr": "10.0.12",
+    "native_aot_executed": false
+  },
+  "selected_source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 92997,
+      "sha256": "58f5c3d892709360573d5b5de53efd2ee11645d6de59833f8dafa304e82c76b2"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 26881,
+      "sha256": "9260c069f9049d606ba814e803dd3b0f58897b79a083a3b463f3e0cd1b7237f0"
+    },
+    "include/poima/runtime_ik.hpp": {
+      "bytes": 1389,
+      "sha256": "36173cb05567236c782f1159d4728decf131199bc98b5ce176648b3e44b68c51"
+    },
+    "src/runtime_ik.cpp": {
+      "bytes": 18924,
+      "sha256": "a91c3cc4bbcc168f3608f9b6d5d10890174d7be1d3312a4926cfd35c3e78a2f8"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 93258,
+      "sha256": "6841e06c12917b434eacd8607077b7a475e5c26c416cc8d9eb0999ca4dfcc824"
+    },
+    "src/world.cpp": {
+      "bytes": 338995,
+      "sha256": "353779cd8d00e8438917bb7c64079b0cd6a37f24ef5b3d1f3431e44d4c6f6666"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 121469,
+      "sha256": "49b6c58c469605b9f6b1c5f9c58563414dcdc55e1020665266e5372e2990c047"
+    },
+    "tests/runtime_two_bone_ik_native.cpp": {
+      "bytes": 54504,
+      "sha256": "3c33bc8db1f8d2ca78e6a651f0f14650a299d579d25cb2a5375a35911f693075"
+    },
+    "tests/runtime_ik_metric_profile.py": {
+      "bytes": 21612,
+      "sha256": "bff70965ec4cf3524adc1b9e6cdf76b584bd5d1ac87aca031f1b40576d3fbe3f"
+    },
+    "tests/managed_ik_metric_gameplay/ManagedIkMetricGame.cs": {
+      "bytes": 1403,
+      "sha256": "34f9c6fdef419b8a0253afbe3a281e425415c8167a82dc93820fd4c52d53fe45"
+    },
+    "tests/managed_ik_metric_gameplay/Poima.ManagedIkMetricGame.csproj": {
+      "bytes": 211,
+      "sha256": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a"
+    }
+  },
+  "native": {
+    "qualified": true,
+    "qualified_cases": 18,
+    "original_cohort": {
+      "passed": false,
+      "cases": 18,
+      "passed_cases": 17,
+      "failed_cases": 1,
+      "cause": "The expected-safe first physical-wrapper tick used a world pole that produced an84.7-degree root swing and exceeded the published Gram bound."
+    },
+    "test_requalification": {
+      "passed": true,
+      "native_ik_groups": 15,
+      "retained_group_bodies": 13,
+      "correction": "Only world poleY0 to3 and its inaccurate45-degree comment; bounds, assertions, point goals, kinematic motion and two-tick rollback unchanged.",
+      "rebuild": "One test translation unit and one test link; production CLI/core unchanged."
+    },
+    "artifact_scope": "Only CLI, corrected IK executable and core newly stored;17 original passed test images remain identified references. Original failed cohort is not regraded.",
+    "cli": {
+      "bytes": 35327024,
+      "sha256": "220bac84afe6b64d363aa79e1cb3683b257d2bf0019980e2a412c04402f634fa"
+    },
+    "normal_core": {
+      "bytes": 142818418,
+      "sha256": "bcd63d4d3912f32016ce4178f474155b1d4e78584754ae804305755b00c46358"
+    }
+  },
+  "qa": {
+    "passed": true,
+    "authoring_core_tests": 5,
+    "metadata_checks": 3,
+    "fresh_project_rpc": 13,
+    "fresh_project_ticks": 120,
+    "authored_files_preserved": 3
+  },
+  "original_character": {
+    "source": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "license": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+    "cooked": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    },
+    "nodes": 57,
+    "takes": 76,
+    "channels": 8712,
+    "keys": 90748,
+    "triangles": 6952,
+    "vertices": 7024,
+    "skin_joints": 41,
+    "mips": [
+      {
+        "bytes": 4194304,
+        "sha256": "9c027087fbc4645cd7029a5162c26ba564692921479ed284dfc6cf1250a5a888"
+      },
+      {
+        "bytes": 1048576,
+        "sha256": "b79410e88cec2313cd4eb87c3ba4c67eaaefac3dc8f5e62ac366558147d12301"
+      },
+      {
+        "bytes": 262144,
+        "sha256": "174c4fa48e3ed585c75bca20f2b31e267a7d46e805c16de175318206d4e39980"
+      },
+      {
+        "bytes": 65536,
+        "sha256": "2041bf8e6316f957505d6eae00a04c7f3383a5ae8b199e8b0b98488db62dd8ca"
+      },
+      {
+        "bytes": 16384,
+        "sha256": "6f814d99c0ccde6e19867d0465c602d05d67d3fdc3fc7fe920f1cdde18e02f44"
+      },
+      {
+        "bytes": 4096,
+        "sha256": "bd52ef428f3e09e8af9ef7127a08474740972efa5ddf02f12da2b80accf22f88"
+      },
+      {
+        "bytes": 1024,
+        "sha256": "a5b771090baa0d840d6ffb788922888c44b816fa53c6d430c0bf6bde0ab018ac"
+      },
+      {
+        "bytes": 256,
+        "sha256": "09286695d09a48ad1ffdc389ad48e10475328953c715fa3ca22805cbadf5a792"
+      },
+      {
+        "bytes": 64,
+        "sha256": "4d8df58ee6837030678902b32df5aa86c315439675ab525dd2769840c57305ec"
+      },
+      {
+        "bytes": 16,
+        "sha256": "2b4bccfdbc1632e05be8f93fde649bc23887d1fe9c91c07ac23b312803dabfcc"
+      },
+      {
+        "bytes": 4,
+        "sha256": "8cc5298e00324cc02ebe2d68f5fbbc8d11b7d22da5e2ce756414af2a18a5209a"
+      }
+    ]
+  },
+  "character_consumers": {
+    "passed": true,
+    "rpc_pairs": 1174,
+    "native_leaders": 4,
+    "poses": 172,
+    "node_observations": 9804,
+    "json": {
+      "rpc_pairs": 573,
+      "poses": 86,
+      "takes": 76,
+      "nodes_per_pose": 57,
+      "checkpoints": 10,
+      "whole_byte_and_typed_pairs": 6
+    },
+    "coreclr": {
+      "rpc_pairs": 601,
+      "poses": 86,
+      "takes": 76,
+      "nodes_per_pose": 57,
+      "checkpoints": 14,
+      "whole_byte_and_typed_pairs": 8,
+      "actual_callbacks": "Both leg controls read/written; intentional Tick throw restores complete saved state; warm/cold continuation checked."
+    },
+    "independent_maxima": {
+      "local_scale_error": 2.7418179087135286e-06,
+      "frame_error": 1.4071361112977243e-06,
+      "gram_error": 3.4678143491229108e-06,
+      "unweighted_position_error": 1.550532047596187e-07,
+      "residual_fraction_of_limit": 0.004118118546334726,
+      "matrix_recompute_error": 1.7763568394002505e-15,
+      "source_scale_translation_error": 0.0
+    },
+    "closure": "All four native leaders EOF0; the separate external owner verifies natural process-tree closure without adoption or cleanup actions.",
+    "state_checks": "Original raw JSONL requests/replies and full saved operands; exact retries, malformed/stale queries, complete rollback, warm restore and fresh-process continuation."
+  },
+  "managed_build": {
+    "passed": true,
+    "new_consumer_files": 5,
+    "bridge": "Previously qualified196 bridge and SDK source contract reused; fresh consumer/SDK outputs recorded independently.",
+    "services_bytes": 352,
+    "prior_abi_checks": 94,
+    "abi_rerun": false
+  },
+  "full_game_regression": {
+    "passed": false,
+    "attempts": [
+      {
+        "passed": false,
+        "rpc_pairs": 142,
+        "checkpoints": 9,
+        "whole_byte_pairs": 4,
+        "full_forecasts": 1,
+        "cause": "85-second functional harness deadline during relocated save restoration; remaining20RPCs not completed.",
+        "closure": "Three native leaders exit0, no forced cleanup, outer final children empty; wrapper restores its owned staged source.",
+        "scope": "Warm/cold checks are partial evidence only; no complete full-game or relocated-continuation pass claimed."
+      }
+    ]
+  },
+  "reproduce": {
+    "native": "Build poima-runtime-two-bone-ik-test in a simulation-enabled build; run ctest --test-dir BUILD -R ^runtime_two_bone_ik_native$ --output-on-failure.",
+    "original_character": "Follow docs/IK_METRIC_PROFILES.md with the unchanged caller-provided Knight GLB/license and fresh output; optional separately built C# consumer."
+  },
+  "selected_record_identities": {
+    "native_qualification": {
+      "bytes": 41246,
+      "sha256": "3e448b0d09be3da63523f88a5eca890e8b5eec92d79e58a3eb9ff6ae330d0e3d"
+    },
+    "original_native_failure": {
+      "bytes": 1123754,
+      "sha256": "32706231fd8ebc203350066977beb33924ffc3325d3821eb9a9f1773d319407c"
+    },
+    "new_ik_test": {
+      "bytes": 4774,
+      "sha256": "bccbf17e6bc35c33751384e09bc88f0e661f5ac26924056eac7a61552e09c3ee"
+    },
+    "managed_build": {
+      "bytes": 6276,
+      "sha256": "f125e3e83417b4d507d50fcbd6b6a95414b4f510906c68ae9e7dd2ea1acf9512"
+    },
+    "protocol_owner": {
+      "bytes": 10455,
+      "sha256": "2864e516f604e38b03fd0c7e8ef5289d32cb2a2e2a4229f92ccc430463517dae"
+    },
+    "protocol_file_review": {
+      "bytes": 8247,
+      "sha256": "790e9fc21f2cc8c18ac0f889a479c781f0532f20dcfe62b78594d255c5c30c42"
+    },
+    "qa_owner": {
+      "bytes": 17213,
+      "sha256": "7004f49c0767e3ebc5dbe358f2346556d99c493a177dcc9571c73e29407b4302"
+    },
+    "full_game_attempt1": {
+      "bytes": 199017,
+      "sha256": "ae8aeea35a040b577fe474708c4c1667b049f610b022afc3d1c62f3c42913616"
+    }
+  },
+  "limitations": [
+    "86 finite poses per consumer, not every time, blend, layer or authored override in the original library.",
+    "Source-derived skinning witnesses are not native vertex-buffer or GPU observations.",
+    "No automatic ground contacts, sole calibration, foot locking, pelvis correction, joint limits or full-body solver.",
+    "No new Windows, renderer, physical-input, optimized performance, clean-machine or Alpha qualification.",
+    "Complete authored-file preservation is not independent proof of all in-memory authoring-history internals."
+  ]
+}

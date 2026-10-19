@@ -41,11 +41,14 @@ breaks a configured chain rejects the whole authored transaction. IK wrappers
 cannot sit beneath a RigNode; dependencies between nested animated wrappers
 are unsupported.
 
-Configured chains require nondegenerate rest segments and positive uniform
-rest scales along the model ancestors, root and middle, including disabled
-chains. An active weighted chain must also retain positive uniform evaluated
-scales along those nodes. Unsupported evaluated poses reject the complete simulation
-batch. The wrapper itself may have an invertible positive affine transform.
+Configured chains require nondegenerate rest segments. The default `uniform`
+metric requires positive uniform rest scales along the model ancestors, root
+and middle, including disabled chains. An active weighted chain must also
+retain positive uniform evaluated scales along those nodes. The explicit
+[`near-uniform-v1` profile](IK_METRIC_PROFILES.md) admits bounded deviations
+while preserving source transforms and measuring the actual affine solve.
+Unsupported evaluated poses reject the complete simulation batch. The wrapper
+itself may have an invertible positive affine transform.
 Hierarchical templates retain the model indices and remap ordinary RigNode
 ownership to each spawned instance. Later authored edits leave the running
 definition frozen; restart to adopt a changed chain.
@@ -122,9 +125,10 @@ document explicitly containing a zero-weight field remains a different authored
 document; it is not silently rewritten to remove that field. `enabled:false`
 disables both applications while retaining a nonzero orientation intent.
 
-Active orientation application has the same positive uniform evaluated
-ancestor/root/middle scale restrictions as positional IK, including when only
-the orientation weight is nonzero. The wrapper may still be positive affine;
+Active orientation application has the same selected metric restrictions as
+positional IK, including when only the orientation weight is nonzero. The
+default profile requires positive uniform evaluated ancestor/root/middle
+scales. The wrapper may still be positive affine;
 the goal is a logical rig quaternion, not a decomposed world rotation under a
 nonuniform or sheared wrapper. Ground queries, automatic foot locking, pelvis
 compensation and joint limits remain separate systems.

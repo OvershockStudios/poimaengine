@@ -38,6 +38,43 @@ void metric(std::span<const int> parents,const ModelPose& pose,const RuntimeTwoB
     const auto a=length(sub(position(pose.world[chain.middle]),position(pose.world[chain.root]))),b=length(sub(position(pose.world[chain.end]),position(pose.world[chain.middle])));
     check(std::isfinite(a)&&std::isfinite(b)&&a>0&&b>0&&a<=1e12&&b<=1e12,"IK links must have finite nonzero lengths within the matrix range.");
 }
+void metric_policy(const RuntimeTwoBoneIk& chain){
+    check(chain.metric_policy==RuntimeIkMetricPolicy::Uniform||chain.metric_policy==RuntimeIkMetricPolicy::NearUniformV1,"Unknown IK metric policy.");
+}
+RuntimeIkMetricState near_uniform_metric(std::span<const int> parents,const ModelPose& pose,const RuntimeTwoBoneIk& chain){
+    RuntimeIkMetricState result;result.evaluated=true;std::vector<int> path;
+    for(int node=static_cast<int>(chain.middle);node>=0;node=parents[static_cast<std::size_t>(node)]){
+        path.push_back(node);const auto& scale=pose.local[static_cast<std::size_t>(node)].scale;
+        for(const auto value:scale)check(std::isfinite(value)&&value>0,"Near-uniform IK requires finite positive evaluated model scales.");
+        const auto error=*std::max_element(scale.begin(),scale.end())/ *std::min_element(scale.begin(),scale.end())-1;
+        check(std::isfinite(error)&&error<=ik_near_uniform_metric_limit,"Near-uniform IK local scale error exceeds its relative limit.");
+        result.local_scale_error=std::max(result.local_scale_error,error);
+    }
+    Q rotation{0,0,0,1};
+    for(auto it=path.rbegin();it!=path.rend();++it){
+        const auto node=static_cast<std::size_t>(*it);rotation=product(rotation,pose.local[node].rotation);
+        const auto rigid=local_matrix({0,0,0},rotation,{1,1,1});const auto& affine=pose.world[node];
+        double maximum=0;
+        for(unsigned col=0;col<3;++col)for(unsigned row=0;row<3;++row){const auto value=affine[col*4+row];check(std::isfinite(value),"Near-uniform IK cumulative frame must be finite.");maximum=std::max(maximum,std::abs(value));}
+        check(maximum>0,"Near-uniform IK cumulative frame is degenerate.");
+        std::array<double,9> scaled{};double aligned_scale=0;
+        // s = trace(R^T A)/3, evaluated after dividing A by its maximum entry.
+        // A/s therefore uses exactly the quaternion-product frame of this solve.
+        for(unsigned col=0;col<3;++col)for(unsigned row=0;row<3;++row){const auto index=col*3+row;scaled[index]=affine[col*4+row]/maximum;aligned_scale+=rigid[col*4+row]*scaled[index];}
+        aligned_scale/=3;check(std::isfinite(aligned_scale)&&aligned_scale>0,"Near-uniform IK cumulative scale must be positive.");
+        // D=A/s uses the same positive scale as the frame comparison. This
+        // admission bounds each D entry before its Gram products are formed.
+        for(unsigned col=0;col<3;++col)for(unsigned row=0;row<3;++row){auto& value=scaled[col*3+row];value/=aligned_scale;const auto error=std::abs(value-rigid[col*4+row]);check(std::isfinite(error)&&error<=ik_near_uniform_metric_limit,"Near-uniform IK cumulative frame error exceeds its relative limit.");result.frame_error=std::max(result.frame_error,error);}
+        for(unsigned a=0;a<3;++a)for(unsigned b=0;b<3;++b){double value=0;for(unsigned row=0;row<3;++row)value+=scaled[a*3+row]*scaled[b*3+row];const auto error=std::abs(value-(a==b?1.:0.));check(std::isfinite(error)&&error<=ik_near_uniform_metric_limit,"Near-uniform IK cumulative Gram error exceeds its relative limit.");result.gram_error=std::max(result.gram_error,error);}
+    }
+    const auto a=length(sub(position(pose.world[chain.middle]),position(pose.world[chain.root]))),b=length(sub(position(pose.world[chain.end]),position(pose.world[chain.middle])));
+    check(std::isfinite(a)&&std::isfinite(b)&&a>0&&b>0&&a<=1e12&&b<=1e12,"IK links must have finite nonzero lengths within the matrix range.");
+    return result;
+}
+std::optional<RuntimeIkMetricState> evaluated_metric(std::span<const int> parents,const ModelPose& pose,const RuntimeTwoBoneIk& chain){
+    if(chain.metric_policy==RuntimeIkMetricPolicy::Uniform){metric(parents,pose,chain);return {};}
+    return near_uniform_metric(parents,pose,chain);
+}
 void wrapper(const Matrix4& m){for(auto x:m)check(std::isfinite(x),"IK wrapper matrix must be finite.");check(m[3]==0&&m[7]==0&&m[11]==0&&m[15]==1,"IK wrapper must be affine.");const auto determinant=m[0]*(m[5]*m[10]-m[9]*m[6])-m[4]*(m[1]*m[10]-m[9]*m[2])+m[8]*(m[1]*m[6]-m[5]*m[2]);check(std::isfinite(determinant)&&determinant>0,"IK wrapper must be an invertible positive affine transform.");}
 }
 std::optional<RuntimeIkEndOrientation> canonical_ik_end_orientation(std::optional<RuntimeIkEndOrientation> value){
@@ -67,21 +104,22 @@ namespace ik {
 void validate_chains(std::span<const int> parents,std::span<const NodePose> rest,std::span<const RuntimeTwoBoneIk> chains){
     check(chains.size()<=8,"AnimationRig permits at most eight IK chains.");if(chains.empty())return;
     ModelPose pose;pose.local.assign(rest.begin(),rest.end());compose(parents,pose);std::uint32_t previous=0;
-    for(const auto& c:chains){validate_ik_command({{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight,c.end_orientation});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
+    for(const auto& c:chains){metric_policy(c);validate_ik_command({{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight,c.end_orientation});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
         check(c.root<parents.size()&&c.middle<parents.size()&&c.end<parents.size()&&c.root!=c.middle&&c.middle!=c.end&&c.root!=c.end,"IK chain indices must be distinct existing nodes.");
-        check(parents[c.middle]==static_cast<int>(c.root)&&parents[c.end]==static_cast<int>(c.middle),"IK chain must have direct model root/middle/end parent correspondence.");metric(parents,pose,c);
+        check(parents[c.middle]==static_cast<int>(c.root)&&parents[c.end]==static_cast<int>(c.middle),"IK chain must have direct model root/middle/end parent correspondence.");(void)evaluated_metric(parents,pose,c);
     }
     auto ancestor=[&](std::uint32_t a,std::uint32_t b){for(int n=static_cast<int>(b);n>=0;n=parents[static_cast<std::size_t>(n)])if(static_cast<std::uint32_t>(n)==a)return true;return false;};
     for(std::size_t i=0;i<chains.size();++i)for(std::size_t j=0;j<i;++j)check(!ancestor(chains[i].root,chains[j].root)&&!ancestor(chains[j].root,chains[i].root),"IK solved branches cannot overlap.");
 }
 RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeTwoBoneIk& chain,const RuntimeIkCommand& control,const Matrix4& world){
-    validate_ik_command(control);wrapper(world);check(control.slot==chain.slot,"IK control slot differs from frozen chain.");check(chain.root<pose.local.size()&&chain.middle<pose.local.size()&&chain.end<pose.local.size()&&chain.root!=chain.middle&&chain.middle!=chain.end&&chain.root!=chain.end&&parents.size()==pose.local.size(),"IK chain pose count differs.");
+    metric_policy(chain);validate_ik_command(control);wrapper(world);check(control.slot==chain.slot,"IK control slot differs from frozen chain.");check(chain.root<pose.local.size()&&chain.middle<pose.local.size()&&chain.end<pose.local.size()&&chain.root!=chain.middle&&chain.middle!=chain.end&&chain.root!=chain.end&&parents.size()==pose.local.size(),"IK chain pose count differs.");
     check(parents[chain.middle]==static_cast<int>(chain.root)&&parents[chain.end]==static_cast<int>(chain.middle),"Invalid IK chain parent correspondence.");
     RuntimeIkState result{control.entity,chain.slot,chain.root,chain.middle,chain.end,control.enabled,control.space,control.target,control.pole};result.weight=control.weight;
+    if(chain.metric_policy==RuntimeIkMetricPolicy::NearUniformV1)result.metric=RuntimeIkMetricState{};
     // Recomposition leaves all incoming locals untouched, including disabled
     // and zero-weight paths. Diagnostics describe the actual published pose.
     compose(parents,pose);const auto requested=control.space==IkSpace::World?control.target:point(world,control.target);
-    if(control.enabled&&control.weight>0){metric(parents,pose,chain);const auto inv=inverse_affine(world);const auto target=control.space==IkSpace::World?point(inv,control.target):control.target;
+    if(control.enabled&&control.weight>0){result.metric=evaluated_metric(parents,pose,chain);const auto inv=inverse_affine(world);const auto target=control.space==IkSpace::World?point(inv,control.target):control.target;
         const auto pole=control.space==IkSpace::World?point(inv,control.pole):control.pole;const auto root=position(pose.world[chain.root]),middle=position(pose.world[chain.middle]),end=position(pose.world[chain.end]);
         const auto upper=sub(middle,root),lower=sub(end,middle),aim_vector=sub(target,root);const auto a=length(upper),b=length(lower),requested_distance=length(aim_vector);
         const auto aim=requested_distance>0?unit(aim_vector):unit(upper);const auto reach=std::clamp(requested_distance,std::abs(a-b),a+b);result.clamped=requested_distance<std::abs(a-b)||requested_distance>a+b;
@@ -94,6 +132,14 @@ RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeT
         pose.local[chain.root].rotation=product(inverse(parent_q),product(swing(upper,sub(wanted_middle,root),plane),root_q));compose(parents,pose);
         const auto middle_parent=orientation(parents,pose.local,parents[chain.middle]),middle_q=orientation(parents,pose.local,static_cast<int>(chain.middle));
         pose.local[chain.middle].rotation=product(inverse(middle_parent),product(swing(sub(position(pose.world[chain.end]),position(pose.world[chain.middle])),sub(wanted_end,position(pose.world[chain.middle])),plane),middle_q));
+        if(result.metric){
+            // Measure the actual affine result before positional weight blending;
+            // the clamp distance and later blend are different error sources.
+            compose(parents,pose);const auto error=length(sub(position(pose.world[chain.end]),wanted_end));
+            const auto limit=std::max(near_uniform_position_absolute_limit,ik_near_uniform_metric_limit*(a+b));
+            check(std::isfinite(error)&&error<=limit,"Near-uniform IK unweighted position residual exceeds its limit.");
+            result.metric->unweighted_position_error=error;result.metric->unweighted_position_limit=limit;
+        }
         if(control.weight<1){pose.local[chain.root].rotation=blend(original_root,pose.local[chain.root].rotation,control.weight);pose.local[chain.middle].rotation=blend(original_middle,pose.local[chain.middle].rotation,control.weight);}compose(parents,pose);
     }
     const auto end_orientation=canonical_ik_end_orientation(control.end_orientation);
@@ -101,7 +147,7 @@ RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeT
         // Use the actual parent after positional blending. This final local
         // rotation leaves the end joint's translation and its ancestors alone.
         if(control.enabled){
-            if(control.weight==0)metric(parents,pose,chain);
+            if(control.weight==0)result.metric=evaluated_metric(parents,pose,chain);
             const auto parent=orientation(parents,pose.local,parents[chain.end]);
             const auto goal=product(inverse(parent),end_orientation->rotation);
             pose.local[chain.end].rotation=blend(pose.local[chain.end].rotation,goal,end_orientation->weight);
@@ -114,6 +160,14 @@ RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeT
         const auto error=2*std::atan2(std::hypot(relative[0],relative[1],relative[2]),std::abs(relative[3]));
         check(std::isfinite(error),"IK end orientation error exceeds numeric range.");
         result.end_orientation=RuntimeIkEndOrientationState{*end_orientation,actual,error};
+    }
+    if(result.metric&&result.metric->evaluated){
+        // A joint rotation can undo cancellation between nearly uniform scales.
+        // The accepted final pose must satisfy the same metric as its input.
+        const auto final=near_uniform_metric(parents,pose,chain);
+        result.metric->local_scale_error=std::max(result.metric->local_scale_error,final.local_scale_error);
+        result.metric->frame_error=std::max(result.metric->frame_error,final.frame_error);
+        result.metric->gram_error=std::max(result.metric->gram_error,final.gram_error);
     }
     result.end_position=point(world,position(pose.world[chain.end]));result.target_error=length(sub(result.end_position,requested));check(std::isfinite(result.target_error),"IK target error exceeds numeric range.");return result;
 }
