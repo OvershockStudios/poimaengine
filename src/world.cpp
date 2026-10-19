@@ -7,6 +7,7 @@
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
 #include "poima/runtime_ik.hpp"
+#include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
 #if POIMA_GAME_UI
 #include "poima/ui_presenter.hpp"
@@ -474,10 +475,29 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
     require(values.is_array() && values.size()<=8,"AnimationRig IK permits at most eight chains.");
     std::vector<RuntimeTwoBoneIk> result;std::set<std::uint32_t> slots;
     for(const auto& value:values) {
-        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight","end_orientation","metric"},{"slot","root","middle","end","target","pole"});
+        fields(value,{"slot","root","middle","end","target","pole","enabled","space","weight","end_orientation","metric","grounding"},{"slot","root","middle","end","target","pole"});
         const auto control=ik_control_value(value);require(slots.insert(control.slot).second,"Duplicate authored IK slot.");
         RuntimeTwoBoneIk chain;chain.slot=control.slot;chain.enabled=control.enabled;chain.space=control.space;chain.target=control.target;chain.pole=control.pole;chain.weight=control.weight;
         chain.end_orientation=control.end_orientation;
+        if(value.contains("grounding")) {
+            const auto& g=value.at("grounding");
+            fields(g,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"},
+                {"sole_offset","sole_up","sole_forward","reference_height"});
+            RuntimeGroundingDefinition definition;
+            auto vector=[&](const char* key) {
+                require(g.at(key).is_array() && g.at(key).size()==3,"Grounding vectors require three numbers.");
+                std::array<double,3> result{};
+                for(std::size_t i=0;i<3;++i){require(g.at(key)[i].is_number(),"Grounding vectors require numbers.");result[i]=g.at(key)[i].get<double>();}
+                return result;
+            };
+            definition.sole_offset=vector("sole_offset");definition.sole_up=vector("sole_up");definition.sole_forward=vector("sole_forward");
+            auto number=[&](const char* key,double& output){if(g.contains(key)){require(g.at(key).is_number(),"Grounding parameters require numbers.");output=g.at(key).get<double>();}};
+            number("reference_height",definition.reference_height);number("plant_height",definition.plant_height);number("lift_height",definition.lift_height);
+            number("probe_above",definition.probe_above);number("probe_below",definition.probe_below);number("max_correction",definition.max_correction);number("max_slope_degrees",definition.max_slope_degrees);
+            require(!value.contains("end_orientation"),"Grounding owns the end orientation; do not supply end_orientation.");
+            try { grounding::validate(definition); }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+            chain.grounding=definition;
+        }
         if(value.contains("metric")) {
             require(value.at("metric").is_string() && (value.at("metric")=="uniform" || value.at("metric")=="near-uniform-v1"),
                 "IK metric must be uniform or near-uniform-v1.");
@@ -3425,9 +3445,10 @@ public:
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.ik") {
-            fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric","include_grounding"},{"session_id","tick","entity","slot"});runtime_guard(params);
             if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");
             if(params.contains("include_metric"))require(params.at("include_metric").is_boolean(),"include_metric must be boolean.");
+            if(params.contains("include_grounding"))require(params.at("include_grounding").is_boolean(),"include_grounding must be boolean.");
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");
             try { (void)runtime_->entity(entity); }catch(const std::runtime_error& error){throw Error(-32004,error.what());}
@@ -3455,6 +3476,19 @@ public:
                             {"gram_error",metric.evaluated ? Json(metric.gram_error) : Json(nullptr)},
                             {"unweighted_position_error",metric.unweighted_position_error ? Json(*metric.unweighted_position_error) : Json(nullptr)},
                             {"unweighted_position_limit",metric.unweighted_position_limit ? Json(*metric.unweighted_position_limit) : Json(nullptr)}};
+                    }
+                }
+                if(state && params.value("include_grounding",false)) {
+                    value["grounding"]=nullptr;
+                    if(state->grounding) {
+                        const auto& g=*state->grounding;
+                        Json hit=nullptr;
+                        if(g.hit)hit={{"entity",g.hit->entity},{"position",g.hit->position},{"normal",g.hit->normal},
+                            {"triangle",g.hit->triangle ? Json(*g.hit->triangle) : Json(nullptr)}};
+                        value["grounding"]={{"decision_tick",g.decision_tick},{"casts",g.casts},{"status",g.status},{"cast",g.cast},{"weight",g.weight},
+                            {"input_sole",g.input_sole},{"ray_origin",g.ray_origin},{"hit",hit},{"actual_sole",g.actual_sole},{"actual_normal",g.actual_normal},
+                            {"position_error",g.position_error ? Json(*g.position_error) : Json(nullptr)},
+                            {"normal_error",g.normal_error ? Json(*g.normal_error) : Json(nullptr)}};
                     }
                 }
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};

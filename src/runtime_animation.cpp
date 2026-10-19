@@ -12,6 +12,20 @@
 namespace poima {
 namespace {
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
+void verify_grounding_geometry(const RuntimeGroundingState& saved,const ModelPose& pose,
+    const RuntimeTwoBoneIk& chain,const Matrix4& wrapper,std::uint64_t tick) {
+    if(saved.status=="uninitialized")return;
+    check(saved.decision_tick==tick,"Restored grounding decision must match the current boundary.");
+    auto actual=saved;grounding::finish(actual,pose,chain,wrapper);
+    for(std::size_t i=0;i<3;++i) {
+        check(std::abs(actual.actual_sole[i]-saved.actual_sole[i])<=1e-6,"Saved grounding sole differs from reconstructed pose.");
+        check(std::abs(actual.actual_normal[i]-saved.actual_normal[i])<=1e-6,"Saved grounding normal differs from reconstructed pose.");
+    }
+    auto residual=[](const std::optional<double>& a,const std::optional<double>& b) {
+        check(a.has_value()==b.has_value()&&(!a||std::abs(*a-*b)<=1e-6),"Saved grounding residual differs from reconstructed pose.");
+    };
+    residual(actual.position_error,saved.position_error);residual(actual.normal_error,saved.normal_error);
+}
 AnimationCommand normalized(const AnimationCommand& source,std::size_t clip_count) {
     auto result=source;
     check(std::isfinite(result.time) && result.time>=0 && result.time<=1e9,"Animation time must be within 0..1e9 seconds.");
@@ -140,13 +154,19 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
     std::map<std::string,std::vector<const Entity*>> mappings;
     std::set<const ModelAsset*> validated;
     std::set<std::string> controlled_cameras,root_actors;
-    std::size_t nodes=0,channels=0,keys=0,joints=0,layer_nodes=0;
+    std::size_t nodes=0,channels=0,keys=0,joints=0,layer_nodes=0,grounded_feet=0;
     for(const auto& entity:definition.entities) {
         check(entities.emplace(entity.id,&entity).second,"Duplicate runtime entity ID.");
         if(entity.character)controlled_cameras.insert(entity.character->camera);
         if(!entity.animation_rig)continue;
         check(!entity.rig_node && !entity.skinned_mesh,"An animation wrapper cannot also be a mapped node or skinned primitive.");
         const auto& rig=*entity.animation_rig;check(bool(rig.model),"AnimationRig requires a model asset.");
+        std::size_t rig_feet=0;
+        for(const auto& chain:rig.ik)if(chain.grounding) {
+            grounding::validate(*chain.grounding);
+            check(!chain.end_orientation,"Grounding owns its end orientation; authored goals are not permitted.");
+            check(++rig_feet<=2 && ++grounded_feet<=64,"Grounding permits at most two feet per rig and64 per world.");
+        }
         rigs.emplace(entity.id,&entity);check(rigs.size()<=128,"World animation rig limit is 128.");
         nodes+=rig.model->nodes.size();check(nodes<=10000,"World mapped animation node limit is 10000.");
         for(const auto& clip:rig.model->animations)channels+=clip.channels.size();
@@ -319,6 +339,10 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
             ik_[index].push_back({entity.id,chain.slot,chain.enabled,chain.space,chain.target,chain.pole,chain.weight,chain.end_orientation});
             RuntimeIkState state{entity.id,chain.slot,chain.root,chain.middle,chain.end,chain.enabled,chain.space,chain.target,chain.pole};state.weight=chain.weight;
             if(chain.metric_policy==RuntimeIkMetricPolicy::NearUniformV1)state.metric=RuntimeIkMetricState{};
+            if(chain.grounding) {
+                auto& control=ik_[index].back();control.enabled=false;control.weight=0;control.end_orientation.reset();
+                state.enabled=false;state.weight=0;state.grounding=RuntimeGroundingState{};
+            }
             ik_states_[index].push_back(state);
         }
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){ return a.slot<b.slot; });
@@ -357,7 +381,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     };
     auto ik_equal=[](const std::vector<RuntimeTwoBoneIk>& a,const std::vector<RuntimeTwoBoneIk>& b) {
         if(a.size()!=b.size())return false;
-        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.metric_policy!=y.metric_policy||x.end_orientation.has_value()!=y.end_orientation.has_value()||
+        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.metric_policy!=y.metric_policy||x.grounding!=y.grounding||x.end_orientation.has_value()!=y.end_orientation.has_value()||
             (x.end_orientation&&(x.end_orientation->rotation!=y.end_orientation->rotation||x.end_orientation->weight!=y.end_orientation->weight)))return false;}
         return true;
     };
@@ -383,7 +407,9 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     // This is read-only: no history or transition buffer is replaced here.
     for(std::size_t index=0;index<candidate.membership_->rigs.size();++index)
         (void)candidate.composed(index,candidate.clocks_[index],candidate.layers_[index],tick);
+    candidate.grounding_restore_pending_=grounding_restore_pending_;
     membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);ik_.swap(candidate.ik_);ik_states_.swap(candidate.ik_states_);roots_.swap(candidate.roots_);
+    std::swap(grounding_restore_pending_,candidate.grounding_restore_pending_);
 }
 
 namespace {
@@ -626,6 +652,16 @@ void RuntimeAnimations::strip_root(std::size_t index,ModelPose& pose) const {
 bool RuntimeAnimations::has_ik() const noexcept {
     return std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig){return !rig.ik.empty();});
 }
+bool RuntimeAnimations::has_grounding() const noexcept {
+    return std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig) {
+        return std::any_of(rig.ik.begin(),rig.ik.end(),[](const RuntimeTwoBoneIk& chain){return chain.grounding.has_value();});
+    });
+}
+bool RuntimeAnimations::owns_grounding(const std::string& entity,std::uint32_t slot) const {
+    const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return false;
+    const auto& chains=membership_->rigs[found->second].ik;
+    return std::any_of(chains.begin(),chains.end(),[&](const RuntimeTwoBoneIk& chain){return chain.slot==slot&&chain.grounding.has_value();});
+}
 std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& entity,std::uint32_t slot) const {
     check(slot>=1&&slot<=8,"IK slot must be 1..8.");const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return {};
     const auto& states=ik_states_[found->second];for(const auto& state:states)if(state.slot==slot)return state;return {};
@@ -635,13 +671,16 @@ void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) 
     for(const auto& command:commands) {
         validate_ik_command(command);check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"IK command entity has no AnimationRig.");
+        check(!owns_grounding(command.entity,command.slot),"Grounding owns this IK slot; manual writes are not permitted.");
         auto& controls=candidate[found->second];const auto control=std::find_if(controls.begin(),controls.end(),[&](const auto& c){return c.slot==command.slot;});
         check(control!=controls.end(),"IK command slot is not configured.");*control=command;control->end_orientation=canonical_ik_end_orientation(command.end_orientation);
     }
     ik_.swap(candidate);
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
-    const std::function<const Matrix4&(const std::string&)>& wrapper_world) {
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query) {
+    if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query);
+    check(!grounding_restore_pending_||bool(wrapper_world),"Grounding restore verification requires the restored physical wrapper.");
     // Every job owns one candidate clock/layer/output partition. Nothing live
     // changes until all evaluations and output allocations have succeeded.
     auto candidate=clocks_;auto candidate_layers=layers_;const bool configured_ik=has_ik();
@@ -675,7 +714,16 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
         }
         if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
         strip_root(index,pose);
-        for(std::size_t i=0;i<rig.ik.size();++i)candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);
+        for(std::size_t i=0;i<rig.ik.size();++i) {
+            if(!rig.ik[i].grounding) {
+                candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);continue;
+            }
+            const auto retained=candidate_ik_states[index][i].grounding;
+            candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);
+            candidate_ik_states[index][i].grounding=retained;
+        }
+        if(grounding_restore_pending_)for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding)
+            verify_grounding_geometry(*candidate_ik_states[index][i].grounding,pose,rig.ik[i],wrappers[index],tick);
         auto& output=outputs[index];
         for(std::size_t node=0;node<rig.nodes.size();++node) {
             const auto& local=pose.local[node];output.push_back({rig.nodes[node],{local.position,local.rotation,local.scale}});
@@ -698,7 +746,80 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
     // Flatten only in frozen rig/node order, never completion order. Moving
     // strings uses the already-reserved result storage before publication.
     for(auto& output:outputs)for(auto& pose:output)result.push_back(std::move(pose));
-    clocks_.swap(candidate);layers_.swap(candidate_layers);if(configured_ik)ik_states_.swap(candidate_ik_states);return result;
+    clocks_.swap(candidate);layers_.swap(candidate_layers);if(configured_ik)ik_states_.swap(candidate_ik_states);grounding_restore_pending_=false;return result;
+}
+std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64_t tick,
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query) {
+    check(!grounding_restore_pending_,"Verify restored grounding pose before refreshing contacts.");
+    // Two joined candidate phases. Physics is queried only by the owner between
+    // them, using the same root-stripped incoming poses that the solver consumes.
+    auto candidate=clocks_;auto candidate_layers=layers_;auto controls=ik_;auto states=ik_states_;
+    const auto count=membership_->rigs.size();
+    std::vector<Matrix4> wrappers(count,identity_matrix());
+    if(wrapper_world)for(std::size_t i=0;i<count;++i)if(!membership_->rigs[i].ik.empty())
+        wrappers[i]=wrapper_world(membership_->rigs[i].entity);
+    std::vector<ModelPose> poses(count);std::vector<std::vector<RuntimeAnimationPose>> outputs(count);
+    std::size_t total_nodes=0;
+    for(std::size_t i=0;i<count;++i) { outputs[i].reserve(membership_->rigs[i].nodes.size());total_nodes+=membership_->rigs[i].nodes.size(); }
+    std::vector<RuntimeAnimationPose> result;result.reserve(total_nodes);
+    auto remember=[tick](Clock& clock,const std::vector<NodePose>& local) {
+        if(!clock.current || tick>=clock.current->tick) {
+            if(clock.current && tick>clock.current->tick)clock.previous=clock.current;
+            clock.current=History{tick,std::make_shared<const std::vector<NodePose>>(local)};
+        }
+        if(clock.transition && !active(*clock.transition,tick))clock.transition.reset();
+    };
+    auto joined=[&](auto&& operation,const char* label) {
+        if(!executor_) { for(std::size_t i=0;i<count;++i)operation(i);return; }
+        std::vector<jobs::Task> tasks;tasks.reserve(count);
+        for(std::size_t i=0;i<count;++i)tasks.push_back({[&,i](jobs::Context& context) {
+            if(!context.cancel_requested())operation(i);
+        },{},label});
+        auto attribution=profiling::job_attribution();attribution.tick=static_cast<std::int64_t>(tick);
+        const auto group=executor_->submit(std::move(tasks),jobs::Lane::frame,attribution);
+        jobs::Result completed;
+        { profiling::Scope wait("runtime.animation.wait",static_cast<std::int64_t>(tick));completed=executor_->wait(group); }
+        profiling::collect_jobs(*executor_);completed.rethrow();
+        check(completed.snapshot.state==jobs::State::succeeded,"Grounding animation jobs were cancelled; no poses committed.");
+    };
+    joined([&](std::size_t index) {
+        const auto& rig=membership_->rigs[index];auto& base=candidate[index];auto& layers=candidate_layers[index];
+        auto pose=evaluate(index,base,tick);remember(base,pose.local);
+        for(std::size_t i=0;i<layers.size();++i) {
+            auto& layer=layers[i];const auto sampled=evaluate(index,layer.clock,tick);remember(layer.clock,sampled.local);
+            const auto& frozen=rig.layers[i];
+            blend_animation_layer(pose.local,sampled.local,frozen.reference,frozen.mask,layer_weight(layer,tick),frozen.mode);
+            if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();
+        }
+        if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
+        strip_root(index,pose);poses[index]=std::move(pose);
+    },"animation.sample.rig");
+    // No task runs here. Do not solve an earlier foot before preparing a later
+    // foot: every decision must observe the same uncorrected animation frame.
+    for(std::size_t index=0;index<count;++index) {
+        const auto& rig=membership_->rigs[index];
+        for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding) {
+            check(states[index][i].grounding.has_value(),"Configured grounding state is absent.");
+            auto decision=grounding::prepare(rig.model_parents,poses[index],rig.ik[i],wrappers[index],rig.entity,tick,*states[index][i].grounding,contact_query);
+            validate_ik_command(decision.control);controls[index][i]=std::move(decision.control);
+            states[index][i].grounding=std::move(decision.state);
+        }
+    }
+    joined([&](std::size_t index) {
+        const auto& rig=membership_->rigs[index];auto& pose=poses[index];
+        for(std::size_t i=0;i<rig.ik.size();++i) {
+            const auto decision=states[index][i].grounding;
+            states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],controls[index][i],wrappers[index]);
+            if(rig.ik[i].grounding)states[index][i].grounding=decision;
+        }
+        for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding)
+            grounding::finish(*states[index][i].grounding,pose,rig.ik[i],wrappers[index]);
+        for(std::size_t node=0;node<rig.nodes.size();++node) {
+            const auto& local=pose.local[node];outputs[index].push_back({rig.nodes[node],{local.position,local.rotation,local.scale}});
+        }
+    },"animation.grounding.solve");
+    for(auto& output:outputs)for(auto& pose:output)result.push_back(std::move(pose));
+    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(controls);ik_states_.swap(states);return result;
 }
 namespace {
 using StateJson=nlohmann::json;
@@ -749,6 +870,79 @@ AnimationCommand read_control(const StateJson& value,const std::string& entity,s
 template<std::size_t N> std::array<double,N> state_vector(const StateJson& value) {
     check(value.is_array() && value.size()==N,"Animation state vector has incorrect length.");
     std::array<double,N> result;for(std::size_t i=0;i<N;++i)result[i]=state_number(value[i]);return result;
+}
+StateJson state_grounding_definition(const RuntimeGroundingDefinition& value) {
+    grounding::validate(value);
+    return {{"sole_offset",value.sole_offset},{"sole_up",value.sole_up},{"sole_forward",value.sole_forward},
+        {"reference_height",value.reference_height},{"plant_height",value.plant_height},{"lift_height",value.lift_height},
+        {"probe_above",value.probe_above},{"probe_below",value.probe_below},
+        {"max_correction",value.max_correction},{"max_slope_degrees",value.max_slope_degrees}};
+}
+RuntimeGroundingDefinition read_grounding_definition(const StateJson& value) {
+    state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"});
+    RuntimeGroundingDefinition result;
+    result.sole_offset=state_vector<3>(value.at("sole_offset"));result.sole_up=state_vector<3>(value.at("sole_up"));result.sole_forward=state_vector<3>(value.at("sole_forward"));
+    result.reference_height=state_number(value.at("reference_height"));result.plant_height=state_number(value.at("plant_height"));result.lift_height=state_number(value.at("lift_height"));
+    result.probe_above=state_number(value.at("probe_above"));result.probe_below=state_number(value.at("probe_below"));
+    result.max_correction=state_number(value.at("max_correction"));result.max_slope_degrees=state_number(value.at("max_slope_degrees"));
+    grounding::validate(result);return result;
+}
+StateJson state_grounding(const RuntimeGroundingState& value) {
+    StateJson hit=nullptr;
+    if(value.hit)hit={{"entity",value.hit->entity},{"position",value.hit->position},{"normal",value.hit->normal},
+        {"triangle",value.hit->triangle?StateJson(*value.hit->triangle):StateJson(nullptr)}};
+    return {{"decision_tick",value.decision_tick},{"casts",value.casts},{"status",value.status},{"cast",value.cast},{"weight",value.weight},
+        {"input_sole",value.input_sole},{"ray_origin",value.ray_origin},{"actual_sole",value.actual_sole},{"actual_normal",value.actual_normal},
+        {"hit",hit},{"position_error",value.position_error?StateJson(*value.position_error):StateJson(nullptr)},
+        {"normal_error",value.normal_error?StateJson(*value.normal_error):StateJson(nullptr)}};
+}
+RuntimeGroundingState read_grounding(const StateJson& value,std::uint64_t tick) {
+    state_fields(value,{"decision_tick","casts","status","cast","weight","input_sole","ray_origin","actual_sole","actual_normal","hit","position_error","normal_error"});
+    RuntimeGroundingState result;result.decision_tick=state_uint(value.at("decision_tick"),tick);
+    result.casts=state_uint(value.at("casts"),animation_state_max_tick);result.cast=state_bool(value.at("cast"));
+    check(value.at("status").is_string(),"Grounding status must be a string.");result.status=value.at("status").get<std::string>();
+    result.weight=state_number(value.at("weight"));check(result.weight>=0&&result.weight<=1,"Grounding weight is outside0..1.");
+    auto point=[&](const StateJson& v,double limit) {auto p=state_vector<3>(v);for(double x:p)check(std::abs(x)<=limit,"Grounding point exceeds its supported bounds.");return p;};
+    auto normal=[&](const StateJson& v) {auto p=state_vector<3>(v);const auto length=std::hypot(p[0],p[1],p[2]);check(std::abs(length-1)<=1e-5,"Grounding normal must be unit length.");return p;};
+    result.input_sole=point(value.at("input_sole"),1e6);result.ray_origin=point(value.at("ray_origin"),1e6);
+    result.actual_sole=point(value.at("actual_sole"),1e12);result.actual_normal=normal(value.at("actual_normal"));
+    if(!value.at("hit").is_null()) {
+        const auto& saved=value.at("hit");state_fields(saved,{"entity","position","normal","triangle"});RuntimeGroundingHit hit;
+        check(saved.at("entity").is_string(),"Grounding hit entity must be a string.");hit.entity=saved.at("entity").get<std::string>();
+        check(hit.entity.size()==32&&hit.entity.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid grounding hit entity.");
+        hit.position=point(saved.at("position"),1e6);hit.normal=normal(saved.at("normal"));
+        if(!saved.at("triangle").is_null())hit.triangle=static_cast<std::uint32_t>(state_uint(saved.at("triangle"),UINT32_MAX));
+        result.hit=std::move(hit);
+    }
+    if(!value.at("position_error").is_null()) {result.position_error=state_number(value.at("position_error"));check(*result.position_error>=0&&*result.position_error<=4e6,"Invalid grounding position error.");}
+    if(!value.at("normal_error").is_null()) {result.normal_error=state_number(value.at("normal_error"));check(*result.normal_error>=0&&*result.normal_error<=3.141592653589794,"Invalid grounding normal error.");}
+    return result;
+}
+void validate_grounding_cache(const RuntimeGroundingState& state,const RuntimeTwoBoneIk& chain,
+    const RuntimeIkCommand& control,std::uint64_t tick) {
+    check(state.decision_tick<=tick,"Grounding decision is newer than the saved boundary.");
+    check(state.casts<=state.decision_tick,"Grounding cast count exceeds its decision tick.");
+    const bool initial=state.status=="uninitialized",disabled=state.status=="disabled",lifted=state.status=="lifted";
+    const bool empty=state.status=="miss"||state.status=="no-normal";
+    const bool rejected=state.status=="slope"||state.status=="heading-degenerate"||state.status=="correction-limit"||state.status=="unreachable";
+    const bool contact=state.status=="contact";
+    check(initial||disabled||lifted||empty||rejected||contact,"Unknown saved grounding status.");
+    check(initial||state.decision_tick==tick,"Initialized grounding save requires the current committed decision.");
+    check(state.cast==(empty||rejected||contact),"Grounding cast flag differs from its decision status.");
+    check(!state.cast||state.casts>0,"A grounding cast requires a positive cumulative count.");
+    check(state.hit.has_value()==(rejected||contact),"Grounding hit differs from its decision status.");
+    check(state.position_error.has_value()==state.hit.has_value()&&state.normal_error.has_value()==state.hit.has_value(),"Grounding contact residual membership differs.");
+    check(state.weight>=0&&state.weight<=chain.weight,"Grounding weight exceeds its frozen source weight.");
+    if(initial) {
+        check(state_grounding(state)==state_grounding(RuntimeGroundingState{}),"Uninitialized grounding state must retain its exact defaults.");
+        check(!control.enabled&&control.weight==0&&!control.end_orientation&&control.space==chain.space&&control.target==chain.target&&control.pole==chain.pole,"Uninitialized grounding controls differ from disabled authored defaults.");
+    } else {
+        check(control.space==IkSpace::World,"Prepared grounding controls must use world space.");
+        if(disabled)check(!chain.enabled||chain.weight==0,"Disabled grounding decision differs from its frozen source.");
+        else check(chain.enabled&&chain.weight>0,"Active grounding decision needs an enabled nonzero source.");
+    }
+    if(contact)check(control.enabled&&state.weight>0&&control.weight==state.weight&&control.end_orientation&&control.end_orientation->weight==state.weight,"Contact controls differ from the cached effective weights.");
+    else check(!control.enabled&&control.weight==0&&!control.end_orientation&&state.weight==0,"Noncontact grounding must retain no effective correction.");
 }
 StateJson state_pose(const NodePose& pose) {
     return {{"position",pose.position},{"rotation",pose.rotation},{"scale",pose.scale}};
@@ -850,7 +1044,7 @@ RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::stri
 }
 std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
-    const bool configured_ik=has_ik(),configured_root=has_root_motion();
+    const bool configured_ik=has_ik(),configured_root=has_root_motion(),grounded=has_grounding();
     // Orientation is persistent control, not animation history. Clearing the
     // last goal returns to the original closed version without an ever-used flag.
     const bool oriented=std::any_of(ik_.begin(),ik_.end(),[](const auto& controls){return std::any_of(controls.begin(),controls.end(),[](const auto& control){return control.end_orientation.has_value();});});
@@ -907,24 +1101,33 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
                 saved.push_back({{"slot",frozen.slot},{"root",frozen.root},{"middle",frozen.middle},{"end",frozen.end},
                     {"enabled",control.enabled},{"space",control.space==IkSpace::World?"world":"rig"},
                     {"target",control.target},{"pole",control.pole},{"weight",control.weight}});
-                if(oriented)saved.back()["end_orientation"]=control.end_orientation ? StateJson{{"rotation",control.end_orientation->rotation},{"weight",control.end_orientation->weight}} : StateJson(nullptr);
+                if(oriented||grounded)saved.back()["end_orientation"]=control.end_orientation ? StateJson{{"rotation",control.end_orientation->rotation},{"weight",control.end_orientation->weight}} : StateJson(nullptr);
+                if(grounded) {
+                    check(ik_states_[index][i].grounding.has_value()==frozen.grounding.has_value(),"Grounding save membership differs.");
+                    if(frozen.grounding) {
+                        const auto state=read_grounding(state_grounding(*ik_states_[index][i].grounding),tick);
+                        validate_grounding_cache(state,frozen,control,tick);
+                    }
+                    saved.back()["grounding"]=frozen.grounding ? StateJson{{"definition",state_grounding_definition(*frozen.grounding)},
+                        {"state",state_grounding(*ik_states_[index][i].grounding)}} : StateJson(nullptr);
+                }
             }
             record["ik"]=std::move(saved);
         }
-        if(configured_root||oriented) {
+        if(configured_root||oriented||grounded) {
             const auto& frozen=membership_->rigs[index].root_motion;
             if(frozen){check(roots_[index].state.to_tick==tick,"Root motion save requires the committed boundary.");record["root_motion"]=save_root(roots_[index],*frozen);}
             else record["root_motion"]=nullptr;
         }
         records.push_back(std::move(record));
     }
-    auto result=StateJson{{"format","poima.animation-state"},{"version",oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
+    auto result=StateJson{{"format","poima.animation-state"},{"version",grounded ? 7 : oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
 void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     check(tick<=animation_state_max_tick,"Animation load tick is out of range.");
     const bool configured=std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
-    const bool configured_ik=has_ik(),configured_root=has_root_motion();
+    const bool configured_ik=has_ik(),configured_root=has_root_motion(),configured_grounding=has_grounding();
     check(text.size()<=(configured || configured_ik || configured_root ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
     // Reject duplicate keys and excessive nesting instead of allowing ambiguous
     // records or allocating an unbounded recursive object tree.
@@ -940,9 +1143,10 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     };
     const auto document=StateJson::parse(text,callback);
     state_fields(document,{"format","version","tick","rigs"});
-    const auto version=state_uint(document.at("version"),6);
-    check(document.at("format")=="poima.animation-state" && version>=1 && version<=6,"Unsupported animation state format/version.");
-    const bool oriented=version==6;
+    const auto version=state_uint(document.at("version"),7);
+    check(document.at("format")=="poima.animation-state" && version>=1 && version<=7,"Unsupported animation state format/version.");
+    const bool grounded=version==7;check(grounded==configured_grounding,"Animation state grounding membership/version differs.");
+    const bool oriented=version>=6;
     const bool modern=version>=2;const bool layered=version>=3;
     check(oriented ? configured_ik : ((version==5)==configured_root && (version==5 || ((version==4)==configured_ik && (version==4 || layered==configured)))),"Animation state version does not match configured layers/IK/root motion.");
     check(layered || text.size()<=animation_state_bytes,"Legacy animation state exceeds 16 MiB.");
@@ -1005,7 +1209,8 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         }
         (void)evaluate(index,next,tick);return next;
     };
-    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;auto candidate_roots=roots_;std::set<std::string> seen;
+    auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_ik=ik_;auto candidate_roots=roots_;
+    auto candidate_ik_states=grounded?ik_states_:std::vector<std::vector<RuntimeIkState>>{};std::set<std::string> seen;
     for(const auto& record:records) {
         if(configured_root||oriented)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"});
         else if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
@@ -1053,7 +1258,8 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             check(saved.is_array()&&saved.size()==rig.ik.size(),"Animation state must contain every configured IK chain exactly once.");
             for(std::size_t i=0;i<saved.size();++i) {
                 const auto& value=saved[i];const auto& frozen=rig.ik[i];
-                if(oriented)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation"});
+                if(grounded)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation","grounding"});
+                else if(oriented)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation"});
                 else state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"});
                 check(state_uint(value.at("slot"),8)==frozen.slot&&state_uint(value.at("root"),UINT32_MAX)==frozen.root&&
                     state_uint(value.at("middle"),UINT32_MAX)==frozen.middle&&state_uint(value.at("end"),UINT32_MAX)==frozen.end,"Animation state IK chain differs from frozen configuration.");
@@ -1068,19 +1274,33 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                     for(std::size_t component=0;component<4;++component)check(std::signbit(canonical->rotation[component])==std::signbit(goal.rotation[component]),"Animation state end orientation has noncanonical signed zero.");
                     control.end_orientation=canonical;any_orientation=true;
                 }
-                validate_ik_command(control);candidate_ik[index][i]=std::move(control);
+                validate_ik_command(control);
+                if(grounded) {
+                    const auto& saved=value.at("grounding");check(saved.is_null()==!frozen.grounding,"Saved grounding chain membership differs.");
+                    candidate_ik_states[index][i].grounding.reset();
+                    if(frozen.grounding) {
+                        state_fields(saved,{"definition","state"});
+                        check(read_grounding_definition(saved.at("definition"))==*frozen.grounding,"Saved grounding binding differs from frozen profile.");
+                        candidate_ik_states[index][i].grounding=read_grounding(saved.at("state"),tick);
+                        validate_grounding_cache(*candidate_ik_states[index][i].grounding,frozen,control,tick);
+                    }
+                }
+                candidate_ik[index][i]=std::move(control);
             }
             // Validate the evaluated model metric now; world-space diagnostics
             // are reconstructed only after the owner restores physical poses.
             auto pose=composed(index,candidate[index],candidate_layers[index],tick);
             strip_root(index,pose);
-            for(std::size_t i=0;i<rig.ik.size();++i)(void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
+            for(std::size_t i=0;i<rig.ik.size();++i)if(!rig.ik[i].grounding)
+                (void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
         }
         if(configured_root||oriented){const auto& root=membership_->rigs[index].root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root)candidate_roots[index]=read_root(saved,entity,*root,membership_->rigs[index].clip_durations.size(),tick,candidate[index]);}
     }
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
-    check(!oriented||any_orientation,"Version 6 animation state requires at least one retained end orientation.");
+    check(version!=6||any_orientation,"Version 6 animation state requires at least one retained end orientation.");
     clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(candidate_ik);roots_.swap(candidate_roots);
+    if(grounded)ik_states_.swap(candidate_ik_states);
+    grounding_restore_pending_=grounded;
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {
     const auto found=membership_->skins.find(entity);if(found==membership_->skins.end())return {};

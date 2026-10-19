@@ -114,6 +114,27 @@ struct RuntimeIkEndOrientationState {
     std::array<double,4> actual_rotation{0,0,0,1};
     double angular_error=0;
 };
+struct RuntimeGroundingDefinition {
+    std::array<double,3> sole_offset{},sole_up{0,1,0},sole_forward{0,0,1};
+    // Heights in model units; distances below are world metres.
+    double reference_height=0,plant_height=.03,lift_height=.15;
+    double probe_above=.3,probe_below=.6,max_correction=.25,max_slope_degrees=55;
+    bool operator==(const RuntimeGroundingDefinition&) const = default;
+};
+struct RuntimeGroundingHit {
+    std::string entity;
+    std::array<double,3> position{},normal{};
+    std::optional<std::uint32_t> triangle;
+};
+struct RuntimeGroundingState {
+    std::uint64_t decision_tick=0,casts=0;
+    std::string status="uninitialized";
+    bool cast=false;
+    double weight=0;
+    std::array<double,3> input_sole{},ray_origin{},actual_sole{},actual_normal{0,1,0};
+    std::optional<RuntimeGroundingHit> hit;
+    std::optional<double> position_error,normal_error;
+};
 struct RuntimeTwoBoneIk {
     std::uint32_t slot=1,root=0,middle=0,end=0;
     bool enabled=true;
@@ -122,6 +143,7 @@ struct RuntimeTwoBoneIk {
     double weight=1;
     std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
     RuntimeIkMetricPolicy metric_policy=RuntimeIkMetricPolicy::Uniform;
+    std::optional<RuntimeGroundingDefinition> grounding=std::nullopt;
 };
 struct RuntimeIkCommand {
     std::string entity;
@@ -149,6 +171,7 @@ struct RuntimeIkState {
     bool clamped=false,pole_fallback=false;
     std::optional<RuntimeIkEndOrientationState> end_orientation=std::nullopt;
     std::optional<RuntimeIkMetricState> metric=std::nullopt;
+    std::optional<RuntimeGroundingState> grounding=std::nullopt;
 };
 enum class RootMotionMode : std::uint32_t { Extract=0, Character=1 };
 struct RuntimeRootMotionDefinition {

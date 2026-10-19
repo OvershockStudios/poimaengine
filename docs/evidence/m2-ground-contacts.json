@@ -1,0 +1,268 @@
+{
+  "format": "poima.evidence.ground-contacts.v1",
+  "engine_version": "0.0.198",
+  "date": "2026-10-19",
+  "passed": true,
+  "scope": "Selected Linux headless automatic foot contacts and retained manual CoreCLR regression. No overall Alpha or new Windows/rendered qualification.",
+  "contract": {
+    "authoring": "Optional AnimationRig.ik[].grounding, explicit calibrated sole frame/reference height; frozen automatic ownership rejects manual caller and C# writes.",
+    "schema_revision": 110,
+    "phase": "Prepare uncorrected blended/root-stripped poses; join jobs; bounded owner-thread post-physics queries; solve and atomically publish.",
+    "bounds": {
+      "feet_per_rig": 2,
+      "feet_per_world": 64,
+      "rays_per_eligible_foot_per_completed_tick": 1
+    },
+    "support": "Static and kinematic colliders, before-nearest filtering of dynamic/character bodies and self physical subtree.",
+    "placement": "Upright positive uniform wrapper; explicit IK metric for model ancestors. Source-height smoothstep fades both corrections; full affine sole frame and offset preserve original scale. Miss/rejected/raised feet retain source animation.",
+    "persistence": "Nested animation-state v7 only when configured. Complete cached decisions, generated controls and diagnostics; current-tick validation and query-free geometry verification on restore. Legacy1-6 paths retained.",
+    "inspection": "runtime.ik include_grounding opt-in; default shape unchanged, reads do not sample or query.",
+    "managed_boundary": "No callback or C ABI service added; retained consumer uses the existing352-byte orientation table. This is not general C++ binary compatibility or new NativeAOT qualification."
+  },
+  "environment": {
+    "platform": "Linux x64 headless",
+    "build_type": "Debug",
+    "debug_flags": "-O0 -g0",
+    "assertions": true,
+    "build_workers": 2,
+    "linker_threads": 1,
+    "runtime_workers": 2,
+    "coreclr": "10.0.12",
+    "windows_executed": false,
+    "graphics_executed": false,
+    "native_aot_executed": false
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 93554,
+      "sha256": "a5771c31b632deb2b48116235aebaf66cdf7a6d6d4187e8933abfe2628a2e3e8"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 27903,
+      "sha256": "2baa25ea607b080844967c9453d74fc31c9d7b33af3701103b80aa6f33b115ed"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 7884,
+      "sha256": "6d7a6efd80b0caa69888e6ba4feedac7c35bf0f3c30a3f80b275b0cc434aa2b3"
+    },
+    "include/poima/runtime_grounding.hpp": {
+      "bytes": 726,
+      "sha256": "716a6b8ae03a8a4ff3100a85423c642aa6aeaa4b85e61638718a531f03883b6e"
+    },
+    "src/runtime.cpp": {
+      "bytes": 151607,
+      "sha256": "0244251016ce760ac24e13017e56c6583ba5c153854c8cf92fa528cb9c8d89e1"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 111529,
+      "sha256": "2d607ff7f0712505f609ecffcc6f50245687a919723bfc6c684d4998bc1f2803"
+    },
+    "src/runtime_grounding.cpp": {
+      "bytes": 13626,
+      "sha256": "c9f11ea489252834fb15296aaf8dcca496d197625e5dd6c3c6698a4539fd2a6f"
+    },
+    "src/runtime_two_bone_ik.inc": {
+      "bytes": 9515,
+      "sha256": "9f2ad78c6a4df1736364736fc74aafc5a242a41195d607fc8476d0ef5056f702"
+    },
+    "src/world.cpp": {
+      "bytes": 342056,
+      "sha256": "7faaef13a45df46fb294165e8b55fb74715bc1f608e0103b242aeee136f67d33"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 123812,
+      "sha256": "64cdb5d2e665ee81d7a7fca7b5d300209517514a30d14e0b9701a9dd519296bd"
+    },
+    "tests/runtime_grounding_native.cpp": {
+      "bytes": 23160,
+      "sha256": "0659d307ce5e3f39c459537467e457cfc8e5cb09e898cf487deed00872beac9d"
+    },
+    "tests/runtime_ground_contacts.py": {
+      "bytes": 13997,
+      "sha256": "534d3f5e88cbf3c57cae865c138168cf5876f7363229f75153fb8fd5c0ca4281"
+    },
+    "tests/runtime_ik_metric_profile.py": {
+      "bytes": 21612,
+      "sha256": "bff70965ec4cf3524adc1b9e6cdf76b584bd5d1ac87aca031f1b40576d3fbe3f"
+    },
+    "tests/managed_ik_metric_gameplay/ManagedIkMetricGame.cs": {
+      "bytes": 1403,
+      "sha256": "34f9c6fdef419b8a0253afbe3a281e425415c8167a82dc93820fd4c52d53fe45"
+    }
+  },
+  "native": {
+    "existing_ctest_cases": 18,
+    "existing_ctest_passed": 18,
+    "grounding_groups": 6,
+    "retained_grounding_snapshots": 20,
+    "authoring_core_tests": 5,
+    "metadata_checks": 3,
+    "builds": [
+      {
+        "passed": true,
+        "seconds": 392.68162603498786,
+        "command_count": 2
+      },
+      {
+        "passed": true,
+        "seconds": 168.22549501401954,
+        "command_count": 1
+      }
+    ],
+    "qa_seconds": 43.59345153000322,
+    "qa_record_identity": {
+      "bytes": 27760,
+      "sha256": "7f826fe9f61c1500b20dd18f95d6a9698b5898d092574720ca6b429ec8d0826a"
+    },
+    "coverage": [
+      "Two feet from one incoming pose; owner-thread queries after joined preparation.",
+      "Actual flat/sloped/translated/rotated/kinematic supports, self-ignore and dynamic prefilter.",
+      "Full affine end scale with independent sole and inverse-transpose normal checks.",
+      "Swing/weight continuity, seven fallback statuses, unsupported definitions/wrappers and64-foot admission.",
+      "Actual earlier contact/physics followed by late failure restores the complete batch.",
+      "Warm/cold complete native saves, cached reads, manual conflicts and no new foot probes on restore."
+    ]
+  },
+  "original_character": {
+    "source": {
+      "source": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "license": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+      "cooked": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "nodes": 57,
+      "takes": 76,
+      "channels": 8712,
+      "keys": 90748,
+      "triangles": 6952,
+      "vertices": 7024,
+      "skin_joints": 41
+    },
+    "cases": {
+      "ground-json": {
+        "passed": true,
+        "rpc": 183,
+        "poses": 17,
+        "nodes_per_pose": 57,
+        "complete_checkpoints": 9,
+        "whole_file_pairs": 5,
+        "native_eof_zero": 2,
+        "record_identity": {
+          "bytes": 1794291,
+          "sha256": "92d7f633d5168d4a149b5284324fdc98f3445d8ed9105a7536576e0e8e0640bd"
+        },
+        "seconds": 36.24689378900803,
+        "takes": [
+          "Idle",
+          "Running_A"
+        ],
+        "foot_decisions": 34,
+        "statuses": {
+          "contact": 18,
+          "lifted": 12,
+          "miss": 4
+        },
+        "max_full_weight_sole_error_metres": 2.9083094373621266e-07,
+        "max_full_weight_normal_error_radians": 1.523881069601437e-06,
+        "compiled_owned_slot_rollback": false
+      },
+      "ground-coreclr": {
+        "passed": true,
+        "rpc": 194,
+        "poses": 17,
+        "nodes_per_pose": 57,
+        "complete_checkpoints": 11,
+        "whole_file_pairs": 6,
+        "native_eof_zero": 2,
+        "record_identity": {
+          "bytes": 1842471,
+          "sha256": "f606c75260dd42603366f2d2cc421095d5f2c590976c1d30091dbffb4df986c7"
+        },
+        "seconds": 46.59957831501379,
+        "takes": [
+          "Idle",
+          "Running_A"
+        ],
+        "foot_decisions": 34,
+        "statuses": {
+          "contact": 18,
+          "lifted": 12,
+          "miss": 4
+        },
+        "max_full_weight_sole_error_metres": 2.9083094373621266e-07,
+        "max_full_weight_normal_error_radians": 1.523881069601437e-06,
+        "compiled_owned_slot_rollback": true
+      },
+      "manual-coreclr": {
+        "passed": true,
+        "rpc": 601,
+        "poses": 86,
+        "nodes_per_pose": 57,
+        "complete_checkpoints": 14,
+        "whole_file_pairs": 8,
+        "native_eof_zero": 2,
+        "record_identity": {
+          "bytes": 8113359,
+          "sha256": "039914162a9c35cd0f96fea5e089726e4945a8eff47a6e172c5dfedd5deef284"
+        },
+        "seconds": 74.58145567099564,
+        "original_takes": 76
+      }
+    },
+    "total_rpc": 978,
+    "contact_poses": 34,
+    "manual_poses": 86,
+    "whole_file_pairs": 19,
+    "complete_checkpoints": 34,
+    "native_eof_zero": 6
+  },
+  "closure": {
+    "all_selected_owners_naturally_closed": true,
+    "forced_cleanup": false,
+    "adopted_children": false,
+    "final_children": [],
+    "protocol_seconds": 179.95460927599925,
+    "protocol_record_identity": {
+      "bytes": 15454,
+      "sha256": "af4c13ad8cca68c4ed4c07fd36dbda5f6300e2d6f4d7f5576ae77d7d242b4951"
+    }
+  },
+  "selected_native_identities": {
+    "poima": {
+      "bytes": 35529720,
+      "sha256": "a97022f86bdc21ed7839dc001941b33c6ec96ddf9aec31821c41c82e5007d6c9"
+    },
+    "libpoima_core.a": {
+      "bytes": 143538410,
+      "sha256": "1c2bc10d08345eab1171374dd27f8b01b9db4b348b6f57f6e9e6221318d11d19"
+    },
+    "poima-runtime-grounding-test": {
+      "bytes": 14029568,
+      "sha256": "d291aa76389d5707836b3782cbe254ed1921b6a2e8903364f18befc03d8fbd20"
+    }
+  },
+  "retained_failures": [
+    {
+      "checkpoint": "0.0.197",
+      "case": "Separate full-game regression",
+      "verdict": "FAILED",
+      "reason": "85-second harness deadline during relocated restoration at142/162RPC; original records unchanged.",
+      "qualified_by_this_checkpoint": false
+    }
+  ],
+  "limitations": [
+    "Automatic contacts here cover Idle/Running_A, not every original take. The separate manual consumer checks all76takes.",
+    "One calibrated point and vertical ray do not prove complete shoe/stair fit, foot locking, gait annotation, pelvis compensation or dynamic-body balance.",
+    "No new Windows, GPU, rendered foot quality, physical input, performance/crowd or full CTest-preset qualification.",
+    "These are measured selected residuals, not universal world-scale/affine error guarantees.",
+    "The earlier full-game deadline miss and broader Alpha gates remain open."
+  ]
+}

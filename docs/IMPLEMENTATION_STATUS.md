@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.197**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.198**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.198 adds optional [automatic foot contacts](GROUND_CONTACTS.md).
+Joined animation preparation precedes bounded owner-thread queries of current
+post-physics supports, followed by atomic IK publication. Calibrated sole frames
+retain source scale, both corrections fade with swing height, and cached decisions
+survive complete rollback and query-free save reconstruction. Eighteen existing
+native fixtures and six grounding groups pass, including nonuniform end scale.
+Original Knight JSON and CoreCLR cases each verify seventeen Idle/Running_A poses;
+a separate retained CoreCLR consumer verifies 86 manual poses across all 76 takes.
+The three cases retain 34 complete checkpoints, nineteen whole-file pairs and six
+normally closed native processes. These are Linux headless geometry/state checks;
+foot locking, pelvis balance, rendered gait quality, new Windows/GPU execution and
+overall Alpha remain open. The earlier full-game deadline failure remains failed.
+[Results and boundaries](evidence/m2-ground-contacts.json).
 
 Version 0.0.197 adds an explicit [near-uniform IK scale profile](IK_METRIC_PROFILES.md)
 for small imported scale differences. It preserves source data and rejects

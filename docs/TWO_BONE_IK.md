@@ -5,8 +5,8 @@ crossfades, inertial transitions and masked layers. Point-only controls change
 the root and middle rotations, preserving translations, scales and the end
 node's local rotation. An optional independent end-orientation goal then
 rotates the final joint for an explicit sole or grip frame. Targets and frames
-come from the game; the engine does not discover ground contacts or anatomical
-chains.
+come from the game, or from an explicit [automatic foot-contact profile](GROUND_CONTACTS.md).
+Anatomical chains and sole calibration remain explicit.
 
 ## Author a frozen chain
 

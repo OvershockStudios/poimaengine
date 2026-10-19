@@ -3,6 +3,7 @@
 #include "poima/runtime.hpp"
 #include "poima/animation.hpp"
 #include "poima/runtime_root_motion.hpp"
+#include "poima/runtime_grounding.hpp"
 #include <functional>
 #include <map>
 #include <utility>
@@ -92,6 +93,7 @@ public:
         std::vector<std::vector<RuntimeIkCommand>> ik;
         std::vector<std::vector<RuntimeIkState>> ik_states;
         std::vector<RootPlayback> roots;
+        bool grounding_restore_pending=false;
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
@@ -104,6 +106,7 @@ private:
     std::vector<std::vector<RuntimeIkCommand>> ik_;
     std::vector<std::vector<RuntimeIkState>> ik_states_;
     std::vector<RootPlayback> roots_;
+    bool grounding_restore_pending_=false;
     root_motion::Planar root_interval(std::size_t,const Clock&,const RootPlayback&,std::uint64_t) const;
     void strip_root(std::size_t,ModelPose&) const;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
@@ -111,6 +114,9 @@ private:
     Clock replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const;
     RuntimeAnimationState clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const;
     RuntimeAnimationLayerState layer_summary(std::size_t index,std::size_t layer,std::uint64_t tick) const;
+    std::vector<RuntimeAnimationPose> sample_grounded(std::uint64_t tick,
+        const std::function<const Matrix4&(const std::string&)>& wrapper_world,
+        const grounding::Query& contact_query);
 public:
     // No executor retains the independent serial reference path.
     explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
@@ -122,6 +128,8 @@ public:
     void rebind(const RuntimeDefinition& definition,std::uint64_t tick);
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
     bool has_ik() const noexcept;
+    bool has_grounding() const noexcept;
+    bool owns_grounding(const std::string& entity,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
     void apply_ik(const std::vector<RuntimeIkCommand>& commands);
     bool has_root_motion() const noexcept;
@@ -131,12 +139,13 @@ public:
     std::vector<RuntimeRootMotionState> prepare_root_motion(std::uint64_t tick) const;
     void commit_root_motion(const std::vector<RuntimeRootMotionState>& states,std::uint64_t tick_after);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick,
-        const std::function<const Matrix4&(const std::string&)>& wrapper_world={});
+        const std::function<const Matrix4&(const std::string&)>& wrapper_world={},
+        const grounding::Query& contact_query={});
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_}; }
-    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots); }
+    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_,grounding_restore_pending_}; }
+    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots);std::swap(grounding_restore_pending_,checkpoint.grounding_restore_pending); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

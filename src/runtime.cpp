@@ -244,15 +244,43 @@ struct Runtime::Impl {
             for(double value:n.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Runtime hierarchy matrix exceeds the supported range.");
         }
     }
-    void animation_locals() {
+    void animation_locals(bool refresh_grounding=false) {
         profiling::Scope profile("runtime.animation.sample",static_cast<std::int64_t>(tick));
         if(animations->has_ik()) {
             // Copy current physical wrapper transforms before sampling jobs.
             // Jobs never read the registry or the preceding frame's matrices.
             sync();
+            grounding::Query contacts;
+            std::map<std::string,std::set<std::string>> excluded;
+            if(refresh_grounding)contacts=[&](const std::string& rig,const RuntimeRay& ray) {
+                auto found=excluded.find(rig);
+                if(found==excluded.end()) {
+                    // The nearest physical ancestor owns this character. A
+                    // shared organizational ancestor must not hide the world.
+                    std::string self=rig;
+                    for(auto id=rig;!id.empty();id=registry.get<Node>(find(id)).parent) {
+                        const auto e=find(id);
+                        if(registry.any_of<Body,Controller>(e)){self=id;break;}
+                    }
+                    auto in_self=[&](std::string id) {
+                        while(!id.empty()) {
+                            if(id==self)return true;
+                            id=registry.get<Node>(find(id)).parent;
+                        }
+                        return false;
+                    };
+                    std::set<std::string> names;
+                    for(const auto& [raw,id]:topology->body_names) {
+                        (void)raw;const auto e=find(id);const auto* body=registry.try_get<Body>(e);
+                        if(!body || body->motion==BodyMotion::Dynamic || in_self(id))names.insert(id);
+                    }
+                    found=excluded.emplace(rig,std::move(names)).first;
+                }
+                return physics_raycast(ray,found->second);
+            };
             for(const auto& pose:animations->sample(tick,[&](const std::string& id)->const Matrix4& {
                 return registry.get<Node>(find(id)).world;
-            }))registry.get<Node>(find(pose.entity)).local=pose.local;
+            },contacts))registry.get<Node>(find(pose.entity)).local=pose.local;
             world_matrices();
         } else for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
     }
@@ -1569,7 +1597,7 @@ struct Runtime::Impl {
                         registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
-                ++tick;animation_locals();sync();
+                ++tick;animation_locals(true);sync();
             }
             sync();
             validate_player_preferences_boundary();

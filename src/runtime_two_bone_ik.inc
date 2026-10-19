@@ -51,7 +51,12 @@
             const auto& chains=pending->animation_rig->ik;
             require(std::any_of(chains.begin(),chains.end(),[&](const auto& chain){return chain.slot==command.slot;}),
                 "Reserved IK target slot is not configured.");
-        } else require(owner->ik(command.entity,command.slot).has_value(),"IK target slot is not configured.");
+            require(std::none_of(chains.begin(),chains.end(),[&](const auto& chain){return chain.slot==command.slot && chain.grounding.has_value();}),
+                "Automatic grounding owns this IK slot.");
+        } else {
+            require(owner->ik(command.entity,command.slot).has_value(),"IK target slot is not configured.");
+            require(!animations->owns_grounding(command.entity,command.slot),"Automatic grounding owns this IK slot.");
+        }
         require(std::none_of(game_ik_commands.begin(),game_ik_commands.end(),[&](const auto& old) {
             return old.entity==command.entity && old.slot==command.slot;
         }),"Duplicate gameplay IK slot in one Tick.");
