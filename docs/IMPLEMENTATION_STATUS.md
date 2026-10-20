@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.211**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.212**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.212 adds optional [finite-speed projectiles](PROJECTILES.md):
+constant-acceleration sphere flight, bounded curved-path sweeps, explicit
+impact/lifetime state and saved continuation over the existing native capsule
+service. [Projectile Range](../examples/projectile-range/README.md) exercises a
+1,200 m/s thin-wall hit, a sphere graze missed by its centre ray, initial overlap,
+gravity and a partial final lifetime step. Its bounded kinematic marker trails
+the authoritative saved trajectory.
+
+The package and compiled sample build; eight pure groups pass 444 checks,
+including a warmed zero-allocation provider loop. Linux and Windows CoreCLR
+each pass 90 literal RPCs, all 47 typed fields, twelve observations, seven
+complete native checkpoints and four whole-byte pairs. Second-Tick failure
+rolls back the full batch; same/fresh-process saved flight continues identically.
+Windows also passes two 1280×720 MSAA4 Vulkan captures with four complete archives
+and two byte-identical capture pairs. Accepted native owners close naturally;
+Windows Jobs are empty and unforced.
+
+These checks reuse qualified native 0.0.211 hosts and the matched 400-byte SDK;
+no native ABI or save-format change is needed. The original sample panel-text
+validation failure remains recorded, followed by the narrowly corrected source.
+[Evidence](evidence/m2-projectiles.json) does not qualify exact parabolic time of
+impact, moving-target relative CCD, penetration, ricochet, projectile pooling or
+production-scale performance. This consumer's AOT/export, physical interaction,
+fresh-agent authoring and wider Alpha gates remain separate.
 
 Version 0.0.211 adds [ordered draw instancing](DRAW_INSTANCING.md) for compatible
 adjacent camera, shadow-view and first-person foreground geometry. Objects retain

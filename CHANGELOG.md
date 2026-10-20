@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.212
+
+- Add optional finite-speed sphere projectiles with constant acceleration, bounded
+  curvature sweeps, explicit impact/lifetime state and native collision queries.
+- Add a compiled Projectile Range with thin-wall, grazing, overlap and gravity
+  cases, complete batch rollback and saved-flight continuation checks.
+
 ## 0.0.211
 
 - Combine compatible adjacent objects into native instanced commands for camera,

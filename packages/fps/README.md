@@ -1,7 +1,7 @@
 # Poima FPS helpers
 
-Optional compiled C# helpers for procedural first-person feedback and weapon
-actions. Games own
+Optional compiled C# helpers for procedural first-person feedback, weapon
+actions and finite-speed projectiles. Games own
 all mutable state and decide which effects affect aiming or presentation.
 The native engine does not install this package for unrelated games.
 
@@ -17,6 +17,9 @@ The native engine does not install this package for unrelated games.
   sum. Independent profiles/streams can drive aim, weapon kick and camera effects.
 - `Weapons.Step`: explicit magazine/chamber/reserve state, semi-auto/automatic/
   burst fire and interruptible reload/equip phases. [Action contract](../../docs/WEAPON_ACTIONS.md).
+
+- `Projectiles.Step`: constant-acceleration sphere flight with bounded curved-path
+  sweeps, lifetime and explicit impact state. [Projectile contract](../../docs/PROJECTILES.md).
 
 ## Recoil profiles
 
@@ -50,7 +53,8 @@ Read the XML API comments for each helper's remaining numerical bounds.
 Reference `Poima.Fps.csproj` from a trusted game project, or include the required
 source files as the [FPS Feedback sample](../../examples/fps-feedback/README.md)
 does. Builds require the same .NET toolchain and Poima gameplay SDK as the game.
-The package has no native callbacks or generated art/content.
+Numerical helpers contain no generated art/content. The native projectile overload
+uses the existing `capsule_cast_v1` service; declare `ICapsuleCastGame` on the game.
 
 Save primitive spring positions/velocities, phase, envelope, shot index, seed
 and time explicitly in `Game<TState>`. `ScalarSpring`, `VectorSpring`, `BobTarget`

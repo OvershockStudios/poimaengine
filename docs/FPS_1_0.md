@@ -20,7 +20,10 @@ separate locomotion gates. Character rigs need their own crouch animation policy
 The optional [weapon-actions package](WEAPON_ACTIONS.md) adds explicit magazine,
 chamber, fire-mode and reload/equip state. Its compiled sample connects accepted
 shot events to the separate aim/visual recoil helpers. Attachments and a
-multiple-weapon inventory remain additional package work.
+multiple-weapon inventory remain additional package work. The optional
+[projectile helper](PROJECTILES.md) adds constant-acceleration finite-speed sphere
+flight and saved impact/lifetime state over the shared native capsule service;
+penetration, ricochet and moving-target relative CCD remain separate.
 
 ## Capability matrix
 

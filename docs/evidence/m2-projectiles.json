@@ -1,0 +1,308 @@
+{
+  "format": "poima.projectile-evidence.v1",
+  "engine_version": "0.0.212",
+  "native_engine_version": "0.0.211",
+  "scope": "Optional compiled finite-speed projectile package/new canonical C# range, using the qualified native211 hosts and matched400-byte C# SDK/bridge. No native API/ABI or save-format change.",
+  "contract": {
+    "motion": "Constant acceleration; analytic clear endpoints and incident velocity; bounded linear sphere sweeps with outward curvature envelope and binary32 radius padding",
+    "phases": [
+      "Flying",
+      "Impacted",
+      "Expired"
+    ],
+    "stop_position": "Swept chord centre at the first contact fraction; provider contact points retained separately",
+    "lifetime": "Partial final step; final contact wins; terminal states do not query or emit another contact",
+    "preflight": "Complete declared/computed bounds and segment budget before any provider call",
+    "aggregate_native_queries_per_callback": 32,
+    "independent_recipe_max_segments": [
+      1,
+      32
+    ],
+    "limitations": [
+      "Curved collision is conservative approximation, not exact parabolic time of impact or a formal floating-point proof.",
+      "Inflated-envelope initial overlap need not imply physical initial overlap.",
+      "Reads committed colliders; no staged-body prediction or moving-target relative CCD.",
+      "Native contact/coordinate tolerances remain; chord-error allowance is not an absolute position-accuracy promise.",
+      "Caller owns complete primitive saved state and compatible recipe; helper records are transient.",
+      "No penetration, ricochet, drag, wind, damage, projectile pooling or production-scale scheduling."
+    ]
+  },
+  "sources": {
+    "packages/fps/Projectiles.cs": {
+      "bytes": 16388,
+      "sha256": "05e866ed917c4b5235585e26f3ef7dfd83b0ee16501a07e3acb920feeca90788"
+    },
+    "tests/Projectiles/Program.cs": {
+      "bytes": 27743,
+      "sha256": "e34b851ba59cdf21c50317877c9b7cd7a0edabb3849c29b45aa4965e8b1b68bd"
+    },
+    "tests/Projectiles/Poima.Projectiles.Tests.csproj": {
+      "bytes": 598,
+      "sha256": "4d5911ccdf774c76aa5ed9488336ef0ac7a868fc13ddb5affa7969099e1b4589"
+    },
+    "tests/projectile_gameplay_contract.py": {
+      "bytes": 17987,
+      "sha256": "6c97fa2265af90b7fa0a291d47218ae52f9a7953c1339a83e713063852ce268c"
+    },
+    "examples/projectile-range/ProjectileRangeGame.cs": {
+      "bytes": 7048,
+      "sha256": "d6b2f3a8a3438261749a5218b2f1433d353596993bc3da9f6d9529a77028d761"
+    },
+    "examples/projectile-range/Poima.ProjectileRangeGame.csproj": {
+      "bytes": 608,
+      "sha256": "4d21abb5a27940a442ff38cde40e5332f1235370421f2b2d881bc9bf52ec0f79"
+    },
+    "examples/projectile-range/prepare.py": {
+      "bytes": 2424,
+      "sha256": "2a21f66eb1e5a1bb938cb30acfa3713ba2f664cc0d3897e7500525f87bea11b6"
+    },
+    "examples/projectile-range/configure.py": {
+      "bytes": 6912,
+      "sha256": "246027537cbc71ef7ae3878da59dc077bfe56ed8122685d9ca11499c425b51f1"
+    },
+    "examples/projectile-range/run.py": {
+      "bytes": 3508,
+      "sha256": "97a147f7637cd7e5180e42bc49b7708f51894206feb44e30360dce71cca8c32b"
+    }
+  },
+  "managed": {
+    "passed": true,
+    "report": {
+      "bytes": 17374,
+      "sha256": "7e9fc82edf84db7bb4d396253912339df7823020f08d0d3f3fb258c92b4058f0"
+    },
+    "seconds": 40.86959697902785,
+    "commands": [
+      {
+        "name": "build-package",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 10.883162623009412
+      },
+      {
+        "name": "build-tests",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 12.984206908993656
+      },
+      {
+        "name": "build-sample",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 15.264981407992309
+      },
+      {
+        "name": "pure-tests",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 0.5294501669995952
+      }
+    ],
+    "forced_cleanup": false,
+    "final_children": 0,
+    "pure": {
+      "groups": 8,
+      "checks": 444,
+      "normal_path_allocated_bytes": 0,
+      "allocation_scope": "Warmed constrained-generic straight and curved provider loops on the measured Linux runtime; no native allocation/throughput claim",
+      "output": {
+        "bytes": 404,
+        "sha256": "1a5c48a9715d7aeed08e5c76883b7837590d054b07b0ccf667d5a23f2148752b"
+      }
+    },
+    "package": {
+      "bytes": 46080,
+      "sha256": "5e12eeea01e5219918406863ae64cd8be5c85c5f5b34acbf32a9144a056a8c10"
+    },
+    "sample": {
+      "bytes": 28672,
+      "sha256": "d48e7dd6acd82f9b73b4a64b909d2710b657b4e3ec4bb8b24a94a8cc457677cb"
+    }
+  },
+  "native": {
+    "linux": {
+      "passed": true,
+      "report": {
+        "bytes": 1005285,
+        "sha256": "c8aa64809e28001fc69a3e5cdda3f128c045fbf2baf604bb1be6e82eacd59429"
+      },
+      "owner_report": {
+        "bytes": 5757,
+        "sha256": "57156f2e960e02dbf368ec90edc7a15bff3366d5507b749eb0fe32d5b5b6bfe0"
+      },
+      "seconds": 3.8811782989942003,
+      "owner_seconds": 6.223416333989007,
+      "literal_rpc": 90,
+      "observations": 12,
+      "primitive_fields": 47,
+      "field_kinds": {
+        "int32": 10,
+        "int64": 5,
+        "entity": 2,
+        "float64": 30
+      },
+      "complete_archives": 7,
+      "whole_byte_pairs": 4,
+      "exclusions": [],
+      "native_eof0": 2,
+      "forced_native_cleanup": false,
+      "checks": [
+        "Fast sphere sweep hits a ten-millimetre wall; retained centre differs from obstacle contact",
+        "Sphere graze hits while native centre ray misses; initial overlap consumes no time",
+        "Exact analytic free flight and partial lifetime; terminal states issue no further queries",
+        "UI launch queues without ticking; gravity uses bounded curvature subdivisions",
+        "Second-Tick callback fault rolls back complete native game, marker, physics and UI archive",
+        "Same/fresh native owners retain all typed fields and complete byte-identical continued-flight archives"
+      ]
+    },
+    "windows": {
+      "passed": true,
+      "report": {
+        "bytes": 1005839,
+        "sha256": "a8bd66c32c654cb05290c2b47cd11feef06b5d68cb5dbaba0371c6314ea04b33"
+      },
+      "owner_report": {
+        "bytes": 2709,
+        "sha256": "dd492efabeef3ea5c001c888019df647e99138f01797c124144c1b04e6373f9a"
+      },
+      "seconds": 1.0891412000055425,
+      "owner_seconds": 1.8112877999956254,
+      "literal_rpc": 90,
+      "observations": 12,
+      "primitive_fields": 47,
+      "field_kinds": {
+        "int32": 10,
+        "int64": 5,
+        "entity": 2,
+        "float64": 30
+      },
+      "complete_archives": 7,
+      "whole_byte_pairs": 4,
+      "exclusions": [],
+      "native_eof0": 2,
+      "forced_native_cleanup": false,
+      "checks": [
+        "Fast sphere sweep hits a ten-millimetre wall; retained centre differs from obstacle contact",
+        "Sphere graze hits while native centre ray misses; initial overlap consumes no time",
+        "Exact analytic free flight and partial lifetime; terminal states issue no further queries",
+        "UI launch queues without ticking; gravity uses bounded curvature subdivisions",
+        "Second-Tick callback fault rolls back complete native game, marker, physics and UI archive",
+        "Same/fresh native owners retain all typed fields and complete byte-identical continued-flight archives"
+      ],
+      "job": {
+        "total_processes": 4,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      }
+    }
+  },
+  "visual": {
+    "passed": true,
+    "report": {
+      "bytes": 352685,
+      "sha256": "6b2355c3a90074f18054972dbcfc8bc155e9058c8a6144675a0019ff2ebd3c4f"
+    },
+    "owner_report": {
+      "bytes": 2372,
+      "sha256": "3d164a56ea236b3329513a656fbc93a890f36e9bd2e82d0f986bd7fe68c5f8ff"
+    },
+    "seconds": 2.2990225999965332,
+    "literal_rpc": 25,
+    "captures": [
+      {
+        "label": "midflight",
+        "identity": {
+          "bytes": 3686538,
+          "sha256": "52cd6f55168be94543491358727af08e4735bd147c7bb991c3dbf3ec8699372d"
+        },
+        "width": 1280,
+        "height": 720,
+        "samples": 4,
+        "frames_presented": 2,
+        "gpu_index": 1,
+        "hardware": true
+      },
+      {
+        "label": "continued",
+        "identity": {
+          "bytes": 3686538,
+          "sha256": "cd8c4c214b60e347f04c71cc6a20bdb14d005fad9a943b306db425f4f16e817f"
+        },
+        "width": 1280,
+        "height": 720,
+        "samples": 4,
+        "frames_presented": 2,
+        "gpu_index": 1,
+        "hardware": true
+      }
+    ],
+    "complete_archives": 4,
+    "whole_byte_pairs": 2,
+    "native_eof0": 1,
+    "job": {
+      "total_processes": 2,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "published_image": {
+      "path": "docs/evidence/projectile-range.png",
+      "identity": {
+        "bytes": 27534,
+        "sha256": "a262394de2e7ec92a9d74e822325fac936c4d90fdb96295bd443f1b4238212f6"
+      },
+      "derivation": "Lossless opaque RGB conversion from original continued BMP; no styling or content generation"
+    },
+    "scope": "Two saved gravity-flight checkpoints, existing camera, no gameplay ticks or source edits. Captures preserve complete native save bytes. Greybox/UI readback, not production art, physical interaction or renderer-performance qualification."
+  },
+  "retained_failures": [
+    {
+      "platform": "linux",
+      "report": {
+        "bytes": 41657,
+        "sha256": "e7bee10eb75ebcfb11acbe6df5e2696986aa1545fdac9aaf6035e73abb3d4dae"
+      },
+      "owner_report": {
+        "bytes": 6812,
+        "sha256": "08e8874e465c2ca33a5482f5c1b5043b95f9f025d895fe1f2808064a22534acb"
+      },
+      "rpc": 2,
+      "native_eof0": 1,
+      "forced_cleanup": false,
+      "cause": "New sample panel supplied text; native world authoring correctly rejected panels with nonempty text (-32602).",
+      "correction": "Only sample configure panel text changed to empty. Compiled helper/sample, native host, full oracle/state and tolerances unchanged. Original failure remains failed.",
+      "original_source_sha256": "727ab807ca569a773185c436fc4a37f201950a5fcd6309652818cc7b927ba3c1",
+      "corrected_source": {
+        "bytes": 6912,
+        "sha256": "246027537cbc71ef7ae3878da59dc077bfe56ed8122685d9ca11499c425b51f1"
+      }
+    }
+  ],
+  "unqualified": [
+    "Native AOT/standalone export of this consumer",
+    "Installed212 native package/editor activation",
+    "Physical mouse/gamepad/input/latency",
+    "Representative projectile throughput or moving targets",
+    "Fresh-agent game authoring",
+    "Alpha closure"
+  ],
+  "artifacts": {
+    "linux_native": {
+      "bytes": 36419720,
+      "sha256": "8b9e0c9a0fbf3a81f2ca073468db148643311d5d978cb2be201152c3e86a2dd5"
+    },
+    "windows_native": {
+      "bytes": 27032064,
+      "sha256": "d8b1744c70485ab9c089e702c6cf11a9917b4ad4155bb315e0bc1f085ab73cc5"
+    },
+    "sdk": {
+      "bytes": 217600,
+      "sha256": "210b0d22796bce015ae2172b23b9df4b991b99e2a5c46c8cf4282d7c29f12da8"
+    },
+    "bridge": {
+      "bytes": 65024,
+      "sha256": "7d0ca09fe3bab95e1b86daf69d4a1708877bc1d102d5ac6e7f156b3814a8fdd2"
+    }
+  }
+}

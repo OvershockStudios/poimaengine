@@ -111,7 +111,9 @@ extend navigation with dynamic obstacles, traversal links and avoidance.
 Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
 [Weapon actions](WEAPON_ACTIONS.md) now supply optional magazine/chamber,
 semi-auto/automatic/burst and interruptible reload/equip rules; inventory and
-attachments remain additional game/package policies.
+attachments remain additional game/package policies. [Finite-speed projectiles](PROJECTILES.md)
+add constant-acceleration swept-sphere flight and explicit saved state; material
+penetration, ricochet and moving-target relative CCD remain further work.
 The optional [FPS feedback package](../packages/fps/README.md) supplies procedural
 math with authored, seeded-random and hybrid recoil. [Camera pose controls](CAMERA_POSES.md)
 separate aim readback, camera effects and foreground motion. Prefer procedural
