@@ -1,0 +1,157 @@
+{
+  "format": "poima.adoption-diagnostics.evidence.v1",
+  "source_checkpoint": "0.0.203",
+  "change": "Capture errno immediately after a failed Linux renameat2(RENAME_NOREPLACE), before composing the diagnostic. The syscall, flags, error code -32091, journal behavior and Windows path are unchanged.",
+  "sources": {
+    "src/project_gameplay_adoption.inc": {
+      "bytes": 33407,
+      "sha256": "2d84fc4ae45c6c662d92818164f6a67f116b1d90295aadaf0ce58c2824141004"
+    },
+    "retained_generic_oracle": {
+      "path": "tests/project_gameplay_adoption_contract.py",
+      "bytes": 63599,
+      "sha256": "bad750da608c4a2cf3f9d8d7ec225a4af10a6c4f3412b84c7b0e1e979738a3a8"
+    },
+    "diagnostic_worker_v1": {
+      "bytes": 11748,
+      "sha256": "6ef5eb22c323b819d35e6d690ef11bf47ba4c3c8622473498e5a4dc810c4f732"
+    },
+    "native_recording_worker_v2": {
+      "bytes": 11976,
+      "sha256": "06e48473bf068e6972b9de3e0a824d468e68445244e2aadeab5fa54d5521c980"
+    }
+  },
+  "engine": {
+    "version": "0.0.203",
+    "image": {
+      "bytes": 35780744,
+      "sha256": "da4871e7e53534528d0450f88da153e04e925299bcc81d18ff116c1d080a8a41"
+    },
+    "services_epoch": 7,
+    "services_bytes": 376,
+    "headless": true
+  },
+  "native_build": {
+    "passed": true,
+    "record": {
+      "bytes": 20043,
+      "sha256": "b1387e9c7820d9e6442194da48ce364fc88b61bbdd25bbc92b502fb5d182d122"
+    },
+    "seconds": 187.76571121701272,
+    "scope": "Incremental DebugO0g0 CLI with two build workers, one LLD thread and a normal static archive. Four actions: core.cpp and project.cpp compile, core archive, CLI link. No managed, renderer or native-test executable rebuild."
+  },
+  "baseline": {
+    "version": "0.0.201",
+    "original_worker_passed": false,
+    "record": {
+      "bytes": 34782,
+      "sha256": "304a4fd5b1abf0ea56d22342e7d6104d7b6a66be4beda97e2aaad27bd93dcc04"
+    },
+    "owner_record": {
+      "bytes": 8835,
+      "sha256": "6b49834412dde4a7b8437902c9e0ea1f1e6f411cb2660f635edf3e6abac06ddd"
+    },
+    "image": {
+      "bytes": 35780712,
+      "sha256": "078be9d03753408037488af5476c9d34fe9720ff1c6d2c3f4b38d086cddbaa73"
+    },
+    "cli_invocations": 3,
+    "rpc_records": 2,
+    "observed_probe_errno": 22,
+    "actual_message": "Atomic no-replacement adoption publication failed or is unsupported by this filesystem: No such file or directory",
+    "expected_message": "Atomic no-replacement adoption publication failed or is unsupported by this filesystem: Invalid argument",
+    "failure": "The original checker failed exactly at the diagnostic mismatch. It retains its failed verdict."
+  },
+  "corrected_diagnostic": {
+    "passed": true,
+    "record": {
+      "bytes": 33412,
+      "sha256": "79cfeffcdcb788a20fbf22093d1e0895591e992d2930705e1173121fed0579da"
+    },
+    "parent_cohort_passed": false,
+    "parent_record": {
+      "bytes": 18604,
+      "sha256": "1e259f1f1a01c4d028274981c9e945ccd4a5a901022e13c581c27d067b60337a"
+    },
+    "cli_invocations": 3,
+    "rpc_records": 2,
+    "observed_probe_errno": 22,
+    "message": "Atomic no-replacement adoption publication failed or is unsupported by this filesystem: Invalid argument",
+    "matched_probe": true,
+    "same_frozen_worker_as_baseline": true,
+    "original_project_files_and_artifact_inventory_preserved": true,
+    "expected_failure_state": "Adoption still rejects the unsupported atomic move. Only explicitly request-owned recovery/staging entries are added; the manifest is not promoted."
+  },
+  "native_filesystem_regression": {
+    "passed": true,
+    "record": {
+      "bytes": 545099,
+      "sha256": "942eb2ec99e523ac60a4aacc6cb80c9df8a346a561262aead970818f52943041"
+    },
+    "owner_record": {
+      "bytes": 53827,
+      "sha256": "b11c19a4c04c8c1e1325ae4ae2dcd8b08e7b0f2421fb8ab8be9c1ff43c2fec98"
+    },
+    "owner_seconds": 40.56724542597658,
+    "cli_invocations": 54,
+    "cli_successes": 39,
+    "expected_typed_rejections": {
+      "-32009": 4,
+      "-32091": 6,
+      "-32602": 5
+    },
+    "rpc_records": 32,
+    "native_world_owners": 16,
+    "all_native_owners_exit_zero": true,
+    "complete_adoption_operand_records": 25,
+    "absent_source_labels": [
+      "source-absent-restart-retry",
+      "copied-payload-tamper"
+    ],
+    "checks": [
+      "CLI v1-to-v2 adoption, exact/historical/older receipts, source-absent fresh-process retry and copied-payload tamper rejection preserve complete inventories.",
+      "Stale hashes, typed/schema/unknown-field/source payload corruption and linked artifact paths reject without changing either complete input inventory."
+    ],
+    "actual_artifact": {
+      "checkpoint": "0.0.202",
+      "library_bytes": 1648488,
+      "library_sha256": "d4a30c95d369ddb7e567f0d952166aee4df8d6738dfff9e950a31a920a90273e",
+      "module_executed": false
+    },
+    "final_original_artifact_and_inputs_equal": true,
+    "observed_worker_output_before_report": {
+      "files": 326,
+      "bytes": 20466637
+    },
+    "storage_scope": "The native worker retains an intentional negative-test symlink in a sibling directory. Its own observed 128 MiB/4096-entry budget counts link metadata without following it. The unchanged process owner separately observes up to 128 MiB of its logs/temp/report and owns all launched descendants. Neither census covers both namespaces or imposes an OS quota."
+  },
+  "retained_observation_failure": {
+    "original_parent_passed": false,
+    "original_worker_passed": false,
+    "record": {
+      "bytes": 135458,
+      "sha256": "4723ab083b7b246e1eb1e5d060850a1954d688c038004487c108422104912043"
+    },
+    "reason": "The added recorder attempted to inventory the deliberately absent original source before the unchanged retry oracle could run. The successor records directory_present=false and inventory=null; it changes no native functional assertion.",
+    "baseline_and_corrected_diagnostic_replayed": false,
+    "original_failure_regraded": false
+  },
+  "retained_core_and_metadata": {
+    "core_record": {
+      "bytes": 441,
+      "sha256": "ef24ba0972ce13d0972a34d6106163cb498052a4b39489fa4d301b60d26d3845"
+    },
+    "authoring_core_tests": 5,
+    "metadata_record": {
+      "bytes": 7471,
+      "sha256": "d8be27290f4d7a49503717608d878651703d6162aee9911e936b43d2ecf454a5"
+    },
+    "metadata_checks": 3,
+    "all_passed": true
+  },
+  "limits": [
+    "Selected native CLI diagnostics and durable adoption checks, not the full Traversal-specific supplied-artifact fixture.",
+    "No adoption Service/MCP profile, synthesized crash-recovery, game execution, Windows, graphics, general filesystem compatibility or overall Alpha qualification.",
+    "Complete retained inventories prove their declared byte/path surface; no global filesystem or concurrent hostile-writer claim."
+  ]
+}

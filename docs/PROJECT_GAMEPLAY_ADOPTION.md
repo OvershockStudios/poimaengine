@@ -131,6 +131,12 @@ case collisions and traversal.
 | `-32091` | Invalid artifact, retained-file corruption, journal corruption or filesystem failure. |
 
 Native adoption failures carry `error_code` in the diagnostic and exit with status 4.
+On Linux, 0.0.203 captures the failed protected move's `errno` before formatting
+the message. The [diagnostic check](evidence/m2-adoption-diagnostics.json)
+reproduces an earlier stale `No such file or directory` message and verifies
+`Invalid argument` from the actual unsupported-operation probe. This improves
+the reported cause; it does not add support for that filesystem or change
+error code `-32091`.
 CLI argument or request-file usage errors retain the ordinary usage-error status.
 Service failures preserve that code. Project inspection is read-only and never
 repairs a failed adoption.

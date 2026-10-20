@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.203
+
+- Report the actual filesystem error when protected gameplay artifact
+  publication fails, preserving atomic no-replacement semantics.
+
 ## 0.0.202
 
 - Use phase-preserving animation rates in Locomotion Yard during active fades,

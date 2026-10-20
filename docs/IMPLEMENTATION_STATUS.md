@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.202**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.203**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.203 corrects the Linux [project adoption](PROJECT_GAMEPLAY_ADOPTION.md)
+filesystem diagnostic. The failing protected move's `errno` is captured before
+message formatting, with atomic no-replacement and error code `-32091` retained.
+The preserved 0.0.201 CLI fails the new diagnostic check; the corrected CLI
+reports the probe's actual `Invalid argument` while retaining original inputs
+and request-owned recovery state. Separate native-filesystem checks pass
+54 CLI invocations, 32 RPCs and sixteen normally closed world owners, covering
+adoption, exact/historical/source-absent retries, stale/type/schema guards,
+corruption and linked paths. Five authoring-core and three metadata checks pass.
+The original recorder's absent-source failure remains failed; a recording-only
+successor preserves the unchanged functional oracle. These are headless
+publication checks; the compiled artifact is inspected and copied, never loaded.
+[Results and exact scope](evidence/m2-adoption-diagnostics.json).
 
 Version 0.0.202 integrates phase-preserving speed controls into
 [Locomotion Yard](../examples/locomotion-yard/README.md#movement-and-playback-policy).

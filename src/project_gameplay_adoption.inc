@@ -97,8 +97,10 @@ void adoption_publish_new(const fs::path& source,const fs::path& destination) {
 #ifdef _WIN32
     adoption_require(MoveFileExW(project_io_path(source).c_str(),project_io_path(destination).c_str(),MOVEFILE_WRITE_THROUGH)!=0,"Cannot atomically publish adoption payload without replacement.");
 #else
-    adoption_require(syscall(SYS_renameat2,AT_FDCWD,source.c_str(),AT_FDCWD,destination.c_str(),RENAME_NOREPLACE)==0,
-        std::string("Atomic no-replacement adoption publication failed or is unsupported by this filesystem: ")+std::strerror(errno));
+    if(syscall(SYS_renameat2,AT_FDCWD,source.c_str(),AT_FDCWD,destination.c_str(),RENAME_NOREPLACE)!=0) {
+        const int error=errno;
+        adoption_require(false,std::string("Atomic no-replacement adoption publication failed or is unsupported by this filesystem: ")+std::strerror(error));
+    }
 #endif
 }
 void adoption_replace_file(const fs::path& source,const fs::path& destination) {
