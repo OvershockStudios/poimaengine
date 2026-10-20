@@ -1,0 +1,201 @@
+{
+  "format": "poima.viewmodel-clearance-evidence.v1",
+  "engine_version": "0.0.208",
+  "scope": "Bounded capsule service and conservative authored foreground proxy, including post-interpolation current-physics constraints. Separate platform/workflow scopes below.",
+  "contract": {
+    "schema_revision": 115,
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "host_services_bytes": 400,
+    "feature": "capsule_cast_v1",
+    "request_bytes": 128,
+    "result_bytes": 144,
+    "frozen_authoring_and_runtime_contracts_unchanged": true
+  },
+  "linux": {
+    "passed": true,
+    "selected_ctest_suites": 15,
+    "capsule_query_groups": 5,
+    "viewmodel_clearance_groups": 6,
+    "managed_wire_checks": 102,
+    "capsule_consumer": {
+      "backend": "CoreCLR",
+      "rpc_pairs": 72,
+      "whole_archives": 8,
+      "complete_byte_equal_pairs": 4,
+      "typed_fields": 22
+    },
+    "retained_fps": {
+      "backend": "CoreCLR",
+      "rpc_pairs": 237,
+      "whole_archives": 10,
+      "complete_byte_equal_pairs": 5,
+      "typed_fields": 59,
+      "native_owners": 2,
+      "compiled_source_checkpoint": "0.0.206"
+    },
+    "forced_cleanup": false,
+    "final_children": [],
+    "retained_qa1": {
+      "bytes": 23710,
+      "sha256": "36a8b3ea440e191c2aa4d5464cd6efd7c838e553b8c4d99ee3a79dc4a167c24e"
+    },
+    "retained_qa2": {
+      "bytes": 10261,
+      "sha256": "65f3b0e4ace67ee33a731fda717aa8b150711e7314850849d80de5bc233aa986"
+    },
+    "retained_capsule": {
+      "bytes": 103382,
+      "sha256": "67ff6b91111642cb86e55f595b82071d173f044fae04efdbd5575d214cc7d4c5"
+    },
+    "retained_fps_evidence": {
+      "bytes": 3557967,
+      "sha256": "a8e4ffeabeedf868f77b43418acd91d82fa15758117b65a2cca31c5200c662ad"
+    }
+  },
+  "original_failures": [
+    {
+      "scope": "First Linux capsule protocol fixture",
+      "passed": false,
+      "rpc_pairs": 68,
+      "complete_byte_equal_pairs": 3,
+      "cause": "The test scheduled an intentional later-Tick failure at entry tick+2. Two callbacks receive entry tick and entry tick+1, then finish at entry tick+2; the native batch correctly succeeded.",
+      "correction": "Select entry tick+1 to fault in the second callback. Keep the complete rollback comparison and all22 fields; native runtime and compiled consumer remain unchanged. Record any unexpected successful response before asserting rejection.",
+      "forced_cleanup": false,
+      "retained_evidence": {
+        "bytes": 97178,
+        "sha256": "80808e503938eb114650c3152829fb960ee26f51e97b78ac42f583826a7737f1"
+      }
+    }
+  ],
+  "limits": [
+    "The clearance envelope is authored and must contain the selected geometry through its supported poses; no arbitrary imported-mesh fitting or continuous angular sweep.",
+    "Blocked anchor/final contact suppresses foreground draws and explicitly reports unresolved; query-budget exhaustion errors rather than becoming clear.",
+    "No outward release spring, full-body weapon IK, firing rules, physical input, production art or subjective weapon-feel qualification.",
+    "No new consumer Native AOT/export, installed editor/runtime package, representative frame-time/latency, fresh-agent workflow or Alpha closure."
+  ],
+  "windows": {
+    "passed": true,
+    "selected_native_executables": 7,
+    "capsule_query_groups": 5,
+    "viewmodel_clearance_groups": 6,
+    "cache_generation": 52,
+    "cli": {
+      "bytes": 26945024,
+      "sha256": "3ba6b0e4c9b0229f064ab92d80e96bdd32212e2e98d3b0fba8e46a041b503004"
+    },
+    "capsule_consumer": {
+      "backend": "CoreCLR",
+      "rpc_pairs": 72,
+      "whole_archives": 8,
+      "complete_byte_equal_pairs": 4,
+      "typed_fields": 22,
+      "retained_evidence": {
+        "bytes": 103405,
+        "sha256": "a65553fedffd6df44e7fb03bdf17208456da63c9587d462ed3bf41e0a828bdfa"
+      }
+    },
+    "vulkan": {
+      "passed": true,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "width": 640,
+      "height": 360,
+      "samples": 4,
+      "viewmodel_samples": 4,
+      "rpc_pairs": 85,
+      "frames_presented": 81,
+      "captures": [
+        {
+          "label": "clear-fractional",
+          "image": {
+            "bytes": 921738,
+            "sha256": "c5dc8ec278a505700d6c537c2a547d32c05fd9f5c9ff6ae80d90c1f494e3a97b"
+          },
+          "status": "clear",
+          "retraction": 0.0,
+          "resolved": true,
+          "suppressed": false
+        },
+        {
+          "label": "front-wall",
+          "image": {
+            "bytes": 921738,
+            "sha256": "9c5acb9787ea1a2387d041fde8754c1409f12cfa2a88605a0ad65e2ff5d7ac86"
+          },
+          "status": "retracted",
+          "retraction": 0.05699894309043885,
+          "resolved": true,
+          "suppressed": false
+        },
+        {
+          "label": "volume-edge",
+          "image": {
+            "bytes": 921738,
+            "sha256": "ff9ee680ba999f83aba72328b29d7c1d900e5220f2c8f127b441387b132a8a2e"
+          },
+          "status": "retracted",
+          "retraction": 0.044628258347511274,
+          "resolved": true,
+          "suppressed": false
+        },
+        {
+          "label": "blocked-anchor",
+          "image": {
+            "bytes": 921738,
+            "sha256": "3261a1bdfc61772c5ffee9a9d54714368b2773b5f8fad86a6809106fdead71b0"
+          },
+          "status": "blocked_anchor",
+          "retraction": 0.65,
+          "resolved": false,
+          "suppressed": true
+        }
+      ],
+      "whole_archives": 6,
+      "complete_byte_equal_pairs": 3,
+      "typed_fields": 59,
+      "compiled_source_checkpoint": "0.0.206",
+      "centre_ray_miss_but_capsule_overlap": true,
+      "changing_fractional_effect_capture": true,
+      "retained_evidence": {
+        "bytes": 1116352,
+        "sha256": "bacbc70406aa8201a3d9ec02ba11bf2239ddb4f7ab20b11554d8ef233f1d2801"
+      },
+      "inspection": "Four original BMPs inspected via lossless RGB copies. Tiny greybox weapon retracts and is absent when suppressed. Existing HUD clipping at640px and crude geometry are not a production UI/art or subjective weapon-feel pass."
+    },
+    "forced_cleanup": false,
+    "final_active_processes": 0,
+    "final_terminated_processes": 0,
+    "retained_native_owner": {
+      "bytes": 184228,
+      "sha256": "39dcfbd5581f85544b0946a7a20fadce948daafd0045e56c07f88ff4f0020e6b"
+    },
+    "retained_cpu_owner": {
+      "bytes": 2458,
+      "sha256": "845b2815c3ed8aa7df5ef33caa146577c9f72022d560047b87acfe1148df2148"
+    },
+    "retained_capsule_owner": {
+      "bytes": 2459,
+      "sha256": "4e5813f7387fb9ad30de0cbe35e1bb60cb1e7dec7e3ebd2257f4bb5bc69ac98c"
+    },
+    "retained_gpu_owner": {
+      "bytes": 2474,
+      "sha256": "110889b3bbc2b55f974f711b5680b92bb52dab5900fcf71de8da2d6e121d5bd4"
+    }
+  },
+  "file_checks": {
+    "publisher_requirement_tests": 21,
+    "runtime_descriptor_self_checks": 15,
+    "generated_linux_and_windows_descriptors": {
+      "services_bytes": 400,
+      "feature_count": 20
+    },
+    "scope": "File-only descriptor validation; no installed-package qualification."
+  },
+  "reproduce": {
+    "native": "Build a simulation-enabled source checkout and run CTest runtime_capsule_cast_native, runtime_viewmodel_clearance_native and the related camera/schema/compatibility suites.",
+    "capsule": "Build tests/managed_capsule_cast_gameplay with a matching compiled SDK/bridge, then run tests/capsule_cast_contract.py with explicit binary/assembly/bridge/platform-hostfxr and a fresh output.",
+    "vulkan": "Run tests/viewmodel_clearance_player.py with the unchanged compiled FPS sample, matching bridge/SDK, native Windows hostfxr, explicitGPU and freshoutput inside the documented owned Windows Job. Requires shared serve/connect player hosting."
+  }
+}

@@ -17,6 +17,22 @@ class Requirements(unittest.TestCase):
         self.baseline=dict(call_version=1,call_bytes=80,services_version=7,services_bytes=176,features=['baseline_v7'])
     def read(self,data):
         self.path.write_text(json.dumps(data));return publish.generated_requirements(self.path)
+    def test_capsule_cast_independent_named_prefix(self):
+        value=dict(self.baseline,services_bytes=400,features=['baseline_v7','capsule_cast_v1'])
+        self.assertEqual(self.read(value),value)
+        for extent in [176,376,392,399,401]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(value,services_bytes=extent))
+        for features in [['baseline_v7'],['capsule_cast_v1'],value['features']+['capsule_cast_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(value,features=features))
+        union=value['features']+['camera_pose_v1','camera_lens_v1']
+        self.assertEqual(self.read(dict(value,features=union))['features'],union)
+        all_names=['animation_inertial_v1','animation_layers_v1','character_input_v1','navigation_query_v1',
+                   'hierarchical_instances_v1','player_preferences_v1','input_actions_v1','hit_regions_v1',
+                   'animation_ik_v1','animation_root_motion_v1','camera_lens_v1','character_stance_v1',
+                   'animation_ik_end_orientation_v1','animation_grounding_control_v1','animation_rate_v1',
+                   'camera_pose_v1','capsule_cast_v1','baseline_v7']
+        self.assertEqual(len(self.read(dict(value,features=all_names))['features']),18)
+
     def test_camera_pose_independent_named_prefix(self):
         value=dict(self.baseline,services_bytes=392,features=['baseline_v7','camera_pose_v1'])
         self.assertEqual(self.read(value),value)

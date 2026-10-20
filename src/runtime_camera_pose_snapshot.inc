@@ -63,5 +63,6 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
         const auto delta=multiply(multiply(result.camera_world,local_matrix(viewmodel->position,viewmodel->rotation,{1,1,1})),inverse_affine(result.camera_world));
         for(auto& object:result.viewmodel->objects) {object.world=multiply(delta,object.world);bounded(object.world);}
     }
+    impl_->apply_viewmodel_clearance(result,viewmodel.value_or(RuntimeCameraPose{}));
     return result;
 }

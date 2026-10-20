@@ -48,6 +48,7 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
+std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_player_preferences_host(std::shared_ptr<GameplayPlayerPreferences>) { throw std::runtime_error("Simulation is not built."); }
 bool Runtime::commit_gameplay_player_preferences() noexcept { return false; }

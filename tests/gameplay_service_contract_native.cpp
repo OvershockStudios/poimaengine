@@ -96,6 +96,15 @@ int main(){try{
     check(parsed_lens.services_bytes==320 && parsed_lens.features.size()==2,"Independent camera lens contract rejected.");
     for(unsigned bytes:{176u,304u,312u,319u,321u}) {auto wrong=lens;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_lens=lens;duplicate_lens["features"].push_back("camera_lens_v1");rejected(duplicate_lens.dump());
+    auto capsule=baseline;capsule["services_bytes"]=400;capsule["features"].push_back("capsule_cast_v1");
+    const auto parsed_capsule=poima::parse_gameplay_service_contract(capsule.dump());
+    check(parsed_capsule.services_bytes==400 && parsed_capsule.features==std::vector<std::string>({"baseline_v7","capsule_cast_v1"}),"Independent capsule contract rejected.");
+    for(unsigned bytes:{176u,376u,392u,399u,401u}){auto wrong=capsule;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_capsule=capsule;duplicate_capsule["features"].push_back("capsule_cast_v1");rejected(duplicate_capsule.dump());
+    auto unnamed_capsule=capsule;unnamed_capsule["features"]=Json::array({"baseline_v7"});rejected(unnamed_capsule.dump());
+    auto combined_capsule=capsule;combined_capsule["features"].push_back("camera_pose_v1");
+    check(poima::parse_gameplay_service_contract(combined_capsule.dump()).services_bytes==400,"Capsule/camera combination rejected.");
+    offer=actual;offer.services_bytes=399;offer_rejected(offer);
     auto pose=baseline;pose["services_bytes"]=392;pose["features"].push_back("camera_pose_v1");
     const auto parsed_pose=poima::parse_gameplay_service_contract(pose.dump());
     check(parsed_pose.services_bytes==392 && parsed_pose.features.size()==2,"Independent camera pose declaration rejected.");

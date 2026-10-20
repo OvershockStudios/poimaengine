@@ -119,9 +119,10 @@ fixed-tick ADS and zoom, with saved game-owned easing through
 `CameraFovTransition`. Opt-in [lens presentation](PLAYER_LENS_PRESENTATION.md)
 interpolates FOV between committed ticks. Independent [effect presentation](PLAYER_POSE_PRESENTATION.md)
 interpolates camera/foreground offsets while native look and movement remain current.
-Complete collision-aware weapon lowering/retraction, broader pose presentation
-and wall-clearance behavior, with animation and
-rendering policies independent of the world camera.
+An optional authored [clearance capsule](VIEWMODEL_CLEARANCE.md) constrains
+foreground geometry after interpolation against current physics. Complete
+broader weapon lowering/IK and smooth release, with animation and rendering
+policies independent of the world camera.
 
 Add hierarchical spawning, prefab composition, variants and inspectable
 override origins. Projects need pinned packages, dependency queries, incremental

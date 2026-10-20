@@ -99,6 +99,17 @@ int main(int argc,char** argv) {
                     const auto result=invoke(owner,"world.describe",params,scope);cases.push_back({{"params",params},{"reply",result}});++total;return result;
                 };
                 const auto full=capture(Json::object()).at("result");
+                need(full.at("schema_revision").get<unsigned>()>=115,"Expected capsule query/clearance discovery.");
+                const auto& capsule=full.at("methods").at("runtime.capsule_cast");
+                need(capsule.at("additionalProperties")==false && capsule.at("required")==Json::array({"session_id","tick","position","rotation","radius","half_height","direction","distance"}) &&
+                    capsule.at("properties").at("distance").at("minimum")==0 && capsule.at("properties").at("half_height").at("minimum")==0 &&
+                    capsule.at("properties").at("ignore").at("uniqueItems")==true && capsule.at("properties").at("ignore").at("maxItems")==128,
+                    "Capsule query overlap/sphere/strict input schema differs.");
+                const auto& camera_schema=full.at("components").at("Camera");
+                const auto& clearance=camera_schema.at("properties").at("viewmodel_clearance");
+                need(clearance.at("additionalProperties")==false && clearance.at("required")==Json::array({"position","rotation","radius","half_height","max_retraction","skin"}) &&
+                    clearance.at("properties").at("skin").at("minimum")==.0001 && camera_schema.at("dependentRequired").at("viewmodel_clearance")==Json::array({"viewmodel"}),
+                    "Authored clearance profile must remain strict, opt-in and lens-dependent.");
                 need(full.at("schema_revision").get<unsigned>()>=78,"Expected compiler session discovery revision.");
                 need(full.at("schema_revision").get<unsigned>()>=92,"Expected opt-in player lens interpolation discovery.");
                 const auto& callback_metrics=full.at("methods").at("runtime.gameplay.metrics");

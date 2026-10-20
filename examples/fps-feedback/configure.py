@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Explicit guarded native authoring step for the new sample's recoil-mode menu.
+"""Explicit guarded native authoring of the sample's menu and weapon clearance.
 
 Run after prepare.py, using an admitted native execution route. No compilation,
 rendering, retry or historical fixture mutation. Original stdio is retained.
 """
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -30,7 +31,7 @@ def main():
     if world.resolve() == (ROOT/'docs/evidence/fixtures/agent-switchback-fresh/world.json').resolve():
         parser.error('Configure an independent prepared copy, never the preserved fixture.')
     args.output.mkdir()
-    record = dict(passed=False, calls=[], scope='One guarded UI authoring transaction; not gameplay qualification.')
+    record = dict(passed=False, calls=[], scope='One guarded menu/Camera authoring transaction; not gameplay qualification.')
     deadline = time.monotonic()+30
     client = None
     try:
@@ -48,6 +49,13 @@ def main():
             row['result'] = result
             return result
         revision = rpc('world.inspect')['revision']
+        camera_id = project['entry']['camera']
+        camera = json.loads(world.read_bytes())['entities'][camera_id]['components']['Camera']
+        if 'viewmodel' not in camera:
+            raise ValueError('The sample clearance profile requires its authored foreground lens.')
+        camera['viewmodel_clearance'] = dict(position=[.18,-.17,-.4],
+            rotation=[math.sqrt(.5),0.0,0.0,math.sqrt(.5)], radius=.075,
+            half_height=.175, max_retraction=.65, skin=.005)
         element = dict(parent=f'{500:032x}', name='Feedback profile', kind='button',
             text='Feedback: Hybrid', action='feedback-mode', visible=True, enabled=True,
             layout=dict(position='absolute', left=dict(unit='dp',value=320), top=dict(unit='dp',value=145),
@@ -56,7 +64,8 @@ def main():
                        border_color='#722f37', border_width=1,
                        focus=dict(border_color='#d46a7e')))
         result = rpc('world.transact', dict(request_id=uuid.uuid4().hex, base_revision=revision,
-            ops=[dict(op='ui.element.set', id=f'{510:032x}', element=element)]))
+            ops=[dict(op='ui.element.set', id=f'{510:032x}', element=element),
+                 dict(op='component.set', id=camera_id, type='Camera', value=camera)]))
         current = rpc('world.inspect')
         if result['committed'] is not True or current['revision'] != result['revision']:
             raise RuntimeError('Guarded authoring did not publish the expected revision.')

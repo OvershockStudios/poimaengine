@@ -618,6 +618,23 @@ void camera_draw_references(const Json& entities) {
         }
     }
 }
+ViewmodelClearanceProfile viewmodel_clearance_value(const Json& value) {
+    fields(value,{"position","rotation","radius","half_height","max_retraction","skin"},
+        {"position","rotation","radius","half_height","max_retraction","skin"});
+    ViewmodelClearanceProfile profile;
+    const auto vector=[&](const char* name,auto& target) {
+        const auto& array=value.at(name);require(array.is_array() && array.size()==target.size(),"Clearance vector has an invalid size.");
+        for(std::size_t i=0;i<target.size();++i) {
+            require(array[i].is_number(),"Clearance vector must be numeric.");target[i]=array[i].get<double>();
+        }
+    };
+    vector("position",profile.position);vector("rotation",profile.rotation);
+    for(const char* name:{"radius","half_height","max_retraction","skin"})require(value.at(name).is_number(),"Clearance scalar must be numeric.");
+    profile.radius=value.at("radius").get<double>();profile.half_height=value.at("half_height").get<double>();
+    profile.max_retraction=value.at("max_retraction").get<double>();profile.skin=value.at("skin").get<double>();
+    try{validate_viewmodel_clearance_profile(profile);}catch(const std::exception& error){throw Error(-32602,error.what());}
+    return profile;
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
@@ -642,9 +659,13 @@ void validate_component(const std::string& type, const Json& value) {
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
-        fields(value,{"vertical_fov","near","far","viewmodel"},{"vertical_fov","near","far"});
+        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance"},{"vertical_fov","near","far"});
         (void)scene_lens_value(Json{{"vertical_fov",value.at("vertical_fov")},{"near",value.at("near")},{"far",value.at("far")}});
         if(value.contains("viewmodel"))(void)scene_lens_value(value.at("viewmodel"));
+        if(value.contains("viewmodel_clearance")) {
+            require(value.contains("viewmodel"),"Viewmodel clearance requires a foreground lens.");
+            (void)viewmodel_clearance_value(value.at("viewmodel_clearance"));
+        }
         return;
     }
     if(type=="CameraDraw") { (void)camera_draw_value(value);return; }
@@ -1673,6 +1694,32 @@ public:
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
 #include "world_navigation.inc"
 #include "world_provenance.inc"
+    static Json capsule_cast_hit_json(const std::optional<CapsuleCastHit>& hit) {
+        if(!hit)return nullptr;
+        return {{"entity",hit->entity},{"fraction",hit->fraction},{"distance",hit->distance},
+            {"point_on_query",hit->point_on_query},{"point_on_obstacle",hit->point_on_obstacle},
+            {"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)},
+            {"penetration_depth",hit->penetration_depth},{"triangle",hit->triangle ? Json(*hit->triangle) : Json(nullptr)},
+            {"initial_overlap",hit->initial_overlap}};
+    }
+    static Json viewmodel_clearance_json(const ViewmodelClearanceResult& value) {
+        const auto& p=value.profile;const auto& c=value.cast;
+        const char* status="blocked_final";
+        switch(value.status) {
+            case ViewmodelClearanceStatus::Clear:status="clear";break;
+            case ViewmodelClearanceStatus::Retracted:status="retracted";break;
+            case ViewmodelClearanceStatus::BlockedAnchor:status="blocked_anchor";break;
+            case ViewmodelClearanceStatus::BlockedFinal:break;
+        }
+        return {{"profile",{{"position",p.position},{"rotation",p.rotation},{"radius",p.radius},{"half_height",p.half_height},
+                {"max_retraction",p.max_retraction},{"skin",p.skin}}},
+            {"cast",{{"position",c.position},{"rotation",c.rotation},{"radius",c.radius},{"half_height",c.half_height},
+                {"direction",c.direction},{"distance",c.distance},{"ignore",c.ignore}}},
+            {"anchor_hit",capsule_cast_hit_json(value.anchor_hit)},{"sweep_hit",capsule_cast_hit_json(value.sweep_hit)},
+            {"final_hit",capsule_cast_hit_json(value.final_hit)},{"retraction",value.retraction},{"status",status},
+            {"resolved",value.resolved},{"suppressed",value.suppressed},{"ignored_entities",value.ignored_entities},
+            {"suppressed_entities",value.suppressed_entities}};
+    }
     static Json renderer_scene_result_json(const RendererSceneResult& scene) {
         Json result={{"world_id",scene.world_id},{"camera_id",scene.camera_id},{"presentation_source_id",scene.presentation_source_id},
             {"authored_revision",scene.authored_revision},{"presentation_generation",scene.presentation_generation},
@@ -1684,6 +1731,7 @@ public:
                 viewmodels.push_back({{"entity",draw.entity_id},{"incarnation",draw.incarnation},{"world",draw.world}});
             result["camera_pose"]={{"camera_world",scene.camera_pose->camera_world},{"viewmodels",std::move(viewmodels)}};
         }
+        if(scene.viewmodel_clearance)result["viewmodel_clearance"]=viewmodel_clearance_json(*scene.viewmodel_clearance);
         if(scene.camera_draw) {
             const auto& draw=*scene.camera_draw;Json foreground=Json::array(),hidden=Json::array();
             for(const auto& object:draw.viewmodels)foreground.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
@@ -2784,6 +2832,7 @@ public:
             if(components.contains("Camera")) {
                 const auto& c=components.at("Camera");value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")};
                 if(c.contains("viewmodel"))value.camera->viewmodel=scene_lens_value(c.at("viewmodel"));
+                if(c.contains("viewmodel_clearance"))value.camera->viewmodel_clearance=viewmodel_clearance_value(c.at("viewmodel_clearance"));
             }
             if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));
             if(components.contains("AnimationRig")) {
@@ -3431,6 +3480,24 @@ public:
             if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             try { auto result=lighting_json(runtime_->lighting());result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result; }
             catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        }
+        if(method=="runtime.capsule_cast") {
+            fields(params,{"session_id","tick","position","rotation","radius","half_height","direction","distance","ignore"},
+                {"session_id","tick","position","rotation","radius","half_height","direction","distance"});
+            runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            CapsuleCastRequest cast;cast.position=query_vector(params.at("position"));cast.direction=query_vector(params.at("direction"));
+            const auto& rotation=params.at("rotation");require(rotation.is_array() && rotation.size()==4,"Capsule rotation must be an XYZW quaternion.");
+            for(std::size_t i=0;i<4;++i) {require(rotation[i].is_number(),"Capsule quaternion must be numeric.");cast.rotation[i]=rotation[i].get<double>();}
+            for(const char* name:{"radius","half_height","distance"})require(params.at(name).is_number(),"Capsule query scalars must be numeric.");
+            cast.radius=params.at("radius").get<double>();cast.half_height=params.at("half_height").get<double>();cast.distance=params.at("distance").get<double>();
+            if(params.contains("ignore")) {
+                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most128 entity IDs.");
+                for(const auto& id:ids)cast.ignore.push_back(identifier(id));
+            }
+            try{return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},
+                {"hit",capsule_cast_hit_json(runtime_->capsule_cast(cast))}};}
+            catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+            catch(const std::invalid_argument& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.raycast") {
             fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});runtime_guard(params);

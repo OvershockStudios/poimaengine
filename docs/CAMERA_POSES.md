@@ -101,14 +101,22 @@ signed-zero bits in an identity command are not preserved through that path.
 Cold restoration validates camera membership, channel presence, bounds and
 physical ownership before publishing the restored state. Rollback retains full offsets.
 
-The call ABI remains 1/80 and the service epoch remains 7. The new 392-byte
-service table preserves the earlier 376-byte prefix and appends getter/setter
+The call ABI remains 1/80 and the service epoch remains 7. The 392-byte
+`camera_pose_v1` prefix preserves the earlier 376 bytes and appends getter/setter
 pointers at offsets 376/384. Version-1 commands are 144 bytes; returned states
 are 272 bytes, including the base matrix at offset 144. Older declared service
 prefixes and permissions remain unchanged. Matched SDK/bridge cohorts validate
-marked-game negotiation before game construction.
+marked-game negotiation before game construction. The current host allocation
+also includes the independently negotiated [capsule query](CAPSULE_QUERIES.md)
+pointer at offset 392; camera-only games retain their 392-byte view.
 
 Opt-in [camera effect interpolation](PLAYER_POSE_PRESENTATION.md) smooths these
 offsets between committed ticks without buffering native look or movement.
-Collision-aware weapon lowering, full-body weapon IK and production animation
-authoring remain separate work.
+An optional authored [foreground clearance capsule](VIEWMODEL_CLEARANCE.md)
+then constrains the selected foreground draw matrices against current physics.
+It does not modify these saved offsets, `BaseWorld`, the world-camera effect
+or gameplay aim. `pose_presentation.rendered_viewmodel` remains the desired
+interpolated offset before that constraint; the renderer's `camera_pose`
+receipt contains the final matrices, or an empty foreground list when blocked.
+This policy has no outward recovery spring or automatic imported-mesh fitting.
+Full-body weapon IK and production animation authoring remain separate work.

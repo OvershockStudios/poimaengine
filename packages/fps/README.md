@@ -55,6 +55,16 @@ and `NoiseCoordinate` are transient numerical records; they are not supported
 nested game-state field declarations. No hidden state, normal-path allocation,
 global random generator, reflection or wall-clock timing is used.
 
+An authored camera [viewmodel-clearance profile](../../docs/VIEWMODEL_CLEARANCE.md)
+can constrain the resulting foreground after pose interpolation, using current
+physics. This native presentation step retracts the configured conservative
+capsule or suppresses foreground draws when unresolved. It does not change the
+package's saved spring state, desired effect offsets, world-camera effect or
+aim rays. `rendered_viewmodel` still describes the desired offset; renderer
+receipts contain the actual matrices after clearance. Fit the proxy to the
+selected geometry; these helpers provide neither automatic mesh fitting nor
+an outward clearance-recovery spring.
+
 Procedural effects can layer over imported animation clips. This package does
 not replace skeletal playback, IK, motion matching or an imported-character
 pipeline, and does not implement a weapon inventory/attachment framework.

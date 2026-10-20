@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==392u &&
+    check(capable.services_version==7 && capable.services_bytes==400u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
@@ -124,6 +124,7 @@ void policy() {
     std::erase(synthetic.features,std::string(grounding_control_feature));
     std::erase(synthetic.features,std::string(animation_rate_feature));
     std::erase(synthetic.features,std::string(camera_pose_feature));
+    std::erase(synthetic.features,std::string(capsule_cast_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -291,6 +292,14 @@ void policy() {
     check(!compatibility_error(baseline,short_rate_host).empty(),"Rate advertised beyond allocation.");
     auto duplicate_rate=rate;duplicate_rate.features.push_back(animation_rate_feature);
     check(!compatibility_error(duplicate_rate,capable).empty(),"Duplicate rate feature accepted.");
+    auto capsule=baseline;capsule.services_bytes=400;capsule.features.push_back(capsule_cast_feature);
+    check(compatibility_error(capsule,capsule).empty() && compatibility_error(capsule,capable).empty(),"Independent capsule requirement rejected.");
+    auto missing_capsule=capable;std::erase(missing_capsule.features,std::string(capsule_cast_feature));
+    check(!compatibility_error(capsule,missing_capsule).empty(),"Opaque extent granted undeclared capsule casts.");
+    for(unsigned bytes:{176u,376u,392u,399u,401u}){auto wrong=capsule;wrong.services_bytes=bytes;check(!compatibility_error(wrong,capable).empty(),"Wrong capsule prefix accepted.");}
+    auto unnamed_capsule=capsule;unnamed_capsule.features={baseline_feature};check(!compatibility_error(unnamed_capsule,capable).empty(),"Unnamed400-byte requirement accepted.");
+    auto duplicate_capsule=capsule;duplicate_capsule.features.push_back(capsule_cast_feature);check(!compatibility_error(duplicate_capsule,capable).empty(),"Duplicate capsule feature accepted.");
+    auto short_capsule_host=capsule;short_capsule_host.services_bytes=399;check(!compatibility_error(baseline,short_capsule_host).empty(),"Capsule availability lacks allocated callback.");
     auto pose=baseline;pose.services_bytes=392;pose.features.push_back(camera_pose_feature);
     check(compatibility_error(pose,pose).empty() && compatibility_error(pose,capable).empty(),"Independent camera pose requires unrelated features.");
     auto unnamed_pose=capable;std::erase(unnamed_pose.features,std::string(camera_pose_feature));
@@ -308,7 +317,7 @@ void policy() {
         const bool valid=(!(mask&2) || bool(mask&1)) && (!(mask&128) || bool(mask&1));
         check(compatibility_error(requested,capable).empty()==valid,"Camera pose extent bypassed older feature dependencies.");
     }
-    auto retained_rate=capable;retained_rate.services_bytes=376;std::erase(retained_rate.features,std::string(camera_pose_feature));
+    auto retained_rate=capable;std::erase(retained_rate.features,std::string(capsule_cast_feature));retained_rate.services_bytes=376;std::erase(retained_rate.features,std::string(camera_pose_feature));
     check(compatibility_error(rate,retained_rate).empty() && compatibility_error(baseline,retained_rate).empty(),"New camera pose broke actual old376 service metadata.");
     check(!compatibility_error(pose,retained_rate).empty(),"Old376 host grants new camera pose.");
     auto stance=baseline;stance.services_bytes=336;stance.features.push_back(character_stance_feature);
@@ -385,6 +394,11 @@ void policy() {
     newest.camera_pose_set=[](void*,const PoimaGameCameraPoseCommandV1*,PoimaGameError*)->int32_t{return -1;};
     const auto newest_before=newest;const auto newest_legacy=baseline_view(newest_base);
     check(std::memcmp(&newest_legacy,&view,176)==0 && std::memcmp(&newest,&newest_before,sizeof(newest))==0,"Camera pose tail altered or mutated the baseline service view.");
+    PoimaGameCapsuleQueryServicesV1 capsule_table{};capsule_table.camera_pose=newest;
+    auto& capsule_base=capsule_table.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline;
+    capsule_base.bytes=400;capsule_table.capsule_cast=[](void*,const PoimaGameCapsuleCastRequestV1*,PoimaGameCapsuleCastResultV1*,PoimaGameError*)->int32_t{return -1;};
+    const auto capsule_before=capsule_table;const auto capsule_legacy=baseline_view(capsule_base);
+    check(std::memcmp(&capsule_legacy,&view,176)==0 && std::memcmp(&capsule_table,&capsule_before,400)==0,"Capsule tail changed legacy view or source bytes.");
     source.services.bytes=175;rejects([&]{baseline_view(source.services);});source.services.bytes=240;source.services.version=8;rejects([&]{baseline_view(source.services);});
 }
 void compiled(const GameplayConfig& config) {

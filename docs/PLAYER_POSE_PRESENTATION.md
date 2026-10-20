@@ -14,7 +14,9 @@ is local to the window and is never serialized into gameplay checkpoints.
 
 `runtime.play` and shared-service `player.start` accept strict Boolean
 `pose_interpolation`. It defaults to false. Omission or false retains the
-committed-camera path and omits the extra pose receipts.
+committed-camera path and omits `pose_presentation` history metadata. An authored
+[foreground clearance profile](VIEWMODEL_CLEARANCE.md) still evaluates current
+physics and supplies its clearance and actual-matrix receipts on that path.
 
 ```json
 {
@@ -84,6 +86,8 @@ Opt-in observed, submitted and presented player material receipts contain
   effect in local metres and X,Y,Z,W quaternion rotation.
 - `previous_viewmodel`, `target_viewmodel`, `rendered_viewmodel` describe the
   independent foreground effect, or are null without a foreground channel.
+  `rendered_viewmodel` is the desired interpolated offset before optional
+  collision clearance.
 - `target_base_world` is the current committed base camera matrix; it is never
   interpolated.
 
@@ -92,6 +96,16 @@ actual prepared `camera_world` matrix and a sorted `viewmodels` list of
 `entity`, `incarnation` and `world` matrices. These are the matrices submitted
 with that scene, rather than a promise that the target effect was displayed.
 Frame sequence and submission tags retain their existing meanings.
+
+With authored `Camera.viewmodel_clearance`, native preparation resolves the
+desired foreground against current Jolt physics after interpolation. The
+`viewmodel_clearance` receipt records that capsule query and any retraction or
+suppression. `camera_pose.viewmodels` contains the resulting draw matrices;
+they can differ from the composition of `rendered_viewmodel` by the safe
+camera-local +Z translation. If the anchor or final check is blocked, the list
+is empty and suppression is explicit. The world-camera matrix, committed
+offsets and gameplay aim remain unchanged. There is no release spring, and the
+history does not feed a resolved clamp back into its next target.
 
 [Player captures](PLAYER_LENS_PRESENTATION.md#captures-and-persistence) freeze
 both pose/lens metadata and owned scene geometry under one window preparation.
@@ -105,7 +119,7 @@ fractional presentation phase or history.
 
 This evolving launch option is outside authoring-core v1. It does not establish
 whole-game animation interpolation, temporal reconstruction continuity,
-collision-aware weapon retraction, scan-out timing or input-to-photon latency.
+arbitrary weapon-mesh clearance, scan-out timing or input-to-photon latency.
 
 ## Reproduce the compiled-game check
 

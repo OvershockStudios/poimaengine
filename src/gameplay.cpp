@@ -128,7 +128,7 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -136,6 +136,50 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
     if(!invalid.empty())throw std::runtime_error("Offered gameplay availability is invalid: "+invalid);
 }
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::capsule_cast_feature)!=required.features.end()) {
+        check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameCapsuleQueryServicesV1),
+            "Gameplay requires services epoch 7 and the 400-byte capsule query extension.");
+        PoimaGameCapsuleQueryServicesV1 extended{};
+        std::memcpy(&extended,&provided,sizeof(extended));
+        auto& pose=extended.camera_pose;auto& rate=pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& stance=orientation.character_stance;auto& lens=stance.camera_lens;auto& root=lens.root_motion;auto& ik=root.ik;auto& regions=ik.regions;auto& preferences=regions.actions.preferences;auto& instances=preferences.instances;
+        auto& navigation=instances.navigation;auto& character=navigation.character;
+        auto& layers=character.animation;auto& animation=layers.animation;
+        animation.baseline.bytes=sizeof(extended);
+        check(extended.capsule_cast,"Gameplay capsule cast callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::camera_pose_feature)!=required.features.end())
+            check(pose.camera_pose_get && pose.camera_pose_set,"Gameplay camera pose callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_rate_feature)!=required.features.end())
+            check(rate.animation_rate_set,"Gameplay animation rate callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::grounding_control_feature)!=required.features.end())
+            check(grounding.grounding_get && grounding.grounding_set,"Gameplay grounding control callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::two_bone_ik_orientation_feature)!=required.features.end())
+            check(orientation.ik_orientation_get && orientation.ik_orientation_set,"Gameplay IK orientation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_stance_feature)!=required.features.end())
+            check(stance.character_stance_get && stance.character_stance_set,"Gameplay character stance extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::camera_lens_feature)!=required.features.end())
+            check(lens.camera_lens_get && lens.camera_lens_set,"Gameplay camera lens extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::root_motion_feature)!=required.features.end())
+            check(root.root_motion_get && root.root_motion_set,"Gameplay root motion extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::two_bone_ik_feature)!=required.features.end())
+            check(ik.ik_get && ik.ik_set,"Gameplay two-bone IK extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::hit_regions_feature)!=required.features.end())
+            check(regions.hit_test,"Gameplay hit region extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::input_actions_feature)!=required.features.end())
+            check(regions.actions.input_action,"Gameplay input action extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::player_preferences_feature)!=required.features.end())
+            check(preferences.preference_snapshot && preferences.preference_patch && preferences.preference_result,"Gameplay player preference extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::instances_feature)!=required.features.end())
+            check(instances.instance_node,"Gameplay hierarchical instance resolver callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::navigation_feature)!=required.features.end())
+            check(navigation.navigation_path,"Gameplay navigation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_input_feature)!=required.features.end())
+            check(character.character_input,"Gameplay character input extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)!=required.features.end())
+            check(animation.animation_get_extended && animation.animation_set_extended,"Gameplay animation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end())
+            check(layers.animation_layer_get && layers.animation_layer_set,"Gameplay animation layer extension callback is absent.");
+        callback(&animation.baseline);return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::camera_pose_feature)!=required.features.end()) {
         check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameCameraPoseServicesV1),
             "Gameplay requires services epoch 7 and the 392-byte camera pose extension.");

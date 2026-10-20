@@ -73,6 +73,7 @@ struct RuntimeCamera {
     double vertical_fov=60, near_plane=0.1, far_plane=1000;
     std::optional<SceneLens> viewmodel;
     RuntimeCameraPose world_pose,viewmodel_pose;
+    std::optional<ViewmodelClearanceProfile> viewmodel_clearance;
 };
 // Complete lenses for selected channels; omitted channels retain committed values.
 // Foreground availability is frozen by the authored Camera definition.
@@ -590,6 +591,8 @@ public:
     RuntimeControlResult control(std::uint64_t expected_ui_revision,
         std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    // Precise fixed-orientation physical capsule query; no state mutation.
+    std::optional<CapsuleCastHit> capsule_cast(const CapsuleCastRequest& request) const;
     std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;
     // Immutable bound mesh, live capsule foot start; no state/time mutation.
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;

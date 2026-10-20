@@ -36,7 +36,7 @@ SceneSnapshot PlayerSession::pose_snapshot(const std::string&,const RuntimeCamer
 }
 SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session,const PlayerPosePresentation* poses) {
     auto result=poses ? session.pose_snapshot(options.camera,poses->rendered_world,poses->rendered_viewmodel) : session.snapshot(options.camera);
-    result.camera_pose_receipt=poses!=nullptr;
+    result.camera_pose_receipt=poses!=nullptr || result.viewmodel_clearance.has_value();
     const auto preferences=options.preferences ? options.preferences->snapshot() : nullptr;
     const auto fov=preferences ? preferences->values.vertical_fov : options.vertical_fov;
     const auto scale=preferences ? preferences->values.ui_scale : options.ui_scale;
@@ -47,7 +47,8 @@ SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& 
 }
 RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     RendererSceneResult result{snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
-        snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0,{},{},{}};
+        snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0,{},{},{},{}};
+    result.viewmodel_clearance=snapshot.viewmodel_clearance;
     result.camera_lens=SceneLens{snapshot.vertical_fov,snapshot.near_plane,snapshot.far_plane};
     RendererCameraDrawResult draw;
     if(snapshot.viewmodel) {

@@ -3,7 +3,8 @@
 A new adaptation of the preserved [Switchback scene](../../docs/evidence/fixtures/agent-switchback-fresh), using its licensed character, audio, geometry and controls. The historical source and verifier remain unchanged. This example adds procedural recoil, look sway, distance-driven bob and deterministic shake through the optional [FPS helpers](../../packages/fps/Feedback.cs).
 
 A runtime and matching SDK with **`camera_pose_v1`** are required. The interactive
-launcher enables independent lens/effect interpolation and needs 0.0.207 or newer;
+launcher enables independent lens/effect interpolation. The configured clearance
+profile needs 0.0.208 or newer;
 `--no-pose-interpolation --no-lens-interpolation` disables those presentation options. The retained 0.0.204 runtime supplies the scene's earlier gameplay baseline; it cannot execute the new camera-pose feature. This source does not by itself establish native, rendered, Native AOT or fresh-agent qualification.
 
 The weapon and gameplay aim use separate authored recoil profiles and seeded streams. The welcome/menu button selects Authored, Seeded or Hybrid. Only accepted shots advance the saved shot ordinal. World-camera shake/bob and viewmodel kick/sway never enter the hit ray: it uses the native `BaseWorld` frame plus saved logical aim recoil. Native look, stance and physics continue to own the base frame. Independent world/viewmodel ADS lenses retain the original 12-tick transition.
@@ -35,7 +36,33 @@ python examples/fps-feedback/configure.py --binary $engine `
   --project build/fps-feedback/source/project.json --output build/fps-feedback/authoring
 ```
 
-`prepare.py` copies the original world, settings, cooked assets and notices exactly, then assigns the independent project a new ID/name. `configure.py` is the explicit native step: one revision-guarded UI transaction adds the feedback-mode button. It retains original stdio, RPC values and direct-process closure. Run it through the task's admitted process owner where process-tree evidence is required. It performs no rendering.
+`prepare.py` copies the original world, settings, cooked assets and notices exactly, then assigns the independent project a new ID/name. `configure.py` is the explicit native step: one revision-guarded transaction adds the feedback-mode button and the Camera's weapon-clearance profile. It retains original stdio, RPC values and direct-process closure. Run it through the task's admitted process owner where process-tree evidence is required. It performs no rendering. Clearance configuration requires the new native profile; an older runtime rejects it rather than silently dropping protection.
+
+### Authored foreground clearance
+
+The profile describes this sample's rigid box305, not an arbitrary imported gun
+or animated arms. Its capsule centre is `(.18,-.17,-.4)`, radius `.075` m and
+half-height `.175` m, with local Y rotated onto Z. This encloses all eight corners
+of the authored `(.09,.11,.35)` unit box; `.005` m skin adds separation. Native
+presentation may retract it up to `.65` m along camera-local +Z. The profile
+requires the existing foreground lens and leaves its FOV unchanged.
+
+The native safety pass runs after current physics and effect interpolation,
+composes the actual foreground pose with this capsule, and ignores physical
+ancestors of the selected camera. A clear anchor is swept toward the requested
+pose, then the final placement is checked. Clear, retracted, blocked-anchor and
+blocked-final diagnostics distinguish the outcomes. If no safe placement is
+available, foreground draws are explicitly suppressed. World-camera motion,
+logical transforms, aim rays, shot rules and saved gameplay state are unchanged;
+there is no new game-owned spring or additional saved field. Collision-only
+geometry can obstruct the proxy, while a render mesh without a collider cannot.
+The profile is a conservative authored proxy, not an exact rendered-mesh query.
+
+See [foreground clearance](../../docs/VIEWMODEL_CLEARANCE.md) for the full
+contract and its limits. The earlier 0.0.206/207 checks above did not execute
+this clearance policy. The [0.0.208 check](../../docs/evidence/m2-viewmodel-clearance.json)
+uses the unchanged compiled game with four actual Windows Vulkan captures,
+three complete saved-state byte pairs and all 59 typed fields.
 
 ## Build and check the math
 

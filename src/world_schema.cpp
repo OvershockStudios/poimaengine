@@ -34,6 +34,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
+    const Json clearance=object_schema({
+        {"position",vector({{"type","number"},{"minimum",-10},{"maximum",10}},3)},
+        {"rotation",vector({{"type","number"},{"minimum",-1.00001},{"maximum",1.00001}},4)},
+        {"radius",{{"type","number"},{"minimum",.001},{"maximum",10}}},
+        {"half_height",{{"type","number"},{"minimum",0},{"maximum",10}}},
+        {"max_retraction",{{"type","number"},{"minimum",.001},{"maximum",10}}},
+        {"skin",{{"type","number"},{"minimum",.0001},{"maximum",10}}}},
+        {"position","rotation","radius","half_height","max_retraction","skin"});
+    camera["properties"]["viewmodel_clearance"]=clearance;
+    camera["dependentRequired"]={{"viewmodel_clearance",{"viewmodel"}}};
     auto draw_camera=id;draw_camera["not"]={{"const",std::string(32,'0')}};
     const Json camera_draw=object_schema({{"camera",draw_camera},{"mode",{{"enum",{"viewmodel","hidden"}}}}},{"camera","mode"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -187,7 +197,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 114}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 115}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -221,6 +231,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             "Pagination with after requires the returned revision.",
             "Single cooperative writer per document; manual file changes require reopening.",
             "Camera and optional complete viewmodel lens require 5..150 degree FOV and 0.001 <= near < far <= 10000000; camera world transforms must be unscaled.",
+            "Optional Camera.viewmodel_clearance requires a foreground lens and a conservative local-Y capsule envelope: normalized XYZW rotation, position within10m, radius.001..10m, half_height0..10m, max_retraction.001..10m, and skin.0001..min(radius,max_retraction). Runtime presentation uses current physics after pose interpolation, ignores physical camera ancestors, retracts all foreground draws together and reports unresolved anchor/final checks with foreground suppression. Authored Scene previews do not evaluate physics clearance. Envelope containment of arbitrary meshes/animation is author-owned.",
             "CameraDraw requires one drawable and an existing nonzero Camera reference. Viewmodels require that Camera's viewmodel lens and a strict descendant hierarchy. Hidden references need no lens or descendant relationship.",
             "CameraDraw limits count at most 32 bindings per mode per camera, including invisible meshes. Templates require local camera references. Named Game views separate viewmodels globally and hide bodies only for the target camera while retaining body shadows; external editor Scene views keep ordinary geometry. Viewmodels never cast world shadows and retain receive_shadows.",
             "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
@@ -323,6 +334,22 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"direction",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
         {"distance",{{"type","number"},{"minimum",.001},{"maximum",10000}}},
         {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}}, {"session_id","tick","origin","direction","distance"});
+    methods["runtime.capsule_cast"]=object_schema({{"session_id",id},{"tick",rev},
+        {"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"rotation",clearance.at("properties").at("rotation")},
+        {"radius",clearance.at("properties").at("radius")},{"half_height",clearance.at("properties").at("half_height")},
+        {"direction",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"distance",{{"type","number"},{"minimum",0},{"maximum",10000}}},
+        {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}},
+        {"session_id","tick","position","rotation","radius","half_height","direction","distance"});
+    methods["runtime.capsule_cast"]["description"]="Read-only fixed-orientation local-Y capsule sweep against current physics. half_height0 selects a sphere; distance0 checks initial overlap. Direction is nonzero and normalized for distance; quaternion norm-squared tolerance1e-5. Both mesh sides are queried; mesh shells remain shells. Initial overlaps select deepest contact; sweeps select earliest fraction; exact ties use entity/triangle then contact-point order. Hit includes both contact points, optional normal/triangle, penetration_depth and initial_overlap. Exact session/tick required; no simulation or save mutation. Outside frozen runtime-game-session v1.";
+    result["capsule_queries"]={{"feature","capsule_cast_v1"},{"services_bytes",400},
+        {"gameplay_attempts_per_tick",capsule_query_tick_budget},{"candidate_body_visits",capsule_query_body_budget},
+        {"contact_callbacks",capsule_query_contact_budget},{"collision_tolerance_metres",capsule_query_collision_tolerance},
+        {"budget_exhaustion","Error: clearance unknown; never a miss or clear result."},
+        {"shape","Fixed-orientation local-Y capsule; half_height excludes spherical caps. Zero height is a sphere."},
+        {"coordinates","Input center/endpoint within +/-1000km; contact points within +/-1e12m. Numeric bounds are not precision guarantees."},
+        {"presentation","Authored Camera.viewmodel_clearance constrains its conservative proxy against current physics after interpolation; unresolved anchor/final contacts suppress foreground with an explicit receipt. No mutable presentation state is saved."}};
     methods["runtime.hit_test"]=methods.at("runtime.raycast");
     methods["runtime.hit_test"]["description"]="Read-only closest committed-pose collider/HitRegion query. Enabled region owners suppress only their own physics proxy; ignored owners suppress their regions, ignored attachments suppress that region. Exact ties prefer world geometry then region owner/name/attachment. Hit includes nullable region_entity and region; entity is damage owner for regions. Exact session/tick required, no tick advance.";
     methods["runtime.character_stance"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});

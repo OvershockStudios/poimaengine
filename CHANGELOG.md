@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.208
+
+- Add read-only capsule overlap/sweep queries through the CLI and independently
+  negotiated C# services, with contact details, mesh openings and bounded work.
+- Add optional authored foreground clearance, evaluated after pose interpolation
+  against current physics; retract the configured envelope or explicitly suppress
+  unresolved foreground draws without changing aim or saved gameplay.
+- Configure the FPS Feedback sample with its own conservative weapon envelope.
+
 ## 0.0.207
 
 - Add opt-in interpolation for world-camera and foreground effect offsets while

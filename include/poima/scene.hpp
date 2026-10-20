@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/ui.hpp"
 #include "poima/ui_model.hpp"
+#include "poima/collision_queries.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -128,6 +129,9 @@ struct SceneSnapshot {
     // Session-local accepted scalar-material epoch, separate from authored/tick.
     std::uint64_t material_revision=0;
     std::optional<SceneViewmodel> viewmodel;
+    // Optional native post-pose safety outcome, owned by this presentation.
+    // Committed transforms, physics and saved game state remain untouched.
+    std::optional<ViewmodelClearanceResult> viewmodel_clearance;
     // Frozen named-runtime baseline for composing gameplay zoom with a player's
     // preferred neutral FOV. External camera snapshots retain legacy omission.
     std::optional<double> authored_vertical_fov;

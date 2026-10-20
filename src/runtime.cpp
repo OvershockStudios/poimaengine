@@ -23,6 +23,7 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Collision/CollideShape.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Body/BodyLock.h>
@@ -175,6 +176,7 @@ struct Runtime::Impl {
     std::size_t game_root_motion_reads=0,game_root_motion_writes=0;
     std::size_t game_camera_lens_reads=0,game_camera_lens_writes=0;
     std::size_t game_camera_pose_reads=0,game_camera_pose_writes=0;
+    std::uint32_t game_capsule_query_attempts=0;
     std::uint64_t control_sequence=0;
     PoimaGameUiControlEvent control_event{};
     RuntimeControlIntent control_intent=RuntimeControlIntent::none;
@@ -337,6 +339,7 @@ struct Runtime::Impl {
             require(d.camera->world_pose==RuntimeCameraPose{} && d.camera->viewmodel_pose==RuntimeCameraPose{},"Authored cameras require identity effect defaults; use runtime camera pose commands.");
             validate_camera_lens({d.camera->vertical_fov,d.camera->near_plane,d.camera->far_plane});
             if(d.camera->viewmodel)validate_camera_lens(*d.camera->viewmodel);
+            if(d.camera->viewmodel_clearance){require(d.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*d.camera->viewmodel_clearance);}
         }
 
         auto e=registry.create();owned_entities.push_back(e);
@@ -548,6 +551,8 @@ struct Runtime::Impl {
         }
         return result;
     }
+#include "runtime_capsule_query.inc"
+#include "runtime_viewmodel_clearance.inc"
     void initialize(const RuntimeDefinition& definition) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
@@ -556,6 +561,9 @@ struct Runtime::Impl {
         initialize_navigation(definition.navigation);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
+        for(const auto& recipe:templates)for(const auto& entity:recipe.entities)if(entity.camera && entity.camera->viewmodel_clearance) {
+            require(entity.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*entity.camera->viewmodel_clearance);
+        }
         validate_runtime_hit_regions(definition);
         validate_runtime_camera_draw(definition);
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
@@ -1478,10 +1486,10 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1948,6 +1956,7 @@ RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& r
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     return impl_->physics_raycast(query);
 }
+std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest& request) const {return impl_->capsule_cast(request);}
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay& query) const {
     std::set<std::string> proxies;
     for(const auto& [id,definition]:impl_->topology->definitions) {
@@ -2081,6 +2090,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
         const auto delta=multiply(multiply(result.camera_world,local_matrix(effect.position,effect.rotation,{1,1,1})),inverse_affine(result.camera_world));
         for(auto& object:result.viewmodel->objects)object.world=multiply(delta,object.world);
     }
+    impl_->apply_viewmodel_clearance(result,effect);
     return result;
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }

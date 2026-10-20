@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.207**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.208**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.208 adds read-only [capsule overlap/sweep queries](CAPSULE_QUERIES.md)
+and optional authored [foreground clearance](VIEWMODEL_CLEARANCE.md). The runtime
+constrains the configured envelope against current physics after effect
+interpolation, without changing aim, logical transforms or saved offsets.
+Blocked anchors/final contacts explicitly suppress foreground draws; exhausted
+query budgets report unknown rather than clear. The C# extension negotiates
+independently through an appended 400-byte host services table, retaining older
+views. Linux passes fifteen selected suites and 102 managed wire checks. The
+new capsule-only CoreCLR consumer passes 72 RPCs, eight complete saved archives
+and four byte-identical pairs across all 22 typed fields on both Linux and
+Windows. The unchanged FPS consumer also passes its 237-RPC Linux workflow,
+retaining all 59 fields and five complete byte pairs.
+Windows passes seven selected native executables. A separate AMD Vulkan run
+passes 85 RPCs, four 640×360 MSAA4 captures and three complete byte comparisons
+across all 59 fields. It checks fractional recoil presentation, frontal and
+volume-edge retraction, a centre-ray miss that the capsule catches, and explicit
+blocked-anchor suppression. Host, connector and enclosing Jobs close naturally.
+The first Linux protocol run remains failed: its intentional fault was scheduled
+one callback too late; the corrected fixture preserves the full rollback oracle.
+The proxy must contain the supported weapon poses; arbitrary mesh fitting,
+smooth outward release, weapon IK and representative performance remain open.
+[Results and scope](evidence/m2-viewmodel-clearance.json).
 
 Version 0.0.207 adds opt-in [camera effect presentation](PLAYER_POSE_PRESENTATION.md).
 Local camera/foreground offsets interpolate between consecutive fixed ticks;
@@ -43,8 +66,8 @@ passes native authoring. [Results and exact scope](evidence/m2-fps-feedback.json
 The original complete-state run exposed a sample save-status label that depended
 on a previous process's ticket history; the corrected sample checks the current
 restore epoch, with the full-state comparison unchanged. This adapted sample
-is separate from fresh-agent qualification. Collision-aware weapon retraction
-and broader animation work remain open.
+is separate from fresh-agent qualification. Broader weapon IK, smooth clearance
+release and animation work remain open.
 
 The 0.0.205 [fresh character-workflow audit](evidence/m2-agent-character-owned-workflow.json)
 uses the 0.0.204 native runtime, Python client and managed authoring tools.

@@ -6,8 +6,10 @@ should remain independent of the player's world FOV. Its own depth buffer
 preserves occlusion between those drawables while preventing world depth from
 cutting them out of the image.
 
-This is a presentation system. Weapon collision, ballistic origins, penetration,
-damage queries and physical clearance still use world gameplay and physics.
+This is a presentation system. Ballistic origins, penetration and damage queries
+remain gameplay decisions. An optional authored [clearance capsule](VIEWMODEL_CLEARANCE.md)
+uses current physics to retract or suppress foreground draws without moving the
+weapon's logical entity or changing gameplay aim.
 
 ## Configure a camera and drawables
 
@@ -66,9 +68,11 @@ self-shadowing; its independent depth provides self-occlusion.
 
 Player FOV preferences affect the world lens only. Lens presence and bindings
 are frozen when the runtime starts. [Gameplay camera controls](CAMERA_LENSES.md)
-can change complete world/foreground lenses on fixed ticks; presentation
-interpolation remains separate work. Existing animation playback, layers, IK and C# controls operate
-on the same rigs. There is one runtime and one committed pose.
+can change complete world/foreground lenses on fixed ticks. Optional
+[lens](PLAYER_LENS_PRESENTATION.md) and [pose](PLAYER_POSE_PRESENTATION.md)
+interpolation control presentation separately. Existing animation playback,
+layers, IK and C# controls operate on the same rigs. There is one runtime and
+one committed pose.
 
 Hierarchical template bindings reference local cameras and remap on birth.
 Complete removal and rebirth, rollback and saves retain their configuration.
@@ -97,6 +101,15 @@ grid. `viewmodel.samples` is the selected count when `rendered:true`; when
 Foreground uses a separate cluster grid for its lens, sharing immutable world
 lights and the existing overflow fallback. Frame receipts describe accepted
 queue submission/presentation, not physical display scan-out or input latency.
+
+With an authored `Camera.viewmodel_clearance`, native snapshot preparation tests
+the configured capsule against current Jolt physics after pose interpolation.
+The same camera-local +Z translation retracts all selected foreground draws.
+A blocked retracted anchor or final overlap suppresses those draws explicitly;
+the foreground lens remains configured. `viewmodel_clearance` records the
+query, outcome and affected identities, while `camera_pose.viewmodels` records
+the final draw matrices. The profile must conservatively contain the selected
+geometry; automatic fitting of arbitrary weapons is not provided.
 
 ## Foreground anti-aliasing
 

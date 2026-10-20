@@ -426,6 +426,30 @@ typedef struct PoimaGameCameraPoseServicesV1 {
     int32_t (POIMA_CALL *camera_pose_set)(void*,const PoimaGameCameraPoseCommandV1*,PoimaGameError*);
 } PoimaGameCameraPoseServicesV1;
 
+/* capsule_cast_v1: fixed-orientation capsule (local Y), translated from position.
+ * half_height excludes spherical caps; zero selects a sphere. Zero distance
+ * performs an overlap query. Inputs/results accept larger advertised prefixes;
+ * only the known bytes are read/written and opaque tails remain untouched.
+ * flags: bit0 initial overlap/touch, bit1 normal present, bit2 triangle present.
+ * A miss has present=0 and every payload byte after the header is zero. */
+typedef struct PoimaGameCapsuleCastRequestV1 {
+    uint32_t version,bytes;
+    double position[3],rotation[4],radius,half_height,direction[3],distance;
+    const PoimaEntityId* ignore;
+    uint32_t ignore_count,reserved;
+} PoimaGameCapsuleCastRequestV1;
+typedef struct PoimaGameCapsuleCastResultV1 {
+    uint32_t version,bytes,present,flags;
+    PoimaEntityId entity;
+    double fraction,distance,point_on_query[3],point_on_obstacle[3],normal[3],penetration_depth;
+    uint32_t triangle,reserved;
+    uint64_t reserved_tail;
+} PoimaGameCapsuleCastResultV1;
+typedef struct PoimaGameCapsuleQueryServicesV1 {
+    PoimaGameCameraPoseServicesV1 camera_pose;
+    int32_t (POIMA_CALL *capsule_cast)(void*,const PoimaGameCapsuleCastRequestV1*,PoimaGameCapsuleCastResultV1*,PoimaGameError*);
+} PoimaGameCapsuleQueryServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -437,6 +461,9 @@ static_assert(sizeof(PoimaGameCameraPoseV1)==56 && alignof(PoimaGameCameraPoseV1
 static_assert(sizeof(PoimaGameCameraPoseCommandV1)==144 && offsetof(PoimaGameCameraPoseCommandV1,entity)==8 && offsetof(PoimaGameCameraPoseCommandV1,channels)==24 && offsetof(PoimaGameCameraPoseCommandV1,reserved)==28 && offsetof(PoimaGameCameraPoseCommandV1,world)==32 && offsetof(PoimaGameCameraPoseCommandV1,viewmodel)==88);
 static_assert(sizeof(PoimaGameCameraPoseStateV1)==272 && offsetof(PoimaGameCameraPoseStateV1,present)==8 && offsetof(PoimaGameCameraPoseStateV1,flags)==12 && offsetof(PoimaGameCameraPoseStateV1,entity)==16 && offsetof(PoimaGameCameraPoseStateV1,world)==32 && offsetof(PoimaGameCameraPoseStateV1,viewmodel)==88 && offsetof(PoimaGameCameraPoseStateV1,base_world)==144);
 static_assert(sizeof(PoimaGameCameraPoseServicesV1)==392 && offsetof(PoimaGameCameraPoseServicesV1,animation_rate)==0 && offsetof(PoimaGameCameraPoseServicesV1,camera_pose_get)==376 && offsetof(PoimaGameCameraPoseServicesV1,camera_pose_set)==384);
+static_assert(sizeof(PoimaGameCapsuleCastRequestV1)==128 && alignof(PoimaGameCapsuleCastRequestV1)==8 && offsetof(PoimaGameCapsuleCastRequestV1,position)==8 && offsetof(PoimaGameCapsuleCastRequestV1,rotation)==32 && offsetof(PoimaGameCapsuleCastRequestV1,radius)==64 && offsetof(PoimaGameCapsuleCastRequestV1,half_height)==72 && offsetof(PoimaGameCapsuleCastRequestV1,direction)==80 && offsetof(PoimaGameCapsuleCastRequestV1,distance)==104 && offsetof(PoimaGameCapsuleCastRequestV1,ignore)==112 && offsetof(PoimaGameCapsuleCastRequestV1,ignore_count)==120 && offsetof(PoimaGameCapsuleCastRequestV1,reserved)==124);
+static_assert(sizeof(PoimaGameCapsuleCastResultV1)==144 && alignof(PoimaGameCapsuleCastResultV1)==8 && offsetof(PoimaGameCapsuleCastResultV1,present)==8 && offsetof(PoimaGameCapsuleCastResultV1,flags)==12 && offsetof(PoimaGameCapsuleCastResultV1,entity)==16 && offsetof(PoimaGameCapsuleCastResultV1,fraction)==32 && offsetof(PoimaGameCapsuleCastResultV1,distance)==40 && offsetof(PoimaGameCapsuleCastResultV1,point_on_query)==48 && offsetof(PoimaGameCapsuleCastResultV1,point_on_obstacle)==72 && offsetof(PoimaGameCapsuleCastResultV1,normal)==96 && offsetof(PoimaGameCapsuleCastResultV1,penetration_depth)==120 && offsetof(PoimaGameCapsuleCastResultV1,triangle)==128 && offsetof(PoimaGameCapsuleCastResultV1,reserved)==132 && offsetof(PoimaGameCapsuleCastResultV1,reserved_tail)==136);
+static_assert(sizeof(PoimaGameCapsuleQueryServicesV1)==400 && offsetof(PoimaGameCapsuleQueryServicesV1,camera_pose)==0 && offsetof(PoimaGameCapsuleQueryServicesV1,capsule_cast)==392);
 static_assert(sizeof(PoimaGameAnimationRateCommandV1)==40 && alignof(PoimaGameAnimationRateCommandV1)==8);
 static_assert(offsetof(PoimaGameAnimationRateCommandV1,version)==0 && offsetof(PoimaGameAnimationRateCommandV1,bytes)==4 && offsetof(PoimaGameAnimationRateCommandV1,entity)==8 && offsetof(PoimaGameAnimationRateCommandV1,layer)==24 && offsetof(PoimaGameAnimationRateCommandV1,reserved)==28 && offsetof(PoimaGameAnimationRateCommandV1,speed)==32);
 static_assert(sizeof(PoimaGameAnimationRateServicesV1)==376 && offsetof(PoimaGameAnimationRateServicesV1,grounding)==0 && offsetof(PoimaGameAnimationRateServicesV1,animation_rate_set)==368);
