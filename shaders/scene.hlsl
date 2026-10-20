@@ -8,6 +8,7 @@ struct ObjectData {
     float4 normal_row2;
     float4 base_metallic; // negative metallic selects the legacy preview material
     float4 emissive_roughness;
+    float4 alpha; // x opacity, y cutoff, z mask mode; w reserved
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
     uint4 history; // x: motion correspondence; y: receive-shadows disabled; zw: reserved
 };
@@ -25,9 +26,12 @@ SamplerState mr_sampler : register(s1);
 SamplerState emissive_sampler : register(s2);
 SamplerState occlusion_sampler : register(s3);
 SamplerState normal_sampler : register(s4);
-struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; float2 uv : TEXCOORD; float4 tangent : TANGENT;
+// NVRHI's Vulkan input layout assigns locations by the declared CPU attribute
+// order, not by reflected semantics. Keep UV at2 even in the shadow shader,
+// where unused normal/tangent inputs may be eliminated by the compiler.
+struct VertexInput { [[vk::location(0)]] float3 position : POSITION; [[vk::location(1)]] float3 normal : NORMAL; [[vk::location(2)]] float2 uv : TEXCOORD; [[vk::location(3)]] float4 tangent : TANGENT;
 #if POIMA_SCENE_PRODUCTS
-    float3 previous_position : PREVIOUS_POSITION;
+    [[vk::location(4)]] float3 previous_position : PREVIOUS_POSITION;
 #endif
 };
 struct VertexOutput {
@@ -60,12 +64,20 @@ VertexOutput vertex_main(VertexInput input) {
     output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
     return output;
 }
-float4 shadow_vertex_main(VertexInput input) : SV_Position {
+struct ShadowVertexOutput {float4 position : SV_Position;float2 uv : TEXCOORD0;};
+ShadowVertexOutput shadow_vertex_main(VertexInput input) {
     const ObjectData draw=objects[draw_indices.object_index];
     const float4 p=float4(input.position,1);
     const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
-    return mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));
+    ShadowVertexOutput output;output.position=mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));output.uv=input.uv;return output;
 }
+void test_material_alpha(float2 uv) {
+    const ObjectData draw=objects[draw_indices.object_index];
+    // Alpha stays linear even when base RGB uses the sRGB texture format.
+    // Equality survives; opaque materials deliberately ignore image/factor alpha.
+    if(draw.alpha.z>.5)clip(base_map.Sample(base_sampler,uv).a*draw.alpha.x-draw.alpha.y);
+}
+void shadow_pixel_main(ShadowVertexOutput input) {test_material_alpha(input.uv);}
 SceneSurface evaluate_material(VertexOutput input,bool front) {
     const ObjectData draw=objects[draw_indices.object_index];
     float3 n=normalize(input.normal);
@@ -119,6 +131,9 @@ ScenePixel pixel_main(VertexOutput input, bool front : SV_IsFrontFace) {
 float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
 #endif
     const SceneSurface material=evaluate_material(input,front);
+    // Evaluate geometric derivatives before discard, then reject before any
+    // color, depth, normal, correspondence or G-buffer value is written.
+    test_material_alpha(input.uv);
     const float3 n=material.normal;
 #if POIMA_SCENE_PRODUCTS
     float2 motion=0;float motion_valid=0;

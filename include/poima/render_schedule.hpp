@@ -230,6 +230,8 @@ struct Schedule {
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
+                for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
             if(pass.id==PassId::opaque)world_opaque=true;
             if(pass.id==PassId::resolve)world_resolved=true;
             if(settings.deferred && pass.id==PassId::scene_clear)
@@ -404,7 +406,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
         add(cluster,f.counts,Use::copy_source);add(cluster,f.cluster_readback,Use::copy_destination,true);
     }
     auto& shadows=pass(PassId::shadows);
-    if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);add(shadows,f.shadow,Use::depth);}
+    if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);for(const auto& draw:f.shadow_draws)for(auto texture:draw.textures)add(shadows,texture,Use::sampled);add(shadows,f.shadow,Use::depth);}
     auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products) {add(clear,f.normal,Use::clear_color,true);add(clear,f.motion,Use::clear_color,true);add(clear,f.motion_valid,Use::clear_color,true);}
     if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}

@@ -44,12 +44,39 @@ std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader
     }
     require(previous_w==1 && previous_h==1,"Texture mip chain is incomplete.");return decoded;
 }
-PbrMaterial parse_material(const Json& value) {
-    PbrMaterial m;m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
-    m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");
+bool alpha_material(const PbrMaterial& m) {
+    return m.alpha_mode!=MaterialAlphaMode::opaque || m.opacity!=1 || m.alpha_cutoff!=.5f;
+}
+PbrMaterial parse_material(const Json& value,bool alpha) {
+    require(value.is_object() && value.size()==(alpha ? 8u : 5u),"Invalid model material fields.");
+    for(const auto& [key,unused]:value.items()) {
+        (void)unused;
+        require(key=="base_color" || key=="emissive" || key=="metallic" || key=="roughness" || key=="double_sided" ||
+            (alpha && (key=="alpha_mode" || key=="opacity" || key=="alpha_cutoff")),"Unknown model material field.");
+    }
+    const auto number=[&](const Json& v,double maximum) {
+        require(v.is_number(),"Model material factors must be numeric.");const double d=v.get<double>();
+        require(std::isfinite(d) && d>=0 && d<=maximum,"Model material factor is out of bounds.");return static_cast<float>(d);
+    };
+    PbrMaterial m;
+    for(const auto* key:{"base_color","emissive"}) {
+        const auto& rgb=value.at(key);require(rgb.is_array() && rgb.size()==3,"Model material colors need three factors.");
+        auto& target=std::string_view(key)=="base_color" ? m.base_color : m.emissive;
+        for(std::size_t c=0;c<3;++c)target[c]=number(rgb[c],1);
+    }
+    m.metallic=number(value.at("metallic"),1);m.roughness=number(value.at("roughness"),1);
+    require(value.at("double_sided").is_boolean(),"Model double_sided must be boolean.");m.double_sided=value.at("double_sided");
+    if(alpha) {
+        const auto& mode=value.at("alpha_mode");require(mode.is_string(),"Model alpha_mode must be text.");
+        if(mode=="opaque")m.alpha_mode=MaterialAlphaMode::opaque;
+        else if(mode=="mask")m.alpha_mode=MaterialAlphaMode::mask;
+        else require(false,"Unsupported model alpha mode.");
+        m.opacity=number(value.at("opacity"),1);m.alpha_cutoff=number(value.at("alpha_cutoff"),max_material_alpha_cutoff);
+    }
     for(float x:m.base_color)require(std::isfinite(x) && x>=0 && x<=1,"Invalid model base color.");
     for(float x:m.emissive)require(std::isfinite(x) && x>=0 && x<=1,"Invalid model emissive factor.");
     require(std::isfinite(m.metallic) && m.metallic>=0 && m.metallic<=1 && std::isfinite(m.roughness) && m.roughness>=0 && m.roughness<=1,"Invalid model metallic/roughness.");
+    validate_pbr_material(m);
     return m;
 }
 }
@@ -69,8 +96,10 @@ std::shared_ptr<const TextureImage> decode_image(const std::string& bytes) {
 std::string encode_model(const ModelAsset& model) { return encode_model_with_importer(model,{}); }
 std::string encode_model_with_importer(const ModelAsset& model,const std::string& importer) {
     validate_animation_data(model);const bool animated=!model.skins.empty() || !model.animations.empty() || std::any_of(model.primitives.begin(),model.primitives.end(),[](const auto& mesh) { return !mesh->influences.empty(); });
+    bool alpha=false;for(const auto& mesh:model.primitives) { validate_pbr_material(mesh->material);alpha=alpha || alpha_material(mesh->material); }
     Json metadata={{"version",3},{"importer","cgltf-1.15/poima-static-3"},{"primitives",Json::array()},{"nodes",Json::array()},{"roots",model.roots},{"diagnostics",model.diagnostics}};
     if(animated) { metadata["version"]=4;metadata["importer"]="cgltf-1.15/poima-animation-reference-1"; }
+    if(alpha) { metadata["version"]=5;metadata["importer"]="cgltf-1.15/poima-alpha-1";metadata["animated"]=animated; }
     require(importer.size()<=256 && importer.find('\0')==std::string::npos,"Invalid model importer identity.");
     if(!importer.empty())metadata["importer"]=importer;
     std::string binary;
@@ -79,6 +108,10 @@ std::string encode_model_with_importer(const ModelAsset& model,const std::string
         metadata["primitives"].push_back({{"vertices",p->vertices.size()},{"indices",p->indices.size()},
             {"material",{{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}}}});
         auto& description=metadata["primitives"].back();description["textures"]=Json::array();description["occlusion_strength"]=p->occlusion_strength;description["normal_scale"]=p->normal_scale;description["has_uv"]=p->has_uv;
+        if(alpha) {
+            auto& material=description["material"];material["alpha_mode"]=material_alpha_mode_name(m.alpha_mode);
+            material["opacity"]=m.opacity;material["alpha_cutoff"]=m.alpha_cutoff;
+        }
         if(animated)description["skinned"]=!p->influences.empty();
         for(const auto& map:p->textures) {
             if(!map.image) { description["textures"].push_back(nullptr);continue; }
@@ -106,21 +139,32 @@ std::string encode_model_with_importer(const ModelAsset& model,const std::string
     for(const auto& image:model.images)metadata["images"].push_back(image_metadata(*image,binary));
     for(const auto& n:model.nodes) { metadata["nodes"].push_back({{"name",n.name},{"parent",n.parent},{"position",n.position},{"rotation",n.rotation},{"scale",n.scale},{"primitives",n.primitives}});if(animated)metadata["nodes"].back()["skin"]=n.skin; }
     const auto header=metadata.dump();require(header.size()<=8*1024*1024 && binary.size()<=64*1024*1024-16-header.size(),"Model package exceeds size limits.");
-    std::string result=animated ? "POIMAM04" : "POIMAM03";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));
+    std::string result=alpha ? "POIMAM05" : animated ? "POIMAM04" : "POIMAM03";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));
     result+=header;result+=binary;return result;
 }
 std::shared_ptr<const ModelAsset> decode_model(const std::string& bytes) {
-    require(bytes.size()>=16 && bytes.size()<=64*1024*1024 && (bytes.substr(0,8)=="POIMAM01" || bytes.substr(0,8)=="POIMAM02" || bytes.substr(0,8)=="POIMAM03" || bytes.substr(0,8)=="POIMAM04"),"Invalid model package header/size.");
+    require(bytes.size()>=16 && bytes.size()<=64*1024*1024 && (bytes.substr(0,8)=="POIMAM01" || bytes.substr(0,8)=="POIMAM02" || bytes.substr(0,8)=="POIMAM03" || bytes.substr(0,8)=="POIMAM04" || bytes.substr(0,8)=="POIMAM05"),"Invalid model package header/size.");
     Reader reader{bytes,8};const auto json_size=reader.integer(),binary_size=reader.integer();
     require(json_size<=8*1024*1024 && std::size_t(json_size)+binary_size==bytes.size()-16,"Invalid model package lengths.");
-    const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+json_size,[](int depth,Json::parse_event_t,Json&) { require(depth<=32,"Model metadata is too deeply nested.");return true; });
-    const bool animated=bytes.substr(0,8)=="POIMAM04";
-    const bool tangent_format=animated || bytes.substr(0,8)=="POIMAM03";
+    std::vector<std::set<std::string>> object_keys;
+    const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+json_size,[&](int depth,Json::parse_event_t event,Json& value) {
+        require(depth<=32,"Model metadata is too deeply nested.");
+        if(event==Json::parse_event_t::object_start)object_keys.emplace_back();
+        else if(event==Json::parse_event_t::key)require(!object_keys.empty() && object_keys.back().insert(value.get<std::string>()).second,"Duplicate model metadata field.");
+        else if(event==Json::parse_event_t::object_end)object_keys.pop_back();
+        return true;
+    });
+    const bool alpha=bytes.substr(0,8)=="POIMAM05";
+    if(alpha)require(metadata.contains("animated") && metadata.at("animated").is_boolean(),"Model v5 requires an explicit animated boolean.");
+    else require(!metadata.contains("animated"),"Legacy model cannot carry a v5 animated flag.");
+    const bool animated=alpha ? metadata.at("animated").get<bool>() : bytes.substr(0,8)=="POIMAM04";
+    if(alpha && !animated)require(!metadata.contains("skins") && !metadata.contains("animations") && !metadata.contains("animation_bytes"),"Static model v5 cannot carry animation sections.");
+    const bool tangent_format=alpha || animated || bytes.substr(0,8)=="POIMAM03";
     const bool textured=bytes.substr(0,8)!="POIMAM01";
-    require(metadata.at("version")== (animated ? 4 : tangent_format ? 3 : textured ? 2 : 1),"Unsupported model package version.");
+    require(metadata.at("version").is_number_unsigned() && metadata.at("version")== (alpha ? 5 : animated ? 4 : tangent_format ? 3 : textured ? 2 : 1),"Unsupported model package version.");
     const auto& primitives=metadata.at("primitives");const auto& nodes=metadata.at("nodes");
     require(primitives.is_array() && !primitives.empty() && primitives.size()<=10000 && nodes.is_array() && !nodes.empty() && nodes.size()<=10000,"Invalid model object counts.");
-    reader.offset=16+json_size;auto result=std::make_shared<ModelAsset>();std::size_t vertices=0,indices=0;result->package_version=animated ? 4u : tangent_format ? 3u : textured ? 2u : 1u;
+    reader.offset=16+json_size;auto result=std::make_shared<ModelAsset>();std::size_t vertices=0,indices=0;result->package_version=alpha ? 5u : animated ? 4u : tangent_format ? 3u : textured ? 2u : 1u;
     std::size_t geometry_end=bytes.size(),animation_end=bytes.size();
     if(textured) {
         geometry_end=reader.offset+count(metadata.at("geometry_bytes"),binary_size);
@@ -136,7 +180,7 @@ std::shared_ptr<const ModelAsset> decode_model(const std::string& bytes) {
         const auto nv=count(p.at("vertices"),1000000-vertices),ni=count(p.at("indices"),3000000-indices);vertices+=nv;indices+=ni;
         const bool skinned=animated && p.at("skinned").get<bool>();
         require(nv && ni && ni%3==0 && reader.offset<=geometry_end && nv*(skinned ? 80u : tangent_format ? 48u : 32u)+ni*4<=geometry_end-reader.offset,"Invalid model geometry lengths.");
-        auto mesh=std::make_shared<MeshAsset>();mesh->material=parse_material(p.at("material"));mesh->vertices.resize(nv);mesh->indices.resize(ni);
+        auto mesh=std::make_shared<MeshAsset>();mesh->material=parse_material(p.at("material"),alpha);mesh->vertices.resize(nv);mesh->indices.resize(ni);
         if(tangent_format) {
             mesh->has_uv=p.at("has_uv");mesh->normal_scale=p.at("normal_scale");require(std::isfinite(mesh->normal_scale) && mesh->normal_scale>=0 && mesh->normal_scale<=16,"Invalid normal scale.");
         }
@@ -214,6 +258,10 @@ std::shared_ptr<const ModelAsset> decode_model(const std::string& bytes) {
         require(reader.offset==animation_end,"Trailing animation data.");
     }
     validate_animation_data(*result);
+    if(alpha) {
+        require(std::any_of(result->primitives.begin(),result->primitives.end(),[](const auto& p){return alpha_material(p->material);}),"Model v5 requires retained nondefault alpha semantics.");
+        require(animated==(!result->skins.empty() || !result->animations.empty() || std::any_of(result->primitives.begin(),result->primitives.end(),[](const auto& p){return !p->influences.empty();})),"Model v5 animated flag does not match its content.");
+    }
     const auto& diagnostics=metadata.at("diagnostics");require(diagnostics.is_array() && diagnostics.size()<=10001,"Invalid model diagnostics.");
     for(const auto& value:diagnostics) { auto text=value.get<std::string>();require(text.size()<=1024,"Model diagnostic too long.");result->diagnostics.push_back(std::move(text)); }
     return result;

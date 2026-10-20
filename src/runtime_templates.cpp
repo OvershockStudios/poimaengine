@@ -15,9 +15,7 @@ bool identity(const std::string& id) {
 }
 bool bounded(double value,double minimum,double maximum) { return std::isfinite(value) && value>=minimum && value<=maximum; }
 void material(const PbrMaterial& value) {
-    for(auto channel:value.base_color)check(bounded(channel,0,1),"Template material base color is invalid.");
-    for(auto channel:value.emissive)check(bounded(channel,0,1),"Template material emissive color is invalid.");
-    check(bounded(value.metallic,0,1) && bounded(value.roughness,0,1),"Template material metallic/roughness is invalid.");
+    validate_pbr_material(value);
 }
 void image(const TextureImage& value) {
     check(!value.mips.empty() && value.mips.size()<=13,"Template texture mip count is invalid.");

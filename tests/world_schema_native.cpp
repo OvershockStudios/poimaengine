@@ -99,6 +99,16 @@ int main(int argc,char** argv) {
                     const auto result=invoke(owner,"world.describe",params,scope);cases.push_back({{"params",params},{"reply",result}});++total;return result;
                 };
                 const auto full=capture(Json::object()).at("result");
+                need(full.at("schema_revision").get<unsigned>()>=116,"Expected alpha-masked material discovery.");
+                const auto& pbr=full.at("components").at("PbrMaterial");
+                const auto& pbr_properties=pbr.at("properties");
+                need(pbr.at("additionalProperties")==false && pbr.at("required")==Json::array({"base_color","emissive","metallic","roughness","double_sided"}) &&
+                    pbr_properties.at("alpha_mode").at("enum")==Json::array({"opaque","mask"}) && pbr_properties.at("alpha_mode").at("default")=="opaque" &&
+                    pbr_properties.at("opacity").at("default")==1 && pbr_properties.at("opacity").at("maximum")==1 &&
+                    pbr_properties.at("alpha_cutoff").at("default")==.5 && pbr_properties.at("alpha_cutoff").at("minimum")==0 && pbr_properties.at("alpha_cutoff").at("maximum")==1e6,
+                    "Material alpha defaults/domains must remain explicit and optional.");
+                need(full.at("live_materials").at("fields")==Json::array({"base_color","emissive","metallic","roughness","alpha_mode","opacity","alpha_cutoff"}),
+                    "Live material discovery must include the independent alpha fields.");
                 need(full.at("schema_revision").get<unsigned>()>=115,"Expected capsule query/clearance discovery.");
                 const auto& capsule=full.at("methods").at("runtime.capsule_cast");
                 need(capsule.at("additionalProperties")==false && capsule.at("required")==Json::array({"session_id","tick","position","rotation","radius","half_height","direction","distance"}) &&

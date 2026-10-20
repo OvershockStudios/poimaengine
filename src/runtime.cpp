@@ -335,6 +335,10 @@ struct Runtime::Impl {
 #include "runtime_navigation.inc"
     void create_entity(const RuntimeEntityDefinition& d,Topology& candidate) {
         require(!candidate.identities.contains(d.id),"Duplicate runtime entity ID.");
+        if(d.mesh) {
+            if(d.mesh->material)validate_material_alpha(*d.mesh->material);
+            if(d.mesh->mesh)validate_material_alpha(d.mesh->mesh->material);
+        }
         if(d.camera) {
             require(d.camera->world_pose==RuntimeCameraPose{} && d.camera->viewmodel_pose==RuntimeCameraPose{},"Authored cameras require identity effect defaults; use runtime camera pose commands.");
             validate_camera_lens({d.camera->vertical_fov,d.camera->near_plane,d.camera->far_plane});
@@ -1749,10 +1753,7 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         auto* mesh=impl_->registry.try_get<RuntimeMesh>(found->second);
         require(mesh && mesh->material.has_value(),"Material adoption needs an existing PBR drawable.");
         require(edit.material.double_sided==mesh->material->double_sided,"Material adoption cannot change double_sided.");
-        const auto factor=[](float value) {return std::isfinite(value) && value>=0 && value<=1;};
-        for(const auto value:edit.material.base_color)require(factor(value),"Invalid material base color.");
-        for(const auto value:edit.material.emissive)require(factor(value),"Invalid material emissive color.");
-        require(factor(edit.material.metallic) && factor(edit.material.roughness),"Invalid material metallic/roughness.");
+        validate_pbr_material(edit.material);
         auto& definition=candidate->definitions.at(edit.id);
         require(definition.mesh && definition.mesh->material.has_value(),"Material definition is not a PBR drawable.");
         definition.mesh->material=edit.material;data->edits.emplace_back(found->second,edit.material);

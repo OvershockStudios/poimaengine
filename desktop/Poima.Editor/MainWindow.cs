@@ -912,6 +912,19 @@ public sealed partial class MainWindow : Window
                 case "PbrMaterial":
                     ColorField("Base color", "base_color"); Scalar("Metallic", "metallic", 0, 1); Scalar("Roughness", "roughness", 0, 1);
                     ColorField("Emission", "emissive"); Toggle("Double sided", "double_sided");
+                    var alphaMode = new ComboBox { ItemsSource = new[] { "Opaque", "Alpha cutout" }, SelectedIndex = value["alpha_mode"]?.GetValue<string>() == "mask" ? 1 : 0, HorizontalAlignment = HorizontalAlignment.Stretch };
+                    AutomationProperties.SetName(alphaMode, "PbrMaterial Alpha mode");
+                    ToolTip.SetTip(alphaMode, "Alpha cutout uses base-texture alpha and opacity. Collision geometry is authored separately.");
+                    alphaMode.SelectionChanged += (_, _) =>
+                    {
+                        if (!CurrentDraft() || alphaMode.SelectedIndex is < 0 or > 1) return;
+                        var selected = alphaMode.SelectedIndex == 1 ? "mask" : "opaque";
+                        if (selected == (value["alpha_mode"]?.GetValue<string>() ?? "opaque")) return;
+                        value["alpha_mode"] = selected; Commit();
+                    };
+                    panel.Children.Add(Row("Alpha mode", alphaMode));
+                    panel.Children.Add(Row("Opacity", Numeric("Opacity", "opacity", value["opacity"] is null ? 1 : Number(value, "opacity"), 0, 1, n => value["opacity"] = n)));
+                    panel.Children.Add(Row("Alpha cutoff", Numeric("Alpha cutoff", "alpha_cutoff", value["alpha_cutoff"] is null ? .5 : Number(value, "alpha_cutoff"), 0, 1e6, n => value["alpha_cutoff"] = n)));
                     break;
                 case "LightingEnvironment":
                     ColorField("Ambient", "ambient", maximum: 1e6);

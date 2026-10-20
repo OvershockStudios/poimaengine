@@ -696,13 +696,16 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="PbrMaterial") {
-        fields(value,{"base_color","emissive","metallic","roughness","double_sided"},{"base_color","emissive","metallic","roughness","double_sided"});
+        fields(value,{"base_color","emissive","metallic","roughness","double_sided","alpha_mode","opacity","alpha_cutoff"},{"base_color","emissive","metallic","roughness","double_sided"});
         for(const auto* key:{"base_color","emissive"}) {
             require(value.at(key).is_array() && value.at(key).size()==3,"Material needs three color components.");
             for(const auto& x:value.at(key))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1,"Material colors must be in [0,1].");
         }
         for(const auto* key:{"metallic","roughness"})require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()) && value.at(key)>=0 && value.at(key)<=1,"Material factors must be in [0,1].");
-        require(value.at("double_sided").is_boolean(),"double_sided must be boolean.");return;
+        require(value.at("double_sided").is_boolean(),"double_sided must be boolean.");
+        if(value.contains("alpha_mode"))require(value.at("alpha_mode").is_string() && (value.at("alpha_mode")=="opaque" || value.at("alpha_mode")=="mask"),"alpha_mode must be opaque or mask.");
+        if(value.contains("opacity"))require(value.at("opacity").is_number() && std::isfinite(value.at("opacity").get<double>()) && value.at("opacity")>=0 && value.at("opacity")<=1,"opacity must be in [0,1].");
+        if(value.contains("alpha_cutoff"))require(value.at("alpha_cutoff").is_number() && std::isfinite(value.at("alpha_cutoff").get<double>()) && value.at("alpha_cutoff")>=0 && value.at("alpha_cutoff")<=max_material_alpha_cutoff,"alpha_cutoff must be in [0,1000000].");return;
     }
     if (type == "MeshCollider") {
         fields(value,{"asset","primitive","friction","restitution"},{"asset","primitive","friction","restitution"});
@@ -1838,8 +1841,20 @@ public:
             finalize_lighting(result);return result;
         } catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     }
+    static PbrMaterial material_from_json(const Json& value) {
+        validate_component("PbrMaterial",value);PbrMaterial m;
+        m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
+        m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");
+        m.alpha_mode=value.value("alpha_mode",std::string("opaque"))=="mask" ? MaterialAlphaMode::mask : MaterialAlphaMode::opaque;
+        m.opacity=value.value("opacity",1.f);m.alpha_cutoff=value.value("alpha_cutoff",.5f);validate_pbr_material(m);return m;
+    }
     static Json material_json(const PbrMaterial& m) {
-        return {{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
+        validate_pbr_material(m);
+        Json result={{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
+        if(m.alpha_mode!=MaterialAlphaMode::opaque || m.opacity!=1 || m.alpha_cutoff!=.5f) {
+            result["alpha_mode"]=material_alpha_mode_name(m.alpha_mode);result["opacity"]=m.opacity;result["alpha_cutoff"]=m.alpha_cutoff;
+        }
+        return result;
     }
     // Resolve overrides against the original immutable mesh, including omitted
     // inherited maps, explicit null clears and inherited strengths.
@@ -1887,9 +1902,7 @@ public:
         } else return std::nullopt;
         if(geometry_only)return mesh;
         if(components.contains("PbrMaterial")) {
-            const auto& value=components.at("PbrMaterial");PbrMaterial m;
-            m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
-            m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");mesh.material=m;
+            mesh.material=material_from_json(components.at("PbrMaterial"));
         }
         if(components.contains("PbrTextures")) {
             mesh.textures=resolve_textures(components,mesh.mesh,cache);

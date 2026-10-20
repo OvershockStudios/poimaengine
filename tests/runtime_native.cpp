@@ -174,6 +174,37 @@ void material_adoption() {
         rollback.snapshot().revision==2 && material(rollback.snapshot(),"body-0").material->base_color==changed.base_color,
         "Failed Tick restored pre-adoption material/topology.");
 }
+void material_alpha_construction() {
+    RuntimeDefinition definition;definition.world_id="alpha-construction";
+    RuntimeEntityDefinition entity;entity.id="alpha";entity.mesh=RuntimeMesh{};definition.entities.push_back(entity);
+    auto mesh=std::make_shared<MeshAsset>();
+    for(const std::array<float,3> point:std::array<std::array<float,3>,3>{{{0,0,0},{1,0,0},{0,1,0}}}) {
+        MeshVertex vertex;vertex.position=point;vertex.normal={0,0,1};mesh->vertices.push_back(vertex);
+    }
+    mesh->indices={0,1,2};
+    PbrMaterial hdr;hdr.emissive={.125f,.5f,2.f};
+    definition.entities[0].mesh->material=hdr;Runtime valid(definition);
+    require(valid.inspect().entities==1,"Direct native HDR material was narrowed by alpha validation.");
+    std::vector<PbrMaterial> invalid;
+    auto bad=hdr;bad.alpha_mode=static_cast<MaterialAlphaMode>(99);invalid.push_back(bad);
+    for(float value:{-.01f,1.01f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        bad=hdr;bad.opacity=value;invalid.push_back(bad);
+    }
+    for(float value:{-1.f,1000001.f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        bad=hdr;bad.alpha_cutoff=value;invalid.push_back(bad);
+    }
+    for(const auto& material:invalid)for(bool inherited:{false,true}) {
+        auto candidate=definition;
+        if(inherited) {
+            auto owned=std::make_shared<MeshAsset>(*mesh);owned->material=material;
+            candidate.entities[0].mesh->mesh=owned;candidate.entities[0].mesh->material.reset();
+        }else candidate.entities[0].mesh->material=material;
+        bool rejected=false;
+        try {Runtime runtime(candidate);}catch(const std::exception&){rejected=true;}
+        require(rejected,"Direct runtime accepted invalid explicit or inherited alpha material.");
+    }
+    std::cout<<"Native alpha construction rejects 18 malformed explicit/inherited materials and retains HDR factors.\n";
+}
 void texture_adoption() {
     const auto id=[](const std::string& name) {
         const std::vector<std::string> names={"box","camera","floor","hidden","legacy","player","wall","missing","rig","joint","skin"};
@@ -725,7 +756,7 @@ void camera_state() {
 }
 int main() {
     try {
-        material_adoption();texture_adoption();renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
+        material_adoption();material_alpha_construction();texture_adoption();renderer_shadow_controls();lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

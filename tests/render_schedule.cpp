@@ -519,5 +519,16 @@ void ambient_occlusion_contracts(){
     }
 }
 
+void masked_shadow_contracts(){
+    auto settings=rich();Fixture fixture(settings);const auto material=fixture.f.camera_draws.front().textures.front();
+    auto opaque=fixture.plan();opaque.validate();++accepted;
+    check(std::none_of(pass(opaque,PassId::shadows).accesses.begin(),pass(opaque,PassId::shadows).accesses.end(),[&](const auto& a){return a.resource==material && a.use==Use::sampled;}),"Opaque depth-only shadow acquired a material read");
+    fixture.f.shadow_draws.front().textures={material};auto masked=fixture.plan();masked.validate();++accepted;
+    check(std::any_of(pass(masked,PassId::shadows).accesses.begin(),pass(masked,PassId::shadows).accesses.end(),[&](const auto& a){return a.resource==material && a.use==Use::sampled;}),"Masked shadow alpha texture read missing");
+    auto bad=masked;erase_access(bad,PassId::shadows,material,Use::sampled);rejects("masked shadow input omitted",[&]{bad.validate();});
+    bad=masked;bad.frame.resources[material].supported&=~use_bit(Use::sampled);rejects("masked shadow alpha image not sampleable",[&]{bad.validate();});
+    bad=masked;bad.frame.resources[material].initialized=false;rejects("masked shadow samples uninitialized alpha",[&]{bad.validate();});
+    bad=masked;bad.frame.shadow_draws.front().textures={none};rejects("masked shadow alpha binding absent",[&]{bad.validate();});
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -112,7 +112,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
     auto skin_fields=static_mesh.at("properties");skin_fields["rig"]=id;skin_fields["node"]=model_node;
     const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
-    const Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}}}, {"base_color","emissive","metallic","roughness","double_sided"});
+    Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}},
+        {"alpha_mode",{{"enum",{"opaque","mask"}},{"default","opaque"}}},
+        {"opacity",{{"type","number"},{"minimum",0},{"maximum",1},{"default",1}}},
+        {"alpha_cutoff",{{"type","number"},{"minimum",0},{"maximum",1e6},{"default",.5}}}}, {"base_color","emissive","metallic","roughness","double_sided"});
+    pbr["description"]="Optional alpha_mode defaults opaque, which ignores alpha. Mask discards sampled base-color alpha times opacity strictly below alpha_cutoff; equality survives. Texture alpha is linear. Defaults preserve legacy materials. Coverage affects raster color/depth/products/shadows, not triangle physics or ray queries; blended transparency is unsupported.";
     const Json sampler_wrap={{"enum",{10497,33071,33648}}};
     const Json map_ref=object_schema({{"asset",asset_id},{"image",{{"type","integer"},{"minimum",0},{"maximum",255}}},
         {"wrap_s",sampler_wrap},{"wrap_t",sampler_wrap},{"min_filter",{{"enum",{9728,9729,9984,9985,9986,9987}}}},{"mag_filter",{{"enum",{9728,9729}}}}}, {"asset"});
@@ -197,7 +201,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 115}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 116}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -780,7 +784,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.material.apply"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_structure_revision",rev},
         {"expected_material_revision",rev},{"revision",rev},{"expected_authored_revision",rev},{"expected_content_sha256",asset_id},{"ids",material_ids}},
         {"session_id","request_id","expected_tick","expected_structure_revision","expected_material_revision","revision","expected_authored_revision","expected_content_sha256","ids"});
-    methods["runtime.material.apply"]["description"]="Explicitly adopt authored base_color/emissive/metallic/roughness changes on existing explicit PbrMaterial drawables without restarting gameplay. Full content and asset closure guards reject unrelated edits. Accepted state is distinct from renderer submission/presentation. Outside authoring-core v1.";
+    methods["runtime.material.apply"]["description"]="Explicitly adopt authored base_color/emissive/metallic/roughness/alpha_mode/opacity/alpha_cutoff changes on existing explicit PbrMaterial drawables without restarting gameplay. Full content and asset closure guards reject unrelated edits. Accepted state is distinct from renderer submission/presentation. Outside authoring-core v1.";
     methods["runtime.texture.inspect"]=methods.at("runtime.material.inspect");
     methods["runtime.texture.inspect"]["description"]="Read the frozen authored PbrTextures component and effective immutable five-slot map identities, samplers and strengths without resolving storage or advancing gameplay. image_sha256 identifies canonical cooked image bytes, including images inherited from model containers.";
     methods["runtime.texture.apply"]=methods.at("runtime.material.apply");
@@ -795,7 +799,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["player.capture_current"]["properties"]["expected_material_revision"]=rev;
     methods["save.write"]["properties"]["expected_material_revision"]=rev;
     methods["save.load"]["properties"]["expected_material_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
-    result["live_materials"]={{"maximum_entities",32},{"fields",{"base_color","emissive","metallic","roughness"}},
+    result["material_alpha"]={{"modes",{"opaque","mask"}},{"default_mode","opaque"},{"default_opacity",1},{"default_cutoff",.5},
+        {"cutoff_maximum",1e6},{"discard","alpha_mode == mask AND sampled base-color alpha * opacity < alpha_cutoff"},
+        {"coverage","Hard alpha test before color, depth and surface-product writes, including foreground and shadow depth. Surviving fragments remain opaque."},
+        {"limitations","No blended transparency, alpha-to-coverage, alpha-aware collision/rays or coverage-preserving mipmaps. Ordinary alpha mip filtering can lose distant coverage."}};
+    result["live_materials"]={{"maximum_entities",32},{"fields",{"base_color","emissive","metallic","roughness","alpha_mode","opacity","alpha_cutoff"}},
         {"baseline","Explicit apply adopts the exact guarded authored material/save baseline; immutable native assets and gameplay state remain owned by the same runtime."},
         {"guards","After material_revision becomes nonzero, save.write/load and exact runtime/player captures require its guard. Retained retries resolve first. Session replacement resets this observation epoch; values persist in the frozen saved document."},
         {"limitations","Scalar apply does not adopt textures, geometry, double_sided or general live scene changes; texture adoption is a separate explicit operation. Every selected ID must have an actual scalar change. Preparation validates complete assets synchronously; no hitch-free latency guarantee."}};

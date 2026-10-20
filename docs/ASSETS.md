@@ -2,6 +2,11 @@
 
 Poima supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and textured metallic/roughness rendering. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. [FBX models and separate animation clips](FBX_IMPORT.md) use the same inspection, instantiation and cooked-content workflow, with a separately documented import profile. Read-only [`asset.source.inspect`](ANIMATION_RETARGETING.md#inspect-the-original-sources) exposes original nodes, takes and guarded reference poses before cooking, including geometryless animation donors.
 
+[Alpha-masked materials](MATERIAL_ALPHA.md) retain glTF/GLB base-color alpha,
+opacity factors and cutoff through authoring, cooked reopening and rendering.
+Nondefault alpha semantics use cooked model version 5; legacy opaque encodings
+remain unchanged. Raster cutouts do not modify collision geometry.
+
 ## Import, inspect and instantiate
 
 To render the original eight-sphere material example from the repository root in Windows PowerShell:
@@ -172,7 +177,7 @@ An entity cannot combine `StaticMesh` and the older `MeshRenderer`. `PbrMaterial
 - Repeat, clamp and mirrored-repeat addressing, nearest/linear magnification, all six glTF minification modes. Missing samplers default to repeat and linear/trilinear filtering. Non-mip samplers restrict the texture view to level zero.
 - Complete RGBA8 mip chains, area-box filtered during cooking. sRGB RGB channels are decoded before filtering and re-encoded afterward; alpha stays linear. Odd image edges are included. No vertical image flip: glTF UV (0,0) addresses the upper-left texel.
 
-16-bit PNG, HDR images, KTX/Basis/WebP, texture transforms, morph targets, compression, required extensions, extended material models, alpha masking/blending, vertex colors, additional UV sets, sparse indices, non-triangle-list modes, unsupported matrix forms and mirrored/zero TRS scales are rejected explicitly. Cameras/lights retain their transform nodes but are not converted to engine camera/light components; this produces a diagnostic. Sparse attribute unpacking is delegated to cgltf but has not yet received a dedicated Poima fixture. Do not infer general glTF conformance from the current fixture set.
+16-bit PNG, HDR images, KTX/Basis/WebP, texture transforms, morph targets, compression, required extensions, extended material models, alpha blending, vertex colors, additional UV sets, sparse indices, non-triangle-list modes, unsupported matrix forms and mirrored/zero TRS scales are rejected explicitly. Cameras/lights retain their transform nodes but are not converted to engine camera/light components; this produces a diagnostic. Sparse attribute unpacking is delegated to cgltf but has not yet received a dedicated Poima fixture. Do not infer general glTF conformance from the current fixture set.
 
 This strict profile is intended to grow. Broader transforms/materials, compressed GPU formats and streaming remain required work. [Material authoring](MATERIAL_AUTHORING.md) adds independent image imports, texture-slot overrides, sampler/strength editing and effective inspection. Asset workflows target Poima’s own authoring model and standard interchange formats. Users must have appropriate rights to imported source assets.
 

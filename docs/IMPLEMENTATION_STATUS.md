@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.208**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.209**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.209 adds [alpha-masked materials](MATERIAL_ALPHA.md) through glTF/GLB
+intake, cooked models, authored inspection and guarded live adoption. Nondefault
+alpha settings use model version 5; default opaque encoding remains unchanged.
+Linux passes thirteen selected native suites plus two fixture setup records.
+The codec fixture passes six groups, 280 checks and 68 retained rejections on
+both platforms. The alpha protocol passes 197 RPCs, fifteen complete archives
+and six byte-identical pairs on Linux and Windows. The retained compiled FPS
+game also passes its 237-RPC Linux workflow with all 59 typed fields and five
+complete byte pairs.
+
+Windows passes six native executables. AMD and NVIDIA each pass forward 1×/4×
+and deferred 1× cutout probes, including foreground coverage, depth, normals,
+weighted motion and matching shadow holes: ninety new captures in total.
+Unchanged opaque reconstruction and motion fixtures pass another 360 captures.
+Separate imported-world checks on each GPU pass 67 RPCs, nine actual captures,
+eighteen complete archives and ten whole-byte pairs. Authored, live-adopted and
+source-removed cold captures match exactly, with independently checked visible
+holes. Accepted Jobs close unforced with no remaining processes.
+
+Inspector alpha controls compile; displayed interaction remains separate.
+Masking is hard clipping, including at MSAA4. Coverage-preserving mips,
+alpha-to-coverage, blended transparency, dense foliage and masked reconstruction
+quality remain open. Texture holes do not alter physics geometry. Original
+compiler, fixture and monitoring failures remain recorded separately from the
+accepted runs. [Results and reproduction](evidence/m2-material-alpha.json).
 
 Version 0.0.208 adds read-only [capsule overlap/sweep queries](CAPSULE_QUERIES.md)
 and optional authored [foreground clearance](VIEWMODEL_CLEARANCE.md). The runtime

@@ -2,6 +2,7 @@
 #include "poima/animation.hpp"
 #define CGLTF_IMPLEMENTATION
 #include <cgltf/cgltf.h>
+#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -176,10 +177,83 @@ struct Images {
         require(valid_texture_sampler(map),"Invalid glTF sampler.");return map;
     }
 };
+// cgltf uses atof for numeric primitives and defaults unknown alphaMode to
+// OPAQUE. Validate the selected new semantics against the original JSON first,
+// with tokens charged to the existing import allocation budget, not a second
+// unbounded document DOM. The parsed temporary is never the source artifact.
+void material_alpha_json(cgltf_data& data,AllocationBudget& budget) {
+    jsmn_parser parser{};jsmn_init(&parser);
+    const auto size=data.json_size;const char* json=data.json;
+    const int count=jsmn_parse(&parser,json,size,nullptr,0);
+    require(count>0 && std::size_t(count)<=max_bytes/sizeof(jsmntok_t)-1,"Invalid/excessive glTF material JSON tokens.");
+    auto* raw=static_cast<jsmntok_t*>(allocate(&budget,(std::size_t(count)+1)*sizeof(jsmntok_t)));
+    require(raw!=nullptr,"glTF material JSON token budget exceeded.");
+    const auto cleanup=[&](jsmntok_t* p){release(&budget,p);};
+    std::unique_ptr<jsmntok_t,decltype(cleanup)> tokens(raw,cleanup);
+    jsmn_init(&parser);require(jsmn_parse(&parser,json,size,raw,count)==count,"Invalid glTF material JSON.");raw[count].type=JSMN_UNDEFINED;
+    const auto named=[&](int key,const char* text) {
+        if(cgltf_json_strcmp(raw+key,reinterpret_cast<const std::uint8_t*>(json),text)==0)return true;
+        const auto& token=raw[key];const auto length=token.end-token.start;
+        // cgltf compares property names literally. Do not partially reinterpret
+        // an escaped PBR object while it silently drops its texture bindings.
+        if(length<=128 && std::string_view(json+token.start,static_cast<std::size_t>(length)).find('\\')!=std::string_view::npos) {
+            const auto decoded=nlohmann::json::parse(json+token.start-1,json+token.end+1);
+            require(decoded!=text,"Escaped glTF material property aliases are unsupported.");
+        }
+        return false;
+    };
+    const auto scalar=[&](int index) {
+        const auto& token=raw[index];require(token.end>=token.start && token.end-token.start<=128,"Excessive glTF alpha scalar.");
+        if(token.type==JSMN_STRING)return nlohmann::json::parse(json+token.start-1,json+token.end+1);
+        require(token.type==JSMN_PRIMITIVE,"glTF alpha value must be scalar.");return nlohmann::json::parse(json+token.start,json+token.end);
+    };
+    const auto number=[&](int index,double maximum) {
+        const auto value=scalar(index);require(value.is_number(),"glTF alpha values must be numeric, not bool/null/text.");
+        const double v=value.get<double>();require(std::isfinite(v) && v>=0 && v<=maximum,"glTF alpha value exceeds its supported range.");return static_cast<float>(v);
+    };
+    const auto each=[&](int object,auto&& visit) {
+        require(object>=0 && object<count && raw[object].type==JSMN_OBJECT,"Invalid glTF material object.");
+        int key=object+1;
+        for(int n=0;n<raw[object].size;++n) {
+            require(key<count && raw[key].type==JSMN_STRING && key+1<count,"Invalid glTF material member.");
+            const int value=key+1,next=cgltf_skip_json(raw,value);require(next>value && next<=count,"Invalid glTF material subtree.");visit(key,value);key=next;
+        }
+    };
+    each(0,[&](int key,int array) {
+        if(!named(key,"materials"))return;
+        require(raw[array].type==JSMN_ARRAY && std::size_t(raw[array].size)==data.materials_count,"Invalid glTF material array.");
+        int object=array+1;
+        for(cgltf_size i=0;i<data.materials_count;++i) {
+            unsigned seen=0;auto& target=data.materials[i];
+            each(object,[&](int field,int value) {
+                unsigned bit=named(field,"alphaMode") ? 1u : named(field,"alphaCutoff") ? 2u : named(field,"pbrMetallicRoughness") ? 4u : 0u;
+                if(!bit)return;require(!(seen&bit),"Duplicate glTF alpha/material field.");seen|=bit;
+                if(bit==1) {
+                    const auto mode=scalar(value);require(mode.is_string(),"glTF alphaMode must be text.");
+                    if(mode=="OPAQUE")target.alpha_mode=cgltf_alpha_mode_opaque;
+                    else if(mode=="MASK")target.alpha_mode=cgltf_alpha_mode_mask;
+                    else if(mode=="BLEND")target.alpha_mode=cgltf_alpha_mode_blend;
+                    else require(false,"Unsupported glTF alphaMode.");
+                }else if(bit==2)target.alpha_cutoff=number(value,max_material_alpha_cutoff);
+                else {
+                    bool factor_seen=false;each(value,[&](int factor,int values) {
+                        if(!named(factor,"baseColorFactor"))return;
+                        require(!factor_seen,"Duplicate glTF baseColorFactor.");factor_seen=true;
+                        require(raw[values].type==JSMN_ARRAY && raw[values].size==4,"glTF baseColorFactor needs four numeric factors.");
+                        for(int c=0;c<4;++c)target.pbr_metallic_roughness.base_color_factor[c]=number(values+1+c,1);
+                    });
+                }
+            });
+            object=cgltf_skip_json(raw,object);
+        }
+    });
+}
 PbrMaterial material(const cgltf_material* source) {
     PbrMaterial result;
     if(!source)return result;
-    require(source->alpha_mode==cgltf_alpha_mode_opaque,"Unsupported glTF material: alpha masking/blending is not implemented.");
+    require(source->alpha_mode==cgltf_alpha_mode_opaque || source->alpha_mode==cgltf_alpha_mode_mask,"Unsupported glTF material: alpha blending is not implemented.");
+    result.alpha_mode=source->alpha_mode==cgltf_alpha_mode_mask ? MaterialAlphaMode::mask : MaterialAlphaMode::opaque;
+    result.alpha_cutoff=source->alpha_cutoff;
     require(!source->has_pbr_specular_glossiness && !source->has_clearcoat && !source->has_transmission && !source->has_volume &&
         !source->has_ior && !source->has_specular && !source->has_sheen && !source->has_emissive_strength && !source->has_iridescence &&
         !source->has_diffuse_transmission && !source->has_anisotropy && !source->has_dispersion && !source->unlit,
@@ -187,11 +261,13 @@ PbrMaterial material(const cgltf_material* source) {
     if(source->has_pbr_metallic_roughness) {
         const auto& pbr=source->pbr_metallic_roughness;
         std::copy_n(pbr.base_color_factor,3,result.base_color.begin());result.metallic=pbr.metallic_factor;result.roughness=pbr.roughness_factor;
+        result.opacity=pbr.base_color_factor[3];
     }
     std::copy_n(source->emissive_factor,3,result.emissive.begin());result.double_sided=source->double_sided!=0;
     for(auto x:result.base_color)require(std::isfinite(x) && x>=0 && x<=1,"Invalid glTF base color.");
     for(auto x:result.emissive)require(std::isfinite(x) && x>=0 && x<=1,"Invalid glTF emissive factor.");
     require(std::isfinite(result.metallic) && result.metallic>=0 && result.metallic<=1 && std::isfinite(result.roughness) && result.roughness>=0 && result.roughness<=1,"Invalid glTF metallic/roughness factor.");
+    validate_pbr_material(result);
     return result;
 }
 }
@@ -205,6 +281,7 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
     cgltf_data* raw=nullptr;
     require(cgltf_parse(&options,bytes.data(),bytes.size(),&raw)==cgltf_result_success,"glTF/GLB parse failed.");
     std::unique_ptr<cgltf_data,decltype(&cgltf_free)> data(raw,cgltf_free);
+    material_alpha_json(*data,budget);
     require(data->nodes_count<=10000 && data->meshes_count<=10000 && data->accessors_count<=50000,"glTF metadata exceeds import limits.");
     require(data->extensions_required_count==0,"Required glTF extensions are not supported by the initial static importer.");
     require(data->skins_count<=max_model_skins && data->animations_count<=max_model_clips,"glTF skin/animation budget exceeded.");
@@ -365,6 +442,9 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
         result->animations.push_back(std::move(animation));
     }
     if(!result->skins.empty() || !result->animations.empty() || std::any_of(result->primitives.begin(),result->primitives.end(),[](const auto& mesh) { return !mesh->influences.empty(); }))result->package_version=4;
+    if(std::any_of(result->primitives.begin(),result->primitives.end(),[](const auto& p) {
+        return p->material.alpha_mode!=MaterialAlphaMode::opaque || p->material.opacity!=1 || p->material.alpha_cutoff!=.5f;
+    }))result->package_version=5;
     validate_animation_data(*result);
 
     return result;

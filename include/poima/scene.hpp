@@ -69,11 +69,24 @@ void validate_light(const Light& light);
 void validate_environment(const LightingEnvironment& environment);
 void append_light(SceneLighting& state,const std::string& id,const Light& light,const Matrix4& world);
 void finalize_lighting(SceneLighting& state);
+enum class MaterialAlphaMode : std::uint32_t { opaque=0,mask=1 };
+constexpr std::string_view material_alpha_mode_name(MaterialAlphaMode mode) {
+    switch(mode) {
+    case MaterialAlphaMode::opaque:return "opaque";
+    case MaterialAlphaMode::mask:return "mask";
+    }
+    return "invalid";
+}
+inline constexpr float max_material_alpha_cutoff=1e6f;
 struct PbrMaterial {
     std::array<float,3> base_color{1,1,1}, emissive{0,0,0};
     float metallic=1, roughness=1;
     bool double_sided=false;
+    MaterialAlphaMode alpha_mode=MaterialAlphaMode::opaque;
+    float opacity=1,alpha_cutoff=.5f;
 };
+void validate_pbr_material(const PbrMaterial& material);
+void validate_material_alpha(const PbrMaterial& material);
 struct MeshAsset;
 struct Bounds { std::array<double,3> minimum{},maximum{}; };
 using Frustum=std::array<std::array<double,4>,6>;

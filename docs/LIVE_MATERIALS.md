@@ -6,7 +6,9 @@ The adopted material becomes part of that runtime's frozen save baseline.
 Ordinary authoring edits remain separate until applied.
 
 This API is outside the stable authoring-core v1 contract. It supports changes
-to `base_color`, `emissive`, `metallic` and `roughness` on existing authored
+to `base_color`, `emissive`, `metallic`, `roughness` and the optional
+[alpha settings](MATERIAL_ALPHA.md) (`alpha_mode`, `opacity`, `alpha_cutoff`)
+on existing authored
 drawables with an explicit `PbrMaterial`. A request selects 1–32 entity IDs in
 ascending order. Every selected material must contain a scalar change.
 

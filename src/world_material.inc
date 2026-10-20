@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Explicit scalar adoption changes the frozen save baseline, not the game owner.
     static Json material_value(const PbrMaterial& value) {
-        return {{"base_color",value.base_color},{"emissive",value.emissive},{"metallic",value.metallic},
-            {"roughness",value.roughness},{"double_sided",value.double_sided}};
+        return material_json(value);
     }
     static std::vector<std::string> material_ids(const Json& value) {
         require(value.is_array() && !value.empty() && value.size()<=32,"Material selection requires 1..32 sorted unique entity IDs.");
@@ -77,11 +76,15 @@
             bool changed=false;
             for(const auto* key:{"base_color","emissive","metallic","roughness"}) {
                 changed=changed || value.at(key)!=old.at("PbrMaterial").at(key);
-                target_comparison["entities"][id]["components"]["PbrMaterial"][key]=old.at("PbrMaterial").at(key);
             }
+            const Json alpha_defaults={{"alpha_mode","opaque"},{"opacity",1},{"alpha_cutoff",.5}};
+            for(const auto& [key,fallback]:alpha_defaults.items())
+                changed=changed || value.value(key,fallback)!=old.at("PbrMaterial").value(key,fallback);
             require(changed,"Every selected material must contain a scalar change.");
-            PbrMaterial material;material.base_color=value.at("base_color").get<std::array<float,3>>();material.emissive=value.at("emissive").get<std::array<float,3>>();
-            material.metallic=value.at("metallic");material.roughness=value.at("roughness");material.double_sided=value.at("double_sided");edits.push_back({id,material});
+            // Restore the exact old shape: omitted alpha defaults are not added
+            // to unrelated content or older saved baselines during comparison.
+            target_comparison["entities"][id]["components"]["PbrMaterial"]=old.at("PbrMaterial");
+            edits.push_back({id,material_from_json(value)});
         }
         require(target_comparison.dump()==source_comparison.dump(),"Live material adoption permits only selected PbrMaterial scalar changes; unrelated authored content must be reverted first.");
         // Revalidate the old closure too: mutable files cannot smuggle a texture,

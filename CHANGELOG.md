@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.209
+
+- Add alpha-masked PBR materials across standard glTF intake, cooked models,
+  authored inspection, guarded live edits and persistent runtime baselines.
+- Match cutout coverage in forward/deferred color, depth, normals, motion,
+  first-person foreground and shadow rendering; retain the opaque shadow path.
+- Add Inspector controls for alpha mode, opacity and cutoff.
+
 ## 0.0.208
 
 - Add read-only capsule overlap/sweep queries through the CLI and independently
