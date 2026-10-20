@@ -1,0 +1,268 @@
+{
+  "format": "poima.locomotion-rates.evidence.v1",
+  "source_checkpoint": "0.0.202",
+  "summary": "Locomotion Yard applies achieved-motion animation speeds while its original inertial fade continues. Full game qualification uses the retained 0.0.201 Linux simulation engine.",
+  "scope": [
+    "Linux headless compiled consumer; no new native engine behavior in this checkpoint.",
+    "Decoded API method/params/result records are retained; they are not original JSON-RPC wire-byte captures.",
+    "Cold continuation comparisons use the existing selected observation surface with session IDs omitted and two host epoch observations excluded; not complete cross-owner future save equality.",
+    "The added fade operands retain the complete saved payloads. Equality applies to original control, anchor and entire transition inside those complete archives, not all state at two different ticks.",
+    "No new Windows, GPU, physical-input, gait-quality, standalone export or overall Alpha qualification."
+  ],
+  "sources": {
+    "examples/locomotion-yard/LocomotionYardGame.cs": {
+      "bytes": 18041,
+      "sha256": "5c809d71b933c58318b5a49fb73144fcdaac21579bef431d3132a6b7834672b6"
+    },
+    "examples/locomotion-yard/Poima.LocomotionYardGame.csproj": {
+      "bytes": 498,
+      "sha256": "640e0698a478183328f26705f8272cc442e775e8feb66c8e66e36cbadba9bec1"
+    },
+    "tests/locomotion_yard_contract.py": {
+      "bytes": 42946,
+      "sha256": "76b3afaec67f9788fe342a0d96b96db76046b35cefad7a8768cbef1c74b92055"
+    },
+    "tests/locomotion_yard_bundle.py": {
+      "bytes": 32523,
+      "sha256": "b6483279a7aa5d2bf9d9285af4bb9bce9971c63d9d53bf144055478cd601a0f2"
+    }
+  },
+  "engine": {
+    "qualified_checkpoint": "0.0.201",
+    "image": {
+      "bytes": 35780712,
+      "sha256": "078be9d03753408037488af5476c9d34fe9720ff1c6d2c3f4b38d086cddbaa73"
+    },
+    "renderer": false,
+    "simulation": true,
+    "native_gameplay": true,
+    "coreclr": true,
+    "services_epoch": 7,
+    "services_bytes": 376,
+    "required_feature": "animation_rate_v1"
+  },
+  "managed_build": {
+    "record": {
+      "bytes": 10112,
+      "sha256": "6d3d3e78c7fedba7af624bc54625e9f821bdcc32d5ebaea0b4653d48f8a6ab7c"
+    },
+    "passed": true,
+    "seconds": 17.84028281297651,
+    "scope": "New game and component-analyzer compilation, then component metadata extraction. Binary SDK and metadata generator reused; no native core, SDK or bridge rebuild.",
+    "assembly": {
+      "bytes": 26112,
+      "sha256": "622224c5d88f9efd117800e2a91e282a44f169e2e42ee8c4f2d709867fc69223"
+    },
+    "component_schemas": 2
+  },
+  "coreclr": {
+    "passed": true,
+    "outer_record": {
+      "bytes": 7139,
+      "sha256": "a58707d895c37b797c34edf28c1d3663fbbbc77fd10a988a50c7bc95e98d5a0a"
+    },
+    "worker_record": {
+      "bytes": 29050591,
+      "sha256": "55010c82c31cc6eb624a918eaefa6b5ce1992b85e9ce177bb93371a84f1edf47"
+    },
+    "outer_seconds": 20.083753587998217,
+    "rpc_records": 5072,
+    "native_owners": 2,
+    "all_native_exit_codes_zero": true,
+    "forced_cleanup": false,
+    "tick_observations": 427,
+    "visual_observations": 22,
+    "settled_original_source_pose_comparisons": 9,
+    "joint_nodes_per_comparison": 61,
+    "weighted_vertices_per_comparison": 1029,
+    "maximum_joint_matrix_error": 1.3872672191439506e-05,
+    "maximum_weighted_vertex_error": 1.7636300253294906e-07,
+    "active_fade_rate_updates": 10,
+    "complete_gameplay_fields": 45,
+    "delivered": {
+      "Ticks": 463,
+      "Arrivals": 1,
+      "Plans": 1,
+      "RateChanges": 147,
+      "AnimationTransitions": 9,
+      "DeferredRateUpdates": 0,
+      "Phase": 2
+    },
+    "continuation_exclusions": [
+      "values.ObservedEpochHigh",
+      "values.ObservedEpochLow"
+    ],
+    "complete_fade_witness": {
+      "passed": true,
+      "immutable_fields": [
+        "control",
+        "anchor_tick",
+        "transition"
+      ],
+      "lexical_number_tokens_equal": true
+    },
+    "complete_fade_operands": [
+      {
+        "tick": 367,
+        "bytes": 119301,
+        "sha256": "c4d5cb10e9b7eb3c48c31e7d279969feccf5d2b5ccc43e1f6d2a5763522a286d",
+        "payload_members": 14
+      },
+      {
+        "tick": 368,
+        "bytes": 119408,
+        "sha256": "c23d8a8c20b3fc98dc1f092cb6748cf55dcfa22fcae13c18c64ab02431dcacd3",
+        "payload_members": 14
+      }
+    ],
+    "reloaded_compatible_coreclr": true,
+    "source_scope": "Untouched pinned original Kenney FBX body and separate Run/Idle takes. Owned authoring copies removed before fresh reopen; original caller sources remain accessible to the pose oracle.",
+    "independent_selected_review": {
+      "bytes": 3919,
+      "sha256": "0a3549d2f7db999dfa835744ffcf40ad9e01bfd6442402f168328c4beae173f2"
+    }
+  },
+  "history": "The earlier deferral policy and its results remain historical evidence. Fresh-character task failures and unrelated qualification failures are not regraded.",
+  "native_aot_artifact": {
+    "original_supervisor_passed": false,
+    "original_publisher_exit_code": 0,
+    "original_supervisor_record": {
+      "bytes": 18034,
+      "sha256": "77d92137f56c900ec932bd8e6c7387496248048adac4b6604c5501026e4c0f06"
+    },
+    "original_failure": "The strict supervisor rejected one adopted child, reaped with wait status 0. No forced cleanup; no final children. Its role/cause is not established. The original failure remains failed.",
+    "recovery": "Separate file-only artifact validation; no publisher retry or original verdict rewrite. Actual native consumption is a separate qualification.",
+    "artifact_files": 9,
+    "descriptor": {
+      "bytes": 10617,
+      "sha256": "7b51fd1d86eb90dbdd20c7b757c5cf030d210af2b1c132051254b0c72974ae52"
+    },
+    "library": {
+      "bytes": 1648488,
+      "sha256": "d4a30c95d369ddb7e567f0d952166aee4df8d6738dfff9e950a31a920a90273e"
+    },
+    "schema_fields": 45,
+    "component_schemas": 2,
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 376,
+    "required_features": [
+      "baseline_v7",
+      "component_collections_v1",
+      "animation_rate_v1",
+      "animation_inertial_v1",
+      "character_input_v1",
+      "navigation_query_v1"
+    ],
+    "publication_metadata_checkpoint": "0.0.202",
+    "consumer_native_engine_checkpoint": "0.0.201",
+    "recovery_record": {
+      "bytes": 4482,
+      "sha256": "e1ea7bd2f522e68c6c07301bcf1c067d0d9ec78852a3dc40c890393b7f7401d4"
+    }
+  },
+  "native_aot_kenney": {
+    "passed": true,
+    "phase_seconds": 20.54779032699298,
+    "original_parent_cohort_passed": false,
+    "parent_record": {
+      "bytes": 14767,
+      "sha256": "4f3fd8e52c014e281ae4d31197ba727ec4a604411f9ed839fbb03ad8bca03b9a"
+    },
+    "worker_record": {
+      "bytes": 29108915,
+      "sha256": "42822549a402ddb57de3d79b18c245e875a17722d8c116f353c984e445bfa21a"
+    },
+    "rpc_records": 5072,
+    "expected_rejections": [
+      {
+        "method": "runtime.gameplay.load_native",
+        "code": -32060
+      }
+    ],
+    "native_owners": 2,
+    "all_native_exit_codes_zero": true,
+    "tick_observations": 427,
+    "visual_observations": 22,
+    "settled_original_source_pose_comparisons": 9,
+    "active_fade_rate_updates": 10,
+    "complete_gameplay_fields": 45,
+    "dynamic_code_supported": false,
+    "dynamic_code_compiled": false,
+    "complete_fade_operands": [
+      {
+        "tick": 367,
+        "bytes": 119307,
+        "sha256": "e172e32e4d583325fd2f932efaaf5b8efa82fe6c87f8acface837768f89b6642",
+        "payload_members": 14
+      },
+      {
+        "tick": 368,
+        "bytes": 119414,
+        "sha256": "a7d6ed1b6e0f6f51c9617fca45792f200e809560ae292ca1040f9bb8607fa79c",
+        "payload_members": 14
+      }
+    ],
+    "saved_control_anchor_entire_transition_tokens_equal": true,
+    "continuation_scope": "Four selected-observation comparisons with the existing two epoch exceptions; full raw fade operands retain all fourteen members. No whole future save equality claim.",
+    "independent_selected_review": {
+      "bytes": 4054,
+      "sha256": "8b7ba4498a54e466616aabad4408409a56ef7c81880b319c1d8408857945bce5"
+    }
+  },
+  "native_aot_knight": {
+    "passed": true,
+    "filesystem_scope": "Native Linux filesystem, reported by stat as ext2/ext3; source and library inputs unchanged.",
+    "owner_record": {
+      "bytes": 8861,
+      "sha256": "f4b1b4d504a412de80f35b6fa3a1717f640bac6472ca9222f58c0438d7ece0aa"
+    },
+    "worker_record": {
+      "bytes": 3402054,
+      "sha256": "9d7fc3fd6d5c501ae393fcd56be25d3db79a6ba53384322771d7b989f95e87e7"
+    },
+    "owner_seconds": 42.936874694016296,
+    "worker_seconds": 40.04308954399312,
+    "decoded_rpc_records": 587,
+    "native_owners": 3,
+    "all_native_exit_codes_zero": true,
+    "complete_checkpoints": 5,
+    "complete_immediate_restore_pairs": 2,
+    "all_14_payload_members": true,
+    "all_45_gameplay_fields": true,
+    "observations": 6,
+    "original_project_and_admitted_source_paths_absent": true,
+    "caller_originals_preserved": true,
+    "full_original_library_retained": {
+      "nodes": 57,
+      "takes": 76,
+      "channels": 8712,
+      "keys": 90748
+    },
+    "scope": "Native AOT headless authoring and manual-tick gameplay. Complete immediate restore comparisons use original save bytes. Later observations are selected gameplay checks; complete later saves remain retained without a cross-owner post-callback equality claim. No renderer, input, contact, IK or performance qualification."
+  },
+  "retained_failed_drvfs_knight": {
+    "passed": false,
+    "worker_record": {
+      "bytes": 192068,
+      "sha256": "ce336fcb92a2a3f7d488a3922f4188f9b53b37c56e1e60a3c56118395cfdd9c6"
+    },
+    "stage": "Project gameplay adoption rejected before runtime gameplay; fifteen authoring RPC records, zero checkpoints.",
+    "adoption_cli_exit_code": 4,
+    "original_worker_replayed_or_regraded": false,
+    "owned_operation_probe": {
+      "record": {
+        "bytes": 519,
+        "sha256": "ab471015f7051c7fb1d0e90701fb056256f4b1cf2f112c7b19c0eaac5caad959"
+      },
+      "operation": "renameat2(RENAME_NOREPLACE)",
+      "return_code": -1,
+      "errno": 22,
+      "errno_name": "EINVAL",
+      "source_and_destination_parents_present": true
+    },
+    "interpretation": "Mounted-drive probe confirms the required atomic operation is unavailable there. Adoption fails closed as documented. Its original diagnostic reports a different errno string; that diagnostic cause is a separate follow-up.",
+    "successor": "Separate native-filesystem cohort uses identical worker, artifact and assertions, with the same 300-second worker and 310-second phase bounds. Original failed cohort remains failed; successful Kenney phase is not rerun."
+  }
+}

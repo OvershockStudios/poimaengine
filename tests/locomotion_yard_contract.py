@@ -268,7 +268,7 @@ def main():
     source_paths = [Path(__file__), ROOT/'examples/locomotion-yard/run.py', ROOT/'examples/locomotion-yard/LocomotionYardGame.cs',
         ROOT/'examples/locomotion-yard/Poima.LocomotionYardGame.csproj', *sorted((ROOT/'tools/python/poima_client').glob('*.py')),
         *[ROOT/'tests'/name for name in ('animation_rotation_retarget.py','animation_rotation_retarget_capture.py','rotation_retarget_fixture.py','frame_transfer_fixture.py','fbx_fixture.py','texture_fixture.py','gltf_fixture.py','scene_capture.py')]]
-    record = dict(passed=False,backend='native_aot' if args.descriptor else 'coreclr',calls=[],owners=[],checks=[],cleanup_errors=[],
+    record = dict(passed=False,backend='native_aot' if args.descriptor else 'coreclr',calls=[],owners=[],checks=[],cleanup_errors=[],active_fade_rate_updates=0,
         hashes={name:sha(path) for name,path in inputs.items()},sources={p.relative_to(ROOT).as_posix():sha(p) for p in source_paths},
         original_source_hashes=pins,continuation_exclusions=['values.ObservedEpochHigh','values.ObservedEpochLow'],
         limits=['Original source decoding/sampling uses the native importer; quaternion chains/FK/weighted skin expectations are independent of the converted asset.',
@@ -320,14 +320,50 @@ def main():
         need(draws['skinned_instances'] == 1 and draws['skinned_vertices'] == 1029, 'Actual original weighted character was not rendered')
         record.setdefault('captures',[]).append(dict(name=name,sha256=sha(path),report=result))
 
+    def fade_save(game, slot):
+        receipt = game.write(slot)
+        payloads = list((output/'saves'/('slot-'+slot)).glob('p-*.bin'))
+        need(len(payloads) == 1 and payloads[0].stat().st_size <= 64*1024*1024,
+             'Complete fade witness needs one bounded original saved payload')
+        path = payloads[0]
+        raw = path.read_bytes()
+        need(hashlib.sha256(raw).hexdigest() == receipt['sha256'], 'Full fade save differs from its native receipt')
+        saved = json.loads(raw)
+        need(set(saved) == {'format','version','document','snapshot'} and
+             set(saved['snapshot']['payload']) == {'content_sha256','world_id','authored_revision','tick',
+                 'gameplay_revision','entities','animation','sound','gameplay','components','structure','ui','control_sequence','cameras'},
+             'Complete fade save envelope or fourteen-member payload differs')
+        # Preserve original number tokens and their integer/float kinds without
+        # rewriting either observed archive or constructing a reduced save.
+        lexical = json.loads(raw,parse_int=lambda text: ('integer',text),parse_float=lambda text: ('float',text))
+        rigs = saved['snapshot']['payload']['animation']['rigs']
+        lexical_rigs = lexical['snapshot']['payload']['animation']['rigs']
+        indices = [i for i,row in enumerate(rigs) if row['entity'] == RIG]
+        need(len(indices) == 1 and saved['snapshot']['payload']['tick'] == game.tick,
+             'Complete fade save does not contain the unique current rig/tick')
+        evidence = dict(slot=slot,path=path.relative_to(output).as_posix(),bytes=len(raw),sha256=receipt['sha256'],
+                        receipt=receipt,tick=game.tick,payload_members=14)
+        return evidence,rigs[indices[0]],lexical_rigs[indices[0]]
+
     def one_tick(game):
         before_actor, before_rig, before_values = game.entity(),game.entity(RIG),game.values()
+        prior = [before_values['PreviousX'],0,before_values['PreviousZ']]
+        displacement = horizontal(position(before_actor),prior) if before_values['PreviousPositionValid'] else 0
+        predicted_moving = displacement > .001
+        predicted_rate = min(8,displacement/DT/nominal_run_speed) if predicted_moving else 1
+        old = before_rig['animation']
+        old_fade = old.get('transition')
+        save_witness = (record.get('complete_fade_save_witness') is None and
+                        old['clip'] == (0 if predicted_moving else 1) and old['playing'] and old['loop'] and
+                        abs(old['speed']-predicted_rate) >= .01 and old_fade is not None and
+                        game.tick+1 < old_fade['start_tick']+old_fade['duration_ticks'])
+        if save_witness:
+            saved_before,before_clock,before_lexical = fade_save(game,'rate-before')
+            record['complete_fade_save_witness'] = dict(before=saved_before,passed=False)
         game.step()
         actor,rig,values = game.entity(),game.entity(RIG),game.values()
         old,new = before_rig['animation'],rig['animation']
         need(new['clip'] == (0 if values['Moving'] else 1) and new['loop'] and new['playing'], 'Compiled movement mode did not select an advancing original idle/run loop')
-        prior = [before_values['PreviousX'],0,before_values['PreviousZ']]
-        displacement = horizontal(position(before_actor),prior) if before_values['PreviousPositionValid'] else 0
         need(abs(values['LastDisplacement']-displacement) < 2e-7, 'Playback sampled current uncommitted movement instead of previous committed position')
         need(abs(values['LastHorizontalSpeed']-displacement/DT) < 2e-5 and abs(values['RequestedRunRate']-min(8,displacement/DT/nominal_run_speed)) < 8e-6, 'Compiled playback rate is not derived from committed horizontal meters per second')
         need(abs(values['PreviousX']-position(before_actor)[0]) < 2e-7 and abs(values['PreviousZ']-position(before_actor)[2]) < 2e-7, 'Persisted movement history is not prior committed position')
@@ -344,10 +380,45 @@ def main():
         requested = values['RequestedRunRate'] if values['Moving'] else 1
         if switched or corrections:
             need(abs(new['speed']-requested) < 1e-10, 'Published clip/rate change ignores the actual committed movement request')
-        if not switched and old.get('transition') is not None:
-            need(new['speed'] == old['speed'] and corrections == 0, 'Rate-only correction replaced an active finite fade')
-            deferred = int(abs(old['speed']-requested) >= .01)
-            need(values['DeferredRateUpdates']-before_values['DeferredRateUpdates'] == deferred, 'Deferred-rate counter does not describe actual finite-fade rate difference')
+        need(values['DeferredRateUpdates'] == before_values['DeferredRateUpdates'] == 0,
+             'Normal playback advanced the retained legacy deferred-rate counter')
+        active_fade_rate_update = False
+        if not switched:
+            expected_correction = int(abs(old['speed']-requested) >= .01)
+            need(corrections == expected_correction and transitions == 0 and
+                 values['AnimationChanges']-before_values['AnimationChanges'] == expected_correction and
+                 new['speed'] == (requested if expected_correction else old['speed']),
+                 'Same-clip playback did not apply the requested rate immediately without replacement')
+            fade = old.get('transition')
+            if fade is not None:
+                end_tick = fade['start_tick']+fade['duration_ticks']
+                need(fade['elapsed_ticks'] == game.tick-1-fade['start_tick'] and game.tick-1 < end_tick,
+                     'Pre-step fade does not describe the committed clock')
+                following = new.get('transition')
+                if game.tick < end_tick:
+                    need(following is not None and
+                         all(following[key] == fade[key] for key in
+                             ('start_tick','duration_ticks','source_frozen','source_clip','source_speed','source_loop','source_playing')) and
+                         following.get('mode') == fade.get('mode') and
+                         following['elapsed_ticks'] == game.tick-fade['start_tick'] and
+                         following['weight'] == following['elapsed_ticks']/fade['duration_ticks'],
+                         'Rate update replaced the outgoing source or changed the original fade deadline/progress')
+                    active_fade_rate_update = bool(expected_correction)
+                    record['active_fade_rate_updates'] += int(active_fade_rate_update)
+                else:
+                    need(following is None and game.tick == end_tick,
+                         'Rate update extended the original fade deadline')
+        if save_witness:
+            saved_after,after_clock,after_lexical = fade_save(game,'rate-after')
+            record['complete_fade_save_witness']['after'] = saved_after
+            need(active_fade_rate_update and all(before_lexical[key] == after_lexical[key]
+                 for key in ('control','anchor_tick','transition')) and before_clock['transition'] is not None,
+                 'Whole saved fade source, reference clocks, correction or deadline changed during a rate-only update')
+            need(after_clock['rate']['anchor_tick'] == saved_before['tick'] and
+                 after_clock['rate']['speed'] == requested,
+                 'Saved latest rate segment does not represent the actual admitted boundary')
+            record['complete_fade_save_witness'].update(passed=True,
+                immutable_fields=['control','anchor_tick','transition'],lexical_number_tokens_equal=True)
         distance = horizontal(position(actor),position(before_actor))
         need(distance <= 4*DT+2e-5, 'Movement exceeded authored capsule speed; possible teleport')
         if distance > .001:
@@ -356,7 +427,8 @@ def main():
             need(sum(a*b for a,b in zip(forward,moved))/(math.hypot(*forward)*distance) > .98, 'Visual/controller facing differs from actual forward movement')
         row = dict(tick=game.tick,position=position(actor),previous_committed_position=position(before_actor),clip=new['clip'],time=new['time'],speed=new['speed'],
             sampled_displacement=values['LastDisplacement'],requested_rate=values['RequestedRunRate'],transition=new.get('transition'),
-            wrapped=not switched and new['time'] < old['time'],rate_changes=corrections,animation_transitions=transitions,deferred=values['DeferredRateUpdates'])
+            wrapped=not switched and new['time'] < old['time'],rate_changes=corrections,animation_transitions=transitions,
+            active_fade_rate_update=active_fade_rate_update,deferred=values['DeferredRateUpdates'])
         record.setdefault('tick_observations',[]).append(row)
         return row
 
@@ -384,6 +456,7 @@ def main():
         maximum = max(p[1] for p in oracle.skin_points(oracle.base_worlds))
         need(abs(controller['height']-(maximum-minimum)) < 2e-5 and abs(authored['entities'][RIG]['components']['Transform']['position'][1]+minimum) < 2e-5, 'Capsule height/visual offset did not come from original standing geometry')
         game.start(); game.load(); game.step(16)
+        game.saves(output/'saves')
         initial = snapshot(game)
         need(initial['rig']['animation']['clip'] == 1 and initial['rig']['animation']['time'] > 0 and initial['rig']['animation'].get('transition') is None and initial['values']['Phase'] == 0, 'Initial stationary state must advance actual settled idle, not hold a fake pose')
         ui = game.rpc('runtime.ui.inspect',dict(session_id=game.session,tick=game.tick))
@@ -410,7 +483,6 @@ def main():
         need(any(abs(coordinates[i+2]) > 3.4 for i in range(0,len(coordinates),3)), 'Persisted path ignores cover/capsule clearance')
         ray = game.rpc('runtime.raycast',dict(session_id=game.session,tick=game.tick,origin=[-4,.8,0],direction=[1,0,0],distance=8,ignore=[ACTOR]))
         need(ray['hit']['entity'] == FIELD(2), 'Native ray does not confirm blocked direct shortcut')
-        game.saves(output/'saves')
         receipt = game.write('midfade')
         payloads = list((output/'saves/slot-midfade').glob('p-*.bin'))
         need(len(payloads) == 1 and sha(payloads[0]) == receipt['sha256'], 'Exact native save receipt lacks matching disk bytes')
@@ -495,7 +567,9 @@ def main():
             boundary = next((r for r in local_run if r['tick'] == first_run+offset),None)
             need(boundary is not None, 'Run40/41 tick boundary was not observed')
             record.setdefault('run_boundary_observations',[]).append(dict(ticks_since_first_run=offset,**boundary))
-        need(fresh.values()['RateChanges'] > 0 and fresh.values()['DeferredRateUpdates'] > 0, 'Actual motion did not exercise deferred finite-fade rate correction')
+        need(fresh.values()['RateChanges'] > 0 and fresh.values()['DeferredRateUpdates'] == 0 and
+             record['active_fade_rate_updates'] > 0 and record.get('complete_fade_save_witness',{}).get('passed') is True,
+             'Actual motion did not exercise an immediate same-clip rate update before the original fade deadline')
         fresh.step(20)
         delivered = snapshot(fresh)
         need(delivered['rig']['animation']['clip'] == 1 and delivered['rig']['animation']['transition'] is None, 'Arrival did not settle back to live idle')
@@ -510,7 +584,7 @@ def main():
         record.update(route_positions=positions,delivered=delivered,settled=settled,source_removal=dict(owned_sources_removed=True,caller_originals_preserved=True))
         record['checks'] = ['Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.',
             'Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.',
-            'Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.',
+            'Committed native displacement controls playback rate one tick later; actual same-clip rate updates preserve the active fade source/deadline without deferral or clock restart.',
             'Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.',
             'Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.',
             'Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run.']

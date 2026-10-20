@@ -96,7 +96,12 @@ record can finish receipt publication even after later project edits.
 Payloads are flushed and published with atomic no-replacement moves.
 Windows adoption file operations use extended paths for long staging names;
 stored selectors and returned paths keep their ordinary spelling. A platform
-or filesystem without those semantics fails explicitly. The manifest changes
+or filesystem without those semantics fails explicitly. On Linux, publication
+requires `renameat2(RENAME_NOREPLACE)`. A mounted Windows filesystem in WSL
+rejects that operation in the [Locomotion Yard qualification](evidence/m2-locomotion-rates.json);
+use a native Linux project filesystem for that workflow. The same worker passes
+there without substituting an overwriting rename or modifying its requirements.
+The manifest changes
 through an atomic replacement after validation. Request-owned torn staging is
 retained in bounded diagnostics before reconstruction; invalid initial journal
 staging without a canonical prepared record is rejected. These recovery rules

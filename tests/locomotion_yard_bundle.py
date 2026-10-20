@@ -24,7 +24,7 @@ from collection_gameplay_bundle import check, inventory, managed_pe, read_json, 
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {'baseline_v7', 'component_collections_v1', 'animation_inertial_v1',
-            'character_input_v1', 'navigation_query_v1'}
+            'character_input_v1', 'navigation_query_v1', 'animation_rate_v1'}
 MAX_LOCAL_EVIDENCE = 128 * 1024 * 1024
 
 
@@ -72,7 +72,7 @@ def artifact_inputs(path, launcher):
           descriptor['target_os'] == 'Windows' and descriptor['target_arch'] == 'x86_64',
           'Supply the actual Windows Locomotion Yard artifact')
     check((descriptor['call_version'], descriptor['call_bytes'], descriptor['services_version'],
-           descriptor['minimum_services_bytes']) == (1, 80, 7, 224) and
+           descriptor['minimum_services_bytes']) == (1, 80, 7, 376) and
           set(descriptor['required_features']) == REQUIRED and
           len(descriptor['required_features']) == len(REQUIRED), 'Locomotion Yard artifact requirements differ')
     files = descriptor['files']
@@ -214,7 +214,7 @@ def main():
         descriptor, manifest, metadata_name, library = artifact_inputs(artifact, launcher)
         runtime_spec = read_json(runtime/'runtime.json')
         check(runtime_spec['target_os'] == 'Windows' and runtime_spec['target_arch'] == 'x86_64' and
-              runtime_spec['gameplay_services_version'] == 7 and runtime_spec['gameplay_services_bytes'] >= 224 and
+              runtime_spec['gameplay_services_version'] == 7 and runtime_spec['gameplay_services_bytes'] >= 376 and
               runtime_spec['gameplay_call_version'] == 1 and runtime_spec['gameplay_call_bytes'] == 80 and
               REQUIRED <= set(runtime_spec['gameplay_features']), 'Actual runtime contract differs')
         check(all(runtime_spec['features'].get(feature) is True for feature in
@@ -331,7 +331,7 @@ def main():
         sample_tick = values['PreviousSampleTick']
         check(isinstance(sample_tick,str) and sample_tick == str(int(sample_tick)),
               'Compiled int64 sample tick must use its canonical decimal-string wire encoding')
-        check(values['RateChanges'] > 0 and values['DeferredRateUpdates'] > 0 and
+        check(values['RateChanges'] > 0 and values['DeferredRateUpdates'] == 0 and
               values['AnimationTransitions'] >= 3 and values['AnimationClip'] == authored['clips']['Idle']['index'] and
               values['AnimationMode'] == 0 and values['AnimationLoop'] == 1 and values['Moving'] == 0 and
               values['AnimationRate'] == 1 and values['LastHorizontalSpeed'] < .06 and
@@ -386,7 +386,11 @@ def main():
         check({row['ticks_since_first_run'] for row in boundaries} == {40,41} and
               any(row['wrapped'] and row['clip'] == 0 for row in evidence['tick_observations']) and
               any(row['wrapped'] and row['clip'] == 1 for row in evidence['tick_observations']) and
-              evidence['delivered']['values']['RateChanges'] > 0 and evidence['delivered']['values']['DeferredRateUpdates'] > 0 and
+              evidence['delivered']['values']['RateChanges'] > 0 and evidence['delivered']['values']['DeferredRateUpdates'] == 0 and
+              evidence['active_fade_rate_updates'] > 0 and
+              sum(row['active_fade_rate_update'] for row in evidence['tick_observations']) == evidence['active_fade_rate_updates'] and
+              evidence['complete_fade_save_witness']['passed'] is True and
+              evidence['complete_fade_save_witness']['lexical_number_tokens_equal'] is True and
               evidence['source_removal'] == dict(owned_sources_removed=True,caller_originals_preserved=True),
               'Independent actual clock/rate/wrap/source-removal evidence is incomplete')
         check(evidence['ui_save_operation']['save_serviced'] and evidence['ui_load_operation']['save_serviced'] and
@@ -395,7 +399,9 @@ def main():
             checks=evidence['checks'], owners=evidence['owners'], source_pose_observations=len(compared),
             continuation_exclusions=evidence['continuation_exclusions'],run_boundary_observations=boundaries,
             rate_changes=evidence['delivered']['values']['RateChanges'],
-            deferred_rate_updates=evidence['delivered']['values']['DeferredRateUpdates'])
+            deferred_rate_updates=evidence['delivered']['values']['DeferredRateUpdates'],
+            active_fade_rate_updates=evidence['active_fade_rate_updates'],
+            complete_fade_save_witness=evidence['complete_fade_save_witness'])
         record['checks'].append('Separate reconstructed worlds use the exact bundled runtime/artifact for original-source joint/geometry/facing oracles, compiled UI saves and exact same/fresh-owner continuation.')
         check(inventory(bundle) == frozen and all(sha(path) == launcher.SOURCE_SHA[name] for name,path in originals.items()) and
               sha(binary) == record['inputs']['binary_sha256'] and

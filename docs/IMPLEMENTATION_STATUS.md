@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.201**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.202**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.202 integrates phase-preserving speed controls into
+[Locomotion Yard](../examples/locomotion-yard/README.md#movement-and-playback-policy).
+The compiled courier follows its real navigation route and changes animation
+speed during active inertial fades, without replacing their source or deadline.
+The existing 45 gameplay fields remain, including the legacy deferral counter.
+The Linux CoreCLR workflow passes 5,072 decoded API records, two normally closed
+native owners, nine settled original-source pose/skin comparisons and ten
+active-fade speed updates. Two complete saved operands retain all fourteen
+payload members; their original clock control, anchor and entire transition
+match lexically. Existing warm/cold selected-observation continuation, compatible
+reload and compiled UI save/load checks also pass. A separately validated
+Native AOT module passes the Kenney contract and an original-Knight project
+workflow, including guarded adoption, cooked-project relocation and two complete
+immediate save-restore pairs. The latter uses a native Linux filesystem:
+mounted-drive adoption rejects its required atomic no-replacement operation.
+That failed run and the original publisher process-audit failure remain failed;
+the existing artifact was recovered without recompilation. These checks use the
+qualified 0.0.201 native engine and do not add Windows, rendered-gait, standalone
+export or overall Alpha evidence. [Results and scope](evidence/m2-locomotion-rates.json).
 
 Version 0.0.201 adds [phase-preserving animation rate controls](ANIMATION_RATES.md)
 for base and configured layer clocks. CLI and staged C# writes retain active

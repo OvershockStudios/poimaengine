@@ -63,6 +63,10 @@ successive committed positions with a consecutive-tick guard and divide their
 horizontal displacement by `DeltaTime`. Save that position/tick history with
 gameplay state, as the test consumer and Locomotion Yard do.
 
+[Locomotion Yard](../examples/locomotion-yard/README.md#movement-and-playback-policy)
+uses the same saved displacement history and speed-only calls for its navigating
+courier, including while a clip transition is active.
+
 These setters are valid during `Tick`. They stage writes for publication after
 the callback; getters inside that callback continue to return committed state.
 If an error escapes `Tick`, publication rejects, or a later tick fails, the

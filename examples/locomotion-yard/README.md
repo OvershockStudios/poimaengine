@@ -22,7 +22,7 @@ conversion, not an editor screenshot.*
 ## Prerequisites and original content
 
 Use the current sample and an engine with simulation, navigation and game UI.
-The Knight profile requires **0.0.174 or later**. Use Python 3.11+ and a .NET 10
+The sample requires **0.0.201 or later**. Use Python 3.11+ and a .NET 10
 SDK when compiling gameplay; a supplied compatible Native AOT artifact needs
 neither the SDK nor CoreCLR at play time.
 Windows interactive play also requires Vulkan rendering. CoreCLR development
@@ -32,9 +32,9 @@ Native AOT requires `POIMA_ENABLE_NATIVE_GAMEPLAY=ON` and does not use hostfxr o
 the bridge at play time. Linux headless verification is separate from Windows
 graphical play.
 
-The module uses services epoch **7**, a **224-byte** prefix, and the features
+The module uses services epoch **7**, a **376-byte** prefix, and the features
 `baseline_v7`, `component_collections_v1`, `animation_inertial_v1`,
-`character_input_v1` and `navigation_query_v1`. Discover the actual build's
+`character_input_v1`, `navigation_query_v1` and `animation_rate_v1`. Discover the actual build's
 capabilities before loading it. A service epoch alone is insufficient: validate
 the artifact's complete call/prefix/feature requirements and component schemas.
 
@@ -270,13 +270,32 @@ the measurement. This nominal reference is a gameplay choice, not a stride
 calibration inferred from an in-place animation.
 
 Clip or binding changes use a **12-tick** inertial transition. Rate-only changes
-of at least `0.01` wait until an active transition ends, then update with no new
-fade and retain the observed clock. The saved counters distinguish transitions,
-accepted rate corrections and deferred corrections. Kenney's original Run has
+of at least `0.01` apply immediately through `SetAnimationSpeed`, including during
+an active fade. They retain the current phase, outgoing source and original fade
+end. The saved counters distinguish full clip transitions from speed-only
+corrections. The legacy `DeferredRateUpdates` field remains in saved state and
+keeps any historical value; new gameplay never increments it. A full replacement
+is still needed to repair externally stopped or nonlooping playback, and waits
+for an active fade to finish. Rate controls themselves do not resume playback. Kenney's original Run has
 pose continuity at wrap (C0), but differing slopes (not C1). Knight retains its
 original Running_A root height offset of approximately **0.05**; the capsule
 owns travel. No loop repair, IK, foot locking, root-motion extraction or
 ground-contact fitting occurs here.
+
+The [0.0.202 rate integration](../../docs/evidence/m2-locomotion-rates.json)
+checks the compiled courier through actual active-fade speed changes, original
+source poses, route completion, reload and warm/cold saved progress. The retained
+native engine is 0.0.201. CoreCLR and Native AOT execute the Kenney contract;
+an original-Knight Native AOT project also passes warm/cold restoration and
+relocated cooked reopening. The publisher's process-audit failure and a
+mounted-drive adoption failure remain recorded separately. Rendered gait,
+foot locking and a new Windows export need separate qualification.
+
+On WSL, keep projects that use `project adopt-gameplay` on a native Linux
+filesystem. The selected mounted Windows filesystem rejects the atomic
+no-replacement move required by [project adoption](../../docs/PROJECT_GAMEPLAY_ADOPTION.md#retry-and-recovery).
+The engine preserves its journal and staging rather than replacing existing
+files or silently weakening publication.
 
 ## Verify the Kenney profile headlessly
 
@@ -305,8 +324,7 @@ WSL. Optional `--capture --gpu 0` requests Windows Vulkan readbacks.
 
 The contract binds binary, compiled artifact, sample and original-source hashes.
 It checks real capsule travel and cover clearance, original-source joint and
-weighted-vertex expectations after fades, advancing Idle/Run clocks, deferred
-rate corrections, compatible reload or rejected AOT replacement, UI receipts,
+weighted-vertex expectations after fades, advancing Idle/Run clocks, immediate speed changes during fades, compatible reload or rejected AOT replacement, UI receipts,
 and exact same-owner/fresh-owner save continuation. It removes only its own
 exact source copies before fresh restoration. Caller originals remain read-only
 for the source-pose oracle. The oracle uses native normalization of original

@@ -37,6 +37,7 @@ public struct LocomotionState
     public int Ticks, ReadyTicks, Phase, Paused, DispatchRequested, Destination;
     public int RouteValid, Plans, Arrivals, Dispatches, LastPathStatus, LastCornerCount;
     public int PreviousPositionValid, Moving, AnimationMode, AnimationClip, AnimationLoop, AnimationChanges;
+    // Legacy saved counter: retain historical values, but add no new deferrals.
     public int AnimationTransitions, RateChanges, DeferredRateUpdates;
     public double GoalX, GoalZ, PreviousX, PreviousZ, LastDisplacement;
     public double LastHorizontalSpeed, RequestedRunRate, AnimationRate;
@@ -46,7 +47,7 @@ public struct LocomotionState
 }
 
 [GameModule("poima.examples.locomotion-yard")]
-public sealed class LocomotionYardGame : Game<LocomotionState>, INavigationGame, ICharacterInputGame, IInertialAnimationGame
+public sealed class LocomotionYardGame : Game<LocomotionState>, INavigationGame, ICharacterInputGame, IAnimationRateGame
 {
     // Actor300 owns the native capsule; visual400 is its authored child.
     // Observer player100 and its camera remain separate from courier control.
@@ -126,26 +127,27 @@ public sealed class LocomotionYardGame : Game<LocomotionState>, INavigationGame,
         {
             bool rateChanged=Math.Abs(current.Speed-rate)>=RateEpsilon;
             bool playbackChanged=!current.Loop || !current.Playing;
-            if(rateChanged || playbackChanged)
+            if(playbackChanged && current.Transition is null)
             {
-                // SetAnimation replaces the entire native playback, including
-                // its fade. Defer rate/flag corrections until the finite active
-                // transition ends; then retain the observed time with blend0.
-                // No rate correction extends or restarts an active transition.
-                if(current.Transition is not null)++state.DeferredRateUpdates;
-                else
-                {
-                    double time=current.Time;
-                    // Only recovering an externally stopped nonloop endpoint
-                    // wraps its invalid loop endpoint; rate-only updates never
-                    // change the committed time. Normal sample clocks loop.
-                    if(!current.Loop && current.Duration>0 && time>=current.Duration)time=0;
-                    context.SetAnimation(config.Visual,clip,AnimationTransitionMode.Inertial,
-                        time:time,speed:rate,loop:true,playing:true,blendTicks:0);
-                    state.AnimationRate=rate;
-                    ++state.AnimationChanges;
-                    if(rateChanged)++state.RateChanges;
-                }
+                // Only a full replacement can repair playback flags. Wait for
+                // an active fade to end rather than implicitly interrupting it.
+                double time=current.Time;
+                // Recovering a stopped nonloop endpoint starts a valid loop;
+                // speed-only writes never seek or resume a stopped clock.
+                if(!current.Loop && current.Duration>0 && time>=current.Duration)time=0;
+                context.SetAnimation(config.Visual,clip,AnimationTransitionMode.Inertial,
+                    time:time,speed:rate,loop:true,playing:true,blendTicks:0);
+                state.AnimationRate=rate;
+                ++state.AnimationChanges;
+            }
+            else if(rateChanged)
+            {
+                // Preserve phase, outgoing source and the original fade end.
+                // This remains safe while a playback-flag repair is deferred.
+                context.SetAnimationSpeed(config.Visual,rate);
+                state.AnimationRate=rate;
+                ++state.AnimationChanges;
+                ++state.RateChanges;
             }
         }
         state.AnimationMode=mode;
