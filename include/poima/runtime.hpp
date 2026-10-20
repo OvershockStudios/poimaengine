@@ -136,12 +136,27 @@ struct RuntimeGroundingDefinition {
     // Heights in model units; distances below are world metres.
     double reference_height=0,plant_height=.03,lift_height=.15;
     double probe_above=.3,probe_below=.6,max_correction=.25,max_slope_degrees=55;
+    bool plant_lock=false;
     bool operator==(const RuntimeGroundingDefinition&) const = default;
 };
 struct RuntimeGroundingHit {
     std::string entity;
     std::array<double,3> position{},normal{};
     std::optional<std::uint32_t> triangle;
+};
+// Support-local anchor uses the physical body's rigid frame, excluding shape scale.
+struct RuntimeFootPlantAnchor {
+    std::uint64_t acquired_tick=0;
+    std::string support;
+    std::optional<std::uint32_t> triangle;
+    std::array<double,3> local_point{},local_normal{0,1,0},local_forward{0,0,1};
+};
+struct RuntimeFootPlantState {
+    bool armed=true;
+    std::string status="uninitialized";
+    std::optional<RuntimeFootPlantAnchor> anchor;
+    std::optional<std::array<double,3>> target_sole,target_normal,target_forward;
+    std::optional<double> position_error,normal_error;
 };
 struct RuntimeGroundingState {
     std::uint64_t decision_tick=0,casts=0;
@@ -151,6 +166,7 @@ struct RuntimeGroundingState {
     std::array<double,3> input_sole{},ray_origin{},actual_sole{},actual_normal{0,1,0};
     std::optional<RuntimeGroundingHit> hit;
     std::optional<double> position_error,normal_error;
+    std::optional<RuntimeFootPlantState> planting;
 };
 // Requested live multiplier, separate from the last contact's effective weight.
 // Authored enable/weight remain a ceiling; targets and calibration stay owned.

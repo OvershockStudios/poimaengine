@@ -130,8 +130,9 @@ positional IK, including when only the orientation weight is nonzero. The
 default profile requires positive uniform evaluated ancestor/root/middle
 scales. The wrapper may still be positive affine;
 the goal is a logical rig quaternion, not a decomposed world rotation under a
-nonuniform or sheared wrapper. Ground queries, automatic foot locking, pelvis
-compensation and joint limits remain separate systems.
+nonuniform or sheared wrapper. [Ground queries](GROUND_CONTACTS.md) and optional
+[planted-foot locking](FOOT_PLANTING.md) use separate profiles. Pelvis compensation
+and joint limits remain further work.
 
 ## Observe and save
 

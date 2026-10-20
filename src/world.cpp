@@ -482,7 +482,7 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
         chain.end_orientation=control.end_orientation;
         if(value.contains("grounding")) {
             const auto& g=value.at("grounding");
-            fields(g,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"},
+            fields(g,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees","plant_lock"},
                 {"sole_offset","sole_up","sole_forward","reference_height"});
             RuntimeGroundingDefinition definition;
             auto vector=[&](const char* key) {
@@ -495,6 +495,10 @@ std::vector<RuntimeTwoBoneIk> animation_ik_value(const Json& values) {
             auto number=[&](const char* key,double& output){if(g.contains(key)){require(g.at(key).is_number(),"Grounding parameters require numbers.");output=g.at(key).get<double>();}};
             number("reference_height",definition.reference_height);number("plant_height",definition.plant_height);number("lift_height",definition.lift_height);
             number("probe_above",definition.probe_above);number("probe_below",definition.probe_below);number("max_correction",definition.max_correction);number("max_slope_degrees",definition.max_slope_degrees);
+            if(g.contains("plant_lock")) {
+                require(g.at("plant_lock").is_boolean(),"Grounding plant_lock must be boolean.");
+                definition.plant_lock=g.at("plant_lock").get<bool>();
+            }
             require(!value.contains("end_orientation"),"Grounding owns the end orientation; do not supply end_orientation.");
             try { grounding::validate(definition); }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
             chain.grounding=definition;
@@ -3610,10 +3614,11 @@ public:
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.ik") {
-            fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric","include_grounding"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric","include_grounding","include_planting"},{"session_id","tick","entity","slot"});runtime_guard(params);
             if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");
             if(params.contains("include_metric"))require(params.at("include_metric").is_boolean(),"include_metric must be boolean.");
             if(params.contains("include_grounding"))require(params.at("include_grounding").is_boolean(),"include_grounding must be boolean.");
+            if(params.contains("include_planting"))require(params.at("include_planting").is_boolean(),"include_planting must be boolean.");
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));require(slot>=1 && slot<=8,"IK slot must be1..8.");
             try { (void)runtime_->entity(entity); }catch(const std::runtime_error& error){throw Error(-32004,error.what());}
@@ -3654,6 +3659,25 @@ public:
                             {"input_sole",g.input_sole},{"ray_origin",g.ray_origin},{"hit",hit},{"actual_sole",g.actual_sole},{"actual_normal",g.actual_normal},
                             {"position_error",g.position_error ? Json(*g.position_error) : Json(nullptr)},
                             {"normal_error",g.normal_error ? Json(*g.normal_error) : Json(nullptr)}};
+                    }
+                }
+                if(state && params.value("include_planting",false)) {
+                    value["planting"]=nullptr;
+                    if(state->grounding && state->grounding->planting) {
+                        const auto& plant=*state->grounding->planting;
+                        Json anchor=nullptr;
+                        if(plant.anchor) {
+                            const auto& a=*plant.anchor;
+                            anchor={{"acquired_tick",a.acquired_tick},{"support",a.support},
+                                {"triangle",a.triangle ? Json(*a.triangle) : Json(nullptr)},
+                                {"local_point",a.local_point},{"local_normal",a.local_normal},{"local_forward",a.local_forward}};
+                        }
+                        value["planting"]={{"armed",plant.armed},{"status",plant.status},{"anchor",anchor},
+                            {"target_sole",plant.target_sole ? Json(*plant.target_sole) : Json(nullptr)},
+                            {"target_normal",plant.target_normal ? Json(*plant.target_normal) : Json(nullptr)},
+                            {"target_forward",plant.target_forward ? Json(*plant.target_forward) : Json(nullptr)},
+                            {"position_error",plant.position_error ? Json(*plant.position_error) : Json(nullptr)},
+                            {"normal_error",plant.normal_error ? Json(*plant.normal_error) : Json(nullptr)}};
                     }
                 }
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};

@@ -97,7 +97,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"probe_above",{{"type","number"},{"minimum",.001},{"maximum",10},{"default",.3}}},
         {"probe_below",{{"type","number"},{"minimum",.001},{"maximum",10},{"default",.6}}},
         {"max_correction",{{"type","number"},{"exclusiveMinimum",0},{"maximum",10},{"default",.25}}},
-        {"max_slope_degrees",{{"type","number"},{"minimum",0},{"maximum",80},{"default",55}}}},
+        {"max_slope_degrees",{{"type","number"},{"minimum",0},{"maximum",80},{"default",55}}},
+        {"plant_lock",{{"type","boolean"},{"default",false},
+            {"description","Optional support-relative planted-foot anchor. Capture at plant_height; release/rearm on lift or disabled control. Support/constraint failures disarm until release, preventing repeated stance reacquisition. Uses one fresh validation ray and the rigid static/kinematic body frame; no pelvis or dynamic-body balance."}}}},
         {"sole_offset","sole_up","sole_forward","reference_height"});
     ik_chain["grounding"]["description"]="Optional native foot contact owner. Unit orthogonal sole axes and plant_height < lift_height required. At most two feet per rig, 64 per world. Only final post-physics sampling probes static/kinematic supports; misses and raised feet preserve animation. Requires upright positive uniform wrapper. Manual controls and explicit end_orientation are rejected for owned slots.";
     rig_fields["ik"]={{"type","array"},{"maxItems",8},{"items",object_schema(ik_chain,{"slot","root","middle","end","target","pole"})}};
@@ -201,7 +203,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 117}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 118}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -369,11 +371,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.ik"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},{"slot",ik_slot},
         {"include_end_orientation",{{"type","boolean"},{"default",false}}},
         {"include_metric",{{"type","boolean"},{"default",false}}},
-        {"include_grounding",{{"type","boolean"},{"default",false}}}}, {"session_id","tick","entity","slot"});
+        {"include_grounding",{{"type","boolean"},{"default",false}}},
+        {"include_planting",{{"type","boolean"},{"default",false}}}}, {"session_id","tick","entity","slot"});
     methods["runtime.ik"]["description"]="Read cached committed two-bone IK controls and diagnostics with exact session/tick. Returns source=runtime and state=null for an existing nonrig or absent configured slot; missing entity rejects. State includes frozen model indices, target/pole/space/weight/enabled, actual world end_position/target_error and clamped/pole_fallback. Inspection never samples or advances.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_end_orientation adds state.end_orientation=null or cached rig-space goal rotation/weight, actual_rotation and angular_error radians. The default response shape is unchanged.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_metric adds state.metric=null for the uniform profile, or near-uniform-v1 cached evaluated/frame/Gram/local-scale and unweighted endpoint diagnostics. Frame/Gram/local-scale errors are maxima over the incoming and published poses. Inactive metric errors are null. The authored metric profile is frozen; runtime.step cannot replace it.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_grounding adds cached grounding decisions, probe counts, support and full-affine sole diagnostics, or null for manual slots. It never queries physics.";
+    methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Independent include_planting adds state.planting=null or cached armed/status/support-local anchor, world sole/normal/heading targets and achieved residuals for plant_lock slots. It changes neither the previous grounding shape nor state; inspection never resolves support frames or probes.";
     const Json sounds={{"type","array"},{"maxItems",64},{"items",{{"oneOf",Json::array({
         object_schema({{"op",{{"const","play"}}},{"emitter",id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4},{"default",1}}}}, {"op","emitter"}),
         object_schema({{"op",{{"const","stop"}}},{"voice",{{"type","integer"},{"minimum",1},{"maximum",max_revision}}}}, {"op","voice"})

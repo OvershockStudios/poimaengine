@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.212**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.213**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.213 adds optional native [planted-foot locking](FOOT_PLANTING.md).
+Calibrated soles retain support-local anchors as a character or static/kinematic
+support moves. Fresh surface validation, explicit release/rearming and cached
+diagnostics avoid silent retargeting or repeated failed-stance reacquisition.
+Sampling jobs join before physical support reads and contact probes.
+
+Six new native groups pass on Linux and Windows, including translated/yawed/
+tilted supports, authored shape scale, partial weights, complete cold saves and
+later-Tick whole-batch rollback. Eleven retained Linux suites and nine Windows
+native executables pass. Each platform's unchanged original Knight workflow
+passes 127 literal RPCs, nine geometric observations, seven complete archives
+and four whole-byte pairs across two naturally closed owners. All 76 original
+takes remain intact; the selected contact pose is Idle, not every take.
+
+The retained compiled projectile consumer passes 90 RPCs and all 47 typed fields
+on each platform. A separate Linux check preserves an original 0.0.198 v7 save
+and its continued state with the original compiled consumer/bridge/SDK. Two
+1280×720 MSAA4 NVIDIA captures preserve four complete before/after archives and
+two byte-identical pairs. Accepted Windows Jobs close empty and unforced.
+
+Opted-in sessions use nested animation-state v10; nonplanting encodings and
+earlier inspection shapes remain intact. C# services remain 400 bytes; native
+C++ layouts require rebuilding. The initial Linux fixture enum compile failure
+remains recorded. [Evidence](evidence/m2-foot-planting.json) does not qualify
+gait detection, whole-shoe collision, pelvis/full-body balance, dynamic supports,
+inertial forced release, production crowds, new AOT/export, fresh-agent character
+intake or broader Alpha closure.
 
 Version 0.0.212 adds optional [finite-speed projectiles](PROJECTILES.md):
 constant-acceleration sphere flight, bounded curved-path sweeps, explicit

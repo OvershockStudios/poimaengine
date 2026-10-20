@@ -268,6 +268,48 @@ struct Runtime::Impl {
         profiling::counter("runtime.hierarchy.recomputed",recomputed);
         profiling::counter("runtime.hierarchy.reused",topology->hierarchy.size()-recomputed);
     }
+    void validate_planting_membership() const {
+        // Restore validation only: verify stored anchors against already
+        // restored body poses. No contact ray, SupportQuery callback, capture
+        // or correction is performed and saved values remain untouched.
+        for(const auto& [rig,definition]:topology->definitions) {
+            if(!definition.animation_rig)continue;
+            for(const auto& chain:definition.animation_rig->ik) {
+                if(!chain.grounding || !chain.grounding->plant_lock)continue;
+                const auto state=animations->ik_state(rig,chain.slot);
+                if(!state || !state->grounding || !state->grounding->planting || !state->grounding->planting->anchor)continue;
+                const auto& support=state->grounding->planting->anchor->support;
+                const auto found=topology->identities.find(support);
+                require(found!=topology->identities.end(),"Saved foot plant support does not exist.");
+                const auto* body=registry.try_get<Body>(found->second);
+                require(body && (body->motion==BodyMotion::Static || body->motion==BodyMotion::Kinematic),
+                    "Saved foot plant support must be static or kinematic.");
+                std::string self=rig;
+                for(auto id=rig;!id.empty();id=registry.get<Node>(find(id)).parent) {
+                    if(registry.any_of<Body,Controller>(find(id))){self=id;break;}
+                }
+                for(auto id=support;!id.empty();id=registry.get<Node>(find(id)).parent)
+                    require(id!=self,"Saved foot plant cannot use its own physical subtree.");
+                JPH::RVec3 position;JPH::Quat rotation;
+                physics.GetBodyInterface().GetPositionAndRotation(body->id,position,rotation);
+                const auto frame=local_matrix({position.GetX(),position.GetY(),position.GetZ()},
+                    {rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()},{1,1,1});
+                const auto& plant=*state->grounding->planting;const auto& anchor=*plant.anchor;
+                require(plant.target_sole && plant.target_normal && plant.target_forward,
+                    "Saved foot plant requires its complete world target.");
+                auto verify=[&](const std::array<double,3>& local,const std::array<double,3>& world,bool point) {
+                    for(std::size_t r=0;r<3;++r) {
+                        const auto expected=(point?frame[12+r]:0)+frame[r]*local[0]+frame[4+r]*local[1]+frame[8+r]*local[2];
+                        require(std::isfinite(expected) && std::abs(expected-world[r])<=1e-6,
+                            "Saved foot plant anchor differs from its restored physical frame.");
+                    }
+                };
+                verify(anchor.local_point,*plant.target_sole,true);
+                verify(anchor.local_normal,*plant.target_normal,false);
+                verify(anchor.local_forward,*plant.target_forward,false);
+            }
+        }
+    }
     void animation_locals(bool refresh_grounding=false) {
         profiling::Scope profile("runtime.animation.sample",static_cast<std::int64_t>(tick));
         if(animations->has_ik()) {
@@ -275,8 +317,9 @@ struct Runtime::Impl {
             // Jobs never read the registry or the preceding frame's matrices.
             sync();
             grounding::Query contacts;
+            grounding::SupportQuery support_frames;
             std::map<std::string,std::set<std::string>> excluded;
-            if(refresh_grounding)contacts=[&](const std::string& rig,const RuntimeRay& ray) {
+            auto exclusions=[&](const std::string& rig)->const std::set<std::string>& {
                 auto found=excluded.find(rig);
                 if(found==excluded.end()) {
                     // The nearest physical ancestor owns this character. A
@@ -300,11 +343,28 @@ struct Runtime::Impl {
                     }
                     found=excluded.emplace(rig,std::move(names)).first;
                 }
-                return physics_raycast(ray,found->second);
+                return found->second;
             };
+            if(refresh_grounding) {
+                contacts=[&](const std::string& rig,const RuntimeRay& ray) {
+                    return physics_raycast(ray,exclusions(rig));
+                };
+                support_frames=[&](const std::string& rig,const std::string& support)->std::optional<Matrix4> {
+                    const auto found=topology->identities.find(support);
+                    if(found==topology->identities.end() || exclusions(rig).contains(support))return {};
+                    const auto* body=registry.try_get<Body>(found->second);
+                    if(!body || (body->motion!=BodyMotion::Static && body->motion!=BodyMotion::Kinematic))return {};
+                    JPH::RVec3 position;JPH::Quat rotation;
+                    physics.GetBodyInterface().GetPositionAndRotation(body->id,position,rotation);
+                    // The shape already contains authored scale. Anchors live
+                    // in the rigid physical frame, not a scaled render frame.
+                    return local_matrix({position.GetX(),position.GetY(),position.GetZ()},
+                        {rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()},{1,1,1});
+                };
+            }
             for(const auto& pose:animations->sample(tick,[&](const std::string& id)->const Matrix4& {
                 return registry.get<Node>(find(id)).world;
-            },contacts))registry.get<Node>(find(pose.entity)).local=pose.local;
+            },contacts,support_frames))registry.get<Node>(find(pose.entity)).local=pose.local;
             world_matrices();
         } else for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
     }

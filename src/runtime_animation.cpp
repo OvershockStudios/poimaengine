@@ -37,6 +37,11 @@ void verify_grounding_geometry(const RuntimeGroundingState& saved,const ModelPos
         check(a.has_value()==b.has_value()&&(!a||std::abs(*a-*b)<=1e-6),"Saved grounding residual differs from reconstructed pose.");
     };
     residual(actual.position_error,saved.position_error);residual(actual.normal_error,saved.normal_error);
+    check(actual.planting.has_value()==saved.planting.has_value(),"Saved planting membership differs from reconstructed pose.");
+    if(saved.planting) {
+        residual(actual.planting->position_error,saved.planting->position_error);
+        residual(actual.planting->normal_error,saved.planting->normal_error);
+    }
 }
 AnimationCommand normalized(const AnimationCommand& source,std::size_t clip_count) {
     auto result=source;
@@ -379,6 +384,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
             if(chain.grounding) {
                 auto& control=ik_[index].back();control.enabled=false;control.weight=0;control.end_orientation.reset();
                 state.enabled=false;state.weight=0;state.grounding=RuntimeGroundingState{};
+                if(chain.grounding->plant_lock)state.grounding->planting=RuntimeFootPlantState{};
             }
             ik_states_[index].push_back(state);
         }
@@ -768,8 +774,9 @@ void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) 
     ik_.swap(candidate);
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
-    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query) {
-    if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query);
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
+    const grounding::SupportQuery& support_query) {
+    if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query,support_query);
     check(!grounding_restore_pending_||bool(wrapper_world),"Grounding restore verification requires the restored physical wrapper.");
     // Every job owns one candidate clock/layer/output partition. Nothing live
     // changes until all evaluations and output allocations have succeeded.
@@ -839,7 +846,8 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
     clocks_.swap(candidate);layers_.swap(candidate_layers);if(configured_ik)ik_states_.swap(candidate_ik_states);grounding_restore_pending_=false;return result;
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64_t tick,
-    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query) {
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
+    const grounding::SupportQuery& support_query) {
     check(!grounding_restore_pending_,"Verify restored grounding pose before refreshing contacts.");
     // Two joined candidate phases. Physics is queried only by the owner between
     // them, using the same root-stripped incoming poses that the solver consumes.
@@ -891,7 +899,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64
         for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding) {
             check(states[index][i].grounding.has_value(),"Configured grounding state is absent.");
             const auto chain=effective_grounding_chain(rig.ik[i],grounding_controls_[index][i]);
-            auto decision=grounding::prepare(rig.model_parents,poses[index],chain,wrappers[index],rig.entity,tick,*states[index][i].grounding,contact_query);
+            auto decision=grounding::prepare(rig.model_parents,poses[index],chain,wrappers[index],rig.entity,tick,*states[index][i].grounding,contact_query,support_query);
             validate_ik_command(decision.control);controls[index][i]=std::move(decision.control);
             states[index][i].grounding=std::move(decision.state);
         }
@@ -986,14 +994,21 @@ template<std::size_t N> std::array<double,N> state_vector(const StateJson& value
 }
 StateJson state_grounding_definition(const RuntimeGroundingDefinition& value) {
     grounding::validate(value);
-    return {{"sole_offset",value.sole_offset},{"sole_up",value.sole_up},{"sole_forward",value.sole_forward},
+    StateJson result={{"sole_offset",value.sole_offset},{"sole_up",value.sole_up},{"sole_forward",value.sole_forward},
         {"reference_height",value.reference_height},{"plant_height",value.plant_height},{"lift_height",value.lift_height},
         {"probe_above",value.probe_above},{"probe_below",value.probe_below},
         {"max_correction",value.max_correction},{"max_slope_degrees",value.max_slope_degrees}};
+    if(value.plant_lock)result["plant_lock"]=true;
+    return result;
 }
 RuntimeGroundingDefinition read_grounding_definition(const StateJson& value) {
-    state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"});
+    if(value.contains("plant_lock"))state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees","plant_lock"});
+    else state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"});
     RuntimeGroundingDefinition result;
+    if(value.contains("plant_lock")) {
+        result.plant_lock=state_bool(value.at("plant_lock"));
+        check(result.plant_lock,"Saved false plant_lock must retain the legacy definition shape.");
+    }
     result.sole_offset=state_vector<3>(value.at("sole_offset"));result.sole_up=state_vector<3>(value.at("sole_up"));result.sole_forward=state_vector<3>(value.at("sole_forward"));
     result.reference_height=state_number(value.at("reference_height"));result.plant_height=state_number(value.at("plant_height"));result.lift_height=state_number(value.at("lift_height"));
     result.probe_above=state_number(value.at("probe_above"));result.probe_below=state_number(value.at("probe_below"));
@@ -1036,6 +1051,97 @@ RuntimeGroundingState read_grounding(const StateJson& value,std::uint64_t tick) 
     if(!value.at("normal_error").is_null()) {result.normal_error=state_number(value.at("normal_error"));check(*result.normal_error>=0&&*result.normal_error<=3.141592653589794,"Invalid grounding normal error.");}
     return result;
 }
+StateJson state_planting(const RuntimeFootPlantState& value) {
+    StateJson anchor=nullptr;
+    if(value.anchor) {
+        const auto& a=*value.anchor;
+        anchor={{"acquired_tick",a.acquired_tick},{"support",a.support},
+            {"triangle",a.triangle?StateJson(*a.triangle):StateJson(nullptr)},
+            {"local_point",a.local_point},{"local_normal",a.local_normal},{"local_forward",a.local_forward}};
+    }
+    return {{"armed",value.armed},{"status",value.status},{"anchor",anchor},
+        {"target_sole",value.target_sole?StateJson(*value.target_sole):StateJson(nullptr)},
+        {"target_normal",value.target_normal?StateJson(*value.target_normal):StateJson(nullptr)},
+        {"target_forward",value.target_forward?StateJson(*value.target_forward):StateJson(nullptr)},
+        {"position_error",value.position_error?StateJson(*value.position_error):StateJson(nullptr)},
+        {"normal_error",value.normal_error?StateJson(*value.normal_error):StateJson(nullptr)}};
+}
+RuntimeFootPlantState read_planting(const StateJson& value,std::uint64_t decision_tick) {
+    state_fields(value,{"armed","status","anchor","target_sole","target_normal","target_forward","position_error","normal_error"});
+    RuntimeFootPlantState result;result.armed=state_bool(value.at("armed"));
+    check(value.at("status").is_string(),"Planting status must be a string.");result.status=value.at("status").get<std::string>();
+    auto point=[](const StateJson& v,double bound) {
+        auto p=state_vector<3>(v);for(double x:p)check(std::abs(x)<=bound,"Saved planting point exceeds its supported bounds.");return p;
+    };
+    auto frame=[](const std::array<double,3>& normal,const std::array<double,3>& forward) {
+        check(std::abs(std::hypot(normal[0],normal[1],normal[2])-1)<=1e-6&&
+            std::abs(std::hypot(forward[0],forward[1],forward[2])-1)<=1e-6&&
+            std::abs(normal[0]*forward[0]+normal[1]*forward[1]+normal[2]*forward[2])<=1e-6,
+            "Saved planting normal/forward must be unit and orthogonal.");
+    };
+    if(!value.at("anchor").is_null()) {
+        const auto& saved=value.at("anchor");state_fields(saved,{"acquired_tick","support","triangle","local_point","local_normal","local_forward"});
+        RuntimeFootPlantAnchor a;a.acquired_tick=state_uint(saved.at("acquired_tick"),decision_tick);
+        check(saved.at("support").is_string(),"Saved planting support must be a string.");a.support=saved.at("support").get<std::string>();
+        check(a.support.size()==32&&a.support.find_first_not_of("0123456789abcdef")==std::string::npos&&
+            a.support.find_first_not_of('0')!=std::string::npos,"Saved planting support must be a nonzero canonical entity.");
+        if(!saved.at("triangle").is_null())a.triangle=static_cast<std::uint32_t>(state_uint(saved.at("triangle"),UINT32_MAX));
+        a.local_point=point(saved.at("local_point"),4e6);a.local_normal=state_vector<3>(saved.at("local_normal"));
+        a.local_forward=state_vector<3>(saved.at("local_forward"));frame(a.local_normal,a.local_forward);result.anchor=std::move(a);
+    }
+    if(!value.at("target_sole").is_null())result.target_sole=point(value.at("target_sole"),1e6);
+    if(!value.at("target_normal").is_null())result.target_normal=state_vector<3>(value.at("target_normal"));
+    if(!value.at("target_forward").is_null())result.target_forward=state_vector<3>(value.at("target_forward"));
+    if(result.target_normal&&result.target_forward)frame(*result.target_normal,*result.target_forward);
+    if(!value.at("position_error").is_null()) {
+        result.position_error=state_number(value.at("position_error"));
+        check(*result.position_error>=0&&*result.position_error<=4e6,"Saved planting position residual is out of range.");
+    }
+    if(!value.at("normal_error").is_null()) {
+        result.normal_error=state_number(value.at("normal_error"));
+        check(*result.normal_error>=0&&*result.normal_error<=3.141592653589794,"Saved planting normal residual is out of range.");
+    }
+    return result;
+}
+void validate_planting_cache(const RuntimeGroundingState& state,const RuntimeTwoBoneIk& chain) {
+    const bool configured=chain.grounding&&chain.grounding->plant_lock;
+    check(state.planting.has_value()==configured,"Saved planting membership differs from the frozen profile.");
+    if(!configured)return;
+    const auto& p=*state.planting;const bool locked=p.status=="locked";
+    const bool initial=p.status=="uninitialized",disabled=p.status=="disabled",lifted=p.status=="lifted";
+    const bool seeking=p.status=="seeking",disarmed=p.status=="disarmed";
+    const bool released_lost=p.status=="released-support-lost",released_changed=p.status=="released-support-changed";
+    const bool released_anchor=p.status=="released-anchor-error";
+    const bool released_contact=p.status=="released-miss"||p.status=="released-no-normal"||p.status=="released-slope"||
+        p.status=="released-heading-degenerate"||p.status=="released-correction-limit"||p.status=="released-unreachable";
+    check(initial||disabled||lifted||seeking||disarmed||locked||released_lost||released_changed||released_anchor||released_contact,
+        "Unknown saved planting status.");
+    check(p.armed==(initial||disabled||lifted||seeking),"Saved planting armed latch differs from its status.");
+    check(p.anchor.has_value()==locked&&p.target_sole.has_value()==locked&&p.target_normal.has_value()==locked&&
+        p.target_forward.has_value()==locked&&p.position_error.has_value()==locked&&p.normal_error.has_value()==locked,
+        "Saved planting anchor/target/residual membership differs from its status.");
+    check(initial==(state.status=="uninitialized")&&disabled==(state.status=="disabled")&&lifted==(state.status=="lifted"),
+        "Saved planting inactive status differs from its grounding decision.");
+    if(initial)check(state_planting(p)==state_planting(RuntimeFootPlantState{}),"Uninitialized planting must retain exact defaults.");
+    if(locked) {
+        check(state.status=="contact"&&state.hit&&state.hit->entity==p.anchor->support,
+            "Locked planting requires a current contact with the saved support.");
+        const auto& hit=*state.hit;const auto& target=*p.target_sole;const auto& n=*p.target_normal;
+        check(std::hypot(hit.position[0]-target[0],hit.position[1]-target[1],hit.position[2]-target[2])<=grounding::plant_point_tolerance,
+            "Saved planting target differs from its actual probe contact.");
+        const auto& h=hit.normal;
+        const auto cross=std::hypot(h[1]*n[2]-h[2]*n[1],h[2]*n[0]-h[0]*n[2],h[0]*n[1]-h[1]*n[0]);
+        const auto dot=h[0]*n[0]+h[1]*n[1]+h[2]*n[2];
+        check(std::atan2(cross,std::clamp(dot,-1.,1.))<=grounding::plant_normal_tolerance,
+            "Saved planting target normal differs from its actual probe contact.");
+    }
+    if(released_lost)check(state.status=="plant-support-lost"||state.status=="contact","Released planting support-loss decision differs.");
+    if(released_changed)check(state.status=="plant-support-changed","Released planting changed-support decision differs.");
+    if(released_anchor)check(state.status=="plant-anchor-error","Released planting anchor-error decision differs.");
+    if(released_contact)check(p.status=="released-"+state.status,"Released planting contact reason differs from its decision.");
+    if(seeking||disarmed)check(state.status!="plant-support-lost"&&state.status!="plant-support-changed"&&state.status!="plant-anchor-error",
+        "Unheld planting cannot retain a held-support failure decision.");
+}
 void validate_grounding_cache(const RuntimeGroundingState& state,const RuntimeTwoBoneIk& chain,
     const RuntimeIkCommand& control,std::uint64_t tick) {
     check(state.decision_tick<=tick,"Grounding decision is newer than the saved boundary.");
@@ -1043,12 +1149,15 @@ void validate_grounding_cache(const RuntimeGroundingState& state,const RuntimeTw
     const bool initial=state.status=="uninitialized",disabled=state.status=="disabled",lifted=state.status=="lifted";
     const bool empty=state.status=="miss"||state.status=="no-normal";
     const bool rejected=state.status=="slope"||state.status=="heading-degenerate"||state.status=="correction-limit"||state.status=="unreachable";
+    const bool planted=chain.grounding&&chain.grounding->plant_lock;
+    const bool plant_lost=planted&&state.status=="plant-support-lost";
+    const bool plant_rejected=planted&&(state.status=="plant-support-changed"||state.status=="plant-anchor-error");
     const bool contact=state.status=="contact";
-    check(initial||disabled||lifted||empty||rejected||contact,"Unknown saved grounding status.");
+    check(initial||disabled||lifted||empty||rejected||contact||plant_lost||plant_rejected,"Unknown saved grounding status.");
     check(initial||state.decision_tick==tick,"Initialized grounding save requires the current committed decision.");
-    check(state.cast==(empty||rejected||contact),"Grounding cast flag differs from its decision status.");
+    check(state.cast==(empty||rejected||contact||plant_rejected),"Grounding cast flag differs from its decision status.");
     check(!state.cast||state.casts>0,"A grounding cast requires a positive cumulative count.");
-    check(state.hit.has_value()==(rejected||contact),"Grounding hit differs from its decision status.");
+    check(state.hit.has_value()==(rejected||contact||plant_rejected),"Grounding hit differs from its decision status.");
     check(state.position_error.has_value()==state.hit.has_value()&&state.normal_error.has_value()==state.hit.has_value(),"Grounding contact residual membership differs.");
     check(state.weight>=0&&state.weight<=chain.weight,"Grounding weight exceeds its frozen source weight.");
     if(initial) {
@@ -1061,6 +1170,7 @@ void validate_grounding_cache(const RuntimeGroundingState& state,const RuntimeTw
     }
     if(contact)check(control.enabled&&state.weight>0&&control.weight==state.weight&&control.end_orientation&&control.end_orientation->weight==state.weight,"Contact controls differ from the cached effective weights.");
     else check(!control.enabled&&control.weight==0&&!control.end_orientation&&state.weight==0,"Noncontact grounding must retain no effective correction.");
+    validate_planting_cache(state,chain);
 }
 StateJson state_pose(const NodePose& pose) {
     return {{"position",pose.position},{"rotation",pose.rotation},{"scale",pose.scale}};
@@ -1166,6 +1276,9 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
     check(!grounding_controls_pending_,"Refresh the final grounding decision before saving changed multipliers.");
     const bool configured_ik=has_ik(),configured_root=has_root_motion(),grounded=has_grounding();
+    const bool planted=std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig) {
+        return std::any_of(rig.ik.begin(),rig.ik.end(),[](const RuntimeTwoBoneIk& chain){return chain.grounding&&chain.grounding->plant_lock;});
+    });
     // Identity controls retain the exact v7 wire shape; no ever-used flag.
     const bool controlled=std::any_of(grounding_controls_.begin(),grounding_controls_.end(),[](const auto& controls) {
         return std::any_of(controls.begin(),controls.end(),[](const RuntimeGroundingControl& value){return value!=RuntimeGroundingControl{};});
@@ -1243,7 +1356,9 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
                     check(ik_states_[index][i].grounding.has_value()==frozen.grounding.has_value(),"Grounding save membership differs.");
                     if(frozen.grounding) {
                         const auto& multiplier=grounding_controls_[index][i];validate_grounding_control(multiplier);
-                        const auto state=read_grounding(state_grounding(*ik_states_[index][i].grounding),tick);
+                        auto state=read_grounding(state_grounding(*ik_states_[index][i].grounding),tick);
+                        const auto& planting=ik_states_[index][i].grounding->planting;
+                        if(planting)state.planting=read_planting(state_planting(*planting),state.decision_tick);
                         const auto effective=state.status=="uninitialized"?frozen:effective_grounding_chain(frozen,multiplier);
                         validate_grounding_cache(state,effective,control,tick);
                     }
@@ -1252,6 +1367,10 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
                     if(controlled&&frozen.grounding) {
                         const auto& multiplier=grounding_controls_[index][i];
                         saved.back()["grounding"]["control"]={{"enabled",multiplier.enabled},{"weight",multiplier.weight}};
+                    }
+                    if(planted&&frozen.grounding) {
+                        const auto& planting=ik_states_[index][i].grounding->planting;
+                        saved.back()["grounding"]["planting"]=planting?state_planting(*planting):StateJson(nullptr);
                     }
                 }
             }
@@ -1265,8 +1384,9 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
         records.push_back(std::move(record));
     }
     const auto legacy_version=controlled ? 8 : grounded ? 7 : oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1;
-    StateJson document={{"format","poima.animation-state"},{"version",retimed?9:legacy_version},{"tick",tick},{"rigs",records}};
-    if(retimed)document["legacy_version"]=legacy_version;
+    StateJson document={{"format","poima.animation-state"},{"version",planted?10:retimed?9:legacy_version},{"tick",tick},{"rigs",records}};
+    if(retimed||planted)document["legacy_version"]=legacy_version;
+    if(planted)document["retimed"]=retimed;
     auto result=document.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
@@ -1274,6 +1394,9 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     check(tick<=animation_state_max_tick,"Animation load tick is out of range.");
     const bool configured=std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
     const bool configured_ik=has_ik(),configured_root=has_root_motion(),configured_grounding=has_grounding();
+    const bool configured_planting=std::any_of(membership_->rigs.begin(),membership_->rigs.end(),[](const Rig& rig) {
+        return std::any_of(rig.ik.begin(),rig.ik.end(),[](const RuntimeTwoBoneIk& chain){return chain.grounding&&chain.grounding->plant_lock;});
+    });
     check(text.size()<=(configured || configured_ik || configured_root ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its configured byte limit.");
     // Reject duplicate keys and excessive nesting instead of allowing ambiguous
     // records or allocating an unbounded recursive object tree.
@@ -1288,11 +1411,14 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         return true;
     };
     const auto document=StateJson::parse(text,callback);
-    const auto wire_version=state_uint(document.at("version"),9);const bool retimed=wire_version==9;
-    if(retimed)state_fields(document,{"format","version","legacy_version","tick","rigs"});
+    const auto wire_version=state_uint(document.at("version"),10);const bool planted=wire_version==10;
+    const bool retimed=planted?state_bool(document.at("retimed")):wire_version==9;
+    if(planted)state_fields(document,{"format","version","legacy_version","retimed","tick","rigs"});
+    else if(retimed)state_fields(document,{"format","version","legacy_version","tick","rigs"});
     else state_fields(document,{"format","version","tick","rigs"});
-    const auto version=retimed?state_uint(document.at("legacy_version"),8):wire_version;
+    const auto version=retimed||planted?state_uint(document.at("legacy_version"),8):wire_version;
     check(document.at("format")=="poima.animation-state" && version>=1 && version<=8,"Unsupported animation state format/version.");
+    check(planted==configured_planting&&(!planted||version==7||version==8),"Animation state planting membership/version differs.");
     const bool controlled=version==8,grounded=version>=7;check(grounded==configured_grounding,"Animation state grounding membership/version differs.");
     const bool oriented=version>=6;
     const bool modern=version>=2,retain_history=modern||retimed;const bool layered=version>=3;
@@ -1431,7 +1557,9 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                     const auto& saved=value.at("grounding");check(saved.is_null()==!frozen.grounding,"Saved grounding chain membership differs.");
                     candidate_ik_states[index][i].grounding.reset();
                     if(frozen.grounding) {
-                        if(controlled)state_fields(saved,{"definition","state","control"});
+                        if(planted&&controlled)state_fields(saved,{"definition","state","control","planting"});
+                        else if(planted)state_fields(saved,{"definition","state","planting"});
+                        else if(controlled)state_fields(saved,{"definition","state","control"});
                         else state_fields(saved,{"definition","state"});
                         check(read_grounding_definition(saved.at("definition"))==*frozen.grounding,"Saved grounding binding differs from frozen profile.");
                         if(controlled) {
@@ -1439,6 +1567,8 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                             any_grounding_control=any_grounding_control||candidate_grounding[index][i]!=RuntimeGroundingControl{};
                         }
                         candidate_ik_states[index][i].grounding=read_grounding(saved.at("state"),tick);
+                        if(planted&&!saved.at("planting").is_null())candidate_ik_states[index][i].grounding->planting=
+                            read_planting(saved.at("planting"),candidate_ik_states[index][i].grounding->decision_tick);
                         const auto& state=*candidate_ik_states[index][i].grounding;
                         check(state.status!="uninitialized"||candidate_grounding[index][i]==RuntimeGroundingControl{},
                             "Uninitialized grounding state requires identity requested controls.");
@@ -1458,7 +1588,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         if(configured_root||oriented){const auto& rig=membership_->rigs[index];const auto& root=rig.root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root){candidate_roots[index]=read_root(saved,entity,*root,rig.clip_durations.size(),tick,candidate[index],retimed,rig.clip_durations);
             if(candidate_roots[index].fade)any_rate=any_rate||candidate_roots[index].fade->source_rate.has_value();}}
     }
-    check(!retimed||any_rate,"Version 9 animation state requires a retained rate segment.");
+    check(!retimed||any_rate,planted?"Retimed version 10 animation state requires a retained rate segment.":"Version 9 animation state requires a retained rate segment.");
     check(!retimed||version!=1||!any_inertial,"Legacy profile 1 cannot contain inertial history flags.");
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
     check(version!=6||any_orientation,"Version 6 animation state requires at least one retained end orientation.");

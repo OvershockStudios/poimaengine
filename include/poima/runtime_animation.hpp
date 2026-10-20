@@ -129,7 +129,7 @@ private:
     RuntimeAnimationLayerState layer_summary(std::size_t index,std::size_t layer,std::uint64_t tick) const;
     std::vector<RuntimeAnimationPose> sample_grounded(std::uint64_t tick,
         const std::function<const Matrix4&(const std::string&)>& wrapper_world,
-        const grounding::Query& contact_query);
+        const grounding::Query& contact_query,const grounding::SupportQuery& support_query);
 public:
     // No executor retains the independent serial reference path.
     explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
@@ -158,7 +158,7 @@ public:
     void commit_root_motion(const std::vector<RuntimeRootMotionState>& states,std::uint64_t tick_after);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick,
         const std::function<const Matrix4&(const std::string&)>& wrapper_world={},
-        const grounding::Query& contact_query={});
+        const grounding::Query& contact_query={},const grounding::SupportQuery& support_query={});
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);

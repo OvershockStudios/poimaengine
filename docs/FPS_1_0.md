@@ -14,8 +14,9 @@ observable workload, declared hardware tier and measured acceptance evidence.
 
 Current foundation: [native crouch/stand](CHARACTER_STANCE.md) preserves feet,
 uses physical clearance before capsule growth and retains posture intent in
-checkpoints. Stairs, slopes, moving platforms, mantle, slide and vault remain
-separate locomotion gates. Character rigs need their own crouch animation policy.
+checkpoints. Optional [native locomotion](CHARACTER_LOCOMOTION.md) covers bounded
+steps, slopes and kinematic supports. Mantle, slide and vault remain further
+locomotion work. Character rigs need their own crouch animation policy.
 
 The optional [weapon-actions package](WEAPON_ACTIONS.md) adds explicit magazine,
 chamber, fire-mode and reload/equip state. Its compiled sample connects accepted
@@ -24,6 +25,11 @@ multiple-weapon inventory remain additional package work. The optional
 [projectile helper](PROJECTILES.md) adds constant-acceleration finite-speed sphere
 flight and saved impact/lifetime state over the shared native capsule service;
 penetration, ricochet and moving-target relative CCD remain separate.
+
+Optional [planted-foot locking](FOOT_PLANTING.md) supplies support-relative
+sole anchors over static/kinematic surfaces, saved state and explicit release
+policy. This procedural layer composes with imported clips; it does not supply
+gait annotation, pelvis balance or motion-matched locomotion.
 
 ## Capability matrix
 

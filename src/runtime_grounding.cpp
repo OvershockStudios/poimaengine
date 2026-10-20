@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace poima::grounding {
 namespace {
@@ -96,6 +97,29 @@ V sole_normal(const Matrix4& m,const V& local) {
         inv[4]*local[0]+inv[5]*local[1]+inv[6]*local[2],
         inv[8]*local[0]+inv[9]*local[1]+inv[10]*local[2]});
 }
+void support_frame(const Matrix4& m) {
+    for(const auto x:m)check(std::isfinite(x),"Plant support frame must be finite.");
+    check(m[3]==0&&m[7]==0&&m[11]==0&&m[15]==1,"Plant support frame must be affine.");
+    bounded(position(m),1e6,"Plant support position exceeds the world range.");
+    const V x{m[0],m[1],m[2]},y{m[4],m[5],m[6]},z{m[8],m[9],m[10]};
+    check(std::abs(length(x)-1)<=wrapper_tolerance&&std::abs(length(y)-1)<=wrapper_tolerance&&
+        std::abs(length(z)-1)<=wrapper_tolerance&&std::abs(dot(x,y))<=wrapper_tolerance&&
+        std::abs(dot(x,z))<=wrapper_tolerance&&std::abs(dot(y,z))<=wrapper_tolerance&&dot(cross(x,y),z)>0,
+        "Plant support frame requires positive unit orthogonal axes within 1e-8.");
+}
+void clear_plant(RuntimeFootPlantState& state,const std::string& status,bool armed) {
+    state.armed=armed;state.status=status;state.anchor.reset();
+    state.target_sole.reset();state.target_normal.reset();state.target_forward.reset();
+    state.position_error.reset();state.normal_error.reset();
+}
+void plant_frame(const V& normal,const V& forward) {
+    finite(normal,"Plant anchor normal must be finite.");finite(forward,"Plant anchor forward must be finite.");
+    check(std::abs(length(normal)-1)<=axis_tolerance&&std::abs(length(forward)-1)<=axis_tolerance&&
+        std::abs(dot(normal,forward))<=axis_tolerance,"Plant anchor axes must be unit and orthogonal within 1e-6.");
+}
+double normal_error(const V& a,const V& b) {
+    return std::atan2(length(cross(a,b)),std::clamp(dot(a,b),-1.,1.));
+}
 void pose_shape(const ModelPose& pose,const RuntimeTwoBoneIk& chain) {
     check(pose.world.size()==pose.local.size()&&chain.root<pose.world.size()&&
         chain.middle<pose.world.size()&&chain.end<pose.world.size(),"Grounding requires a complete model pose.");
@@ -124,7 +148,7 @@ void validate(const RuntimeGroundingDefinition& d) {
 
 Decision prepare(std::span<const int> parents,const ModelPose& pose,const RuntimeTwoBoneIk& chain,
     const Matrix4& wrapper,const std::string& entity,std::uint64_t tick,
-    const RuntimeGroundingState& previous,const Query& query) {
+    const RuntimeGroundingState& previous,const Query& query,const SupportQuery& support) {
     check(chain.grounding.has_value(),"Grounding chain has no frozen profile.");const auto& d=*chain.grounding;
     validate(d);pose_shape(pose,chain);check(parents.size()==pose.local.size(),"Grounding model parent count differs.");
     check(!chain.end_orientation,"Grounding owns its end orientation.");
@@ -139,30 +163,72 @@ Decision prepare(std::span<const int> parents,const ModelPose& pose,const Runtim
     const auto model_sole=point(pose.world[chain.end],d.sole_offset);
     s.input_sole=point(wrapper,model_sole);s.actual_sole=s.input_sole;s.actual_normal=sole_normal(end_world,d.sole_up);
     bounded(s.input_sole,1e6,"Grounding sole exceeds the world query range.");
-    if(!chain.enabled||chain.weight==0)return result;
+    if(d.plant_lock) {
+        s.planting=previous.planting.value_or(RuntimeFootPlantState{});
+        s.planting->position_error.reset();s.planting->normal_error.reset();
+    }
+    if(!chain.enabled||chain.weight==0) {
+        if(s.planting)clear_plant(*s.planting,"disabled",true);
+        return result;
+    }
     const auto height=model_sole[1]-d.reference_height;check(std::isfinite(height),"Grounding sole height is invalid.");
-    if(height>=d.lift_height) { s.status="lifted";return result; }
+    if(height>=d.lift_height) {
+        s.status="lifted";if(s.planting)clear_plant(*s.planting,"lifted",true);return result;
+    }
     double weight=chain.weight;
     if(height>d.plant_height) { const auto t=(height-d.plant_height)/(d.lift_height-d.plant_height);weight*=1-t*t*(3-2*t); }
-    if(weight<=0) { s.status="lifted";return result; }
-    RuntimeRay ray;ray.origin=add(s.input_sole,{0,d.probe_above,0});ray.direction={0,-1,0};ray.distance=d.probe_above+d.probe_below;
+    if(weight<=0) { s.status="lifted";if(s.planting)clear_plant(*s.planting,"lifted",true);return result; }
+    const bool held=s.planting&&s.planting->anchor.has_value();
+    V target_sole=s.input_sole,anchor_normal{},anchor_forward{};
+    auto reject=[&](const char* status,const char* reason=nullptr) {
+        s.status=status;
+        if(held)clear_plant(*s.planting,std::string("released-")+(reason?reason:status),false);
+    };
+    if(s.planting&&!held) {
+        // Keep the failure latch through ordinary terrain conformance. Only
+        // source lift or requested disable starts another stance acquisition.
+        s.planting->status=s.planting->armed?"seeking":"disarmed";
+        s.planting->target_sole.reset();s.planting->target_normal.reset();s.planting->target_forward.reset();
+    }
+    if(held) {
+        const auto& anchor=*s.planting->anchor;
+        check(anchor.acquired_tick<=tick,"Plant anchor cannot be newer than its decision.");
+        bounded(anchor.local_point,4e6,"Plant local anchor exceeds its supported range.");
+        plant_frame(anchor.local_normal,anchor.local_forward);
+        check(bool(support),"Plant support resolver is unavailable.");
+        const auto frame=support(entity,anchor.support);
+        if(!frame) {reject("plant-support-lost","support-lost");return result;}
+        support_frame(*frame);
+        target_sole=point(*frame,anchor.local_point);anchor_normal=unit(vector(*frame,anchor.local_normal));
+        anchor_forward=unit(vector(*frame,anchor.local_forward));
+        bounded(target_sole,1e6,"Plant target sole exceeds the world query range.");
+    }
+    RuntimeRay ray;ray.origin=add(target_sole,{0,d.probe_above,0});ray.direction={0,-1,0};ray.distance=d.probe_above+d.probe_below;
     bounded(ray.origin,1e6,"Grounding probe origin exceeds the world query range.");
     bounded(add(ray.origin,{0,-ray.distance,0}),1e6,"Grounding probe endpoint exceeds the world query range.");
     s.ray_origin=ray.origin;check(bool(query),"Grounding contact query is unavailable.");
     check(s.casts<std::numeric_limits<std::uint64_t>::max(),"Grounding cast counter overflow.");
     ++s.casts;s.cast=true;const auto hit=query(entity,ray);
-    if(!hit) { s.status="miss";return result; }
-    if(!hit->normal) { s.status="no-normal";return result; }
+    if(!hit) { reject("miss");return result; }
+    if(!hit->normal) { reject("no-normal");return result; }
     finite(hit->position,"Grounding hit position must be finite.");finite(*hit->normal,"Grounding hit normal must be finite.");
+    if(s.planting)bounded(hit->position,1e6,"Plant support hit exceeds the world query range.");
     const auto normal_length=length(*hit->normal);
-    if(!std::isfinite(normal_length)||normal_length==0) { s.status="no-normal";return result; }
+    if(!std::isfinite(normal_length)||normal_length==0) { reject("no-normal");return result; }
     const auto n=unit(*hit->normal);s.hit=RuntimeGroundingHit{hit->entity,hit->position,n,hit->triangle};
-    if(n[1]<=0||n[1]<std::cos(d.max_slope_degrees*radians)) { s.status="slope";return result; }
+    if(held&&hit->entity!=s.planting->anchor->support) {reject("plant-support-changed","support-changed");return result;}
+    if(n[1]<=0||n[1]<std::cos(d.max_slope_degrees*radians)) { reject("slope");return result; }
+    if(held&&(length(sub(hit->position,target_sole))>plant_point_tolerance||normal_error(n,anchor_normal)>plant_normal_tolerance)) {
+        reject("plant-anchor-error","anchor-error");return result;
+    }
     const auto source_forward=vector(end_world,d.sole_forward);
-    const auto projected=sub(source_forward,times(n,dot(source_forward,n)));
+    const auto goal_normal=held?anchor_normal:n;
+    const auto goal_forward=held?anchor_forward:source_forward;
+    const auto projected=sub(goal_forward,times(goal_normal,dot(goal_forward,goal_normal)));
     const auto heading_length=length(projected),source_length=length(source_forward);
-    if(!std::isfinite(heading_length)||!std::isfinite(source_length)||source_length==0||heading_length<=1e-12*source_length) {
-        s.status="heading-degenerate";return result;
+    const auto heading_reference_length=held?length(goal_forward):source_length;
+    if(!std::isfinite(heading_length)||!std::isfinite(source_length)||source_length==0||heading_length<=1e-12*heading_reference_length) {
+        reject("heading-degenerate");return result;
     }
     const auto source_world=product(wrapper_q,orientation(parents,pose,chain.end));
     // The end joint may have positive nonuniform scale even when every IK
@@ -170,21 +236,45 @@ Decision prepare(std::span<const int> parents,const ModelPose& pose,const Runtim
     // logical rotation; mapping the unscaled local axes would tilt the actual
     // surface normal. Keep the complete source offset below for the same reason.
     const auto residual_frame=product(inverse(source_world),frame(s.actual_normal,source_forward));
-    const auto desired_world=product(frame(n,projected),inverse(residual_frame));
+    const auto desired_world=product(frame(goal_normal,projected),inverse(residual_frame));
     // Rotate the entire source affine ankle-to-sole vector, not a unitized
     // local offset. Original scales and translations remain untouched.
     const auto offset=rotate(product(desired_world,inverse(source_world)),vector(end_world,d.sole_offset));
-    const auto target=sub(hit->position,offset);
+    const auto goal_sole=held?target_sole:hit->position;
+    const auto target=sub(goal_sole,offset);
     const auto correction=length(sub(target,position(end_world)));
     check(std::isfinite(correction),"Grounding correction exceeds numeric range.");
-    if(correction>d.max_correction) { s.status="correction-limit";return result; }
+    if(correction>d.max_correction) { reject("correction-limit");return result; }
     const auto root=point(wrapper,position(pose.world[chain.root])),middle=point(wrapper,position(pose.world[chain.middle]));
     const auto a=length(sub(middle,root)),b=length(sub(position(end_world),middle)),reach=length(sub(target,root));
     check(std::isfinite(a)&&std::isfinite(b)&&a>0&&b>0&&std::isfinite(reach),"Grounding links must have finite nonzero lengths.");
-    if(reach<std::abs(a-b)||reach>a+b) { s.status="unreachable";return result; }
+    if(reach<std::abs(a-b)||reach>a+b) { reject("unreachable");return result; }
     c.target=target;c.enabled=true;c.weight=weight;
     c.end_orientation=canonical_ik_end_orientation(RuntimeIkEndOrientation{product(inverse(wrapper_q),desired_world),weight});
-    validate_ik_command(c);s.weight=weight;s.status="contact";return result;
+    validate_ik_command(c);s.weight=weight;s.status="contact";
+    if(s.planting) {
+        auto& plant=*s.planting;
+        if(!held&&plant.armed&&height<=d.plant_height) {
+            check(bool(support),"Plant support resolver is unavailable.");
+            const auto frame=support(entity,hit->entity);
+            if(!frame) {
+                // This foot already cast and has a valid ordinary contact.
+                // Retain that real decision while recording failed acquisition.
+                clear_plant(plant,"released-support-lost",false);return result;
+            }
+            support_frame(*frame);const auto inverse=inverse_affine(*frame);
+            RuntimeFootPlantAnchor anchor;anchor.acquired_tick=tick;anchor.support=hit->entity;anchor.triangle=hit->triangle;
+            anchor.local_point=point(inverse,goal_sole);anchor.local_normal=unit(vector(inverse,goal_normal));
+            anchor.local_forward=unit(vector(inverse,unit(projected)));
+            bounded(anchor.local_point,4e6,"Plant local anchor exceeds its supported range.");plant_frame(anchor.local_normal,anchor.local_forward);
+            plant.anchor=std::move(anchor);
+        }
+        if(plant.anchor) {
+            plant.armed=false;plant.status="locked";plant.target_sole=goal_sole;
+            plant.target_normal=goal_normal;plant.target_forward=unit(projected);
+        }
+    }
+    return result;
 }
 
 void finish(RuntimeGroundingState& state,const ModelPose& pose,const RuntimeTwoBoneIk& chain,const Matrix4& wrapper) {
@@ -198,6 +288,16 @@ void finish(RuntimeGroundingState& state,const ModelPose& pose,const RuntimeTwoB
             std::clamp(dot(state.actual_normal,n),-1.,1.));
         check(std::isfinite(position_error)&&std::isfinite(normal_error),"Grounding final contact residual must be finite.");
         state.position_error=position_error;state.normal_error=normal_error;
+    }
+    if(state.planting) {
+        auto& plant=*state.planting;plant.position_error.reset();plant.normal_error.reset();
+        if(plant.anchor) {
+            check(plant.target_sole&&plant.target_normal&&plant.target_forward,"Locked plant requires its complete target frame.");
+            const auto position=length(sub(state.actual_sole,*plant.target_sole));
+            const auto angle=normal_error(state.actual_normal,unit(*plant.target_normal));
+            check(std::isfinite(position)&&std::isfinite(angle),"Planted-foot residual must be finite.");
+            plant.position_error=position;plant.normal_error=angle;
+        }
     }
 }
 }

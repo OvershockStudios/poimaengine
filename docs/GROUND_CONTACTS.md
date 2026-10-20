@@ -6,10 +6,12 @@ using the blended, root-stripped pose before IK. Both feet query that same
 uncorrected pose before either leg is solved. Sampling jobs join before the
 owner queries Jolt; workers never query the physics world.
 
-This is terrain conformance. Planted-foot locking, gait/contact annotation,
-pelvis compensation, dynamic-body support and full-body balance remain future
-work. A ray and one calibrated sole point cannot guarantee that an entire shoe
-fits stairs, narrow ledges or irregular geometry.
+The default is terrain conformance. Optional [planted-foot locking](FOOT_PLANTING.md)
+keeps a sole anchored relative to an eligible support, with explicit release
+and rearming. Gait/contact annotation, pelvis compensation, dynamic-body support
+and full-body balance remain future work. A ray and one calibrated sole point
+cannot guarantee that an entire shoe fits stairs, narrow ledges or irregular
+geometry.
 
 ## Author a foot
 
@@ -138,6 +140,8 @@ contacts need not reach the surface exactly.
 Disabled, raised and rejected feet do not retain an old correction. Statuses
 are `uninitialized`, `disabled`, `lifted`, `miss`, `no-normal`, `slope`,
 `heading-degenerate`, `correction-limit`, `unreachable` and `contact`.
+An opted-in planting profile adds support-validation decisions and independent
+cached anchor diagnostics; see the [planting contract](FOOT_PLANTING.md#state-and-failures).
 Rejected hits with valid normals remain inspectable; misses and missing normals
 have no retained support. Invalid definitions, unsupported wrappers and solver
 metric failures reject the complete simulation batch rather than masquerading
@@ -160,7 +164,7 @@ refreshes contacts. Inspection, skin queries, serialization and warm/cold save
 restoration never cast new foot rays. Existing physics restoration has its own
 support rebuilding; this is not a promise that it executes no physics queries.
 
-Grounded sessions with default requested controls retain nested animation-state
+Grounded sessions without planting or rate overlays and with default requested controls retain nested animation-state
 version 7 and its exact shape. A nondefault requested control selects version 8,
 which adds a complete `control` record beside each automatic slot's frozen
 `definition` and cached `state`. Restoring v7 resets requested multipliers to
@@ -169,6 +173,10 @@ defaults selects v7 again. All-default v8 archives reject as noncanonical.
 Both versions retain the frozen profiles, generated controls and complete
 contact diagnostics/counters. Sessions
 without grounding retain their existing animation-state versions and shapes.
+An active [rate overlay](ANIMATION_RATES.md) uses version 9; an authored
+[planting profile](FOOT_PLANTING.md#save-and-restore) selects version 10 with
+explicit legacy-control and rate membership. Nonplanting sessions retain
+their earlier encodings.
 Initialized saved decisions must belong to the saved tick. A restore verifies
 their achieved geometry against the reconstructed pose without rewriting the
 saved numbers; the next tick queries the restored physical world. Direct native

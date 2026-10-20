@@ -1,0 +1,880 @@
+{
+  "format": "poima.foot-planting-evidence.v1",
+  "engine_version": "0.0.213",
+  "scope": "Optional native support-relative planted-foot locking over the existing calibrated grounding and two-bone IK profile.",
+  "contract": {
+    "schema_revision": 118,
+    "authored_opt_in": "AnimationRig.ik[].grounding.plant_lock",
+    "cached_inspection": "runtime.ik include_planting",
+    "nested_animation_version": 10,
+    "legacy_backing_versions": [
+      7,
+      8
+    ],
+    "retimed_field": "Strict Boolean: true only for the rate overlay",
+    "legacy_without_opt_in": "Existing versions1\u20139 and omitted flag result shapes retained; no invented anchors",
+    "support_motion": [
+      "static",
+      "kinematic"
+    ],
+    "support_frame": "Actual physical rigid position/rotation, excluding authored shape scale",
+    "point_tolerance_m": 0.001,
+    "normal_tolerance_rad": 0.001,
+    "max_automatic_feet_per_rig": 2,
+    "max_automatic_feet_per_world": 64,
+    "max_rays_per_eligible_foot_tick": 1,
+    "release": "Explicit source lift or disabled/zero-weight control rearms; failed held constraint disarms until rearmed",
+    "restore": "Animation reconstruction calls neither surface nor support provider; outer runtime checks anchors against already restored physical body poses without recapture or fresh foot rays",
+    "csharp_services_bytes": 400,
+    "new_gameplay_abi": false
+  },
+  "sources": {
+    "CMakeLists.txt": {
+      "bytes": 100378,
+      "sha256": "b3def9cc8b78d5fa20f635a1d9b94a334dfc34a8b0ed330f0d82207b7722f332"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 31095,
+      "sha256": "86c42562735b9e15b329e80d286418b23c7c0f8d04ac81c9c12c9964d9d616f6"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 9206,
+      "sha256": "28ba41ea5313ec0885d018a6db89da7ec19c70561804876df18e137a813d0671"
+    },
+    "include/poima/runtime_grounding.hpp": {
+      "bytes": 1011,
+      "sha256": "febb8a8f95f2d1db6044caae0bbb251a903644935deedd6768b2b110d00eb382"
+    },
+    "src/runtime.cpp": {
+      "bytes": 164980,
+      "sha256": "7a6e2fd9b02893381629224eb525eb35f013de485d5742b2c32c5caaf32b44fe"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 136437,
+      "sha256": "6e2dd083c1da3661d46077153f51ea4c625585d5a169d74f74a3628cb724a8b8"
+    },
+    "src/runtime_grounding.cpp": {
+      "bytes": 19762,
+      "sha256": "4443467a01ba68c5b06c160fbda4bd14911baa89073be1b03c877eba16e90bf3"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 49270,
+      "sha256": "8d893a09d282534b60edc85b14e7c8566e23c183ede35e4d96d50e9848142f38"
+    },
+    "src/world.cpp": {
+      "bytes": 358989,
+      "sha256": "506e8f33f41aa93384a0da02cfe637dffb78b59b02dacf9fa3e8aa74c2d075c6"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 136595,
+      "sha256": "9c89511202d6d7ac427cc16533416a128b1a18dc1bd4041324aa5874f387b1ee"
+    },
+    "tests/runtime_foot_planting_native.cpp": {
+      "bytes": 28887,
+      "sha256": "bcff72c6cf192635410ae74ee53352fde0528649276691a31c04f67ca6e8a1ea"
+    },
+    "tests/runtime_foot_planting.py": {
+      "bytes": 17321,
+      "sha256": "46b935e28545558650393d86c9c6aad6a2e27f5066bda8acc02fffb5e8ff4ff5"
+    }
+  },
+  "managed_images": {
+    "Poima.Gameplay.dll": {
+      "bytes": 217600,
+      "sha256": "210b0d22796bce015ae2172b23b9df4b991b99e2a5c46c8cf4282d7c29f12da8"
+    },
+    "Poima.ManagedBridge.dll": {
+      "bytes": 65024,
+      "sha256": "7d0ca09fe3bab95e1b86daf69d4a1708877bc1d102d5ac6e7f156b3814a8fdd2"
+    },
+    "Poima.ProjectileRangeGame.dll": {
+      "bytes": 28672,
+      "sha256": "d48e7dd6acd82f9b73b4a64b909d2710b657b4e3ec4bb8b24a94a8cc457677cb"
+    }
+  },
+  "linux": {
+    "native_cli": {
+      "bytes": 36534576,
+      "sha256": "2b2cfaf6c6b30faad38b0376f6f38e13fa20d654626a92475cafb1e4069b7cf9"
+    },
+    "native_build": {
+      "passed": true,
+      "report": {
+        "bytes": 49522,
+        "sha256": "8a464bc487968fee4f8d67f348b430c51ee53fb977285042ff84944ae7c889b4"
+      },
+      "seconds": 66.694475442986,
+      "commands": [
+        {
+          "label": "configure",
+          "seconds": 17.419527994003147,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 186,
+              "sha256": "f1dd7e81711b86b6aad2ce60145f761223526715fd28ca2e9e6e007066fe2be6"
+            },
+            "stderr": {
+              "bytes": 609,
+              "sha256": "b264753afcca928f2fcebec59516db5f18c1d643a6593df57f068caaf937b63a"
+            }
+          }
+        },
+        {
+          "label": "build",
+          "seconds": 43.09551237800042,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 1360,
+              "sha256": "150cfd622c020545659f59e2c09a20bec5f024f2289b1c117fa2336a8637b9d5"
+            },
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        }
+      ],
+      "forced_cleanup": false,
+      "final_children": []
+    },
+    "cpu": {
+      "passed": true,
+      "report": {
+        "bytes": 59883,
+        "sha256": "6180f144a38e13e841a191638ae6e957a91e3e6b4f999517727a46602406442d"
+      },
+      "seconds": 116.69802262700978,
+      "commands": [
+        {
+          "label": "new-native",
+          "seconds": 0.5786214300023858,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 68,
+              "sha256": "cf99f4a83d1da6757b53290a549953a6480a68ea26c4bf3809d15f27cc6f6e09"
+            },
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "retained-native",
+          "seconds": 64.4742857189849,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 8873,
+              "sha256": "81e49c0dcb1a3a531988a82428c1f757165351bee43091db14ace3837d958222"
+            },
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "original-character",
+          "seconds": 24.694011963001685,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 87,
+              "sha256": "c5645bd8545df863ab3222174dad8cdfb35fb2c31e2967ec4a89a08773059796"
+            },
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "retained-projectile",
+          "seconds": 4.397647093021078,
+          "exit_code": 0,
+          "natural_descendant_closure": true,
+          "streams": {
+            "stdout": {
+              "bytes": 90,
+              "sha256": "4bdba3b8e1bb5b6b8c97fd2085f23a99ae41ffa1d6202a1dc7fc94cee791de9d"
+            },
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        }
+      ],
+      "forced_cleanup": false,
+      "final_children": []
+    },
+    "new_native_groups": 6,
+    "new_native_archives": 56,
+    "retained_ctest_suites": 11,
+    "character": {
+      "passed": true,
+      "report": {
+        "bytes": 1080228,
+        "sha256": "6a158440dbcf9d5a6a9ba87250f15f5a396f48db9313a5a53f9c6039e7b6009b"
+      },
+      "seconds": 23.883629687974462,
+      "rpc": 127,
+      "owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "surplus_stdout_lines": 0,
+          "raw_stdin": {
+            "bytes": 48682,
+            "sha256": "fde30c598e1c52413c34a17d8956e7935131d6f98eb75569aab4a1009250b5c3"
+          },
+          "raw_stdout": {
+            "bytes": 330478,
+            "sha256": "075d6f5dd25e07049cfc27ab35f1d06032b3d6fb729df476c63f71563dbe5876"
+          }
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "surplus_stdout_lines": 0,
+          "raw_stdin": {
+            "bytes": 5308,
+            "sha256": "730878ce738915b4e464dc4be80c2ba57f24c356576ca65719c328a521926569"
+          },
+          "raw_stdout": {
+            "bytes": 40034,
+            "sha256": "953c339496d6aa4c42a378b977c1d1636b2db16c41c635eea21eadaf6297bc1c"
+          }
+        }
+      ],
+      "original_asset": {
+        "source": {
+          "bytes": 3659532,
+          "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+        },
+        "license": {
+          "bytes": 891,
+          "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+        },
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "cooked": {
+          "bytes": 8464853,
+          "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+        },
+        "nodes": 57,
+        "takes": 76,
+        "channels": 8712,
+        "keys": 90748,
+        "triangles": 6952,
+        "vertices": 7024,
+        "skin_joints": 41
+      },
+      "samples": 9,
+      "locked_foot_observations": 16,
+      "max_observed_support_local_sole_drift_m": 1.831213032218225e-07,
+      "asserted_drift_tolerance_m": 0.0002,
+      "checkpoints": [
+        {
+          "label": "initial-planting-v10",
+          "slot": "orientation-1",
+          "identity": {
+            "bytes": 68717,
+            "sha256": "d5c2b570fd85a4921cc8831a9ab67bd9113d5db9942b26d810b561f7a438259b"
+          },
+          "tick": 0,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "after-query-admission",
+          "slot": "orientation-2",
+          "identity": {
+            "bytes": 68717,
+            "sha256": "d5c2b570fd85a4921cc8831a9ab67bd9113d5db9942b26d810b561f7a438259b"
+          },
+          "tick": 0,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "active-moving-support",
+          "slot": "orientation-3",
+          "identity": {
+            "bytes": 82281,
+            "sha256": "cdd0d662bf7324d4da53317be1fdc215364fdbf04e25c702264f4fc956d5e19b"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "same-owner-restored",
+          "slot": "orientation-4",
+          "identity": {
+            "bytes": 82281,
+            "sha256": "cdd0d662bf7324d4da53317be1fdc215364fdbf04e25c702264f4fc956d5e19b"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "expected-platform-continuation",
+          "slot": "orientation-5",
+          "identity": {
+            "bytes": 82030,
+            "sha256": "3758ff015afa745badb9d936f2791d92b8320e470a2450ddc79f81be0ccd6ff9"
+          },
+          "tick": 11,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "fresh-owner-restored",
+          "slot": "orientation-6",
+          "identity": {
+            "bytes": 82281,
+            "sha256": "cdd0d662bf7324d4da53317be1fdc215364fdbf04e25c702264f4fc956d5e19b"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "fresh-owner-platform-continuation",
+          "slot": "orientation-7",
+          "identity": {
+            "bytes": 82030,
+            "sha256": "3758ff015afa745badb9d936f2791d92b8320e470a2450ddc79f81be0ccd6ff9"
+          },
+          "tick": 11,
+          "gameplay_revision": 0
+        }
+      ],
+      "whole_pairs": [
+        {
+          "label": "read-and-rejection-complete-state",
+          "left": "orientation-1",
+          "right": "orientation-2"
+        },
+        {
+          "label": "same-owner-locked-complete",
+          "left": "orientation-3",
+          "right": "orientation-4"
+        },
+        {
+          "label": "fresh-owner-locked-complete",
+          "left": "orientation-3",
+          "right": "orientation-6"
+        },
+        {
+          "label": "fresh-owner-moving-platform-continuation",
+          "left": "orientation-5",
+          "right": "orientation-7"
+        }
+      ],
+      "checks": [
+        "Original Knight geometry, all76takes/8712channels/90748keys retained;57node full-affine observations",
+        "Actual Idle anti-slide under wrapper movement and off-centre translating/yawing physical support",
+        "Guarded independent cached planting read, strict Boolean admission and earlier response shapes",
+        "Complete locked warm/cold native archives and continued moving-platform state",
+        "Disable/rearm and constrained release without repeated stance reacquisition"
+      ]
+    },
+    "retained_projectile": {
+      "passed": true,
+      "report": {
+        "bytes": 1005364,
+        "sha256": "f8327875af367a400c3c4c840f1d8407324edf4c12182fde9f73e5934deec1e5"
+      },
+      "seconds": 4.135362706001615,
+      "rpc": 90,
+      "typed_fields": 47,
+      "observations": 12,
+      "whole_archives": 7,
+      "whole_byte_pairs": 4,
+      "owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false
+        }
+      ],
+      "checks": [
+        "Fast sphere sweep hits a ten-millimetre wall; retained centre differs from obstacle contact",
+        "Sphere graze hits while native centre ray misses; initial overlap consumes no time",
+        "Exact analytic free flight and partial lifetime; terminal states issue no further queries",
+        "UI launch queues without ticking; gravity uses bounded curvature subdivisions",
+        "Second-Tick callback fault rolls back complete native game, marker, physics and UI archive",
+        "Same/fresh native owners retain all typed fields and complete byte-identical continued-flight archives"
+      ]
+    },
+    "retained_original_v7": {
+      "owner": {
+        "passed": true,
+        "report": {
+          "bytes": 5157,
+          "sha256": "41fb5098f004020d9a3d00d76ecc22f5ad854a4529adcab3519a86b9c057638f"
+        },
+        "seconds": 13.484284138015937,
+        "commands": [
+          {
+            "label": "original198-v7",
+            "seconds": 7.317251653992571,
+            "exit_code": 0,
+            "natural_descendant_closure": true,
+            "streams": {
+              "stdout": {
+                "bytes": 48,
+                "sha256": "f5473661267f91f8eef30302a4d2939e2d9066265528f913261423f71f347b17"
+              },
+              "stderr": {
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              }
+            }
+          }
+        ],
+        "forced_cleanup": false,
+        "final_children": []
+      },
+      "report": {
+        "bytes": 22082,
+        "sha256": "68207303605de2cd750ccb2222d623d4dd83925d3e7e800100a855a8edf75738"
+      },
+      "seconds": 6.6535447479982395,
+      "rpc": 9,
+      "complete_byte_pairs": 2,
+      "source": {
+        "bytes": 79292,
+        "sha256": "8164034f8bec1c703ae1af5f76b876b9517331db0ecaec2a9be3451600984573"
+      },
+      "future": {
+        "bytes": 79291,
+        "sha256": "491be3502f5a2092b1c453aa1b7a9e32f5f5e8b8dd71c8f02e29df82db8e0011"
+      },
+      "owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false
+        }
+      ],
+      "scope": "Exact original0.0.198 save/world/cooked library and original compiled consumer/bridge/SDK; no normalization or migration"
+    }
+  },
+  "windows": {
+    "native_build": {
+      "passed": true,
+      "report": {
+        "bytes": 23106,
+        "sha256": "8007fa8a26cf02919675bb43579710b53cb44bce0874c8104442b520e0c23ff1"
+      },
+      "compiler_report": {
+        "bytes": 108301,
+        "sha256": "9ac3b1d1501661820ec093f6d931dc562bd093c94c4c7a872044effa4f7103b9"
+      },
+      "cache_generation": 57,
+      "executable_identities": {
+        "bin/poima.exe": {
+          "bytes": 27096576,
+          "sha256": "a355634c71e564b063f9776f019e03cc84309108a38e9bd8db3e6ca3189a7731"
+        },
+        "bin/poima_desktop.dll": {
+          "bytes": 310821376,
+          "sha256": "dff934593d425a6921a60f99d424c92b314b52c033278875f328cf3c051eea68"
+        },
+        "bin/poima-runtime-foot-planting-test.exe": {
+          "bytes": 19210752,
+          "sha256": "8ed6367de64cfe80968764a9a77bfc658f1fc425f614742ef13666d606077584"
+        },
+        "bin/poima-runtime-grounding-test.exe": {
+          "bytes": 19174912,
+          "sha256": "b7093b6997a68f8cfd97ee7593fe73a64e6ba733dc1e7d7b17feab4920a91976"
+        },
+        "bin/poima-runtime-grounding-control-test.exe": {
+          "bytes": 19137024,
+          "sha256": "cd325c9d7c6e7de5a56e6a1bef60725a5a6dbad76df915ad997a5ef7cb9c1807"
+        },
+        "bin/poima-runtime-two-bone-ik-test.exe": {
+          "bytes": 19304960,
+          "sha256": "fe1f8dcce18a66fdf00b269ebef2e4cfad9ec51c620df20bd178600361eaf317"
+        },
+        "bin/poima-runtime-animation-rate-test.exe": {
+          "bytes": 19161088,
+          "sha256": "4a7bb1e44978d006bd6755a741fd86d6aa412c958de6f6d1bd24a9825db94698"
+        },
+        "bin/poima-runtime-animation-save-test.exe": {
+          "bytes": 2299392,
+          "sha256": "7aa34374b4940983f3cc36988ba9bc1f34d28d07fcb0c93956d0b9a08ea2a7bd"
+        },
+        "bin/poima-world-schema-test.exe": {
+          "bytes": 25641472,
+          "sha256": "eb5c9e9224b47df84cea538bb84137fe7d4e1945ab5748e5d8563e6b5b28d13f"
+        },
+        "bin/poima-render-schedule-test.exe": {
+          "bytes": 1428992,
+          "sha256": "bbca96662d000b7345a6a7664dbe384bee5345240ec9576fa25ab506e0be6e90"
+        },
+        "bin/poima-runtime-test.exe": {
+          "bytes": 19415040,
+          "sha256": "75187ca5a6a2dcb31749265d506e4e92668adf25aa55c5244d071802dbc8afeb"
+        }
+      },
+      "scope": "Selected11-target cross-build; native execution is separate"
+    },
+    "cpu": {
+      "passed": true,
+      "report": {
+        "bytes": 2610,
+        "sha256": "191e1f09586890dd21e705f91be9ce2f0c3faff78d51ec357131e7fd64e18092"
+      },
+      "seconds": 12.06278849998489,
+      "engine_identity": {
+        "bytes": 27096576,
+        "sha256": "a355634c71e564b063f9776f019e03cc84309108a38e9bd8db3e6ca3189a7731"
+      },
+      "worker": {
+        "bytes": 7582,
+        "sha256": "58c8f1f635c8dbffdde01427f0ab8f2fedef823676e6f949eede696299c019ca"
+      },
+      "job": {
+        "total_processes": 10,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      },
+      "native_suites": 9,
+      "new_groups": 6,
+      "new_native_archives": 56
+    },
+    "protocol": {
+      "passed": true,
+      "report": {
+        "bytes": 3301,
+        "sha256": "4d87a746cb32e7faba0828b50394b54f183564498e074661cbf40fc813cff3a7"
+      },
+      "seconds": 5.197618600010173,
+      "engine_identity": {
+        "bytes": 27096576,
+        "sha256": "a355634c71e564b063f9776f019e03cc84309108a38e9bd8db3e6ca3189a7731"
+      },
+      "worker": {
+        "bytes": 3975,
+        "sha256": "3e167c32c489fcc4e15044f0ccd08910b7a62c3d3600ac4a03ddc821b5ce96ea"
+      },
+      "job": {
+        "total_processes": 7,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      }
+    },
+    "character": {
+      "passed": true,
+      "report": {
+        "bytes": 1115258,
+        "sha256": "f9c9f2ed722600b789953eb9892857d5641c588948facf453401856e2c83ddd6"
+      },
+      "seconds": 3.0005286000086926,
+      "rpc": 127,
+      "owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "surplus_stdout_lines": 0,
+          "raw_stdin": {
+            "bytes": 48712,
+            "sha256": "ffae8685b5150e2b2805e59c8990c6064ebc39dd7b68b5176bfbfd79795e5c75"
+          },
+          "raw_stdout": {
+            "bytes": 330466,
+            "sha256": "efa091e4c2a28413d6af0d390d50bb00999659529cacb233a803e5377465e797"
+          }
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "surplus_stdout_lines": 0,
+          "raw_stdin": {
+            "bytes": 5318,
+            "sha256": "295628617c8580189372dcb630111fe6afd782339b388bf3a6015d600b3c8640"
+          },
+          "raw_stdout": {
+            "bytes": 40040,
+            "sha256": "98d15c83730b7226df289db280e51b22560a3f367e201f411118e375e44a07da"
+          }
+        }
+      ],
+      "original_asset": {
+        "source": {
+          "bytes": 3659532,
+          "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+        },
+        "license": {
+          "bytes": 891,
+          "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+        },
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "cooked": {
+          "bytes": 8464853,
+          "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+        },
+        "nodes": 57,
+        "takes": 76,
+        "channels": 8712,
+        "keys": 90748,
+        "triangles": 6952,
+        "vertices": 7024,
+        "skin_joints": 41
+      },
+      "samples": 9,
+      "locked_foot_observations": 16,
+      "max_observed_support_local_sole_drift_m": 1.8312130316288637e-07,
+      "asserted_drift_tolerance_m": 0.0002,
+      "checkpoints": [
+        {
+          "label": "initial-planting-v10",
+          "slot": "orientation-1",
+          "identity": {
+            "bytes": 68717,
+            "sha256": "a7c7cd2753005c340d307570e4a42e85542d1a32245f2e9e40fdebf1058ff2de"
+          },
+          "tick": 0,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "after-query-admission",
+          "slot": "orientation-2",
+          "identity": {
+            "bytes": 68717,
+            "sha256": "a7c7cd2753005c340d307570e4a42e85542d1a32245f2e9e40fdebf1058ff2de"
+          },
+          "tick": 0,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "active-moving-support",
+          "slot": "orientation-3",
+          "identity": {
+            "bytes": 82283,
+            "sha256": "9e048701558c776645ce92102e69259c47a93f058e0c6e29cce742974e61c1da"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "same-owner-restored",
+          "slot": "orientation-4",
+          "identity": {
+            "bytes": 82283,
+            "sha256": "9e048701558c776645ce92102e69259c47a93f058e0c6e29cce742974e61c1da"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "expected-platform-continuation",
+          "slot": "orientation-5",
+          "identity": {
+            "bytes": 82027,
+            "sha256": "bef791cb133fe10fcb500d3d28c7ccc303073ce06ecaa2423157702e22ec85e2"
+          },
+          "tick": 11,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "fresh-owner-restored",
+          "slot": "orientation-6",
+          "identity": {
+            "bytes": 82283,
+            "sha256": "9e048701558c776645ce92102e69259c47a93f058e0c6e29cce742974e61c1da"
+          },
+          "tick": 8,
+          "gameplay_revision": 0
+        },
+        {
+          "label": "fresh-owner-platform-continuation",
+          "slot": "orientation-7",
+          "identity": {
+            "bytes": 82027,
+            "sha256": "bef791cb133fe10fcb500d3d28c7ccc303073ce06ecaa2423157702e22ec85e2"
+          },
+          "tick": 11,
+          "gameplay_revision": 0
+        }
+      ],
+      "whole_pairs": [
+        {
+          "label": "read-and-rejection-complete-state",
+          "left": "orientation-1",
+          "right": "orientation-2"
+        },
+        {
+          "label": "same-owner-locked-complete",
+          "left": "orientation-3",
+          "right": "orientation-4"
+        },
+        {
+          "label": "fresh-owner-locked-complete",
+          "left": "orientation-3",
+          "right": "orientation-6"
+        },
+        {
+          "label": "fresh-owner-moving-platform-continuation",
+          "left": "orientation-5",
+          "right": "orientation-7"
+        }
+      ],
+      "checks": [
+        "Original Knight geometry, all76takes/8712channels/90748keys retained;57node full-affine observations",
+        "Actual Idle anti-slide under wrapper movement and off-centre translating/yawing physical support",
+        "Guarded independent cached planting read, strict Boolean admission and earlier response shapes",
+        "Complete locked warm/cold native archives and continued moving-platform state",
+        "Disable/rearm and constrained release without repeated stance reacquisition"
+      ]
+    },
+    "retained_projectile": {
+      "passed": true,
+      "report": {
+        "bytes": 1005899,
+        "sha256": "57d4802c979722bf343db05913a6b31661df330c4ba53db160fe8214e73609ee"
+      },
+      "seconds": 0.9974224000179674,
+      "rpc": 90,
+      "typed_fields": 47,
+      "observations": 12,
+      "whole_archives": 7,
+      "whole_byte_pairs": 4,
+      "owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false
+        }
+      ],
+      "checks": [
+        "Fast sphere sweep hits a ten-millimetre wall; retained centre differs from obstacle contact",
+        "Sphere graze hits while native centre ray misses; initial overlap consumes no time",
+        "Exact analytic free flight and partial lifetime; terminal states issue no further queries",
+        "UI launch queues without ticking; gravity uses bounded curvature subdivisions",
+        "Second-Tick callback fault rolls back complete native game, marker, physics and UI archive",
+        "Same/fresh native owners retain all typed fields and complete byte-identical continued-flight archives"
+      ]
+    },
+    "capture_owner": {
+      "passed": true,
+      "report": {
+        "bytes": 2909,
+        "sha256": "8467420504baf6f6781908da861b3fb35a813a0bfed117984449b64a64627eea"
+      },
+      "seconds": 3.8593973999959417,
+      "engine_identity": {
+        "bytes": 27096576,
+        "sha256": "a355634c71e564b063f9776f019e03cc84309108a38e9bd8db3e6ca3189a7731"
+      },
+      "worker": {
+        "bytes": 2143,
+        "sha256": "1cabe19eefe8ed5d54ac69ea6bd22908ee0aa56ea6df9e4950b718bee487cd8b"
+      },
+      "job": {
+        "total_processes": 3,
+        "active_processes": 0,
+        "terminated_processes": 0,
+        "forced_cleanup": false
+      }
+    },
+    "capture": {
+      "report": {
+        "bytes": 1067117,
+        "sha256": "1e1b5b87dbdfffcffc4ed2e45f95e7deb0de98ae8d56a4c9d6cbaddf99e45df0"
+      },
+      "rpc": 27,
+      "captures": 2,
+      "whole_archives": 4,
+      "whole_byte_pairs": 2,
+      "images": [
+        {
+          "image": {
+            "bytes": 3686538,
+            "sha256": "67ebbe893bbbc3b79fec16b44f522180184a872e441b8b190007eb792580ee20"
+          },
+          "result": {
+            "build_version": "0.0.213",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 720,
+            "nvrhi_errors": 0,
+            "samples": 4,
+            "tick": 8,
+            "width": 1280,
+            "skinned_instances": 6
+          }
+        },
+        {
+          "image": {
+            "bytes": 3686538,
+            "sha256": "0d0ee64dd428c796a9cc7bab8656354209691666fd0251340944191edc9d2425"
+          },
+          "result": {
+            "build_version": "0.0.213",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 720,
+            "nvrhi_errors": 0,
+            "samples": 4,
+            "tick": 11,
+            "width": 1280,
+            "skinned_instances": 6
+          }
+        }
+      ],
+      "scope": "Two unchanged original-camera selected saved poses; no simulation or authored changes during capture"
+    }
+  },
+  "original_failure": {
+    "platform": "Linux",
+    "scope": "Initial new native fixture compilation",
+    "report": {
+      "bytes": 77976,
+      "sha256": "f54f2975e48605fa1b3cc239577b77d22d5ca3203c06fb77277db8a46216d976"
+    },
+    "passed": false,
+    "forced_cleanup": false,
+    "exit_code": 1,
+    "cause": "Test used nonexistent AnimationPath::position; corrected only to the existing translation enum. Original source and streams retained."
+  },
+  "limitations": [
+    "One calibrated sole point and orientation, not whole-shoe collision or heel/toe articulation.",
+    "Height-threshold contact heuristic, not general gait detection or motion matching.",
+    "No pelvis/full-body balance, dynamic-body supports or extra inertial forced-release transition.",
+    "Selected saved Idle poses and tiny analytic fixtures do not establish rendered walking quality, crowds, production performance or physical input.",
+    "No new Native AOT/export, installed package, fresh-agent character-intake or broader Alpha qualification.",
+    "No cross-OS whole-state or floating-point replay guarantee."
+  ],
+  "illustration": {
+    "path": "foot-planting.png",
+    "identity": {
+      "bytes": 152605,
+      "sha256": "84ada96a280a1e5b0b7040847f26e3ae1545a3e5f3a8353a0c89b24183249f78"
+    },
+    "original_native_bmp": {
+      "bytes": 3686538,
+      "sha256": "67ebbe893bbbc3b79fec16b44f522180184a872e441b8b190007eb792580ee20"
+    },
+    "rgb_sha256": "958843f491c281756d335befe8194072d66eb236476d76bc4e727fe007539840",
+    "operation": "Exact original opaque BGRA to RGB channel order and bottom-up row conversion only; no crop, color transform, rescale or generated content.",
+    "content": "KayKit Adventurers1.0 Knight by Kay Lousberg, CC0; original saved Idle pose on moved support.",
+    "source_and_license_reference": "../CHARACTER_LIBRARY.md#original-source"
+  }
+}

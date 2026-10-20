@@ -101,6 +101,9 @@ graphics, AI and simulation systems.
 Extend standard-format intake with bone mapping, retargeting diagnostics and
 reusable animation assets. Complete code-first and hierarchical state-machine
 playback, layers, IK, foot placement and explicit root-motion ownership.
+Optional [planted-foot anchors](FOOT_PLANTING.md) now constrain a calibrated
+sole relative to static/kinematic supports. Broader gait/contact detection,
+pelvis balance and smooth forced release remain part of this segment.
 Add motion-matched locomotion with inspectable pose/trajectory features,
 transitions and animation-database cost. Integrate ragdolls, damage-directed
 hit reactions and recovery with explicit animation/physics ownership.
