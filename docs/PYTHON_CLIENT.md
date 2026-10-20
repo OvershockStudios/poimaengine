@@ -88,6 +88,48 @@ Retain the original bytes and inspect the actual command and owner outcome.
 These helpers do not retry, reconnect or reinterpret an uncertain result as a
 successful or rejected RPC.
 
+## Open an exported game
+
+Use a matching 0.0.204 or later native runtime and exported `game.json`:
+
+```python
+with WorldClient.open_game(binary, game_path,
+                           save_root=external_save_directory,
+                           close_timeout=20) as game:
+    status = game.call("runtime.status")
+    discovery = game.discover("catalog")
+```
+
+The native `game stdio` command verifies the complete immutable bundle and
+prepares its runtime and optional Native AOT gameplay at tick zero. Closing
+stdin, calling `session.close`, or leaving the client context ends the dedicated
+process. No separate server or connection is created. Exceptions in the caller
+still close the transport; retain any cleanup diagnostic.
+
+`WorldClient.open_game_command(command_prefix, game_path, ...)` accepts an
+explicit owned wrapper prefix with the same literal-prefix rules as
+`open_command`. It does not establish Job/group ownership itself. Both factories
+accept `save_root`, `save_write_mode`, `cwd`, `validate_responses` and ordinary
+`JsonRpcProcess` options. `save_write_mode` is exactly `synchronous` or
+`background` and requires an explicit root. Game/save paths must be nonempty
+text paths without NUL or a leading `--`; use `./--name` for such a filename.
+Invalid game/save paths, write modes, command prefixes, response-validation
+flags and unknown transport keywords reject before process or trace creation.
+Other transport options retain their existing validation and launch behavior.
+The cleanup option is `close_timeout`.
+
+Bundle/storage validation stays native. Startup errors may surface on the first
+request; opening is not a readiness handshake or automatic retry. Discovery has
+`read_only_runtime` mode, `read_only: true` and no `session_scope`, identifying
+the dedicated standalone context. The existing stable runtime-session header
+does not advertise a qualified profile for this new context. Authoring and
+pumped-player mutations are unavailable; finish through `session.close` or EOF.
+For a shared service with several clients or a continuously pumped player,
+use [game serve](GAME_SERVICE.md) and the explicit host-owner lifecycle below.
+The [dedicated-session checks](GAME_SERVICE.md#reproduce-the-checks) cover native
+closure, complete checkpoint continuation and error handling. The standalone
+factory tests run with `python tests/python_game_stdio_factories.py`.
+
 ## Retain the original RPC streams
 
 Opt into raw traces when a workflow needs records independent of decoded

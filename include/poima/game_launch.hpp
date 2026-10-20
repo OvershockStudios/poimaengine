@@ -24,4 +24,11 @@ struct GameServeOptions {
 // the same owner-thread local service used by authoring hosts. No window or
 // simulation tick is created until a client requests one.
 Reply serve_game(const GameServeOptions& options);
+struct GameStdioOptions {
+    std::string manifest,save_root;
+    std::optional<std::string> save_write_mode={};
+};
+// Verify and prepare a read-only game, then own its synchronous NDJSON session
+// until session.close or stdin EOF. No endpoint, window or automatic Tick.
+Reply stdio_game(const GameStdioOptions& options);
 }

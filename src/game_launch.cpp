@@ -6,6 +6,7 @@
 #include "poima/build_metadata.hpp"
 #include "poima/local_session.hpp"
 #include "poima/shared_session.hpp"
+#include "world_stdio.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -152,6 +153,18 @@ Reply serve_game(const GameServeOptions& options) {
     }catch(const std::exception& error) {
         return {4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.serve"},{"status","error"},
             {"result",nullptr},{"diagnostics",Json::array({{{"code","game.serve_failed"},{"message",error.what()}}})}}.dump()};
+    }
+}
+Reply stdio_game(const GameStdioOptions& options) {
+    try {
+        validate_save_launch(options.save_root,options.save_write_mode);
+        const auto game=load_game(options.manifest);validate_game_host(game);
+        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
+        prepare_game(world,game,options.save_root,options.save_write_mode);
+        return {run_world_stdio(world),{}};
+    }catch(const std::exception& error) {
+        return {4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.stdio"},{"status","error"},
+            {"result",nullptr},{"diagnostics",Json::array({{{"code","game.stdio_failed"},{"message",error.what()}}})}}.dump()};
     }
 }
 Reply run_game(const GameLaunchOptions& options) {

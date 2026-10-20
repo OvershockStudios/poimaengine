@@ -100,8 +100,24 @@ poima::Reply run(int argc, char** argv) {
         return poima::usage_error("Invalid project command. Use: schema project");
     }
     if(command=="game") {
-        if(argc<4 || !*argv[3])return poima::usage_error("Use: game inspect <game.json> | run <game.json> [options] | serve <game.json> --endpoint <name> [--save-root external-directory] [--save-write-mode synchronous|background].");
+        if(argc<4 || !*argv[3])return poima::usage_error("Use: game inspect <game.json> | run <game.json> [options] | serve <game.json> --endpoint <name> | stdio <game.json> [--save-root external-directory] [--save-write-mode synchronous|background].");
         const std::string_view action=argv[2];if(action=="inspect" && argc==4)return poima::inspect_game(argv[3]);
+        if(action=="stdio") {
+            poima::GameStdioOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
+            for(int i=4;i<argc;i+=2) {
+                const std::string_view key=argv[i];
+                if(i+1>=argc || !seen.insert(key).second || (key!="--save-root" && key!="--save-write-mode"))return poima::usage_error("Game stdio accepts optional --save-root and --save-write-mode only.");
+                const std::string_view value=argv[i+1];
+                if(value.empty() || value.starts_with("--"))return poima::usage_error("Game stdio arguments require nonempty values.");
+                if(key=="--save-root")options.save_root=value;
+                else {
+                    if(value!="synchronous" && value!="background")return poima::usage_error("Save write mode must be synchronous or background.");
+                    options.save_write_mode=value;
+                }
+            }
+            if(options.save_write_mode && options.save_root.empty())return poima::usage_error("Save write mode requires --save-root.");
+            return poima::stdio_game(options);
+        }
         if(action=="serve") {
             poima::GameServeOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
             for(int i=4;i<argc;i+=2) {

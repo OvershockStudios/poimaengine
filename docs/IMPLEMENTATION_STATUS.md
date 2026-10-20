@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.203**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.204**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.204 adds [dedicated exported-game sessions](GAME_SERVICE.md#dedicated-agent-session)
+through `game stdio` and Python `open_game`/`open_game_command`. One process
+verifies the immutable bundle and owns its runtime and optional compiled gameplay;
+EOF or `session.close` ends that lifetime. The Windows C# UI fixture passes
+83 SDK RPCs and nine CLI checks, with three normally closed SDK owners, eight
+complete saved archives and five byte-and-type-equal pairs across fourteen
+payload members. These include restored state and two-tick continuation in a
+fresh process. The selected retained Native AOT image has thirteen saved globals;
+this workflow invokes no compiler. Linux headless checks pass eight suites
+containing 136 tests, fourteen frozen-contract artifact tests and three metadata
+checks. Initial fixture metadata and request-shape failures remain recorded;
+their corrections preserve the strict file guards and complete state comparisons.
+The dedicated owner reports read-only mode without a shared-session scope or a
+qualified stable runtime-session profile. Presentation, broader physics
+continuation, fresh agent intake and the wider Alpha gates remain separate.
+[Results and exact scope](evidence/m2-game-stdio.json).
 
 Version 0.0.203 corrects the Linux [project adoption](PROJECT_GAMEPLAY_ADOPTION.md)
 filesystem diagnostic. The failing protected move's `errno` is captured before

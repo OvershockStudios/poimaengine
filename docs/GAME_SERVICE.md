@@ -1,9 +1,14 @@
 # Inspect and play an exported game through the native service
 
-`game serve` opens a verified game bundle for the same agent-facing runtime
-operations used during development. It starts the declared Runtime and optional
-Native AOT gameplay at tick zero, then serves local clients. It opens no player
-window and advances no simulation tick until a client requests work.
+`game stdio` opens a verified game bundle for agent-facing runtime operations
+through one owned newline-delimited JSON-RPC process. It starts the declared
+Runtime and optional Native AOT gameplay at tick zero. EOF or `session.close`
+ends that process and releases its runtime. It opens no player window and
+advances no simulation tick until a client requests work.
+
+`game serve` provides a shared local host when several clients or a continuously
+pumped player need the same session. Client disconnection leaves that host alive;
+its owner requests `host.shutdown` separately.
 
 Use this workflow to test the actual shipped content and compiled gameplay,
 inspect failures, drive menus, save and restore checkpoints, or capture the
@@ -19,6 +24,57 @@ platform and declared gameplay requirements are verified before the host becomes
 ready. Current bundle export still requires a simulation and renderer runtime;
 serving it does not initialize that renderer. Native AOT publication is a build
 step; serving an existing artifact does not invoke a compiler or load CoreCLR.
+
+### Dedicated agent session
+
+Use a 0.0.204 or later executable and its matching exported bundle:
+
+```powershell
+D:/Games/MyGame/runtime/bin/poima.exe game stdio D:/Games/MyGame/game.json `
+  --save-root D:/GameSaves/MyGame
+```
+
+Send one JSON-RPC request per line to stdin; stdout contains replies and no
+startup banner. Framing retains the authored-world service's 1 MiB limit and
+notification handling. Only `--save-root` and `--save-write-mode` are accepted;
+the latter requires an explicit save root. Bundle validation, platform checks,
+Native AOT loading and protected external-save rules are the same as `game serve`.
+Startup failure exits with status 4 and a structured `game.stdio_failed`
+diagnostic. Invalid command arguments use the ordinary usage error.
+
+The Python SDK owns the same process:
+
+```python
+from poima_client import WorldClient
+
+with WorldClient.open_game(
+    "D:/Games/MyGame/runtime/bin/poima.exe",
+    "D:/Games/MyGame/game.json",
+    save_root="D:/GameSaves/MyGame",
+    close_timeout=20,
+) as game:
+    status = game.call("runtime.status")
+    print(status)
+```
+
+Use `open_game_command(argv_prefix, game_path, ...)` for an admitted executable
+wrapper. The factory copies that prefix literally and launches no shell. It
+does not infer a process-tree owner; retain the caller's required Job/group
+supervision. Invalid game/save paths, write modes, command prefixes, response-validation flags
+and unknown transport keywords reject before process or trace creation. Other
+transport options retain their existing validation and launch behavior.
+Startup errors may surface on the first request, with no automatic retry.
+
+Discovery reports `mode: read_only_runtime`, `read_only: true` and no
+`session_scope`, identifying a dedicated standalone owner. The released
+runtime game-session v1 header reports no qualified profile for this new owner
+context. Shared-headless profile qualification does not apply to it.
+Use `session.close` or close stdin to finish. `host.shutdown` and pumped-player
+mutations reject; client context-manager exit also closes its owned transport
+when the caller raises an exception. Cleanup uses the existing bounded policy
+configured by `close_timeout`; retain any reported cleanup failure.
+
+### Shared game host
 
 Inspect the game, then start its bundled executable:
 
@@ -65,7 +121,8 @@ A client timeout does not establish that a request failed or the host stopped.
 ## Discover the active game
 
 Read `world.describe`, `world.inspect`, `runtime.status` and `player.inspect`.
-The discovery mode is `read_only_runtime` and its scope is `shared_headless`.
+Both launch forms report `read_only_runtime`. The shared host reports
+`session_scope: shared_headless`; a dedicated `game stdio` owner omits that field.
 `runtime.status` supplies the automatically created session ID, current tick
 and authored revision; do not invent a session or call `runtime.start` again.
 If the bundle declares gameplay, `runtime.gameplay.inspect` identifies the
@@ -81,6 +138,8 @@ No player exists initially. Native simulation queries and guarded
 and [compiled gameplay](MANAGED_GAMEPLAY.md) for guards and result handling.
 
 ## Observe a live player
+
+This section requires `game serve`; dedicated stdio sessions do not pump a player.
 
 Use the existing [shared-player task](LIVE_PLAYER.md#task-sequence), starting
 from the service's active runtime instead of authoring and starting another one.
@@ -112,27 +171,58 @@ Captures must be new files outside the bundle.
 
 [External saves](GAMEPLAY_SAVES.md) and [compiled save requests](GAMEPLAY_PERSISTENCE.md)
 use the same configured store and operation ledger as standalone games. Loading a
-checkpoint replaces the Runtime while the live player retains its preference
-owner. Observe the new session and refreshed tick before subsequent requests.
+checkpoint replaces the Runtime. When a shared player exists, it retains its
+preference owner. Observe the new session and refreshed tick before subsequent requests.
 Saved diagnostic ticket words do not recreate a former owner or its receipts.
 
-Exact receipt retries return their historical outcomes without repeating the
-operation. After reconnect, reconcile that receipt and inspect current state;
+Within the same owner, exact receipt retries return their historical outcomes
+without repeating the operation. After a shared-service reconnect, reconcile
+that receipt and inspect current state;
 its original acknowledgement is not a fresh observation. Stale guards reject
 without overwriting newer state. If storage or gameplay fails, retain the error
 and inspect the authoritative owner before issuing a deliberate new request.
+A new stdio process starts a new receipt lifetime; restore a saved checkpoint
+explicitly rather than treating it as a reconnection to the former owner.
 
 The service rejects authored document edits, asset imports, input/settings
 profile mutations and development compilation. It permits existing runtime,
 player-preference and external-save operations. This is an immutable content
 boundary, not a sandbox for untrusted native gameplay or same-user clients.
+Player-preference mutations require the shared player context.
 
-Stop the active player through guarded `player.control`, stop the current
+For a shared host, stop the active player through guarded `player.control`, stop the current
 Runtime, then call `host.shutdown`. Client `session.close` cannot shut down this
 shared host. The existing signal path stops presentation before releasing its
 Runtime and endpoint. A later host gets a fresh runtime and receipt lifetime.
+For a dedicated stdio owner, use `session.close` or EOF instead.
 
 ## Reproduce the checks
+
+For the dedicated session, supply an existing matching Windows bundle and a new
+output directory. Run native Windows Python under a process-tree supervisor
+that assigns its gated worker to a kill-on-close Job before launching native
+processes:
+
+```powershell
+python tests/game_stdio_contract.py `
+  --binary path/to/game/runtime/bin/poima.exe `
+  --game path/to/game/game.json --output build/game-stdio-check
+```
+
+The fixture exports and compiles nothing. It makes and relocates its own complete
+bundle copy; the supplied original remains available. It checks read-only
+admission, receipt guards, complete saves, warm/cold restoration and continued
+state, EOF, explicit close, caller exceptions, malformed framing and corrupt
+bundle rejection. Add `--ui-id <32-digit-control-id>` to exercise an eligible
+compiled Control button that does not request Save/Load. It requires exact
+continued archive equality for the selected game; arbitrary contact dynamics or
+load-sensitive gameplay may fail that stronger witness. Emergency process
+cleanup fails the check.
+
+The [0.0.204 results](evidence/m2-game-stdio.json) use the retained compiled
+[UI control fixture](../tests/managed_ui_gameplay/README.md): thirteen typed
+globals, eight complete saved archives and five complete equality pairs. This
+does not qualify a new Native AOT publication or a rendered player.
 
 The primitive contract tests source removal, relocation, read-only failures,
 real controller movement, detach/reconnect, exact retry, external checkpoints,
@@ -140,8 +230,8 @@ malformed startup and endpoint reuse without creating a renderer:
 
 ```powershell
 python tests/game_service_contract.py `
-  --binary build/windows-runtime/poima.exe `
-  --runtime build/runtime-windows `
+  --binary path/to/runtime/bin/poima.exe `
+  --runtime path/to/runtime `
   --output build/game-service-check
 ```
 
@@ -150,8 +240,8 @@ The compiled integration uses the genuine published settings fixture from
 
 ```powershell
 python tests/game_service_player.py `
-  --binary build/windows-runtime/poima.exe `
-  --runtime build/runtime-windows `
+  --binary path/to/runtime/bin/poima.exe `
+  --runtime path/to/runtime `
   --artifact build/published-settings/native-gameplay.json `
   --output build/game-service-player-check --gpu 1
 ```

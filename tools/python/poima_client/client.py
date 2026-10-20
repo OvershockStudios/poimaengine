@@ -34,6 +34,17 @@ def _integer_bound(value, lower, upper, name):
         raise ValueError("{} must be an integer from {} to {}".format(name, lower, upper))
 
 
+def _game_path(value, name):
+    try:
+        path = os.fspath(value)
+    except TypeError as error:
+        raise ValueError(name + " must be a filesystem path") from error
+    if (not isinstance(path, str) or not path or "\0" in path or
+            path.startswith("--")):
+        raise ValueError(name + " must be a nonempty text path without NUL or a leading --")
+    return path
+
+
 def _snapshot(params):
     # Bound the detached recovery context before sending anything. The transport
     # separately checks the complete envelope, including its correlation ID.
@@ -61,11 +72,12 @@ def _unique_object(pairs):
 
 
 class WorldClient:
-    """Own a native stdio client; closing it detaches without shutting down a host.
+    """Own a native stdio client and reap its directly launched process on close.
 
     ``WorldClient(transport)`` also accepts a request/close-compatible transport
     for explicit embedding. ``open`` owns a standalone world's writer; ``connect``
-    attaches to a same-platform shared endpoint through the native CLI.
+    attaches to a shared endpoint and closing only detaches that bridge.
+    ``open_game`` owns a dedicated read-only exported-game stdio session.
     """
 
     def __init__(self, transport, *, validate_responses=True):
@@ -125,6 +137,63 @@ class WorldClient:
         command.extend(["world", os.fspath(world_path)])
         if profiles is not None:
             command.extend(["--development-profiles", profiles])
+        transport = JsonRpcProcess(command, cwd=cwd, **transport_options)
+        return cls(transport, validate_responses=validate_responses)
+
+    @classmethod
+    def open_game(cls, binary, game_path, *, save_root=None, save_write_mode=None,
+                  cwd=None, validate_responses=True, **transport_options):
+        """Open a verified exported game through its dedicated native stdio host.
+
+        Uses the executable's path conventions without resolution or translation.
+        Closing the client closes its directly owned stdio process; no background
+        server, endpoint, connector or shutdown request is created by this helper.
+        """
+        if not isinstance(validate_responses, bool):
+            raise ValueError("validate_responses must be a boolean")
+        return cls.open_game_command([os.fspath(binary)], game_path,
+                                     save_root=save_root, save_write_mode=save_write_mode,
+                                     cwd=cwd, validate_responses=validate_responses,
+                                     **transport_options)
+
+    @classmethod
+    def open_game_command(cls, argv_prefix, game_path, *, save_root=None,
+                          save_write_mode=None, cwd=None, validate_responses=True,
+                          **transport_options):
+        """Append ``game stdio`` to an explicit executable/wrapper argv prefix.
+
+        The prefix is copied verbatim, not inspected or repaired. It must already
+        contain any required wrapper flags and delimiter. Supplying a prefix does
+        not establish process ownership or a sandbox. Use the caller's admitted
+        owned execution route where required; this helper launches no shell.
+
+        Game/save paths must be nonempty text paths without NUL or a leading
+        ``--``. Use ``./--name`` for such a filename. The native host validates
+        the bundle and storage; the client does not open or rewrite those paths.
+        ``save_write_mode`` is exactly ``synchronous`` or ``background`` and
+        requires an explicit save root. Invalid arguments reject before process
+        or trace creation. Startup errors may surface on the first request;
+        no discovery, retry or background host management is implicit.
+        """
+        if not isinstance(validate_responses, bool):
+            raise ValueError("validate_responses must be a boolean")
+        if not isinstance(argv_prefix, (list, tuple)) or not argv_prefix:
+            raise ValueError("argv_prefix must be a nonempty explicit list or tuple")
+        command = list(argv_prefix)
+        if any(not isinstance(value, str) or "\0" in value for value in command) or not command[0]:
+            raise ValueError("argv_prefix entries must be strings without NUL, with a nonempty executable")
+        game = _game_path(game_path, "game_path")
+        root = None if save_root is None else _game_path(save_root, "save_root")
+        if save_write_mode is not None:
+            if not isinstance(save_write_mode, str) or save_write_mode not in ("synchronous", "background"):
+                raise ValueError("save_write_mode must be synchronous or background")
+            if root is None:
+                raise ValueError("save_write_mode requires an explicit save_root")
+        command.extend(["game", "stdio", game])
+        if root is not None:
+            command.extend(["--save-root", root])
+        if save_write_mode is not None:
+            command.extend(["--save-write-mode", save_write_mode])
         transport = JsonRpcProcess(command, cwd=cwd, **transport_options)
         return cls(transport, validate_responses=validate_responses)
 

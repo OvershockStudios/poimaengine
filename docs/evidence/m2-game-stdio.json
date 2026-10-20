@@ -1,0 +1,221 @@
+{
+  "format": "poima.game-stdio.qualification.v1",
+  "engine_version": "0.0.204",
+  "platforms": {
+    "Windows": "Native exported-game stdio workflow on the development laptop.",
+    "Linux": "Native headless CLI build and selected authoring/SDK regressions; no positive exported-game stdio execution."
+  },
+  "behavior": {
+    "native_command": "game stdio <game.json> [--save-root external-directory] [--save-write-mode synchronous|background]",
+    "python_factories": [
+      "WorldClient.open_game",
+      "WorldClient.open_game_command"
+    ],
+    "lifetime": "One verified readonly bundle/runtime/optional NativeAOT gameplay owner, tick0; explicit stepping, EOF/session.close ends ownership.",
+    "discovery": {
+      "mode": "read_only_runtime",
+      "read_only": true,
+      "session_scope": "absent",
+      "stable_runtime_game_session_profile": null,
+      "stable_runtime_game_session_qualified": false
+    },
+    "framing": "Existing bounded 1MiB newline-delimited JSON-RPC; no banner/endpoint/player pump."
+  },
+  "windows": {
+    "passed": true,
+    "fixture_seconds": 17.21512690000236,
+    "checks": 79,
+    "sdk_rpc_pairs": 83,
+    "native_cli_commands": 9,
+    "native_processes": 12,
+    "job_processes_including_worker": 13,
+    "job_active_after": 0,
+    "job_terminated_after": 0,
+    "forced_cleanup": false,
+    "sdk_owner_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "lifetimes": [
+      "explicit session.close",
+      "SDK EOF close",
+      "caller exception with context close",
+      "raw framing followed by session.close"
+    ],
+    "whole_saved_archives": 8,
+    "saved_payload_members": [
+      "animation",
+      "authored_revision",
+      "cameras",
+      "components",
+      "content_sha256",
+      "control_sequence",
+      "entities",
+      "gameplay",
+      "gameplay_revision",
+      "sound",
+      "structure",
+      "tick",
+      "ui",
+      "world_id"
+    ],
+    "whole_byte_and_typed_pairs": [
+      {
+        "left": "guards-before",
+        "right": "guards-after",
+        "exclusions": []
+      },
+      {
+        "left": "checkpoint",
+        "right": "retries-after",
+        "exclusions": []
+      },
+      {
+        "left": "checkpoint",
+        "right": "warm-restored",
+        "exclusions": []
+      },
+      {
+        "left": "checkpoint",
+        "right": "cold-restored",
+        "exclusions": []
+      },
+      {
+        "left": "warm-future",
+        "right": "cold-future",
+        "exclusions": []
+      }
+    ],
+    "bundle_files_including_manifest": 61,
+    "bundle_bytes": 99890173,
+    "compiled_fixture": {
+      "type": "Poima.Tests.ManagedUiGame",
+      "library_sha256": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b",
+      "schema_bytes": 72,
+      "saved_global_fields": 13,
+      "descriptor_version": 1,
+      "artifact_engine_version": "0.0.39",
+      "selected_service_prefix_bytes": 176,
+      "publication": "Retained original NativeAOT image; no compiler invoked for this workflow.",
+      "source_behavior_reference": "tests/managed_ui_gameplay/ManagedUiGame.cs",
+      "source_binding_scope": "Prior evidence pins the retained descriptor and native image; it does not record the C# publication source hash. Current fixture source is a behavior reference, with typed state/UI expectations checked against actual results."
+    },
+    "negative_cases": [
+      "readonly authoring/development",
+      "standalone host.shutdown",
+      "stale tick",
+      "step receipt conflict/retry",
+      "protected save root",
+      "unknown/framing CLI flags",
+      "corrupt payload",
+      "undeclared file",
+      "unsupported target metadata",
+      "oversized NDJSON and content-length header rejection"
+    ]
+  },
+  "linux": {
+    "passed": true,
+    "selected_ctest_suites": 8,
+    "selected_ctest_tests": 136,
+    "skipped": 0,
+    "metadata_checks": 3,
+    "frozen_runtime_contract_artifact_tests": 14,
+    "scope": "Native authoring/shared-session loop, client and factory regressions. No graphics or positive exported-game execution."
+  },
+  "preserved_failures": [
+    {
+      "phase": "Windows file-only plan preparation",
+      "result": "failed before any engine launch",
+      "cause": "Directory-entry metadata reported zero link count; path lstat returned one. Correction preserves the strict ordinary-file/no-alias guard."
+    },
+    {
+      "phase": "First native stdio contract cohort",
+      "result": "failed; original result retained",
+      "cause": "Fixture sent unsupported tick to runtime.inspect, which correctly rejected with -32602. Corrected requests add explicit returned session/tick joins; complete archives and guards remain required.",
+      "forced_cleanup": false
+    }
+  ],
+  "limits": [
+    "Selected compact fixture, not representative game performance or general future-contact equality.",
+    "Bundle copy relocation is verified; the supplied original bundle remains present.",
+    "No player presentation, GPU, physical input, audible-output, fresh installation, new NativeAOT publication or complete Alpha qualification.",
+    "New dedicated owner does not borrow the released shared-host profile qualification."
+  ],
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 95545,
+      "sha256": "22844387461c3acf091a6fdbe7ae2dcfde26ea8eb81dcfb9ee931a5fb8b2d7f0"
+    },
+    "include/poima/game_launch.hpp": {
+      "bytes": 1327,
+      "sha256": "f45165bd1d085af5d4315da963810d2c70a150ee2ce95d1fac59d8140c7e73fc"
+    },
+    "src/game_launch.cpp": {
+      "bytes": 16449,
+      "sha256": "13c97d41a1a5ec347dda91f9df88f31e0e71c883bf2258b1d22190b4db5a19a8"
+    },
+    "src/main.cpp": {
+      "bytes": 23675,
+      "sha256": "fea8f950b3898652c5497fd831768f58d382d96f61d798ef32926fe3e17f6f40"
+    },
+    "src/world.cpp": {
+      "bytes": 346621,
+      "sha256": "653c9933d3e228660257c36feecfbae35324b272c558cb3e378a6828a08f925e"
+    },
+    "src/world_stdio.hpp": {
+      "bytes": 296,
+      "sha256": "2e2e3839d35f41d5fa244469fc319707cd16a5bf9f934fa54d5e2d5ace0367ee"
+    },
+    "src/core.cpp": {
+      "bytes": 20121,
+      "sha256": "528b031032c386d81f54290a9ece62b7305fb4817c6334f5358bf158f08067b6"
+    },
+    "tools/python/poima_client/client.py": {
+      "bytes": 24582,
+      "sha256": "4a1709fd8530877154a1eacf26c672b5ed0dacb0deb75695ea3d9dc17b5f6267"
+    },
+    "tests/python_game_stdio_factories.py": {
+      "bytes": 14212,
+      "sha256": "986e0f1c8581ad2b5e65e1872b5bfccbc63ab963d766616a393ed6eaad1ed1f4"
+    },
+    "tests/game_stdio_contract.py": {
+      "bytes": 32699,
+      "sha256": "0d96d4eac5df8a92f0bd6bcb5cc6be69dec971dcef3b15372108c37e0d166773"
+    }
+  },
+  "retained_local_records": {
+    "build/native-snapshot-0.0.204/native-build-1/build-result.json": {
+      "bytes": 142907,
+      "sha256": "7c65c210674b0e1c7e145f60995095856a350de8ca280958a023aaafc8825e69"
+    },
+    "build/runtime-install-0.0.204/windows-1/install-report.json": {
+      "bytes": 71390,
+      "sha256": "b52265a955b74f2a3616626a3e63f6626f0b0ab91d245bd9d77916c1619e9463"
+    },
+    "build/game-stdio-0.0.204/bundle-preparation-1/report.json": {
+      "bytes": 10473,
+      "sha256": "c2983b2aeefe9f344acdd6ff902bd946465a05af073b246632abad41cd1c6153"
+    },
+    "build/game-stdio-0.0.204/windows-contract-1/results/report.json": {
+      "bytes": 539067,
+      "sha256": "fa4695ec4714b71603b558d37dff3c951c95e59306ee4db599a8fd499c75916f"
+    },
+    "build/game-stdio-0.0.204/windows-contract-2/results/report.json": {
+      "bytes": 1176278,
+      "sha256": "1e4a64c9059ec54a255b25c74bfb243f4ff922f282792718afa84424815c9c83"
+    },
+    "build/game-stdio-0.0.204/windows-contract-2/job/owner.json": {
+      "bytes": 1461,
+      "sha256": "5f36be096c96d1de4d39a9ac4bab77f46d6e646101852aab658306bcb7eb59cd"
+    },
+    "build/game-stdio-0.0.204/linux-build-1/report.json": {
+      "bytes": 25560,
+      "sha256": "3006f681085ac032b18ff91fed0ad919e2a4f0101c0c63d0fda60fae3cadcd9a"
+    },
+    "build/game-stdio-0.0.204/linux-checks-1/report.json": {
+      "bytes": 103161,
+      "sha256": "8c2edb982109dd91f82571e9c04c7c5183acb56b5a73ab1b0959e871c5a963da"
+    }
+  }
+}

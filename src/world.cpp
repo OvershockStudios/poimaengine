@@ -3,6 +3,7 @@
 #include "gpu_memory_json.hpp"
 #include <limits>
 #include "poima/world.hpp"
+#include "world_stdio.hpp"
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
@@ -4028,9 +4029,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
     }
     return notification ? std::string{} : response.dump();
 }
-int run_world_session(const std::string& utf8_path,const std::string& development_profiles) {
-    WorldSession session(utf8_path);
-    if(!development_profiles.empty())session.configure_development_profiles(development_profiles);
+int run_world_stdio(WorldSession& session) {
     while(!session.closed()) {
         std::string line;bool oversized=false;char c=0;
         while(std::cin.get(c) && c!='\n') { if(line.size()<1024*1024)line+=c;else oversized=true; }
@@ -4040,5 +4039,10 @@ int run_world_session(const std::string& utf8_path,const std::string& developmen
         if(!response.empty())std::cout<<response<<'\n'<<std::flush;
     }
     return 0;
+}
+int run_world_session(const std::string& utf8_path,const std::string& development_profiles) {
+    WorldSession session(utf8_path);
+    if(!development_profiles.empty())session.configure_development_profiles(development_profiles);
+    return run_world_stdio(session);
 }
 }

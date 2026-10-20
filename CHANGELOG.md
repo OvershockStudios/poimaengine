@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.204
+
+- Add dedicated `game stdio` sessions and Python game factories so one process
+  owns exported-game testing and closes on EOF or `session.close`.
+
 ## 0.0.203
 
 - Report the actual filesystem error when protected gameplay artifact
