@@ -52,6 +52,14 @@ fresh agent attempt remains failed after two marker centres missed the frozen
 placement requirement. The assisted correction and later rebuild do not close
 the fresh character-intake requirement. [Evidence](evidence/m2-agent-character-intake.json).
 
+The [0.0.205 fresh workflow](evidence/m2-agent-character-owned-workflow.json)
+qualifies owned process closure and selected source/publication/export provenance
+with runtime 0.0.204. Its original candidate fails the unchanged pad-placement
+check and remains unmodified. The task permits optional capture, but its two-frame
+hardware capture differs from the evaluator's intended CPU-only resource scope.
+It does not close fresh character intake,
+independent gameplay or the broader Alpha gates.
+
 The 0.0.131 [fresh Switchback checkpoint](evidence/m2-agent-switchback-fresh.json) passes its original agent supervisor and thirteen independent gameplay groups with full save continuation, including the exported service with the original project unavailable. Separate Ready/Idle/Run Vulkan observations pass with the original project unavailable. The [0.0.135 portable-source rebuild](evidence/m2-agent-switchback-fresh-rebuild.json) also passes all thirteen groups and complete save comparisons with a newly compiled module using native 0.0.134. That checkpoint qualified one fresh provider run and preserved the earlier failures; the later repeated-workflow result is recorded below.
 
 The [additional Switchback evaluation](evidence/m2-agent-switchback-repeat.json) independently passes source and relocated readonly gameplay, full save comparisons and rendered Idle/Run observation using native 0.0.134. Its original fresh workflow remains failed after incomplete historical owner proof and a forced Script Job cleanup. Those separate game results did not supply a second successful fresh workflow; the repeated-workflow criterion remained open at that checkpoint.

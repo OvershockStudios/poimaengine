@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.204**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.205**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.205 [fresh character-workflow audit](evidence/m2-agent-character-owned-workflow.json)
+uses the 0.0.204 native runtime, Python client and managed authoring tools.
+Its original agent session and 37 owned tool lifetimes close naturally, including
+five failed scripts. Independent checks join 497 raw RPC pairs, publication,
+guarded adoption and two complete 62-file export copies. The unchanged file-only
+gate rejects a required pad centre: its authored world-space Y is 0.006 m rather
+than 0 m.
+The candidate remains unchanged and failed; no independent gameplay campaign
+or Alpha closure follows. The task permits optional capture, and the agent
+renders two GPU frames. This does not match the evaluator's intended CPU-only
+resource profile. Updated
+[iteration guidance](AGENT_ITERATION.md#check-the-brief-against-the-authored-scene)
+explains guarded readback of exact scene requirements before handoff.
 
 Version 0.0.204 adds [dedicated exported-game sessions](GAME_SERVICE.md#dedicated-agent-session)
 through `game stdio` and Python `open_game`/`open_game_command`. One process

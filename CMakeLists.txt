@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 if(CMAKE_LINKER_TYPE STREQUAL "LLD" AND CMAKE_VERSION VERSION_LESS "3.29")
     message(FATAL_ERROR "LLD linker selection requires CMake 3.29 or newer.")
 endif()
-project(Poima VERSION 0.0.204 LANGUAGES C CXX)
+project(Poima VERSION 0.0.205 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)

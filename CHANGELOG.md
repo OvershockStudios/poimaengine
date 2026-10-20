@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.205
+
+- Document guarded scene-value readback before agent handoff, with a fresh
+  character-workflow audit that separates owned cleanup and artifact provenance
+  from failed scene-placement acceptance.
+
 ## 0.0.204
 
 - Add dedicated `game stdio` sessions and Python game factories so one process

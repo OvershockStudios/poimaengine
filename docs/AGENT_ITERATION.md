@@ -211,6 +211,49 @@ not update a frozen runtime. General scene changes still need a new runtime.
 
 ## Publish, attach and export
 
+### Check the brief against the authored scene
+
+Before export, turn the brief's numeric requirements into a short checklist:
+the entity ID, property, local or world space, units, expected value and allowed
+tolerance. Keep presentation choices separate from required gameplay anchors.
+A small visual offset still changes an object's authored position; use a
+separate visual child only when the required hierarchy permits one.
+
+Read the committed scene through the service instead of checking only the
+authoring script. Inspect the authored revision, then use `entity.get` for
+the selected component and `entity.world_transform` for evaluated world space.
+For example, with an existing client and known entity ID:
+
+```python
+revision = client.inspect()["revision"]
+local = client.get(entity_id, component="Transform", revision=revision)
+evaluated = client.world_transform(entity_id, revision=revision)
+world_position = evaluated["matrix"][12:15]
+```
+
+The world matrix is column-major; its translation occupies indices 12–14.
+Compare all three coordinates against the brief's values using its specified
+tolerance. A stale revision rejects the read: inspect again and repeat the complete check rather
+than mixing revisions. Retain actual values and unresolved mismatches with the
+handoff; do not increase tolerances to hide a mismatch. This is a readback
+example, not a complete acceptance verifier. The existing
+[Python client contract tests](../tests/python_client_contract.py) cover component
+reads, sixteen-element world matrices and stale-revision rejection.
+
+Record resource permissions separately from capability discovery. GPU captures,
+foreground interaction and audio output need to fit the task's allowed workload.
+An advertised operation or optional presentation check does not establish that
+permission. Report actual device use and leave omitted visual checks explicit.
+
+A [fresh character-workflow audit](evidence/m2-agent-character-owned-workflow.json)
+demonstrates this distinction: all 37 owned tool lifetimes closed naturally and
+the selected publication and export provenance checks passed, but the unchanged
+acceptance gate rejected a required marker position. That game remains a failed fresh task.
+The mismatch does not establish why the agent chose that position; the visual
+offset advice above is general guidance.
+
+### Publish the accepted project
+
 Use a host-configured [development profile](DEVELOPMENT_PROFILES.md) for native
 publishing. Inspect the verified publication descriptor and project hash, then
 [adopt the artifact](PROJECT_GAMEPLAY_ADOPTION.md) with a fresh request ID. Keep

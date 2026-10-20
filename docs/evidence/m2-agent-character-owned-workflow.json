@@ -1,0 +1,106 @@
+{
+  "format": "poima.agent-character-owned-workflow.evidence.v1",
+  "checkpoint_version": "0.0.205",
+  "date": "2026-10-20",
+  "scope": "One fresh original-character agent authoring session with source/publication/adoption/export and owned-process audits. Original candidate failed the unchanged scene-placement gate; no independent gameplay campaign.",
+  "versions": {
+    "runtime": "0.0.204",
+    "python_client": "0.0.204",
+    "managed_authoring_pack": "0.0.204",
+    "agent_cli": "Codex 0.162.1",
+    "selected_model": "gpt-6.1-sol",
+    "model_identity_scope": "Explicit CLI selection; retained event format does not attest actual server-side model identity.",
+    "target": "Windows x86_64"
+  },
+  "verdicts": {
+    "original_provider_completed": true,
+    "owned_lifetimes_qualified": true,
+    "selected_artifact_provenance_qualified": true,
+    "task_instruction_policy_qualified_in_retained_scope": true,
+    "intended_cpu_only_resource_scope_matched": false,
+    "original_scene_acceptance_passed": false,
+    "independent_gameplay_campaign_executed": false,
+    "fresh_character_intake_qualified": false,
+    "whole_engine_or_alpha_qualified": false
+  },
+  "original_attempt": {
+    "provider_seconds": 607.671257449023,
+    "supervised_seconds": 669.9405052410148,
+    "provider_exit_code": 0,
+    "automatic_retry": false,
+    "repairs_after_original_completion": false,
+    "provider_turns": 1,
+    "script_lifetimes": 20,
+    "naturally_successful_scripts": 15,
+    "naturally_failed_scripts": 5,
+    "native_lifetimes": 17,
+    "forced_cleanup": false,
+    "unknown_or_unqualified_owned_lifetimes": 0,
+    "native_rpc_pairs": 497,
+    "publication_submissions": 2,
+    "publication_limit": 8,
+    "publication_outcomes": [
+      "compile failed: invalid EntitySnapshot.Position access",
+      "corrected source compiled successfully"
+    ],
+    "export_submissions": 1,
+    "export_limit": 6
+  },
+  "artifact_provenance": {
+    "source_lineage": "Original authored C# and project, retained failed source and explicit compiler correction, successful publication, guarded adoption, export and byte-identical relocated copy.",
+    "saved_gameplay_fields": 15,
+    "gameplay_schema_bytes": 96,
+    "successful_descriptor_sha256": "be4831212dbc8c7d2dac0c4a00096fbb3c21dbddfdd42120f0fcec9e03d51879",
+    "successful_library_sha256": "6f17b765e9808098e8d0c8b151d3f0075cb41873478dedde380ebc5b115eca54",
+    "complete_export_members": 62,
+    "byte_identical_relocated_members": 62,
+    "runtime_members": 49,
+    "export_manifest_sha256": "508d469c4e6a24b3a2e8d9308d139d76b46933889cf05dfa601eefdc3b402586",
+    "export_inventory_sha256": "a632028f3cee66538a1d0627e2027d3441b62641ddaf0bab9d2057d322c807e3",
+    "scope": "Selected actual bytes and raw receipts; an inventory or relocated copy does not establish standalone gameplay/save continuation."
+  },
+  "original_failure": {
+    "stage": "file-only candidate acceptance",
+    "first_rejection": "Actual declared pad center differs: pad1",
+    "required_world_y_metres": 0,
+    "observed_world_y_metres": 0.006,
+    "tolerance_relaxed": false,
+    "candidate_modified_or_regraded": false,
+    "independent_native_campaign_started": false,
+    "further_failures_not_excluded": true
+  },
+  "resource_observation": {
+    "task_permission": "Optional capture was permitted by the task; CPU-only was the evaluator's intended resource profile, not a task prohibition.",
+    "successful_hardware_captures": 1,
+    "reported_frames_presented": 2,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "cpu_only": false,
+    "scope": "Actual native capture; no foreground, physical input, acoustic, visual-quality or representative-performance qualification."
+  },
+  "retained_audit_identities": {
+    "original_tool_records": {
+      "bytes": 3190510,
+      "sha256": "7ca2aed67f9dd9c345b3543e40ca88050ba73f044670362478e5a933488c5471"
+    },
+    "task_policy": {
+      "bytes": 129990,
+      "sha256": "c8814f424b76dceff57c4827acf184e14924abb51f1ec80eeb5511178d6f400e"
+    },
+    "selected_artifact_provenance": {
+      "bytes": 39196,
+      "sha256": "4c6b16032a3a87bb419d7ba0822ac441bc35ed6539e19bad96ac972f7b35eb22"
+    },
+    "original_file_acceptance_failure": {
+      "bytes": 1995,
+      "sha256": "043016eb616b47a2705de2ccb7a808cc98aebeeb4ad26dee3f30582936cfcfcd"
+    }
+  },
+  "limits": [
+    "Raw provider records, account context, local paths and working research remain private.",
+    "Retained-event review of trusted tools is not an OS security sandbox, a complete native/script ancestry proof or global process-absence proof.",
+    "Agent-authored playtest claims were not substituted for independent gameplay qualification.",
+    "Original compile/script/request failures, GPU scope mismatch and first placement rejection remain retained; no automatic retry or assisted correction changes this verdict.",
+    "No autonomous success-rate, comparative engine ranking, stable API expansion or Alpha release claim."
+  ],
+  "guidance": "../AGENT_ITERATION.md#check-the-brief-against-the-authored-scene"
+}
