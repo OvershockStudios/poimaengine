@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.199**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.200**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.200 adds automatic [runtime hierarchy reuse](RUNTIME_HIERARCHY.md).
+Exact local-transform keys and parent propagation preserve the existing matrix
+calculations; failed evaluations publish neither the candidate matrix nor its
+key. The cache is derived, absent from saves and public contracts. Selected
+Linux CPU qualification passes twenty retained native cases, seven new hierarchy
+groups, five authoring checks and three metadata checks. The new fixture retains
+43 complete equal save pairs and twenty independent affine observations across
+physics, animation/IK, root motion, cameras, structural changes and rollback.
+A six-owner comparison on the same 2,397-entity compiled game preserves all
+fourteen payload members through twelve prospective complete state forecasts.
+Across two profiled pairs, mean hierarchy time falls 23.6% and inclusive native
+batch time falls 13.0%, including the new counters. These are laptop headless
+Debug wall times, not FPS or general performance guarantees. A separate retained
+CoreCLR game also passes warm, cold and relocated continuation: 162 RPCs,
+302 ticks, five whole-save pairs and two complete forecasts, with the original
+85-second pre-RPC admission rule unchanged. The original 0.0.197 failed run
+retains its verdict and unisolated cause. No new Windows, GPU, AOT or overall
+Alpha qualification is supplied by this checkpoint.
+[Results and measured workload boundaries](evidence/m2-runtime-hierarchy.json).
 
 Version 0.0.199 adds live enable/weight controls for
 [automatic foot contacts](GROUND_CONTACTS.md#control-placement-from-gameplay).

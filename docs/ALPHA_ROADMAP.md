@@ -30,6 +30,14 @@ The [implementation status](IMPLEMENTATION_STATUS.md) remains authoritative for
 individual capabilities. A checklist row is not a claim that every feature
 listed there is complete or production-ready.
 
+The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
+complete state on the fixed 2,397-entity compiled workload across six Linux
+headless owners. Two profiled pairs reduce mean inclusive native batch wall
+time by 13.0% in Debug; separate warm/cold/relocated game checks also pass with
+their original admission deadline. This is CPU runtime progress, not new
+rendered frame-time, memory-growth, Windows, fresh character-intake or overall
+Alpha qualification. The earlier failed full-game run retains its verdict.
+
 The [Knight character-route fixture](evidence/fixtures/agent-character-intake/README.md)
 adds a separately compiled portable-source export and independently verified
 native gameplay, full checkpoints and relocated continuation. Its original

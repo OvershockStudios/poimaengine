@@ -9,6 +9,8 @@ see the [full-workload batching investigation](RUNTIME_BATCHING.md). Grouped
 headless stepping and interactive player frames have different timing boundaries.
 The [source-state contract](RUNTIME_SOURCE_STATE.md) explains `source_stale`
 and repeated observations across edits, saves and live adoption.
+The [hierarchy evaluator](RUNTIME_HIERARCHY.md) describes automatic matrix reuse,
+exact invalidation, lifetime rules and profiler counters.
 
 ```sh
 cmake --preset runtime-headless

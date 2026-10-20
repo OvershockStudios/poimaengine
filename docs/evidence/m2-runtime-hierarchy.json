@@ -1,0 +1,608 @@
+{
+  "format": "poima.evidence.runtime-hierarchy.v1",
+  "implementation": {
+    "automatic": true,
+    "local_key": "Exact double-array bytes for position, quaternion and scale; no rounding or sign canonicalization.",
+    "invalidation": "Changed local key or recomputed parent; new nodes start invalid. Future independent output replacement or parent rebinding requires explicit internal invalidation.",
+    "publication": "Validate the complete finite world matrix against the inclusive per-entry magnitude limit of 1e12 before publishing output and key.",
+    "persistence": "Derived cache is absent from public schemas and saved gameplay state; no ABI or save-format change.",
+    "counters": [
+      "runtime.hierarchy.recomputed",
+      "runtime.hierarchy.reused"
+    ]
+  },
+  "sources": {
+    "src/runtime_hierarchy.hpp": {
+      "bytes": 1721,
+      "sha256": "f3013e91ca9c87918b784cd38c05fa66a1aff7faf5bb3b4c17f83594fb2ac192"
+    },
+    "src/runtime.cpp": {
+      "bytes": 154202,
+      "sha256": "42a75d168f57b1230a077e2bb4963930c2929698f348439c0fda7473ed30c182"
+    },
+    "tests/runtime_hierarchy_native.cpp": {
+      "bytes": 23992,
+      "sha256": "8e3260c50810eb7a1d3a8b023501627279eb9113d94635f771b30ea89bbdd27e"
+    }
+  },
+  "native_build": {
+    "platform": "Linux x86_64 headless",
+    "configuration": "Debug -O0 -g0; assertions retained; simulation/native gameplay/CoreCLR/navigation/audio/logical UI enabled; renderer and desktop disabled.",
+    "linker": "Opt-in LLD, one linker thread; two build workers; normal static archive.",
+    "passed": true,
+    "seconds": 221.3534426090191,
+    "selected_executable_targets": 22,
+    "observed_actions": {
+      "total": 22,
+      "cpp_compilations": 3,
+      "static_archive": 1,
+      "executable_links": 18
+    },
+    "natural_closure": true,
+    "forced_cleanup": false,
+    "cli": {
+      "bytes": 35678608,
+      "sha256": "48cf5af1bd129ada95cc8ffbdc9e0e8b6f6ee983964fa03388c8d06fca88cbe1"
+    },
+    "record": {
+      "bytes": 60821,
+      "sha256": "1d84d42fa0a06d9f2e74fba6cd17a60fce4e8d5b5ca98085070be08896b08c2d"
+    }
+  },
+  "native_qualification": {
+    "passed": true,
+    "retained_ctests": 20,
+    "new_hierarchy_native_groups": 7,
+    "new_hierarchy_portable_substitution": false,
+    "complete_saved_byte_pairs": 43,
+    "affine_observations": 20,
+    "core_conformance_tests": 5,
+    "metadata_checks": 3,
+    "seconds": 32.16382452900871,
+    "natural_closure": true,
+    "forced_cleanup": false,
+    "record": {
+      "bytes": 28088,
+      "sha256": "862c3a57b82588d570598821232ad3405a98684202d7208d75478662bf49793e"
+    },
+    "file_only_qualification": {
+      "bytes": 5977,
+      "sha256": "92c131f97f41b7a7123c9c927408b93ee94c6aa7dbb61b59832f35ab22558fe4"
+    },
+    "recipe": [
+      "cmake --build build/linux-game --target poima-runtime-hierarchy-test -j2",
+      "ctest --test-dir build/linux-game -R ^runtime_hierarchy_native$ --output-on-failure",
+      "build/linux-game/poima-runtime-hierarchy-test --output <new-directory>"
+    ],
+    "new_hierarchy_checks": 4557
+  },
+  "baseline_199": {
+    "engine_version": "0.0.199",
+    "engine": {
+      "bytes": 35676400,
+      "sha256": "c4e8d8662baed5148d025d524960541dc38dc9530c67d2a97e504249a0dca02a"
+    },
+    "scope": "Two fresh full-workload processes; native profiling off/on, managed callbacks unprofiled throughout; 120 warmup and 120 measured single-tick batches per owner.",
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animation_rigs": 24,
+    "rig_nodes": 1464,
+    "component_schemas": 4,
+    "gameplay_fields": 50,
+    "raw_rpc_pairs": 1038,
+    "actual_ticks": 480,
+    "complete_checkpoints": 4,
+    "whole_payload_members": 14,
+    "complete_typed_and_lexical_epoch_forecasts": 2,
+    "native_EOF_exit0": 2,
+    "outer_seconds": 49.283850848994916,
+    "capture": {
+      "capacity": 65536,
+      "events": 5522,
+      "dropped": 0,
+      "open": 0,
+      "failed_events": 0,
+      "truncated_event_names": 0
+    },
+    "hierarchy": {
+      "samples": 360,
+      "mean_ns": 3490265.586111111,
+      "sum_ns": 1256495611
+    },
+    "batch": {
+      "samples": 120,
+      "mean_ns": 19429872.133333333,
+      "sum_ns": 2331584656
+    },
+    "hierarchy_fraction_of_inclusive_batch": 0.5389019900120667,
+    "ancestry": "All 360 hierarchy spans are same-thread descendants of batch scopes; three nonoverlapping spans in each of 120 batches.",
+    "record": {
+      "bytes": 416359,
+      "sha256": "cc93c529dbf40876871560bccbad7f080e4a35872a6bd2a9c62f5595b9c1810c"
+    },
+    "file_only_review": {
+      "bytes": 3128,
+      "sha256": "9f697cefb3d65e67c55b3beb0d67c56dff840f9b1e93000f5f0f82711c9cdaec"
+    }
+  },
+  "limits": [
+    "Inclusive wall scopes include scheduling and waits; overlapping groups must not be summed as exclusive CPU costs. Baseline magnitude is not a candidate speedup or proof of the earlier deadline cause.",
+    "Counter recording consumes capture capacity and adds instrumentation. Hierarchy traversal still visits every node; no constant-time or parallel-traversal claim.",
+    "Whole-save regression uses selected contact-free or supported settled physical operands; no arbitrary active-contact identical-future guarantee.",
+    "The original 0.0.197 full-game deadline failure remains failed. No Windows/GPU/rendered/foreground,allocation/leak,new managed compilation or overall Alpha qualification is claimed."
+  ],
+  "engine_version": "0.0.200",
+  "date": "2026-10-19",
+  "passed": true,
+  "scope": "Exact runtime hierarchy caching; selected Linux headless native regressions, six-owner matched full-game comparison and separate retained CoreCLR save/load and relocated cooked continuation regression. Not complete Alpha qualification.",
+  "matched_comparison": {
+    "passed": true,
+    "A": "Retained 0.0.199 executable",
+    "B": "New 0.0.200 executable",
+    "schedule": [
+      "A-off-1",
+      "B-off-1",
+      "A-on-1",
+      "B-on-1",
+      "B-on-2",
+      "A-on-2"
+    ],
+    "workload": {
+      "authored_entities": 2394,
+      "live_entities": 2397,
+      "rigs": 24,
+      "rig_nodes": 1464,
+      "lights": 64,
+      "schemas": 4,
+      "gameplay_fields": 50,
+      "ticks_per_owner": 240,
+      "warmup_ticks": 120,
+      "measured_ticks": 120,
+      "ticks_per_batch": 1,
+      "managed_callback_profiling": false
+    },
+    "rpc_pairs": 3118,
+    "owners": 6,
+    "complete_checkpoints": 12,
+    "prospective_full_typed_and_lexical_epoch_forecasts": 12,
+    "payload_members": 14,
+    "all_forecasts_prepared_before_first_owner_tick": true,
+    "all_forecasts_equal": true,
+    "outer_seconds": 137.21688054100377,
+    "worker_seconds": 125.05165832900093,
+    "natural_closure": true,
+    "forced_cleanup": false,
+    "profiled_runs": [
+      {
+        "owner": "A-on-1",
+        "events": 5522,
+        "capacity": 65536,
+        "dropped": 0,
+        "open": 0,
+        "clock_saturated": false,
+        "counter_passes": 0,
+        "cpu_groups": {
+          "runtime.hierarchy": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 2992053,
+            "max": 4409584,
+            "mean": 3280756.6555555556,
+            "min": 2817470,
+            "name": "runtime.hierarchy",
+            "p50": 3164927,
+            "p95": 4004291,
+            "p99": 4233337,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.batch": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 19364590,
+            "max": 21350660,
+            "mean": 18614941.583333332,
+            "min": 17119093,
+            "name": "runtime.batch",
+            "p50": 18470532,
+            "p95": 20417509,
+            "p99": 20919658,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.tick": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 13743971,
+            "max": 14722653,
+            "mean": 12651856.466666667,
+            "min": 11630819,
+            "name": "runtime.tick",
+            "p50": 12537908,
+            "p95": 13970266,
+            "p99": 14579752,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.sync": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 4334665,
+            "max": 5835231,
+            "mean": 4698291.361111111,
+            "min": 4181280,
+            "name": "runtime.sync",
+            "p50": 4610089,
+            "p95": 5436574,
+            "p99": 5659284,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          }
+        },
+        "hierarchy_cache_counters": "Not instrumented in the retained 0.0.199 executable; no measured cache-work count."
+      },
+      {
+        "owner": "B-on-1",
+        "events": 6242,
+        "capacity": 65536,
+        "dropped": 0,
+        "open": 0,
+        "clock_saturated": false,
+        "counter_passes": 360,
+        "counter_totals": {
+          "runtime.hierarchy.recomputed": 138040,
+          "runtime.hierarchy.reused": 724880
+        },
+        "cpu_groups": {
+          "runtime.hierarchy": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 2092258,
+            "max": 3670759,
+            "mean": 2515144.686111111,
+            "min": 1935806,
+            "name": "runtime.hierarchy",
+            "p50": 2379093,
+            "p95": 3182620,
+            "p99": 3529696,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.batch": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 16035890,
+            "max": 18741967,
+            "mean": 16296414.191666666,
+            "min": 15005325,
+            "name": "runtime.batch",
+            "p50": 16102604,
+            "p95": 17642874,
+            "p99": 18498628,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.tick": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 11201694,
+            "max": 13114233,
+            "mean": 11296707.108333332,
+            "min": 10495653,
+            "name": "runtime.tick",
+            "p50": 11170321,
+            "p95": 12418766,
+            "p99": 12900685,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.sync": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 3426694,
+            "max": 5171524,
+            "mean": 3902629.202777778,
+            "min": 3261175,
+            "name": "runtime.sync",
+            "p50": 3814326,
+            "p95": 4602956,
+            "p99": 4905319,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          }
+        },
+        "hierarchy_cache_counters": "Both node counts recorded once per hierarchy traversal."
+      },
+      {
+        "owner": "B-on-2",
+        "events": 6242,
+        "capacity": 65536,
+        "dropped": 0,
+        "open": 0,
+        "clock_saturated": false,
+        "counter_passes": 360,
+        "counter_totals": {
+          "runtime.hierarchy.recomputed": 138040,
+          "runtime.hierarchy.reused": 724880
+        },
+        "cpu_groups": {
+          "runtime.hierarchy": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 2174110,
+            "max": 4295494,
+            "mean": 2552890.3527777777,
+            "min": 1900389,
+            "name": "runtime.hierarchy",
+            "p50": 2382549,
+            "p95": 3370940,
+            "p99": 3754626,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.batch": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 15722361,
+            "max": 19352184,
+            "mean": 16275326.125,
+            "min": 14878208,
+            "name": "runtime.batch",
+            "p50": 16018092,
+            "p95": 18191193,
+            "p99": 19172910,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.tick": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 11038254,
+            "max": 13924843,
+            "mean": 11368218.25,
+            "min": 10299739,
+            "name": "runtime.tick",
+            "p50": 11076547,
+            "p95": 12781533,
+            "p99": 13577747,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.sync": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 3572236,
+            "max": 5662951,
+            "mean": 3920510.8333333335,
+            "min": 3188981,
+            "name": "runtime.sync",
+            "p50": 3793778,
+            "p95": 4786518,
+            "p99": 5171285,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          }
+        },
+        "hierarchy_cache_counters": "Both node counts recorded once per hierarchy traversal."
+      },
+      {
+        "owner": "A-on-2",
+        "events": 5522,
+        "capacity": 65536,
+        "dropped": 0,
+        "open": 0,
+        "clock_saturated": false,
+        "counter_passes": 0,
+        "cpu_groups": {
+          "runtime.hierarchy": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 2963361,
+            "max": 4524960,
+            "mean": 3349806.658333333,
+            "min": 2814924,
+            "name": "runtime.hierarchy",
+            "p50": 3200473,
+            "p95": 4185066,
+            "p99": 4470018,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.batch": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 18183857,
+            "max": 21531219,
+            "mean": 18823059.216666665,
+            "min": 16993139,
+            "name": "runtime.batch",
+            "p50": 18626171,
+            "p95": 20464450,
+            "p99": 21430196,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.tick": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 11779615,
+            "max": 15068893,
+            "mean": 12806306.058333334,
+            "min": 11428903,
+            "name": "runtime.tick",
+            "p50": 12574085,
+            "p95": 14159669,
+            "p99": 14977645,
+            "samples": 120,
+            "source": "request",
+            "unit": "ns"
+          },
+          "runtime.sync": {
+            "failed": 0,
+            "kind": "cpu",
+            "last": 4312835,
+            "max": 6060721,
+            "mean": 4743978.063888889,
+            "min": 4143229,
+            "name": "runtime.sync",
+            "p50": 4622612,
+            "p95": 5613604,
+            "p99": 5923295,
+            "samples": 360,
+            "source": "request",
+            "unit": "ns"
+          }
+        },
+        "hierarchy_cache_counters": "Not instrumented in the retained 0.0.199 executable; no measured cache-work count."
+      }
+    ],
+    "mean_comparison": {
+      "runtime.hierarchy": {
+        "A_mean_ns": 3315281.6569444444,
+        "B_mean_ns": 2534017.519444444,
+        "mean_reduction_percent": 23.565543393982956,
+        "paired_reduction_percent": [
+          23.33644490663381,
+          23.789919444247985
+        ]
+      },
+      "runtime.batch": {
+        "A_mean_ns": 18719000.4,
+        "B_mean_ns": 16285870.158333333,
+        "mean_reduction_percent": 12.998184676926794,
+        "paired_reduction_percent": [
+          12.45519563565287,
+          13.53517014604514
+        ]
+      }
+    },
+    "B_reused_node_percent": 84.00315208825847,
+    "measured_rpc_brackets": [
+      {
+        "owner": "A-off-1",
+        "seconds": 4.147139291,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      },
+      {
+        "owner": "B-off-1",
+        "seconds": 3.61764504,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      },
+      {
+        "owner": "A-on-1",
+        "seconds": 3.913704466,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      },
+      {
+        "owner": "B-on-1",
+        "seconds": 3.611553386,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      },
+      {
+        "owner": "B-on-2",
+        "seconds": 3.658353707,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      },
+      {
+        "owner": "A-on-2",
+        "seconds": 3.980360342,
+        "scope": "Monotonic wall bracket around inherited inspect+one-tick step; includes RPC/validation overhead, not native CPU time"
+      }
+    ],
+    "interpretation": "Two descriptive profiled pairs on one laptop. Inclusive native wall times include waits/scheduling. B includes two extra counter events per pass. Off-arm RPC brackets include inspection, transport and validation. No general FPS, exclusive-CPU, release-build or original-deadline-cause claim.",
+    "record": {
+      "bytes": 1302987,
+      "sha256": "ca20b023d273461469534ca53266f12016cb147295a386b94455825c2e592d55"
+    },
+    "owner_record": {
+      "bytes": 7316,
+      "sha256": "8c52a811e1e08999d02483bf9685b651f0b650060f324f2a3d707cafd790f9d5"
+    },
+    "independent_file_review": {
+      "passed": true,
+      "record": {
+        "bytes": 49874,
+        "sha256": "12499347b44e3a8cb449edeafd557e8a5400f8854b6ce208d65c239012043d3f"
+      },
+      "scope": "Independent original raw requests, responses, complete saves, forecasts, trace events and natural process closure; no native replay."
+    },
+    "final_case_files": 92,
+    "final_case_bytes": 100017939
+  },
+  "retained_compiled_game": {
+    "passed": true,
+    "backend": "CoreCLR; unchanged retained game IL and bridge; no managed rebuild",
+    "rpc_pairs": 162,
+    "ticks": 302,
+    "owners": 3,
+    "complete_checkpoint_references": 11,
+    "whole_file_pairs": 5,
+    "complete_forecasts": 2,
+    "worker_seconds": 82.21512252700632,
+    "outer_seconds": 89.4777921650093,
+    "functional_admission_seconds": 85,
+    "worker_deadline_seconds": 100,
+    "outer_deadline_seconds": 120,
+    "deadline_semantics": "Original functional check precedes each RPC; it is not an all-responses-complete-by-85-seconds requirement. No deadline or check frequency changed.",
+    "staged_source_restored": true,
+    "scope": "Source, cold and relocated service execution; only the owned staged cooked root becomes unavailable, while the original checkout remains readable. No new graphical export or Windows execution.",
+    "record": {
+      "bytes": 210602,
+      "sha256": "8e1b71a6175afd4cdcb07f057451565af923d8656665be047604ffc428c0f2b0"
+    },
+    "owner_record": {
+      "bytes": 5648,
+      "sha256": "ebeddbdabc1296beb22219786b2f71fb6a26cce2c676f61c3df0e409a8b38af6"
+    },
+    "wrapper_record": {
+      "bytes": 2470,
+      "sha256": "3636f08fce4c90b9d8e0b9610ce12cdc6a9a575dd64c6e001c81102f18efe5aa"
+    },
+    "independent_file_review": {
+      "passed": true,
+      "record": {
+        "bytes": 2733,
+        "sha256": "c0efb6a0a5249f68425ef02281ba79939836fbdd86c4184c1b2a98f30331f71d"
+      },
+      "scope": "Independent closed-file audit of original rawpairs,all savedbytes/types/lexemes,prospectiveforecasts,restoration and naturalclosures. No native/test/compiler/provider actor or actualcase edit."
+    }
+  },
+  "retained_failures": [
+    {
+      "checkpoint": "0.0.197",
+      "outcome": "failed",
+      "scope": "Original 85-second pre-RPC admission limit reached at RPC142/162 during relocated restoration. This new passing run neither changes that verdict nor establishes its cause."
+    },
+    {
+      "checkpoint": "0.0.199",
+      "outcome": "failed",
+      "scope": "Original unsettled dynamic-prop future comparison remains failed; hierarchy tests use distinct selected physical cases and do not repair arbitrary physics persistence."
+    }
+  ],
+  "diagnostic_failures": [
+    {
+      "scope": "File-only build-plan preflight",
+      "result": "failed before any commands launched",
+      "correction": "Separate preparer validates both original relative/absolute reference spellings by actual file identity and resolved path."
+    },
+    {
+      "scope": "File-only comparison reader v1",
+      "result": "failed on an exact Unix mode assertion outside the producer contract",
+      "correction": "Separate reader v2 checks original bytes and executable access, recording requested 0755 and observed DrvFS 0777. No cohort, state operand, timing or producer requirement changed."
+    }
+  ]
+}

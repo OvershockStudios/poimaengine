@@ -54,6 +54,10 @@ Owner CPU failure flags indicate exception unwinding. Native job flags mark non-
 
 Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output and the editor DSP worker have separate [output contracts](AUDIO_EVENTS.md) and [editor qualification](EDITOR_AUDIO.md).
 
+The [hierarchy counters](RUNTIME_HIERARCHY.md#inspect-reuse) report recomputed
+and reused nodes for each completed traversal. Their sum is that pass's live
+membership; multiple passes in one tick count the nodes again.
+
 `render.retire` measures CPU polling, collection of completed frame results and related cleanup. It can occur without a wait. A nested `render.wait` appears only when an unfinished submission must complete before reusing a frame slot or draining outstanding work. These CPU scopes describe the current retirement operation; the delayed GPU events retain submission attribution separately. With render profiling requested, `render_diagnostics.cpu.completion_wait` summarizes the explicit completion-wait calls, excluding successful polls and the remaining retirement work. It is not a frame-time or presentation-latency measurement.
 
 `renderer.submitted_submissions` and `renderer.outstanding_submissions` are recorded at submission, before presentation or report polling can retire work. They show logical queue depth at that point; they do not prove simultaneous GPU execution.

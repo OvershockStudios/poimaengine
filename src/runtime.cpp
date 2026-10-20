@@ -9,6 +9,7 @@
 #include "runtime_entity_ids.hpp"
 #include "runtime_hit_regions.hpp"
 #include "runtime_assertions.hpp"
+#include "runtime_hierarchy.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -76,6 +77,8 @@ struct Node {
     std::string id, parent;
     RuntimeTransform local, initial;
     Matrix4 world = identity_matrix();
+    detail::RuntimeHierarchyCache hierarchy_cache{};
+    bool world_recomputed=false;
 };
 struct Motion {
     KinematicTarget target;
@@ -239,12 +242,18 @@ struct Runtime::Impl {
     }
     void world_matrices() {
         profiling::Scope profile("runtime.hierarchy",static_cast<std::int64_t>(tick));
+        std::uint64_t recomputed=0;
         for (auto e : topology->hierarchy) {
             auto& n=registry.get<Node>(e);
-            const auto local=local_matrix(n.local.position,n.local.rotation,n.local.scale);
-            n.world=n.parent.empty() ? local : multiply(registry.get<Node>(find(n.parent)).world,local);
-            for(double value:n.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Runtime hierarchy matrix exceeds the supported range.");
+            // Parents precede children in this pass. Their bindings are fixed
+            // for each Node lifetime; new/cold nodes start with invalid caches.
+            const auto* parent=n.parent.empty() ? nullptr : &registry.get<Node>(find(n.parent));
+            n.world_recomputed=n.hierarchy_cache.update(n.local,parent ? &parent->world : nullptr,
+                parent && parent->world_recomputed,n.world);
+            recomputed+=n.world_recomputed ? 1u : 0u;
         }
+        profiling::counter("runtime.hierarchy.recomputed",recomputed);
+        profiling::counter("runtime.hierarchy.reused",topology->hierarchy.size()-recomputed);
     }
     void animation_locals(bool refresh_grounding=false) {
         profiling::Scope profile("runtime.animation.sample",static_cast<std::int64_t>(tick));
