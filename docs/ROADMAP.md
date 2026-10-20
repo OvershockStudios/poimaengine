@@ -117,7 +117,10 @@ penetration, ricochet and moving-target relative CCD remain further work.
 The optional [FPS feedback package](../packages/fps/README.md) supplies procedural
 math with authored, seeded-random and hybrid recoil. [Camera pose controls](CAMERA_POSES.md)
 separate aim readback, camera effects and foreground motion. Prefer procedural
-layers where useful, with imported clips for actions they represent better.
+motion for recoil, sway, aim offsets, contact adjustments and other responsive
+animation. Combine it with imported clips when they better preserve authored
+motion or offer a more efficient implementation; procedural motion and clip
+playback must compose within the same animation workflow.
 [First-person viewmodels](VIEWMODELS.md) provide a separate FOV and
 foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
 fixed-tick ADS and zoom, with saved game-owned easing through
