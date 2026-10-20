@@ -458,7 +458,7 @@ struct Runtime::Impl {
             if(!settings.camera.empty()) {
                 const auto camera=find(settings.camera);
                 require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
-                require(!settings.stance || !registry.all_of<RuntimeRigNode>(camera),"Stance camera position cannot also be owned by ModelNode animation.");
+                require(!settings.stance || !candidate.definitions.at(settings.camera).rig_node,"Stance camera position cannot also be owned by ModelNode animation.");
                 require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
             }
             auto capsule=JPH::CapsuleShapeSettings(settings.height/2-settings.radius,settings.radius).Create();
@@ -2095,4 +2095,5 @@ SceneSnapshot Runtime::snapshot() const {
     }
     return result;
 }
+#include "runtime_camera_pose_snapshot.inc"
 }

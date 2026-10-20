@@ -4,10 +4,12 @@
 #include <algorithm>
 #include <charconv>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <thread>
 #include <vector>
@@ -35,13 +37,22 @@ class Owner final:public PlayerSession {
 public:
     std::string session="original";
     std::uint64_t current_tick=7,material_revision=0;
-    mutable unsigned snapshots=0,lens_samples=0;
+    mutable unsigned snapshots=0,lens_samples=0,pose_samples=0,pose_snapshots=0;
+    mutable std::vector<std::uint64_t> pose_sampled_ticks;
     mutable std::vector<std::uint64_t> sampled_ticks;
     unsigned advances=0,owner_polls=0;
     SceneLens world_lens;
     std::optional<SceneLens> viewmodel_lens;
     std::optional<double> authored_fov;
-    bool animate_lenses=false;
+    bool animate_lenses=false,pose_provider=false,animate_poses=false;
+    std::string pose_source;
+    double base_offset=0;
+    RuntimeCameraPose world_pose;
+    std::optional<RuntimeCameraPose> viewmodel_pose;
+    Matrix4 current_base() const {
+        // Explicit 90-degree Z base: large committed motion must never blend.
+        return {0,1,0,0,-1,0,0,0,0,0,1,0,10+double(current_tick)*.5+base_offset,2,-3,1};
+    }
     // One-shot maintenance changes exercise real PlayerWindow routing only;
     // they do not stand in for a Runtime, save writer or compiled callback.
     bool maintenance_tick=false,maintenance_replace=false;
@@ -56,21 +67,47 @@ public:
     std::string identity() const override {return session;}
     std::uint64_t tick() const override {return current_tick;}
     bool controller_valid(const std::string& id) const override {return id=="controller";}
-    SceneSnapshot snapshot(const std::string& camera) const override {
-        check(camera=="camera","Unexpected owner camera");++snapshots;
+    SceneSnapshot scene(const std::string& camera) const {
+        check(camera=="camera" || camera=="camera2","Unexpected owner camera");
         SceneSnapshot result;result.world_id="native-window-lifetime";result.camera_id=camera;
         // A valid rigid camera is required even for a scene with no mesh objects.
         // SceneSnapshot's Matrix4 has no default initializer.
         result.camera_world=identity_matrix();
-        result.presentation_source_id=session;result.presentation_generation=material_revision;result.material_revision=material_revision;
+        result.presentation_source_id=pose_source.empty() ? session : pose_source;result.presentation_generation=material_revision;result.material_revision=material_revision;
         result.vertical_fov=world_lens.vertical_fov;result.near_plane=world_lens.near_plane;result.far_plane=world_lens.far_plane;
         result.authored_vertical_fov=authored_fov;
         if(viewmodel_lens)result.viewmodel=SceneViewmodel{*viewmodel_lens,{}};
         return result;
     }
+    SceneSnapshot snapshot(const std::string& camera) const override {
+        ++snapshots;return scene(camera);
+    }
+    std::optional<PlayerPoseSample> pose_sample(const std::string& camera) const override {
+        check(camera=="camera" || camera=="camera2","Unexpected lightweight pose camera");
+        ++pose_samples;pose_sampled_ticks.push_back(current_tick);
+        if(!pose_provider)return {};
+        return PlayerPoseSample{session,pose_source.empty() ? session : pose_source,camera,current_tick,
+            material_revision,world_pose,viewmodel_pose,current_base()};
+    }
+    SceneSnapshot pose_snapshot(const std::string& camera,const RuntimeCameraPose& world,
+        const std::optional<RuntimeCameraPose>& viewmodel) const override {
+        check(pose_provider && bool(viewmodel)==bool(viewmodel_lens),"Unexpected pose snapshot provider/channels");
+        ++pose_snapshots;auto result=scene(camera);const auto base=current_base();
+        result.camera_world=multiply(base,local_matrix(world.position,world.rotation,{1,1,1}));
+        if(result.viewmodel) {
+            // One synthetic foreground cube gives the real renderer an actual
+            // incarnation/matrix to acknowledge, rather than an empty list.
+            SceneObject object{};object.entity_id="foreground";object.incarnation=17;
+            object.albedo={1,.1f,.1f};
+            const auto effect=local_matrix(viewmodel->position,viewmodel->rotation,{1,1,1});
+            object.world=multiply(multiply(result.camera_world,effect),local_matrix({0,0,-2},{0,0,0,1},{.3,.3,.3}));
+            result.viewmodel->objects.push_back(std::move(object));
+        }
+        return result;
+    }
     std::optional<PlayerLensSample> lens_sample(const std::string& camera) const override {
-        check(camera=="camera","Unexpected lightweight lens camera");++lens_samples;sampled_ticks.push_back(current_tick);
-        return PlayerLensSample{session,session,camera,current_tick,material_revision,world_lens,viewmodel_lens,authored_fov};
+        check(camera=="camera" || camera=="camera2","Unexpected lightweight lens camera");++lens_samples;sampled_ticks.push_back(current_tick);
+        return PlayerLensSample{session,pose_source.empty() ? session : pose_source,camera,current_tick,material_revision,world_lens,viewmodel_lens,authored_fov};
     }
     PlayerAudioState audio_state(const std::string&) const override {
         AudioSnapshot snapshot;snapshot.listener=identity_matrix();return {current_tick,std::move(snapshot),{}};
@@ -82,6 +119,12 @@ public:
         if(animate_lenses) {
             world_lens.vertical_fov=70-double(advances%12);
             if(viewmodel_lens)viewmodel_lens->vertical_fov=75-double(advances%12)*.5;
+        }
+        if(animate_poses) {
+            world_pose.position={double(advances)*.01,double(advances)*.02,0};
+            const double half_angle=double(advances)*.01;
+            world_pose.rotation={0,0,std::sin(half_angle),std::cos(half_angle)};
+            if(viewmodel_pose)viewmodel_pose->position={double(advances)*.005,0,0};
         }
         return false;
     }
@@ -149,6 +192,195 @@ void lens_admission_without_window() {
     deferred.request_stop();check(!deferred.poll(),"Deferred opt-in owner failed to stop");
     check(owner.snapshots==0 && owner.lens_samples==0 && owner.advances==0,
         "Deferred stop created interpolation state without a frame");
+}
+void pose_admission_without_window() {
+    Owner owner;auto launch=options();launch.replay=true;launch.pose_interpolation=true;
+    rejects([&]{PlayerWindow denied(launch,owner,true);},"Replay admitted pose interpolation before device initialization");
+    check(owner.snapshots==0 && owner.pose_snapshots==0 && owner.pose_samples==0 && owner.owner_polls==0,
+        "Rejected pose replay touched the owner or took a scene");
+    launch.replay=false;PlayerWindow deferred(launch,owner,true);
+    check(owner.snapshots==0 && owner.pose_samples==0 && !deferred.report().materials.observed,
+        "Deferred pose option sampled before a frame");
+    PlayerCaptureSnapshot forged;
+    rejects([&]{deferred.capture("never-pose-before-ready.bmp",forged);},"Unready pose token bypassed admission");
+    deferred.request_stop();check(!deferred.poll() && owner.pose_samples==0 && owner.pose_snapshots==0,
+        "Deferred pose stop sampled or rendered");
+}
+Matrix4 independent_product(const Matrix4& a,const Matrix4& b) {
+    Matrix4 result{};
+    for(unsigned column=0;column<4;++column)for(unsigned row=0;row<4;++row)
+        for(unsigned k=0;k<4;++k)result[column*4+row]+=a[k*4+row]*b[column*4+k];
+    return result;
+}
+Matrix4 independent_pose(const RuntimeCameraPose& pose) {
+    const auto& q=pose.rotation;const auto x=q[0],y=q[1],z=q[2],w=q[3];
+    return {1-2*(y*y+z*z),2*(x*y+z*w),2*(x*z-y*w),0,
+        2*(x*y-z*w),1-2*(x*x+z*z),2*(y*z+x*w),0,
+        2*(x*z+y*w),2*(y*z-x*w),1-2*(x*x+y*y),0,
+        pose.position[0],pose.position[1],pose.position[2],1};
+}
+void matrix_near(const Matrix4& a,const Matrix4& b,const char* message) {
+    for(unsigned i=0;i<16;++i)check(std::isfinite(a[i]) && std::isfinite(b[i]) && std::abs(a[i]-b[i])<1e-11,message);
+}
+void pose_scene(const SceneSnapshot& snapshot,const PlayerPosePresentation& pose) {
+    matrix_near(snapshot.camera_world,independent_product(pose.target_base_world,independent_pose(pose.rendered_world)),
+        "Prepared camera did not use exactly current committed base times rendered effect");
+    check(snapshot.viewmodel && snapshot.viewmodel->objects.size()==1 && pose.rendered_viewmodel,
+        "Synthetic foreground or rendered optional channel missing");
+    const Matrix4 object_local{.3,0,0,0,0,.3,0,0,0,0,.3,0,0,0,-2,1};
+    const auto camera=independent_product(pose.target_base_world,independent_pose(pose.rendered_world));
+    matrix_near(snapshot.viewmodel->objects[0].world,independent_product(independent_product(camera,
+        independent_pose(*pose.rendered_viewmodel)),object_local),"Foreground matrix lost the rendered camera/world/viewmodel effect chain");
+}
+void write_pose_receipt(const std::filesystem::path& path,const PlayerMaterialReceipt& receipt) {
+    using Json=nlohmann::json;check(receipt.pose_presentation && receipt.scene.camera_pose,"Real pose presentation receipt missing");
+    const auto& p=*receipt.pose_presentation;const auto& scene=*receipt.scene.camera_pose;
+    const auto pose=[](const RuntimeCameraPose& v){return Json{{"position",v.position},{"rotation",v.rotation}};};
+    Json foreground=Json::array();
+    for(const auto& object:scene.viewmodels)foreground.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation},{"world",object.world}});
+    Json result={{"synthetic_owner",true},{"physics_or_compiled_game_oracle",false},{"session_id",receipt.session_id},
+        {"tick",receipt.tick},{"player_generation",receipt.player_generation},{"source_id",receipt.scene.presentation_source_id},
+        {"camera_id",receipt.scene.camera_id},{"frame_sequence",receipt.scene.frame_sequence},{"submission_id",receipt.scene.submission_id},
+        {"previous_tick",p.previous_tick},{"target_tick",p.target_tick},{"alpha",p.alpha},{"interpolating",p.interpolating},
+        {"reset_reason",p.reset_reason},{"previous_world",pose(p.previous_world)},{"target_world",pose(p.target_world)},
+        {"rendered_world",pose(p.rendered_world)},{"target_base_world",p.target_base_world},
+        {"previous_viewmodel",p.previous_viewmodel ? pose(*p.previous_viewmodel) : Json(nullptr)},
+        {"target_viewmodel",p.target_viewmodel ? pose(*p.target_viewmodel) : Json(nullptr)},
+        {"rendered_viewmodel",p.rendered_viewmodel ? pose(*p.rendered_viewmodel) : Json(nullptr)},
+        {"actual_camera_world",scene.camera_world},{"actual_foreground",std::move(foreground)}};
+    check(!std::filesystem::exists(path),"Pose receipt must be new");std::ofstream stream(path,std::ios::binary);
+    stream<<result.dump(2)<<'\n';check(bool(stream),"Failed to retain pose receipt");
+}
+void pose_capture_graphics(int gpu,const std::filesystem::path& output) {
+    auto launch=options();launch.render.gpu=gpu;launch.player_generation=71;
+    launch.background=true;launch.pose_interpolation=true;launch.lens_interpolation=true;
+    Owner owner;owner.pose_provider=true;owner.pose_source="pose-source";
+    owner.world_lens={70,.1,100};owner.viewmodel_lens=SceneLens{75,.01,10};owner.authored_fov=70;
+    owner.world_pose.position={.1,.2,0};owner.viewmodel_pose=RuntimeCameraPose{};
+    std::optional<PlayerCaptureSnapshot> expired;
+    {
+        PlayerWindow window(launch,owner,true);
+        check_player(window.poll() && window.ready(),window,"Pose/lens background window did not initialize");
+        const auto initial=window.report().materials.presented;
+        check(initial && initial->pose_presentation && initial->lens_presentation &&
+            initial->pose_presentation->enabled && !initial->pose_presentation->interpolating &&
+            initial->pose_presentation->alpha==1 && initial->pose_presentation->target_world==owner.world_pose &&
+            initial->pose_presentation->rendered_world==owner.world_pose && initial->scene.camera_pose &&
+            initial->scene.camera_pose->viewmodels.size()==1 && owner.snapshots==0 && owner.advances==0,
+            "Paused initial scene did not retain exact poses alongside lens metadata");
+        matrix_near(initial->scene.camera_pose->camera_world,independent_product(owner.current_base(),independent_pose(owner.world_pose)),
+            "Initial actual camera receipt composed the base/effect incorrectly");
+        write_pose_receipt(output/"pose-initial.json",*initial);
+        owner.animate_lenses=true;owner.animate_poses=true;window.pause(false);
+        const auto until=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+        while(owner.advances==0 && std::chrono::steady_clock::now()<until) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            check_player(window.poll() && window.ready(),window,"Background pose owner failed to acquire live Tick");
+        }
+        check(owner.advances>0 && !window.paused(),"Background pose owner never committed a live Tick");
+        const auto advances=owner.advances,scenes=owner.pose_snapshots,samples=owner.pose_samples;
+        const auto tick=owner.current_tick;
+        std::this_thread::sleep_for(std::chrono::milliseconds(160));
+        check_player(window.poll() && window.ready(),window,"Pose eight-Tick catch-up failed");
+        check(owner.advances-advances==8 && owner.snapshots==0 && owner.pose_snapshots-scenes<=2 &&
+            owner.pose_samples-samples>=8,"Pose catch-up extracted scenes per Tick or lost lightweight samples");
+        for(std::uint64_t value=tick+1;value<=owner.current_tick;++value)
+            check(std::find(owner.pose_sampled_ticks.begin()+samples,owner.pose_sampled_ticks.end(),value)!=owner.pose_sampled_ticks.end(),
+                "Pose history omitted a committed Tick during catch-up");
+        const auto pair=window.report().materials.observed->pose_presentation;
+        check(pair && pair->previous_tick+1==pair->target_tick && pair->target_tick==owner.current_tick &&
+            pair->target_world==owner.world_pose && pair->target_viewmodel==owner.viewmodel_pose &&
+            pair->target_base_world==owner.current_base() && pair->alpha>=0 && pair->alpha<1 && pair->interpolating,
+            "Live pose receipt did not retain the last consecutive committed pair/current base");
+        for(unsigned axis=0;axis<3;++axis)
+            check(std::abs(pair->rendered_world.position[axis]-(pair->previous_world.position[axis]+
+                (pair->target_world.position[axis]-pair->previous_world.position[axis])*pair->alpha))<1e-12,
+                "Live translation was not linear in the reported fixed-clock alpha");
+        // The synthetic owner uses a monotone Z arc below pi. Its independent
+        // scalar angle oracle also checks the actual window's rotation blend.
+        const double angle_before=2*std::atan2(pair->previous_world.rotation[2],pair->previous_world.rotation[3]);
+        const double angle_target=2*std::atan2(pair->target_world.rotation[2],pair->target_world.rotation[3]);
+        const double angle=angle_before+(angle_target-angle_before)*pair->alpha;
+        check(std::abs(pair->rendered_world.rotation[2]-std::sin(angle*.5))<1e-12 &&
+            std::abs(pair->rendered_world.rotation[3]-std::cos(angle*.5))<1e-12,
+            "Actual pose presentation did not follow the independent constant-speed rotation arc");
+        const auto lenses=window.report().materials.observed->lens_presentation;
+        check(lenses && lenses->previous_tick==pair->previous_tick && lenses->target_tick==pair->target_tick && lenses->alpha==pair->alpha,
+            "Lens and pose interpolation did not coexist on the same committed fixed-clock pair");
+        auto stale=window.capture_snapshot();auto frozen=window.capture_snapshot();
+        rejects([&]{window.capture(utf8(output/"pose-stale.bmp"),stale);},"New pose preparation retained an old capture lease");
+        check(frozen.pose_presentation() && frozen.lens_presentation(),"Frozen capture lost pose or lens channel");
+        pose_scene(frozen.snapshot(),*frozen.pose_presentation());
+        const auto before_scenes=owner.pose_snapshots,before_advances=owner.advances;const auto before_tick=owner.current_tick;
+        const auto capture=window.capture(utf8(output/"pose-live.bmp"),frozen);
+        check(capture.success && capture.hardware && capture.capture_written && capture.validation_errors==0 &&
+            capture.diagnostics.scene_submitted && capture.diagnostics.scene_presented &&
+            *capture.diagnostics.scene_submitted==*capture.diagnostics.scene_presented &&
+            same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(frozen.snapshot())) &&
+            window.report().materials.presented->pose_presentation==frozen.pose_presentation() &&
+            owner.pose_snapshots==before_scenes && owner.advances==before_advances && owner.current_tick==before_tick,
+            "Frozen pose capture resampled/advanced authority or acknowledged different camera/foreground transforms");
+        const auto bmp=bytes(output/"pose-live.bmp");check(bmp.size()>54 && bmp[0]=='B' && bmp[1]=='M',"Pose capture is not actual BMP bytes");
+        write_pose_receipt(output/"pose-live.json",*window.report().materials.presented);
+        auto pause_lease=window.capture_snapshot();window.pause(true);
+        rejects([&]{window.capture(utf8(output/"pose-paused-stale.bmp"),pause_lease);},"Pause retained an old pose lease");
+        window.synchronize();auto paused=window.capture_snapshot();
+        check(paused.pose_presentation() && paused.pose_presentation()->alpha==1 &&
+            !paused.pose_presentation()->interpolating && paused.pose_presentation()->rendered_world==owner.world_pose &&
+            paused.pose_presentation()->rendered_viewmodel==owner.viewmodel_pose && !paused.pose_presentation()->reset_reason.empty(),
+            "Pause failed to present exact current pose endpoints");
+        pose_scene(paused.snapshot(),*paused.pose_presentation());
+        const auto paused_capture=window.capture(utf8(output/"pose-paused.bmp"),paused);
+        check(paused_capture.success && paused_capture.hardware && paused_capture.capture_written && paused_capture.validation_errors==0,
+            "Exact paused endpoint capture failed");
+        write_pose_receipt(output/"pose-paused.json",*window.report().materials.presented);
+        const auto cut=[&](const char* name,auto&& change) {
+            const auto token=window.capture_snapshot();change();
+            const auto denied=output/(std::string("pose-cut-")+name+".bmp");
+            rejects([&]{window.capture(utf8(denied),token);},"Changed target retained a pose capture lease");
+            check(!std::filesystem::exists(denied),"Rejected pose lease published an artifact");
+            window.synchronize();check_player(window.poll() && window.ready(),window,"Changed pose owner failed to redraw");
+            const auto fresh=window.capture_snapshot();
+            check(fresh.pose_presentation() && fresh.pose_presentation()->alpha==1 &&
+                !fresh.pose_presentation()->interpolating && fresh.pose_presentation()->target_tick==owner.current_tick &&
+                !fresh.pose_presentation()->reset_reason.empty(),"Pose owner cut retained an old interpolation interval");
+            pose_scene(fresh.snapshot(),*fresh.pose_presentation());
+        };
+        cut("world",[&]{owner.world_pose.position[0]+=.125;});
+        cut("viewmodel",[&]{owner.viewmodel_pose->position[1]+=.0625;});
+        cut("base",[&]{owner.base_offset+=4;});
+        cut("source",[&]{owner.pose_source="pose-source-replaced";});
+        cut("material",[&]{++owner.material_revision;});
+        cut("restore",[&]{owner.current_tick=2;});
+        cut("session",[&]{owner.session="pose-restored-owner";owner.current_tick=1;});
+        auto channel=window.capture_snapshot();owner.viewmodel_pose.reset();owner.viewmodel_lens.reset();
+        rejects([&]{window.capture(utf8(output/"pose-channel-stale.bmp"),channel);},"Removed optional pose channel retained a lease");
+        window.synchronize();check_player(window.poll() && window.ready(),window,"Optional channel removal failed to present");
+        const auto absent=window.capture_snapshot();
+        check(absent.pose_presentation() && !absent.pose_presentation()->previous_viewmodel &&
+            !absent.pose_presentation()->target_viewmodel && !absent.pose_presentation()->rendered_viewmodel &&
+            !absent.snapshot().viewmodel && absent.pose_presentation()->alpha==1 && !absent.pose_presentation()->interpolating,
+            "Optional foreground removal blended against a stale channel");
+        owner.viewmodel_pose=RuntimeCameraPose{};owner.viewmodel_lens=SceneLens{75,.01,10};window.synchronize();
+        check_player(window.poll() && window.ready(),window,"Optional foreground reintroduction failed to present");
+        auto inactive=window.capture_snapshot();check_player(window.poll() && window.ready(),window,"Paused pose lease poll failed");
+        rejects([&]{window.capture(utf8(output/"pose-poll-stale.bmp"),inactive);},"An actual poll retained a pose lease");
+        expired=window.capture_snapshot();window.request_stop();check(!window.poll() && window.report().render.success,"Pose window failed natural stop");
+        check(owner.pose_snapshots>0 && owner.snapshots==0,"Opt-in frame silently fell back to a committed full snapshot");
+    }
+    {
+        auto next=launch;next.camera="camera2";
+        PlayerWindow successor(next,owner,true);
+        check_player(successor.poll() && successor.ready(),successor,"New selected-camera window failed initialization");
+        const auto token=successor.capture_snapshot();
+        check(token.snapshot().camera_id=="camera2" && token.pose_presentation() && token.pose_presentation()->alpha==1 &&
+            !token.pose_presentation()->interpolating,"Selected camera/lifetime change retained an old pose pair");
+        rejects([&]{successor.capture(utf8(output/"pose-old-lifetime.bmp"),*expired);},"Successor camera/window accepted an expired pose lease");
+        check(!std::filesystem::exists(output/"pose-old-lifetime.bmp") && !std::filesystem::exists(output/"pose-stale.bmp") &&
+            !std::filesystem::exists(output/"pose-paused-stale.bmp") && !std::filesystem::exists(output/"pose-poll-stale.bmp") && !std::filesystem::exists(output/"pose-channel-stale.bmp"),
+            "Rejected pose lease produced an output artifact");
+        successor.request_stop();check(!successor.poll() && successor.report().render.success,"Selected-camera successor failed natural stop");
+    }
 }
 void preferences_without_window() {
     Owner owner;auto launch=options();launch.vertical_fov=37;
@@ -334,7 +566,10 @@ void graphics(int gpu,const std::filesystem::path& output,bool check_audio) {
               settled.materials.presented->tick==7 && settled.materials.presented->player_generation==12,
               "Native presentation lost its exact material/session/tick/generation receipt");
         check(!settled.materials.observed->lens_presentation && !settled.materials.submitted->lens_presentation &&
-            !settled.materials.presented->lens_presentation && owner.lens_samples==0,
+            !settled.materials.presented->lens_presentation && owner.lens_samples==0 &&
+            !settled.materials.observed->pose_presentation && !settled.materials.submitted->pose_presentation &&
+            !settled.materials.presented->pose_presentation && !settled.materials.presented->scene.camera_pose &&
+            owner.pose_samples==0 && owner.pose_snapshots==0,
             "Default-off player emitted interpolation metadata or queried lightweight samples");
         const auto old_presented=*settled.materials.presented;
         owner.material_revision=1;
@@ -581,7 +816,7 @@ CooperativeEvidence cooperative_graphics(int gpu,const std::filesystem::path& ou
 }
 int main(int argc,char** argv) {
     try {
-        int gpu=-1;std::filesystem::path output;bool check_audio=false,cooperative_only=false;
+        int gpu=-1;std::filesystem::path output;bool check_audio=false,cooperative_only=false,pose_only=false;
         for(int i=1;i<argc;++i) {
             const std::string_view key=argv[i];check(i+1<argc,"Missing argument value");
             const std::string_view value=argv[++i];
@@ -593,6 +828,8 @@ int main(int argc,char** argv) {
                 check(output.empty(),"Repeated output argument");output=std::filesystem::u8path(std::string(value));
             }else if(key=="--audio") {
                 check(value=="0" || value=="1","Audio check expects 0 or 1");check_audio=value=="1";
+            }else if(key=="--pose-only") {
+                check(value=="0" || value=="1","Pose-only check expects 0 or 1");pose_only=value=="1";
             }else if(key=="--cooperative-only") {
                 check(value=="0" || value=="1","Cooperative-only check expects 0 or 1");cooperative_only=value=="1";
             }else check(false,"Unknown argument");
@@ -600,7 +837,16 @@ int main(int argc,char** argv) {
         check((gpu<0)==output.empty(),"GPU check requires both --gpu and new --output");
         check(!check_audio || gpu>=0,"Audio check requires an actual graphics owner");
         check(!cooperative_only || (gpu>=0 && !check_audio),"Cooperative-only requires a GPU and excludes the separate audio group");
-        basic();preferences_without_window();lens_admission_without_window();
+        check(!pose_only || (gpu>=0 && !check_audio && !cooperative_only),"Pose-only requires GPU and excludes audio/cooperative modes");
+        basic();preferences_without_window();lens_admission_without_window();pose_admission_without_window();
+        if(pose_only) {
+            check(!std::filesystem::exists(output),"Output directory must be new");
+            check(std::filesystem::create_directories(output),"Cannot create owned pose output directory");
+            pose_capture_graphics(gpu,output);
+            std::cout<<"{\"passed\":true,\"pose_admission_groups\":1,\"pose_window_groups\":1,"
+                "\"captures\":2,\"lens_pose_coexistence\":true,\"physics_oracle\":false,\"compiled_game\":false,\"physical_input\":false}\n";
+            return 0;
+        }
         CooperativeEvidence cooperative;
         if(gpu>=0) {
             check(!std::filesystem::exists(output),"Output directory must be new");

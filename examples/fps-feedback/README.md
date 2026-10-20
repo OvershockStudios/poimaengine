@@ -2,7 +2,9 @@
 
 A new adaptation of the preserved [Switchback scene](../../docs/evidence/fixtures/agent-switchback-fresh), using its licensed character, audio, geometry and controls. The historical source and verifier remain unchanged. This example adds procedural recoil, look sway, distance-driven bob and deterministic shake through the optional [FPS helpers](../../packages/fps/Feedback.cs).
 
-A runtime and matching SDK with **`camera_pose_v1`** are required. The retained 0.0.204 runtime supplies the scene's earlier gameplay baseline; it cannot execute the new camera-pose feature. This source does not by itself establish native, rendered, Native AOT or fresh-agent qualification.
+A runtime and matching SDK with **`camera_pose_v1`** are required. The interactive
+launcher enables independent lens/effect interpolation and needs 0.0.207 or newer;
+`--no-pose-interpolation --no-lens-interpolation` disables those presentation options. The retained 0.0.204 runtime supplies the scene's earlier gameplay baseline; it cannot execute the new camera-pose feature. This source does not by itself establish native, rendered, Native AOT or fresh-agent qualification.
 
 The weapon and gameplay aim use separate authored recoil profiles and seeded streams. The welcome/menu button selects Authored, Seeded or Hybrid. Only accepted shots advance the saved shot ordinal. World-camera shake/bob and viewmodel kick/sway never enter the hit ray: it uses the native `BaseWorld` frame plus saved logical aim recoil. Native look, stance and physics continue to own the base frame. Independent world/viewmodel ADS lenses retain the original 12-tick transition.
 
@@ -14,6 +16,13 @@ retaining every one of the 59 typed fields. The public prepare/configure recipe
 also passes native Windows authoring. Separate six-frame Windows Vulkan checks
 verify native camera/foreground isolation with analytic geometry; they do not
 qualify this sample's rendered weapon feel. [Results and scope](../../docs/evidence/m2-fps-feedback.json).
+
+The 0.0.207 [presentation check](../../docs/evidence/m2-player-pose-presentation.json)
+uses this unchanged compiled game with seeded spring state. Fifty native RPCs
+produce four 640×360 MSAA4 captures: two changing fractional poses and two paused
+endpoints. Independent equations check camera/weapon matrices and FOV; two
+complete paused save comparisons retain all 59 fields exactly. This checks
+controlled effect relaxation, not physical input, firing or subjective weapon feel.
 
 ## Prepare and configure
 
@@ -61,6 +70,11 @@ python examples/fps-feedback/run.py --binary $engine `
   --bridge build/fps-feedback/bridge/Poima.ManagedBridge.dll --hostfxr $hostfxr `
   --save-root build/fps-feedback/saves --output build/fps-feedback/play
 ```
+
+The launcher enables [effect interpolation](../../docs/PLAYER_POSE_PRESENTATION.md)
+and independent FOV interpolation. Only effect offsets are delayed; native look,
+movement and logical aim remain committed. Use `--no-pose-interpolation` or
+`--no-lens-interpolation` to inspect the respective committed presentation.
 
 Begin in the UI. WASD and mouse move/look; C crouches, right mouse aims, left mouse fires and R reloads. Crouch at the supply pad before firing. The menu preserves save/load/retry controls. Tab releases the cursor. Select a feedback mode before beginning or while paused. The output retains original stdio and calls; a caller-provided outer process owner remains responsible for whole-tree bounds and closure.
 

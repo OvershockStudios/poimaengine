@@ -122,8 +122,21 @@ void physical_descendants(){
     Runtime r(d);const auto before=r.save_snapshot(digest);rejects([&]{step(r,{{id(1),translated(.1),{}}});});check(r.save_snapshot(digest)==before,"Physical-descendant rejection changed state.");
     step(r,{{id(1),{},translated(.2)}});const auto saved=r.save_snapshot(digest);auto restored=Runtime::from_snapshot(d,digest,saved);check(restored->save_snapshot(digest)==saved,"Foreground-only pose could not save with physical descendant.");
 }
+void animation_owned_camera_rejection(){
+    RuntimeDefinition d;d.world_id="camera-pose-animation-ownership";d.authored_revision=1;
+    auto model=std::make_shared<ModelAsset>();model->nodes.resize(1);model->roots={0};model->nodes[0].name="Animated camera";
+    model->animations.push_back({"Move camera",1,{{0,AnimationPath::translation,AnimationInterpolation::linear,{0,1},{{0,0,0,0},{.5,0,0,0}}}}});
+    RuntimeEntityDefinition rig;rig.id=id(1);rig.animation_rig=RuntimeAnimationRig{model,0,0,1,true,true};
+    RuntimeEntityDefinition camera;camera.id=id(2);camera.parent=rig.id;camera.rig_node=RuntimeRigNode{rig.id,0};camera.camera=RuntimeCamera{60,.1,100,SceneLens{75,.01,10}};
+    d.entities={rig,camera};Runtime r(d);r.step(12,{});check(r.entity(camera.id).local.position[0]>0,"Animation ownership fixture did not sample its camera.");
+    const auto before=r.save_snapshot(digest);const auto matrix=r.entity(camera.id).world;
+    for(const auto& command:std::vector<RuntimeCameraPoseCommand>{{camera.id,translated(.1),{}},{camera.id,{},translated(.2)},{camera.id,RuntimeCameraPose{},RuntimeCameraPose{}}}) {
+        rejects([&]{step(r,{command});});check(r.save_snapshot(digest)==before && r.entity(camera.id).world==matrix,"Rejected animation-owned camera write changed complete committed state.");
+    }
+    check(r.camera_pose(camera.id)->world==RuntimeCameraPose{} && r.camera_pose(camera.id)->viewmodel==RuntimeCameraPose{},"Animation-owned camera acquired a presentation channel effect.");
+}
 }
 int main(){try{if(!Runtime::available()){std::cout<<"Native camera pose unavailable; simulation groups skipped.\n";return 0;}
-    independent_channels_and_nonaccumulation();rotation_order_and_base_ancestry();admission_and_rollback();snapshots_and_structural_lifetime();native_look_stance_and_camera_base();physical_descendants();
-    std::cout<<"6 native camera pose groups passed\n";
+    independent_channels_and_nonaccumulation();rotation_order_and_base_ancestry();admission_and_rollback();snapshots_and_structural_lifetime();native_look_stance_and_camera_base();physical_descendants();animation_owned_camera_rejection();
+    std::cout<<"7 native camera pose groups passed\n";
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

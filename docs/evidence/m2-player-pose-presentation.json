@@ -1,0 +1,308 @@
+{
+  "format": "poima.player-pose-presentation.qualification.v1",
+  "engine_version": "0.0.207",
+  "behavior": {
+    "option": "pose_interpolation",
+    "default": false,
+    "clock": "Interactive or explicit background elapsed clock; replay rejects before graphics initialization.",
+    "interpolation": "Linear local translation and shortest-arc quaternion SLERP across final two consecutive committed ticks; exact endpoints and unchanged channels.",
+    "ownership": "Only world/foreground effect offsets are interpolated. Native look, movement, stance, animation, queries and BaseWorld stay committed.",
+    "extraction": "Pure owned transform provider recomputes selected camera descendants, light transforms and skin palettes, then applies foreground offset once. Exact-current overrides preserve the original path.",
+    "receipts": "Opt-in pose_presentation plus actual renderer camera and foreground matrices; frozen capture lease validates current target/base/source/material and window/preparation identity.",
+    "persistence": "Committed offsets and game state only; no fractional render phase or presentation history."
+  },
+  "linux": {
+    "passed": true,
+    "selected_ctest_suites": 12,
+    "pose_history_groups": 6,
+    "pose_provider_groups": 7,
+    "camera_pose_groups": 7,
+    "simulation_groups_skipped": false,
+    "descriptor_passed": true,
+    "compiled_fps": {
+      "backend": "CoreCLR",
+      "rpc_pairs": 237,
+      "native_owners": 2,
+      "whole_archives": 10,
+      "selected_whole_byte_equal_pairs": 5,
+      "gameplay_fields": {
+        "total": 59,
+        "int32": 19,
+        "float64": 35,
+        "int64": 5
+      },
+      "scope": "Unchanged compiled FPS source/SDK/bridge from 0.0.206, current 0.0.207 native CLI. Complete rollback, immediate same/fresh-process restore and three-tick continuation; no window."
+    },
+    "owner_seconds": 80.25483669500682,
+    "forced_cleanup": false,
+    "final_children": [],
+    "retained_owner": {
+      "bytes": 20774,
+      "sha256": "f18c5a6f0af8f426d244c6dc1d42f2dd3cf1e5cc1dbe2e6d486d488cd4a298ba"
+    },
+    "retained_compiled_evidence": {
+      "bytes": 3558272,
+      "sha256": "176e7322e1f3e0e4ca0e17ac94d3e44460d8d208c22c9672b390a3198b0d67d2"
+    }
+  },
+  "original_failures": [
+    {
+      "scope": "Linux selected CTest qualification",
+      "passed": false,
+      "failed_test": "runtime_camera_pose_presentation_native",
+      "cause": "Animation-owned live cameras were checked against a registry component that is not populated. Model-node ownership lives in immutable runtime definitions.",
+      "correction": "Validate authoritative model-node metadata. Retain the original rejection and add committed world/foreground/identity-write rejection with complete save equality.",
+      "original_suites": 12,
+      "original_failed_suites": 1,
+      "forced_cleanup": false,
+      "retained_owner": {
+        "bytes": 13812,
+        "sha256": "69d18d95e9712e4bd11fd2dedbb3f9ed78376f74b416c97805164234f8ae8584"
+      }
+    },
+    {
+      "scope": "Windows compiled FPS presentation fixture",
+      "passed": false,
+      "rpc_pairs": 9,
+      "captures": 0,
+      "cause": "Fixture launched ordinary world stdio before requesting player.start, which requires a pumped shared headless host. Native command correctly rejected with -32080.",
+      "correction": "Use the existing owned shared serve/connect workflow; keep capture/state/math assertions and resource bounds.",
+      "forced_cleanup": false,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "retained_owner": {
+        "bytes": 4112,
+        "sha256": "0bbfc5e9705da31ee9b50682c2975bac7c530d8dfc63e3e13a3c13c69c197136"
+      },
+      "retained_evidence": {
+        "bytes": 26953,
+        "sha256": "5dd813a93661fca4f3683e2ae09c95a8c249dfaa1742be7b2cc364d8f161150c"
+      }
+    }
+  ],
+  "source_review_corrections": [
+    "A synthetic window owner/oracle initially omitted the rendered world-camera effect from its foreground transform. Both were corrected before native execution; the old source remains retained."
+  ],
+  "limits": [
+    "Controlled tiny native rigs and scenes are not representative character or frame-time performance.",
+    "Synthetic window routing, real native runtime transforms and compiled-game playback remain separate evidence scopes.",
+    "No whole-game animation interpolation, physical input, scan-out latency, new consumer Native AOT/export, fresh-agent game creation or Alpha closure."
+  ],
+  "compiled_images": {
+    "linux_cli": {
+      "bytes": 36061184,
+      "sha256": "634c617d24897d959485e1191bb7baf7ed72f68fad42e27f44604cb4307ec7b8"
+    },
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "5f5535a27f1ee2dff00919b0d4c617eed59a2fe869ba7673c4037aa7ebbb3b73"
+    },
+    "sdk": {
+      "bytes": 209408,
+      "sha256": "dd91784bc50ad19780346f0515a6d78d8e0987965c0d3ce7a5e96f611681dba4"
+    },
+    "consumer": {
+      "bytes": 33280,
+      "sha256": "26c87cebd250664c0d1751f9663c50e760a54ff06b600d7a75777f10f73be7e4"
+    },
+    "windows_cli": {
+      "bytes": 26868224,
+      "sha256": "cd5056d3aa78c3d6cdd157fc673979d3915c76035338b319c6dab3976ee48472"
+    }
+  },
+  "source_identities": {
+    "include/poima/player_pose.hpp": {
+      "bytes": 1509,
+      "sha256": "2b42d0e2c509c2925ce3f61bdea210c65d4e8ded2d241f0c6618f92b03920959"
+    },
+    "src/player_pose.cpp": {
+      "bytes": 6069,
+      "sha256": "6b6fa3923161656d589110b0041a9a57289dfd396ab93c9894a0840672ecf3e0"
+    },
+    "src/runtime_camera_pose_snapshot.inc": {
+      "bytes": 4525,
+      "sha256": "271768df34de5b8f7dec296fd6614df7e33a306ace31161f5cea878fd46d51c0"
+    },
+    "src/runtime_camera_pose_state.inc": {
+      "bytes": 5442,
+      "sha256": "acd4b12cd6c87a19a597e67c8d51027a08748311d18a93d7e3d469f29688b880"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 346268,
+      "sha256": "1ed76c40b5a1883f98142b123e6e9c086ff65ca02dd771d2f28e545942ea332b"
+    },
+    "src/player.cpp": {
+      "bytes": 9153,
+      "sha256": "0b3cc8f05a857d386536bdae94d538004638768bf4309c72544e8ead00464943"
+    },
+    "tests/player_pose_native.cpp": {
+      "bytes": 13955,
+      "sha256": "265b62e666030da8e9c3161805e95e59efe193e8a43e2b0fb3aaf209ab9c05d9"
+    },
+    "tests/runtime_camera_pose_presentation_native.cpp": {
+      "bytes": 17661,
+      "sha256": "51892cdaa087cf30d31d02641f82db50ea1e4ae99dbeb5fdff9ffcf4dd149367"
+    },
+    "tests/runtime_camera_pose_native.cpp": {
+      "bytes": 13296,
+      "sha256": "8ebdf400c7bd5c5223f4bab56ac25d86e3b8c7aff9c946c1a5814410321e0c00"
+    },
+    "tests/player_window_native.cpp": {
+      "bytes": 65362,
+      "sha256": "ceefdfa2b53c97c30803a8ca20a3053fed7379735bee278f7a0445b9d306aea0"
+    },
+    "tests/fps_pose_player.py": {
+      "bytes": 28898,
+      "sha256": "2dc37a7fd0a5eab367a29669747661035762830a0faa129d29e6931f0c2a25ec"
+    }
+  },
+  "windows": {
+    "cpu": {
+      "passed": true,
+      "selected_native_executables": 8,
+      "pose_history_groups": 6,
+      "pose_provider_groups": 7,
+      "camera_pose_groups": 7,
+      "camera_lens_groups": 6,
+      "camera_draw_checks": 9,
+      "schema_discovery_responses": 1347,
+      "owner_seconds": 12.912953499995638,
+      "job_processes": 9,
+      "forced_cleanup": false,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "retained_owner": {
+        "bytes": 2455,
+        "sha256": "52f0582f6b291fc907ce1957f5a72f30b926a8fdbbc2044625ecff28f8ec80b6"
+      }
+    },
+    "window": {
+      "passed": true,
+      "scope": "Synthetic owned adapter; actual Windows Vulkan window, renderer matrices and frozen captures. No runtime physics or compiled gameplay oracle.",
+      "pose_admission_groups": 1,
+      "pose_window_groups": 1,
+      "captures": 2,
+      "lens_pose_coexistence": true,
+      "owner_seconds": 3.226679800020065,
+      "forced_cleanup": false,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "retained_owner": {
+        "bytes": 2454,
+        "sha256": "bb07ae61e713a09da60d79978f034a4747233b7366b7d0ae96fd5263bfc0665d"
+      },
+      "retained_worker": {
+        "bytes": 2542,
+        "sha256": "b14d3002aa6b758f6bba1e95ce26c9150c97122fb168a32191b81e4b82d6d4d9"
+      },
+      "retained_captures": {
+        "pose-live.bmp": {
+          "bytes": 307338,
+          "sha256": "40197b7000a98056e56a46aa258523ae204ab4181188cb8f5866455826693b33"
+        },
+        "pose-paused.bmp": {
+          "bytes": 307338,
+          "sha256": "40197b7000a98056e56a46aa258523ae204ab4181188cb8f5866455826693b33"
+        }
+      }
+    },
+    "compiled_fps": {
+      "passed": true,
+      "backend": "CoreCLR",
+      "rpc_pairs": 50,
+      "captures": [
+        {
+          "label": "running-a",
+          "verification": {
+            "alpha": 0.26086599999999993,
+            "previous_tick": 2,
+            "running": true,
+            "target_tick": 3
+          },
+          "image": {
+            "bytes": 921738,
+            "sha256": "84f6f53e7456e92ad1ec20764c58d5773dc4e34dc134af18e2b3d1a6510043ca"
+          },
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        {
+          "label": "running-b",
+          "verification": {
+            "alpha": 0.687154,
+            "previous_tick": 5,
+            "running": true,
+            "target_tick": 6
+          },
+          "image": {
+            "bytes": 921738,
+            "sha256": "199707e8cb7a1ffe4e06549bf979f1ed86337f571c602f67beb3781e500f554c"
+          },
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        {
+          "label": "paused-a",
+          "verification": {
+            "alpha": 1.0,
+            "previous_tick": 8,
+            "running": false,
+            "target_tick": 8
+          },
+          "image": {
+            "bytes": 921738,
+            "sha256": "0b3a472ac077fe0f888be588dc09772a27ddeb6b5d9c6d32d856ba224db24169"
+          },
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        {
+          "label": "paused-b",
+          "verification": {
+            "alpha": 1.0,
+            "previous_tick": 8,
+            "running": false,
+            "target_tick": 8
+          },
+          "image": {
+            "bytes": 921738,
+            "sha256": "0b3a472ac077fe0f888be588dc09772a27ddeb6b5d9c6d32d856ba224db24169"
+          },
+          "hardware": true,
+          "nvrhi_errors": 0
+        }
+      ],
+      "width": 640,
+      "height": 360,
+      "samples": 4,
+      "viewmodel_samples": 4,
+      "total_frames_presented": 37,
+      "final_tick": 8,
+      "whole_archives": 3,
+      "selected_whole_byte_equal_pairs": 2,
+      "gameplay_fields": {
+        "total": 59,
+        "int32": 19,
+        "float64": 35,
+        "int64": 5
+      },
+      "owner_seconds": 3.0688698000158183,
+      "fixture_seconds": 1.9504323999863118,
+      "job_processes": 4,
+      "forced_cleanup": false,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "native_host_exit": 0,
+      "connector_exit": 0,
+      "scope": "Unchanged 0.0.206 compiled game and bridge with 0.0.207 CLI. Seeded spring relaxation in a background player; two changing fractional camera/weapon captures and two paused endpoints. Independent current-base/matrix, quaternion arc, translation and FOV equations; original stale guards and retry after a later tick. Three complete native archives and two full-byte comparisons while paused. No physical input, firing, subjective feel or performance claim.",
+      "retained_owner": {
+        "bytes": 2450,
+        "sha256": "ab8b820a7728166454fcd23593db02de6e7b9254bfcc41a505e099a3bf9e887e"
+      },
+      "retained_evidence": {
+        "bytes": 740231,
+        "sha256": "8404993cc93a84b38d1f7d52a8155e0daf5c687a7421a2dcf60ed3c57448a429"
+      }
+    }
+  }
+}

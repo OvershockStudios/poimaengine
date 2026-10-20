@@ -53,6 +53,7 @@ struct PlayerWindow::Impl {
 PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool paused) {
     validate_player_preferences(options);
     if(options.lens_interpolation && options.replay)throw std::invalid_argument("Lens interpolation is interactive only.");
+    if(options.pose_interpolation && options.replay)throw std::invalid_argument("Pose interpolation is interactive only.");
     impl_=std::make_unique<Impl>(options,session,paused);
 }
 PlayerWindow::~PlayerWindow()=default;

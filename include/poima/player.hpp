@@ -6,6 +6,7 @@
 #include "poima/gamepad.hpp"
 #include "poima/player_diagnostics.hpp"
 #include "poima/player_lens.hpp"
+#include "poima/player_pose.hpp"
 #include "poima/player_readiness.hpp"
 #include "poima/ui_presenter.hpp"
 #include <memory>
@@ -69,6 +70,11 @@ public:
     // Owned committed lens values only; no mesh extraction or simulation work.
     // Optional presentation interpolation requires this lightweight provider.
     virtual std::optional<PlayerLensSample> lens_sample(const std::string&) const { return {}; }
+    virtual std::optional<PlayerPoseSample> pose_sample(const std::string&) const { return {}; }
+    // Pure owned snapshot of current base transforms with only these effect
+    // offsets substituted; no authored/runtime state is changed.
+    virtual SceneSnapshot pose_snapshot(const std::string& camera,const RuntimeCameraPose& world,
+        const std::optional<RuntimeCameraPose>& viewmodel) const;
     virtual PlayerAudioState audio_state(const std::string& listener) const=0;
     // Cheap logical projection for per-tick ownership changes; no scene/mesh
     // extraction is needed when a gameplay tick opens a modal.
@@ -100,6 +106,8 @@ struct PlayerOptions {
     // Live-clock FOV-only presentation between committed ticks. Authoritative
     // simulation and camera pose remain current; adds at most one tick of FOV lag.
     bool lens_interpolation=false;
+    // Saved effect offsets only; native look/motion stay at the current tick.
+    bool pose_interpolation=false;
     std::uint32_t max_frames=0; // Live players: zero runs until close/owner stop.
     std::vector<PlayerSegment> sequence;
     // Shared service sets the next admitted player generation before creation.
@@ -111,7 +119,8 @@ struct PlayerOptions {
 };
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
 // compose neutral FOV with gameplay zoom on the copy. No borrowed runtime survives.
-SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session);
+SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session,
+    const PlayerPosePresentation* poses=nullptr);
 // The preference is a neutral world FOV; gameplay lens changes retain their
 // tangent-half-angle zoom relative to the frozen authored baseline. Missing
 // baseline preserves the external-camera absolute-override contract.
@@ -147,6 +156,7 @@ struct PlayerMaterialReceipt {
     std::string session_id;
     std::uint64_t tick=0,player_generation=0;
     std::optional<PlayerLensPresentation> lens_presentation;
+    std::optional<PlayerPosePresentation> pose_presentation;
     friend bool operator==(const PlayerMaterialReceipt&,const PlayerMaterialReceipt&)=default;
 };
 struct PlayerMaterialReport {
@@ -155,7 +165,8 @@ struct PlayerMaterialReport {
     // their own session/source/generation tags expose that they are stale.
     std::optional<PlayerMaterialReceipt> observed,submitted,presented;
     void observe(const SceneSnapshot&,std::string session,std::uint64_t tick,std::uint64_t player_generation,
-        std::optional<PlayerLensPresentation> lens_presentation={});
+        std::optional<PlayerLensPresentation> lens_presentation={},
+        std::optional<PlayerPosePresentation> pose_presentation={});
     bool submit(PlayerMaterialReceipt&& frame) noexcept;
     bool present(PlayerMaterialReceipt&& frame) noexcept;
 };
@@ -187,11 +198,13 @@ class PlayerCaptureSnapshot {
     friend class PlayerWindow;
     SceneSnapshot snapshot_;
     std::optional<PlayerLensPresentation> lens_presentation_;
+    std::optional<PlayerPosePresentation> pose_presentation_;
     std::shared_ptr<const void> owner_;
     std::uint64_t token_=0;
 public:
     const SceneSnapshot& snapshot() const { return snapshot_; }
     const std::optional<PlayerLensPresentation>& lens_presentation() const { return lens_presentation_; }
+    const std::optional<PlayerPosePresentation>& pose_presentation() const { return pose_presentation_; }
 };
 // One frame-driven native graphics lifetime. Every call and destruction belongs
 // to the creating thread; session must outlive the window. Initialization is

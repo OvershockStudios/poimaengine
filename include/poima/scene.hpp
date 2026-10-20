@@ -131,6 +131,8 @@ struct SceneSnapshot {
     // Frozen named-runtime baseline for composing gameplay zoom with a player's
     // preferred neutral FOV. External camera snapshots retain legacy omission.
     std::optional<double> authored_vertical_fov;
+    // Opt-in receipt of actual prepared camera and foreground matrices.
+    bool camera_pose_receipt=false;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

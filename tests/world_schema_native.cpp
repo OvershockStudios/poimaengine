@@ -148,6 +148,38 @@ int main(int argc,char** argv) {
                         reject(value,"interactive","lens_interpolation must be Boolean");
                     reject(true,"replay","Lens interpolation is interactive only");
                 }
+                // Additive live-pose option: retain the independent lens gates
+                // above; neither option admits replay or coerces JSON values.
+                need(full.at("schema_revision").get<unsigned>()>=114,
+                    "Expected opt-in player pose interpolation discovery.");
+                for(const auto* method:{"runtime.play","player.start"})if(full.at("methods").contains(method)) {
+                    const auto& launch=full.at("methods").at(method);
+                    const auto& pose=launch.at("properties").at("pose_interpolation");
+                    need(pose.at("type")=="boolean" && pose.at("default")==false &&
+                        std::find(launch.at("required").begin(),launch.at("required").end(),Json("pose_interpolation"))==launch.at("required").end(),
+                        "Pose interpolation must be optional strict Boolean, default false.");
+                    bool replay_constraint=false;
+                    for(const auto& condition:launch.at("allOf"))if(condition.contains("then") &&
+                        condition.at("then").contains("properties") && condition.at("then").at("properties").contains("pose_interpolation")) {
+                        need(condition.at("if").at("properties").at("mode").at("const")=="replay" &&
+                            condition.at("then").at("properties").at("pose_interpolation").at("const")==false,
+                            "Replay pose schema constraint differs from admission.");
+                        replay_constraint=true;
+                    }
+                    need(replay_constraint,"Replay discovery must reject true pose interpolation.");
+                    const auto reject_pose=[&](const Json& value,const char* mode,const char* message) {
+                        Json params={{"session_id",std::string(32,'a')},{"request_id",std::string(32,'b')},
+                            {"expected_tick",0},{"camera",std::string(32,'c')},{"mode",mode},{"pose_interpolation",value}};
+                        if(std::string_view(method)=="player.start")params["expected_generation"]=0;
+                        const auto reply=invoke(owner,method,params,scope);
+                        need(reply.contains("error") && reply.at("error").at("code")==-32602 &&
+                            reply.at("error").at("message").get<std::string>().find(message)!=std::string::npos,
+                            "Malformed/replay pose option reached runtime or device admission.");
+                    };
+                    for(const auto& value:Json::array({0,1,0.0,1.0,nullptr,"true",Json::array(),Json::object()}))
+                        reject_pose(value,"interactive","pose_interpolation must be Boolean");
+                    reject_pose(true,"replay","Pose interpolation is interactive only");
+                }
                 if(full.at("methods").contains("player.capture_current")) {
                     const auto& current=full.at("methods").at("player.capture_current");
                     const auto& exact=full.at("methods").at("player.capture");

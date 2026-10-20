@@ -7,10 +7,14 @@
             options.render.scene_debug_view==SceneDebugView::color,options.render.reconstruction!=ReconstructionMode::none};
     }
     static void validate_player_parameters(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation","pose_interpolation"},
             {"session_id","request_id","expected_tick","camera","mode"});
         require(!params.contains("lens_interpolation") || params.at("lens_interpolation").is_boolean(),
             "lens_interpolation must be Boolean.");
+        require(!params.contains("pose_interpolation") || params.at("pose_interpolation").is_boolean(),
+            "pose_interpolation must be Boolean.");
+        require(!params.value("pose_interpolation",false) || params.at("mode")!="replay",
+            "Pose interpolation is interactive only; replay requires exact committed effects.");
         require(!params.value("lens_interpolation",false) || params.at("mode")!="replay",
             "Lens interpolation is interactive only; replay requires exact committed lenses.");
     }
@@ -22,6 +26,7 @@
         require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
         PlayerOptions options;options.audio=params.value("audio",false);
         options.lens_interpolation=params.value("lens_interpolation",false);
+        options.pose_interpolation=params.value("pose_interpolation",false);
         if(params.contains("controller"))options.controller=identifier(params.at("controller"));
         options.camera=identifier(params.at("camera"));
         require(params.at("mode")=="interactive" || params.at("mode")=="replay" || params.at("mode")=="background","Player mode must be interactive, replay or background.");
@@ -110,6 +115,18 @@
                 sample.viewmodel=lens->viewmodel;sample.authored_fov=lens->authored_world.vertical_fov;
                 return sample;
             }
+            std::optional<PlayerPoseSample> pose_sample(const std::string& camera) const override {
+                const auto pose=owner.runtime_->camera_pose(camera);if(!pose)return std::nullopt;
+                PlayerPoseSample sample;
+                sample.session_id=owner.runtime_id_;sample.source_id=owner.runtime_->presentation_source_id();
+                sample.camera_id=camera;sample.tick=owner.runtime_->inspect().tick;
+                sample.material_revision=owner.runtime_->material_revision();sample.world=pose->world;
+                sample.viewmodel=pose->viewmodel;sample.base_world=pose->base_world;return sample;
+            }
+            SceneSnapshot pose_snapshot(const std::string& camera,const RuntimeCameraPose& world,
+                const std::optional<RuntimeCameraPose>& viewmodel) const override {
+                return owner.runtime_->snapshot(camera,world,viewmodel);
+            }
             PlayerAudioState audio_state(const std::string& listener) const override {
                 return {tick(),owner.runtime_->audio_snapshot(listener),owner.runtime_->sound_state().voices()};
             }
@@ -127,6 +144,15 @@
             }
     };
 
+    static Json player_pose_presentation_json(const PlayerPosePresentation& p) {
+        const auto pose=[](const RuntimeCameraPose& v)->Json {return {{"position",v.position},{"rotation",v.rotation}};};
+        const auto optional=[&](const std::optional<RuntimeCameraPose>& v)->Json {return v ? pose(*v) : Json(nullptr);};
+        return {{"enabled",p.enabled},{"interpolating",p.interpolating},{"previous_tick",p.previous_tick},
+            {"target_tick",p.target_tick},{"alpha",p.alpha},{"reset_reason",p.reset_reason},
+            {"previous_world",pose(p.previous_world)},{"target_world",pose(p.target_world)},{"rendered_world",pose(p.rendered_world)},
+            {"previous_viewmodel",optional(p.previous_viewmodel)},{"target_viewmodel",optional(p.target_viewmodel)},
+            {"rendered_viewmodel",optional(p.rendered_viewmodel)},{"target_base_world",p.target_base_world}};
+    }
     static Json player_lens_presentation_json(const PlayerLensPresentation& presentation) {
         const auto lens=[](const SceneLens& value)->Json {
             return {{"vertical_fov",value.vertical_fov},{"near",value.near_plane},{"far",value.far_plane}};
@@ -728,6 +754,13 @@
                 presentation.target_world==accepted->world && presentation.target_viewmodel==accepted->viewmodel,
                 "Frozen player lens target differs from its guarded committed native camera.",-32020);
         }
+        if(frozen.pose_presentation()) {
+            const auto committed=runtime_->camera_pose(player_owner_->prepared.options.camera);
+            const auto& shown=*frozen.pose_presentation();
+            require(committed && shown.target_tick==captured_tick && shown.target_world==committed->world &&
+                shown.target_viewmodel==committed->viewmodel && shown.target_base_world==committed->base_world,
+                "Frozen player pose target differs from its guarded committed native camera.",-32020);
+        }
         auto prepared=reserve_player_receipt(normalized);prepared->result=player_info(false);
         if(capture_current) {
             const auto lens=[](const SceneLens& value)->Json {
@@ -746,6 +779,7 @@
             {"lighting",lighting_json(snapshot.lighting)},{"build_version",build_metadata().version}};
         if(frozen.lens_presentation() && frozen.lens_presentation()->enabled)prepared->result["capture"]["lens_presentation"]=
             player_lens_presentation_json(*frozen.lens_presentation());
+        if(frozen.pose_presentation())prepared->result["capture"]["pose_presentation"]=player_pose_presentation_json(*frozen.pose_presentation());
         auto& receipt=publish_player_receipt(std::move(prepared));
         try {
             auto capture=player_owner_->window->capture(output,frozen);

@@ -140,12 +140,16 @@ poima::Reply run(int argc, char** argv) {
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" && key!="--default-save-root"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" && key!="--pose-interpolation" && key!="--default-save-root"))return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
             if(key=="--default-save-root") {
                 if(value!="true" && value!="false")return poima::usage_error("Default save root expects true or false.");
                 options.default_save_root=value=="true";continue;
+            }
+            if(key=="--pose-interpolation") {
+                if(value!="true" && value!="false")return poima::usage_error("Pose interpolation expects true or false.");
+                options.pose_interpolation=value=="true";continue;
             }
             if(key=="--lens-interpolation") {
                 if(value!="true" && value!="false")return poima::usage_error("Lens interpolation expects true or false.");
@@ -175,6 +179,7 @@ poima::Reply run(int argc, char** argv) {
         }
         if(options.save_write_mode && options.save_root.empty() && !options.default_save_root)return poima::usage_error("Save write mode requires --save-root or --default-save-root true.");
         if(!options.replay.empty() && options.lens_interpolation)return poima::usage_error("Lens interpolation is interactive only.");
+        if(!options.replay.empty() && options.pose_interpolation)return poima::usage_error("Pose interpolation is interactive only.");
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
         return poima::run_game(options);
     }

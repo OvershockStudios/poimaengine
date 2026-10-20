@@ -31,6 +31,8 @@ def main():
     parser.add_argument('--save-root', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True, help='Fresh log/stdio directory.')
     parser.add_argument('--gpu', type=int, default=-1)
+    parser.add_argument('--pose-interpolation', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--lens-interpolation', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
     if args.assembly and not (args.bridge and args.hostfxr):
         parser.error('CoreCLR requires explicit bridge and hostfxr.')
@@ -68,7 +70,7 @@ def main():
                   'left mouse fires; R reloads. Menu provides save/load. Tab releases the cursor.', flush=True)
             call('runtime.play', dict(request_id=uuid.uuid4().hex, session_id=session,
                  expected_tick=0, controller=manifest['entry']['controller'], camera=manifest['entry']['camera'],
-                 mode='interactive', width=1280, height=720, gpu=args.gpu), timeout=86400)
+                 mode='interactive', pose_interpolation=args.pose_interpolation, lens_interpolation=args.lens_interpolation, width=1280, height=720, gpu=args.gpu), timeout=86400)
         finally:
             (args.output/'calls.json').write_text(json.dumps(records, indent=2, allow_nan=False)+'\n', encoding='utf-8')
 

@@ -1679,6 +1679,11 @@ public:
             {"material_revision",scene.material_revision},{"frame_sequence",scene.frame_sequence},{"submission_id",scene.submission_id}};
         if(scene.camera_lens)result["camera_lens"]={{"vertical_fov",scene.camera_lens->vertical_fov},
             {"near",scene.camera_lens->near_plane},{"far",scene.camera_lens->far_plane}};
+        if(scene.camera_pose) {
+            Json viewmodels=Json::array();for(const auto& draw:scene.camera_pose->viewmodels)
+                viewmodels.push_back({{"entity",draw.entity_id},{"incarnation",draw.incarnation},{"world",draw.world}});
+            result["camera_pose"]={{"camera_world",scene.camera_pose->camera_world},{"viewmodels",std::move(viewmodels)}};
+        }
         if(scene.camera_draw) {
             const auto& draw=*scene.camera_draw;Json foreground=Json::array(),hidden=Json::array();
             for(const auto& object:draw.viewmodels)foreground.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
@@ -1697,6 +1702,8 @@ public:
             {"scene",renderer_scene_result_json(receipt->scene)}};
         if(receipt->lens_presentation && receipt->lens_presentation->enabled)
             result["lens_presentation"]=player_lens_presentation_json(*receipt->lens_presentation);
+        if(receipt->pose_presentation && receipt->pose_presentation->enabled)
+            result["pose_presentation"]=player_pose_presentation_json(*receipt->pose_presentation);
         return result;
     }
     static Json player_materials_json(const PlayerMaterialReport& material) {

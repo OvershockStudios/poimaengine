@@ -117,9 +117,10 @@ layers where useful, with imported clips for actions they represent better.
 foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
 fixed-tick ADS and zoom, with saved game-owned easing through
 `CameraFovTransition`. Opt-in [lens presentation](PLAYER_LENS_PRESENTATION.md)
-interpolates FOV between committed ticks; camera-pose interpolation remains open.
-Complete collision-aware weapon lowering/retraction,
-pose presentation interpolation and wall-clearance behavior, with animation and
+interpolates FOV between committed ticks. Independent [effect presentation](PLAYER_POSE_PRESENTATION.md)
+interpolates camera/foreground offsets while native look and movement remain current.
+Complete collision-aware weapon lowering/retraction, broader pose presentation
+and wall-clearance behavior, with animation and
 rendering policies independent of the world camera.
 
 Add hierarchical spawning, prefab composition, variants and inspectable

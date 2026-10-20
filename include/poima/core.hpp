@@ -198,18 +198,30 @@ struct RendererCameraDrawResult {
     std::vector<SceneDrawableIdentity> viewmodels,hidden;
     friend bool operator==(const RendererCameraDrawResult&,const RendererCameraDrawResult&)=default;
 };
+struct RendererPoseDrawable {
+    std::string entity_id;
+    std::uint64_t incarnation=0;
+    Matrix4 world=identity_matrix();
+    friend bool operator==(const RendererPoseDrawable&,const RendererPoseDrawable&)=default;
+};
+struct RendererCameraPoseResult {
+    Matrix4 camera_world=identity_matrix();
+    std::vector<RendererPoseDrawable> viewmodels;
+    friend bool operator==(const RendererCameraPoseResult&,const RendererCameraPoseResult&)=default;
+};
 struct RendererSceneResult {
     std::string world_id,camera_id,presentation_source_id;
     std::uint64_t authored_revision=0,presentation_generation=0,material_revision=0;
     std::uint64_t frame_sequence=0,submission_id=0;
     std::optional<RendererCameraDrawResult> camera_draw;
     std::optional<SceneLens> camera_lens;
+    std::optional<RendererCameraPoseResult> camera_pose;
     friend bool operator==(const RendererSceneResult&,const RendererSceneResult&)=default;
 };
 inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSceneResult& b) noexcept {
     return a.world_id==b.world_id && a.camera_id==b.camera_id && a.presentation_source_id==b.presentation_source_id &&
         a.authored_revision==b.authored_revision && a.presentation_generation==b.presentation_generation &&
-        a.material_revision==b.material_revision && a.camera_draw==b.camera_draw && a.camera_lens==b.camera_lens;
+        a.material_revision==b.material_revision && a.camera_draw==b.camera_draw && a.camera_lens==b.camera_lens && a.camera_pose==b.camera_pose;
 }
 struct RenderDiagnostics {
     gpu_memory::Diagnostics memory_budget;

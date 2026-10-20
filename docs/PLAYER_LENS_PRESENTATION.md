@@ -5,6 +5,7 @@ final two consecutive committed ticks. Gameplay remains authoritative at 60 Hz:
 gameplay camera-lens reads and checkpoints still observe committed lenses.
 Simulation and collision queries retain their current fixed-tick state. Camera
 pose, input, geometry and animation are not buffered by this option.
+[Camera effect interpolation](PLAYER_POSE_PRESENTATION.md) is a separate option.
 
 This adds up to one fixed tick of FOV presentation lag. It does not add an ADS
 timer or change the transition duration. Use the caller-owned
@@ -66,7 +67,7 @@ Initialization, runtime/session/source or camera changes, material epochs,
 authored FOV baseline changes, first-person lens presence changes and skipped or
 repeated ticks reset to the current target. External owner edits and stepping
 also reset instead of inventing a committed interval. Pause, inactivity, focus
-loss, unavailable drawables, resizing, preference changes and presentation
+loss, unavailable drawables, resizing, FOV preference changes and presentation
 generation/view-cut changes invalidate the old presentation interval.
 
 A reset reports `previous_tick == target_tick`, `alpha: 1` and

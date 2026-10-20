@@ -108,5 +108,7 @@ are 272 bytes, including the base matrix at offset 144. Older declared service
 prefixes and permissions remain unchanged. Matched SDK/bridge cohorts validate
 marked-game negotiation before game construction.
 
-Pose interpolation between simulation ticks, collision-aware weapon lowering,
-full-body weapon IK and production animation authoring remain separate work.
+Opt-in [camera effect interpolation](PLAYER_POSE_PRESENTATION.md) smooths these
+offsets between committed ticks without buffering native look or movement.
+Collision-aware weapon lowering, full-body weapon IK and production animation
+authoring remain separate work.

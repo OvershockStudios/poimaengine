@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.207
+
+- Add opt-in interpolation for world-camera and foreground effect offsets while
+  native look, movement, aiming and saved gameplay remain committed.
+- Keep camera-attached geometry, skinning and lighting aligned through owned
+  presentation snapshots; expose exact camera/foreground matrices in receipts.
+- Freeze pose interpolation with player captures and reset it across ownership,
+  pause, external-edit and presentation cuts; enable it in FPS Feedback Range.
+
 ## 0.0.206
 
 - Add independent world-camera and foreground pose controls, unaffected base-aim

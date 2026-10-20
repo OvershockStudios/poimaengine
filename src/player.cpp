@@ -30,8 +30,13 @@ double player_effective_vertical_fov(double live,std::optional<double> authored,
     return std::clamp(2*std::atan(std::tan(*preference*half_radians)*
         std::tan(live*half_radians)/std::tan(*authored*half_radians))*degrees,5.,150.);
 }
-SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session) {
-    auto result=session.snapshot(options.camera);
+SceneSnapshot PlayerSession::pose_snapshot(const std::string&,const RuntimeCameraPose&,
+    const std::optional<RuntimeCameraPose>&) const {
+    throw std::runtime_error("This player owner does not provide owned camera pose presentation.");
+}
+SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session,const PlayerPosePresentation* poses) {
+    auto result=poses ? session.pose_snapshot(options.camera,poses->rendered_world,poses->rendered_viewmodel) : session.snapshot(options.camera);
+    result.camera_pose_receipt=poses!=nullptr;
     const auto preferences=options.preferences ? options.preferences->snapshot() : nullptr;
     const auto fov=preferences ? preferences->values.vertical_fov : options.vertical_fov;
     const auto scale=preferences ? preferences->values.ui_scale : options.ui_scale;
@@ -42,7 +47,7 @@ SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& 
 }
 RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     RendererSceneResult result{snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
-        snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0};
+        snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0,{},{},{}};
     result.camera_lens=SceneLens{snapshot.vertical_fov,snapshot.near_plane,snapshot.far_plane};
     RendererCameraDrawResult draw;
     if(snapshot.viewmodel) {
@@ -62,23 +67,30 @@ RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     };
     normalize(draw.viewmodels);normalize(draw.hidden);
     if(draw.viewmodel_lens || !draw.hidden.empty())result.camera_draw=std::move(draw);
+    if(snapshot.camera_pose_receipt) {
+        RendererCameraPoseResult pose;pose.camera_world=snapshot.camera_world;
+        if(snapshot.viewmodel)for(const auto& object:snapshot.viewmodel->objects)
+            pose.viewmodels.push_back({object.entity_id,object.incarnation,object.world});
+        std::sort(pose.viewmodels.begin(),pose.viewmodels.end(),[](const auto& a,const auto& b){return a.entity_id<b.entity_id;});
+        result.camera_pose=std::move(pose);
+    }
     return result;
 }
-void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation,std::optional<PlayerLensPresentation> lenses) {
-    PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation,std::move(lenses)};
+void PlayerMaterialReport::observe(const SceneSnapshot& snapshot,std::string session,std::uint64_t tick,std::uint64_t generation,std::optional<PlayerLensPresentation> lenses,std::optional<PlayerPosePresentation> poses) {
+    PlayerMaterialReceipt receipt{renderer_scene_result(snapshot),std::move(session),tick,generation,std::move(lenses),std::move(poses)};
     observed=std::move(receipt);
 }
 bool PlayerMaterialReport::submit(PlayerMaterialReceipt&& frame) noexcept {
     if(!observed || !frame.scene.frame_sequence || !frame.scene.submission_id ||
        frame.session_id!=observed->session_id || frame.tick!=observed->tick ||
-       frame.player_generation!=observed->player_generation || frame.lens_presentation!=observed->lens_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
+       frame.player_generation!=observed->player_generation || frame.lens_presentation!=observed->lens_presentation || frame.pose_presentation!=observed->pose_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
        (submitted && frame.scene.frame_sequence<=submitted->scene.frame_sequence))return false;
     submitted=std::move(frame);return true;
 }
 bool PlayerMaterialReport::present(PlayerMaterialReceipt&& frame) noexcept {
     if(!observed || !submitted || frame!=*submitted || frame.session_id!=observed->session_id ||
        frame.tick!=observed->tick || frame.player_generation!=observed->player_generation ||
-       frame.lens_presentation!=observed->lens_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
+       frame.lens_presentation!=observed->lens_presentation || frame.pose_presentation!=observed->pose_presentation || !same_renderer_snapshot(frame.scene,observed->scene) ||
        (presented && frame.scene.frame_sequence<=presented->scene.frame_sequence))return false;
     presented=std::move(frame);return true;
 }

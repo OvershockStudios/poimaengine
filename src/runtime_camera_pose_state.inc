@@ -59,7 +59,9 @@
         }
         const auto e=find(command.entity);const auto* camera=registry.try_get<RuntimeCamera>(e);
         require(camera,"Pose target requires a live Camera.");
-        require(!registry.any_of<RuntimeRigNode,Body,Controller>(e),"Camera pose target cannot be animation-owned or physical.");
+        // Rig-node ownership is frozen topology metadata, not an EnTT
+        // component. Animation sampling writes these nodes' base local poses.
+        require(!topology->definitions.at(command.entity).rig_node && !registry.any_of<Body,Controller>(e),"Camera pose target cannot be animation-owned or physical.");
         require(!command.viewmodel || camera->viewmodel.has_value(),"Camera pose cannot add a foreground channel.");
     }
     void apply_camera_poses(const std::vector<RuntimeCameraPoseCommand>& commands) {

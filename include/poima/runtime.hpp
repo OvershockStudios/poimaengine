@@ -619,5 +619,14 @@ public:
     // Live geometry/lighting, independent of an authored camera entity.
     SceneSnapshot snapshot() const;
     SceneSnapshot snapshot(const std::string& camera) const;
+    // Pure owned presentation copy. Replace only this camera's two pose
+    // channels while deriving geometry, skin palettes and lights from current
+    // committed local transforms; simulation/query/save state is untouched.
+    // Viewmodel presence must match the committed camera. Numerical bounds
+    // always apply. Exact current offsets use the legacy snapshot path, even
+    // for an animation-owned/physical camera; changed offsets require the same
+    // ownership restrictions as camera pose commands.
+    SceneSnapshot snapshot(const std::string& camera,const RuntimeCameraPose& world,
+        const std::optional<RuntimeCameraPose>& viewmodel) const;
 };
 }

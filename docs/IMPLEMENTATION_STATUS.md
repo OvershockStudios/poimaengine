@@ -1,8 +1,29 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.206**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.207**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.207 adds opt-in [camera effect presentation](PLAYER_POSE_PRESENTATION.md).
+Local camera/foreground offsets interpolate between consecutive fixed ticks;
+native look, movement, animation and aim queries remain committed. Owned
+geometry, skin palettes and attached lights use the presented camera transform,
+and frozen captures retain the same pose/lens metadata and renderer matrices.
+Linux passes twelve selected suites, including six pose-history and seven
+presentation-provider groups, plus the unchanged compiled FPS workflow with
+237 RPCs, all 59 typed fields and five complete byte-identical saved-state pairs.
+Windows passes eight selected native executables and a separate Vulkan
+window/capture fixture with a synthetic owner. The compiled FPS sample also
+passes fifty RPCs, four 640×360 MSAA4 captures and two complete saved-state
+byte comparisons while paused. Two running captures independently join
+fractional pose/FOV interpolation to actual camera and foreground matrices;
+the host and connector close naturally. This controlled spring-relaxation
+check does not exercise physical input or firing. An initial native check exposed
+an animation-ownership guard that inspected an unpopulated registry component;
+the fix validates the authoritative model-node metadata and preserves the
+required write rejection. This option smooths only effect offsets and adds up
+to one fixed tick of presentation lag. It does not interpolate the whole game
+or establish a latency/performance result. [Results and scope](evidence/m2-player-pose-presentation.json).
 
 Version 0.0.206 adds [camera/weapon pose controls](CAMERA_POSES.md) and an
 optional [procedural FPS feedback package](../packages/fps/README.md).
@@ -22,8 +43,8 @@ passes native authoring. [Results and exact scope](evidence/m2-fps-feedback.json
 The original complete-state run exposed a sample save-status label that depended
 on a previous process's ticket history; the corrected sample checks the current
 restore epoch, with the full-state comparison unchanged. This adapted sample
-is separate from fresh-agent qualification. Between-tick pose interpolation,
-collision-aware weapon retraction and broader animation work remain open.
+is separate from fresh-agent qualification. Collision-aware weapon retraction
+and broader animation work remain open.
 
 The 0.0.205 [fresh character-workflow audit](evidence/m2-agent-character-owned-workflow.json)
 uses the 0.0.204 native runtime, Python client and managed authoring tools.
