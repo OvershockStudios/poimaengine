@@ -40,15 +40,17 @@ struct VertexOutput {
     float3 normal : TEXCOORD1;
     float2 uv : TEXCOORD2;
     float4 tangent : TEXCOORD3;
+    nointerpolation uint object_index : TEXCOORD7;
 #if POIMA_SCENE_PRODUCTS
     float4 previous_clip : TEXCOORD4;
     nointerpolation uint motion_valid : TEXCOORD5;
     float4 current_clip : TEXCOORD6;
 #endif
 };
-VertexOutput vertex_main(VertexInput input) {
-    const ObjectData draw=objects[draw_indices.object_index];
-    VertexOutput output;
+VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
+    const uint object_index=draw_indices.object_index+instance_id;
+    const ObjectData draw=objects[object_index];
+    VertexOutput output;output.object_index=object_index;
     const float4 local_position=float4(input.position,1);
     output.world_position=float3(dot(draw.model_row0,local_position),dot(draw.model_row1,local_position),dot(draw.model_row2,local_position));
     output.position=mul(view_projection,float4(output.world_position,1));
@@ -64,22 +66,23 @@ VertexOutput vertex_main(VertexInput input) {
     output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
     return output;
 }
-struct ShadowVertexOutput {float4 position : SV_Position;float2 uv : TEXCOORD0;};
-ShadowVertexOutput shadow_vertex_main(VertexInput input) {
-    const ObjectData draw=objects[draw_indices.object_index];
+struct ShadowVertexOutput {float4 position : SV_Position;float2 uv : TEXCOORD0;nointerpolation uint object_index : TEXCOORD1;};
+ShadowVertexOutput shadow_vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
+    const uint object_index=draw_indices.object_index+instance_id;
+    const ObjectData draw=objects[object_index];
     const float4 p=float4(input.position,1);
     const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
-    ShadowVertexOutput output;output.position=mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));output.uv=input.uv;return output;
+    ShadowVertexOutput output;output.object_index=object_index;output.position=mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));output.uv=input.uv;return output;
 }
-void test_material_alpha(float2 uv) {
-    const ObjectData draw=objects[draw_indices.object_index];
+void test_material_alpha(float2 uv,uint object_index) {
+    const ObjectData draw=objects[object_index];
     // Alpha stays linear even when base RGB uses the sRGB texture format.
     // Equality survives; opaque materials deliberately ignore image/factor alpha.
     if(draw.alpha.z>.5)clip(base_map.Sample(base_sampler,uv).a*draw.alpha.x-draw.alpha.y);
 }
-void shadow_pixel_main(ShadowVertexOutput input) {test_material_alpha(input.uv);}
+void shadow_pixel_main(ShadowVertexOutput input) {test_material_alpha(input.uv,input.object_index);}
 SceneSurface evaluate_material(VertexOutput input,bool front) {
-    const ObjectData draw=objects[draw_indices.object_index];
+    const ObjectData draw=objects[input.object_index];
     float3 n=normalize(input.normal);
     // Smooth vertex normals describe shading, not the rasterized triangle plane.
     // Compute the plane before any divergent light/cascade branches.
@@ -133,7 +136,7 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     const SceneSurface material=evaluate_material(input,front);
     // Evaluate geometric derivatives before discard, then reject before any
     // color, depth, normal, correspondence or G-buffer value is written.
-    test_material_alpha(input.uv);
+    test_material_alpha(input.uv,input.object_index);
     const float3 n=material.normal;
 #if POIMA_SCENE_PRODUCTS
     float2 motion=0;float motion_valid=0;

@@ -237,6 +237,11 @@ Schema revision 9 adds [shadow settings and budgets](SHADOWS.md) to Light and Li
 
 Schema revision 10 adds `culling` and `profile` controls to world/runtime capture and runtime play, with [draw counters and CPU/GPU timing](RENDER_DIAGNOSTICS.md) in their results.
 
+Schema revision 117 adds optional `draw_instancing` (default true) to capture/play
+operations. Set false for direct submission; completed diagnostics retain object
+instance counts and separately report actual camera/shadow geometry command counts.
+See [ordered draw instancing](DRAW_INSTANCING.md).
+
 Schema revision 11 adds `BoxCollider.motion: "kinematic"`, `motions` on runtime steps/replay segments, `runtime.raycast`, and live motion fields on `runtime.entity`. See [physics interactions](PHYSICS_INTERACTIONS.md).
 
 Schema revision 12 adds `runtime.gameplay.load`, `.inspect`, `.edit` and `.collect`, plus a first-tick `use` input on steps and replay segments. The optional C# module has its own gameplay revision and shares runtime retry receipts; it does not add authored gameplay components or persistent game saves. See the [managed gameplay contract](MANAGED_GAMEPLAY.md).

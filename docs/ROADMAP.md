@@ -158,6 +158,10 @@ reduced tier for hardware without ray tracing. Add inspectable post effects,
 robust temporal reconstruction and separately qualified DLSS, FSR and NVIDIA
 frame generation; XeSS remains a bonus.
 
+[Ordered draw instancing](DRAW_INSTANCING.md) supplies a CPU-planned foundation
+for compatible adjacent geometry. GPU-resident updates, indirect visibility,
+occlusion, LOD and representative frame-time qualification remain separate work.
+
 Build day/night lighting, atmospheric scattering, fog, clouds, wind and dense
 environmental motion around shared world time. New research techniques need
 controlled moving-scene quality/cost comparisons against the functioning

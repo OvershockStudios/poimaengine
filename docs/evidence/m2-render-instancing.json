@@ -1,0 +1,367 @@
+{
+  "format": "poima.render-instancing-evidence.v1",
+  "engine_version": "0.0.211",
+  "date": "2026-10-20",
+  "scope": "CPU-planned ordered native draw instancing, strict render-option discovery/admission, actual command counts and separately qualified hardware parity. No GPU-resident/indirect/occlusion/LOD or measured frame-rate improvement claim.",
+  "contract": {
+    "schema_revision": 117,
+    "draw_instancing": {
+      "type": "boolean",
+      "default": true,
+      "false": "Direct one-command-per-visible-instance reference"
+    },
+    "object_data_bytes": 208,
+    "draw_push_bytes": 16,
+    "first_instance": 0,
+    "host_services_bytes_unchanged": 400,
+    "gameplay_call_bytes_unchanged": 80,
+    "save_and_cooked_encodings_unchanged": true,
+    "cpp_consumers_require_rebuild": true,
+    "draws_fields": "Object/view-instance counts remain unchanged.",
+    "batches_fields": "Actual retired geometry command counts; foreground counted separately."
+  },
+  "planner": {
+    "groups": 6,
+    "checks": 1969893,
+    "platforms": [
+      "Linux",
+      "Windows"
+    ],
+    "large_invalid_span_guard": "Source reviewed; no fabricated oversized span execution."
+  },
+  "linux": {
+    "graphics_enabled": false,
+    "native_build_seconds": 284.76749922099407,
+    "cli": {
+      "bytes": 36419720,
+      "sha256": "8b9e0c9a0fbf3a81f2ca073468db148643311d5d978cb2be201152c3e86a2dd5"
+    },
+    "initial_qa": {
+      "passed": false,
+      "passed_suites": [
+        "model_alpha_native",
+        "render_batches_native",
+        "render_schedule_native",
+        "build_metadata_contract",
+        "runtime_viewmodel_clearance_native",
+        "world_material_native",
+        "world_texture_native",
+        "runtime_camera_draw_native",
+        "runtime_native",
+        "cli_contract"
+      ],
+      "failed_suite": "world_schema_native",
+      "reason": "New test supplied unsupported Camera background author operand."
+    },
+    "corrected_schema_discovery_responses": 1365,
+    "owner_scopes": 6,
+    "strict_flag_values": "Omitted/false/true admitted through ordinary missing-asset rejection; eight malformed values rejected before rendering; authored files/state/history unchanged.",
+    "retained_weapon": {
+      "backend": "coreclr",
+      "rpc": 204,
+      "observations": 25,
+      "typed_fields": 33,
+      "whole_archives": 8,
+      "whole_byte_pairs": 4,
+      "natural_native_exit_codes": [
+        0,
+        0
+      ],
+      "raw_evidence": {
+        "bytes": 2477472,
+        "sha256": "8eb286478cb6ef4df8417c285abc44ac9290699d012ac510b13e519f9efa0159"
+      }
+    },
+    "corrected_qa_seconds": 89.41749649299891
+  },
+  "windows": {
+    "native_compiler_seconds": 366.8386315490061,
+    "native_build_and_seal_seconds": 420.12288499300485,
+    "cli": {
+      "bytes": 27032064,
+      "sha256": "d8b1744c70485ab9c089e702c6cf11a9917b4ad4155bb315e0bc1f085ab73cc5"
+    },
+    "core": {
+      "bytes": 241590700,
+      "sha256": "f650f05ccd5aaf623308cf58476d6f44eac17ccbe5593cf938fd63b01d6f8934"
+    },
+    "main_desktop_core_unchanged_after_test_only_repairs": true,
+    "schema_only_rebuild_seconds": 56.01761865601293,
+    "fixture_only_rebuild_seconds": 54.266671938996296,
+    "test_artifacts": "Original native receipt remains unchanged. Two corrected test-only images have separate exact source/preimage, owned rebuild and lossless predecessor witnesses.",
+    "cpu_executables": 7,
+    "cpu_seconds": 16.16309790001833,
+    "cpu_job": {
+      "passed": true,
+      "forced_cleanup": false,
+      "job_accounting_after_cleanup": {
+        "user_time": 130156250,
+        "kernel_time": 38125000,
+        "period_user_time": 130156250,
+        "period_kernel_time": 38125000,
+        "page_faults": 301745,
+        "total_processes": 8,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "gpu_commands": 12,
+    "gpu_seconds": 51.746409100014716,
+    "gpu_job": {
+      "passed": true,
+      "forced_cleanup": false,
+      "job_accounting_after_cleanup": {
+        "user_time": 167812500,
+        "kernel_time": 282500000,
+        "period_user_time": 167812500,
+        "period_kernel_time": 282500000,
+        "page_faults": 2367824,
+        "total_processes": 13,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "total_captures": 514,
+    "new_instancing_captures": 64,
+    "retained_alpha_captures": 90,
+    "retained_reconstruction_captures": 200,
+    "retained_motion_captures": 160,
+    "adapters": [
+      {
+        "name": "AMD Radeon(TM) Graphics",
+        "fixture_seconds": 4.5142275,
+        "captures": 32,
+        "full_rgb_and_available_probe_pairs": 16,
+        "maximum_rgb_error": 0,
+        "shadow_oracles": [
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          }
+        ],
+        "dense_commands": {
+          "direct": 1024,
+          "instanced": 1,
+          "visible_instances": 1024
+        },
+        "modes": [
+          "forward 1x",
+          "forward 4x",
+          "deferred 1x"
+        ],
+        "foreground_samples": 4,
+        "raw_evidence": {
+          "bytes": 158155,
+          "sha256": "e27dd87376d4add2ad5aeac884dce2775d4ccfa43c0ee7e34ddc91240a88d029"
+        }
+      },
+      {
+        "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "fixture_seconds": 6.2118396,
+        "captures": 32,
+        "full_rgb_and_available_probe_pairs": 16,
+        "maximum_rgb_error": 0,
+        "shadow_oracles": [
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          },
+          {
+            "holes": 6,
+            "kept": 2,
+            "max_rgb_error": 0
+          }
+        ],
+        "dense_commands": {
+          "direct": 1024,
+          "instanced": 1,
+          "visible_instances": 1024
+        },
+        "modes": [
+          "forward 1x",
+          "forward 4x",
+          "deferred 1x"
+        ],
+        "foreground_samples": 4,
+        "raw_evidence": {
+          "bytes": 158502,
+          "sha256": "9c3820bbbf9c928284c0bdbc0680e2fd77dbb494f9d2c145aeee0766b0d700d8"
+        }
+      }
+    ]
+  },
+  "original_failures_retained": [
+    {
+      "case": "Linux QA1",
+      "result": "FAILED",
+      "cause": "Unsupported Camera background field in new test setup; corrected by removing only that operand. Original request rejection separately recorded as -32602 Unknown field: background; same request without field succeeds."
+    },
+    {
+      "case": "Linux QA2",
+      "result": "FAILED",
+      "cause": "Test-only link used a runner PATH missing the already-required development linker. Successor restores the original qualified build linker selection; no source/assertion change."
+    },
+    {
+      "case": "Windows GPU1",
+      "result": "FAILED",
+      "cause": "New fixture used empty-index imported mesh outside renderer profile, before any capture. Successor uses supported shared builtin nonindexed boxes and adjusts only their exact front-depth expectation to 2.99 m; tolerances and all32/16/count/shadow controls retained."
+    }
+  ],
+  "limits": [
+    "Controlled 320x240 instancing fixtures, not representative scene/game performance.",
+    "Raw scene-product equality covers requested probes; complete floating-point attachments are not compared.",
+    "Nonindexed controls use built-in geometry; imported meshes keep explicit triangle indices.",
+    "No new installed package, Native AOT/export, physical input, editor interaction, GI or Alpha closure qualification."
+  ],
+  "original_records": {
+    "linux_native": {
+      "bytes": 76038,
+      "sha256": "ee824fd77677b9663d3fb1c88751d5cd20471a5edb0c5cbe25fdf27af6a8c036"
+    },
+    "linux_failed_qa1": {
+      "bytes": 50035,
+      "sha256": "4632de37cb809009dba0f460c3373f4a0ca709ccd8fe9193e9b849b81e1b5a84"
+    },
+    "linux_failed_qa2": {
+      "bytes": 10104,
+      "sha256": "479dcbf525467347c99861f19f31eab27479a9c6763b83ef574cdb989c17cca8"
+    },
+    "linux_corrected_qa3": {
+      "bytes": 16008,
+      "sha256": "9d14ee13356e212cb319fb8cdb95fc641fb986ebb7d11011c40530917350698f"
+    },
+    "camera_diagnostic": {
+      "bytes": 2287,
+      "sha256": "e1ef148a72bc7a0540ff8107c28748c88305fdb4e494513692c103ae772d6ba6"
+    },
+    "windows_native": {
+      "bytes": 19679,
+      "sha256": "d0da259bc3f11d273faf6330e03c98828c54fd796a6b01b3d6eccfe144c17dd5"
+    },
+    "windows_schema_build": {
+      "bytes": 11107,
+      "sha256": "567418cec4ce504eb7825f337e64d5d28f5d13dd53e18e4126b7afad841240e7"
+    },
+    "windows_fixture_build": {
+      "bytes": 11587,
+      "sha256": "4ca7a3ff5730040c3bc6641e786ff7f7ff0173e411e54fa4768510440615bd9d"
+    },
+    "windows_cpu": {
+      "bytes": 2781,
+      "sha256": "1933db635e27b041122ff9465c2ec206d9eb547c2c8af69ccfa8d3534e58c691"
+    },
+    "windows_failed_gpu1": {
+      "bytes": 4442,
+      "sha256": "67339956b55347b8f0951b6512a262964ab094a22c175a70c4fbf07ca487b6f4"
+    },
+    "windows_gpu2": {
+      "bytes": 3051,
+      "sha256": "36b73594fbfa2bcbbcda3d24c006951512b47fd939adf4c250794375a553792b"
+    }
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 99811,
+      "sha256": "3eaefc0e0d22a016847771d30191f3a87f22402b0ddb157e86ab5bc529781ea7"
+    },
+    "include/poima/core.hpp": {
+      "bytes": 12046,
+      "sha256": "388e050b31dfd9913ea050e249d235afbbef29d47d6598c696145f3dd75e9ca7"
+    },
+    "include/poima/render_batches.hpp": {
+      "bytes": 1678,
+      "sha256": "007248d2ba6158ab35d70adba79eac35df9432ac6ebb17ef17efa073e123d252"
+    },
+    "src/core.cpp": {
+      "bytes": 20190,
+      "sha256": "920b2c5393ad39f5c26aa3e5c04ac4926cae08e5d54afe562cb2b4a95c9957ec"
+    },
+    "src/world.cpp": {
+      "bytes": 357138,
+      "sha256": "96e3a659e8450fd85d576ab3b16e881933c86770d33c1f0900df85dcc30cfbab"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 65858,
+      "sha256": "c35813c7ac8460d946ca692dce95b318891f0088ff1ce3c60e9a773d9f1e0064"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 135727,
+      "sha256": "f78879f09d872ac2f129d9fec883680bd27806c2e3b97ff5bc9b29262b4630dc"
+    },
+    "src/game_launch.cpp": {
+      "bytes": 16687,
+      "sha256": "e10e69cad32363d8bd4e10298f09b987b98303f02ba587eebe9a0e239effff8d"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 355456,
+      "sha256": "306e3fb59ff34dda0260214802eab94f7df071a496ad8edf72669264eeaca349"
+    },
+    "shaders/scene.hlsl": {
+      "bytes": 9785,
+      "sha256": "703bef3446cdc176e4a4a508c4eaf79e95a20f4a6f80bd9c5e345f74c7abb933"
+    },
+    "tests/render_batches.cpp": {
+      "bytes": 8940,
+      "sha256": "51a1f399b3727f85b6224720b670885de033003ca37078da1e3efc013095bf3f"
+    },
+    "tests/render_instancing_native.cpp": {
+      "bytes": 21561,
+      "sha256": "0761beb69b29252712530eb42b30f499dc91c6fc7ff70419246b741f29aaa8b7"
+    },
+    "tests/world_schema_native.cpp": {
+      "bytes": 31377,
+      "sha256": "a6518cae76d604399202c6cf96b13cb03fef0e12dded3ada3b7bdda78bb28e69"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "0e29a0008a7c864cf85ca6f9df73db6e8c00b21db6998b24582cb5f6de576959"
+    }
+  }
+}

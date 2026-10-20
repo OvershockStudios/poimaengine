@@ -11,6 +11,7 @@
 #include "poima/profiler.hpp"
 #include "poima/frame_performance.hpp"
 #include "poima/render_schedule.hpp"
+#include "poima/render_batches.hpp"
 #include "poima/fsr3.hpp"
 #include "poima/temporal_clock.hpp"
 #include "poima/temporal_inputs_cs.hpp"
@@ -440,6 +441,8 @@ struct Context {
     nvrhi::BindingLayoutHandle binding_layout;
     nvrhi::BindingSetHandle bindings;
     std::vector<DrawItem> draws;
+    std::vector<render_batches::Batch> camera_batch_plan,viewmodel_batch_plan;
+    std::vector<std::vector<render_batches::Batch>> shadow_batch_plans;
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
     std::vector<GpuLight> gpu_lights;
@@ -615,7 +618,7 @@ struct Context {
 #endif
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;player_context=player;
-        deferred=options.deferred;diagnostics.deferred=deferred;
+        deferred=options.deferred;diagnostics.deferred=deferred;diagnostics.draw_instancing=options.draw_instancing;
         shadow_filter_override=options.shadow_filter;
         shadow_filter=shadow_filter_override.value_or(source ? source->lighting.environment.shadow_filter : ShadowFilter::pcf3_point);
         require(shadow_filter==ShadowFilter::pcf3_point || shadow_filter==ShadowFilter::pcf3_fractional,"Invalid shadow filter.");
@@ -962,6 +965,36 @@ struct Context {
         }
         if(viewmodel_enabled && viewmodel_objects.empty())viewmodel_objects.push_back({});
     }
+    void prepare_draw_batches() {
+        // Skin write/history buffers are selected by prepare_submission_history.
+        // Plan only after that boundary, from the exact handles this submission binds.
+        camera_batch_plan.clear();viewmodel_batch_plan.clear();shadow_batch_plans.clear();
+        pending_draws.camera_batches=0;pending_draws.shadow_batches=0;
+        if(pending_viewmodel)pending_viewmodel->draws.camera_batches=0;
+        if(!scene)return;
+        require(draws.size()<=std::numeric_limits<std::uint32_t>::max() && viewmodel_draws.size()<=std::numeric_limits<std::uint32_t>::max(),"Draw batch candidate count exceeds uint32.");
+        auto key=[](const DrawItem& draw,nvrhi::IBindingSet* bindings,bool previous,std::uint32_t pipeline) {
+            return render_batches::Key{reinterpret_cast<std::uintptr_t>(draw.geometry.vertices.Get()),
+                reinterpret_cast<std::uintptr_t>(draw.geometry.indices.Get()),
+                previous ? reinterpret_cast<std::uintptr_t>(draw.previous_vertices.Get()) : 0,
+                reinterpret_cast<std::uintptr_t>(bindings),draw.geometry.count,pipeline};
+        };
+        // Pipeline values are exact local selectors of the two immutable pipeline
+        // handles in each pass, never truncated pointers or hashed identities.
+        std::vector<render_batches::Candidate> candidates;candidates.reserve(draws.size());
+        for(const auto& draw:draws)candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,key(draw,draw.bindings.Get(),samples==1,draw.cull ? 1u : 0u)});
+        camera_batch_plan=render_batches::plan(candidates,diagnostics.draw_instancing);
+        shadow_batch_plans.reserve(shadow_plan.size());
+        for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
+            candidates.clear();
+            for(const auto& draw:draws)candidates.push_back({draw.object_index,(draw.shadow_mask & (1u<<layer))!=0,
+                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadow_bindings.Get(),samples==1,draw.masked_shadow_bindings ? 1u : 0u)});
+            shadow_batch_plans.push_back(render_batches::plan(candidates,diagnostics.draw_instancing));
+        }
+        candidates.clear();candidates.reserve(viewmodel_draws.size());
+        for(const auto& draw:viewmodel_draws)candidates.push_back({draw.object_index,viewmodel_enabled && draw.camera_visible,key(draw,draw.bindings.Get(),false,draw.cull ? 1u : 0u)});
+        viewmodel_batch_plan=render_batches::plan(candidates,diagnostics.draw_instancing);
+    }
     void commit_history() {
         if(!scene || (reconstruction && !scene_visible))return;
         if(pending_reconstruction.active) {temporal_phase=pending_reconstruction.history_reset ? 1 : temporal_phase+1;temporal_clock.accept();}
@@ -1174,8 +1207,8 @@ struct Context {
             const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
             state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
             if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
-            for(const auto& draw:draws) {
-                if(!(draw.shadow_mask & (1u<<layer)))continue;
+            for(const auto& batch:shadow_batch_plans.at(layer)) {
+                const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.masked_shadow_bindings ? masked_shadow_pipeline : shadow_pipeline;
                 state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : shadow_bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
@@ -1183,8 +1216,9 @@ struct Context {
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
                 commands->setPushConstants(&indices,sizeof(indices));
-                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
-                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+                ++pending_draws.shadow_batches;
             }
         }
         commands->setTextureState(shadow_texture,nvrhi::AllSubresources,nvrhi::ResourceStates::ShaderResource);commands->commitBarriers();
@@ -1799,11 +1833,13 @@ struct Context {
     }
     void render_viewmodel() {
         nvrhi::GraphicsState state;state.framebuffer=viewmodel->framebuffer;state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
-        for(const auto& draw:viewmodel_draws)if(draw.camera_visible) {
+        for(const auto& batch:viewmodel_batch_plan) {
+            const auto& draw=viewmodel_draws.at(batch.first);
             state.pipeline=draw.cull ? viewmodel->culled_pipeline : viewmodel->pipeline;state.bindings={};state.bindings.push_back(draw.bindings);state.vertexBuffers={};state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(draw.geometry.vertices).setSlot(0));
             state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
             commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
-            if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+            if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+            ++pending_viewmodel->draws.camera_batches;
         }
     }
     void composite_viewmodel() {
@@ -3057,15 +3093,16 @@ struct Context {
         if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(1));state.bindings.push_back(bindings);}
         commands->setGraphicsState(state);
         if(scene) {
-            for(const auto& draw:draws) {
-                if(!scene_visible || !draw.camera_visible)continue;
+            for(const auto& batch:camera_batch_plan) {
+                const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
                 if(samples==1)state.vertexBuffers[1].buffer=draw.previous_vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
-                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
-                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+                ++pending_draws.camera_batches;
             }
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
@@ -3101,7 +3138,7 @@ struct Context {
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
-        prepare_game_ui();prepare_submission_history();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
+        prepare_game_ui();prepare_submission_history();prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
@@ -3226,6 +3263,11 @@ struct Context {
                 commands->commitBarriers();timestamp(5);break;
             }
         });
+        std::uint64_t expected_shadow_batches=0;for(const auto& batches:shadow_batch_plans)expected_shadow_batches+=batches.size();
+        require(pending_draws.camera_batches==camera_batch_plan.size() && pending_draws.shadow_batches==expected_shadow_batches,
+            "Recorded scene draw command counts differ from their ordered plans.");
+        require(!pending_viewmodel || pending_viewmodel->draws.camera_batches==viewmodel_batch_plan.size(),
+            "Recorded foreground draw command count differs from its ordered plan.");
         commands->close();
         record_ms=elapsed_ms(record_started);
         }
@@ -3234,6 +3276,7 @@ struct Context {
         PerformanceWallScope wall(performance_cpu?&performance_cpu->work.submit_ns:nullptr);
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
+        if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
         slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=has_skin_draws();slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
         slot.skin_ids.swap(submitted_skin_ids);
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;

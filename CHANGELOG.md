@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.211
+
+- Combine compatible adjacent objects into native instanced commands for camera,
+  shadow and first-person foreground rendering, preserving per-object data.
+- Add a direct-reference rendering option and separate completed geometry command
+  counters from existing object/view-instance counts.
+
 ## 0.0.210
 
 - Add optional explicit-state weapon actions with semi-auto, automatic and burst

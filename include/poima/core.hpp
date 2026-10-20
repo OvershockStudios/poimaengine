@@ -120,6 +120,7 @@ struct RenderOptions {
     std::string capture;
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
+    bool draw_instancing = true; // Consecutive compatible draws; false selects one command per instance.
     bool deferred = false; // Single-sample opaque material/lighting split.
     AmbientOcclusionOptions ambient_occlusion;
     SceneDebugView scene_debug_view = SceneDebugView::color;
@@ -137,6 +138,7 @@ struct RenderOptions {
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
 struct DrawCounts {
     std::uint64_t objects=0,camera_draws=0,camera_culled=0,camera_triangles=0;
+    std::uint64_t camera_batches=0,shadow_batches=0; // Actual geometry commands; draws retain instance counts.
     std::uint64_t skinned_instances=0,skinned_vertices=0;
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
 };
@@ -235,7 +237,7 @@ struct RenderDiagnostics {
     TimingSummary ambient_occlusion_gpu,ambient_occlusion_filter_gpu;
     ReconstructionDiagnostics reconstruction;
     SceneProductsDiagnostics scene_products;
-    bool culling=true,profile_requested=false,gpu_timestamps=false;
+    bool culling=true,draw_instancing=true,profile_requested=false,gpu_timestamps=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
     std::uint64_t completed_submissions=0,gpu_samples_dropped=0;
     std::string gpu_timing_detail="Profiling not requested.";

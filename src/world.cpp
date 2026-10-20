@@ -1763,6 +1763,7 @@ public:
     }
     static Json draw_counts_json(const DrawCounts& c) {
         return {{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
+            {"camera_batches",c.camera_batches},{"shadow_batches",c.shadow_batches},
             {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles}};
     }
     static Json light_assignment_json(const LightAssignmentDiagnostics& l) {
@@ -1798,7 +1799,7 @@ public:
                 {"motion_visualization","valid: R/G = 0.5 + motion in pixels / 64, B = 0; invalid: black"},{"normal_format","RGBA16_FLOAT"},
                 {"normal_space","world"},{"normal_alpha","surface validity"},{"depth_convention","device depth [0,1], near 0, far/clear 1"},
                 {"depth_visualization","positive view distance divided by far; invalid surface black"}}},
-            {"culling",d.culling},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
+            {"culling",d.culling},{"draw_instancing",d.draw_instancing},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
             {"frame_execution",{{"limit",f.limit},{"submitted",f.submitted},{"outstanding",f.outstanding},{"peak_outstanding",f.peak_outstanding},
                 {"slot_waits",f.slot_waits},{"drain_waits",f.drain_waits},{"device_idle_waits",f.device_idle_waits},
                 {"presentation_fences",f.presentation_fences},{"presentation_retirement",f.presentation_retirement}}},
@@ -2567,8 +2568,8 @@ public:
         }
         require(options.scene_product_probes.empty() || (options.samples==1 && !options.capture.empty()),"Scene product probes require samples=1 and a capture path.");
         require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
-        for(const auto* key:{"culling","clustered_lighting","profile"})if(params.contains(key))require(params.at(key).is_boolean(),"Culling/clustered_lighting/profile options must be boolean.");
-        options.culling=params.value("culling",true);options.clustered_lighting=params.value("clustered_lighting",true);options.profile=params.value("profile",false);
+        for(const auto* key:{"culling","draw_instancing","clustered_lighting","profile"})if(params.contains(key))require(params.at(key).is_boolean(),"Culling/draw_instancing/clustered_lighting/profile options must be boolean.");
+        options.culling=params.value("culling",true);options.draw_instancing=params.value("draw_instancing",true);options.clustered_lighting=params.value("clustered_lighting",true);options.profile=params.value("profile",false);
 #if !POIMA_FSR3_UPSCALER
         require(options.reconstruction==ReconstructionMode::none,"FSR3 reconstruction is unavailable in this build.",-32003);
 #endif
@@ -2577,7 +2578,7 @@ public:
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             material_guard(params,"material_revision");
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
@@ -2589,8 +2590,8 @@ public:
                 ui_scale=static_cast<float>(density);
             }
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "viewmodel_samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "shadow_filter", "capture_frames", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "viewmodel_samples", "culling", "draw_instancing", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "shadow_filter", "capture_frames", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));

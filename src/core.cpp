@@ -138,6 +138,7 @@ Reply capabilities() {
         ",\"scene_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"render_diagnostics\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"frustum_culling\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"draw_instancing\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"shadow_maps\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"light_authoring\":true,\"punctual_lighting\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"material_texture_authoring\":true,\"normal_mapping\":" + boolean(POIMA_RENDER_SMOKE != 0) +

@@ -7,7 +7,7 @@
             options.render.scene_debug_view==SceneDebugView::color,options.render.reconstruction!=ReconstructionMode::none};
     }
     static void validate_player_parameters(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation","pose_interpolation"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation","pose_interpolation"},
             {"session_id","request_id","expected_tick","camera","mode"});
         require(!params.contains("lens_interpolation") || params.at("lens_interpolation").is_boolean(),
             "lens_interpolation must be Boolean.");

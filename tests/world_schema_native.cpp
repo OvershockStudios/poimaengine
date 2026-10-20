@@ -25,6 +25,39 @@ std::map<std::string,std::string> tree(const fs::path& root) {
 Json invoke(poima::WorldSession& owner,const char* method,const Json& params,poima::WorldRequestScope scope) {
     return Json::parse(owner.request(Json{{"jsonrpc","2.0"},{"id",17},{"method",method},{"params",params}}.dump(),scope));
 }
+void instancing_admission(const fs::path& root) {
+    fs::create_directory(root);const auto file=root/"world.json";
+    poima::WorldSession owner(file.string());const auto scope=poima::WorldRequestScope::standalone;
+    const std::string camera(32,'d');
+    Json ops=Json::array();
+    ops.push_back({{"op","entity.create"},{"id",camera},{"name","Render option camera"}});
+    ops.push_back({{"op","component.set"},{"id",camera},{"type","Camera"},
+        {"value",{{"vertical_fov",60},{"near",.1},{"far",100}}}});
+    const auto authored=invoke(owner,"world.transact",{{"request_id",std::string(32,'e')},{"base_revision",0},{"ops",ops}},scope);
+    need(authored.contains("result"),"Cannot author instancing admission camera.");
+    const auto before=tree(root);
+    const auto state=invoke(owner,"world.inspect",Json::object(),scope),history=invoke(owner,"world.history",Json::object(),scope);
+    const auto revision=state.at("result").at("revision");
+    Json params={{"revision",revision},{"camera",camera},{"path",(root/"never-render.bmp").string()}};
+    for(const auto& value:Json::array({0,1,0.0,1.0,nullptr,"true",Json::array(),Json::object()})) {
+        params["draw_instancing"]=value;const auto rejected=invoke(owner,"world.capture",params,scope);
+        need(rejected.contains("error") && rejected.at("error").at("code")==-32602 &&
+            rejected.at("error").at("message").get<std::string>().find("draw_instancing")!=std::string::npos,
+            "Malformed instancing flag reached rendering or a different rejection.");
+    }
+    // This missing cooked asset follows option validation but precedes rendering.
+    // It proves Boolean/omitted admission on both headless and Vulkan builds
+    // without silently opening a graphics device in this portable suite.
+    params.erase("draw_instancing");params["asset"]=std::string(64,'0');params["time"]=0;
+    for(const auto& value:Json::array({nullptr,false,true})) {
+        auto request=params;if(!value.is_null())request["draw_instancing"]=value;
+        const auto rejected=invoke(owner,"asset.animation.capture",request,scope);
+        need(rejected.contains("error") && rejected.at("error").at("code")==-32050,
+            "Boolean/omitted instancing flag did not reach ordinary missing-asset rejection.");
+    }
+    need(tree(root)==before && invoke(owner,"world.inspect",Json::object(),scope)==state &&
+        invoke(owner,"world.history",Json::object(),scope)==history,"Render option admission changed authored state or files.");
+}
 void callback_admission(const fs::path& file) {
     poima::WorldSession owner(file.string());const auto scope=poima::WorldRequestScope::standalone;
     const auto discovery=invoke(owner,"world.describe",Json::object(),scope).at("result");
@@ -89,6 +122,7 @@ int main(int argc,char** argv) {
         {std::ofstream out(file,std::ios::binary|std::ios::trunc);out<<document.dump(2)<<'\n';need(bool(out),"Fixture write failed.");}
         const auto fixture_bytes=bytes(file);Json transcript=Json::array();std::vector<Json> mutations;
         callback_admission(file);
+        instancing_admission(root/"render-options");
         std::size_t total=0;
         for(const auto mode:{poima::WorldOpenMode::authoring,poima::WorldOpenMode::read_only_runtime}) {
             poima::WorldSession owner(file.string(),mode);
@@ -99,6 +133,13 @@ int main(int argc,char** argv) {
                     const auto result=invoke(owner,"world.describe",params,scope);cases.push_back({{"params",params},{"reply",result}});++total;return result;
                 };
                 const auto full=capture(Json::object()).at("result");
+                need(full.at("schema_revision").get<unsigned>()>=117,"Expected native draw instancing discovery.");
+                for(const auto* method:{"world.capture","runtime.capture","asset.animation.capture","runtime.play","player.start"})if(full.at("methods").contains(method)) {
+                    const auto& schema=full.at("methods").at(method);const auto& flag=schema.at("properties").at("draw_instancing");
+                    need(flag.at("type")=="boolean" && flag.at("default")==true &&
+                        std::find(schema.at("required").begin(),schema.at("required").end(),Json("draw_instancing"))==schema.at("required").end(),
+                        "Instancing must remain optional/default-enabled on every render entry point.");
+                }
                 need(full.at("schema_revision").get<unsigned>()>=116,"Expected alpha-masked material discovery.");
                 const auto& pbr=full.at("components").at("PbrMaterial");
                 const auto& pbr_properties=pbr.at("properties");

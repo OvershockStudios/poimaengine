@@ -186,7 +186,7 @@ Reply run_game(const GameLaunchOptions& options) {
         const auto session=prepare_game(world,game,save_root,options.save_write_mode);
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
-            {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};
+            {"samples",options.render.samples},{"culling",options.render.culling},{"draw_instancing",options.render.draw_instancing},{"profile",options.render.profile}};
         if(options.render.viewmodel_samples!=1)params["viewmodel_samples"]=options.render.viewmodel_samples;
         if(options.lens_interpolation)params["lens_interpolation"]=true;
         if(options.pose_interpolation)params["pose_interpolation"]=true;

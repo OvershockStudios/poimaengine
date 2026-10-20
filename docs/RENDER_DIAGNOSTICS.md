@@ -6,10 +6,11 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 
 ## Request controls
 
-`world.describe` schema revision 44 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
+`world.describe` exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture`, `runtime.play` and `player.start`. Schema revision 117 adds `draw_instancing`:
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
+| `draw_instancing` | true | Combine immediately adjacent compatible geometry draws. False retains one command per visible object/view instance. See [ordered instancing](DRAW_INSTANCING.md). |
 | `culling` | true | Reject object bounds entirely outside each render view. False submits every renderable to every view for comparison. |
 | `clustered_lighting` | true | Conservatively assign finite lights to view-space cells. False evaluates the complete light table as a reference. |
 | `frames_in_flight` | 2 | Integer from 1 to 2. Two bounds queued submissions; one provides a serialized reference. |
@@ -32,14 +33,14 @@ Bounds are derived from all stored mesh vertex positions, or the unit box for bu
 
 The six planes use the actual float-rounded GPU view-projection matrix and Vulkan's `[0,w]` clip-depth convention. The camera and each directional cascade, point face or spotlight test their own frustum. Camera rejection therefore does not remove a potentially visible shadow caster. Light/caster movement and viewport resize rebuild the relevant decisions.
 
-This is object-level frustum culling, not occlusion culling. Bounds can produce false positives. There is no hierarchical scene index, meshlet/triangle culling, GPU-driven submission or instancing yet. CPU work is linear in objects times views. All renderables still resolve/upload geometry and material resources; this change does not implement asset streaming or defer invalid-content errors until an object appears. Hidden render components are excluded by snapshot construction and are not counted as frustum rejects. A drawable with `cast_shadows:false` remains a camera candidate but is excluded before shadow-frustum tests. `culling:false` disables frustum rejection; it does not override drawable eligibility. `receive_shadows` does not change draw membership. See [per-drawable controls](SHADOWS.md#per-drawable-controls).
+This is object-level frustum culling, not occlusion culling. Bounds can produce false positives. There is no hierarchical scene index, meshlet/triangle culling or GPU-driven submission. [Ordered instancing](DRAW_INSTANCING.md) combines adjacent compatible draws after these visibility decisions. CPU work is linear in objects times views. All renderables still resolve/upload geometry and material resources; this change does not implement asset streaming or defer invalid-content errors until an object appears. Hidden render components are excluded by snapshot construction and are not counted as frustum rejects. A drawable with `cast_shadows:false` remains a camera candidate but is excluded before shadow-frustum tests. `culling:false` disables frustum rejection; it does not override drawable eligibility. `receive_shadows` does not change draw membership. See [per-drawable controls](SHADOWS.md#per-drawable-controls).
 
 ## Response
 
 Successful capture and all returned player reports include `render_diagnostics`:
 
 - `memory_budget`: optional per-process heap allocation estimates, dynamic budgets, device identity and sample age. See [GPU memory diagnostics](GPU_MEMORY.md) for availability and interpretation.
-- `culling`, `profile_requested`: selected options.
+- `culling`, `draw_instancing`, `profile_requested`: selected options.
 - `completed_submissions`: command submissions whose graphics completion and diagnostic readbacks have retired. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
 - `frame_execution`: configured limit, submitted/outstanding/peak counts, slot/drain/device-idle wait counts and the presentation retirement policy.
 - `last_draws`: counts for the last completed submission, not lifetime totals.
@@ -52,7 +53,9 @@ Successful capture and all returned player reports include `render_diagnostics`:
 | Field | Meaning |
 | --- | --- |
 | `objects` | Renderable snapshot objects. |
-| `camera_draws`, `camera_culled` | Submitted camera draws and rejected object bounds; their sum equals `objects`. |
+| `camera_draws`, `camera_culled` | Submitted camera object instances and rejected object bounds; their sum equals `objects`. |
+| `camera_batches` | Actual camera geometry draw commands in the completed submission. |
+| `shadow_batches` | Actual shadow geometry draw commands summed across shadow views. |
 | `camera_triangles` | Triangles submitted to the camera. Back-face/depth rejection can reduce rasterized work further. |
 | `shadow_views` | Active depth views for this camera/light configuration. |
 | `shadow_candidates` | Eligible visible cast-enabled drawable/view pairs before shadow-frustum rejection: cast-enabled snapshot objects × active `shadow_views`. Equals `objects * shadow_views` when all snapshot objects cast. |

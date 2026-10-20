@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.210**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.211**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.211 adds [ordered draw instancing](DRAW_INSTANCING.md) for compatible
+adjacent camera, shadow-view and first-person foreground geometry. Objects retain
+independent transforms and scalar materials. Strict `draw_instancing` controls
+select batching or direct reference submission; completed diagnostics keep
+instance counts and separately expose actual geometry command counts.
+
+Linux and Windows pass six portable planner groups with 1,969,893 checks. Eleven
+selected Linux suites pass across the initial and corrected-schema records,
+including 1,365 discovery responses across six session scopes. The retained
+compiled weapon workflow passes 204 RPCs, all 33 typed fields, eight whole
+checkpoints and four byte-identical pairs. Windows passes seven native executables.
+
+AMD and NVIDIA each pass 32 new captures and sixteen exact whole-RGB/available
+probe pairs. A controlled 1,024-object case keeps all instances while reducing
+camera commands from 1,024 to one; separate shadow and 4× foreground batching
+also execute. Retained alpha, reconstruction and motion fixtures pass another
+450 captures, for 514 total. Accepted Jobs close empty and unforced.
+
+Original test-camera, linker-configuration and unsupported empty-index fixture
+failures remain recorded. Corrected test-only binaries have separate build and
+preimage witnesses; the successful native engine/core/shader build is unchanged.
+[Evidence](evidence/m2-render-instancing.json) does not establish GPU-resident
+updates, indirect/occlusion/LOD rendering or a frame-time improvement. Native C++
+consumers require rebuilding; C# services, gameplay saves and cooked formats are
+unchanged. Broader scene scale, installed delivery and Alpha gates remain open.
 
 Version 0.0.210 adds optional [weapon actions](WEAPON_ACTIONS.md): semi-auto,
 automatic and burst fire, separate magazine/chamber/reserve accounting, and
