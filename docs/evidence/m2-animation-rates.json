@@ -1,0 +1,379 @@
+{
+  "format": "poima.evidence.animation-rates.v1",
+  "engine_version": "0.0.201",
+  "date": "2026-10-19",
+  "passed": true,
+  "scope": "Selected Linux headless native/CLI/CoreCLR animation-rate controls and separate retained-game regression; not complete Alpha qualification.",
+  "implementation": {
+    "command": "runtime.step.animation_rates",
+    "speed_range": [
+      0,
+      8
+    ],
+    "layer_slots": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "base_selector": "Omitted layer in JSON; layer0 in native command.",
+    "shared_animation_write_limit_per_tick": 64,
+    "semantics": "Keep current destination phase and immutable fade/reference clocks, correction coefficients and independent weight ramps. Same-speed writes consume admission without reanchoring. Rate zero does not resume stopped/ended playback or stop fade time.",
+    "persistence": {
+      "conditional_nested_animation_state_version": 9,
+      "retained_legacy_profiles": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "history": "Every v9 clock retains current/previous output history, including legacy profile1 before its first inertial transition."
+    },
+    "services": {
+      "epoch": 7,
+      "feature": "animation_rate_v1",
+      "required_bytes": 376,
+      "setter_offset": 368,
+      "command_bytes": 40,
+      "marker": "IAnimationRateGame",
+      "methods": [
+        "SetAnimationSpeed",
+        "SetAnimationLayerSpeed"
+      ]
+    }
+  },
+  "sources": {
+    "include/poima/runtime.hpp": {
+      "bytes": 28856,
+      "sha256": "981eacf65c398a7bbe579756ce8d100fa7c4077cc9440b369e8402331096b8a0"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 9113,
+      "sha256": "24bab480833c42959f5b2f9356430d8152897384adf6c2a80a9a3aba1dbeafe7"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 44054,
+      "sha256": "5b1220f53d3a992aae919c4a5cca36c25de1d44a86923f963ef57fb55536af33"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 17060,
+      "sha256": "b39c32d898fc3ffb049ca2a9d5bd3de37cf7e2f5ebb18efab8e1a738defe9a43"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 125534,
+      "sha256": "146443f09a27456e66b92603ff975e6c26132588e6fca83b9c6bdb2d7f239da9"
+    },
+    "src/runtime.cpp": {
+      "bytes": 156591,
+      "sha256": "07890e2b53a7a85b84655dedc06f12aa05775f6301120a27fe361d47a34c2dc2"
+    },
+    "src/runtime_animation_rate_services.inc": {
+      "bytes": 2721,
+      "sha256": "18dfcf54ea3dfd8cf56eab456175d8adbb4d1638b38e1063b4368f237bd38fa2"
+    },
+    "src/world.cpp": {
+      "bytes": 346510,
+      "sha256": "08c1ca604079894370965eccbb1f3c2500cf9c2b66a1f8be268a5bade2a0c69d"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 126387,
+      "sha256": "f556d666d748bebaf42c7a19c929e7a338380b7fd68b7ff8da146471f233f0cf"
+    },
+    "managed/Poima.Gameplay/AnimationRate.cs": {
+      "bytes": 3316,
+      "sha256": "56f5e2a6d5890b915a47ba077817f699a15551354e70782a7f6102c2ef00819d"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 26586,
+      "sha256": "140dc5dcdac5c8926a68390d1aa5dcf78ec89625271d44e4819e331919d75990"
+    },
+    "tests/runtime_animation_rate_native.cpp": {
+      "bytes": 24365,
+      "sha256": "4ac5440260292ed1a3bb971615fca04351c1fa4fcf0dd88ed1c46765ae9ad3c1"
+    },
+    "tests/runtime_animation_rates.py": {
+      "bytes": 23342,
+      "sha256": "110f4de0d7242b1c5bd11ae103b006f8f8a1833167288cd11e3f88fe44149227"
+    },
+    "tests/managed_animation_rate_gameplay/ManagedAnimationRateGame.cs": {
+      "bytes": 4692,
+      "sha256": "7f26b3ed4e30137095c1795ad31161f79f1a255342ca7feb49372760c7e3167a"
+    },
+    "tests/managed_animation_rate_gameplay/Poima.ManagedAnimationRateGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    }
+  },
+  "native": {
+    "platform": "Linux x86_64 headless",
+    "configuration": "Debug -O0 -g0; assertions, simulation, native/CoreCLR gameplay, navigation, audio and logical UI; rendering/desktop disabled; two build workers and one LLD thread.",
+    "cli": {
+      "bytes": 35780712,
+      "sha256": "078be9d03753408037488af5476c9d34fe9720ff1c6d2c3f4b38d086cddbaa73"
+    },
+    "build": {
+      "seconds": 467.14414216802106,
+      "selected_targets": 23,
+      "observed_actions": 69,
+      "record": {
+        "bytes": 169633,
+        "sha256": "46e93589df86568818a29b0ce0f398777bca82655e5243376ca589f14e3afd71"
+      }
+    },
+    "fixture_repair": {
+      "seconds": 32.18466014400474,
+      "actions": 2,
+      "scope": "One corrected test translation unit and its link; core and22other images unchanged.",
+      "record": {
+        "bytes": 9477,
+        "sha256": "f2e499fbe80239d55862340f1c3a93c0cff2b5ddb6a6613031a634aa815fcb88"
+      }
+    },
+    "qualification": {
+      "retained_ctests": 21,
+      "retained_ctests_source": "originalFAILEDQA1 firstcommand actualPASS",
+      "rate_portable_groups": 6,
+      "rate_native_groups": 1,
+      "whole_pairs": 92,
+      "malformed_operands": 15,
+      "archive_operands": 199,
+      "rate_checks": 766,
+      "simulation_off_syntax_translation_units": 1,
+      "core_tests": 5,
+      "metadata_deferred": true
+    },
+    "qualification_record": {
+      "bytes": 8748,
+      "sha256": "a10996d2fdec64aa6ab1c6cb46d236e76b107fda0e75415f34e2585053ce2392"
+    },
+    "composite_scope": "The21 retained CTests passed in the first command of the original failed QA1. Corrected new rate fixture, OFF declaration syntax and core5 pass separately in QA2. Original failed owner remains failed."
+  },
+  "managed": {
+    "abi_groups": 98,
+    "abi_record": {
+      "bytes": 10312,
+      "sha256": "f19ef47e0aa3f11fb3c9a5ca02cc2799215ed184b470a4fb400485a57f350bba"
+    },
+    "metadata_checks": 3,
+    "metadata_record": {
+      "bytes": 7471,
+      "sha256": "32e3b2c1384b9f2842fcc4e20d86e3b15a40bf6668df184cdf0d34e0fecb4daf"
+    },
+    "qualified_build_record": {
+      "bytes": 21421,
+      "sha256": "de6627c980b54d4a444703c2261faab917fe5d1906a7113a722c3d6af83c1580"
+    },
+    "qualified_qa_record": {
+      "bytes": 14429,
+      "sha256": "34bffc3f31e6c10b93940ee9e1a45c484d2b1ce451bee24303be85dd9bb2c7aa"
+    },
+    "consumer_only_build": {
+      "record": {
+        "bytes": 9667,
+        "sha256": "d1fe8bb5d01c2c43fbec597e8d14ef41f6871a792fa5dcad60139956c2d80d57"
+      },
+      "commands": 2,
+      "scope": "Compile corrected consumer against the previously built SDK binary, then run the existing component-manifest generator. SDK, bridge, generator, ABI98 and metadata3 are reused without rebuilding/rerunning.",
+      "assembly": {
+        "bytes": 8704,
+        "sha256": "4f5037ac1cd8f8394c6c84905fc8b7647c91ed049245446bf82b840c5db42c85"
+      },
+      "bridge": {
+        "bytes": 64512,
+        "sha256": "7a5dd5c2c085dd7fe84ef6fd8b8a9b9137c1fc3ad6b43bfc53f7dc0e59e66179"
+      },
+      "bridge_sdk": {
+        "bytes": 200192,
+        "sha256": "80a16b035cfc6c128571d1926744468f078ff97ca0bddfa10cce2bce69e73b50"
+      },
+      "gameplay_schema_fields": 26,
+      "saved_movement_history": [
+        "PreviousPositionValid",
+        "PreviousSampleTick",
+        "PreviousX",
+        "PreviousZ"
+      ],
+      "supplied_sdk_copy": {
+        "bytes": 200192,
+        "sha256": "2a45ca55d867d4fd5bcf7ae0b8ee30f9b34d809c1ba4ec7e16dde28b7989dbb4"
+      },
+      "sdk_scope": "ABI98 checks the bridge SDK image. Protocol3 qualifies this selected supplied-consumer/bridge combination; it does not prove both distinct SDK images loaded or general interchangeability."
+    },
+    "descriptor_file_only_checks": 15,
+    "descriptor_available_features": 18
+  },
+  "cli_workflow": {
+    "passed": true,
+    "outer_seconds": 119.15899147701566,
+    "worker_seconds": 104.10946236201562,
+    "raw_rpc_pairs": 218,
+    "native_leaders_EOF0": 2,
+    "whole_descendant_closure": true,
+    "authored_entities": 136,
+    "original_asset": {
+      "source": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "license": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+      "cooked": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "nodes": 57,
+      "takes": 76,
+      "channels": 8712,
+      "keys": 90748,
+      "triangles": 6952,
+      "vertices": 7024,
+      "skin_joints": 41
+    },
+    "quota_asset": {
+      "source": {
+        "bytes": 2388,
+        "sha256": "d8e150e26529c3f3f39df2226d3bc929cd6d6d0465bcf6bde45deddffb860d7d"
+      },
+      "cooked": {
+        "bytes": 1796,
+        "sha256": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be"
+      },
+      "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+      "fixture": "tests/animation_fixture.py:ribbon via tests/gltf_fixture.py:glb",
+      "nodes": 3,
+      "takes": 1,
+      "channels": 1,
+      "keys": 2,
+      "instances": 12
+    },
+    "source_cohort": {
+      "original_rigs": 1,
+      "standard_rigs": 12,
+      "original_nodes": 57,
+      "standard_nodes": 3,
+      "instanced_channels": 8724,
+      "unique_compiled_keys": 90750,
+      "instance_summed_keys": 90772,
+      "mapped_nodes": 93
+    },
+    "configured_clocks": 65,
+    "quota": {
+      "accepted_full": 1,
+      "accepted_rates": 63,
+      "rejected_full": 1,
+      "rejected_rates": 64,
+      "configured_clocks": 65
+    },
+    "complete_checkpoints": 31,
+    "whole_saved_file_pairs": 15,
+    "complete_snapshot_payload_members": 14,
+    "gameplay_fields": 26,
+    "fade_immutability_witnesses": 3,
+    "original_character_observations": 4,
+    "nodes_per_character_observation": 57,
+    "prospective_complete_cold_future": 1,
+    "prospective_before_cold_owner": true,
+    "movement_measurement": "Consecutive committed positions and positive fixed DeltaTime with all four history fields saved. Get().Velocity is already affected by input preparation during Tick.",
+    "owner_record": {
+      "bytes": 6897,
+      "sha256": "37c414a52f2b68f6249fc06a32ff0b118ab501b78da0bde71863a628b5a6cb1f"
+    },
+    "worker_record": {
+      "bytes": 1432876,
+      "sha256": "4ca160c09fdada334f1f977bb68f24da23af787027c37cd716636bfbf242e769"
+    }
+  },
+  "retained_game": {
+    "passed": true,
+    "outer_seconds": 93.42139696300728,
+    "worker_seconds": 85.75853019399801,
+    "rpc_pairs": 162,
+    "requested_ticks": 302,
+    "native_owners_EOF0": 3,
+    "checkpoint_references": 11,
+    "unique_checkpoint_archives": 6,
+    "whole_saved_byte_pairs": 5,
+    "whole_typed_lexical_forecasts": 2,
+    "payload_members": 14,
+    "gameplay_fields": 50,
+    "component_types": 4,
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animation_rigs": 24,
+    "rig_nodes": 1464,
+    "compiled_save_load_cycles": 1,
+    "rename_attempts": 1,
+    "rename_retries": 0,
+    "restored_stage": true,
+    "final_files": 82,
+    "final_bytes": 24843028,
+    "qualification_record": {
+      "bytes": 2760,
+      "sha256": "d50c024a4dd9ecdd84cbd4ad35c72e507580b4b1a6103a522d38d7a0b5f04ee8"
+    },
+    "compatibility_scope": "Unchanged169 game IL and190 bridge; distinct SDK images disclosed in original receipts. Warm/cold/relocated cooked-content reopening, not a new standalone build.",
+    "clock_semantics": "Original85-second pre-request admission rule before census/RPC; admitted responses can finish later. Original100-second worker and120-second outer ceilings remain unchanged."
+  },
+  "retained_failures": [
+    {
+      "scope": "Initial native rate fixture",
+      "passed": false,
+      "cause": "An empty-channel zero-duration test clip was invalid before the first rate operation.",
+      "correction": "Use a valid single-key zero-duration channel; all existing assertions remain.",
+      "record": {
+        "bytes": 19653,
+        "sha256": "8fbd9671efe92008956d4f9b37996ab13d6167681206e912d9b22139aaba0c4a"
+      }
+    },
+    {
+      "scope": "Initial managed ABI run",
+      "passed": false,
+      "cause": "SDK generated-feature bound15 rejected the legitimate16-feature union.",
+      "correction": "Bound16 matches the finite known-name set; all98 ABI groups pass in the separate corrected run.",
+      "record": {
+        "bytes": 6331,
+        "sha256": "f54b107edf10ca2c6695dc07dfb50ab3ecdc51a05c611e0ee6467b9ce757fed9"
+      }
+    },
+    {
+      "scope": "Thirteen original Knight instances",
+      "passed": false,
+      "cause": "Correct65536 instanced-animation-channel admission rejected the proposed fixture before gameplay.",
+      "correction": "Distinct mixed cohort keeps one intact original Knight and12 standard ribbons for all65 valid clocks. World limits and quota assertions remain unchanged.",
+      "record": {
+        "bytes": 7554,
+        "sha256": "fc2268acbced125e598c9bfb369135f63ead25538fb618d3da8dac48c5a2b864"
+      }
+    },
+    {
+      "scope": "Initial mixed-rig consumer",
+      "passed": false,
+      "cause": "Reading prepared velocity during Tick did not measure achieved character movement.",
+      "correction": "Retain consecutive committed-position history, using existing Locomotion Yard policy. All original native assertions remain.",
+      "record": {
+        "bytes": 7733,
+        "sha256": "f9094f736c338c2b190161e74869cb50bd4c767b549663e25c6244de0a1e2c10"
+      }
+    }
+  ],
+  "reproduction": {
+    "native_test": "ctest --test-dir build/linux-game -R ^runtime_animation_rate_native$ --output-on-failure",
+    "cli_script": "tests/runtime_animation_rates.py",
+    "cli_script_source_review": "Only root-path resolution, description/SPDX and result label differ from executed worker; functional code is identical. Public adapter import/argument-help check passed; its native workflow was not repeated.",
+    "executed_worker_sha256": "8e9059ffdfe6e0896f0c7459ce67cd9b840a3a47a2370ba8402450670e4aade0"
+  },
+  "limits": [
+    "Pose/phase continuity does not promise velocity continuity, stride fitting, phase synchronization, foot locking or rendered gait quality.",
+    "Original1..8 save validation and authored/root-motion time bounds remain unchanged. v9 has a separately bounded unwrapped segment phase.",
+    "Original profile7/8 standalone cases and mixed-rig cohort use disabled grounding diagnostics; this is not new active contact qualification.",
+    "ABI harness uses stub callbacks; actual CLI/CoreCLR execution is a separate recorded scope. No new NativeAOT/Windows/GPU/physical input or representative performance qualification.",
+    "Fresh agent character intake and wider Alpha release gates remain open. Earlier unrelated failed workloads retain their verdicts."
+  ]
+}

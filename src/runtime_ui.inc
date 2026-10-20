@@ -75,16 +75,16 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGameGroundingServicesV1 services() {
-        PoimaGameGroundingServicesV1 full{};auto& orientation=full.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
-        result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(PoimaGameGroundingServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
+    PoimaGameAnimationRateServicesV1 services() {
+        PoimaGameAnimationRateServicesV1 full{};auto& grounding=full.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
+        result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(PoimaGameAnimationRateServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
             &get_animation_extended,&set_animation_extended},&get_animation_layer,&set_animation_layer},&set_character_input},&query_navigation};
         result.root_motion.ik.regions.actions.preferences.instances.instance_node=&resolve_instance_node;
         result.root_motion.ik.regions.actions.preferences.preference_snapshot=&get_player_preferences;result.root_motion.ik.regions.actions.preferences.preference_patch=&patch_player_preferences;
         result.root_motion.ik.regions.actions.preferences.preference_result=&get_player_preference_result;result.root_motion.ik.regions.actions.input_action=&get_input_action;
-        result.root_motion.ik.regions.hit_test=&hit_test_gameplay;result.root_motion.ik.ik_get=&get_two_bone_ik;result.root_motion.ik.ik_set=&set_two_bone_ik;result.root_motion.root_motion_get=&get_root_motion;result.root_motion.root_motion_set=&set_root_motion;result.camera_lens_get=&get_camera_lens;result.camera_lens_set=&set_camera_lens;extended.character_stance_get=&get_character_stance;extended.character_stance_set=&set_character_stance;orientation.ik_orientation_get=&get_two_bone_ik_orientation;orientation.ik_orientation_set=&set_two_bone_ik_orientation;full.grounding_get=&get_grounding_control;full.grounding_set=&set_grounding_control;return full;
+        result.root_motion.ik.regions.hit_test=&hit_test_gameplay;result.root_motion.ik.ik_get=&get_two_bone_ik;result.root_motion.ik.ik_set=&set_two_bone_ik;result.root_motion.root_motion_get=&get_root_motion;result.root_motion.root_motion_set=&set_root_motion;result.camera_lens_get=&get_camera_lens;result.camera_lens_set=&set_camera_lens;extended.character_stance_get=&get_character_stance;extended.character_stance_set=&set_character_stance;orientation.ik_orientation_get=&get_two_bone_ik_orientation;orientation.ik_orientation_set=&set_two_bone_ik_orientation;grounding.grounding_get=&get_grounding_control;grounding.grounding_set=&set_grounding_control;full.animation_rate_set=&set_animation_rate;return full;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
         if(ui_commands.empty() && !ui_modal)return {};
@@ -105,7 +105,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;const auto api=services();game->control(api.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;const auto api=services();game->control(api.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             validate_player_preferences_boundary();

@@ -236,6 +236,13 @@ struct AnimationCommand {
     double weight=1;
     std::uint32_t weight_blend_ticks=0;
 };
+// Change only the destination clock's rate, preserving its current phase and
+// active transition. Null selects the base; 1..4 selects a configured layer.
+struct AnimationRateCommand {
+    std::string entity;
+    double speed=1;
+    std::optional<std::uint32_t> layer={};
+};
 struct RuntimeAnimationTransition {
     std::uint64_t start_tick=0;
     std::uint32_t duration_ticks=0,elapsed_ticks=0;
@@ -539,7 +546,8 @@ public:
         const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={},
         const std::vector<RuntimeCameraLensCommand>& camera_lenses={},
         const std::vector<RuntimeCharacterStanceCommand>& character_stances={},
-        const std::vector<RuntimeGroundingCommand>& grounding={});
+        const std::vector<RuntimeGroundingCommand>& grounding={},
+        const std::vector<AnimationRateCommand>& animation_rates={});
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;

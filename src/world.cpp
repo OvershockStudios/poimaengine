@@ -2928,6 +2928,24 @@ public:
         }
         return result;
     }
+    static std::vector<AnimationRateCommand> parse_animation_rates(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Animation rates must be an array of at most64 commands.");
+        std::vector<AnimationRateCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","speed","layer"},{"entity","speed"});
+            AnimationRateCommand command;command.entity=identifier(value.at("entity"));
+            const auto& speed=value.at("speed");
+            require(speed.is_number() && std::isfinite(speed.get<double>()) && speed>=0 && speed<=8,
+                "Animation rate speed must be finite and within0..8.");command.speed=speed.get<double>();
+            if(value.contains("layer")) {
+                const auto slot=revision(value.at("layer"));require(slot>=1 && slot<=4,"Animation rate layer must be1..4.");
+                command.layer=static_cast<std::uint32_t>(slot);
+            }
+            require(seen.emplace(command.entity,command.layer.value_or(0)).second,"Duplicate animation rate target.");
+            result.push_back(std::move(command));
+        }
+        return result;
+    }
     static std::vector<RuntimeIkCommand> parse_ik(const Json& raw) {
         require(raw.is_array() && raw.size()<=64,"IK must contain at most64 complete commands.");
         std::vector<RuntimeIkCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
@@ -3533,10 +3551,12 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
+            if(!normalized.contains("animation_rates"))normalized["animation_rates"]=Json::array();
+            const auto animation_rates=parse_animation_rates(normalized.at("animation_rates"));
             if(!normalized.contains("ik"))normalized["ik"]=Json::array();
             const auto ik=parse_ik(normalized.at("ik"));
             if(!normalized.contains("root_motion"))normalized["root_motion"]=Json::array();
@@ -3576,6 +3596,11 @@ public:
             }
             const auto motions=parse_motions(normalized.at("motions"));const auto sounds=parse_sounds(normalized.at("sounds"));
             const auto animations=parse_animations(normalized.at("animations"));
+            require(animations.size()+animation_rates.size()<=64,"Caller exceeds64 combined animation writes in one Tick.");
+            for(const auto& rate:animation_rates)
+                require(std::none_of(animations.begin(),animations.end(),[&](const auto& command) {
+                    return command.entity==rate.entity && command.layer==rate.layer;
+                }),"Replacement and rate command target the same animation clock in one Tick.");
             for(const auto& receipt:advance_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id")) {
                 require(receipt->params==normalized,"Runtime request ID reused with different parameters.",-32010);return advance_json(receipt->outcome,true);
             }
@@ -3586,7 +3611,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

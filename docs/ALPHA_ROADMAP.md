@@ -38,6 +38,13 @@ their original admission deadline. This is CPU runtime progress, not new
 rendered frame-time, memory-growth, Windows, fresh character-intake or overall
 Alpha qualification. The earlier failed full-game run retains its verdict.
 
+The [0.0.201 animation rate controls](ANIMATION_RATES.md) let CLI and C# gameplay
+retime base/layer playback during active fades. An original-character workflow
+preserves all 26 gameplay fields through rollback and cold continuation; a
+separate retained game also passes its original continuation checks.
+[Qualification](evidence/m2-animation-rates.json) is headless: rendered gait,
+foot locking and the separate fresh agent character-intake gate remain open.
+
 The [Knight character-route fixture](evidence/fixtures/agent-character-intake/README.md)
 adds a separately compiled portable-source export and independently verified
 native gameplay, full checkpoints and relocated continuation. Its original

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.201
+
+- Add phase-preserving animation speed changes for base and layer playback,
+  with staged C# controls, transition continuity and complete saved state.
+
 ## 0.0.200
 
 - Cache unchanged runtime hierarchy transforms with exact invalidation and

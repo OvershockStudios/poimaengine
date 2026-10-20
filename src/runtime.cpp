@@ -197,6 +197,8 @@ struct Runtime::Impl {
         game_spawns.clear();game_despawns.clear();game_structure_calls=scheduled_structure_calls=0;
     }
     std::vector<AnimationCommand> game_animation_commands;
+    std::vector<AnimationRateCommand> game_animation_rate_commands;
+    std::uint32_t game_animation_rate_write_calls=0;
     std::vector<RuntimeIkCommand> game_ik_commands;
     std::vector<RuntimeGroundingCommand> game_grounding_commands;
     std::vector<RuntimeRootMotionCommand> game_root_motion_commands;
@@ -774,6 +776,7 @@ struct Runtime::Impl {
                 auto member=[&](const std::string& id) {return std::any_of(pending->entities.begin(),pending->entities.end(),[&](const auto& entity){return entity.id==id;});};
                 std::erase_if(self.game_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_animation_commands,[&](const auto& command){return member(command.entity);});
+                std::erase_if(self.game_animation_rate_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_ik_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_grounding_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_root_motion_commands,[&](const auto& command){return member(command.entity);});
@@ -923,13 +926,16 @@ struct Runtime::Impl {
     }
     void stage_animation(const PoimaGameAnimationCommand& source,AnimationTransitionMode mode,
         std::optional<std::uint32_t> layer={},double weight=1,std::uint32_t weight_blend_ticks=0) {
-        require_tick();require(game_animation_commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
+        require_tick();require(game_animation_commands.size()+game_animation_rate_commands.size()<64,"Gameplay exceeded 64 combined animation writes in one tick.");
         require(source.clip>=-1 && source.loop<=1 && source.playing<=1,"Invalid gameplay animation command encoding.");
         AnimationCommand command;command.entity=gameplay_id(source.entity);
         if(const auto* pending=pending_entity(command.entity))require(pending->animation_rig.has_value(),"Reserved animation target needs an AnimationRig.");
         if(source.clip>=0)command.clip=static_cast<std::uint32_t>(source.clip);
         command.time=source.time;command.speed=source.speed;command.loop=source.loop!=0;command.playing=source.playing!=0;command.blend_ticks=source.blend_ticks;command.transition_mode=mode;
         command.layer=layer;command.weight=weight;command.weight_blend_ticks=weight_blend_ticks;
+        require(std::none_of(game_animation_rate_commands.begin(),game_animation_rate_commands.end(),[&](const auto& rate) {
+            return rate.entity==command.entity && rate.layer==command.layer;
+        }),"Gameplay replacement and rate command target the same animation clock in one Tick.");
         // All callback versions share staging and its Tick-end validation
         // for duplicates, caller conflicts, references, ranges and poses.
         game_animation_commands.push_back(std::move(command));
@@ -996,6 +1002,7 @@ struct Runtime::Impl {
 #include "runtime_camera_lens.inc"
 #include "runtime_two_bone_ik.inc"
 #include "runtime_grounding_services.inc"
+#include "runtime_animation_rate_services.inc"
 #include "runtime_root_motion.inc"
     static int32_t POIMA_CALL get_input_action(void* context,const PoimaEntityId* id,const char* name,
         std::uint32_t name_bytes,PoimaGameInputActionV1* output,PoimaGameError* error) {
@@ -1372,7 +1379,7 @@ struct Runtime::Impl {
             throw;
         }
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1423,8 +1430,8 @@ struct Runtime::Impl {
         try {
             apply_camera_lenses(lens_commands);
             animations->apply_grounding(grounding_commands);
-            if(!animation_commands.empty() || !ik_commands.empty() || !root_commands.empty()) {
-                animations->apply(animation_commands,tick);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
+            if(!animation_commands.empty() || !animation_rates.empty() || !ik_commands.empty() || !root_commands.empty()) {
+                animations->apply(animation_commands,tick,animation_rates);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
             }
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
@@ -1449,7 +1456,7 @@ struct Runtime::Impl {
                 if(game) {
                     game_sound_calls=0;game_navigation_calls=0;sync();
                     if(animations->has_ik())animation_locals();
-                    game_commands.clear();game_animation_commands.clear();game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_commands.clear();game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         if(!topology->identities.contains(source->entity))continue;
                         PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
@@ -1459,13 +1466,13 @@ struct Runtime::Impl {
                     clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
                     clear_ui_commands();
                     profiling::Scope commands_profile("runtime.gameplay.commands");
-                    require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
+                    require(game_animation_commands.size()+game_animation_rate_commands.size()+(frame==0 ? animation_commands.size()+animation_rates.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation writes in one Tick.");
                     require(game_ik_commands.size()+(frame==0 ? ik_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined IK commands in one tick.");
                     require(game_grounding_commands.size()+(frame==0 ? grounding_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined grounding commands in one tick.");
                     require(game_root_motion_commands.size()+(frame==0 ? root_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined root-motion commands in one tick.");
@@ -1487,8 +1494,13 @@ struct Runtime::Impl {
                             return explicit_command.entity==command.entity && explicit_command.slot==command.slot;
                         }),"Gameplay and caller targeted the same grounding slot in one tick.");
                     for(const auto& command:game_animation_commands)
-                        require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity && explicit_command.layer==command.layer; }),
-                            "Gameplay and caller targeted the same animation rig in one tick.");
+                        require(frame!=0 || (std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& caller) { return caller.entity==command.entity && caller.layer==command.layer; }) &&
+                            std::none_of(animation_rates.begin(),animation_rates.end(),[&](const auto& caller) { return caller.entity==command.entity && caller.layer==command.layer; })),
+                            "Gameplay and caller targeted the same animation clock in one tick.");
+                    for(const auto& command:game_animation_rate_commands)
+                        require(frame!=0 || (std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& caller) { return caller.entity==command.entity && caller.layer==command.layer; }) &&
+                            std::none_of(animation_rates.begin(),animation_rates.end(),[&](const auto& caller) { return caller.entity==command.entity && caller.layer==command.layer; })),
+                            "Gameplay and caller targeted the same animation clock in one tick.");
 
                 }
                 if(scheduled || game_structure_calls) {
@@ -1510,6 +1522,10 @@ struct Runtime::Impl {
                                 "Caller animation and removal target the same instance in one tick.");
                             require(std::none_of(game_animation_commands.begin(),game_animation_commands.end(),[&](const auto& m){return m.entity==id;}),
                                 "Gameplay animation and removal target the same instance in one tick.");
+                            require(frame!=0 || std::none_of(animation_rates.begin(),animation_rates.end(),[&](const auto& m){return m.entity==id;}),
+                                "Caller animation rate and removal target the same instance in one tick.");
+                            require(std::none_of(game_animation_rate_commands.begin(),game_animation_rate_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Gameplay animation rate and removal target the same instance in one tick.");
                             require(frame!=0 || std::none_of(ik_commands.begin(),ik_commands.end(),[&](const auto& m){return m.entity==id;}),
                                 "Caller IK and removal target the same instance in one tick.");
                             require(std::none_of(game_ik_commands.begin(),game_ik_commands.end(),[&](const auto& m){return m.entity==id;}),
@@ -1549,11 +1565,11 @@ struct Runtime::Impl {
                 }
                 apply_camera_lenses(game_camera_lens_commands);game_camera_lens_commands.clear();
                 animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
-                if(!game_animation_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
-                    animations->apply(game_animation_commands,tick);animations->apply_ik(game_ik_commands);
+                if(!game_animation_commands.empty() || !game_animation_rate_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
+                    animations->apply(game_animation_commands,tick,game_animation_rate_commands);animations->apply_ik(game_ik_commands);
                     animations->apply_root_motion(game_root_motion_commands);animation_locals();sync();
                 }
-                game_animation_commands.clear();game_ik_commands.clear();game_root_motion_commands.clear();
+                game_animation_commands.clear();game_animation_rate_commands.clear();game_ik_commands.clear();game_root_motion_commands.clear();
                 // Membership has now published. Newly born kinematic bodies can
                 // receive their first movement before this tick's physics step.
                 if(game) {
@@ -1641,7 +1657,7 @@ struct Runtime::Impl {
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();clear_structure_commands();
-            game_animation_commands.clear();game_character_inputs.clear();game_navigation_calls=0;
+            game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_character_inputs.clear();game_navigation_calls=0;
             // Jolt PhysicsState records motion/contact state but does not own
             // collision shapes. Select the original shapes before replaying it.
             for(const auto& saved:angles)restore_character_stance(registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
@@ -1895,7 +1911,7 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {

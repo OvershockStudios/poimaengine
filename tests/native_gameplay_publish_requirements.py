@@ -17,6 +17,15 @@ class Requirements(unittest.TestCase):
         self.baseline=dict(call_version=1,call_bytes=80,services_version=7,services_bytes=176,features=['baseline_v7'])
     def read(self,data):
         self.path.write_text(json.dumps(data));return publish.generated_requirements(self.path)
+    def test_animation_rate_named_prefix(self):
+        value=dict(self.baseline,services_bytes=376,features=['animation_rate_v1','animation_inertial_v1','baseline_v7'])
+        self.assertEqual(self.read(value),value)
+        for extent in [176,192,352,368,375,377]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(value,services_bytes=extent))
+        for features in [['animation_rate_v1','baseline_v7'],['animation_inertial_v1','baseline_v7'],value['features']+['animation_rate_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(value,features=features))
+        # This feature grants layer speed only, not full masked-layer APIs.
+        self.assertNotIn('animation_layers_v1',self.read(value)['features'])
     def test_grounding_control_named_prefix(self):
         features=['animation_grounding_control_v1','animation_ik_end_orientation_v1','animation_ik_v1','baseline_v7']
         required=dict(self.baseline,services_bytes=368,features=features)

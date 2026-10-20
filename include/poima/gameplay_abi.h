@@ -395,6 +395,18 @@ typedef struct PoimaGameGroundingServicesV1 {
     int32_t (POIMA_CALL *grounding_set)(void*,const PoimaGameGroundingCommandV1*,PoimaGameError*);
 } PoimaGameGroundingServicesV1;
 
+// animation_rate_v1: speed-only base/configured-layer control; no seek or fade reset.
+typedef struct PoimaGameAnimationRateCommandV1 {
+    uint32_t version,bytes;
+    PoimaEntityId entity;
+    uint32_t layer,reserved; // 0=base, 1..4=configured layer
+    double speed;
+} PoimaGameAnimationRateCommandV1;
+typedef struct PoimaGameAnimationRateServicesV1 {
+    PoimaGameGroundingServicesV1 grounding;
+    int32_t (POIMA_CALL *animation_rate_set)(void*,const PoimaGameAnimationRateCommandV1*,PoimaGameError*);
+} PoimaGameAnimationRateServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -402,6 +414,9 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameAnimationRateCommandV1)==40 && alignof(PoimaGameAnimationRateCommandV1)==8);
+static_assert(offsetof(PoimaGameAnimationRateCommandV1,version)==0 && offsetof(PoimaGameAnimationRateCommandV1,bytes)==4 && offsetof(PoimaGameAnimationRateCommandV1,entity)==8 && offsetof(PoimaGameAnimationRateCommandV1,layer)==24 && offsetof(PoimaGameAnimationRateCommandV1,reserved)==28 && offsetof(PoimaGameAnimationRateCommandV1,speed)==32);
+static_assert(sizeof(PoimaGameAnimationRateServicesV1)==376 && offsetof(PoimaGameAnimationRateServicesV1,grounding)==0 && offsetof(PoimaGameAnimationRateServicesV1,animation_rate_set)==368);
 static_assert(sizeof(PoimaGameGroundingCommandV1)==48 && alignof(PoimaGameGroundingCommandV1)==8);
 static_assert(offsetof(PoimaGameGroundingCommandV1,version)==0 && offsetof(PoimaGameGroundingCommandV1,bytes)==4 && offsetof(PoimaGameGroundingCommandV1,entity)==8 && offsetof(PoimaGameGroundingCommandV1,slot)==24 && offsetof(PoimaGameGroundingCommandV1,enabled)==28 && offsetof(PoimaGameGroundingCommandV1,weight)==32 && offsetof(PoimaGameGroundingCommandV1,reserved)==40);
 static_assert(sizeof(PoimaGameGroundingStateV1)==48 && alignof(PoimaGameGroundingStateV1)==8);

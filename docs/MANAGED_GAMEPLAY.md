@@ -91,6 +91,8 @@ public sealed class CounterGame : Game<CounterState>
 | `GetAnimationExtended(entity)` | Opt-in copied playback state with nullable active mode/progress; requires `IInertialAnimationGame`. |
 | `GetAnimationLayer(entity, slot)` | Copy one configured slot, including playback, immutable mode/mask count and weight ramp; requires `IMaskedAnimationGame`. |
 | `SetAnimationLayer(entity, slot, clip, weight, ...)` | Queue complete playback and target weight for a configured slot; requires `IMaskedAnimationGame`. |
+| `SetAnimationSpeed(entity, speed)` | Stage a phase-preserving base-clock rate change; requires `IAnimationRateGame`. |
+| `SetAnimationLayerSpeed(entity, slot, speed)` | Stage a rate change for a configured layer without changing its weight ramp; requires `IAnimationRateGame`. |
 | `FindNavigationPath(agent, goal, corners, extents, maxPolygons, maxNodes)` | Copy a bounded route from the live character foot position; Tick-only and requires `INavigationGame`. |
 | `ResolveNode(instanceRoot, templateNode)` | Resolve a `TemplateNodeId` to a live or noncanceled reserved member ID; requires `IHierarchicalInstancesGame`. Resolution does not publish a reserved entity or enable committed reads. |
 | `GetPlayerPreferences()` | Read committed configuration and cached native observations; Tick/Control, requires `IPlayerPreferencesGame`. An unattached player reports unavailable. |
@@ -142,13 +144,35 @@ Replace the example IDs with a controller and rig wrapper in your world, and sel
 
 `GetAnimationExtended(entity)` returns nullable `AnimationStateExtended`. Its `State` is the same legacy playback/transition projection returned by `GetAnimation`; `Mode` and `Progress` are null when no transition is active. For an active transition, `Progress` is elapsed ticks divided by duration, rather than a clip's contribution to the pose. An existing non-rig entity returns null; an unknown entity is an error. These reads retain the committed-state timing described below.
 
-Calls made during `Tick` queue commands. Repeated queries in that callback observe the current native state, not queued writes. Commands apply after the callback and before the physics update, then animation advances with the simulation tick. Explicit caller commands from `runtime.step` have already applied before gameplay runs. If caller and gameplay target the same base clock or the same configured layer on that first tick, the entire batch fails instead of choosing a winner. Duplicate gameplay targets also fail. Base and distinct layer slots on the same rig can coexist. Caller and gameplay together may submit at most 64 animation commands on the first tick; subsequent ticks allow at most 64 gameplay commands each.
+Calls made during `Tick` queue commands. Repeated queries in that callback observe the current native state, not queued writes. Commands apply after the callback and before the physics update, then animation advances with the simulation tick. Explicit caller commands from `runtime.step` have already applied before gameplay runs. If caller and gameplay target the same base clock or the same configured layer on that first tick, the entire batch fails instead of choosing a winner. Duplicate gameplay targets also fail. Base and distinct layer slots on the same rig can coexist. Caller and gameplay together may submit at most 64 complete-animation and rate writes on the first tick; subsequent ticks allow at most 64 combined gameplay writes each.
 
 Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, inertial corrections/output history, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible CoreCLR code reload leaves the native animation clocks, history and in-progress transitions intact.
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, 320 named camera lenses, 336 named character stance, and 352 named IK end orientation plus IK; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, 232 named hierarchical instances, 256 named player preferences, 264 named input actions, 272 named hit regions, 288 named two-bone IK, 304 named root motion, 320 named camera lenses, 336 named character stance, 352 named IK end orientation plus IK, 368 named grounding control plus orientation and IK, and 376 named animation rate plus inertial; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs and general full-body locomotion remain unfinished. Bounded planar controller root motion has its own [frozen binding and content policy](ROOT_MOTION.md). Two-bone IK is a bounded post-animation chain solver described [separately](TWO_BONE_IK.md). Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
+
+## Change playback speed from C#
+
+Declare `IAnimationRateGame`, which inherits `IInertialAnimationGame`, to use
+`context.SetAnimationSpeed(rig, speed)` or
+`context.SetAnimationLayerSpeed(rig, slot, speed)` during `Tick`. Speed must be
+finite within `0..8`; a layer must be a configured slot in `1..4`. These writes
+preserve the current phase, outgoing source, inertial corrections and original
+fade deadline. They do not seek, resume stopped playback or restart layer
+weight ramps. Use the existing complete setters for those changes.
+
+The named `animation_rate_v1` extension requires epoch 7 and a 376-byte service
+prefix, including its inherited `animation_inertial_v1` requirement. It appends
+one setter after the unchanged 368-byte prefix. Rate-only layer writes do not
+require the masked-layer marker; existing layer getters and complete layer
+setters still require `IMaskedAnimationGame`. Cached getters see committed
+state, and rate writes share complete-animation quotas, conflicts and rollback.
+A same-speed command remains an admitted write but does not reanchor its clock.
+
+See [animation rates](ANIMATION_RATES.md) for the service layout, zero-rate and
+root-motion behavior, and conditional nested animation-state version 9. This
+API contract does not extend any recorded shipping or platform qualification.
 
 ## Control masked layers from C#
 

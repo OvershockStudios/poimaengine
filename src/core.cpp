@@ -146,6 +146,7 @@ Reply capabilities() {
         ",\"player_settings_profiles\":true,\"input_profiles\":true,\"keyboard_mouse_rebinding\":true,\"gpu_skinning\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"animation_asset_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"animation_rig_authoring\":true,\"runtime_clip_playback\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"runtime_animation_rates\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_inertial_transitions\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_animation_layers\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_animation_jobs\":" + boolean(POIMA_SIMULATION != 0) +

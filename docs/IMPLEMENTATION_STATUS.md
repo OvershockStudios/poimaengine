@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.200**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.201**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.201 adds [phase-preserving animation rate controls](ANIMATION_RATES.md)
+for base and configured layer clocks. CLI and staged C# writes retain active
+fade deadlines, source poses, inertial corrections and layer weight ramps.
+Conditional nested animation-state v9 retains rate segments and complete output
+history; older save shapes and service prefixes remain supported. Twenty-one
+retained native cases and seven rate groups pass, with 766 checks and 92 whole
+archive pairs, including seven complete Runtime pairs. The negotiated 376-byte
+extension passes 98 managed ABI groups. A real C# consumer drives the original
+Knight from achieved movement, retaining its position history among all 26
+gameplay fields. Its two-process CLI cohort passes 218 RPCs, 31 complete
+checkpoints and 15 whole-file pairs, including active-fade cold continuation.
+Twelve small standard rigs supply the remaining clocks for the 64-write limit
+check without exceeding existing world budgets. A separate unchanged older game
+also passes warm, cold and relocated cooked-content continuation under its
+original deadlines. Earlier fixture, SDK-bound and observation failures remain
+recorded separately. These are Linux headless control/state checks; rendered
+gait, foot locking, fresh agent character intake and wider Alpha gates remain
+open. [Results and exact scope](evidence/m2-animation-rates.json).
 
 Version 0.0.200 adds automatic [runtime hierarchy reuse](RUNTIME_HIERARCHY.md).
 Exact local-transform keys and parent propagation preserve the existing matrix

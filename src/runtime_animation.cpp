@@ -11,6 +11,11 @@
 
 namespace poima {
 namespace {
+constexpr std::uint64_t animation_state_max_tick=9007199254740991ULL;
+// This is an internal unwrapped phase, not an authored seek. A legal looping
+// command may already have advanced beyond its original 1e9-second seek bound.
+// The exact tick bound and rate<=8 at 60 Hz leave conservative headroom here.
+constexpr double animation_rate_phase_limit=1e9+double(animation_state_max_tick);
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 void validate_grounding_control(const RuntimeGroundingControl& control) {
     check(std::isfinite(control.weight)&&control.weight>=0&&control.weight<=1,"Grounding multiplier weight must be finite in0..1.");
@@ -60,6 +65,29 @@ RuntimeAnimationState clock_state(const AnimationCommand& control,std::uint64_t 
     else if(control.loop)result.time=std::fmod(result.time,result.duration);
     else if(result.time>=result.duration) { result.time=result.duration;result.playing=false; }
     return result;
+}
+AnimationCommand rate_control(const AnimationCommand& original,const std::optional<RuntimeAnimations::RateSegment>& rate) {
+    auto result=original;
+    if(rate) { result.time=rate->time;result.speed=rate->speed; }
+    return result;
+}
+RuntimeAnimationState effective_clock_state(const AnimationCommand& control,std::uint64_t anchor,
+    const std::optional<RuntimeAnimations::RateSegment>& rate,std::uint64_t tick,std::span<const double> durations) {
+    if(!rate)return clock_state(control,anchor,tick,durations);
+    return clock_state(rate_control(control,rate),rate->anchor_tick,tick,durations);
+}
+double rate_phase(const AnimationCommand& control,std::uint64_t anchor,
+    const std::optional<RuntimeAnimations::RateSegment>& rate,std::uint64_t tick,std::span<const double> durations) {
+    const auto effective=rate_control(control,rate);const auto start=rate?rate->anchor_tick:anchor;
+    check(tick>=start,"Animation rate boundary predates its clock.");
+    if(!effective.clip)return 0;
+    check(*effective.clip<durations.size(),"Animation rate clip is invalid for the frozen rig.");
+    if(durations[*effective.clip]==0)return 0;
+    double phase=effective.time;
+    if(effective.playing)phase+=double(tick-start)*Runtime::fixed_dt*effective.speed;
+    if(!effective.loop)phase=std::min(phase,durations[*effective.clip]);
+    check(std::isfinite(phase)&&phase>=0&&phase<=animation_rate_phase_limit,"Animation rate phase exceeds its internal clock bound.");
+    return phase;
 }
 bool active(const RuntimeAnimations::Transition& transition,std::uint64_t tick) {
     check(tick>=transition.start_tick,"Animation transition predates its command.");
@@ -436,7 +464,7 @@ double layer_weight(const RuntimeAnimations::LayerPlayback& layer,std::uint64_t 
 }
 RuntimeAnimationState RuntimeAnimations::clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const {
     const auto& durations=membership_->rigs[index].clip_durations;
-    auto result=clock_state(clock.control,clock.anchor_tick,tick,durations);
+    auto result=effective_clock_state(clock.control,clock.anchor_tick,clock.rate,tick,durations);
     if(clock.transition && active(*clock.transition,tick)) {
         const auto& fade=*clock.transition;RuntimeAnimationTransition transition;
         transition.start_tick=fade.start_tick;transition.duration_ticks=fade.duration_ticks;
@@ -445,7 +473,7 @@ RuntimeAnimationState RuntimeAnimations::clock_summary(std::size_t index,const C
         transition.mode=fade.inertial ? AnimationTransitionMode::Inertial : AnimationTransitionMode::Crossfade;
         transition.source_frozen=bool(fade.frozen_source || fade.inertial);
         if(!fade.frozen_source && !fade.inertial) {
-            const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,durations);
+            const auto source=effective_clock_state(fade.source,fade.source_anchor_tick,fade.source_rate,tick,durations);
             transition.source_clip=source.clip;transition.source_time=source.time;transition.source_speed=source.speed;
             transition.source_loop=source.loop;transition.source_playing=source.playing;
         }
@@ -478,7 +506,7 @@ std::optional<RuntimeAnimationLayerState> RuntimeAnimations::layer_state(const s
     return {};
 }
 ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const {
-    const auto& rig=membership_->rigs[index];const auto target=clock_state(clock.control,clock.anchor_tick,tick,rig.clip_durations);
+    const auto& rig=membership_->rigs[index];const auto target=effective_clock_state(clock.control,clock.anchor_tick,clock.rate,tick,rig.clip_durations);
     auto pose=rig.compiled->sample(target.clip,target.time,false,rig.baseline);
     // Expired sources must never be evaluated: an outgoing clip may become
     // invalid after the transition has finished, with no effect on its target.
@@ -506,7 +534,7 @@ ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::
     std::vector<NodePose> outgoing;
     if(fade.frozen_source)outgoing=*fade.frozen_source;
     else {
-        const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,rig.clip_durations);
+        const auto source=effective_clock_state(fade.source,fade.source_anchor_tick,fade.source_rate,tick,rig.clip_durations);
         outgoing=rig.compiled->sample(source.clip,source.time,false,rig.baseline).local;
     }
     check(outgoing.size()==pose.local.size(),"Animation transition local pose count differs.");
@@ -536,7 +564,7 @@ ModelPose RuntimeAnimations::composed(std::size_t index,const Clock& base,const 
     return pose;
 }
 RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const {
-        Clock next=previous;next.control=playback_control(command,membership_->rigs[index].clip_durations.size());next.anchor_tick=tick;next.transition.reset();
+        Clock next=previous;next.control=playback_control(command,membership_->rigs[index].clip_durations.size());next.anchor_tick=tick;next.transition.reset();next.rate.reset();
         next.inertial_ever_used=next.inertial_ever_used || command.transition_mode==AnimationTransitionMode::Inertial;
         if(command.blend_ticks>0) {
             Transition fade;fade.start_tick=tick;fade.duration_ticks=command.blend_ticks;
@@ -571,13 +599,15 @@ RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const 
                 fade.inertial=std::make_shared<const std::vector<InertialNode>>(std::move(correction));
             }else if(previous.transition && active(*previous.transition,tick))
                 fade.frozen_source=std::make_shared<const std::vector<NodePose>>(evaluate(index,previous,tick).local);
-            else { fade.source=previous.control;fade.source_anchor_tick=previous.anchor_tick; }
+            else { fade.source=previous.control;fade.source_anchor_tick=previous.anchor_tick;fade.source_rate=previous.rate; }
             next.transition=std::move(fade);
         }
     (void)evaluate(index,next,tick);return next;
 }
-void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick) {
+void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick,const std::vector<AnimationRateCommand>& rates) {
     check(commands.size()<=64,"At most 64 animation commands per batch.");
+    check(rates.size()<=64-commands.size(),"At most 64 combined animation and rate commands per batch.");
+    if(!rates.empty())check(tick<=animation_state_max_tick,"Animation rate tick is out of range.");
     auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_roots=roots_;std::set<std::pair<std::string,std::optional<std::uint32_t>>> seen;std::set<std::size_t> changed;
     for(const auto& command:commands) {
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Animation command requires an AnimationRig entity.");
@@ -595,7 +625,7 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
                         const auto d=root_interval(index,candidate[index],root,tick);
                         fade.correction_velocity={source.x-d.x/Runtime::fixed_dt,source.z-d.z/Runtime::fixed_dt,source.yaw-d.yaw/Runtime::fixed_dt};
                     }else if(roots_[index].fade&&tick-roots_[index].fade->start_tick<roots_[index].fade->duration_ticks)fade.frozen_velocity=source;
-                    else {fade.source=clocks_[index].control;fade.source_anchor_tick=clocks_[index].anchor_tick;}
+                    else {fade.source=clocks_[index].control;fade.source_anchor_tick=clocks_[index].anchor_tick;fade.source_rate=clocks_[index].rate;}
                     root.fade=std::move(fade);
                 }
                 (void)root_interval(index,candidate[index],root,tick);
@@ -610,14 +640,36 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
             if(command.weight_blend_ticks>0)next.weight_transition=RuntimeAnimationWeightTransition{tick,command.weight_blend_ticks,0,layer_weight(previous,tick),command.weight};
         }
     }
+    for(const auto& command:rates) {
+        check(std::isfinite(command.speed)&&command.speed>=0&&command.speed<=8,"Animation rate must be within 0..8.");
+        check(!command.layer||(*command.layer>=1&&*command.layer<=4),"Animation layer slot must be 1..4.");
+        const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Animation rate requires an AnimationRig entity.");
+        check(seen.emplace(command.entity,command.layer).second,"Duplicate animation command target.");
+        const auto index=found->second;Clock* next=&candidate[index];
+        if(command.layer) {
+            const auto& frozen=membership_->rigs[index].layers;
+            const auto slot=std::find_if(frozen.begin(),frozen.end(),[&](const auto& layer){return layer.slot==*command.layer;});
+            check(slot!=frozen.end(),"Animation layer slot is not configured.");
+            next=&candidate_layers[index][std::size_t(slot-frozen.begin())].clock;
+        }
+        const auto& durations=membership_->rigs[index].clip_durations;
+        const auto current=effective_clock_state(next->control,next->anchor_tick,next->rate,tick,durations);
+        if(current.speed==command.speed)continue;
+        const double phase=rate_phase(next->control,next->anchor_tick,next->rate,tick,durations);
+        next->rate=RateSegment{tick,phase,command.speed};changed.insert(index);
+        if(!command.layer&&membership_->rigs[index].root_motion)(void)root_interval(index,*next,candidate_roots[index],tick);
+    }
     for(const auto index:changed)(void)composed(index,candidate[index],candidate_layers[index],tick);
     clocks_.swap(candidate);layers_.swap(candidate_layers);roots_.swap(candidate_roots);
 }
 root_motion::Planar RuntimeAnimations::root_interval(std::size_t index,const Clock& clock,const RootPlayback& playback,std::uint64_t tick) const {
     const auto& rig=membership_->rigs[index];check(rig.root_motion.has_value(),"Root motion rig is not configured.");const auto& root=*rig.root_motion;
-    auto raw=[&](const AnimationCommand& command,std::uint64_t anchor){return root_motion::interval(*rig.compiled,rig.baseline,rig.model_parents,root.node,root.yaw,rig.root_rest,
-        command.clip?rig.clip_durations.at(*command.clip):0,command,anchor,tick);};
-    auto destination=raw(clock.control,clock.anchor_tick);
+    auto raw=[&](const AnimationCommand& original,std::uint64_t anchor,const std::optional<RateSegment>& rate){
+        if(!rate)return root_motion::interval(*rig.compiled,rig.baseline,rig.model_parents,root.node,root.yaw,rig.root_rest,
+            original.clip?rig.clip_durations.at(*original.clip):0,original,anchor,tick);
+        const auto command=rate_control(original,rate);return root_motion::interval(*rig.compiled,rig.baseline,rig.model_parents,root.node,root.yaw,rig.root_rest,
+            command.clip?rig.clip_durations.at(*command.clip):0,command,rate->anchor_tick,tick);};
+    auto destination=raw(clock.control,clock.anchor_tick,clock.rate);
     if(!playback.fade)return destination;
     const auto& fade=*playback.fade;check(tick>=fade.start_tick,"Root motion fade predates its command.");
     if(tick-fade.start_tick>=fade.duration_ticks)return destination;
@@ -628,7 +680,7 @@ root_motion::Planar RuntimeAnimations::root_interval(std::size_t index,const Clo
     }else {
         root_motion::Planar source;
         if(fade.frozen_velocity)source={fade.frozen_velocity->x*Runtime::fixed_dt,fade.frozen_velocity->z*Runtime::fixed_dt,fade.frozen_velocity->yaw*Runtime::fixed_dt};
-        else source=raw(fade.source,fade.source_anchor_tick);
+        else source=raw(fade.source,fade.source_anchor_tick,fade.source_rate);
         destination=root_motion::mix(source,destination,std::clamp((double(tick-fade.start_tick)+.5)/fade.duration_ticks,0.,1.));
     }
     root_motion::validate_delta(destination);return destination;
@@ -864,10 +916,15 @@ namespace {
 using StateJson=nlohmann::json;
 constexpr std::size_t animation_state_bytes=16*1024*1024;
 constexpr std::size_t layered_animation_state_bytes=64*1024*1024;
-constexpr std::uint64_t animation_state_max_tick=9007199254740991ULL;
 void state_fields(const StateJson& value,std::initializer_list<const char*> fields) {
     check(value.is_object() && value.size()==fields.size(),"Invalid animation state object fields.");
     for(const auto* field:fields)check(value.contains(field),"Missing animation state field.");
+}
+void clock_fields(const StateJson& value,std::initializer_list<const char*> fields,bool retimed) {
+    if(!retimed){state_fields(value,fields);return;}
+    check(value.is_object()&&value.size()==fields.size()+1,"Invalid animation clock object fields.");
+    for(const auto* field:fields)check(value.contains(field),"Missing animation clock field.");
+    check(value.contains("rate"),"Missing animation clock rate field.");
 }
 std::uint64_t state_uint(const StateJson& value,std::uint64_t maximum) {
     check(value.is_number_integer() && value>=0 && value<=maximum,"Animation state integer is out of range.");
@@ -905,6 +962,23 @@ AnimationCommand read_control(const StateJson& value,const std::string& entity,s
     if(modern)control.transition_mode=read_mode(value.at("transition_mode"));
     check(control.clip || (control.time==0 && !control.playing),"Rest animation state must have zero time and not play.");
     return normalized(control,clip_count);
+}
+StateJson state_rate(const std::optional<RuntimeAnimations::RateSegment>& rate) {
+    if(!rate)return nullptr;
+    check(rate->anchor_tick<=animation_state_max_tick&&std::isfinite(rate->time)&&rate->time>=0&&rate->time<=animation_rate_phase_limit&&
+        std::isfinite(rate->speed)&&rate->speed>=0&&rate->speed<=8,"Animation rate segment exceeds its internal clock bounds.");
+    return {{"anchor_tick",rate->anchor_tick},{"time",rate->time},{"speed",rate->speed}};
+}
+std::optional<RuntimeAnimations::RateSegment> read_rate(const StateJson& value,const AnimationCommand& control,
+    std::uint64_t anchor,std::uint64_t tick,std::span<const double> durations) {
+    if(value.is_null())return {};
+    state_fields(value,{"anchor_tick","time","speed"});RuntimeAnimations::RateSegment rate;
+    rate.anchor_tick=state_uint(value.at("anchor_tick"),tick);rate.time=state_number(value.at("time"));rate.speed=state_number(value.at("speed"));
+    check(rate.anchor_tick>=anchor&&rate.time>=0&&rate.time<=animation_rate_phase_limit&&rate.speed>=0&&rate.speed<=8,"Animation rate segment is outside its clock bounds.");
+    if(!control.clip || durations[*control.clip]==0)check(rate.time==0,"Rest/zero-duration animation rate phase must be zero.");
+    else if(!control.loop)check(rate.time<=durations[*control.clip],"Nonloop animation rate phase exceeds its endpoint.");
+    if(!control.playing)check(rate.time==rate_phase(control,anchor,{},rate.anchor_tick,durations),"Stopped animation rate cannot change its phase.");
+    return rate;
 }
 template<std::size_t N> std::array<double,N> state_vector(const StateJson& value) {
     check(value.is_array() && value.size()==N,"Animation state vector has incorrect length.");
@@ -1062,13 +1136,14 @@ RuntimeRootMotionState read_root_state(const StateJson& value,const std::string&
     if(!s.enabled)check(s.world_requested==std::array<double,3>{}&&s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Saved disabled motion has physical diagnostics.");
     if(s.from_tick==s.to_tick)check(s.local_delta==std::array<double,3>{}&&s.yaw_delta==0&&s.world_requested==std::array<double,3>{}&&s.world_applied==std::array<double,3>{}&&s.applied_yaw==0&&s.translation_error==0,"Initial root motion state is not neutral.");return s;
 }
-StateJson save_root(const RuntimeAnimations::RootPlayback& playback,const RuntimeRootMotionDefinition& root) {
+StateJson save_root(const RuntimeAnimations::RootPlayback& playback,const RuntimeRootMotionDefinition& root,bool retimed) {
     StateJson fade=nullptr;
     if(playback.fade){const auto& f=*playback.fade;StateJson source=nullptr;if(f.mode==AnimationTransitionMode::Crossfade&&!f.frozen_velocity)source={{"control",state_control(f.source,true)},{"anchor_tick",f.source_anchor_tick}};
+        if(retimed&&!source.is_null())source["rate"]=state_rate(f.source_rate);
         fade={{"start_tick",f.start_tick},{"duration_ticks",f.duration_ticks},{"mode",state_mode(f.mode)},{"source",source},{"frozen_velocity",f.frozen_velocity?root_vector(*f.frozen_velocity):StateJson(nullptr)},{"correction_velocity",root_vector(f.correction_velocity)}};}
     return {{"binding",root_binding(root)},{"enabled",playback.enabled},{"state",root_state(playback.state)},{"last_velocity",root_vector(playback.last_velocity)},{"fade",fade}};
 }
-RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::string& entity,const RuntimeRootMotionDefinition& root,std::size_t clips,std::uint64_t tick,const RuntimeAnimations::Clock& clock) {
+RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::string& entity,const RuntimeRootMotionDefinition& root,std::size_t clips,std::uint64_t tick,const RuntimeAnimations::Clock& clock,bool retimed,std::span<const double> durations) {
     state_fields(value,{"binding","enabled","state","last_velocity","fade"});const auto& binding=value.at("binding");state_fields(binding,{"node","mode","actor","enabled","yaw"});
     check(state_uint(binding.at("node"),UINT32_MAX)==root.node&&state_bool(binding.at("enabled"))==root.enabled&&state_bool(binding.at("yaw"))==root.yaw&&binding==root_binding(root),"Saved root motion profile differs from frozen definition.");
     RuntimeAnimations::RootPlayback result;result.enabled=state_bool(value.at("enabled"));result.state=read_root_state(value.at("state"),entity,root,tick);result.last_velocity=read_root_vector(value.at("last_velocity"));
@@ -1080,7 +1155,8 @@ RuntimeAnimations::RootPlayback read_root(const StateJson& value,const std::stri
         const auto& source=saved.at("source");const auto& frozen=saved.at("frozen_velocity");
         if(fade.mode==AnimationTransitionMode::Inertial)check(source.is_null()&&frozen.is_null(),"Inertial root fade cannot contain crossfade sources.");
         else {check(fade.correction_velocity.x==0&&fade.correction_velocity.z==0&&fade.correction_velocity.yaw==0&&source.is_null()!=frozen.is_null(),"Crossfade root state requires one source and no correction.");
-            if(!source.is_null()){state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,clips,true);fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);}
+            if(!source.is_null()){clock_fields(source,{"control","anchor_tick"},retimed);fade.source=read_control(source.at("control"),entity,clips,true);fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);
+                if(retimed)fade.source_rate=read_rate(source.at("rate"),fade.source,fade.source_anchor_tick,fade.start_tick,durations);}
             else {fade.frozen_velocity=read_root_vector(frozen);root_motion::validate_delta({fade.frozen_velocity->x*Runtime::fixed_dt,fade.frozen_velocity->z*Runtime::fixed_dt,fade.frozen_velocity->yaw*Runtime::fixed_dt});}}
         result.fade=std::move(fade);
     }return result;
@@ -1100,6 +1176,15 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
     const bool oriented=std::any_of(ik_.begin(),ik_.end(),[](const auto& controls){return std::any_of(controls.begin(),controls.end(),[](const auto& control){return control.end_orientation.has_value();});});
     const bool layered=configured_ik || configured_root || std::any_of(layers_.begin(),layers_.end(),[](const auto& layers){ return !layers.empty(); });
     const bool modern=layered || std::any_of(clocks_.begin(),clocks_.end(),[](const Clock& clock) { return clock.inertial_ever_used; });
+    auto clock_retimed=[&](const Clock& clock) {return clock.rate.has_value() || (clock.transition&&active(*clock.transition,tick)&&clock.transition->source_rate.has_value());};
+    bool retimed=false;
+    for(std::size_t i=0;i<clocks_.size();++i) {
+        retimed=retimed||clock_retimed(clocks_[i]);
+        for(const auto& layer:layers_[i])retimed=retimed||clock_retimed(layer.clock);
+        if(roots_[i].fade&&tick>=roots_[i].fade->start_tick&&tick-roots_[i].fade->start_tick<roots_[i].fade->duration_ticks)
+            retimed=retimed||roots_[i].fade->source_rate.has_value();
+    }
+    const bool retain_history=modern||retimed;
     auto save_clock=[&](std::size_t index,const Clock& clock,const std::string& entity) {
         check(clock.inertial_ever_used || clock.control.transition_mode==AnimationTransitionMode::Crossfade,"Inertial control requires its history flag.");
         // Also refuse exporting a state that cannot currently be evaluated.
@@ -1112,11 +1197,13 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
                 inertial=StateJson::array();for(const auto& node:*fade.inertial)inertial.push_back(state_inertial(node));
             } else if(fade.frozen_source)frozen=state_poses(*fade.frozen_source);
             else source={{"control",state_control(fade.source,modern)},{"anchor_tick",fade.source_anchor_tick}};
+            if(retimed&&!source.is_null())source["rate"]=state_rate(fade.source_rate);
             transition={{"start_tick",fade.start_tick},{"duration_ticks",fade.duration_ticks},{"source",source},{"frozen_source",frozen}};
             if(modern) { transition["mode"]=fade.inertial ? "inertial" : "crossfade";transition["inertial"]=std::move(inertial); }
         }
         StateJson record={{"entity",entity},{"control",state_control(clock.control,modern)},{"anchor_tick",clock.anchor_tick},{"transition",transition}};
-        if(modern) {
+        if(retimed)record["rate"]=state_rate(clock.rate);
+        if(retain_history) {
             history_order(clock);record["inertial_ever_used"]=clock.inertial_ever_used;
             const auto& rig=membership_->rigs[index];
             record["history"]={{"current",state_history(clock.current,tick,rig.nodes.size(),*rig.compiled)},
@@ -1172,12 +1259,15 @@ std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
         }
         if(configured_root||oriented||grounded) {
             const auto& frozen=membership_->rigs[index].root_motion;
-            if(frozen){check(roots_[index].state.to_tick==tick,"Root motion save requires the committed boundary.");record["root_motion"]=save_root(roots_[index],*frozen);}
+            if(frozen){check(roots_[index].state.to_tick==tick,"Root motion save requires the committed boundary.");record["root_motion"]=save_root(roots_[index],*frozen,retimed);}
             else record["root_motion"]=nullptr;
         }
         records.push_back(std::move(record));
     }
-    auto result=StateJson{{"format","poima.animation-state"},{"version",controlled ? 8 : grounded ? 7 : oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1},{"tick",tick},{"rigs",records}}.dump();
+    const auto legacy_version=controlled ? 8 : grounded ? 7 : oriented ? 6 : configured_root ? 5 : configured_ik ? 4 : layered ? 3 : modern ? 2 : 1;
+    StateJson document={{"format","poima.animation-state"},{"version",retimed?9:legacy_version},{"tick",tick},{"rigs",records}};
+    if(retimed)document["legacy_version"]=legacy_version;
+    auto result=document.dump();
     check(result.size()<=(layered ? layered_animation_state_bytes : animation_state_bytes),"Animation state exceeds its versioned byte limit.");return result;
 }
 void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
@@ -1198,22 +1288,25 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         return true;
     };
     const auto document=StateJson::parse(text,callback);
-    state_fields(document,{"format","version","tick","rigs"});
-    const auto version=state_uint(document.at("version"),8);
+    const auto wire_version=state_uint(document.at("version"),9);const bool retimed=wire_version==9;
+    if(retimed)state_fields(document,{"format","version","legacy_version","tick","rigs"});
+    else state_fields(document,{"format","version","tick","rigs"});
+    const auto version=retimed?state_uint(document.at("legacy_version"),8):wire_version;
     check(document.at("format")=="poima.animation-state" && version>=1 && version<=8,"Unsupported animation state format/version.");
     const bool controlled=version==8,grounded=version>=7;check(grounded==configured_grounding,"Animation state grounding membership/version differs.");
     const bool oriented=version>=6;
-    const bool modern=version>=2;const bool layered=version>=3;
+    const bool modern=version>=2,retain_history=modern||retimed;const bool layered=version>=3;
     check(oriented ? configured_ik : ((version==5)==configured_root && (version==5 || ((version==4)==configured_ik && (version==4 || layered==configured)))),"Animation state version does not match configured layers/IK/root motion.");
     check(layered || text.size()<=animation_state_bytes,"Legacy animation state exceeds 16 MiB.");
     check(state_uint(document.at("tick"),animation_state_max_tick)==tick,"Animation state tick differs from restore boundary.");
     const auto& records=document.at("rigs");check(records.is_array() && records.size()==membership_->rigs.size(),"Animation state must contain every current rig exactly once.");
-    bool any_inertial=false,any_orientation=false,any_grounding_control=false;
+    bool any_inertial=false,any_orientation=false,any_grounding_control=false,any_rate=false;
     auto read_clock=[&](const StateJson& record,std::size_t index,const std::string& entity) {
         const auto& rig=membership_->rigs[index];Clock next;
         next.control=read_control(record.at("control"),entity,rig.clip_durations.size(),modern);
         next.anchor_tick=state_uint(record.at("anchor_tick"),tick);
-        if(modern) {
+        if(retimed) {next.rate=read_rate(record.at("rate"),next.control,next.anchor_tick,tick,rig.clip_durations);any_rate=any_rate||next.rate.has_value();}
+        if(retain_history) {
             next.inertial_ever_used=state_bool(record.at("inertial_ever_used"));any_inertial=any_inertial || next.inertial_ever_used;
             check(next.inertial_ever_used || next.control.transition_mode==AnimationTransitionMode::Crossfade,"Inertial control requires its history flag.");
             const auto& history=record.at("history");state_fields(history,{"current","previous"});
@@ -1254,8 +1347,9 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                 fade.inertial=std::make_shared<const std::vector<InertialNode>>(std::move(correction));
             } else if(!source.is_null()) {
                 check(source.is_null()!=frozen.is_null() && (!modern || transition.at("inertial").is_null()),"Crossfade animation state requires exactly one source kind.");
-                state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,rig.clip_durations.size(),modern);
+                clock_fields(source,{"control","anchor_tick"},retimed);fade.source=read_control(source.at("control"),entity,rig.clip_durations.size(),modern);
                 fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);
+                if(retimed){fade.source_rate=read_rate(source.at("rate"),fade.source,fade.source_anchor_tick,fade.start_tick,rig.clip_durations);any_rate=any_rate||fade.source_rate.has_value();}
                 check(next.inertial_ever_used || fade.source.transition_mode==AnimationTransitionMode::Crossfade,"Inertial source control requires its history flag.");
             } else {
                 check(source.is_null()!=frozen.is_null() && (!modern || transition.at("inertial").is_null()),"Crossfade animation state requires exactly one source kind.");
@@ -1270,11 +1364,11 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     for(auto& controls:candidate_grounding)std::fill(controls.begin(),controls.end(),RuntimeGroundingControl{});
     auto candidate_ik_states=grounded?ik_states_:std::vector<std::vector<RuntimeIkState>>{};std::set<std::string> seen;
     for(const auto& record:records) {
-        if(configured_root||oriented)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"});
-        else if(configured_ik)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"});
-        else if(layered)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"});
-        else if(modern)state_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history"});
-        else state_fields(record,{"entity","control","anchor_tick","transition"});
+        if(configured_root||oriented)clock_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik","root_motion"},retimed);
+        else if(configured_ik)clock_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers","ik"},retimed);
+        else if(layered)clock_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history","layers"},retimed);
+        else if(retain_history)clock_fields(record,{"entity","control","anchor_tick","transition","inertial_ever_used","history"},retimed);
+        else clock_fields(record,{"entity","control","anchor_tick","transition"},false);
         check(record.at("entity").is_string(),"Animation state rig identity must be a string.");
         const auto entity=record.at("entity").get<std::string>();const auto found=membership_->indices.find(entity);
         check(found!=membership_->indices.end() && seen.insert(entity).second,"Unknown or duplicate animation state rig.");
@@ -1283,7 +1377,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             const auto& saved=record.at("layers");const auto& frozen=membership_->rigs[index].layers;
             check(saved.is_array() && saved.size()==frozen.size(),"Animation state must contain every configured layer exactly once.");
             for(std::size_t i=0;i<saved.size();++i) {
-                const auto& value=saved[i];state_fields(value,{"slot","mode","control","anchor_tick","transition","inertial_ever_used","history","weight","target_weight","weight_transition","mask","reference_clip","reference_time"});
+                const auto& value=saved[i];clock_fields(value,{"slot","mode","control","anchor_tick","transition","inertial_ever_used","history","weight","target_weight","weight_transition","mask","reference_clip","reference_time"},retimed);
                 check(state_uint(value.at("slot"),4)==frozen[i].slot,"Animation state layer slot differs from its frozen configuration.");
                 check(value.at("mode")== (frozen[i].mode==AnimationLayerMode::Override ? "override" : "additive"),"Animation state layer mode differs from its frozen configuration.");
                 const auto& mask=value.at("mask");check(mask.is_array() && mask.size()==frozen[i].mask.size(),"Animation state layer mask differs from its configuration.");
@@ -1361,8 +1455,11 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             for(std::size_t i=0;i<rig.ik.size();++i)if(!rig.ik[i].grounding)
                 (void)ik::solve(rig.model_parents,pose,rig.ik[i],candidate_ik[index][i],identity_matrix());
         }
-        if(configured_root||oriented){const auto& root=membership_->rigs[index].root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root)candidate_roots[index]=read_root(saved,entity,*root,membership_->rigs[index].clip_durations.size(),tick,candidate[index]);}
+        if(configured_root||oriented){const auto& rig=membership_->rigs[index];const auto& root=rig.root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root){candidate_roots[index]=read_root(saved,entity,*root,rig.clip_durations.size(),tick,candidate[index],retimed,rig.clip_durations);
+            if(candidate_roots[index].fade)any_rate=any_rate||candidate_roots[index].fade->source_rate.has_value();}}
     }
+    check(!retimed||any_rate,"Version 9 animation state requires a retained rate segment.");
+    check(!retimed||version!=1||!any_inertial,"Legacy profile 1 cannot contain inertial history flags.");
     check(version!=2 || any_inertial,"Version 2 animation state requires at least one inertial history flag.");
     check(version!=6||any_orientation,"Version 6 animation state requires at least one retained end orientation.");
     check(!controlled||any_grounding_control,"Version 8 animation state requires a nonidentity grounding multiplier.");

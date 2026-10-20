@@ -63,6 +63,10 @@ The step's existing expected-tick check and retained in-session retry receipts a
 
 ## Timed crossfades
 
+For speed changes during a fade, use [animation rate commands](ANIMATION_RATES.md)
+to preserve phase and the transition deadline. Complete playback commands below
+retain their replacement semantics.
+
 To transition to clip 1 over half a second, include a duration of 30 ticks:
 
 ```json

@@ -52,12 +52,19 @@ public:
         std::uint64_t tick=0;
         std::shared_ptr<const std::vector<NodePose>> poses;
     };
+    // A bounded phase overlay. The original command/anchor remain the immutable
+    // destination reference used to validate an active fade and its offsets.
+    struct RateSegment {
+        std::uint64_t anchor_tick=0;
+        double time=0,speed=1;
+    };
     struct Transition {
         AnimationCommand source;
         std::uint64_t source_anchor_tick=0,start_tick=0;
         std::uint32_t duration_ticks=0;
         std::shared_ptr<const std::vector<NodePose>> frozen_source;
         std::shared_ptr<const std::vector<InertialNode>> inertial=nullptr;
+        std::optional<RateSegment> source_rate;
     };
     struct Clock {
         AnimationCommand control;
@@ -65,6 +72,7 @@ public:
         std::optional<Transition> transition;
         std::optional<History> current=std::nullopt,previous=std::nullopt;
         bool inertial_ever_used=false;
+        std::optional<RateSegment> rate;
     };
     struct LayerPlayback {
         Clock clock;
@@ -78,6 +86,7 @@ public:
         AnimationTransitionMode mode=AnimationTransitionMode::Crossfade;
         std::optional<root_motion::Planar> frozen_velocity;
         root_motion::Planar correction_velocity;
+        std::optional<RateSegment> source_rate;
     };
     struct RootPlayback {
         bool enabled=true;
@@ -130,7 +139,8 @@ public:
     // definitions/bindings are immutable; their entire live playback survives.
     // Added rigs begin at tick, removed rigs disappear atomically.
     void rebind(const RuntimeDefinition& definition,std::uint64_t tick);
-    void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
+    void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick,
+        const std::vector<AnimationRateCommand>& rates={});
     bool has_ik() const noexcept;
     bool has_grounding() const noexcept;
     bool owns_grounding(const std::string& entity,std::uint32_t slot) const;
