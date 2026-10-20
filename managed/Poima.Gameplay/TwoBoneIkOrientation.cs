@@ -5,7 +5,10 @@ namespace Poima;
 /// <summary>Opts into complete point/end-orientation IK controls before game construction.</summary>
 public interface ITwoBoneIkOrientationGame : ITwoBoneIkGame { }
 [StructLayout(LayoutKind.Sequential)]
-public readonly record struct Quaterniond(double X,double Y,double Z,double W);
+public readonly record struct Quaterniond(double X,double Y,double Z,double W)
+{
+    public static Quaterniond Identity=>new(0,0,0,1);
+}
 /// <summary>Logical rig-space quaternion goal, independent of the point target space and weight.</summary>
 public readonly record struct IkEndOrientationGoal(Quaterniond Rotation,double Weight);
 /// <summary>Complete replacement. A null goal clears orientation; all positional arguments are explicit to preserve old overload resolution.</summary>

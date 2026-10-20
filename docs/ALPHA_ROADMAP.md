@@ -66,6 +66,10 @@ The [additional Switchback evaluation](evidence/m2-agent-switchback-repeat.json)
 
 The [0.0.139 second fresh workflow](evidence/m2-agent-switchback-fresh-repeat.json) separately passes its original supervisor and independent source, readonly export and Vulkan checks. Together with 0.0.131, it supplies bounded repeated fresh-workflow evidence for the same frozen task. Its generic SDK/docs/lifecycle guidance differs from the earlier run and is disclosed; this is neither a controlled success-rate experiment nor a full Alpha qualification. Earlier failed workflow verdicts are preserved.
 
+The [FPS Feedback range](../examples/fps-feedback) adds a compiled recoil/camera
+consumer with complete restore and continuation checks. It reuses licensed
+scene inputs and is separate from the required fresh-agent game workflows.
+
 ### Qualification target
 
 Alpha 1 needs three compact games with different gameplay structures, rather

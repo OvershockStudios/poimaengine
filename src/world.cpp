@@ -3011,6 +3011,23 @@ public:
         }
         return result;
     }
+    static std::vector<RuntimeCameraPoseCommand> parse_camera_poses(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Camera poses must contain at most64 commands.");
+        std::vector<RuntimeCameraPoseCommand> result;std::set<std::string> targets;
+        const auto pose=[](const Json& value) {
+            fields(value,{"position","rotation"},{"position","rotation"});
+            validate_transform({{"position",value.at("position")},{"rotation",value.at("rotation")},{"scale",{1,1,1}}});
+            RuntimeCameraPose result;result.position=value.at("position").get<std::array<double,3>>();result.rotation=value.at("rotation").get<std::array<double,4>>();
+            for(double v:result.position)require(std::abs(v)<=10,"Camera pose translation exceeds10 metres per axis.");return result;
+        };
+        for(const auto& value:raw) {
+            fields(value,{"entity","world","viewmodel"},{"entity"});RuntimeCameraPoseCommand command;command.entity=identifier(value.at("entity"));
+            require(targets.insert(command.entity).second,"Duplicate camera pose target.");
+            require(value.contains("world") || value.contains("viewmodel"),"Camera pose command requires world or viewmodel.");
+            if(value.contains("world"))command.world=pose(value.at("world"));if(value.contains("viewmodel"))command.viewmodel=pose(value.at("viewmodel"));result.push_back(std::move(command));
+        }
+        return result;
+    }
     static std::array<double,3> query_vector(const Json& v) {
         require(v.is_array() && v.size()==3,"Expected a three-element query vector.");
         for(const auto& x:v)require(x.is_number() && std::isfinite(x.get<double>()) && std::abs(x.get<double>())<=1e6,"Query vector must be finite and within 1e6.");
@@ -3452,6 +3469,18 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
+        if(method=="runtime.camera_pose") {
+            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));
+            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->camera_pose(entity);Json value=nullptr;
+                const auto pose=[](const RuntimeCameraPose& v)->Json{return {{"position",v.position},{"rotation",v.rotation}};};
+                if(state)value={{"entity",state->entity},{"world",pose(state->world)},{"viewmodel",state->viewmodel ? pose(*state->viewmodel) : Json(nullptr)},{"base_world_matrix",state->base_world}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.camera_lens") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3552,7 +3581,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -3564,6 +3593,8 @@ public:
             const auto root_motion=parse_root_motion(normalized.at("root_motion"));
             if(!normalized.contains("camera_lenses"))normalized["camera_lenses"]=Json::array();
             const auto camera_lenses=parse_camera_lenses(normalized.at("camera_lenses"));
+            if(!normalized.contains("camera_poses"))normalized["camera_poses"]=Json::array();
+            const auto camera_poses=parse_camera_poses(normalized.at("camera_poses"));
             if(!normalized.contains("character_stances"))normalized["character_stances"]=Json::array();
             const auto character_stances=parse_character_stances(normalized.at("character_stances"));
             if(!normalized.contains("grounding"))normalized["grounding"]=Json::array();
@@ -3612,7 +3643,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

@@ -176,6 +176,18 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         SaveJson foreground=nullptr;if(camera->viewmodel) {Impl::validate_camera_lens(*camera->viewmodel);foreground=lens_json(*camera->viewmodel);}
         cameras.push_back({{"entity",s.registry.get<Node>(e).id},{"world",lens_json(world)},{"viewmodel",std::move(foreground)}});
     }
+    SaveJson poses=SaveJson::array();
+    const auto pose_json=[](const RuntimeCameraPose& pose) {Impl::validate_camera_pose(pose);return SaveJson{{"position",pose.position},{"rotation",pose.rotation}};};
+    for(const auto e:s.topology->order)if(const auto* camera=s.registry.try_get<RuntimeCamera>(e))
+        if(camera->world_pose!=RuntimeCameraPose{} || camera->viewmodel_pose!=RuntimeCameraPose{}) {
+            require(camera->viewmodel || camera->viewmodel_pose==RuntimeCameraPose{},"Absent foreground cannot own a pose.");
+            RuntimeCameraPoseCommand command{s.registry.get<Node>(e).id,camera->world_pose,camera->viewmodel ? std::optional(camera->viewmodel_pose) : std::nullopt};
+            auto validation=command;if(*validation.world==RuntimeCameraPose{})validation.world.reset();
+            s.validate_camera_pose_command(validation);
+            poses.push_back({{"entity",command.entity},{"world",pose_json(camera->world_pose)},
+                {"viewmodel",camera->viewmodel ? pose_json(camera->viewmodel_pose) : SaveJson(nullptr)}});
+        }
+    if(!poses.empty())payload["camera_poses"]={{"version",1},{"states",std::move(poses)}};
     const bool camera_state=!cameras.empty();
     const bool custom=!s.components->schemas().empty();
     const bool structural=s.structure_revision!=0;
@@ -220,8 +232,20 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         (version==9 || version==8 || version==7 || version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
     require((version==9)==save_locomotion_definition(definition),"Virtual locomotion content requires snapshot version 9.");
     require(version!=8 || save_stance_definition(definition),"Snapshot version 8 requires frozen character stance content.");
-    const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
+    auto data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
+    // Authenticate the original complete payload before validating a separately
+    // named optional extension; every legacy field and unknown-key rejection stays exact.
+    SaveJson pose_extension=nullptr;
+    if(data.contains("camera_poses")) {
+        require(version>=7,"Camera pose extension requires Camera snapshot membership.");
+        pose_extension=data.at("camera_poses");data.erase("camera_poses");
+        save_fields(pose_extension,{"version","states"});
+        require(pose_extension.at("version").is_number_integer() && pose_extension.at("version")==1,
+            "Unsupported camera pose extension version.");
+        const auto& states=pose_extension.at("states");
+        require(states.is_array() && !states.empty() && states.size()<=10000,"Camera pose extension requires1..10000 nonidentity states.");
+    }
     if(version>=7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
     else if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
     else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
@@ -363,6 +387,26 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             require(row.at("viewmodel").is_null()==!camera->viewmodel,"Saved foreground lens presence differs from frozen Camera.");
             const auto world=lens_read(row.at("world"));camera->vertical_fov=world.vertical_fov;camera->near_plane=world.near_plane;camera->far_plane=world.far_plane;
             if(camera->viewmodel)camera->viewmodel=lens_read(row.at("viewmodel"));
+        }
+    }
+    if(!pose_extension.is_null()) {
+        const auto read_pose=[](const SaveJson& value) {
+            save_fields(value,{"position","rotation"});RuntimeCameraPose result;
+            result.position=save_vector<3>(value.at("position"),10);result.rotation=save_rotation(value.at("rotation"));
+            Impl::validate_camera_pose(result);return result;
+        };
+        std::string previous_pose;
+        for(const auto& row:pose_extension.at("states")) {
+            save_fields(row,{"entity","world","viewmodel"});const auto id=save_text(row.at("entity"));
+            require(previous_pose.empty() || previous_pose<id,"Camera pose extension IDs must be unique and sorted.");previous_pose=id;
+            const auto e=s.find(id);auto* camera=s.registry.try_get<RuntimeCamera>(e);
+            require(camera && row.at("viewmodel").is_null()==!camera->viewmodel,"Saved camera pose membership differs from frozen Camera.");
+            RuntimeCameraPoseCommand command;command.entity=id;command.world=read_pose(row.at("world"));
+            if(camera->viewmodel)command.viewmodel=read_pose(row.at("viewmodel"));
+            require(*command.world!=RuntimeCameraPose{} || (command.viewmodel && *command.viewmodel!=RuntimeCameraPose{}),"Redundant identity camera pose extension row.");
+            auto validation=command;if(*validation.world==RuntimeCameraPose{})validation.world.reset();
+            s.validate_camera_pose_command(validation);
+            camera->world_pose=*command.world;if(command.viewmodel)camera->viewmodel_pose=*command.viewmodel;
         }
     }
     if(!data.at("gameplay").is_null()) {

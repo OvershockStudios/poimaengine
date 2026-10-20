@@ -54,9 +54,25 @@ struct RuntimeCharacterStanceState {
     bool configured=false,requested_crouch=false,crouched=false,stand_blocked=false;
     float radius=0,standing_height=0,crouched_height=0,height=0,speed=0,camera_drop=0;
 };
+struct RuntimeCameraPose {
+    std::array<double,3> position{0,0,0};
+    std::array<double,4> rotation{0,0,0,1};
+    bool operator==(const RuntimeCameraPose&) const = default;
+};
+struct RuntimeCameraPoseCommand {
+    std::string entity;
+    std::optional<RuntimeCameraPose> world,viewmodel;
+};
+struct RuntimeCameraPoseState {
+    std::string entity;
+    RuntimeCameraPose world;
+    std::optional<RuntimeCameraPose> viewmodel;
+    Matrix4 base_world=identity_matrix();
+};
 struct RuntimeCamera {
     double vertical_fov=60, near_plane=0.1, far_plane=1000;
     std::optional<SceneLens> viewmodel;
+    RuntimeCameraPose world_pose,viewmodel_pose;
 };
 // Complete lenses for selected channels; omitted channels retain committed values.
 // Foreground availability is frozen by the authored Camera definition.
@@ -547,13 +563,15 @@ public:
         const std::vector<RuntimeCameraLensCommand>& camera_lenses={},
         const std::vector<RuntimeCharacterStanceCommand>& character_stances={},
         const std::vector<RuntimeGroundingCommand>& grounding={},
-        const std::vector<AnimationRateCommand>& animation_rates={});
+        const std::vector<AnimationRateCommand>& animation_rates={},
+        const std::vector<RuntimeCameraPoseCommand>& camera_poses={});
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeGroundingCommand> grounding(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeRootMotionState> root_motion(const std::string& id) const;
+    std::optional<RuntimeCameraPoseState> camera_pose(const std::string& id) const;
     std::optional<RuntimeCameraLensState> camera_lens(const std::string& id) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;

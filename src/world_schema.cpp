@@ -187,7 +187,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 112}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 113}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -237,6 +237,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
     result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
+    result["gameplay_camera_poses"]={{"feature","camera_pose_v1"},{"services_abi",7},{"services_bytes",392},
+        {"command_bytes",144},{"state_bytes",272},{"reads_per_tick",256},{"combined_writes_per_tick",64},
+        {"translation_metres_per_axis",10},{"quaternion_norm_tolerance",1e-5},{"viewmodel_presence","frozen"},
+        {"save_extension","Optional camera_poses version1; only nonidentity states. Legacy snapshots are unchanged at identity."}};
     result["gameplay_camera_lenses"]={{"feature","camera_lens_v1"},{"services_abi",7},{"services_bytes",320},
         {"command_bytes",80},{"state_bytes",104},{"reads_per_tick",256},{"combined_writes_per_tick",64},
         {"snapshot_version",7},{"viewmodel_presence","frozen"},{"player_fov","Perspective ratio against authored baseline, saturated to5..150 degrees."}};
@@ -323,6 +327,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.hit_test"]["description"]="Read-only closest committed-pose collider/HitRegion query. Enabled region owners suppress only their own physics proxy; ignored owners suppress their regions, ignored attachments suppress that region. Exact ties prefer world geometry then region owner/name/attachment. Hit includes nullable region_entity and region; entity is damage owner for regions. Exact session/tick required, no tick advance.";
     methods["runtime.character_stance"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.character_stance"]["description"]="Read committed controller stance with exact session/tick. Noncontrollers return state=null; legacy controllers report configured=false; missing entities reject. Reads do not change shape, retry standing, advance ticks or render.";
+    methods["runtime.camera_pose"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
+    methods["runtime.camera_pose"]["description"]="Read committed additive local world and optional foreground-only poses and base_world_matrix with exact session/tick. Base matrix excludes all ancestor and local camera pose effects while retaining native look/stance and physical motion. Existing noncamera returns state=null; missing entity rejects. Does not advance, render or acknowledge.";
     methods["runtime.camera_lens"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.camera_lens"]["description"]="Read committed world and optional first-person lenses plus immutable authored_world with exact session/tick. Existing noncamera returns state=null; missing entity rejects. No tick advancement, rendering or acknowledgement.";
     methods["runtime.root_motion"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
@@ -361,6 +367,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.step"]["properties"]["ik"]={{"type","array"},{"maxItems",64},{"items",object_schema(ik_command,{"entity","slot","target","pole"})}};
     auto lens_command=object_schema({{"entity",id},{"world",lens},{"viewmodel",lens}},{"entity"});
     lens_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});
+    const auto pose_vector=[](unsigned count,double bound) {return Json{{"type","array"},{"minItems",count},{"maxItems",count},{"items",{{"type","number"},{"minimum",-bound},{"maximum",bound}}}};};
+    const auto camera_pose=object_schema({{"position",pose_vector(3,10)},{"rotation",pose_vector(4,1.00001)}},{"position","rotation"});
+    auto pose_command=object_schema({{"entity",id},{"world",camera_pose},{"viewmodel",camera_pose}},{"entity"});
+    pose_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});
+    methods["runtime.step"]["properties"]["camera_poses"]={{"type","array"},{"maxItems",64},{"items",pose_command}};
+    result["invariants"].push_back("camera_pose_v1 replaces selected additive local rigid offsets; explicit identity resets. World effect composes after native look/stance and is visible in committed runtime entity world transforms. Foreground effect changes selected foreground draw matrices only, leaving physical/hit-query state unchanged. Cameras owned by ModelNode animation or physics reject; world effects reject physical descendants. Authored Camera membership and foreground presence remain frozen. Compiled setters stage, reads stay committed; caller/gameplay duplicate targets, more than64 writes, removal conflicts and invalid poses reject the full batch. Nonidentity states use optional camera_poses version1 save extension, with complete world/viewmodel rows; identity defaults retain old save shape.");
     methods["runtime.step"]["properties"]["camera_lenses"]={{"type","array"},{"maxItems",64},{"items",lens_command}};
     methods["runtime.step"]["properties"]["animation_rates"]={{"type","array"},{"maxItems",64},{"items",object_schema({{"entity",id},{"speed",{{"type","number"},{"minimum",0},{"maximum",8}}},{"layer",{{"type","integer"},{"minimum",1},{"maximum",4}}}},{"entity","speed"})}};
     result["invariants"].push_back("Animation rate commands change only destination speed, preserving committed phase and an active fade's original source, correction and deadline. Omitted layer selects the base; layer1..4 must be configured. Speeds0..8; zero holds phase while fade ticks continue, without resuming stopped/ended clips. Full replacements and rates share64 unique-clock writes per Tick across caller/gameplay; conflicts reject the whole batch. Same-speed writes consume admission but do not reanchor. Retimed clocks select nested animation-statev9 with explicit legacy_version; unretimed saves retain their original version. Existing animation inspection reports the effective rate/phase; no getter samples or advances.");

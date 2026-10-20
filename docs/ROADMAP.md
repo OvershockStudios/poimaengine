@@ -109,6 +109,10 @@ Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 platform movement. Harden broader traversal and add swimming;
 extend navigation with dynamic obstacles, traversal links and avoidance.
 Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
+The optional [FPS feedback package](../packages/fps/README.md) supplies procedural
+math with authored, seeded-random and hybrid recoil. [Camera pose controls](CAMERA_POSES.md)
+separate aim readback, camera effects and foreground motion. Prefer procedural
+layers where useful, with imported clips for actions they represent better.
 [First-person viewmodels](VIEWMODELS.md) provide a separate FOV and
 foreground self-depth. [Gameplay camera controls](CAMERA_LENSES.md) support
 fixed-tick ADS and zoom, with saved game-owned easing through

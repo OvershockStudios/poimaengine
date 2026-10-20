@@ -1,8 +1,29 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.205**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.206**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.206 adds [camera/weapon pose controls](CAMERA_POSES.md) and an
+optional [procedural FPS feedback package](../packages/fps/README.md).
+The [range sample](../examples/fps-feedback) exercises authored, seeded-random
+and hybrid recoil, with gameplay aim separated from visual weapon motion and
+camera shake. The Linux and Windows CoreCLR workflows each pass 237 original RPCs, ten complete
+saved archives and five byte-identical restore/continuation or rollback pairs,
+retaining all 59 typed gameplay fields. Six selected native suites, the compiled
+ABI harness and six managed math groups (746 assertions) also pass. Windows
+also passes five selected native executables. Its CPU workflow closes naturally
+with nine Job processes, zero active and zero terminated.
+Separate Windows Vulkan checks present six 640×360 MSAA4 frames: foreground-only
+motion retains all 217,840 compared background pixels exactly, while world-camera
+motion moves the world marker. All three captures retain byte-identical complete
+before/after archives. The corrected public sample prepare/configure recipe also
+passes native authoring. [Results and exact scope](evidence/m2-fps-feedback.json).
+The original complete-state run exposed a sample save-status label that depended
+on a previous process's ticket history; the corrected sample checks the current
+restore epoch, with the full-state comparison unchanged. This adapted sample
+is separate from fresh-agent qualification. Between-tick pose interpolation,
+collision-aware weapon retraction and broader animation work remain open.
 
 The 0.0.205 [fresh character-workflow audit](evidence/m2-agent-character-owned-workflow.json)
 uses the 0.0.204 native runtime, Python client and managed authoring tools.

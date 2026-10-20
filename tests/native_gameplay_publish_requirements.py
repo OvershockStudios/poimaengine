@@ -17,6 +17,16 @@ class Requirements(unittest.TestCase):
         self.baseline=dict(call_version=1,call_bytes=80,services_version=7,services_bytes=176,features=['baseline_v7'])
     def read(self,data):
         self.path.write_text(json.dumps(data));return publish.generated_requirements(self.path)
+    def test_camera_pose_independent_named_prefix(self):
+        value=dict(self.baseline,services_bytes=392,features=['baseline_v7','camera_pose_v1'])
+        self.assertEqual(self.read(value),value)
+        for extent in [176,320,376,384,391,393]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(value,services_bytes=extent))
+        for features in [['baseline_v7'],['camera_pose_v1'],value['features']+['camera_pose_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(value,features=features))
+        union=value['features']+['animation_inertial_v1','animation_rate_v1','camera_lens_v1']
+        self.assertEqual(self.read(dict(value,features=union))['features'],union)
+
     def test_animation_rate_named_prefix(self):
         value=dict(self.baseline,services_bytes=376,features=['animation_rate_v1','animation_inertial_v1','baseline_v7'])
         self.assertEqual(self.read(value),value)

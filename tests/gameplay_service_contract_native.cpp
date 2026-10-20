@@ -96,6 +96,17 @@ int main(){try{
     check(parsed_lens.services_bytes==320 && parsed_lens.features.size()==2,"Independent camera lens contract rejected.");
     for(unsigned bytes:{176u,304u,312u,319u,321u}) {auto wrong=lens;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_lens=lens;duplicate_lens["features"].push_back("camera_lens_v1");rejected(duplicate_lens.dump());
+    auto pose=baseline;pose["services_bytes"]=392;pose["features"].push_back("camera_pose_v1");
+    const auto parsed_pose=poima::parse_gameplay_service_contract(pose.dump());
+    check(parsed_pose.services_bytes==392 && parsed_pose.features.size()==2,"Independent camera pose declaration rejected.");
+    for(unsigned bytes:{176u,192u,304u,320u,336u,352u,368u,376u,384u,391u,393u}){auto wrong=pose;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto duplicate_pose=pose;duplicate_pose["features"].push_back("camera_pose_v1");rejected(duplicate_pose.dump());
+    auto unnamed_pose=pose;unnamed_pose["features"]=Json::array({"baseline_v7"});rejected(unnamed_pose.dump());
+    auto mixed_pose=pose;mixed_pose["features"].push_back("camera_lens_v1");mixed_pose["features"].push_back("character_stance_v1");
+    mixed_pose["features"].push_back("animation_rate_v1");rejected(mixed_pose.dump());
+    mixed_pose["features"].push_back("animation_inertial_v1");
+    check(poima::parse_gameplay_service_contract(mixed_pose.dump()).features.size()==6,"Named camera pose combination rejected.");
+    offer=actual;offer.services_bytes=384;offer_rejected(offer);
     auto root=baseline;root["services_bytes"]=304;root["features"].push_back("animation_root_motion_v1");
     parsed=poima::parse_gameplay_service_contract(root.dump());
     check(parsed.services_bytes==304 && parsed.features.size()==2,"Independent root motion contract rejected.");

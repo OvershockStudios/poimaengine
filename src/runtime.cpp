@@ -174,6 +174,7 @@ struct Runtime::Impl {
     std::size_t game_grounding_read_calls=0,game_grounding_write_calls=0;
     std::size_t game_root_motion_reads=0,game_root_motion_writes=0;
     std::size_t game_camera_lens_reads=0,game_camera_lens_writes=0;
+    std::size_t game_camera_pose_reads=0,game_camera_pose_writes=0;
     std::uint64_t control_sequence=0;
     PoimaGameUiControlEvent control_event{};
     RuntimeControlIntent control_intent=RuntimeControlIntent::none;
@@ -203,6 +204,7 @@ struct Runtime::Impl {
     std::vector<RuntimeGroundingCommand> game_grounding_commands;
     std::vector<RuntimeRootMotionCommand> game_root_motion_commands;
     std::vector<RuntimeCameraLensCommand> game_camera_lens_commands;
+    std::vector<RuntimeCameraPoseCommand> game_camera_pose_commands;
     std::vector<RuntimeInput> game_character_inputs;
     std::vector<RuntimeCharacterStanceCommand> game_stance_commands;
     std::size_t game_stance_reads=0,game_stance_writes=0;
@@ -252,6 +254,13 @@ struct Runtime::Impl {
             const auto* parent=n.parent.empty() ? nullptr : &registry.get<Node>(find(n.parent));
             n.world_recomputed=n.hierarchy_cache.update(n.local,parent ? &parent->world : nullptr,
                 parent && parent->world_recomputed,n.world);
+            if(const auto* camera=registry.try_get<RuntimeCamera>(e);camera && camera->world_pose!=RuntimeCameraPose{}) {
+                n.world=multiply(n.world,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
+                for(double v:n.world)require(std::isfinite(v) && std::abs(v)<=1e12,"Effected camera hierarchy matrix exceeds the supported range.");
+                // The cache stores the base-local key, so an effected output may
+                // never be reused as that base on the next pass/reset.
+                n.hierarchy_cache.invalidate();n.world_recomputed=true;
+            }
             recomputed+=n.world_recomputed ? 1u : 0u;
         }
         profiling::counter("runtime.hierarchy.recomputed",recomputed);
@@ -325,6 +334,7 @@ struct Runtime::Impl {
     void create_entity(const RuntimeEntityDefinition& d,Topology& candidate) {
         require(!candidate.identities.contains(d.id),"Duplicate runtime entity ID.");
         if(d.camera) {
+            require(d.camera->world_pose==RuntimeCameraPose{} && d.camera->viewmodel_pose==RuntimeCameraPose{},"Authored cameras require identity effect defaults; use runtime camera pose commands.");
             validate_camera_lens({d.camera->vertical_fov,d.camera->near_plane,d.camera->far_plane});
             if(d.camera->viewmodel)validate_camera_lens(*d.camera->viewmodel);
         }
@@ -772,6 +782,9 @@ struct Runtime::Impl {
                 require(std::none_of(self.game_camera_lens_commands.begin(),self.game_camera_lens_commands.end(),[&](const auto& command) {
                     return std::any_of(pending->entities.begin(),pending->entities.end(),[&](const auto& entity){return entity.id==command.entity;});
                 }),"Camera lens and canceled birth conflict in one tick.");
+                require(std::none_of(self.game_camera_pose_commands.begin(),self.game_camera_pose_commands.end(),[&](const auto& command) {
+                    return std::any_of(pending->entities.begin(),pending->entities.end(),[&](const auto& entity){return entity.id==command.entity;});
+                }),"Camera pose and canceled birth conflict in one Tick.");
                 self.components->cancel_births(ids);pending->canceled=true;
                 auto member=[&](const std::string& id) {return std::any_of(pending->entities.begin(),pending->entities.end(),[&](const auto& entity){return entity.id==id;});};
                 std::erase_if(self.game_commands,[&](const auto& command){return member(command.entity);});
@@ -998,6 +1011,8 @@ struct Runtime::Impl {
             static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode),source->slot,source->weight,source->weight_blend_ticks);
         });
     }
+#include "runtime_camera_pose_state.inc"
+#include "runtime_camera_pose.inc"
 #include "runtime_camera_lens_state.inc"
 #include "runtime_camera_lens.inc"
 #include "runtime_two_bone_ik.inc"
@@ -1379,7 +1394,7 @@ struct Runtime::Impl {
             throw;
         }
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1428,7 +1443,7 @@ struct Runtime::Impl {
         checkpoint_profile.reset();
         components->begin_batch();
         try {
-            apply_camera_lenses(lens_commands);
+            apply_camera_lenses(lens_commands);apply_camera_poses(pose_commands);
             animations->apply_grounding(grounding_commands);
             if(!animation_commands.empty() || !animation_rates.empty() || !ik_commands.empty() || !root_commands.empty()) {
                 animations->apply(animation_commands,tick,animation_rates);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
@@ -1456,17 +1471,17 @@ struct Runtime::Impl {
                 if(game) {
                     game_sound_calls=0;game_navigation_calls=0;sync();
                     if(animations->has_ik())animation_locals();
-                    game_commands.clear();game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_commands.clear();game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         if(!topology->identities.contains(source->entity))continue;
                         PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1477,6 +1492,9 @@ struct Runtime::Impl {
                     require(game_grounding_commands.size()+(frame==0 ? grounding_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined grounding commands in one tick.");
                     require(game_root_motion_commands.size()+(frame==0 ? root_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined root-motion commands in one tick.");
                     require(game_camera_lens_commands.size()+(frame==0 ? lens_commands.size() : 0)<=64,"Caller and gameplay exceed64 camera lens writes in one Tick.");
+                    require(game_camera_pose_commands.size()+(frame==0 ? pose_commands.size() : 0)<=64,"Caller and gameplay exceed64 camera pose writes in one Tick.");
+                    for(const auto& command:game_camera_pose_commands)
+                        require(frame!=0 || std::none_of(pose_commands.begin(),pose_commands.end(),[&](const auto& explicit_command){return explicit_command.entity==command.entity;}),"Gameplay and caller targeted the same camera pose in one Tick.");
                     for(const auto& command:game_camera_lens_commands)
                         require(frame!=0 || std::none_of(lens_commands.begin(),lens_commands.end(),[&](const auto& explicit_command) {
                             return explicit_command.entity==command.entity;
@@ -1542,6 +1560,8 @@ struct Runtime::Impl {
                                 "Caller camera lens and removal target the same instance in one tick.");
                             require(std::none_of(game_camera_lens_commands.begin(),game_camera_lens_commands.end(),[&](const auto& m){return m.entity==id;}),
                                 "Gameplay camera lens and removal target the same instance in one tick.");
+                            require(frame!=0 || std::none_of(pose_commands.begin(),pose_commands.end(),[&](const auto& command){return command.entity==id;}),"Caller camera pose and removal conflict in one Tick.");
+                            require(std::none_of(game_camera_pose_commands.begin(),game_camera_pose_commands.end(),[&](const auto& command){return command.entity==id;}),"Gameplay camera pose and removal conflict in one Tick.");
                             require(std::none_of(game_character_inputs.begin(),game_character_inputs.end(),[&](const auto& input){return input.entity==id;}),
                                 "Gameplay character input and removal target the same instance in one tick.");
                             require(frame!=0 || std::none_of(stance_commands.begin(),stance_commands.end(),[&](const auto& command){return command.entity==id;}),
@@ -1564,6 +1584,7 @@ struct Runtime::Impl {
                     components->publish_tick();
                 }
                 apply_camera_lenses(game_camera_lens_commands);game_camera_lens_commands.clear();
+                apply_camera_poses(game_camera_pose_commands);game_camera_pose_commands.clear();
                 animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
                 if(!game_animation_commands.empty() || !game_animation_rate_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
                     animations->apply(game_animation_commands,tick,game_animation_rate_commands);animations->apply_ik(game_ik_commands);
@@ -1644,7 +1665,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
+            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             clear_player_preferences_commands();
@@ -1911,7 +1932,7 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {
@@ -2042,6 +2063,7 @@ SceneLighting Runtime::lighting() const {
     }
     finalize_lighting(result);return result;
 }
+std::optional<RuntimeCameraPoseState> Runtime::camera_pose(const std::string& id) const { return impl_->camera_pose(id); }
 std::optional<RuntimeCameraLensState> Runtime::camera_lens(const std::string& id) const { return impl_->camera_lens(id); }
 RuntimeCameraState Runtime::camera_state(const std::string& camera) const {
     auto result=impl_->camera_projection(camera);result.lighting=lighting();return result;
@@ -2054,6 +2076,11 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     result.authored_vertical_fov=projection.authored_vertical_fov;
     result.near_plane=projection.near_plane;result.far_plane=projection.far_plane;
     select_scene_camera_draw(result,projection.viewmodel);
+    const auto& effect=impl_->registry.get<RuntimeCamera>(impl_->find(camera)).viewmodel_pose;
+    if(result.viewmodel && effect!=RuntimeCameraPose{}) {
+        const auto delta=multiply(multiply(result.camera_world,local_matrix(effect.position,effect.rotation,{1,1,1})),inverse_affine(result.camera_world));
+        for(auto& object:result.viewmodel->objects)object.world=multiply(delta,object.world);
+    }
     return result;
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }

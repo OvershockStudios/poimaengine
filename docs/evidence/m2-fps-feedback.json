@@ -1,0 +1,239 @@
+{
+  "format": "poima.fps-feedback.qualification.v1",
+  "engine_version": "0.0.206",
+  "behavior": {
+    "camera_feature": "camera_pose_v1",
+    "channels": [
+      "world-camera rigid offset",
+      "foreground weapon/arms rigid offset"
+    ],
+    "base_aim": "Committed base camera matrix excludes all camera presentation offsets; gameplay applies its own saved aim recoil.",
+    "recoil": [
+      "authored pattern",
+      "seeded variation",
+      "hybrid"
+    ],
+    "pattern_end": [
+      "repeat",
+      "hold",
+      "stop"
+    ],
+    "helpers": [
+      "analytic critically damped springs",
+      "bounded look sway",
+      "achieved-distance bob",
+      "tick/seed shake"
+    ],
+    "ownership": "Game-owned primitive state; optional compiled helper package."
+  },
+  "compatibility": {
+    "service_epoch": 7,
+    "call_abi": 1,
+    "call_bytes": 80,
+    "services_bytes": 392,
+    "previous_prefix_bytes": 376,
+    "command_bytes": 144,
+    "state_bytes": 272,
+    "base_matrix_offset": 144
+  },
+  "platforms": {
+    "Linux": {
+      "backend": "Actual native CLI and CoreCLR compiled gameplay",
+      "passed": true,
+      "rpc_pairs": 237,
+      "gameplay_fields": {
+        "total": 59,
+        "int32": 19,
+        "float64": 35,
+        "int64": 5
+      },
+      "complete_archives": 10,
+      "byte_identical_pairs": 5,
+      "pair_scopes": [
+        "later-tick rollback",
+        "caller/game duplicate-write rollback",
+        "same-process immediate restore",
+        "fresh-process immediate restore",
+        "same/fresh-process three-tick continuation"
+      ],
+      "native_owners": 2,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "forced_cleanup": false,
+      "retained_evidence": {
+        "bytes": 3558112,
+        "sha256": "121bebf053021730d61ec96b036c2ce85b9692a80e3330aeda486197af15e17b"
+      },
+      "retained_owner": {
+        "bytes": 24461,
+        "sha256": "89a4a660a65e100a1d374e588e118742978490f8b68683467b9e7a133cbaa852"
+      }
+    },
+    "Windows": {
+      "backend": "Actual native CLI and CoreCLR compiled gameplay",
+      "passed": true,
+      "rpc_pairs": 237,
+      "gameplay_fields": {
+        "total": 59,
+        "int32": 19,
+        "float64": 35,
+        "int64": 5
+      },
+      "complete_archives": 10,
+      "byte_identical_pairs": 5,
+      "pair_scopes": [
+        "later-tick rollback",
+        "caller/game duplicate-write rollback",
+        "same-process immediate restore",
+        "fresh-process immediate restore",
+        "same/fresh-process three-tick continuation"
+      ],
+      "native_owners": 2,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "forced_cleanup": false,
+      "retained_evidence": {
+        "bytes": 3558959,
+        "sha256": "5e971c28d3c58b9cd5f69aaed2de6811917f383ff830f0ac1a0da4f000f8246b"
+      },
+      "retained_owner": {
+        "bytes": 2443,
+        "sha256": "f927e986d0eadbf1df1da91cf17bfe90601121e645696000477d6a0f7f8d0e73"
+      }
+    }
+  },
+  "checks": {
+    "linux_native_suites": 6,
+    "windows_native_executables": 5,
+    "managed_abi": "Compiled harness including independent camera-pose permission, protected short-tail and exact layout checks.",
+    "managed_math": {
+      "groups": 6,
+      "assertions": 746
+    },
+    "publisher_tests": 20,
+    "descriptor_self_checks": 15
+  },
+  "original_failures": [
+    "Initial SDK compilation found a duplicate quaternion type; the existing type was reused.",
+    "An initial math-test compilation used an ambiguous target-typed constructor; the test now names Vector3d explicitly.",
+    "Initial Linux linking lacked required linker-wrapper environment; source objects were retained and relinked.",
+    "The publisher fixture exceeded its original 90-second limit on the mounted drive; the unchanged test and limit passed on an owned native Linux filesystem.",
+    "A descriptor invocation combined mutually exclusive runtime and self-test modes; each was invoked separately.",
+    "Initial sample authoring used unsupported uppercase color spelling, then omitted required save-load UI/control/material guards. Successors use supported authored values and exact guards.",
+    "A comparison authored integer pose zeros against returned float64 fields; new requests use explicit floating-point literals and retain strict response-type checks.",
+    "Complete cold-continuation comparison exposed one differing UI text field and its derived snapshot SHA caused by old process save-ticket history. The sample now checks the current restore epoch; all 59 saved fields and the complete comparison remain.",
+    "The first Windows build used a different spelling of the existing CMake source path and triggered unnecessary dependency work; it was explicitly interrupted, retained failed, and completed using the existing canonical path.",
+    "The first GPU fixture completed its six renders and pixel checks but failed final process metadata publication by using an unsupported transport property. Its failed verdict remains; a successor uses process_id."
+  ],
+  "scope": [
+    "Adapted licensed scene and authored compiled consumer; not fresh-agent game creation or an Alpha gate.",
+    "Complete saved archives are compared within each platform; no cross-platform floating-point equality guarantee.",
+    "Small fixtures do not establish representative performance, input latency or physical-controller behavior.",
+    "New consumer Native AOT publication, project adoption and standalone export need separate execution.",
+    "Between-tick pose interpolation, collision-aware retraction, full-body weapon IK and broader animation authoring remain open."
+  ],
+  "source_identities": {
+    "packages/fps/Feedback.cs": {
+      "bytes": 16815,
+      "sha256": "bf978224efc2beb943754a5f9abdddcb2d8cfefb0242fb4d3ca2f83002727bee"
+    },
+    "packages/fps/Recoil.cs": {
+      "bytes": 6820,
+      "sha256": "ff76543bcafb40971f589a030f4571dd4e33c88fa5e886b1f9e0869938164f69"
+    },
+    "examples/fps-feedback/FpsFeedbackGame.cs": {
+      "bytes": 8305,
+      "sha256": "a3f61ea349f9a5b77296b998486089282cf3b8cb8cc61a9fbaaf755fd603ef91"
+    },
+    "examples/fps-feedback/FeedbackMotion.cs": {
+      "bytes": 6505,
+      "sha256": "792380358b11894ef517287ca3af5a6bc788b1d381ca34e2c8a400034b7d0c2a"
+    },
+    "tests/fps_feedback_gameplay_contract.py": {
+      "bytes": 25042,
+      "sha256": "0f7b2d1366d2ced11cea9d7eb62951c2b80bb55a3d06eeb0120402795237ca4a"
+    },
+    "tests/camera_pose_capture.py": {
+      "bytes": 16968,
+      "sha256": "2d8e82d90bbe0fbb362a3f7a8e867209a7862022289db904c05de4df2fabc00c"
+    },
+    "examples/fps-feedback/configure.py": {
+      "bytes": 4878,
+      "sha256": "9065435cc156f26c9d1a8d75c8aaf727f8b62a60fa56d39fb7330d6b7f0ee2ec"
+    }
+  },
+  "compiled_images": {
+    "sdk": {
+      "bytes": 209408,
+      "sha256": "dd91784bc50ad19780346f0515a6d78d8e0987965c0d3ce7a5e96f611681dba4"
+    },
+    "bridge": {
+      "bytes": 64512,
+      "sha256": "5f5535a27f1ee2dff00919b0d4c617eed59a2fe869ba7673c4037aa7ebbb3b73"
+    },
+    "consumer": {
+      "bytes": 33280,
+      "sha256": "26c87cebd250664c0d1751f9663c50e760a54ff06b600d7a75777f10f73be7e4"
+    },
+    "windows_cli": {
+      "bytes": 26793472,
+      "sha256": "cf261ad7faab412ad5ec370a7654fc677d2ca8e6c215c4de0e842077f94c1bc6"
+    }
+  },
+  "windows_rendering": {
+    "passed": true,
+    "gpu_index": 0,
+    "width": 640,
+    "height": 360,
+    "world_msaa": 4,
+    "viewmodel_msaa": 4,
+    "captures": 3,
+    "frames_presented": 6,
+    "rpc_pairs": 28,
+    "foreground_centroid_dx_pixels": 56.493030842230155,
+    "world_centroid_dx_pixels": -27.990402670561252,
+    "outside_foreground_rgb": {
+      "changed_pixels": 0,
+      "max_rgb_delta": 0,
+      "pixels": 217840,
+      "strong_changed_pixels": 0
+    },
+    "complete_archives": 6,
+    "whole_byte_equal_pairs": 3,
+    "job_processes": 3,
+    "job_active_after": 0,
+    "job_terminated_after": 0,
+    "forced_cleanup": false,
+    "fixture": "Analytic emissive world marker and foreground quad; native camera controls without compiled gameplay.",
+    "scope": "Analytic emissive quads and actual hardware frames; separate world/foreground pose controls. RGB products only; no depth/HDR, gameplay/C#, physical input, foreground window interaction, latency or performance qualification.",
+    "retained_evidence": {
+      "bytes": 88358,
+      "sha256": "65916250aba86ebe1e052507a8120fa119c5d1cd5d1546846a9982b4b5e93774"
+    },
+    "retained_owner": {
+      "bytes": 2460,
+      "sha256": "e238ba07396ff4bf591a1537babfcba299495ff0ba734421d146a3a2838aaeaa"
+    }
+  },
+  "public_sample_authoring": {
+    "passed": true,
+    "recipe": [
+      "prepare.py",
+      "configure.py"
+    ],
+    "native_authoring_calls": 3,
+    "job_processes": 2,
+    "job_active_after": 0,
+    "job_terminated_after": 0,
+    "forced_cleanup": false,
+    "scope": "Fresh copy and guarded native feedback-mode UI authoring; no compiler, gameplay or rendering.",
+    "retained_owner": {
+      "bytes": 7987,
+      "sha256": "17688bb21359eaab3efac1f6e278e26233dbacd5aa50d45717b1b159b8e29813"
+    }
+  }
+}

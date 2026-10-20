@@ -4,6 +4,8 @@ World cameras and first-person arms/weapons have independent, persistent lens
 controls. Use them for ADS, optical zoom and changes to near/far clipping.
 Controls run on the fixed tick, alongside gameplay, and survive checkpoints.
 They do not edit the authored scene or player preference profile.
+[Camera pose effects](CAMERA_POSES.md) independently control camera/weapon
+recoil, bob and shake with unaffected base-aim readback.
 
 ## Agent API
 

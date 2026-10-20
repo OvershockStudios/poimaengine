@@ -19,7 +19,7 @@ KNOWN_FEATURES = frozenset((
     'animation_inertial_v1', 'animation_layers_v1', 'character_input_v1',
     'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1',
     'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1',
-    'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'navigation_query_v1'))
+    'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'navigation_query_v1'))
 NAVIGATION = 'navigation_query_v1'
 
 
@@ -63,13 +63,13 @@ def canonical(header):
     refs = ['baseline_feature', *re.findall(r'result\.features\.push_back\(([a-z_]+)\);', body)]
     need(len(refs) == len(set(refs)) and all(name in symbols for name in refs), 'Canonical native feature symbols are incomplete or duplicated.')
     features = [symbols[name] for name in refs]
-    need(set(features) == KNOWN_FEATURES and len(features) == 18 and refs.count('navigation_feature') == 1,
+    need(set(features) == KNOWN_FEATURES and len(features) == 19 and refs.count('navigation_feature') == 1,
          'Known native availability feature contract changed.')
     extents = re.findall(r'result\.services_bytes=([a-z_]+);', body)
-    need(extents and extents[-1] == 'animation_rate_services_bytes' and all(name in numbers for name in extents),
+    need(extents and extents[-1] == 'camera_pose_services_bytes' and all(name in numbers for name in extents),
          'Canonical service allocation endpoint changed.')
     need((numbers.get('call_version'), numbers.get('call_bytes'), numbers.get('services_version'),
-          numbers.get(extents[-1])) == (1, 80, 7, 376), 'Known native call/epoch/extent contract changed.')
+          numbers.get(extents[-1])) == (1, 80, 7, 392), 'Known native call/epoch/extent contract changed.')
     return dict(call_version=numbers['call_version'], call_bytes=numbers['call_bytes'],
                 services_version=numbers['services_version'], services_bytes=numbers[extents[-1]], features=features)
 
@@ -124,7 +124,7 @@ def self_test(header, cmake, stale_runtime=None):
         generated = copy.deepcopy(seed);generated['features']['navigation'] = navigation
         generated.update(generated_fields(cmake, navigation))
         result = validate(generated, header)
-        need(result['feature_count'] == (18 if navigation else 17), 'Generated descriptor has the wrong feature count.')
+        need(result['feature_count'] == (19 if navigation else 18), 'Generated descriptor has the wrong feature count.')
         cases += 1
     good = copy.deepcopy(seed);good.update(generated_fields(cmake, False))
     def reject(value):
@@ -139,7 +139,7 @@ def self_test(header, cmake, stale_runtime=None):
     if stale_runtime is None:
         stale['gameplay_services_bytes'] = 256
         stale['gameplay_features'] = [name for name in good['gameplay_features'] if name not in
-            ('input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1')]
+            ('input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1')]
     need(stale['gameplay_services_bytes'] == 256, 'The retained regression witness must be the known stale 256-byte descriptor.')
     reject(stale)
     # Reconstruct generated packaging fields on the actual retained metadata,
@@ -155,7 +155,7 @@ def self_test(header, cmake, stale_runtime=None):
         bad = copy.deepcopy(good);bad['gameplay_features'] = features;reject(bad)
     bad = copy.deepcopy(good);bad['features']['navigation'] = True;reject(bad)
     bad['gameplay_features'].append(NAVIGATION);bad['features']['simulation'] = False;reject(bad)
-    need(policy['services_bytes'] == 376, 'Canonical extent changed during file-only tests.')
+    need(policy['services_bytes'] == 392, 'Canonical extent changed during file-only tests.')
     return dict(passed=True, file_only_checks=cases, retained_stale_descriptor_rejected=True,
                 generated_navigation_false_and_true_checked=True)
 

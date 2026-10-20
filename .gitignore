@@ -16,6 +16,12 @@ __pycache__/
 /examples/character-yard/obj/
 /examples/locomotion-yard/bin/
 /examples/locomotion-yard/obj/
+/examples/fps-feedback/bin/
+/examples/fps-feedback/obj/
+/packages/fps/bin/
+/packages/fps/obj/
+/tests/FpsFeedback/bin/
+/tests/FpsFeedback/obj/
 
 /tests/fixtures/**/bin/
 /tests/fixtures/**/obj/

@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.206
+
+- Add independent world-camera and foreground pose controls, unaffected base-aim
+  readback, atomic CLI/C# commands and persistent camera offsets.
+- Add optional FPS feedback helpers and a range sample with authored, seeded-random
+  and hybrid recoil, separate aiming/visual motion, sway, travel-driven bob and shake.
+
 ## 0.0.205
 
 - Document guarded scene-value readback before agent handoff, with a fresh

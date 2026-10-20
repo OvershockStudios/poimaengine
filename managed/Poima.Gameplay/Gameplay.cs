@@ -21,9 +21,18 @@ public readonly record struct EntityId(ulong High, ulong Low)
 public readonly record struct Vector3d(double X, double Y, double Z);
 [InlineArray(16)] internal struct MatrixStorage { private double element; }
 [StructLayout(LayoutKind.Sequential)]
-public struct WorldTransform
+public struct WorldTransform : IEquatable<WorldTransform>
 {
     private MatrixStorage matrix;
+    // InlineArray has no runtime-generated ValueType equality on .NET9+.
+    // Compare the matrix values explicitly, including all affine elements.
+    public readonly bool Equals(WorldTransform other)
+    {for(int i=0;i<16;++i)if(!matrix[i].Equals(other.matrix[i]))return false;return true;}
+    public override readonly bool Equals(object? other)=>other is WorldTransform value && Equals(value);
+    public override readonly int GetHashCode()
+    {var hash=new HashCode();for(int i=0;i<16;++i)hash.Add(matrix[i]);return hash.ToHashCode();}
+    public static bool operator ==(WorldTransform left,WorldTransform right)=>left.Equals(right);
+    public static bool operator !=(WorldTransform left,WorldTransform right)=>!left.Equals(right);
     public readonly Vector3d Position => new(matrix[12],matrix[13],matrix[14]);
     public readonly Vector3d Forward => new(-matrix[8],-matrix[9],-matrix[10]);
     public readonly double this[int column, int row] => column is >=0 and <4 && row is >=0 and <4 ? matrix[column*4+row] : throw new ArgumentOutOfRangeException();

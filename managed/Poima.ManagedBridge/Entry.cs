@@ -50,7 +50,7 @@ public static unsafe class Entry
         try
         {
             if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !AnimationServiceAbi.LayoutValid() || !AnimationLayerServiceAbi.LayoutValid() || !CharacterInputServiceAbi.LayoutValid() || !NavigationServiceAbi.LayoutValid() || !InstanceServiceAbi.LayoutValid() || !PlayerPreferenceServiceAbi.LayoutValid() || !InputActionServiceAbi.LayoutValid() || !HitRegionServiceAbi.LayoutValid() || !TwoBoneIkServiceAbi.LayoutValid() || !TwoBoneIkOrientationServiceAbi.LayoutValid() || !AnimationRateServiceAbi.LayoutValid() || !GroundingControlServiceAbi.LayoutValid() || !RootMotionServiceAbi.LayoutValid() || !CameraLensServiceAbi.LayoutValid() || !CharacterStanceServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !AnimationServiceAbi.LayoutValid() || !AnimationLayerServiceAbi.LayoutValid() || !CharacterInputServiceAbi.LayoutValid() || !NavigationServiceAbi.LayoutValid() || !InstanceServiceAbi.LayoutValid() || !PlayerPreferenceServiceAbi.LayoutValid() || !InputActionServiceAbi.LayoutValid() || !HitRegionServiceAbi.LayoutValid() || !TwoBoneIkServiceAbi.LayoutValid() || !TwoBoneIkOrientationServiceAbi.LayoutValid() || !AnimationRateServiceAbi.LayoutValid() || !GroundingControlServiceAbi.LayoutValid() || !RootMotionServiceAbi.LayoutValid() || !CameraPoseServiceAbi.LayoutValid() || !CameraLensServiceAbi.LayoutValid() || !CharacterStanceServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -142,8 +142,9 @@ public static unsafe class Entry
             bool animationRate=typeof(IAnimationRateGame).IsAssignableFrom(type);
             bool rootMotion=typeof(IRootMotionGame).IsAssignableFrom(type);
             bool cameraLens=typeof(ICameraLensGame).IsAssignableFrom(type);
+            bool cameraPose=typeof(ICameraPoseGame).IsAssignableFrom(type);
             bool stance=typeof(ICharacterStanceGame).IsAssignableFrom(type);
-            var required=GameplayRequirements.Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate);
+            var required=GameplayRequirements.Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose);
             GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)

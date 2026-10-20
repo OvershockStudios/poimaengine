@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==376u &&
+    check(capable.services_version==7 && capable.services_bytes==392u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
@@ -83,7 +83,7 @@ void policy() {
     check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
     auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
-    auto appended=capable;appended.services_bytes=376;appended.features.push_back("future_available_v1");
+    auto appended=capable;appended.services_bytes=400;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
     for(unsigned animation_kind:{0u,1u,2u}) {
@@ -123,6 +123,7 @@ void policy() {
     std::erase(synthetic.features,std::string(two_bone_ik_orientation_feature));
     std::erase(synthetic.features,std::string(grounding_control_feature));
     std::erase(synthetic.features,std::string(animation_rate_feature));
+    std::erase(synthetic.features,std::string(camera_pose_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -175,7 +176,7 @@ void policy() {
     check(!compatibility_error(baseline,short_instances).empty(),"Instance capability advertised without allocation.");
     auto duplicate_instances=instances;duplicate_instances.features.push_back(instances_feature);
     check(!compatibility_error(duplicate_instances,capable).empty(),"Duplicate instance requirement accepted.");
-    auto future_instances=capable;future_instances.services_bytes=376;future_instances.features.push_back("future_available_v1");
+    auto future_instances=capable;future_instances.services_bytes=400;future_instances.features.push_back("future_available_v1");
     check(compatibility_error(instances,future_instances).empty(),"Larger same-epoch host rejects instance prefix.");
     auto preferences=baseline;preferences.services_bytes=256;preferences.features.push_back(player_preferences_feature);
     check(compatibility_error(preferences,capable).empty() && compatibility_error(preferences,preferences).empty(),
@@ -290,6 +291,26 @@ void policy() {
     check(!compatibility_error(baseline,short_rate_host).empty(),"Rate advertised beyond allocation.");
     auto duplicate_rate=rate;duplicate_rate.features.push_back(animation_rate_feature);
     check(!compatibility_error(duplicate_rate,capable).empty(),"Duplicate rate feature accepted.");
+    auto pose=baseline;pose.services_bytes=392;pose.features.push_back(camera_pose_feature);
+    check(compatibility_error(pose,pose).empty() && compatibility_error(pose,capable).empty(),"Independent camera pose requires unrelated features.");
+    auto unnamed_pose=capable;std::erase(unnamed_pose.features,std::string(camera_pose_feature));
+    check(!compatibility_error(pose,unnamed_pose).empty(),"Opaque extent grants unnamed camera pose.");
+    for(unsigned bytes:{176u,192u,320u,336u,352u,368u,376u,384u,391u,393u}) {
+        auto wrong=pose;wrong.services_bytes=bytes;check(!compatibility_error(wrong,capable).empty(),"Wrong camera pose prefix accepted.");
+    }
+    auto short_pose=pose;short_pose.services_bytes=384;
+    check(!compatibility_error(baseline,short_pose).empty(),"Camera pose advertised beyond its allocation.");
+    auto duplicate_pose=pose;duplicate_pose.features.push_back(camera_pose_feature);
+    check(!compatibility_error(duplicate_pose,capable).empty(),"Duplicate camera pose feature accepted.");
+    for(unsigned mask=0;mask<256;++mask) {
+        auto requested=pose;const char* optional[]{animation_feature,animation_layers_feature,character_input_feature,input_actions_feature,hit_regions_feature,camera_lens_feature,character_stance_feature,animation_rate_feature};
+        for(unsigned bit=0;bit<8;++bit)if(mask&(1u<<bit))requested.features.push_back(optional[bit]);
+        const bool valid=(!(mask&2) || bool(mask&1)) && (!(mask&128) || bool(mask&1));
+        check(compatibility_error(requested,capable).empty()==valid,"Camera pose extent bypassed older feature dependencies.");
+    }
+    auto retained_rate=capable;retained_rate.services_bytes=376;std::erase(retained_rate.features,std::string(camera_pose_feature));
+    check(compatibility_error(rate,retained_rate).empty() && compatibility_error(baseline,retained_rate).empty(),"New camera pose broke actual old376 service metadata.");
+    check(!compatibility_error(pose,retained_rate).empty(),"Old376 host grants new camera pose.");
     auto stance=baseline;stance.services_bytes=336;stance.features.push_back(character_stance_feature);
     check(compatibility_error(stance,stance).empty() && compatibility_error(stance,capable).empty(),"Independent stance profile gained unrelated dependencies.");
     auto unnamed_stance=capable;std::erase(unnamed_stance.features,std::string(character_stance_feature));
@@ -356,6 +377,14 @@ void policy() {
     typed.animation_get_extended=nullptr;typed.animation_set_extended=nullptr;
     const auto legacy_without_tail=baseline_view(typed.baseline);
     check(std::memcmp(&legacy_without_tail,&legacy_from_typed,176)==0,"Baseline view interpreted extension callback slots.");
+    PoimaGameCameraPoseServicesV1 newest{};
+    std::memcpy(&newest,&typed,sizeof(typed));
+    auto& newest_base=newest.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline;
+    newest_base.bytes=sizeof(newest);
+    newest.camera_pose_get=[](void*,const PoimaEntityId*,PoimaGameCameraPoseStateV1*,PoimaGameError*)->int32_t{return -1;};
+    newest.camera_pose_set=[](void*,const PoimaGameCameraPoseCommandV1*,PoimaGameError*)->int32_t{return -1;};
+    const auto newest_before=newest;const auto newest_legacy=baseline_view(newest_base);
+    check(std::memcmp(&newest_legacy,&view,176)==0 && std::memcmp(&newest,&newest_before,sizeof(newest))==0,"Camera pose tail altered or mutated the baseline service view.");
     source.services.bytes=175;rejects([&]{baseline_view(source.services);});source.services.bytes=240;source.services.version=8;rejects([&]{baseline_view(source.services);});
 }
 void compiled(const GameplayConfig& config) {
