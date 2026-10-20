@@ -1,0 +1,680 @@
+{
+  "format": "poima.evidence.grounding-controls.v1",
+  "engine_version": "0.0.199",
+  "date": "2026-10-19",
+  "passed": true,
+  "scope": "Selected Linux CPU headless live automatic-contact controls, actual CoreCLR consumer, retained manual352-byte regression and untouched198 v7 save compatibility. Not overall Alpha qualification.",
+  "contract": {
+    "requested_controls": "Complete runtime.step grounding rows {entity,slot,enabled,weight}; runtime.grounding reads requested controls at an exact session/tick. Getter/setter do not probe supports. Requested controls remain distinct from achieved runtime.ik contact diagnostics.",
+    "composition": "Authored enable AND live enable; authored weight multiplied by live weight. Frozen calibration, target ownership and source-height fade remain unchanged. Disabled automatic slots still reject manual IK/orientation commands.",
+    "bounds": {
+      "commands_per_tick_combined_caller_and_gameplay": 64,
+      "managed_reads_per_tick": 1024,
+      "managed_writes_per_tick": 64,
+      "feet_per_rig": 2,
+      "feet_per_world": 64,
+      "weight_min": 0,
+      "weight_max": 1
+    },
+    "abi": {
+      "feature": "animation_grounding_control_v1",
+      "services_epoch": 7,
+      "services_bytes": 368,
+      "prior_orientation_prefix_bytes": 352,
+      "command_bytes": 48,
+      "state_bytes": 48,
+      "get_offset": 352,
+      "set_offset": 360,
+      "csharp_marker": "IGroundingControlGame",
+      "csharp_methods": [
+        "GetGroundingControl",
+        "SetGroundingControl"
+      ],
+      "compatibility": "Named additive extension; short/undeclared tables reject before extension access. Existing earlier prefixes retained; no general C++ binary-compatibility claim."
+    },
+    "persistence": "Nested animation v8 only when a live multiplier differs from true/1; otherwise exact existing v7 grounding shape. V7 loads identity multipliers. Uninitialized nonidentity v8 and allidentity v8 reject. Changed policy cannot be saved with a stale decision; same-value writes remain passive. Only successful final sampling commits refreshed decisions.",
+    "atomicity": "Caller/gameplay conflicts, malformed controls, duplicate setters, quota rejection and later-Tick failures retain whole native state. Portable saves remain distinct from in-process physics rollback."
+  },
+  "environment": {
+    "platform": "Linux x64 headless",
+    "native_build": "Debug -O0 -g0 with assertions",
+    "build_workers": 2,
+    "linker": "LLVM LLD, one link thread",
+    "runtime_workers": 2,
+    "dotnet_sdk": "10.0.401",
+    "coreclr": "10.0.12",
+    "renderer_executed": false,
+    "windows_executed": false,
+    "native_aot_executed": false
+  },
+  "native": {
+    "build_recovery": {
+      "passed": true,
+      "seconds": 312.202141,
+      "commands": 2,
+      "configure_exit_code": 0,
+      "build_exit_code": 0,
+      "observed_ninja_actions": 47,
+      "compiled_translation_units": 29,
+      "normal_core_archives": 1,
+      "executable_links": 17,
+      "scope": "Incremental configure/build after retained supervisor failure; original native1 remains failed. No clean-build claim."
+    },
+    "test_only_successor": {
+      "passed": true,
+      "seconds": 31.183508,
+      "actions": 2,
+      "translation_units": 1,
+      "links": 1,
+      "other_executable_images_preserved": 20,
+      "engine_core_preserved": true,
+      "scope": "Only the settled-cohort test executable changed; no physics/contact-persistence fix."
+    },
+    "retained_ctest": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "repeated_after_test_only_rebuild": false,
+      "scope": "Original QA1 completed all 19 old tests before the new unsettled fixture failed. Unchanged core/other test identities retain those results."
+    },
+    "selected_qa": {
+      "passed": true,
+      "seconds": 25.246948,
+      "new_native_groups": 5,
+      "native_archive_files": 16,
+      "complete_native_raw_and_typed_pairs": 5,
+      "core_authoring_tests": 5,
+      "core_errors": 0,
+      "core_failures": 0,
+      "core_skips": 0,
+      "metadata_checks": 3
+    },
+    "settled_cohort": "A distinct fixed 120-tick pre-jump warmup requires the actual unrelated dynamic prop inactive with exactly zero linear/angular velocities, from a complete retained snapshot. Every entity and field remains in exact immediate/future comparisons. Original 60-tick --unsettled-prop case stays available and failed/unqualified."
+  },
+  "managed": {
+    "passed": true,
+    "build_owner_seconds": 151.098307,
+    "build_commands": 3,
+    "abi_execution_commands": 1,
+    "named_abi_assertion_groups": 96,
+    "retained_groups": 94,
+    "new_groups": 2,
+    "scope": "Actual Entry.Invoke plus independent mock-host ABI/POD/guarded-table tests; linked production NativeGame code is portable IL here, not NativeAOT shipping qualification. Actual CoreCLR execution is separately recorded below.",
+    "new_game_saved_state": {
+      "bytes": 64,
+      "fields": 8
+    },
+    "artifact_identities": {
+      "bridge": {
+        "bytes": 64512,
+        "sha256": "287a27e9e5d563eab57dde648948c5e8a62b32f0edfb38008037e20184f6b5e0"
+      },
+      "bridge_and_abi_sdk": {
+        "bytes": 198144,
+        "sha256": "f7fadbc9697a62e79100707dd175b1495c6462f32df87b1d5379aa0c6bbabefb"
+      },
+      "consumer_sdk": {
+        "bytes": 198144,
+        "sha256": "8702de221130ff8fde1512c05c0360a93e7a913a5a248a3df6095d4bebd824f0"
+      },
+      "consumer": {
+        "bytes": 7168,
+        "sha256": "a56a3f6fb0670b0b509e1fe0a2f65fb1414a90caef24b900e077c9fb7bcc4016"
+      },
+      "old352_consumer": {
+        "bytes": 6656,
+        "sha256": "9ac9769d94c5d3c586f57f10a69a8f2db0417c62f8cdf48af03af522f0f3bbac"
+      },
+      "old_bridge": {
+        "bytes": 64512,
+        "sha256": "ecbc97c8d2e1968315d2f7d3ad5fec2a556911de7d1b51f66a74744b94be5000"
+      },
+      "old_bridge_sdk": {
+        "bytes": 192512,
+        "sha256": "9dd4812b708b21efed9f6f81f1b41abcb2713d6564872e94bd3bda6d181b52be"
+      },
+      "old_consumer_sdk": {
+        "bytes": 192512,
+        "sha256": "9213d69f54d5f6d8a160af4b594b75d5615ac20da6852bda064312af141ac325"
+      }
+    },
+    "sdk_identity_limit": "Bridge/ABI and consumer SDK files have different hashes despite the selected pinned source/project. Their exact combination passed actual CoreCLR checks; byte equivalence or arbitrary mixed-version compatibility is not inferred."
+  },
+  "policy_checks": {
+    "passed": true,
+    "owner_seconds": 31.525962,
+    "publisher_requirement_tests": 18,
+    "descriptor_self_cases": 15,
+    "actual_descriptor_checks": 1,
+    "actual_descriptor_services_bytes": 368,
+    "actual_descriptor_available_features": 17,
+    "disabled_simulation_facade": "C++20 syntax-only check; not a linked/executed simulation-OFF engine qualification.",
+    "source_fence_limit": "The policy owner did not itself enforce imported publisher and indirect native-header pins. Separate immutable prelaunch managed/native source freezes were joined independently to those selected sources; no complete owner-enforced transitive closure is claimed."
+  },
+  "original_character": {
+    "name": "KayKit Adventurers 1.0 Knight",
+    "license": "CC0 original notice retained",
+    "original_source": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_license": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "cooked": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    },
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76,
+    "channels": 8712,
+    "time_keys": 90748,
+    "source_preservation": "Original geometry/curves and complete cooked identity retained; all57 affine nodes observed per sample. Local positions/scales remain source-derived; configured leg rotations intentionally change.",
+    "control_cases": "The18 control samples select original Idle36 at time0; actual native controller velocity/elevation/grounded state establishes Jump/airborne/landing. This is not simulated by merely selecting a jump clip. The separate86-sample manual case covers all76 takes."
+  },
+  "protocol": {
+    "passed": true,
+    "parent_seconds_observed": 311.047846,
+    "cases": [
+      {
+        "label": "JSON controls",
+        "passed": true,
+        "scope": "Original Knight Idle pose, caller disable/fade/re-enable, actual controller Jump/airborne/landing, request/retry/stale/ownership and complete warm/cold saves.",
+        "raw_rpc_pairs": 198,
+        "native_leaders_eof0": 2,
+        "full_pose_samples": 8,
+        "helper_seconds_observed": 62.212683,
+        "record": {
+          "bytes": 1001553,
+          "sha256": "3e0078aec54d26255de2f1989ec60bfe5bbdba157b115648e86b940635c86a84"
+        },
+        "complete_checkpoint_references": 18,
+        "complete_raw_and_typed_pairs": 11,
+        "nested_animation_versions": [
+          7,
+          8
+        ]
+      },
+      {
+        "label": "CoreCLR controls",
+        "passed": true,
+        "scope": "New368-byte game controls both automatic feet and actual Jump; staged-read invariance, caller conflict, disabled manual ownership,1025th-read and duplicate-setter rejection, later-Tick rollback. Retained352-byte game also executes.",
+        "raw_rpc_pairs": 297,
+        "native_leaders_eof0": 2,
+        "full_pose_samples": 10,
+        "helper_seconds_observed": 130.193872,
+        "record": {
+          "bytes": 1453061,
+          "sha256": "9b796d867433871f79d5b437e1c83b5d8f35455b10f3040b1a29978d8659d271"
+        },
+        "complete_checkpoint_references": 29,
+        "complete_raw_and_typed_pairs": 17,
+        "nested_animation_versions": [
+          7,
+          8
+        ]
+      },
+      {
+        "label": "Retained manual CoreCLR consumer",
+        "passed": true,
+        "scope": "Unchanged explicit near-uniform/orientation consumer; one selected time in all 76 original takes plus detailed Idle/Run, full affine observations and complete persistence. No automatic grounding in this manual case.",
+        "raw_rpc_pairs": 601,
+        "native_leaders_eof0": 2,
+        "full_pose_samples": 86,
+        "helper_seconds_observed": 77.963324,
+        "record": {
+          "bytes": 8113359,
+          "sha256": "8264fbc560c76ff52389021b105e3fd5c0dc1639a19f56a2197aef7d3338b633"
+        },
+        "complete_checkpoint_references": 14,
+        "complete_raw_and_typed_pairs": 8,
+        "nested_animation_versions": [
+          4,
+          6
+        ]
+      },
+      {
+        "label": "Original 198 v7 save",
+        "passed": true,
+        "scope": "Copies untouched original world/cooked content and complete save namespace to fresh output; exact original full bytes on load/re-save and after two actual old 352-byte callback Ticks.",
+        "raw_rpc_pairs": 9,
+        "native_leaders_eof0": 1,
+        "full_pose_samples": 0,
+        "helper_seconds_observed": 6.914937,
+        "record": {
+          "bytes": 22157,
+          "sha256": "daa00af475c1938a644b8cefc6231c66985723ab302564080331bef9e50591ff"
+        },
+        "original_full_archive_pairs": 2,
+        "new_pose_samples": 0
+      }
+    ],
+    "totals": {
+      "raw_rpc_pairs": 1105,
+      "new_complete_checkpoint_references": 61,
+      "original198_archive_comparison_pairs": 2,
+      "complete_raw_and_typed_pairs": 38,
+      "control_full57_node_pose_samples": 18,
+      "manual_full57_node_pose_samples": 86,
+      "native_leaders_eof0": 7
+    },
+    "old_v7_archive_identity": {
+      "original_cold": {
+        "bytes": 79292,
+        "sha256": "8164034f8bec1c703ae1af5f76b876b9517331db0ecaec2a9be3451600984573"
+      },
+      "after_two_actual_old352_ticks": {
+        "bytes": 79291,
+        "sha256": "491be3502f5a2092b1c453aa1b7a9e32f5f5e8b8dd71c8f02e29df82db8e0011"
+      }
+    },
+    "equality_scope": "Every complete saved operand and recursive numeric/boolean/string type retained. Whole-pair claims compare original raw bytes as well as complete typed structures, with no field removal, normalization or receipt rewriting. Counts distinguish repeated capture references from distinct content.",
+    "closure": "Seven native leaders EOF0 with no surplus stdout; enclosing four-command owner passed, no forced cleanup and finalchildren empty. External process-tree ownership remains distinct from individual leader exit."
+  },
+  "selected_native_identities": {
+    "poima": {
+      "encoding": "raw",
+      "stored": {
+        "bytes": 35676048,
+        "sha256": "7e37ff94d89c3a0c98554a44cc902519ab044652a32d5b7820f3b7c30e00a433"
+      },
+      "decoded": {
+        "bytes": 35676048,
+        "sha256": "7e37ff94d89c3a0c98554a44cc902519ab044652a32d5b7820f3b7c30e00a433"
+      }
+    },
+    "libpoima_core.a": {
+      "encoding": "gzip1",
+      "stored": {
+        "bytes": 20259784,
+        "sha256": "d81c73b0f71efee55f53a78c848be8a882568da105c1fbe787c751aa8a90db17"
+      },
+      "decoded": {
+        "bytes": 144002884,
+        "sha256": "360106e9d0ed277ec54283714325e2679734ded9ca626b03e01b9c1af08c7093"
+      }
+    },
+    "poima-runtime-grounding-control-test": {
+      "encoding": "gzip1",
+      "stored": {
+        "bytes": 3468311,
+        "sha256": "3e21edcd7af1a15e7a50720e69fae723167c338d8b985be4e3090e3da5e6b9ec"
+      },
+      "decoded": {
+        "bytes": 14098664,
+        "sha256": "4a7bb7dbf765fcaa811782e8dbc4c0bb395c9ac4afb508e21342dddb76c566ab"
+      }
+    }
+  },
+  "seal_scope": "Copies/compression preserve selected tested images. This seal is not a new build, clean installation or another gameplay run.",
+  "qualified_image_scope": "The first protocol table uses the original 199 CLI hash in selected_native_identities. The later allowlist-only build and current-image headless checks use the separately identified CLI/core in attached_player_followup. Original results are not reassigned to the rebuilt image; attached/advancing-player routing remains source-reviewed, not executed.",
+  "retained_failures": [
+    {
+      "case": "Initial native owner",
+      "verdict": "FAILED",
+      "forced_cleanup": true,
+      "cause": "A process disappeared during a /proc read; the supervisor raised ProcessLookupError and terminated the owned build. This is not a reported compiler error. Final child population was empty. Corrective owner/build is separate."
+    },
+    {
+      "case": "Original unsettled native QA",
+      "verdict": "FAILED",
+      "forced_cleanup": false,
+      "cause": "After an original 60-tick warmup the unrelated falling prop was still active at the saved boundary. Cold/warm landing archives differ at10 prop body/local position or quaternion scalar values plus the enclosing digest; every other entity and animation/control field is exact. No fields are filtered and no tolerance is introduced.",
+      "later_treatment": "Distinct fixed 120-tick asleep-prop cohort; no contact-cache/sleep-history persistence fix or retroactive pass."
+    },
+    {
+      "case": "First publisher policy run",
+      "verdict": "FAILED",
+      "forced_cleanup": true,
+      "cause": "Original90-second command deadline. Separate admitted native-Linux temporary/output scope used the unchanged suite and same command bound; no matched filesystem causality or speed claim."
+    },
+    {
+      "case": "Intermediate policy preparation",
+      "verdict": "REJECTED_BEFORE_COMMAND",
+      "cause": "Temporary directory lay outside the owned output root; no command was spawned."
+    },
+    {
+      "case": "Earlier197 full representative-game workflow",
+      "verdict": "FAILED",
+      "cause": "Original85-second functional deadline during relocated save restoration. Current small control/character fixtures do not close or regrade that broader workflow."
+    }
+  ],
+  "validation_scope": {
+    "independent_case_file_checks": "Original raw request/reply associations and complete save files/pairs recomputed after closure. Independent source/ABI/native/QA reviews remain separate evidence scopes; successful producer flags alone are not gameplay evidence.",
+    "case_reviewer_scope": "Read-only retained-file validation includes source-author validators. No separate native replay or independent engine implementation is claimed.",
+    "hash_only_original_records": {
+      "original_native_build_recovery": {
+        "bytes": 117453,
+        "sha256": "bd379ac0eef6b21780c303f2e2b4a3ea808f6054f73294c812cc992df11d2bed"
+      },
+      "test_only_rebuild": {
+        "bytes": 9394,
+        "sha256": "1745a75eb1d75889353a1e46aa8ee396919781aab9d35ed5b9c3b79d8f0c85cb"
+      },
+      "managed_build_and_abi_owner": {
+        "bytes": 20333,
+        "sha256": "6361937d03ca8687a225eb7a4a107b0dfb9e7068f9db1d56984021fd27ab4c8b"
+      },
+      "managed_abi_result": {
+        "bytes": 10048,
+        "sha256": "e80c6abdbbe3c1727101dae275aebe773d4ef2a230f1654f04623c929d3669b0"
+      },
+      "old_ctest_and_failed_unsettled_owner": {
+        "bytes": 18494,
+        "sha256": "98d8c9a0daa440179b7deb2da4a411dabd570bdaca72155af06002761ab7304a"
+      },
+      "settled_native_core_metadata_owner": {
+        "bytes": 15884,
+        "sha256": "6d72be8a60f14127e00091de5329826dcf5d545734059241363775180f17144e"
+      },
+      "policy_owner": {
+        "bytes": 14483,
+        "sha256": "bc9837b0873957adc31514e1d055c914151af543e78a150c6a5f52a0f5b16ca9"
+      },
+      "protocol_parent": {
+        "bytes": 19818,
+        "sha256": "00fba3895135a4aa20a02ff23218257da010e96a54775307c8ca43cc3edd87c0"
+      },
+      "selected_native_seals": {
+        "bytes": 1800,
+        "sha256": "3079e83e068221ba01c3910aeb0e9ccc5b0a2660e270e3426f4534bd8ca34dde"
+      }
+    },
+    "hash_only_file_reviews": {
+      "native_build": {
+        "bytes": 10087,
+        "sha256": "3d03b259afd9532aa5aaf19979f688d0a0e1b5843e81be927dc0724c2ece0de5"
+      },
+      "test_rebuild_and_policy": {
+        "bytes": 9032,
+        "sha256": "90dddbd0ea06860f22bf0fac1b211bbb00fba76d575b726cefd50f4459937866"
+      },
+      "managed": {
+        "bytes": 13856,
+        "sha256": "0031375c3a42f2d93c5715c39aa7bc09eba0f6a237e284b2ba7b8d1c5964e7ba"
+      },
+      "native_qa": {
+        "bytes": 9528,
+        "sha256": "bacc3c889fc01854e7e6dc0af1b59169dd3c00ea00379092a0d0a3fc81d02730"
+      },
+      "json_case": {
+        "bytes": 18968,
+        "sha256": "5d66cab08393a0e2fa005eb4c8c160c984e9998e1b1b86fb360f5ae6c0575529"
+      },
+      "coreclr_case": {
+        "bytes": 20336,
+        "sha256": "aa152c30b8436896fe1fdee93e00be829fd305a89ccc0149d1f46a40535f6c57"
+      }
+    }
+  },
+  "source_identities_scope": "Current public source identities. The only post-protocol source delta is the separately identified attached-player read allowlist before/after change; original protocol outcomes remain bound to the original image and preceding source identity.",
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 94193,
+      "sha256": "b85dbfafaf99850935622895b8534eae3d459a449e8f5f46fe109a044166c66f"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 28511,
+      "sha256": "a4afde9e86b54f3d95b11ccb38e4f88339a2cb594e1d008ee54d818aa25b2c7b"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 8658,
+      "sha256": "93129b13100eb0ee9c91781b5d7f813d9b52e4c43221af820cdc43195e9545cd"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 42866,
+      "sha256": "e2d673dec85341d9031a24ee078fbdabdb8892656a2c3c2b73f288116c3176e1"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 16009,
+      "sha256": "0765ad50d5fcdb28ea333a3f9d62ddc8097966dc9e92a90c6285b11600f56139"
+    },
+    "src/runtime.cpp": {
+      "bytes": 153757,
+      "sha256": "a498a767394f34e63fa5f4d396d1acacfde1cf476267c3628b5f17294f5e77f4"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 117194,
+      "sha256": "cef9c482d578797ff9bc65e72323d95a80d4f3ceac13b066fb6df2e55732ffa4"
+    },
+    "src/runtime_grounding_services.inc": {
+      "bytes": 3485,
+      "sha256": "908d20b4f03a2c4c39232ceeb61e2fd691e8f5f5450a2a7ff448c5cd667b8bf4"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 9497,
+      "sha256": "aa3024b6ee687a8e2c3767a9b8e556cf85a37b2db8d7df15f040f081aa4cd390"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 76656,
+      "sha256": "34902bbce220522fbc06b9fbaf901d107dd34dd2796b79834018fd4f3e9f4fdd"
+    },
+    "src/runtime_ui.inc": {
+      "bytes": 11457,
+      "sha256": "34b74773b2c291884ef2d457819a27ffda608d5704ab2187806531bef06deda1"
+    },
+    "src/world.cpp": {
+      "bytes": 344619,
+      "sha256": "164f01b19689345bb6008b83e1adebd2080551f32836177964d5e88a960460ea"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 125374,
+      "sha256": "49635d581b8713b53e585d99169f1c310728fa2c4b20050c5531c694f4802773"
+    },
+    "src/world_gameplay_save.inc": {
+      "bytes": 14420,
+      "sha256": "810062065e8b6179a6eeacf2b96b4d6b627a77e82a58a49040c7ab249196241a"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 62866,
+      "sha256": "4dd04e7071ea0c4c91ce6ab850c624032988e4c4e778c80d4b6fe2bb0f207af1"
+    },
+    "tests/gameplay_compatibility_native.cpp": {
+      "bytes": 35311,
+      "sha256": "7af08db3ad29dd69d624ff4253689c4fd47c61d5c93942a968df489e889d55cd"
+    },
+    "tests/runtime_grounding_control_native.cpp": {
+      "bytes": 17787,
+      "sha256": "dbfed2be465a320c61ef0e5f49869229e219a65d7d688e00cc547bef649739ed"
+    },
+    "managed/Poima.Gameplay/GroundingControl.cs": {
+      "bytes": 5826,
+      "sha256": "5ed243dc678e4eae78760a1ca10c5b113f67ad42455c73ebf085ad70873e2fe5"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 25057,
+      "sha256": "59c12e38ff1d2e7caf18ef462c2424bf13d5ac212a859781c5258b25b1ef61da"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 15112,
+      "sha256": "0d140330e2eab02321b54f734cd960928dcb19f5abfd89d28e1599ad136798e4"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7290,
+      "sha256": "bda78ae2c8bc7e40d684024284222b7228744c028e1aa1b9759e5f6a112ed29c"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 20700,
+      "sha256": "8f07769c952d13b0edb9d18a194e71bece1c9134e419bcd27aa9f9ba5f76b358"
+    },
+    "tests/native_gameplay_publish_requirements.py": {
+      "bytes": 19243,
+      "sha256": "f226960c67dd40fd78d1a225c5d2f1104bbc9adf3a9837f0ae6a671911f87e9b"
+    },
+    "tests/managed_service_abi/Program.cs": {
+      "bytes": 42227,
+      "sha256": "7bb1a558b964aeb9aa89a4e2fd9ac775e92222fff8d88d7d5afc2625450c718d"
+    },
+    "tests/managed_service_abi/GroundingControlExtension.cs": {
+      "bytes": 13934,
+      "sha256": "46153ee2d3f9cf180c782ede84410caee8752b02f75a44442d14470283cb8535"
+    },
+    "tests/runtime_grounding_control.py": {
+      "bytes": 19528,
+      "sha256": "2088b8dbb22361c9085cccf9205e070aa3bc48f0719e7175aab05949d371f41b"
+    },
+    "tests/runtime_ground_contacts.py": {
+      "bytes": 13997,
+      "sha256": "534d3f5e88cbf3c57cae865c138168cf5876f7363229f75153fb8fd5c0ca4281"
+    },
+    "tests/runtime_ik_metric_profile.py": {
+      "bytes": 21612,
+      "sha256": "bff70965ec4cf3524adc1b9e6cdf76b584bd5d1ac87aca031f1b40576d3fbe3f"
+    },
+    "tests/managed_grounding_control_gameplay/ManagedGroundingControlGame.cs": {
+      "bytes": 2303,
+      "sha256": "be947137a88718d1eef331adb51f983c95204b91d1c7ec464317f0ac7a4eecf3"
+    },
+    "tests/managed_grounding_control_gameplay/Poima.ManagedGroundingControlGame.csproj": {
+      "bytes": 211,
+      "sha256": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a"
+    }
+  },
+  "reproduction": {
+    "native_test_source": "tests/runtime_grounding_control_native.cpp",
+    "native_target": "poima-runtime-grounding-control-test",
+    "native_options": "--output <fresh-directory>; --unsettled-prop explicitly selects original 60-tick unqualified case.",
+    "character_script": "tests/runtime_grounding_control.py",
+    "character_arguments": [
+      "--binary <matching-qualified-native-cli>",
+      "--source <unchanged-Knight.glb>",
+      "--license <original-CC0-notice>",
+      "--output <fresh-directory>"
+    ],
+    "compiled_project": "tests/managed_grounding_control_gameplay/Poima.ManagedGroundingControlGame.csproj",
+    "compiled_extra_arguments": [
+      "--hostfxr <matched-hostfxr>",
+      "--bridge <matched-bridge>",
+      "--assembly <built-control-consumer.dll>",
+      "--legacy-assembly <retained 352-byte-consumer.dll>"
+    ],
+    "owner_requirement": "Run under an external process-tree owner; scripts do not build/download content or prove descendant closure from EOF alone.",
+    "documentation": "docs/GROUND_CONTACTS.md#control-placement-from-gameplay",
+    "legacy_replay_scope": "The tiny original198 archive-copy/replay is retained integration evidence, not a shipped public command recipe."
+  },
+  "limitations": [
+    "Linux CPU headless and CoreCLR only: no new NativeAOT publication/shipping, Windows, renderer/GPU, presented frames, physical input, gait quality or performance qualification.",
+    "This supplies requested correction multipliers, not airborne detection, gait inference, foot locking, moving-platform locks, pelvis/full-body solving or an automatic character controller policy.",
+    "Portable saves reconstruct contact caches/sleep history. No arbitrary future-physics identity claim; the original active-prop failure remains open as a separate reliability boundary.",
+    "Original checkout/source remain readable; no clean-machine, filesystem access-denial or relocation/export claim follows from these small fixtures.",
+    "Successful1024-read or64-distinct-write boundaries are not inferred from1025th-read/duplicate rejection cases.",
+    "No Alpha completion, fresh-agent success or original197 full-game continuation pass is claimed."
+  ],
+  "attached_player_followup": {
+    "passed_build": true,
+    "owner_seconds_observed": 197.732863,
+    "actions": {
+      "world_translation_units": 1,
+      "normal_core_archives": 1,
+      "cli_links": 1
+    },
+    "source_delta": {
+      "path": "src/world_player_service.inc",
+      "before": {
+        "bytes": 62846,
+        "sha256": "4eaeb2808c83c6d3f7f7fb1d5a247e69e44ab0da5d6ad253bfb021874b032c64"
+      },
+      "after": {
+        "bytes": 62866,
+        "sha256": "4dd04e7071ea0c4c91ce6ab850c624032988e4c4e778c80d4b6fe2bb0f207af1"
+      },
+      "change": "Add runtime.grounding to the cached-read allowlist while a player advances; no control mutation, physics or grounding solve changes."
+    },
+    "cli": {
+      "bytes": 35676400,
+      "sha256": "c4e8d8662baed5148d025d524960541dc38dc9530c67d2a97e504249a0dca02a"
+    },
+    "normal_core": {
+      "bytes": 144004202,
+      "sha256": "518f56231658668b10264e2a8fec2f4f769fcfe2490957a64d52f3f55ae3944a"
+    },
+    "record": {
+      "bytes": 11589,
+      "sha256": "f4ee9311a41fbf7bee9bfed71e7e609741815acd12dd371035c92797ab37ce7c"
+    },
+    "original_protocol_rerun": false,
+    "attached_advancing_player_query_executed": false,
+    "scope": "Separately source-reviewed allowlist correction and successful CLI-only build, followed by current-image CoreCLR control/original-v7/core/metadata checks. Earlier protocol outcomes retain their original image; this separate final-image replay is explicit. Actual attached/advancing-player query routing was not executed.",
+    "final_headless_qa": {
+      "passed": true,
+      "owner_seconds_observed": 166.811509,
+      "commands": 4,
+      "core_authoring_tests": 5,
+      "core_failures": 0,
+      "core_errors": 0,
+      "core_skips": 0,
+      "metadata_checks": 3,
+      "coreclr_control": {
+        "passed": true,
+        "raw_rpc_pairs": 297,
+        "complete_checkpoint_references": 29,
+        "complete_raw_and_typed_pairs": 17,
+        "full_pose_samples": 10,
+        "native_leaders_eof0": 2,
+        "helper_seconds_observed": 125.579937,
+        "record": {
+          "bytes": 1453037,
+          "sha256": "44284d0139e0d046080e789770982c18b8be42ed1390f82e001690c0c669863e"
+        }
+      },
+      "original198_v7_compatibility": {
+        "passed": true,
+        "raw_rpc_pairs": 9,
+        "complete_raw_and_typed_pairs": 2,
+        "full_pose_samples": 0,
+        "native_leaders_eof0": 1,
+        "helper_seconds_observed": 6.962038,
+        "record": {
+          "bytes": 22130,
+          "sha256": "9c50663b23600586084f51b74264a8bab78c739473ed1e63c5d222abf18bb37f"
+        },
+        "original_full_archive_pairs": 2
+      },
+      "forced_cleanup": false,
+      "final_children_empty": true,
+      "record": {
+        "bytes": 21660,
+        "sha256": "3ba8a54928b6ef7833bb82b4c3f002c14f8af3d58f824b6b8ba95ae3e0519ac3"
+      },
+      "core_record": {
+        "bytes": 441,
+        "sha256": "5a2e17eb7ca03305a56fea97b33e207a0d0c50226a2aaadccda6f428204ba560"
+      },
+      "metadata_record": {
+        "bytes": 7463,
+        "sha256": "04892ba6886f1f82d4d0adbdbec7126eb2854eed2a50f6064caa357e208218ad"
+      }
+    },
+    "selected_seals": {
+      "poima": {
+        "encoding": "raw",
+        "stored": {
+          "bytes": 35676400,
+          "sha256": "c4e8d8662baed5148d025d524960541dc38dc9530c67d2a97e504249a0dca02a"
+        },
+        "decoded": {
+          "bytes": 35676400,
+          "sha256": "c4e8d8662baed5148d025d524960541dc38dc9530c67d2a97e504249a0dca02a"
+        }
+      },
+      "libpoima_core.a": {
+        "encoding": "gzip1",
+        "stored": {
+          "bytes": 20258995,
+          "sha256": "a595054d07ae23240810f6eb6ead6153c90257e0cba8b7497882bb4637f6aeb4"
+        },
+        "decoded": {
+          "bytes": 144004202,
+          "sha256": "518f56231658668b10264e2a8fec2f4f769fcfe2490957a64d52f3f55ae3944a"
+        }
+      }
+    },
+    "seal_record": {
+      "bytes": 1184,
+      "sha256": "555292032ed11184b4776ae30f2ab902d236a4b78cfb325ce4933304796e75ef"
+    },
+    "seal_stored_payload_bytes": 55935395
+  }
+}

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.199
+
+- Add live gameplay enable/weight controls for automatic foot contacts, with a negotiated C# extension, complete rollback and compatible default save shapes.
+
 ## 0.0.198
 
 - Add opt-in native foot contacts on post-physics surfaces, with calibrated sole frames, swing fading, cached diagnostics and transactional persistence.

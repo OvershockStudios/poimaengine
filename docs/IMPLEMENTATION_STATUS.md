@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-19 for **0.0.198**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-19 for **0.0.199**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.199 adds live enable/weight controls for
+[automatic foot contacts](GROUND_CONTACTS.md#control-placement-from-gameplay).
+Caller and compiled C# controls retain frozen calibration and ownership, stage
+atomically with gameplay, and share complete rollback and saves. The negotiated
+368-byte C# extension preserves the older service prefixes. Identity controls
+retain the exact nested v7 save shape; nonidentity controls select v8. Selected
+Linux CPU checks pass nineteen retained CTest cases, five new native groups and
+96 managed ABI groups. Original Knight JSON and CoreCLR workflows exercise real
+jump/airborne/landing behavior, retaining 47 complete checkpoints and 28 whole-file
+pairs. A separate retained manual consumer checks all 76 takes, and original
+0.0.198 v7 archives reopen and continue with exact whole-file equality. The
+original unsettled-prop future comparison remains failed; a distinct, fixed
+settled-prop cohort passes without changing the physics implementation or
+dropping state fields. The earlier supervisor failure and publisher timeout remain failed,
+with bounded recovery recorded separately. These are headless CoreCLR checks,
+not new AOT, Windows, GPU, rendered-gait or overall Alpha qualification. The
+earlier full-game deadline failure remains open.
+[Results and boundaries](evidence/m2-grounding-controls.json).
 
 Version 0.0.198 adds optional [automatic foot contacts](GROUND_CONTACTS.md).
 Joined animation preparation precedes bounded owner-thread queries of current

@@ -465,3 +465,15 @@ Declare `ICameraLensGame` for committed `GetCameraLens` reads and staged
 independent; player FOV preferences compose with gameplay zoom. Complete
 lens state participates in rollback and saves. See [the lens API, limits and
 examples](CAMERA_LENSES.md).
+
+
+## Control automatic foot placement from C#
+
+Declare `IGroundingControlGame` for requested per-foot enable/weight controls.
+It inherits the orientation and IK markers and negotiates
+`animation_grounding_control_v1` with a 368-byte epoch-7 services prefix.
+`GetGroundingControl` reads requested policy; `SetGroundingControl` stages a
+complete replacement. Neither probes physics. Automatic slot ownership remains
+frozen while disabled, and calibration stays part of the authored content.
+See [control placement from gameplay](GROUND_CONTACTS.md#control-placement-from-gameplay)
+for timing, budgets, save versions, conflicts and recovery.

@@ -39,7 +39,7 @@ These illustrative indices and frame values must be calibrated to the imported
 character; they are not an anatomical mapping. `target` is retained as a
 required chain field but automatic placement replaces it. `pole` still selects
 the knee's bend plane, using the chain's authored `space`. Automatic ownership
-is frozen for the runtime session. Caller and C# writes to that slot reject;
+is frozen for the runtime session. Manual IK caller and C# writes to that slot reject;
 other manual slots keep their existing behavior. Do not supply an authored
 `end_orientation` on an automatic slot. Restart to adopt changed configuration.
 
@@ -56,13 +56,57 @@ Between them, smoothstep fades both positional and orientation correction.
 The bounds are `0 <= plant_height < lift_height <= 10` model units. This explicit
 height policy preserves ordinary swing lift but is not a general gait detector.
 Clips that roll, climb or use a different ground reference need suitable
-configuration or a separate animation/rig policy.
+configuration and suitable live gameplay policy.
 
 The wrapper must remain upright, with a positive uniform orthogonal transform
 within `1e-8`; yaw, translation and uniform scale are supported. Model ancestors
 still obey their selected [IK metric profile](IK_METRIC_PROFILES.md). Source
 scales, translations, geometry and animation curves are preserved. This version
 does not implement general affine ground adaptation.
+
+## Control placement from gameplay
+
+`runtime.step` accepts complete requested controls, up to 64 unique rig/slot
+pairs combined with compiled gameplay in one tick:
+
+```json
+{"grounding": [{"entity": "<rig-id>", "slot": 1,
+                 "enabled": false, "weight": 1}]}
+```
+
+The request also needs the usual session, request, expected tick and tick count.
+The new `runtime.grounding` read requires `session_id`, `tick`, `entity` and
+`slot`; it returns the requested `enabled`/`weight`, or null for an existing
+manual or absent slot. It never samples animation or queries physics.
+
+Requested enable is ANDed with authored enable. Requested weight (`0–1`)
+multiplies authored weight before the existing animated-height fade. The default
+`true`/`1` preserves the authored behavior. Zero weight or disabled placement
+retains the original animated pose and performs no foot ray. Calibration,
+contact limits and automatic slot ownership remain frozen, even while disabled.
+Games can suspend placement for jumping, climbing or death without rewriting
+an IK target. The engine does not infer those gameplay states.
+
+Caller controls apply before the first tick's C# callback and are visible to its
+reads. C# writes stage during Tick and apply after the callback; reads inside
+that callback do not see those staged replacements. Caller/C# writes to the same slot reject, and any later batch
+failure restores policy, contact decisions, counters, physics and gameplay
+state together. A control write itself casts no ray. The final post-physics
+phase makes the decision; requested policy and the last cached effective
+contact are deliberately separate observations.
+
+These new controls are evolving APIs outside the released runtime game-session
+v1 method set.
+
+C# games declare `IGroundingControlGame` and use
+`context.GetGroundingControl(entity, slot)` and
+`context.SetGroundingControl(new GroundingControlCommand(entity, slot, enabled, weight))`.
+This requires the named `animation_grounding_control_v1` feature and a
+368-byte epoch-7 services prefix. It appends two callbacks to the retained
+352-byte orientation prefix; existing consumers keep their negotiated contract.
+The control read/write limits are 1,024/64 per Tick, independent of manual IK
+budgets. The read returns requested policy, not contact diagnostics. Native
+C++ headers and runtime layouts still require a rebuild when changed.
 
 ## Probe and solve
 
@@ -116,14 +160,22 @@ refreshes contacts. Inspection, skin queries, serialization and warm/cold save
 restoration never cast new foot rays. Existing physics restoration has its own
 support rebuilding; this is not a promise that it executes no physics queries.
 
-Grounded sessions use nested animation-state version 7. It retains the frozen
-profiles, generated controls and complete contact diagnostics/counters. Sessions
+Grounded sessions with default requested controls retain nested animation-state
+version 7 and its exact shape. A nondefault requested control selects version 8,
+which adds a complete `control` record beside each automatic slot's frozen
+`definition` and cached `state`. Restoring v7 resets requested multipliers to
+`true`/`1`; restoring v8 retains every multiplier. Returning all controls to their
+defaults selects v7 again. All-default v8 archives reject as noncanonical.
+Both versions retain the frozen profiles, generated controls and complete
+contact diagnostics/counters. Sessions
 without grounding retain their existing animation-state versions and shapes.
 Initialized saved decisions must belong to the saved tick. A restore verifies
 their achieved geometry against the reconstructed pose without rewriting the
 saved numbers; the next tick queries the restored physical world. Direct native
 animation sampling at a later historical tick must refresh its final decisions
-before exporting a current grounded save. Checkpoint rollback covers histories, controls,
+before exporting a current grounded save. A changed requested policy also requires
+a successful final contact phase before export; saves reject a pending policy
+rather than pairing it with an older effective decision. Checkpoint rollback covers histories, controls,
 diagnostics and counters together with physics and gameplay state. Failed
 batches may have performed read-only probes before rollback; their discarded
 queries do not remain in the committed counter.
@@ -143,10 +195,40 @@ and sloped physics support, source swing lift, cached inspection, and complete
 warm/cold saves. Run it under an external process-tree owner. This CPU fixture
 cannot qualify rendered contact quality, hardware input or production crowds.
 
+`poima-runtime-grounding-control-test --output <fresh-directory>` exercises
+requested controls, strict v7/v8 persistence, automatic ownership, actual
+controller jumping and full-state rollback. Its default jump cohort uses a
+fixed 120-tick preparation and requires the unrelated prop to be inactive with
+exactly zero velocities before branching. It retains every saved field and
+compares complete warm/cold landing archives exactly.
+
+The original 60-tick `--unsettled-prop` cohort failed that future-state comparison:
+the still-active prop's later pose differed, while character and contact state
+matched. That failure remains retained. Portable snapshots rebuild physics
+contacts and do not promise identical arbitrary future contact trajectories;
+the settled cohort does not fix or qualify that broader behavior. In-process
+rollback uses a separate complete Jolt checkpoint.
+
+`tests/runtime_grounding_control.py` exercises the same controls on the unchanged
+licensed Knight, with real controller jump/airborne/landing, whole save pairs
+and optional compiled C# consumers. It builds nothing; supply the matching
+bridge and game assembly to exercise the managed path. Its CLI flags include
+`--binary`, `--source`, `--license`, `--output`, and optional
+`--hostfxr`, `--bridge`, `--assembly` and `--legacy-assembly`.
+Run it under an external process-tree owner.
+
 The [0.0.198 qualification](evidence/m2-ground-contacts.json) records the selected
 native checks and two automatic-contact consumers, plus a retained manual
 CoreCLR regression across all 76 original takes. The automatic cases cover
 Idle/Running_A; they do not establish contact quality for every take.
+
+The [0.0.199 qualification](evidence/m2-grounding-controls.json) adds requested
+enable/weight controls, actual controller jumping, disabled placement without
+new casts, staged C# writes and whole-state rollback. JSON and CoreCLR cases
+retain 47 complete checkpoints and 28 whole-file pairs. A separate cold load of
+original 0.0.198 v7 saves retains their whole bytes and selected future state
+using the older compiled consumer. The original unsettled-prop failure and the
+distinct settled-prop cohort are recorded separately.
 
 Design references include Daniel Holden's July 2026
 [IK and foot-locking discussion](https://theorangeduck.com/page/inverse-kinematics-foot-locking),

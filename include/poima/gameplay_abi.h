@@ -375,6 +375,26 @@ typedef struct PoimaGameTwoBoneIkOrientationServicesV1 {
 } PoimaGameTwoBoneIkOrientationServicesV1;
 
 
+// animation_grounding_control_v1: requested automatic controls, not contact weight.
+typedef struct PoimaGameGroundingCommandV1 {
+    uint32_t version,bytes;
+    PoimaEntityId entity;
+    uint32_t slot,enabled;
+    double weight;
+    uint64_t reserved;
+} PoimaGameGroundingCommandV1;
+typedef struct PoimaGameGroundingStateV1 {
+    uint32_t version,bytes,present,reserved;
+    PoimaEntityId entity;
+    uint32_t slot,enabled;
+    double weight;
+} PoimaGameGroundingStateV1;
+typedef struct PoimaGameGroundingServicesV1 {
+    PoimaGameTwoBoneIkOrientationServicesV1 orientation;
+    int32_t (POIMA_CALL *grounding_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameGroundingStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *grounding_set)(void*,const PoimaGameGroundingCommandV1*,PoimaGameError*);
+} PoimaGameGroundingServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -382,6 +402,11 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameGroundingCommandV1)==48 && alignof(PoimaGameGroundingCommandV1)==8);
+static_assert(offsetof(PoimaGameGroundingCommandV1,version)==0 && offsetof(PoimaGameGroundingCommandV1,bytes)==4 && offsetof(PoimaGameGroundingCommandV1,entity)==8 && offsetof(PoimaGameGroundingCommandV1,slot)==24 && offsetof(PoimaGameGroundingCommandV1,enabled)==28 && offsetof(PoimaGameGroundingCommandV1,weight)==32 && offsetof(PoimaGameGroundingCommandV1,reserved)==40);
+static_assert(sizeof(PoimaGameGroundingStateV1)==48 && alignof(PoimaGameGroundingStateV1)==8);
+static_assert(offsetof(PoimaGameGroundingStateV1,version)==0 && offsetof(PoimaGameGroundingStateV1,bytes)==4 && offsetof(PoimaGameGroundingStateV1,present)==8 && offsetof(PoimaGameGroundingStateV1,reserved)==12 && offsetof(PoimaGameGroundingStateV1,entity)==16 && offsetof(PoimaGameGroundingStateV1,slot)==32 && offsetof(PoimaGameGroundingStateV1,enabled)==36 && offsetof(PoimaGameGroundingStateV1,weight)==40);
+static_assert(sizeof(PoimaGameGroundingServicesV1)==368 && offsetof(PoimaGameGroundingServicesV1,orientation)==0 && offsetof(PoimaGameGroundingServicesV1,grounding_get)==352 && offsetof(PoimaGameGroundingServicesV1,grounding_set)==360);
 static_assert(sizeof(PoimaGameInputActionV1)==16 && alignof(PoimaGameInputActionV1)==4 && offsetof(PoimaGameInputActionV1,flags)==8 && offsetof(PoimaGameInputActionV1,reserved)==12);
 static_assert(sizeof(PoimaGameInputActionServicesV1)==264 && offsetof(PoimaGameInputActionServicesV1,preferences)==0 && offsetof(PoimaGameInputActionServicesV1,input_action)==256);
 static_assert(sizeof(PoimaGameHitRegionResultV1)==192 && alignof(PoimaGameHitRegionResultV1)==8 && offsetof(PoimaGameHitRegionResultV1,hit)==8 && offsetof(PoimaGameHitRegionResultV1,region_entity)==96);

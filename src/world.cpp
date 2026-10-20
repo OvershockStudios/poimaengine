@@ -2949,6 +2949,23 @@ public:
         }
         return result;
     }
+    static std::vector<RuntimeGroundingCommand> parse_grounding(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Grounding must contain at most 64 commands.");
+        std::vector<RuntimeGroundingCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","slot","enabled","weight"},{"entity","slot","enabled","weight"});
+            RuntimeGroundingCommand command;command.entity=identifier(value.at("entity"));
+            const auto slot=revision(value.at("slot"));require(slot>=1 && slot<=8,"Grounding slot must be 1..8.");
+            command.slot=static_cast<std::uint32_t>(slot);
+            require(value.at("enabled").is_boolean(),"Grounding enabled must be boolean.");
+            require(value.at("weight").is_number(),"Grounding weight must be numeric.");
+            command.enabled=value.at("enabled").get<bool>();command.weight=value.at("weight").get<double>();
+            require(std::isfinite(command.weight) && command.weight>=0 && command.weight<=1,"Grounding weight must be finite in 0..1.");
+            require(seen.emplace(command.entity,command.slot).second,"Duplicate grounding control target.");
+            result.push_back(std::move(command));
+        }
+        return result;
+    }
     static std::vector<RuntimeCharacterStanceCommand> parse_character_stances(const Json& raw) {
         require(raw.is_array() && raw.size()<=32,"Character stances must contain at most 32 commands.");
         std::vector<RuntimeCharacterStanceCommand> result;std::set<std::string> seen;
@@ -3444,6 +3461,18 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
+        if(method=="runtime.grounding") {
+            fields(params,{"session_id","tick","entity","slot"},{"session_id","tick","entity","slot"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto entity=identifier(params.at("entity"));const auto slot=revision(params.at("slot"));
+            require(slot>=1 && slot<=8,"Grounding slot must be 1..8.");
+            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto state=runtime_->grounding(entity,static_cast<std::uint32_t>(slot));Json value=nullptr;
+                if(state)value={{"entity",state->entity},{"slot",state->slot},{"enabled",state->enabled},{"weight",state->weight}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
+            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.ik") {
             fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric","include_grounding"},{"session_id","tick","entity","slot"});runtime_guard(params);
             if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");
@@ -3504,7 +3533,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","character_stances","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","ik","root_motion","camera_lenses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -3516,6 +3545,8 @@ public:
             const auto camera_lenses=parse_camera_lenses(normalized.at("camera_lenses"));
             if(!normalized.contains("character_stances"))normalized["character_stances"]=Json::array();
             const auto character_stances=parse_character_stances(normalized.at("character_stances"));
+            if(!normalized.contains("grounding"))normalized["grounding"]=Json::array();
+            const auto grounding=parse_grounding(normalized.at("grounding"));
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
                 if(!command.contains("enabled"))command["enabled"]=true;
@@ -3555,7 +3586,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

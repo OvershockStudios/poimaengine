@@ -135,6 +135,19 @@ struct RuntimeGroundingState {
     std::optional<RuntimeGroundingHit> hit;
     std::optional<double> position_error,normal_error;
 };
+// Requested live multiplier, separate from the last contact's effective weight.
+// Authored enable/weight remain a ceiling; targets and calibration stay owned.
+struct RuntimeGroundingControl {
+    bool enabled=true;
+    double weight=1;
+    bool operator==(const RuntimeGroundingControl&) const = default;
+};
+struct RuntimeGroundingCommand {
+    std::string entity;
+    std::uint32_t slot=1;
+    bool enabled=true;
+    double weight=1;
+};
 struct RuntimeTwoBoneIk {
     std::uint32_t slot=1,root=0,middle=0,end=0;
     bool enabled=true;
@@ -525,11 +538,13 @@ public:
         const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={},
         const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={},
         const std::vector<RuntimeCameraLensCommand>& camera_lenses={},
-        const std::vector<RuntimeCharacterStanceCommand>& character_stances={});
+        const std::vector<RuntimeCharacterStanceCommand>& character_stances={},
+        const std::vector<RuntimeGroundingCommand>& grounding={});
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
+    std::optional<RuntimeGroundingCommand> grounding(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeRootMotionState> root_motion(const std::string& id) const;
     std::optional<RuntimeCameraLensState> camera_lens(const std::string& id) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;

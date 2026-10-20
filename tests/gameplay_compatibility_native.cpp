@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==352u &&
+    check(capable.services_version==7 && capable.services_bytes==368u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
@@ -83,7 +83,7 @@ void policy() {
     check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
     auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
-    auto appended=capable;appended.services_bytes=352;appended.features.push_back("future_available_v1");
+    auto appended=capable;appended.services_bytes=368;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
     for(unsigned animation_kind:{0u,1u,2u}) {
@@ -121,6 +121,7 @@ void policy() {
     std::erase(synthetic.features,std::string(camera_lens_feature));
     std::erase(synthetic.features,std::string(character_stance_feature));
     std::erase(synthetic.features,std::string(two_bone_ik_orientation_feature));
+    std::erase(synthetic.features,std::string(grounding_control_feature));
     if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
@@ -173,7 +174,7 @@ void policy() {
     check(!compatibility_error(baseline,short_instances).empty(),"Instance capability advertised without allocation.");
     auto duplicate_instances=instances;duplicate_instances.features.push_back(instances_feature);
     check(!compatibility_error(duplicate_instances,capable).empty(),"Duplicate instance requirement accepted.");
-    auto future_instances=capable;future_instances.services_bytes=352;future_instances.features.push_back("future_available_v1");
+    auto future_instances=capable;future_instances.services_bytes=368;future_instances.features.push_back("future_available_v1");
     check(compatibility_error(instances,future_instances).empty(),"Larger same-epoch host rejects instance prefix.");
     auto preferences=baseline;preferences.services_bytes=256;preferences.features.push_back(player_preferences_feature);
     check(compatibility_error(preferences,capable).empty() && compatibility_error(preferences,preferences).empty(),
@@ -262,6 +263,20 @@ void policy() {
     check(!compatibility_error(baseline,missing_point_host).empty(),"Orientation advertised without point IK dependency.");
     auto duplicate_orientation=oriented;duplicate_orientation.features.push_back(two_bone_ik_orientation_feature);
     check(!compatibility_error(duplicate_orientation,capable).empty(),"Duplicate orientation feature accepted.");
+    auto grounding=oriented;grounding.services_bytes=368;grounding.features.push_back(grounding_control_feature);
+    check(compatibility_error(grounding,grounding).empty()&&compatibility_error(grounding,capable).empty(),"Grounding named prefix rejected.");
+    check(compatibility_error(oriented,grounding).empty()&&compatibility_error(oriented,oriented).empty(),"Grounding broke legacy352 orientation host.");
+    auto missing_grounding=capable;std::erase(missing_grounding.features,std::string(grounding_control_feature));
+    check(!compatibility_error(grounding,missing_grounding).empty(),"Opaque extent granted grounding rights.");
+    auto missing_orientation=grounding;std::erase(missing_orientation.features,std::string(two_bone_ik_orientation_feature));
+    check(!compatibility_error(missing_orientation,capable).empty(),"Grounding omitted orientation dependency.");
+    for(unsigned bytes:{176u,288u,336u,352u,360u,367u,369u}) {auto wrong=grounding;wrong.services_bytes=bytes;check(!compatibility_error(wrong,capable).empty(),"Wrong grounding prefix accepted.");}
+    auto bad_grounding_host=grounding;bad_grounding_host.services_bytes=352;
+    check(!compatibility_error(baseline,bad_grounding_host).empty(),"Grounding advertised beyond available extent.");
+    auto missing_orientation_host=grounding;std::erase(missing_orientation_host.features,std::string(two_bone_ik_orientation_feature));
+    check(!compatibility_error(baseline,missing_orientation_host).empty(),"Grounding host omitted orientation dependency.");
+    auto duplicate_grounding=grounding;duplicate_grounding.features.push_back(grounding_control_feature);
+    check(!compatibility_error(duplicate_grounding,capable).empty(),"Duplicate grounding feature accepted.");
     auto stance=baseline;stance.services_bytes=336;stance.features.push_back(character_stance_feature);
     check(compatibility_error(stance,stance).empty() && compatibility_error(stance,capable).empty(),"Independent stance profile gained unrelated dependencies.");
     auto unnamed_stance=capable;std::erase(unnamed_stance.features,std::string(character_stance_feature));

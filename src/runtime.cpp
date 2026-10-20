@@ -168,6 +168,7 @@ struct Runtime::Impl {
     std::size_t game_input_action_calls=0;
     std::size_t game_hit_region_calls=0;
     std::size_t game_ik_read_calls=0,game_ik_write_calls=0;
+    std::size_t game_grounding_read_calls=0,game_grounding_write_calls=0;
     std::size_t game_root_motion_reads=0,game_root_motion_writes=0;
     std::size_t game_camera_lens_reads=0,game_camera_lens_writes=0;
     std::uint64_t control_sequence=0;
@@ -194,6 +195,7 @@ struct Runtime::Impl {
     }
     std::vector<AnimationCommand> game_animation_commands;
     std::vector<RuntimeIkCommand> game_ik_commands;
+    std::vector<RuntimeGroundingCommand> game_grounding_commands;
     std::vector<RuntimeRootMotionCommand> game_root_motion_commands;
     std::vector<RuntimeCameraLensCommand> game_camera_lens_commands;
     std::vector<RuntimeInput> game_character_inputs;
@@ -764,6 +766,7 @@ struct Runtime::Impl {
                 std::erase_if(self.game_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_animation_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_ik_commands,[&](const auto& command){return member(command.entity);});
+                std::erase_if(self.game_grounding_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_root_motion_commands,[&](const auto& command){return member(command.entity);});
                 std::erase_if(self.game_character_inputs,[&](const auto& command){return member(command.entity);});
             } else {
@@ -983,6 +986,7 @@ struct Runtime::Impl {
 #include "runtime_camera_lens_state.inc"
 #include "runtime_camera_lens.inc"
 #include "runtime_two_bone_ik.inc"
+#include "runtime_grounding_services.inc"
 #include "runtime_root_motion.inc"
     static int32_t POIMA_CALL get_input_action(void* context,const PoimaEntityId* id,const char* name,
         std::uint32_t name_bytes,PoimaGameInputActionV1* output,PoimaGameError* error) {
@@ -1359,7 +1363,7 @@ struct Runtime::Impl {
             throw;
         }
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1409,6 +1413,7 @@ struct Runtime::Impl {
         components->begin_batch();
         try {
             apply_camera_lenses(lens_commands);
+            animations->apply_grounding(grounding_commands);
             if(!animation_commands.empty() || !ik_commands.empty() || !root_commands.empty()) {
                 animations->apply(animation_commands,tick);animations->apply_ik(ik_commands);animations->apply_root_motion(root_commands);animation_locals();sync();
             }
@@ -1435,17 +1440,17 @@ struct Runtime::Impl {
                 if(game) {
                     game_sound_calls=0;game_navigation_calls=0;sync();
                     if(animations->has_ik())animation_locals();
-                    game_commands.clear();game_animation_commands.clear();game_ik_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_commands.clear();game_animation_commands.clear();game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         if(!topology->identities.contains(source->entity))continue;
                         PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1453,6 +1458,7 @@ struct Runtime::Impl {
                     profiling::Scope commands_profile("runtime.gameplay.commands");
                     require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
                     require(game_ik_commands.size()+(frame==0 ? ik_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined IK commands in one tick.");
+                    require(game_grounding_commands.size()+(frame==0 ? grounding_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined grounding commands in one tick.");
                     require(game_root_motion_commands.size()+(frame==0 ? root_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined root-motion commands in one tick.");
                     require(game_camera_lens_commands.size()+(frame==0 ? lens_commands.size() : 0)<=64,"Caller and gameplay exceed64 camera lens writes in one Tick.");
                     for(const auto& command:game_camera_lens_commands)
@@ -1467,6 +1473,10 @@ struct Runtime::Impl {
                         require(frame!=0 || std::none_of(ik_commands.begin(),ik_commands.end(),[&](const auto& explicit_command) {
                             return explicit_command.entity==command.entity && explicit_command.slot==command.slot;
                         }),"Gameplay and caller targeted the same IK slot in one tick.");
+                    for(const auto& command:game_grounding_commands)
+                        require(frame!=0 || std::none_of(grounding_commands.begin(),grounding_commands.end(),[&](const auto& explicit_command) {
+                            return explicit_command.entity==command.entity && explicit_command.slot==command.slot;
+                        }),"Gameplay and caller targeted the same grounding slot in one tick.");
                     for(const auto& command:game_animation_commands)
                         require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity && explicit_command.layer==command.layer; }),
                             "Gameplay and caller targeted the same animation rig in one tick.");
@@ -1495,6 +1505,10 @@ struct Runtime::Impl {
                                 "Caller IK and removal target the same instance in one tick.");
                             require(std::none_of(game_ik_commands.begin(),game_ik_commands.end(),[&](const auto& m){return m.entity==id;}),
                                 "Gameplay IK and removal target the same instance in one tick.");
+                            require(frame!=0 || std::none_of(grounding_commands.begin(),grounding_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Caller grounding and removal target the same instance in one tick.");
+                            require(std::none_of(game_grounding_commands.begin(),game_grounding_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Gameplay grounding and removal target the same instance in one tick.");
                             require(frame!=0 || std::none_of(root_commands.begin(),root_commands.end(),[&](const auto& m){return m.entity==id;}),
                                 "Caller root-motion control and removal target the same instance in one tick.");
                             require(std::none_of(game_root_motion_commands.begin(),game_root_motion_commands.end(),[&](const auto& m){return m.entity==id;}),
@@ -1525,6 +1539,7 @@ struct Runtime::Impl {
                     components->publish_tick();
                 }
                 apply_camera_lenses(game_camera_lens_commands);game_camera_lens_commands.clear();
+                animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
                 if(!game_animation_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
                     animations->apply(game_animation_commands,tick);animations->apply_ik(game_ik_commands);
                     animations->apply_root_motion(game_root_motion_commands);animation_locals();sync();
@@ -1604,7 +1619,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_ik_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
+            game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             clear_player_preferences_commands();
@@ -1871,11 +1886,14 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {
     (void)impl_->find(id);require(slot>=1 && slot<=8,"IK slot must be 1..8.");return impl_->animations->ik_state(id,slot);
+}
+std::optional<RuntimeGroundingCommand> Runtime::grounding(const std::string& id,std::uint32_t slot) const {
+    (void)impl_->find(id);require(slot>=1 && slot<=8,"Grounding slot must be 1..8.");return impl_->animations->grounding_control(id,slot);
 }
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string& id) const {
     (void)impl_->find(id);return impl_->animations->root_motion_state(id);

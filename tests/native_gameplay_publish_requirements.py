@@ -17,6 +17,17 @@ class Requirements(unittest.TestCase):
         self.baseline=dict(call_version=1,call_bytes=80,services_version=7,services_bytes=176,features=['baseline_v7'])
     def read(self,data):
         self.path.write_text(json.dumps(data));return publish.generated_requirements(self.path)
+    def test_grounding_control_named_prefix(self):
+        features=['animation_grounding_control_v1','animation_ik_end_orientation_v1','animation_ik_v1','baseline_v7']
+        required=dict(self.baseline,services_bytes=368,features=features)
+        self.assertEqual(self.read(required),required)
+        for extent in [176,288,336,352,360,367,369]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(required,services_bytes=extent))
+        for invalid in [features[1:],features[:1]+features[2:],features[:2]+features[3:],features+[features[0]]]:
+            with self.subTest(features=invalid),self.assertRaises(ValueError):self.read(dict(required,features=invalid))
+        # The preexisting352 orientation requirement remains accepted unchanged.
+        old=dict(self.baseline,services_bytes=352,features=features[1:])
+        self.assertEqual(self.read(old),old)
     def test_ik_end_orientation_named_prefix_and_point_dependency(self):
         value=dict(self.baseline,services_bytes=352,features=['animation_ik_end_orientation_v1','animation_ik_v1','baseline_v7'])
         self.assertEqual(self.read(value),value)

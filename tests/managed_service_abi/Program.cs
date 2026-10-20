@@ -514,6 +514,7 @@ static unsafe partial class Program
             CameraLensContract(output,state,good,checks);
             CharacterStanceContract(output,state,good,checks);
             TwoBoneIkOrientationContract(output,state,good,checks);
+            GroundingControlContract(output,state,good,checks);
             CameraFovTransitionContract(checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
