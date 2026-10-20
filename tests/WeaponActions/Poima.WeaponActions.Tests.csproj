@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../managed/Directory.Build.props" />
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Compile Include="../../packages/fps/Weapons.cs" Link="Weapons.cs" /></ItemGroup>
+</Project>

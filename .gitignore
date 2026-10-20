@@ -18,10 +18,14 @@ __pycache__/
 /examples/locomotion-yard/obj/
 /examples/fps-feedback/bin/
 /examples/fps-feedback/obj/
+/examples/weapon-actions/bin/
+/examples/weapon-actions/obj/
 /packages/fps/bin/
 /packages/fps/obj/
 /tests/FpsFeedback/bin/
 /tests/FpsFeedback/obj/
+/tests/WeaponActions/bin/
+/tests/WeaponActions/obj/
 
 /tests/fixtures/**/bin/
 /tests/fixtures/**/obj/

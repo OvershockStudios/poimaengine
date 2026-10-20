@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.210
+
+- Add optional explicit-state weapon actions with semi-auto, automatic and burst
+  fire, magazine/chamber accounting and interruptible reload/equip phases.
+- Add a compiled Weapon Actions range connecting accepted shots to independent
+  aim and visual recoil, hit queries and inspectable saved action state.
+
 ## 0.0.209
 
 - Add alpha-masked PBR materials across standard glTF intake, cooked models,

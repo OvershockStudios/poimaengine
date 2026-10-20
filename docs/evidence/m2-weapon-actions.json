@@ -1,0 +1,1766 @@
+{
+  "format": "poima.weapon-actions-evidence.v1",
+  "engine_version": "0.0.210",
+  "scope": "Optional compiled weapon-action helper and an adapted C# range. Development CoreCLR consumer on qualified native0.0.209 hosts; no native API/ABI change.",
+  "contract": {
+    "fire_modes": [
+      "SemiAutomatic",
+      "Automatic",
+      "Burst"
+    ],
+    "phases": [
+      "Ready",
+      "Holstered",
+      "Equipping",
+      "ReloadEject",
+      "ReloadInsert",
+      "Chambering"
+    ],
+    "magazine_excludes_chamber": true,
+    "tactical_reload_retains_chamber": true,
+    "partial_magazines_return_to_reserve": true,
+    "interruptions_preserve_committed_transfers": true,
+    "only_accepted_shot_emits_recoil": true,
+    "durations": "Fixed simulation ticks; not render frames or clip events",
+    "bounds": {
+      "magazine_capacity": [
+        1,
+        4096
+      ],
+      "burst_count": [
+        1,
+        16
+      ],
+      "duration_ticks": [
+        1,
+        1000000
+      ],
+      "total_rounds": [
+        0,
+        1000000
+      ]
+    },
+    "limits": [
+      "No attachments, multi-weapon inventory, per-shell/open-bolt loading or dropped-magazine items.",
+      "Helper records are transient; persistent operands are explicit primitive game/component fields.",
+      "Definitions must remain compatible with current state; changing a recipe is not a save migration."
+    ]
+  },
+  "sources": {
+    "packages/fps/Weapons.cs": {
+      "bytes": 11924,
+      "sha256": "336bddff193f3b0c7537b379a3107443500e18cef3481b7fb3e0f096ce4c4bad"
+    },
+    "tests/WeaponActions/Program.cs": {
+      "bytes": 23039,
+      "sha256": "e175786a5fb7f55269559415767a1a4ad1666a37eb004db8d7b92dfa78c16dc9"
+    },
+    "examples/weapon-actions/WeaponActionsGame.cs": {
+      "bytes": 6724,
+      "sha256": "c9bf7b7364809b561ade9b8099e46e8ba600e9112d90e2b376022b69bfe58e4a"
+    },
+    "tests/weapon_actions_gameplay_contract.py": {
+      "bytes": 18252,
+      "sha256": "4373c7c96bed581aea996b61bf2b13505c1f3af9e9c24c0bb90685e351d73cea"
+    }
+  },
+  "managed": {
+    "passed": true,
+    "report": {
+      "bytes": 17310,
+      "sha256": "1199d5072befc48355fe637143d07eb764c7dc53d823e5f09ed7c9e98fc7d552"
+    },
+    "seconds": 38.700565231993096,
+    "commands": [
+      {
+        "name": "build-package",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 11.36645828699693
+      },
+      {
+        "name": "build-tests",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 10.28070972498972
+      },
+      {
+        "name": "build-sample",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 15.317560773983132
+      },
+      {
+        "name": "pure-tests",
+        "exit_code": 0,
+        "natural_descendant_closure": true,
+        "seconds": 0.5211755089985672
+      }
+    ],
+    "forced_cleanup": false,
+    "final_children": 0,
+    "pure": {
+      "passed": true,
+      "groups": 8,
+      "checks": 137286,
+      "scope": "Independent pure weapon action tables, conservation and complete caller-state replay. No native gameplay/save/runtime/renderer or performance execution claim."
+    },
+    "package": {
+      "bytes": 29696,
+      "sha256": "045e46a193583a3efabca8718bd08cd11327fd45c63fee5b2c9bfa5e852e8f10"
+    },
+    "sample": {
+      "bytes": 39424,
+      "sha256": "46a9d2944a5734683f8da79750989fb71590eb9c086fbc6f706337af1985f52c"
+    },
+    "sdk": {
+      "bytes": 217600,
+      "sha256": "210b0d22796bce015ae2172b23b9df4b991b99e2a5c46c8cf4282d7c29f12da8"
+    }
+  },
+  "platforms": {
+    "Linux": {
+      "passed": true,
+      "native_engine_version": "0.0.209",
+      "native_binary": {
+        "bytes": 36383048,
+        "sha256": "bd6d2ccbab48d8a1519d4c6a5125be64de73c2dcec3573d3bbd0ba03e9b46cad"
+      },
+      "backend": "coreclr",
+      "source_evidence": {
+        "bytes": 2477371,
+        "sha256": "07fa3c737aa5e6c837b161bceebccd2251f65d7d7f208791429fed44f7f4c3e6"
+      },
+      "owner_report": {
+        "bytes": 5719,
+        "sha256": "94f22332852deeb6632dc053a61441e286fbc088b51132dee27269606486e763"
+      },
+      "owner_seconds": 10.087684186000843,
+      "fixture_seconds": 7.305509397003334,
+      "rpc_count": 204,
+      "observations": 25,
+      "fields": [
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "AcceptedShots",
+          "offset": 72
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Active",
+          "offset": 36
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "AimHeld",
+          "offset": 60
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimPitch",
+          "offset": 96
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimPitchVelocity",
+          "offset": 104
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimYaw",
+          "offset": 112
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimYawVelocity",
+          "offset": 120
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "BurstRemaining",
+          "offset": 24
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Chamber",
+          "offset": 4
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Cooldown",
+          "offset": 20
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Crouched",
+          "offset": 64
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "DryFires",
+          "offset": 48
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "FireMode",
+          "offset": 32
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Hits",
+          "offset": 52
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimX",
+          "offset": 176
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimY",
+          "offset": 184
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimZ",
+          "offset": 192
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "LastEvents",
+          "offset": 44
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Magazine",
+          "offset": 0
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Misses",
+          "offset": 56
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "PendingCommands",
+          "offset": 40
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Phase",
+          "offset": 12
+        },
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "RecoilImpulses",
+          "offset": 88
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Reserve",
+          "offset": 8
+        },
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "TickCount",
+          "offset": 80
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "TicksRemaining",
+          "offset": 16
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "TriggerHeld",
+          "offset": 28
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "VisualPitch",
+          "offset": 128
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "VisualPitchVelocity",
+          "offset": 136
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponBack",
+          "offset": 160
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponBackVelocity",
+          "offset": 168
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponPitch",
+          "offset": 144
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponPitchVelocity",
+          "offset": 152
+        }
+      ],
+      "archives": [
+        {
+          "label": "armed-full-plus-chamber",
+          "payload": {
+            "bytes": 66994,
+            "sha256": "2e2eaa4207c757c14fb9cce2ec98788e841320607d3e3f2ab0352393003f2b9a"
+          }
+        },
+        {
+          "label": "before-second-tick-fault",
+          "payload": {
+            "bytes": 67018,
+            "sha256": "f28901a6987304859373073a6abb80d03dbc9bd11b4b349ebfe1dd29635d72e0"
+          }
+        },
+        {
+          "label": "after-second-tick-fault",
+          "payload": {
+            "bytes": 67018,
+            "sha256": "f28901a6987304859373073a6abb80d03dbc9bd11b4b349ebfe1dd29635d72e0"
+          }
+        },
+        {
+          "label": "cold-source-mid-reload",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "same-owner-restored",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "same-owner-five-tick-continuation",
+          "payload": {
+            "bytes": 66995,
+            "sha256": "ffb007587070574ff97b962f15489a2a41e2a5817617e451ffd44e74f19d9a3b"
+          }
+        },
+        {
+          "label": "fresh-owner-restored",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "fresh-owner-five-tick-continuation",
+          "payload": {
+            "bytes": 66995,
+            "sha256": "ffb007587070574ff97b962f15489a2a41e2a5817617e451ffd44e74f19d9a3b"
+          }
+        }
+      ],
+      "whole_pairs": [
+        {
+          "label": "whole-batch-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "same-owner-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-five-tick-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ],
+      "native_owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "checks": [
+        "Ammo/chamber/reserve/accepted-shot conservation across every observed primitive state",
+        "Actual target hit uses BaseWorld plus logical recoil despite misleading presentation",
+        "Semi, automatic and released burst cadence; dry-fire and busy/holstered suppression",
+        "Interrupt eject/insert/chamber stages without duplicating rounds; explicit retained chamber",
+        "Logical pause queues without advancing timers; full-duration equip and burst cancellation",
+        "Full native rollback at second compiled Tick; same/fresh owner complete mid-reload continuation"
+      ],
+      "selected_observations": [
+        {
+          "label": "initial",
+          "tick": 60,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "0",
+            "RecoilImpulses": "0",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "actual accepted shot",
+          "tick": 319,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "semi held does not repeat",
+          "tick": 325,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "reload eject begins",
+          "tick": 326,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 3,
+            "TicksRemaining": 3,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel eject suppresses shot",
+          "tick": 327,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "ejected partial mag retained",
+          "tick": 332,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 15,
+            "Phase": 4,
+            "TicksRemaining": 4,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel insert retains returned rounds",
+          "tick": 333,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 15,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "retained chamber fires",
+          "tick": 334,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 15,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "empty reload enters chamber stage",
+          "tick": 343,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 5,
+            "TicksRemaining": 2,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel chamber preserves unchambered mag",
+          "tick": 344,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "dry fire never impulses",
+          "tick": 345,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "full mag starts chamber only",
+          "tick": 346,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 5,
+            "TicksRemaining": 2,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "one actual chamber transfer",
+          "tick": 348,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "tactical reload retains chamber",
+          "tick": 356,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "automatic cadence drains five rounds",
+          "tick": 369,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "7",
+            "RecoilImpulses": "7",
+            "DryFires": 1,
+            "FireMode": 1,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "empty automatic produces no recoil",
+          "tick": 372,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "7",
+            "RecoilImpulses": "7",
+            "DryFires": 2,
+            "FireMode": 1,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "burst begins",
+          "tick": 357,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "3",
+            "RecoilImpulses": "3",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 2
+          }
+        },
+        {
+          "label": "released burst finishes",
+          "tick": 363,
+          "selected_values": {
+            "Magazine": 1,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "5",
+            "RecoilImpulses": "5",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "second burst begins",
+          "tick": 367,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 2
+          }
+        },
+        {
+          "label": "holster cancels burst",
+          "tick": 368,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 1,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "holstered held cannot shoot",
+          "tick": 374,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 1,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "equip starts full duration",
+          "tick": 375,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 2,
+            "TicksRemaining": 2,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "equip completes",
+          "tick": 377,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "queued reload applies on resumed tick",
+          "tick": 382,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 3,
+            "TicksRemaining": 3,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "mid-insert durable state",
+          "tick": 386,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 4,
+            "TicksRemaining": 3,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        }
+      ],
+      "owner": {
+        "passed": true,
+        "forced_cleanup": false,
+        "final_children": []
+      }
+    },
+    "Windows": {
+      "passed": true,
+      "native_engine_version": "0.0.209",
+      "native_binary": {
+        "bytes": 27016704,
+        "sha256": "f759251b165bd41836482b9a03e128716429002f75acef7d08324f4bf30f6302"
+      },
+      "backend": "coreclr",
+      "source_evidence": {
+        "bytes": 2478318,
+        "sha256": "e665c1f58adfd7f12527313149e7771e9d2fc8f8721b959dd40a10ecf0d18524"
+      },
+      "owner_report": {
+        "bytes": 2726,
+        "sha256": "90e84a0e69a73b9e618715e68185861c77d1a3ef8ef4eca2198b6fbe3b36517f"
+      },
+      "owner_seconds": 2.7276308000145946,
+      "fixture_seconds": 1.959916499996325,
+      "rpc_count": 204,
+      "observations": 25,
+      "fields": [
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "AcceptedShots",
+          "offset": 72
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Active",
+          "offset": 36
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "AimHeld",
+          "offset": 60
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimPitch",
+          "offset": 96
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimPitchVelocity",
+          "offset": 104
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimYaw",
+          "offset": 112
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "AimYawVelocity",
+          "offset": 120
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "BurstRemaining",
+          "offset": 24
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Chamber",
+          "offset": 4
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Cooldown",
+          "offset": 20
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Crouched",
+          "offset": 64
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "DryFires",
+          "offset": 48
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "FireMode",
+          "offset": 32
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Hits",
+          "offset": 52
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimX",
+          "offset": 176
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimY",
+          "offset": 184
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "LastAimZ",
+          "offset": 192
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "LastEvents",
+          "offset": 44
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Magazine",
+          "offset": 0
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Misses",
+          "offset": 56
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "PendingCommands",
+          "offset": 40
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Phase",
+          "offset": 12
+        },
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "RecoilImpulses",
+          "offset": 88
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "Reserve",
+          "offset": 8
+        },
+        {
+          "bytes": 8,
+          "kind": "int64",
+          "name": "TickCount",
+          "offset": 80
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "TicksRemaining",
+          "offset": 16
+        },
+        {
+          "bytes": 4,
+          "kind": "int32",
+          "name": "TriggerHeld",
+          "offset": 28
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "VisualPitch",
+          "offset": 128
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "VisualPitchVelocity",
+          "offset": 136
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponBack",
+          "offset": 160
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponBackVelocity",
+          "offset": 168
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponPitch",
+          "offset": 144
+        },
+        {
+          "bytes": 8,
+          "kind": "float64",
+          "name": "WeaponPitchVelocity",
+          "offset": 152
+        }
+      ],
+      "archives": [
+        {
+          "label": "armed-full-plus-chamber",
+          "payload": {
+            "bytes": 66994,
+            "sha256": "2e2eaa4207c757c14fb9cce2ec98788e841320607d3e3f2ab0352393003f2b9a"
+          }
+        },
+        {
+          "label": "before-second-tick-fault",
+          "payload": {
+            "bytes": 67018,
+            "sha256": "f28901a6987304859373073a6abb80d03dbc9bd11b4b349ebfe1dd29635d72e0"
+          }
+        },
+        {
+          "label": "after-second-tick-fault",
+          "payload": {
+            "bytes": 67018,
+            "sha256": "f28901a6987304859373073a6abb80d03dbc9bd11b4b349ebfe1dd29635d72e0"
+          }
+        },
+        {
+          "label": "cold-source-mid-reload",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "same-owner-restored",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "same-owner-five-tick-continuation",
+          "payload": {
+            "bytes": 66995,
+            "sha256": "ffb007587070574ff97b962f15489a2a41e2a5817617e451ffd44e74f19d9a3b"
+          }
+        },
+        {
+          "label": "fresh-owner-restored",
+          "payload": {
+            "bytes": 67002,
+            "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+          }
+        },
+        {
+          "label": "fresh-owner-five-tick-continuation",
+          "payload": {
+            "bytes": 66995,
+            "sha256": "ffb007587070574ff97b962f15489a2a41e2a5817617e451ffd44e74f19d9a3b"
+          }
+        }
+      ],
+      "whole_pairs": [
+        {
+          "label": "whole-batch-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "same-owner-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-five-tick-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ],
+      "native_owners": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "checks": [
+        "Ammo/chamber/reserve/accepted-shot conservation across every observed primitive state",
+        "Actual target hit uses BaseWorld plus logical recoil despite misleading presentation",
+        "Semi, automatic and released burst cadence; dry-fire and busy/holstered suppression",
+        "Interrupt eject/insert/chamber stages without duplicating rounds; explicit retained chamber",
+        "Logical pause queues without advancing timers; full-duration equip and burst cancellation",
+        "Full native rollback at second compiled Tick; same/fresh owner complete mid-reload continuation"
+      ],
+      "selected_observations": [
+        {
+          "label": "initial",
+          "tick": 60,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "0",
+            "RecoilImpulses": "0",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "actual accepted shot",
+          "tick": 319,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "semi held does not repeat",
+          "tick": 325,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "reload eject begins",
+          "tick": 326,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 3,
+            "TicksRemaining": 3,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel eject suppresses shot",
+          "tick": 327,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 12,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "ejected partial mag retained",
+          "tick": 332,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 15,
+            "Phase": 4,
+            "TicksRemaining": 4,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel insert retains returned rounds",
+          "tick": 333,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 15,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "1",
+            "RecoilImpulses": "1",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "retained chamber fires",
+          "tick": 334,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 15,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "empty reload enters chamber stage",
+          "tick": 343,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 5,
+            "TicksRemaining": 2,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "cancel chamber preserves unchambered mag",
+          "tick": 344,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 0,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "dry fire never impulses",
+          "tick": 345,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "full mag starts chamber only",
+          "tick": 346,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 0,
+            "Reserve": 11,
+            "Phase": 5,
+            "TicksRemaining": 2,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "one actual chamber transfer",
+          "tick": 348,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 11,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "tactical reload retains chamber",
+          "tick": 356,
+          "selected_values": {
+            "Magazine": 4,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "2",
+            "RecoilImpulses": "2",
+            "DryFires": 1,
+            "FireMode": 0,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "automatic cadence drains five rounds",
+          "tick": 369,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "7",
+            "RecoilImpulses": "7",
+            "DryFires": 1,
+            "FireMode": 1,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "empty automatic produces no recoil",
+          "tick": 372,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 0,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "7",
+            "RecoilImpulses": "7",
+            "DryFires": 2,
+            "FireMode": 1,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "burst begins",
+          "tick": 357,
+          "selected_values": {
+            "Magazine": 3,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "3",
+            "RecoilImpulses": "3",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 2
+          }
+        },
+        {
+          "label": "released burst finishes",
+          "tick": 363,
+          "selected_values": {
+            "Magazine": 1,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "5",
+            "RecoilImpulses": "5",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "second burst begins",
+          "tick": 367,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 2
+          }
+        },
+        {
+          "label": "holster cancels burst",
+          "tick": 368,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 1,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "holstered held cannot shoot",
+          "tick": 374,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 1,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "equip starts full duration",
+          "tick": 375,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 2,
+            "TicksRemaining": 2,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "equip completes",
+          "tick": 377,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 0,
+            "TicksRemaining": 0,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "queued reload applies on resumed tick",
+          "tick": 382,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 3,
+            "TicksRemaining": 3,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        },
+        {
+          "label": "mid-insert durable state",
+          "tick": 386,
+          "selected_values": {
+            "Magazine": 0,
+            "Chamber": 1,
+            "Reserve": 10,
+            "Phase": 4,
+            "TicksRemaining": 3,
+            "AcceptedShots": "6",
+            "RecoilImpulses": "6",
+            "DryFires": 1,
+            "FireMode": 2,
+            "BurstRemaining": 0
+          }
+        }
+      ],
+      "job": {
+        "passed": true,
+        "forced_cleanup": false,
+        "user_time": 16406250,
+        "kernel_time": 9062500,
+        "period_user_time": 16406250,
+        "period_kernel_time": 9062500,
+        "page_faults": 130075,
+        "total_processes": 4,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    }
+  },
+  "limitations": [
+    "Synthetic native inputs and controlled adapted scene; not physical mouse/gamepad qualification or a fresh-agent workflow.",
+    "No Native AOT consumer, standalone export or clean installation is qualified for this new sample.",
+    "No representative performance, interactive weapon-animation quality or full engine/Alpha completion claim."
+  ],
+  "original_failure": {
+    "platform": "Linux",
+    "passed": false,
+    "source": {
+      "bytes": 18252,
+      "sha256": "060a4a4f94572f46ba8635826c9a4905e010b8785d8ec22dfa4ff4cb84027abd"
+    },
+    "evidence": {
+      "bytes": 44038,
+      "sha256": "b8ab9c167c63c2aeef962bd04c11079bf86adb5450be530a9b6f0af265678b06"
+    },
+    "owner_report": {
+      "bytes": 6775,
+      "sha256": "f6074e103848ac009b45b26edd76f0e507fc245ef40d16d1d88eded72eee9837"
+    },
+    "rpc_count": 8,
+    "cause": "The fixture submitted action names in an unsorted order. Native input validation rejected the first step with -32602.",
+    "native_exit_codes": [
+      0
+    ],
+    "forced_cleanup": false,
+    "final_children": [],
+    "recovery": "Only the outgoing action-list order changed to aim,crouch,fire,reload. Original responses, complete-state requirements and C# source were not changed. Original failure remains failed."
+  },
+  "independent_review": {
+    "identity": {
+      "bytes": 5217,
+      "sha256": "e22535c436876e68ff18a713b3d4a138672cc467f3cd1380ac187a9676dade55"
+    },
+    "scope": "Original requests/results, all complete archive bytes and typed fields, four equality pairs per platform, native closure, compile/pure-test records and original failure retained."
+  },
+  "visual": {
+    "passed": true,
+    "scope": "Two saved compiled sample states without ticks, source changes or camera edits. Actual Vulkan capture; not physical UI/input or an OS desktop screenshot.",
+    "native_engine_version": "0.0.209",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "width": 1280,
+    "height": 720,
+    "samples": 4,
+    "viewmodel_samples": 4,
+    "ui_scale": 1,
+    "frames_per_capture": 2,
+    "rpc_count": 25,
+    "source_evidence": {
+      "bytes": 891025,
+      "sha256": "f97089e102c8f426f15c3344168d2204d80025e0a458c614106e35a2ff8176d9"
+    },
+    "ownership": {
+      "bytes": 2366,
+      "sha256": "ca56441a9c316e99f475468618b5823cd15e619ff7718a62bb8a374443f70153"
+    },
+    "fixture_seconds": 2.1136715000029653,
+    "job": {
+      "passed": true,
+      "forced_cleanup": false,
+      "user_time": 10156250,
+      "kernel_time": 9375000,
+      "period_user_time": 10156250,
+      "period_kernel_time": 9375000,
+      "page_faults": 122372,
+      "total_processes": 2,
+      "active_processes": 0,
+      "terminated_processes": 0
+    },
+    "native_owner": {
+      "pid": 23796,
+      "closed": true,
+      "cleanup_actions": [],
+      "exit_code": 0,
+      "cleanup_error": null,
+      "stderr_truncated": false
+    },
+    "captures": [
+      {
+        "label": "armed",
+        "image": {
+          "bytes": 3686538,
+          "sha256": "bdcf4b53943f0ee77f4d55ea5ae836e13f0e8d3a63aa70c2cc8733d564955633"
+        },
+        "tick": 356,
+        "ui_revision": 362,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "mid-reload",
+        "image": {
+          "bytes": 3686538,
+          "sha256": "696a2f99b13409158f7a6d5fada712f7b6b950418e7c1b8a5019c6f17363116b"
+        },
+        "tick": 386,
+        "ui_revision": 399,
+        "nvrhi_errors": 0
+      }
+    ],
+    "complete_archives": [
+      {
+        "label": "visual-armed-before",
+        "identity": {
+          "bytes": 66994,
+          "sha256": "2e2eaa4207c757c14fb9cce2ec98788e841320607d3e3f2ab0352393003f2b9a"
+        }
+      },
+      {
+        "label": "visual-armed-after",
+        "identity": {
+          "bytes": 66994,
+          "sha256": "2e2eaa4207c757c14fb9cce2ec98788e841320607d3e3f2ab0352393003f2b9a"
+        }
+      },
+      {
+        "label": "visual-mid-reload-before",
+        "identity": {
+          "bytes": 67002,
+          "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+        }
+      },
+      {
+        "label": "visual-mid-reload-after",
+        "identity": {
+          "bytes": 67002,
+          "sha256": "c63da3d36d3f13fa5e2f22d3ff216a0d2a939b714f2c457aa6fd811658ad8f4d"
+        }
+      }
+    ],
+    "whole_byte_pairs": [
+      {
+        "label": "armed",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "mid-reload",
+        "bytes_equal": true,
+        "exclusions": []
+      }
+    ],
+    "public_image": {
+      "path": "m2-weapon-actions.png",
+      "identity": {
+        "bytes": 51422,
+        "sha256": "a64e02fdf3c04823477beed56237f2fb59a19510f8c0e006717421b179dd5eaa"
+      },
+      "conversion": "Exact opaque RGB conversion of the original armed-state BMP; no cropping or styling."
+    },
+    "limits": [
+      "The renderer exposes UI revision and density; internal UI vertex/index packet contents are not separately exposed.",
+      "Greybox test scene and controls, not production artwork or representative rendering performance."
+    ]
+  },
+  "visual_original_failure": {
+    "passed": false,
+    "source_evidence": {
+      "bytes": 456195,
+      "sha256": "7541d2d8052f74527939a9192ddd655f4d5e0ac02108a9c4f886ab8b62e1d800"
+    },
+    "ownership": {
+      "bytes": 2719,
+      "sha256": "b2ae59ba10fc010b5c38048104373c1e4436e1233a1b0acd428e520eda6ed403"
+    },
+    "rpc_count": 12,
+    "captures": 1,
+    "cause": "Active output inventory attempted to hash the live world exclusive Windows lock file. The native capture and complete save pair had completed, but the owner failed.",
+    "forced_cleanup": false,
+    "job_active": 0,
+    "job_terminated": 0,
+    "recovery": "Active bounds use ordinary-file metadata; closed full inventories, source pins and complete-state capture comparisons remain strict. Original failed run remains failed."
+  }
+}

@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.209**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-20 for **0.0.210**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.210 adds optional [weapon actions](WEAPON_ACTIONS.md): semi-auto,
+automatic and burst fire, separate magazine/chamber/reserve accounting, and
+interruptible reload/equip phases. The [compiled range](../examples/weapon-actions/README.md)
+drives native hits and separate aim/visual recoil only from accepted shots.
+The package, sample and eight pure groups compile and pass, including 137,286
+checks of timing, conservation, validation and complete caller-state replay.
+
+Linux and Windows CoreCLR workflows each pass 204 original RPCs, 25 state
+observations, eight complete checkpoints and four whole-byte equality pairs,
+preserving all 33 typed gameplay fields. They cover actual target hits,
+interrupted transfers, empty fire, burst cancellation, queued paused controls,
+a second-tick fault with full batch rollback and fresh-process mid-reload
+continuation. These runs use the qualified 0.0.209 native engines and matched
+400-byte SDK/bridge; no native API or gameplay ABI changes are needed.
+Accepted owners close unforced. The first Linux attempt remains failed after
+an unsorted input-action request; the corrected test changes only request order.
+[Evidence](evidence/m2-weapon-actions.json) separates pure helper checks from
+native execution. Attachments, multiple-weapon inventory, weapon clips,
+Native AOT shipping and physical interaction remain separate work.
+
+A separate NVIDIA Vulkan check restores the ready and mid-reload saves, renders
+two 1280×720 MSAA4 observations with native HUD/controls, and retains four full
+archives and two exact capture-before/after byte pairs. No gameplay ticks or
+camera/source edits occur. The first capture owner remains failed after trying
+to hash a live exclusive lock; the successor keeps strict closed inventories
+and uses metadata for active size bounds. These images qualify controlled
+presentation, not physical input or production artwork.
 
 Version 0.0.209 adds [alpha-masked materials](MATERIAL_ALPHA.md) through glTF/GLB
 intake, cooked models, authored inspection and guarded live adoption. Nondefault

@@ -1,6 +1,7 @@
-# Poima FPS feedback
+# Poima FPS helpers
 
-Optional compiled C# helpers for procedural first-person feedback. Games own
+Optional compiled C# helpers for procedural first-person feedback and weapon
+actions. Games own
 all mutable state and decide which effects affect aiming or presentation.
 The native engine does not install this package for unrelated games.
 
@@ -14,6 +15,8 @@ The native engine does not install this package for unrelated games.
   cell interval and amplitudes; no wall clock or mutable RNG.
 - `Recoil.AngularKick`: authored patterns, seeded random variation or their
   sum. Independent profiles/streams can drive aim, weapon kick and camera effects.
+- `Weapons.Step`: explicit magazine/chamber/reserve state, semi-auto/automatic/
+  burst fire and interruptible reload/equip phases. [Action contract](../../docs/WEAPON_ACTIONS.md).
 
 ## Recoil profiles
 
@@ -44,7 +47,7 @@ Read the XML API comments for each helper's remaining numerical bounds.
 
 ## Use and save state
 
-Reference `Poima.Fps.csproj` from a trusted game project, or include its two
+Reference `Poima.Fps.csproj` from a trusted game project, or include the required
 source files as the [FPS Feedback sample](../../examples/fps-feedback/README.md)
 does. Builds require the same .NET toolchain and Poima gameplay SDK as the game.
 The package has no native callbacks or generated art/content.
@@ -67,4 +70,4 @@ an outward clearance-recovery spring.
 
 Procedural effects can layer over imported animation clips. This package does
 not replace skeletal playback, IK, motion matching or an imported-character
-pipeline, and does not implement a weapon inventory/attachment framework.
+pipeline, and does not implement a multiple-weapon inventory or attachment framework.

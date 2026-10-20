@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../managed/Directory.Build.props" />
+  <ItemGroup Condition="'$(PoimaGameplayAssembly)' == ''"><ProjectReference Include="../../managed/Poima.Gameplay/Poima.Gameplay.csproj" /></ItemGroup>
+  <ItemGroup Condition="'$(PoimaGameplayAssembly)' != ''"><Reference Include="Poima.Gameplay"><HintPath>$(PoimaGameplayAssembly)</HintPath><Private>true</Private></Reference></ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../packages/fps/Weapons.cs" Link="Weapons.cs" />
+    <Compile Include="../../packages/fps/Feedback.cs" Link="Feedback.cs" />
+    <Compile Include="../../packages/fps/Recoil.cs" Link="Recoil.cs" />
+    <Compile Include="../fps-feedback/PoseMath.cs" Link="PoseMath.cs" />
+  </ItemGroup>
+  <Import Project="../../managed/Poima.Components.targets" />
+</Project>

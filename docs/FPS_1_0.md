@@ -17,6 +17,11 @@ uses physical clearance before capsule growth and retains posture intent in
 checkpoints. Stairs, slopes, moving platforms, mantle, slide and vault remain
 separate locomotion gates. Character rigs need their own crouch animation policy.
 
+The optional [weapon-actions package](WEAPON_ACTIONS.md) adds explicit magazine,
+chamber, fire-mode and reload/equip state. Its compiled sample connects accepted
+shot events to the separate aim/visual recoil helpers. Attachments and a
+multiple-weapon inventory remain additional package work.
+
 ## Capability matrix
 
 | Area | Engine responsibility | Reusable package or game responsibility | Acceptance examples |
