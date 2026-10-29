@@ -1,0 +1,552 @@
+{
+  "format": "poima.inspection-controls-evidence.v1",
+  "engine_version": "0.0.214",
+  "recorded_date": "2026-10-29",
+  "scope": "Optional filesystem-preserving input inspection and restored compact typed mutation discovery; Windows and Linux headless execution.",
+  "contract": {
+    "schema_revision": 119,
+    "input.inspect.read_only": {
+      "type": "boolean",
+      "default": false,
+      "effective_policy": "constructor_read_only OR requested_read_only",
+      "scope": "Immutable or quiescent profiles",
+      "result": "Existing complete summary and validation retained",
+      "ordinary_authoring": "Omitted/false keeps cooperative locking and possible lock-sidecar creation",
+      "concurrent_writer_synchronization": false,
+      "atomic_concurrent_read_guarantee": false,
+      "other_input_operations": "Unchanged"
+    },
+    "dependentRequired": "Recognize well-formed maps of unique string arrays, including empty maps/arrays; preserve complete selected source branches and transaction envelopes. Malformed/reference/dialect/discriminator/conditional guards remain conservative.",
+    "new_gameplay_abi": false,
+    "save_format_change": false
+  },
+  "sources": {
+    "src/world.cpp": {
+      "bytes": 359312,
+      "sha256": "f31f5adfa3b97ee9f1ccaba8ca803578e02194c51ee3639f28904431e8f20619"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 136904,
+      "sha256": "b04d6fb691eaf655ad90bf739a510c458c1bf81472517bf05683d74d9bb455b4"
+    },
+    "tests/input_profile_contract.py": {
+      "bytes": 29326,
+      "sha256": "e6870e87dc7fb5ce074e281af7aff935b8a5516a8a814c4b3f684d45dc05405e"
+    },
+    "tests/world_session_native.cpp": {
+      "bytes": 82623,
+      "sha256": "18da57449063c189678308241be51a1ae7f33f510bf92d7dd85029afa1894a60"
+    },
+    "src/input_profile_store.cpp": {
+      "bytes": 25407,
+      "sha256": "fe42be158a064eaeecfb42f5418e3f50d52f529bd43abd675c741d75f64c96dc"
+    },
+    "src/input_profile_store.hpp": {
+      "bytes": 837,
+      "sha256": "5bb63face39a4df04eef2b7f59b716640b75a9edb6b06f59db86186ea7e34f61"
+    },
+    "docs/INPUT_PROFILES.md": {
+      "bytes": 11718,
+      "sha256": "33c2443d18e5c67be33e2378c43a4abd621392a0f6329d13ba71a96c330c84b0"
+    },
+    "CMakeLists.txt": {
+      "bytes": 100378,
+      "sha256": "5ae07a764c20a188531af3016e99339678d1671e3f0ca2991e7563c100da6716"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "4585025a8775d30a97ea422e6c5161300898c035c1609bbd2dd8d771ebd5a773"
+    },
+    "tests/world_contract.py": {
+      "bytes": 36338,
+      "sha256": "8303ca513306fed2e579e789f1649e34447bbacfe7c55cd3c618ea016233c8ee"
+    },
+    "src/mutation_discovery.hpp": {
+      "bytes": 7349,
+      "sha256": "bb0c84fd3e0f7f306fdaa4a29fb797d26e2247c19bbe483d0cd1c2e0d38fdbf5"
+    },
+    "tests/mutation_discovery_native.cpp": {
+      "bytes": 16217,
+      "sha256": "a9937c0d3ee3f5059dae5fad4c0fe5896617b1e7bc2bf073a50373851a47ae9f"
+    },
+    "docs/WORLD_SERVICE.md": {
+      "bytes": 31236,
+      "sha256": "7def4b348a9b355faca4ea4c606b36963c4adb18a48c09093561d5eef849265e"
+    }
+  },
+  "linux": {
+    "build": {
+      "report": {
+        "bytes": 25121,
+        "sha256": "5e3d4cfef1a57db9fd75e697dc609c7c49e1937ffe52f95a9e45c42f402f0707"
+      },
+      "plan": {
+        "bytes": 49530,
+        "sha256": "af4b8837e30925465d16b1dee566107e8fab47e68275a966b4ee2f1c8ee6b576"
+      },
+      "seconds": 204.89630751300137,
+      "passed": true,
+      "natural_unforced_closure": true,
+      "commands": [
+        {
+          "label": "build-final",
+          "seconds": 198.94820789799996,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 9472,
+            "sha256": "27b741fc08624777231af026122d8e12115931c86f29044fbfa720dfdf490c78"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "cpu": {
+      "report": {
+        "bytes": 195400,
+        "sha256": "b3b9f0bd13fdb0a3e58d5529f19f48969dfbd63d82db33b077fe1339b774bd7d"
+      },
+      "plan": {
+        "bytes": 56183,
+        "sha256": "2e363683212464a3dd895043295fc2b206eae8cf29870c271aab00bd38394664"
+      },
+      "seconds": 143.56241754499933,
+      "passed": true,
+      "natural_unforced_closure": true,
+      "commands": [
+        {
+          "label": "input-profile",
+          "seconds": 41.627404558996204,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 2738,
+            "sha256": "789522e94a14488767e11121dd35a38d07edcefcd9562258d00055f70f416ed3"
+          }
+        },
+        {
+          "label": "native",
+          "seconds": 66.25508241199714,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 2257,
+            "sha256": "8fdf07e27073723882074de30dc6bbccb63ae816db93d399cf912bb67c1b1cfc"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "label": "authoring",
+          "seconds": 17.180114883005444,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 4909,
+            "sha256": "16f370edfda09597d40bd0f69b41b9051ea0c00bc3c378f468a48649f7b8b85f"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "label": "runtime",
+          "seconds": 3.5290857099971618,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 2269,
+            "sha256": "7a55bd4d08b3946f96904fdb47b4893b1be92d09fbbce5011e7cb6ab0a455b60"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "images": {
+      "poima": {
+        "bytes": 36538032,
+        "sha256": "a9cd4026dc6265e8a6022a245e2d50a5cfde1154308737d0528421d510391050"
+      },
+      "poima-world-session-test": {
+        "bytes": 36439328,
+        "sha256": "19aefd7211a32e9739a20424ed75cf2aa422fbf6d9a09588406dc08b4034e0e6"
+      },
+      "poima-world-schema-test": {
+        "bytes": 36040648,
+        "sha256": "4e779b47cc5399a5f88c29e525bdf5c3a698d92c88af5799f44863453a9fc4dd"
+      },
+      "poima-input-profile-test": {
+        "bytes": 489416,
+        "sha256": "5eec171a6fb841f434f47abc37b3c9055e7ff8c28076935d3f50a9ab9fa7bf63"
+      },
+      "poima-mutation-discovery-test": {
+        "bytes": 948056,
+        "sha256": "edf51401c9162a3af80e5a43914361b9b10f0ba6eb5585934d7b13b823bf1d6c"
+      }
+    },
+    "python_methods_passed": {
+      "input_profile": 20,
+      "cli": 11,
+      "world": 14,
+      "runtime": 9
+    },
+    "python_skips": 0,
+    "native_suites": [
+      "input_profile_native",
+      "world_session_native",
+      "world_schema_native",
+      "mutation-discovery-native"
+    ],
+    "schema_response_marker": {
+      "responses": 1365,
+      "owner_scopes": 6,
+      "full_transcript_saved": false
+    },
+    "input_profile_evidence": {
+      "bytes": 1032,
+      "sha256": "b7fea94b365cd22933b59fb184e9dbfb3584ef08afca13b6c4ca55dcecce28d4"
+    }
+  },
+  "windows": {
+    "build": {
+      "report": {
+        "bytes": 42569,
+        "sha256": "1bd1502cfb2b3fddc9bf37f43cda820e25c10d1b2c1d7cf32ddfe52a17c98e88"
+      },
+      "plan": {
+        "bytes": 64376,
+        "sha256": "b0d269b81d03050c3f9b0cdbcc358b8142f9b2a0c1a4541fa7cc43130935201e"
+      },
+      "seconds": 288.2368221509969,
+      "passed": true,
+      "natural_unforced_closure": true,
+      "commands": [
+        {
+          "label": "configure",
+          "seconds": 52.04714816100022,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 6717,
+            "sha256": "b4eae51edae345a25636bb6014ca66ad9daacaeaacfe8d6670df3c0134dbcccc"
+          },
+          "stderr": {
+            "bytes": 609,
+            "sha256": "b264753afcca928f2fcebec59516db5f18c1d643a6593df57f068caaf937b63a"
+          }
+        },
+        {
+          "label": "build",
+          "seconds": 222.91408199299622,
+          "exit_code": 0,
+          "stdout": {
+            "bytes": 3056,
+            "sha256": "57ee6bc396b27b6066bf6ab99769052f51f4ca2ebd30cbbe1dd31b1b59fefe95"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "seal": {
+      "passed": true,
+      "report": {
+        "bytes": 14667,
+        "sha256": "0437cb261dbd0328d7db199c4c8bf62a444c6b746baaf652c981f712d3e6148e"
+      },
+      "manifest": {
+        "bytes": 4757,
+        "sha256": "0d126e3d51888caea5bec7280a30763af0c2192c002127edee5f59fe4c32f08e"
+      },
+      "seconds": 343.78133229900413,
+      "cache_generation": 58,
+      "partial_compiler_cohort": true,
+      "targets": [
+        "poima",
+        "poima_desktop",
+        "poima-world-session-test",
+        "poima-world-schema-test",
+        "poima-input-profile-test"
+      ],
+      "images": {
+        "bin/poima.exe": {
+          "bytes": 27100672,
+          "sha256": "ffa47aa74661f93ad5df3ecb00a8f0682f722f3a673c73b2e9dc290c532c6c2f"
+        },
+        "bin/poima_desktop.dll": {
+          "bytes": 310836224,
+          "sha256": "9b5d057f0c6207bf7874f51b41cff36a393f8d47c3204fdc18b26596b9744a48"
+        },
+        "bin/poima-world-session-test.exe": {
+          "bytes": 26023424,
+          "sha256": "0ebead97316375d8f84343d67834350d877bfc78997f1334b4caddfb380ca32c"
+        },
+        "bin/poima-world-schema-test.exe": {
+          "bytes": 25644544,
+          "sha256": "5ebbe13b99e8a45273a0d77093d76c455dcefee032b7a2c0a4bf4c8034349de5"
+        },
+        "bin/poima-input-profile-test.exe": {
+          "bytes": 1289216,
+          "sha256": "db73116f3f329090cc91faa36716dd38ad48cade4e55c2992aac36f7c05ec08c"
+        }
+      },
+      "core_identity": {
+        "bytes": 242293880,
+        "sha256": "168d5c5236c16e5f747c25d2e3c9b468dfa17b7adea07d7f17f0d83b3c15f4e9"
+      },
+      "unrebuilt_prior_213_images": 8,
+      "prior_213_preserved": true
+    },
+    "cpu": {
+      "passed": true,
+      "report": {
+        "bytes": 6180,
+        "sha256": "6dada2efa9f81ece7be98621df7ff6054eef95fb5149d302284aaa649d658d99"
+      },
+      "worker": {
+        "bytes": 7569,
+        "sha256": "3e2f9882390ab92149586300324f4044c3f82b8f59c2ffba1827851e13109864"
+      },
+      "plan": {
+        "bytes": 54357,
+        "sha256": "fad78de82269ff2fed39e367f1131efd0d57e260e56edb8e2cb74044612ede65"
+      },
+      "seconds": 21.25341040000785,
+      "native_suites": 3,
+      "commands": [
+        {
+          "label": "poima-world-session-test",
+          "seconds": 3.275065399997402,
+          "exit_code": 0,
+          "streams": {
+            "stdout.bin": {
+              "bytes": 147,
+              "sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+            },
+            "stderr.bin": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "poima-world-schema-test",
+          "seconds": 9.0985886999988,
+          "exit_code": 0,
+          "streams": {
+            "stdout.bin": {
+              "bytes": 110,
+              "sha256": "349b755ea15bc2245a8d50a7b18f6a8f79b963601550511725786442862582d8"
+            },
+            "stderr.bin": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "poima-input-profile-test",
+          "seconds": 0.08021879999432713,
+          "exit_code": 0,
+          "streams": {
+            "stdout.bin": {
+              "bytes": 151,
+              "sha256": "b95dd8d48e0d6c88712989d37edb37ab28fea7a89569ec4136ed054a72d96813"
+            },
+            "stderr.bin": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        {
+          "label": "input-profile-contract",
+          "seconds": 6.743040599976666,
+          "exit_code": 0,
+          "streams": {
+            "stdout.bin": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stderr.bin": {
+              "bytes": 3116,
+              "sha256": "9af28508ad78b22721cdc5cb1bdb7885033f179b05a1da92f9bf46f2cfe5f135"
+            }
+          }
+        }
+      ],
+      "input_profile": {
+        "methods_run": 20,
+        "methods_passed": 19,
+        "methods_skipped": 1,
+        "skipped_method": "test_symlink_profiles_and_sidecars_preserve_targets",
+        "skip_reason_summary": "Symbolic-link setup lacked the required Windows privilege (WinError 1314); complete original reason retained in raw report.",
+        "new_methods_actually_passed": [
+          "test_default_and_explicit_false_retain_lock_sidecar",
+          "test_read_only_corruption_preserves_complete_directory",
+          "test_read_only_missing_and_valid_exact_response_and_membership",
+          "test_read_only_strict_boolean_rejected_before_path_or_storage"
+        ],
+        "evidence": {
+          "bytes": 1067,
+          "sha256": "5b7a5476435d9fa9e09a142aec2645c87f2e72a8bd9ee003dbe86eea6716ae1b"
+        }
+      },
+      "schema": {
+        "responses": 1365,
+        "owner_scopes": 6,
+        "complete_transcript": {
+          "bytes": 9387910,
+          "sha256": "dde203f92a7c82663e52dc261ef951a9d287287ea44fb4aa90c125fd6ae80a97"
+        }
+      },
+      "job": {
+        "passed": true,
+        "forced_cleanup": false,
+        "cleanup_errors": [],
+        "at_child_exit": {
+          "user_time": 147187500,
+          "kernel_time": 63281250,
+          "period_user_time": 147187500,
+          "period_kernel_time": 63281250,
+          "page_faults": 1066646,
+          "total_processes": 243,
+          "active_processes": 0,
+          "terminated_processes": 0
+        },
+        "after_cleanup": {
+          "user_time": 147187500,
+          "kernel_time": 63281250,
+          "period_user_time": 147187500,
+          "period_kernel_time": 63281250,
+          "page_faults": 1066646,
+          "total_processes": 243,
+          "active_processes": 0,
+          "terminated_processes": 0
+        }
+      },
+      "known_live_child": null
+    }
+  },
+  "native_request_comparison": {
+    "passed": true,
+    "image": {
+      "bytes": 36538032,
+      "sha256": "a9cd4026dc6265e8a6022a245e2d50a5cfde1154308737d0528421d510391050"
+    },
+    "same_original_requests": true,
+    "cases": [
+      {
+        "type": "Transform",
+        "old_error": null,
+        "old_branches": 35,
+        "new_branches": 1,
+        "old_wire_bytes": 86522,
+        "new_wire_bytes": 2922,
+        "complete_expected_result_equal": true
+      },
+      {
+        "type": "Camera",
+        "old_error": {
+          "code": -32602,
+          "message": "Unknown or unavailable mutation operation or component type."
+        },
+        "old_branches": null,
+        "new_branches": 1,
+        "old_wire_bytes": 122,
+        "new_wire_bytes": 3624,
+        "complete_expected_result_equal": true
+      },
+      {
+        "type": "AnimationRig",
+        "old_error": null,
+        "old_branches": 35,
+        "new_branches": 1,
+        "old_wire_bytes": 86525,
+        "new_wire_bytes": 7667,
+        "complete_expected_result_equal": true
+      }
+    ],
+    "request_identity": {
+      "bytes": 381,
+      "sha256": "9389ddbdd6837fcc2d314a50e5a67ae34be5ff1b877a44388559bcddc115b652"
+    },
+    "response_identity": {
+      "bytes": 14213,
+      "sha256": "d7beadb4b47afe5114cf1d48ded252de033b07748d275b2dd6bcab18ec9595e4"
+    },
+    "scope": "Same three typed requests in fresh empty worlds; complete expected results independently select unchanged original branches/envelopes. Wire bytes only; no agent-token, latency or performance conclusion."
+  },
+  "retained_failed_cohorts": [
+    {
+      "attempt": "linux-cpu-1",
+      "passed": false,
+      "report": {
+        "bytes": 142230,
+        "sha256": "b179f61a2c883e7977c5dde7a3131a74171df1e041f164b1df1034950ccde610"
+      },
+      "seconds": 201.00885511899833
+    },
+    {
+      "attempt": "linux-cpu-2",
+      "passed": false,
+      "report": {
+        "bytes": 194161,
+        "sha256": "e69d7634310ff9641a2e5614314a99153473ab1224354d1701b927f77a2f41f0"
+      },
+      "seconds": 257.8869276900077
+    },
+    {
+      "attempt": "linux-cpu-3",
+      "passed": false,
+      "report": {
+        "bytes": 193846,
+        "sha256": "68a1e2a1c5ccf47dbb4eb63eb03225ea9406a85479e0fb55a48cd05a51fb1664"
+      },
+      "seconds": 267.40444814800867
+    }
+  ],
+  "preceding_fresh_character_workflow": {
+    "runtime_version": "0.0.213",
+    "aggregate": "UNQUALIFIED",
+    "historical_final_audit": "661 original files remained byte-identical but inspection added one empty coordination sidecar. Original candidate, grader, receipts and failure were not repaired or regraded.",
+    "classification_record": {
+      "bytes": 5228,
+      "sha256": "2095d5891e2c8b520fbc8181b42156d8a56257e7037777f6cc8ec0608c389443"
+    }
+  },
+  "limits": [
+    "Windows symbolic-link scenarios remain unqualified; hard-link and all four new inspection methods passed.",
+    "Pure projection unit execution is Linux-only; Windows includes real typed Camera integration checks.",
+    "No synchronized concurrent-profile-read guarantee.",
+    "No new installed-pack, AOT/export, fresh-agent, physical-input, graphics/performance or Alpha qualification."
+  ],
+  "reproduction": {
+    "prerequisites": "Use a configured full-feature native build; see DEVELOPMENT_PROFILES.md and subsystem contracts.",
+    "linux_targets": [
+      "poima",
+      "poima-world-session-test",
+      "poima-world-schema-test",
+      "poima-input-profile-test",
+      "poima-mutation-discovery-test"
+    ],
+    "linux_native_ctest_regex": "^(world_session_native|world_schema_native|input_profile_native|mutation-discovery-native)$",
+    "linux_retained_ctest_regex": "^(cli_contract|world_contract|runtime_contract)$",
+    "profile_contract": "python3 tests/input_profile_contract.py build/linux-game/poima --evidence input-profile.json",
+    "windows_native_tests": [
+      "poima-world-session-test.exe",
+      "poima-world-schema-test.exe",
+      "poima-input-profile-test.exe"
+    ],
+    "windows_profile_contract": "python -I -B tests/input_profile_contract.py build/windows-runtime/bin/poima.exe --evidence input-profile-windows.json"
+  }
+}

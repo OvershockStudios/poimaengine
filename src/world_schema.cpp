@@ -203,7 +203,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 118}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 119}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -272,7 +272,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json input_path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Profile file ending .poima-input.json; relative paths resolve beside the world."}};
     methods["input.describe"]=object_schema(Json::object());
     methods["input.devices"]=object_schema(Json::object());
-    methods["input.inspect"]=object_schema({{"path",input_path}},{"path"});
+    methods["input.inspect"]=object_schema({{"path",input_path},{"read_only",{{"type","boolean"},{"default",false},
+        {"description","Inspect immutable or quiescent input without creating/opening a writer lock. No cooperative writer synchronization or new atomic/concurrent-read guarantee. Read-only packaged hosts always use this mode, including explicit false."}}}},{"path"});
     Json input_event={{"oneOf",Json::array({
         object_schema({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"}),
         object_schema({{"motion",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},2)}},{"motion"}),

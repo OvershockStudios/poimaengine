@@ -6,7 +6,29 @@ Version 0.0.29 connects keyboard/mouse profiles to the [desktop Game view](DESKT
 
 ## Discover, preview and apply
 
-`world.describe` schema 18 exposes `input.describe`, `input.inspect`, `input.transact` and `input.evaluate`. These work in the headless build. `input.describe` returns v1 `defaults`, v2 `gamepad_defaults`, v3 named-action support, supported formats, complete profile schemas, physical control catalog, reserved controls, units and persistence/application rules. `input.inspect` takes a `path`; a missing profile reports v1 defaults, revision 0 and `persisted:false` without creating it. `input.devices` separately reports whether the SDL device host is available and its discovered gamepads.
+`world.describe` exposes `input.describe`, `input.inspect`, `input.transact` and `input.evaluate`. These work in the headless build. `input.describe` returns v1 `defaults`, v2 `gamepad_defaults`, v3 named-action support, supported formats, complete profile schemas, physical control catalog, reserved controls, units and persistence/application rules. `input.inspect` takes a `path`; a missing profile reports v1 defaults, revision 0 and `persisted:false` without creating it. `input.devices` separately reports whether the SDL device host is available and its discovered gamepads.
+
+For immutable or quiescent profiles, `input.inspect` accepts an optional Boolean
+`read_only`:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"input.inspect","params":{"path":"route.poima-input.json","read_only":true}}
+```
+
+This preserves the existing summary and validation while avoiding creation or
+opening of a writer-lock sidecar. It does not create a missing profile or repair
+an invalid one. Use it when auditing complete file inventories or inspecting
+content whose directory must remain unchanged. It does not synchronize with
+cooperating writers or introduce an atomic concurrent-read guarantee; use a
+quiescent input, or retain ordinary cooperative inspection when writers may be
+active. A concurrent change can cause a read or validation error.
+
+Omitting the flag or specifying `false` retains cooperative inspection in
+authoring sessions, including its documented possible `.lock` file. Packaged
+read-only sessions always use filesystem-preserving inspection; `false` cannot
+downgrade that host policy. Non-Boolean flags reject before path validation or
+storage access. `input.transact`, `input.evaluate` and player loading keep their
+existing behavior. The optional field is advertised by discovery schema 119.
 
 Profile files end in `.poima-input.json`. Their parent directory must already exist. Relative paths resolve beside the world document. They are independent of the authored world and can be shared by several worlds. Paths inside the world's immutable asset store or reserved document paths are rejected. Main files and sidecars reject symbolic links and hard-link aliases. Explicit paths are the initial development interface; automatic per-user storage selection and packaged-game configuration are unfinished.
 

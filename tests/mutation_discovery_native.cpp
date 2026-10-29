@@ -65,6 +65,86 @@ int main() { try {
           "Selected conditional component schema was lost or rewritten.");
     check(conditional_source.dump() == original_conditional, "Conditional source was mutated.");
 
+    // dependentRequired constrains object property presence, not the explicit
+    // operation/type constants. Preserve its complete authored subtree while
+    // selecting the Camera that exposed the integration regression.
+    const auto valid_dependencies = Json::array({
+        Json::object(),
+        Json{{"viewmodel_clearance", Json::array({"viewmodel"})}},
+        Json{{"", Json::array({"", "other"})}, {"unused", Json::array()}},
+        Json{{"op", Json::array({"value", "id"})}, {"type", Json::array({"type"})}},
+        Json{{"futureSemantics", Json::array({"if", "then", "else"})}}
+    });
+    for (const auto& dependencies : valid_dependencies) {
+        auto dependent_camera = camera;
+        dependent_camera["properties"]["value"] = {{"type", "object"},
+            {"properties", {{"viewmodel", {{"type", "object"}}},
+                            {"viewmodel_clearance", {{"type", "object"}}}}},
+            {"dependentRequired", dependencies}};
+        const auto value = envelope(Json::array({rename, dependent_camera, transform}));
+        const auto original_value = value.dump();
+        auto expected_camera = value;
+        expected_camera["properties"]["ops"]["items"]["oneOf"] = Json::array({dependent_camera});
+        check(mutation_schema(value, "component.set", "Camera") == expected_camera,
+              "Typed Camera selection lost its complete dependency/envelope or was unavailable.");
+        check(items(mutation_schema(value, "component.set", "Transform")) == Json::array({transform}),
+              "A valid object dependency prevented disjoint Camera pruning.");
+        check(items(mutation_schema(value, "component.set")) == Json::array({dependent_camera, transform}),
+              "Operation-only selection lost a dependency-bearing component.");
+        check(value.dump() == original_value, "Dependency projection changed the source.");
+
+        // A dependency on the operation object itself also leaves explicit
+        // discriminator disjointness intact; it is not a composition keyword.
+        dependent_camera["dependentRequired"] = dependencies;
+        check(items(mutation_schema(envelope(Json::array({dependent_camera, transform})),
+                                    "component.set", "Camera")) == Json::array({dependent_camera}),
+              "Branch-level valid dependency lost its explicit supported witness.");
+    }
+
+    const auto malformed_dependencies = Json::array({
+        nullptr, false, 1, "object", Json::array(),
+        Json{{"value", nullptr}}, Json{{"value", false}}, Json{{"value", 1}},
+        Json{{"value", "id"}}, Json{{"value", Json::object()}},
+        Json{{"value", Json::array({"id", "id"})}},
+        Json{{"value", Json::array({"id", nullptr})}},
+        Json{{"value", Json::array({"id", true})}},
+        Json{{"value", Json::array({"id", 1})}},
+        Json{{"value", Json::array({Json::array()})}},
+        Json{{"value", Json::array({Json::object()})}}
+    });
+    for (const auto& dependencies : malformed_dependencies) {
+        auto malformed_camera = camera;
+        malformed_camera["properties"]["value"] = {{"type", "object"}, {"dependentRequired", dependencies}};
+        const auto value = envelope(Json::array({rename, malformed_camera, transform}));
+        const auto original_value = value.dump();
+        check(mutation_schema(value, "component.set", "Transform") == value,
+              "Malformed dependency failed to preserve the complete union.");
+        check(mutation_schema(value, "component.set") == value,
+              "Malformed dependency was removed from operation-only discovery.");
+        rejects([&] { mutation_schema(value, "component.set", "Camera"); });
+        check(value.dump() == original_value, "Malformed dependency projection changed the source.");
+    }
+
+    // Recognizing one keyword must not bypass opaque discriminator semantics,
+    // actual reference/dialect guards or branch-level conditionals.
+    for (const auto* discriminator_key : {"op", "type"}) {
+        auto opaque_camera = camera;
+        opaque_camera["properties"][discriminator_key]["dependentRequired"] = Json::object();
+        const auto value = envelope(Json::array({opaque_camera, transform}));
+        check(mutation_schema(value, "component.set", "Transform") == value,
+              "Object dependency on a discriminator invented a disjointness proof.");
+        rejects([&] { mutation_schema(value, "component.set", "Camera"); });
+    }
+    for (const auto* keyword : {"$ref", "$dynamicRef", "$recursiveRef", "$schema", "$vocabulary", "futureSemantics"}) {
+        auto guarded_camera = camera;
+        guarded_camera["properties"]["value"] = {{"dependentRequired", {{"a", Json::array({"b"})}}},
+                                                   {keyword, "opaque"}};
+        const auto value = envelope(Json::array({guarded_camera, transform}));
+        check(mutation_schema(value, "component.set", "Transform") == value,
+              "Valid dependency bypassed an opaque reference/dialect/keyword guard.");
+        rejects([&] { mutation_schema(value, "component.set", "Camera"); });
+    }
+
     // Recurse into all three conditional schema positions. A reference,
     // unfamiliar dialect or unknown nested keyword still preserves the union.
     for (const auto* position : {"if", "then", "else"}) {

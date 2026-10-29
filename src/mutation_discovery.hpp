@@ -38,6 +38,17 @@ inline bool known_schema(const Json& schema, unsigned depth = 0) {
         } else if (key == "oneOf" || key == "anyOf" || key == "allOf" || key == "prefixItems") {
             if (!value.is_array()) return false;
             for (const auto& child : value) if (!known_schema(child, depth + 1)) return false;
+        } else if (key == "dependentRequired") {
+            // JSON Schema validation 2020-12, 6.5.4: property-name literals
+            // map to unique string arrays (including empty maps/arrays).
+            // Recognize the constraint without rewriting or evaluating it.
+            if (!value.is_object()) return false;
+            for (const auto& dependencies : value) {
+                if (!dependencies.is_array()) return false;
+                for (auto item = dependencies.begin(); item != dependencies.end(); ++item) {
+                    if (!item->is_string() || std::find(dependencies.begin(), item, *item) != item) return false;
+                }
+            }
         } else if (key != "type" && key != "required" && key != "const" && key != "enum" &&
                    key != "description" && key != "title" && key != "default" &&
                    key != "minLength" && key != "maxLength" && key != "pattern" &&

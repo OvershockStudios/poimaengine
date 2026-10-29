@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.214
+
+- Add optional read-only input-profile inspection for quiescent or immutable
+  files, preserving validation and results without creating a lock sidecar.
+- Recognize valid `dependentRequired` constraints in mutation discovery,
+  restoring compact Camera and Transform selection while retaining complete
+  selected schemas and conservative malformed-schema and reference guards.
+
 ## 0.0.213
 
 - Add optional native planted-foot locking with support-relative anchors for

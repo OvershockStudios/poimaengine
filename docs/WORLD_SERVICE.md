@@ -85,6 +85,13 @@ conservative, as do nested references, unfamiliar dialects, unknown keywords
 and malformed schema positions. A retained opaque branch cannot by itself
 establish that a requested selector is supported.
 
+Version 0.0.214 also recognizes well-formed `dependentRequired` constraints:
+an object mapping property names to arrays of unique strings, including empty
+maps and arrays. The selected Camera schema retains its complete viewmodel
+dependency while unrelated branches can be narrowed. Discovery recognizes the
+constraint without evaluating or rewriting it. Malformed declarations remain
+opaque; reference, dialect, discriminator and conditional guards still apply.
+
 `runtime_game_session_contract`, like `authoring_contract`, is reserved session
 metadata in full and focused views. It is not listed as a selectable catalog
 section. Its availability describes the contract profile, not whether a runtime

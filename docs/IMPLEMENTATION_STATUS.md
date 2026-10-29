@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-20 for **0.0.213**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-29 for **0.0.214**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.214 adds optional Boolean `read_only` to
+[`input.inspect`](INPUT_PROFILES.md), preserving profile summaries and validation
+without a writer-lock sidecar for immutable or quiescent files. Ordinary
+inspection retains cooperative locking; an explicit `false` cannot downgrade
+a packaged read-only host. The option does not synchronize with writers or
+establish atomic concurrent reads.
+
+[Mutation discovery](WORLD_SERVICE.md) recognizes valid `dependentRequired`
+constraints, restoring compact Camera, Transform and AnimationRig selection
+while preserving complete selected branches and transaction envelopes.
+Malformed declarations and existing reference, dialect, discriminator and
+conditional guards remain conservative. The same native Transform request falls
+from 86,522 to 2,922 wire bytes; this measures response size, not agent token
+usage or iteration latency.
+
+Linux passes 54 Python methods and four native suites. Windows passes three
+native suites and 19 of 20 input-profile methods; the symbolic-link setup skips
+with WinError 1314, while hard-link checks and all four new inspection methods
+pass. Accepted owners close naturally and the Windows Job is empty and
+unforced. The original three failed regression cohorts remain failed; the final
+production fix preserves the original strict narrowing assertions. The preceding
+fresh character workflow remains unqualified after an empty inspection-lock
+sidecar changed its file membership. [Evidence](evidence/m2-inspection-controls.json)
+keeps these scopes separate; this checkpoint does not close fresh character
+intake or the broader Alpha gates.
 
 Version 0.0.213 adds optional native [planted-foot locking](FOOT_PLANTING.md).
 Calibrated soles retain support-local anchors as a character or static/kinematic

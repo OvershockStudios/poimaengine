@@ -54,8 +54,12 @@ class InputProfile(unittest.TestCase):
         profile=copy.deepcopy(DEFAULT);profile['bindings']['forward']=['key.up'];return profile
     def test_discovery_and_missing_profile(self):
         schema,description=[self.result(r) for r in self.requests(rpc('world.describe'),rpc('input.describe'))]
-        self.assertGreaterEqual(schema['schema_revision'],17)
+        self.assertGreaterEqual(schema['schema_revision'],119)
         for method in ['input.describe','input.inspect','input.transact','input.evaluate']:self.assertIn(method,schema['methods'])
+        inspection=schema['methods']['input.inspect']
+        self.assertEqual(inspection['required'],['path']);self.assertFalse(inspection['additionalProperties'])
+        self.assertEqual(inspection['properties']['read_only']['type'],'boolean')
+        self.assertIs(inspection['properties']['read_only']['default'],False)
         for key in ['input_profile','input_revision']:self.assertIn(key,schema['methods']['runtime.play']['properties'])
         self.assertEqual(description['defaults'],DEFAULT)
         controls={control['id']:control for control in description['controls']}
@@ -63,6 +67,68 @@ class InputProfile(unittest.TestCase):
         for name in ['key.escape','key.tab']:self.assertIn(name,description['reserved_controls'])
         missing=self.inspect();self.assertEqual(missing['profile'],DEFAULT);self.assertEqual(missing['revision'],0)
         self.assertFalse(missing['persisted']);self.assertFalse(self.profile.exists())
+    def directory_state(self,folder):
+        # Include every directory and every complete file; no lock/sidecar exclusions.
+        return {p.relative_to(folder).as_posix():('directory',None) if p.is_dir() else ('file',p.read_bytes())
+                for p in folder.rglob('*')}
+    def test_read_only_missing_and_valid_exact_response_and_membership(self):
+        missing=self.inspect()
+        self.result(self.requests(self.transaction(self.remapped()))[0]);expected=self.inspect()
+        self.assertEqual(set(expected),{'format','profile','revision','persisted','content_hash','application'})
+        folder=self.root/'immutable-inspection';folder.mkdir();(folder/'empty-directory').mkdir()
+        (folder/'sentinel.bin').write_bytes(b'whole-directory sentinel\x00\xff')
+        target=folder/'existing.poima-input.json';target.write_bytes(self.profile.read_bytes())
+        absent=folder/'absent.poima-input.json';before=self.directory_state(folder)
+        for path,wanted in [(target,expected),(absent,missing)]:
+            # Both ordinary native absolute paths and world-relative paths use the same guard path.
+            for selected in [self.native(path),path.relative_to(self.root).as_posix()]:
+                with self.subTest(path=selected):
+                    response=self.result(self.requests(rpc('input.inspect',path=selected,read_only=True))[0])
+                    self.assertEqual(response,wanted)
+                    self.assertEqual(self.directory_state(folder),before)
+        REPORTS.append({'read_only_inspection':True,'complete_response_equal':True,
+            'missing_defaults_equal':True,'complete_directory_bytes_and_membership_equal':True})
+    def test_read_only_corruption_preserves_complete_directory(self):
+        self.result(self.requests(self.transaction())[0]);valid=self.profile.read_bytes()
+        newer=json.loads(valid);newer['format']='poima.input.v999'
+        duplicate=b'{"revision":1,'+valid[1:]
+        for index,raw in enumerate([b'{broken',json.dumps(newer).encode(),duplicate]):
+            folder=self.root/('corrupt-read-only-'+str(index));folder.mkdir()
+            target=folder/'player.poima-input.json';target.write_bytes(raw)
+            (folder/'sentinel.bin').write_bytes(b'preserved');before=self.directory_state(folder)
+            request=rpc('input.inspect',path=self.native(target),read_only=True)
+            observed=self.requests(request)[0];self.error(observed,-32070)
+            self.assertEqual(self.directory_state(folder),before)
+            # Retain the ordinary locked error result too; the new mode changes no error schema.
+            ordinary=self.requests(rpc('input.inspect',path=self.native(target)))[0]
+            self.error(ordinary,-32070);self.assertEqual(observed['error'],ordinary['error'])
+            self.assertEqual(target.read_bytes(),raw)
+            after=dict(before);after[target.name+'.lock']=('file',b'')
+            self.assertEqual(self.directory_state(folder),after)
+    def test_read_only_strict_boolean_rejected_before_path_or_storage(self):
+        self.result(self.requests(self.transaction())[0])
+        folder=self.root/'invalid-read-only';folder.mkdir()
+        valid=folder/'valid.poima-input.json';valid.write_bytes(self.profile.read_bytes())
+        corrupt=folder/'corrupt.poima-input.json';corrupt.write_bytes(b'{broken')
+        before=self.directory_state(folder)
+        for value in [0,1,-1,0.0,1.0,'true','false',None,[],{},[True]]:
+            for path in [self.native(valid),self.native(corrupt),self.native(folder/'absent.poima-input.json'),42]:
+                with self.subTest(value=value,path=path):
+                    response=self.requests(rpc('input.inspect',path=path,read_only=value))[0]
+                    self.error(response,-32602)
+                    self.assertEqual(response['error']['message'],'read_only must be boolean.')
+                    self.assertEqual(self.directory_state(folder),before)
+    def test_default_and_explicit_false_retain_lock_sidecar(self):
+        self.result(self.requests(self.transaction(self.remapped()))[0]);expected=self.inspect()
+        for name,extra in [('default',{}),('explicit-false',{'read_only':False})]:
+            folder=self.root/name;folder.mkdir()
+            target=folder/'player.poima-input.json';target.write_bytes(self.profile.read_bytes())
+            before=self.directory_state(folder)
+            observed=self.result(self.requests(rpc('input.inspect',path=self.native(target),**extra))[0])
+            self.assertEqual(observed,expected)
+            after=dict(before);after[target.name+'.lock']=('file',b'')
+            self.assertEqual(self.directory_state(folder),after)
+        REPORTS.append({'default_and_explicit_false_preserve_cooperative_lock_creation':True})
     def test_preview_restart_and_shared_profile(self):
         request=self.transaction(self.remapped(),preview=True)
         preview=self.result(self.requests(request)[0]);self.assertTrue(preview['preview']);self.assertEqual(preview['revision'],0)
@@ -163,7 +229,8 @@ class InputProfile(unittest.TestCase):
         cache=Path(str(self.world)+'.assets');cache.mkdir(exist_ok=True)
         target=cache/'reserved.poima-input.json';target.write_bytes(b'immutable asset sentinel')
         before=target.read_bytes();request['params']['path']=self.native(target)
-        for operation in [request,rpc('input.inspect',path=self.native(target))]:
+        for operation in [request,rpc('input.inspect',path=self.native(target)),
+                          rpc('input.inspect',path=self.native(target),read_only=True)]:
             self.error(self.requests(operation)[0],-32602);self.assertEqual(target.read_bytes(),before)
         self.assertEqual(sorted(p.name for p in cache.iterdir()),[target.name])
     def check_linked_paths(self,hard):
@@ -183,7 +250,9 @@ class InputProfile(unittest.TestCase):
             # Preserve the link pathname: resolve() would test its target instead.
             linked_path=str(path.absolute())
             request=self.transaction(self.remapped(),revision=1);request['params']['path']=linked_path
-            for operation in [request,rpc('input.inspect',path=linked_path),rpc('input.evaluate',path=linked_path,events=[])]:
+            for operation in [request,rpc('input.inspect',path=linked_path),
+                              rpc('input.inspect',path=linked_path,read_only=True),
+                              rpc('input.evaluate',path=linked_path,events=[])]:
                 self.error(self.requests(operation)[0]);self.assertEqual(path.read_bytes(),before)
                 self.assertEqual(target.read_bytes(),target_bytes);self.assertEqual(target.stat().st_ino,inode)
             self.assertTrue(linked.is_symlink() if not hard else linked.stat().st_ino==inode)

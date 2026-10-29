@@ -135,6 +135,22 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
         expected["selection"]=selection;expected["methods"]={{"world.transact",projected}};
         check(result({{"view","mutation"},{"operation","component.set"},{"type","Transform"}})==expected,
               "Scoped mutation discovery lost metadata, envelope or exact selected branch.");
+        auto camera_projected=full.at("methods").at("world.transact");
+        auto camera_branches=Json::array();
+        for(const auto& branch:camera_projected.at("properties").at("ops").at("items").at("oneOf")) {
+            const auto& properties=branch.at("properties");
+            if(properties.at("op").value("const",std::string())=="component.set" &&
+               properties.contains("type") && properties.at("type").value("const",std::string())=="Camera")
+                camera_branches.push_back(branch);
+        }
+        check(camera_branches.size()==1 && camera_branches.at(0).at("properties").at("value").at("dependentRequired")==
+              Json{{"viewmodel_clearance",{"viewmodel"}}},"Missing Camera dependency discovery witness.");
+        camera_projected["properties"]["ops"]["items"]["oneOf"]=camera_branches;
+        auto camera_expected=metadata;camera_expected["partial"]=true;camera_expected["view"]="mutation";
+        camera_expected["selection"]={{"operation","component.set"},{"type","Camera"}};
+        camera_expected["methods"]={{"world.transact",camera_projected}};
+        check(result({{"view","mutation"},{"operation","component.set"},{"type","Camera"}})==camera_expected,
+              "Typed Camera discovery rejected or changed its dependency, envelope or selected branch.");
     } else {
         for(const Json selector:{Json{{"view","mutation"},{"operation","entity.create"}},
                                  Json{{"view","mutation"},{"operation","component.set"},{"type","Transform"}}})
@@ -837,6 +853,11 @@ int main() {
                 }
             }
             const auto inspected=call(session,"input.inspect",{{"path","packaged.poima-input.json"}});check(inspected["revision"]==1 && inspected["profile"]==controls,"Read-only input inspection differs.");
+            for(const bool requested:{false,true}) {
+                check(call(session,"input.inspect",{{"path","packaged.poima-input.json"},{"read_only",requested}})==inspected,
+                      "Per-request input access changed a packaged profile observation.");
+                check(tree(directory)==before,"Per-request false downgraded packaged read-only input inspection or created sidecars.");
+            }
             const auto evaluated=call(session,"input.evaluate",{{"path","packaged.poima-input.json"},{"events",Json::array({{{"control","key.up"},{"down",true}},{{"consume",true}}})}});
             check(evaluated["frames"][0]["move"][1]==1,"Read-only profile did not reach native evaluator.");
             if(poima::Runtime::available()) {

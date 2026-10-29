@@ -2459,11 +2459,18 @@ public:
             return {{"input_profile",info},{"frames",frames},{"gamepad",{{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}}}};
         }
         require(method=="input.inspect" || method=="input.transact","Unknown input method.",-32601);
-        if(method=="input.inspect")fields(params,{"path"},{"path"});
+        bool inspect_read_only=read_only_;
+        if(method=="input.inspect") {
+            fields(params,{"path","read_only"},{"path"});
+            if(params.contains("read_only")) {
+                require(params.at("read_only").is_boolean(),"read_only must be boolean.");
+                inspect_read_only=read_only_ || params.at("read_only").get<bool>();
+            }
+        }
         else fields(params,{"path","request_id","expected_revision","profile","preview"},{"path","request_id","expected_revision","profile"});
         const auto file=input_profile_path(params.at("path"));
         try {
-            if(method=="input.inspect")return read_only_ ? input_profiles::inspect_read_only(file) : input_profiles::inspect(file);
+            if(method=="input.inspect")return inspect_read_only ? input_profiles::inspect_read_only(file) : input_profiles::inspect(file);
             auto operation=params;operation.erase("path");return input_profiles::transact(file,operation);
         }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
     }
