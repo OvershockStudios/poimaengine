@@ -145,6 +145,14 @@ def environment(output):
     state = output/'tool-state'
     for name in ('home','appdata','localappdata','temporary','http-cache','plugins-cache'):
         (state/name).mkdir(parents=True, exist_ok=False)
+    if os.name == 'nt':
+        # Native tools may initialize WinINet's compatibility cache beneath
+        # USERPROFILE even with separate APPDATA/LOCALAPPDATA. Supply ordinary
+        # owned directories before tool startup so Windows need not create the
+        # Content.IE5 junction. Strict output/link checks remain unchanged.
+        cache = state/'home/AppData/Local/Microsoft/Windows/INetCache'
+        for name in ('IE', 'Content.IE5'):
+            (cache/name).mkdir(parents=True, exist_ok=False)
     values.update(DOTNET_CLI_HOME=str(state/'home'),USERPROFILE=str(state/'home'),
         APPDATA=str(state/'appdata'),LOCALAPPDATA=str(state/'localappdata'),
         TEMP=str(state/'temporary'),TMP=str(state/'temporary'),

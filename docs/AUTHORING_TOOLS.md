@@ -227,6 +227,11 @@ the supplied original path at workflow boundaries. Its caller owns preparing
 the offline SDK/linker environment and safely excluding/restoring any checkout;
 the workflow alone does not make that path unavailable.
 
+Before launching Windows tools, the NativeAOT reproducer prepares ordinary
+Internet-cache directories inside its owned tool profile. This avoids relying
+on Windows to initialize a compatibility junction. The workflow still rejects
+links and reparse points; preparation never replaces an existing cache path.
+
 The 0.0.164 [CoreCLR reproducer](../tests/coreclr_authoring_workflow.py) needs
 Python 3.11+ and a matching Windows runtime with simulation, managed gameplay
 and game UI enabled. Its compiled fixture exercises generated component access,
