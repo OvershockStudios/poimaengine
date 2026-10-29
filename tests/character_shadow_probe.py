@@ -360,7 +360,7 @@ def main():
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--gpu', type=int, required=True)
-    parser.add_argument('--shadow-filter', choices=('pcf3_point', 'pcf3_fractional'), default='pcf3_point')
+    parser.add_argument('--shadow-filter', choices=('pcf3_point', 'pcf3_fractional', 'pcss_directional'), default='pcf3_point')
     args = parser.parse_args()
     need(os.name == 'nt', 'Run under native Windows Python with the root-owned process-tree supervisor.')
     binary, manifest = args.binary.resolve(strict=True), args.manifest.resolve(strict=True)

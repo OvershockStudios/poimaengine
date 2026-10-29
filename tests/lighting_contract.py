@@ -123,7 +123,7 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(denied['message'],'Player service mutations require a pumped shared headless owner.')
         for method in ('world.capture','runtime.capture','runtime.play','asset.animation.capture'):
             self.assertEqual(discovery['methods'][method]['properties']['shadow_filter'],
-                             {'enum':['pcf3_point','pcf3_fractional'],'description':'Explicit override; omission inherits LightingEnvironment.shadow_filter, falling back to pcf3_point for legacy scenes.'})
+                             {'enum':['pcf3_point','pcf3_fractional','pcss_directional'],'description':'Explicit override; omission inherits LightingEnvironment.shadow_filter, falling back to pcf3_point for legacy scenes.'})
         c.txn(0,[create(1),component(1,'Camera',{'vertical_fov':60,'near':.1,'far':100})])
         authored=self.path.read_bytes();history=c.rpc('world.history');player=c.rpc('player.inspect')
         capabilities=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
@@ -143,7 +143,7 @@ class LightingContract(unittest.TestCase):
             # A later common-parser error proves valid filter forwarding while
             # guaranteeing that no graphics/window/device initialization occurs.
             parameters={**base,'path':native(output),'samples':1,'scene_debug_view':'ambient_occlusion'}
-            for mode in ('pcf3_point','pcf3_fractional',None):
+            for mode in ('pcf3_point','pcf3_fractional','pcss_directional',None):
                 selected=parameters if mode is None else {**parameters,'shadow_filter':mode}
                 denied=c.rpc(method,selected,error=-32602)
                 self.assertEqual(denied['message'],'ambient_occlusion debug view requires enabled ambient occlusion.')
@@ -154,7 +154,7 @@ class LightingContract(unittest.TestCase):
                 if runtime is not None:self.assertEqual(c.rpc('runtime.inspect',{'session_id':session}),runtime)
             for value in ('','unknown','PCF3_POINT','pcf3_bilinear',None,True,0,1.0,[],{}):
                 denied=c.rpc(method,{**parameters,'shadow_filter':value},error=-32602)
-                self.assertEqual(denied['message'],'shadow_filter must be pcf3_point or pcf3_fractional.')
+                self.assertEqual(denied['message'],'shadow_filter must be pcf3_point, pcf3_fractional or pcss_directional.')
                 self.assertFalse(output.exists())
                 self.assertEqual(self.path.read_bytes(),authored)
                 self.assertEqual(c.rpc('world.history'),history)

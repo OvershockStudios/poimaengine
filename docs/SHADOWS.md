@@ -17,6 +17,7 @@ Add a `shadow` object to a Light component. Absence preserves the previous unsha
 | `distance` | Shadow coverage distance in meters, greater than `near` and at most 100000; default 80. Directional: camera-view depth. Local: distance from the source. |
 | `bias` | Depth comparison offset in normalized shadow depth, [0,0.1]; default 0.0005. This is not a world-space distance; excessive values detach shadows. |
 | `normal_bias` | Receiver offset along the geometric surface normal in meters, [0,1]; default 0.01. Scaled by `1 - N·L` to reduce grazing-angle acne. |
+| `angular_size_degrees` | Optional directional emitter diameter, finite number [0,20]. In `pcss_directional`, omission uses 0.53 internally and zero retains fractional PCF. Independent of the visible sky sun size. |
 
 Shadowed spotlights require `outer_angle <= 89.5°` because the depth view uses a finite perspective projection. A finite local-light range must exceed the shadow near plane. Its effective shadow far plane is the lesser of range and shadow distance. Illumination can continue outside shadow coverage; the final tenth of coverage fades visibility toward unshadowed lighting. The near exclusion is a real limitation: place it close enough to include gameplay-relevant blockers.
 
@@ -58,9 +59,10 @@ Submit the full cloned value through `component.set` in a revision-guarded
 ambient, exposure and filter would remove an existing sky. Use that scene's
 actual Sun reference rather than copying the starter ID.
 
-The native API and world-service CLI expose both filter values. The desktop
-Inspector preserves the field when applying its other Environment edits; a
-dedicated filter dropdown is not implemented.
+The native API and world-service CLI expose all three filter values. Ordinary
+desktop Inspector edits preserve the Environment filter and existing shadow
+fields; dedicated filter and emitter-size controls are not implemented. Remove
+`angular_size_degrees` before changing a directional light to point or spot.
 
 | Enabled shadowed light | Depth views | Storage at 1024² D32 |
 | --- | ---: | ---: |
@@ -70,9 +72,9 @@ dedicated filter dropdown is not implemented.
 
 The initial renderer permits **16 views** and **128 MiB of depth texels**. Both constraints apply. For example, two point lights plus one directional light fit at 1024; three point lights exceed the view limit. Nine views at 2048 exceed the memory limit. Changing resolution participates in the same whole-world validation as adding lights. Failed edits are atomic and do not replace the prior valid scene. Disabled lights/shadows consume no shadow views. Texture allocation/driver overhead is additional to the texel count; these are not total-renderer memory caps.
 
-`world.describe` schema revision 13 includes these fields and limits. `world.lighting`, `runtime.lighting`, captures and player results expose effective per-light shadow settings plus `shadow_resolution`, `shadow_views` and `shadow_bytes`. The view count represents the allocation for enabled shadowed lights. A directional camera whose near plane is already beyond the configured distance has no active cascades, although its reserved views still count toward allocation. Authoring inspection requires no GPU.
+Basic shadow discovery dates to schema revision 13; revision 120 adds directional emitter size and contact filtering. `world.lighting`, `runtime.lighting`, captures and player results expose effective per-light shadow settings plus `shadow_resolution`, `shadow_views` and `shadow_bytes`. The view count represents the allocation for enabled shadowed lights. A directional camera whose near plane is already beyond the configured distance has no active cascades, although its reserved views still count toward allocation. Authoring inspection requires no GPU.
 
-Visible opaque geometry casts and receives direct-light shadows by default. Each drawable can opt out independently through the controls below. Hidden geometry does neither; collision-only objects do not cast. Alpha-cutout casters and transparent transmission remain unimplemented. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
+Visible opaque geometry casts and receives direct-light shadows by default. Each drawable can opt out independently through the controls below. Hidden geometry does neither; collision-only objects do not cast. [Alpha-masked PBR casters](MATERIAL_ALPHA.md) use their texture alpha, opacity and cutoff in the shadow pass; discarded texels write no shadow depth. Blended transparency and light transmission remain unsupported. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
 
 ## Per-drawable controls
 
@@ -216,7 +218,7 @@ Directional depth bounds extend toward the light by the configured shadow distan
 
 Local lights use a perspective depth map: one cone for a spot, or +X/−X/+Y/−Y/+Z/−Z views for a point. Point selection uses the dominant direction axis of the normal-biased receiver relative to the light. Percentage-closer filtering averages depth comparisons. Each tap uses an analytic receiver-plane depth adjustment, so a sloping unoccluded surface does not shadow itself merely because adjacent texels store different depths. The triangle plane is derived from world-position derivatives before divergent light/cascade branches; smoothed vertex normals and normal maps affect shading, not this depth plane. A normal map does not change caster geometry.
 
-Point-face filter taps clamp to the current face at its edges. Cross-face filtering is not seamless, and complex silhouettes crossing cube edges can show discontinuities. The tests cover six orientations and one seam-spanning blocker, not every seam configuration. The filter is fixed-width; it does not simulate area-light penumbrae or contact hardening. Bias can trade acne for detached shadows, especially with large near/far ratios or fine geometry. Floating-point precision at extreme scales remains unqualified.
+Point-face filter taps clamp to the current face at its edges. Cross-face filtering is not seamless, and complex silhouettes crossing cube edges can show discontinuities. The tests cover six orientations and one seam-spanning blocker, not every seam configuration. Local-light filtering remains fixed-width; the directional option below does not add point/spot area-light penumbrae. Bias can trade acne for detached shadows, especially with large near/far ratios or fine geometry. Floating-point precision at extreme scales remains unqualified.
 
 ### Filter selection
 
@@ -233,6 +235,7 @@ choice, while render diagnostics report the effective filter actually rendered.
 | --- | --- |
 | `pcf3_point` | Legacy fallback: nine equal-weight depth comparisons around the selected texel. |
 | `pcf3_fractional` | Sixteen weighted comparisons, interpolating four neighboring 3×3 comparison boxes. |
+| `pcss_directional` | Bounded directional contact hardening; existing fractional PCF for point/spot lights. |
 
 Add `"shadow_filter":"pcf3_fractional"` to a supported capture or player-launch
 request. Capture and player reports expose the actual choice through
@@ -250,13 +253,74 @@ fades, caster geometry and map allocations are unchanged.
 
 The extra comparisons run in forward opaque shading or deferred lighting,
 not shadow-depth generation. The controlled measurements below do not establish
-representative game cost; the tap-count increase alone is not a frame-time increase. This remains fixed-width
+representative game cost; the tap-count increase alone is not a frame-time increase. Point/fractional modes remain fixed-width
 filtering, with no physically sized penumbra or general moving-scene stability
 claim. New `project create` starter worlds explicitly choose 1024-pixel maps and
 `pcf3_fractional`, with a directional sun using 80-metre coverage, depth bias
 0.0001 and normal bias 0.005 metres. Existing worlds and global bias defaults are
 unchanged. This starter recipe is editable; its lower biases need checking against
 the scene's surfaces, scale and light direction to avoid acne.
+
+### Directional contact hardening
+
+Version 0.0.216 adds opt-in `pcss_directional`. Choose it in the authored
+Environment or an explicit capture/player override. Existing omitted defaults,
+starter fractional selection and old filter arithmetic remain unchanged.
+The angular field is ignored by the two retained filters.
+Directional `Light.shadow.angular_size_degrees` is optional even in this mode:
+omission uses 0.53° internally without inserting a stored/readback field.
+Explicit values, including zero, retain their presence through frozen lighting,
+export and saves. The field rejects nonnumbers, nonfinite/out-of-range values
+and local lights, even when disabled. It is independent of
+`LightingEnvironment.sky.sun_size_degrees`. Clone complete components when editing.
+
+The spatial filter uses sixteen deterministic blocker-depth reads and, when
+blockers are found, sixteen bilinear comparison locations: sixty-four filter
+depth reads per selected cascade. Cascade blending can evaluate two cascades
+and double this work. Every actual fetched texel receives geometric
+receiver-plane correction and bias; raw depths are not interpolated.
+Separation uses the actual orthographic light-depth span and guarded world
+metres per texel, rather than camera split distances, with the tangent of half
+the emitter diameter. Blocker-present radius is clamped to 2–16 shadow texels;
+search radius is capped at 16. The two-texel floor is resolution-limited
+antialiasing, not physically resolved sub-footprint softness. Positive-size
+directional views reserve an 18-texel guard; zero size retains the reference fit.
+
+Zero emitter, no sampled blocker and point/spot lights use existing fractional
+PCF. A bounded search can miss blockers; it does not prove global absence.
+The fallback retains centre/thin-caster visibility but cannot restore detail
+missing from a coarse map. Only `pcss_directional` adds `render_diagnostics.contact_shadows`:
+`blocker_samples:16`, `filter_samples:16`, `max_comparisons:64`,
+`max_radius_texels:16`, `guard_texels:18` and fallback labels.
+These are configured per-cascade bounds, not measured
+per-pixel work. Old modes omit the object. D32 allocations, resolutions and the
+16-view/128 MiB depth budget are unchanged; no history, temporal randomness,
+shadow caching, ray tracing, virtual shadows or GI is added.
+
+[Qualification](evidence/m2-contact-shadows.json) records 300 controlled 800×600
+captures: forward 1×/4× and deferred 1× on both the NVIDIA RTX 4070 Laptop GPU and
+AMD Radeon integrated graphics. Each cohort passes six analytic profiles at
+heights 0.5/1/2 m and diameters 3°/6°, within the predeclared absolute-error bound
+`max(two actual shadow texels projected into the receiver plane, 15% of reference)`.
+No-blocker, sloping, masked/thin/moving-caster, sun-motion and three cascade-blend
+controls also pass, including exact whole-image zero-emitter/local fractional
+fallbacks. Linux and Windows CPU checks retain six new API tests with 167 Client
+requests/eight Client worlds and six complete snapshots/21 files per platform,
+alongside the selected native and lighting suites.
+
+Separate fixed-scene cost runs use eight alternating-order pairs, each block
+with eight warmup and twenty measured frames. The nearest-rank p95 across signed paired
+differences of block shading p95 is 0.22016 ms at NVIDIA 1080p and 0.54328 ms at
+AMD 720p, meeting the respective 0.75/1.5 ms budgets. These are bounded fixture
+results, not game FPS, general temporal/character quality, arbitrary area-light
+accuracy or production-renderer completion. Retained character/gameplay and
+broader rendering work have their own evidence and limits.
+
+![Native directional contact-shadow capture of the licensed Knight](evidence/m2-contact-shadow-character.png)
+
+*Original [KayKit Knight](CHARACTER_LIBRARY.md#original-source) in a restored
+planted-foot pose, captured at 1280×720 MSAA4 with the new filter. This is a
+renderer readback, not a physical-input or walking-quality check.*
 
 ### Authored filter and starter comparison
 
@@ -308,13 +372,15 @@ Poima 0.0.12 adds independent [frustum culling and render diagnostics](RENDER_DI
 
 ## Quality and planned extensions
 
-The current filter is fixed-width PCF. Its smoothness and map texel density are
-not a production character-shadow quality target. Performance Yard deliberately
-uses 512-pixel maps over 30 metres; higher resolution, receiver bias and contact
+The point/fractional references remain fixed-width; the bounded directional
+option above does not establish a production character-shadow quality target.
+Performance Yard deliberately uses 512-pixel maps over 30 metres; higher
+resolution, receiver bias and contact
 filtering need controlled comparisons with the actual imported character.
 Skinned instances already cast their posed meshes with separate per-view bounds.
 Per-drawable cast/receive controls are available as described above;
-hardware-instanced shadow submission remains planned.
+compatible adjacent shadow drawables already use [ordered instanced submission](DRAW_INSTANCING.md),
+with separate per-view plans and retained opaque/masked bindings.
 
 The [rendering roadmap](ROADMAP.md#4-scalable-rendering-and-atmosphere) includes
 soft shadows and cacheable static/dynamic casters. A correct cache lowers redraw

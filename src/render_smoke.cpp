@@ -621,8 +621,14 @@ struct Context {
         deferred=options.deferred;diagnostics.deferred=deferred;diagnostics.draw_instancing=options.draw_instancing;
         shadow_filter_override=options.shadow_filter;
         shadow_filter=shadow_filter_override.value_or(source ? source->lighting.environment.shadow_filter : ShadowFilter::pcf3_point);
-        require(shadow_filter==ShadowFilter::pcf3_point || shadow_filter==ShadowFilter::pcf3_fractional,"Invalid shadow filter.");
+        require(shadow_filter==ShadowFilter::pcf3_point || shadow_filter==ShadowFilter::pcf3_fractional || shadow_filter==ShadowFilter::pcss_directional,"Invalid shadow filter.");
         diagnostics.shadow_filter=shadow_filter;
+        const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
+        diagnostics.shadow_blocker_samples=contact_shadows ? contact_shadow_blocker_samples : 0;
+        diagnostics.shadow_filter_samples=contact_shadows ? contact_shadow_filter_samples : 0;
+        diagnostics.shadow_max_comparisons=contact_shadows ? contact_shadow_max_comparisons : 0;
+        diagnostics.shadow_max_radius_texels=contact_shadows ? contact_shadow_max_radius_texels : 0;
+        diagnostics.shadow_guard_texels=contact_shadows ? contact_shadow_guard_texels : 0;
         ambient_occlusion=options.ambient_occlusion;diagnostics.ambient_occlusion=ambient_occlusion;
         require(ambient_occlusion.mode==AmbientOcclusionMode::none || ambient_occlusion.mode==AmbientOcclusionMode::gtao,"Invalid ambient occlusion mode.");
         require(ambient_occlusion.quality==AmbientOcclusionQuality::low || ambient_occlusion.quality==AmbientOcclusionQuality::medium || ambient_occlusion.quality==AmbientOcclusionQuality::high,"Invalid ambient occlusion quality.");
@@ -1931,6 +1937,12 @@ struct Context {
         auto lighting=scene->lighting;finalize_lighting(lighting);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
+        const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
+        diagnostics.shadow_blocker_samples=contact_shadows ? contact_shadow_blocker_samples : 0;
+        diagnostics.shadow_filter_samples=contact_shadows ? contact_shadow_filter_samples : 0;
+        diagnostics.shadow_max_comparisons=contact_shadows ? contact_shadow_max_comparisons : 0;
+        diagnostics.shadow_max_radius_texels=contact_shadows ? contact_shadow_max_radius_texels : 0;
+        diagnostics.shadow_guard_texels=contact_shadows ? contact_shadow_guard_texels : 0;
         require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
         const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
         const auto vp=multiply(perspective(scene->vertical_fov,aspect,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
@@ -1971,7 +1983,7 @@ struct Context {
         // Write every scene preparation, including light/pose/session changes.
         frame_constants.light_count[3]=static_cast<std::uint32_t>(shadow_filter);
         for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
-        shadow_plan=shadow_views(*scene,aspect);
+        shadow_plan=shadow_views(*scene,aspect,shadow_filter_override);
         frame_constants.light_count[2]=static_cast<std::uint32_t>(shadow_plan.size());
         gpu_lights.resize(lighting.lights.size());
         for(std::size_t i=0;i<lighting.lights.size();++i) {
@@ -1979,7 +1991,8 @@ struct Context {
             for(std::size_t k=0;k<3;++k) { light.position_kind[k]=number(source.position[k]);light.direction_range[k]=number(source.direction[k]);light.color_intensity[k]=source.light.color[k]; }
             light.position_kind[3]=static_cast<float>(source.light.kind);light.direction_range[3]=source.light.range;light.color_intensity[3]=source.light.intensity;
             light.cone[0]=std::cos(source.light.inner_angle*0.017453292519943295f);light.cone[1]=std::cos(source.light.outer_angle*0.017453292519943295f);
-            light.cone[2]=source.light.shadow.distance;light.cone[3]=source.light.shadow.near_plane;
+            light.cone[2]=source.light.kind==LightKind::directional ? number(std::tan(static_cast<double>(source.light.shadow.angular_size_degrees.value_or(.53f))*0.0087266462599716478846)) : source.light.shadow.distance;
+            light.cone[3]=source.light.shadow.near_plane;
             light.shadow[2]=source.light.shadow.bias;light.shadow[3]=source.light.shadow.normal_bias;
         }
         for(std::size_t i=0;i<shadow_plan.size();++i) {
@@ -1987,6 +2000,9 @@ struct Context {
             if(light.shadow[1]==0)light.shadow[0]=static_cast<float>(i);light.shadow[1]+=1;
             for(std::size_t k=0;k<16;++k)view.view_projection[k]=number(source.view_projection[k]);
             view.splits[0]=number(source.split_near);view.splits[1]=number(source.split_far);
+            require(!contact_shadows || lighting.lights[source.light_index].light.kind!=LightKind::directional ||
+                (source.depth_span>0 && source.world_units_per_texel>0),"Directional contact shadows require actual light-depth span and texel scale.");
+            view.splits[2]=number(source.depth_span);view.splits[3]=number(source.world_units_per_texel);
         }
         configure_light_assignment();
         // Use the actual rounded GPU matrices for clipping decisions.

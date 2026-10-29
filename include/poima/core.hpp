@@ -246,6 +246,9 @@ struct RenderDiagnostics {
     FrameExecutionDiagnostics frame_execution;
     TimingSummary prepare_cpu,record_cpu,render_call_cpu,completion_wait_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
     ShadowFilter shadow_filter = ShadowFilter::pcf3_point;
+    // Configured directional contact-filter bounds; zero for retained PCF modes.
+    std::uint32_t shadow_blocker_samples=0,shadow_filter_samples=0,shadow_max_comparisons=0;
+    double shadow_max_radius_texels=0,shadow_guard_texels=0;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
 };

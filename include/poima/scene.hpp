@@ -28,17 +28,28 @@ Matrix4 inverse_affine(const Matrix4& matrix);
 Matrix4 perspective(double vertical_fov_degrees, double aspect, double near_plane, double far_plane);
 bool rigid_transform(const Matrix4& matrix);
 
-enum class ShadowFilter : std::uint32_t { pcf3_point=0, pcf3_fractional=1 };
+enum class ShadowFilter : std::uint32_t { pcf3_point=0, pcf3_fractional=1, pcss_directional=2 };
 constexpr std::string_view shadow_filter_name(ShadowFilter filter) {
     switch(filter) {
     case ShadowFilter::pcf3_point: return "pcf3_point";
     case ShadowFilter::pcf3_fractional: return "pcf3_fractional";
+    case ShadowFilter::pcss_directional: return "pcss_directional";
     }
     return "invalid";
 }
 
 enum class LightKind : std::uint32_t { directional=0,point=1,spot=2 };
-struct ShadowSettings { bool enabled=false;float near_plane=.05f,distance=80,bias=.0005f,normal_bias=.01f; };
+struct ShadowSettings {
+    bool enabled=false;float near_plane=.05f,distance=80,bias=.0005f,normal_bias=.01f;
+    // Directional emitter diameter; omission uses .53 degrees in PCSS only.
+    std::optional<float> angular_size_degrees;
+};
+inline constexpr std::uint32_t contact_shadow_blocker_samples=16;
+inline constexpr std::uint32_t contact_shadow_filter_samples=16;
+// Each filter location evaluates four comparison texels before interpolation.
+inline constexpr std::uint32_t contact_shadow_max_comparisons=64;
+inline constexpr double contact_shadow_max_radius_texels=16;
+inline constexpr double contact_shadow_guard_texels=18;
 struct Light {
     LightKind kind=LightKind::point;
     std::array<float,3> color{1,1,1};
@@ -151,7 +162,13 @@ struct SceneSnapshot {
     // Opt-in receipt of actual prepared camera and foreground matrices.
     bool camera_pose_receipt=false;
 };
-struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
-std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);
+struct ShadowView {
+    Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0;
+    // Actual orthographic light-depth span and expanded cascade texel scale.
+    // Local-light views retain zero; camera split depths cannot replace these.
+    double depth_span=0,world_units_per_texel=0;
+};
+std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect,
+                                  std::optional<ShadowFilter> filter_override={});
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene);
 }

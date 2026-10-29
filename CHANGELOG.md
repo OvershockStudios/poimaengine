@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.216
+
+- Add opt-in directional contact-hardening shadows with authored emitter size,
+  bounded filtering and inspectable limits through the shared native APIs.
+- Qualify forward, MSAA and deferred paths on both laptop GPUs, preserving older
+  filter images, local-light fallbacks and complete saved-character state.
+- Record alternating paired GPU shading measurements with explicit fixture
+  budgets and retain the failed qualification-monitor run separately.
+
 ## 0.0.215
 
 - Qualify a fresh agent-authored imported-character game through installed

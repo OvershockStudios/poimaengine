@@ -16,6 +16,10 @@ void validate_light(const Light& l) {
     require(l.kind!=LightKind::directional || l.range==0,"Directional lights cannot have a range.");
     require(std::isfinite(l.inner_angle) && std::isfinite(l.outer_angle) && l.inner_angle>=0 && l.inner_angle<l.outer_angle && l.outer_angle<=90,"Spot half-angles need 0 <= inner < outer <= 90 degrees.");
     const auto& s=l.shadow;
+    if(s.angular_size_degrees) {
+        require(l.kind==LightKind::directional,"Shadow angular_size_degrees applies only to directional lights.");
+        require(std::isfinite(*s.angular_size_degrees) && *s.angular_size_degrees>=0 && *s.angular_size_degrees<=20,"Shadow angular_size_degrees must be in [0,20] degrees.");
+    }
     require(std::isfinite(s.near_plane) && s.near_plane>=.001f && s.near_plane<=100,"Shadow near must be in [0.001,100] meters.");
     require(std::isfinite(s.distance) && s.distance>s.near_plane && s.distance<=100000,"Shadow distance must exceed near and be at most 100000 meters.");
     require(std::isfinite(s.bias) && s.bias>=0 && s.bias<=.1f && std::isfinite(s.normal_bias) && s.normal_bias>=0 && s.normal_bias<=1,"Shadow bias must be in [0,0.1]; normal_bias in [0,1] meters.");
@@ -27,7 +31,7 @@ void validate_light(const Light& l) {
 void validate_environment(const LightingEnvironment& e) {
     for(auto x:e.ambient)require(std::isfinite(x) && x>=0 && x<=1e6f,"Ambient fill must be in [0,1e6].");
     require(std::isfinite(e.exposure) && e.exposure>=0 && e.exposure<=1e6f,"Exposure multiplier must be in [0,1e6].");
-    require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional,"Invalid environment shadow filter.");
+    require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional || e.shadow_filter==ShadowFilter::pcss_directional,"Invalid environment shadow filter.");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
     for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})
         for(auto x:color)require(std::isfinite(x) && x>=0 && x<=1,"Sky colors must be finite linear RGB in [0,1].");

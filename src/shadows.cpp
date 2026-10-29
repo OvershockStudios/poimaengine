@@ -20,9 +20,12 @@ Matrix4 view(V position,V direction) {
 }
 V point(const Matrix4& m,V p) { V r{};for(std::size_t i=0;i<3;++i)r[i]=m[i]*p[0]+m[4+i]*p[1]+m[8+i]*p[2]+m[12+i];return r; }
 }
-std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect) {
+std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect,std::optional<ShadowFilter> filter_override) {
     if(!(aspect>0) || !std::isfinite(aspect) || !rigid_transform(scene.camera_world))throw std::runtime_error("Shadow views require a rigid camera and finite positive aspect.");
     auto lighting=scene.lighting;finalize_lighting(lighting);std::vector<ShadowView> result;
+    const auto filter=filter_override.value_or(lighting.environment.shadow_filter);
+    if(filter!=ShadowFilter::pcf3_point && filter!=ShadowFilter::pcf3_fractional && filter!=ShadowFilter::pcss_directional)
+        throw std::runtime_error("Invalid effective shadow filter.");
     const V axes[]={{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
     for(std::size_t i=0;i<lighting.lights.size();++i) {
         const auto& source=lighting.lights[i];const auto& l=source.light;validate_light(l);if(!shadow_view_count(l))continue;
@@ -49,13 +52,16 @@ std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect) {
                 }
                 // A rotation-invariant bounding sphere, rounded extent and texel snapping
                 // keep camera rotation/translation from continuously rescaling the map.
-                radius=std::ceil(radius*16)/16;radius*=double(lighting.environment.shadow_resolution)/(lighting.environment.shadow_resolution-4);
+                radius=std::ceil(radius*16)/16;
+                if(filter==ShadowFilter::pcss_directional && s.angular_size_degrees.value_or(.53f)>0)
+                    radius*=double(lighting.environment.shadow_resolution)/(lighting.environment.shadow_resolution-2*contact_shadow_guard_texels);
+                else radius*=double(lighting.environment.shadow_resolution)/(lighting.environment.shadow_resolution-4);
                 auto light_view=view(add(center,scale(source.direction,-(radius+s.distance))),source.direction);
                 const double texel=2*radius/lighting.environment.shadow_resolution;
                 light_view[12]=std::round(light_view[12]/texel)*texel;light_view[13]=std::round(light_view[13]/texel)*texel;
                 const double depth=2*radius+s.distance;
                 Matrix4 projection={1/radius,0,0,0,0,1/radius,0,0,0,0,-1/depth,0,0,0,0,1};
-                result.push_back({multiply(projection,light_view),i,previous,split});previous_width=split-previous;previous=split;
+                result.push_back({multiply(projection,light_view),i,previous,split,depth,texel});previous_width=split-previous;previous=split;
             }
         }
     }

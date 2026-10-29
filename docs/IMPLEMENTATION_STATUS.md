@@ -1,8 +1,35 @@
 # Implementation status
 
-Updated 2026-10-29 for **0.0.215**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-29 for **0.0.216**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.216 adds opt-in [directional contact-hardening shadows](SHADOWS.md#directional-contact-hardening).
+Authored emitter size controls bounded spatial filtering; existing filter defaults
+remain unchanged. Point and spot lights use the fractional reference path.
+The filter uses sixteen blocker reads and up to sixty-four comparison reads per
+evaluated cascade, a 2–16 texel filter radius and an 18-texel directional guard.
+Its resolution floor, search/radius caps and local-light fallback are explicit.
+
+[Qualification](evidence/m2-contact-shadows.json) covers 300 analytic/control
+captures across forward 1×/4× and deferred 1× on both laptop GPUs, plus strict
+authoring, frozen-lighting and complete-save checks on Windows and Linux.
+Sixty-four instancing images match their older reference bytes. Four matched
+old/current fractional-filter cohorts pass 32 legacy image comparisons and
+twelve explicit-default comparisons. Two original Knight saved-pose captures
+preserve four complete archives and two whole-byte pairs.
+The retained compiled projectile game also passes 90 RPCs, all 47 typed fields,
+seven complete archives and four whole-byte pairs across warm and fresh owners.
+Its existing LatestPatch configuration admits the newly installed .NET 10.0.13;
+the new qualification pins those dependencies separately from the old cohort.
+
+Separate fixed-scene cost cohorts meet the selected budgets: nearest-rank p95
+of eight signed paired block-p95 shading differences is 0.22016 ms at NVIDIA
+1080p and 0.54328 ms at AMD 720p. These are small-fixture measurements, not game
+frame-time or general character-motion guarantees. A failed legacy-check monitor
+run remains failed; its replacement corrects a live filesystem-scan race and
+passes the same rendering assertions. Shadow caching, GI and broader production
+rendering remain open.
 
 Version 0.0.215 records a [fresh imported-character workflow](evidence/m2-agent-character-fresh.json).
 One Codex CLI session authors new compiled C# gameplay from generic docs/SDK

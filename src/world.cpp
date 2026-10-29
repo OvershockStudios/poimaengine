@@ -328,12 +328,18 @@ Light light_value(const Json& value) {
     light.color=value.at("color").get<std::array<float,3>>();light.intensity=value.at("intensity");light.enabled=value.at("enabled");
     light.range=value.value("range",0.0f);light.inner_angle=value.value("inner_angle",0.0f);light.outer_angle=value.value("outer_angle",45.0f);
     if(value.contains("shadow")) {
-        const auto& v=value.at("shadow");fields(v,{"enabled","near","distance","bias","normal_bias"},{"enabled"});
+        const auto& v=value.at("shadow");fields(v,{"enabled","near","distance","bias","normal_bias","angular_size_degrees"},{"enabled"});
         require(v.at("enabled").is_boolean(),"Shadow enabled must be boolean.");light.shadow.enabled=v.at("enabled");
         for(const auto* key:{"near","distance","bias","normal_bias"})if(v.contains(key))require(v.at(key).is_number() && std::isfinite(v.at(key).get<double>()),"Invalid shadow number.");
         const double shadow_near=v.value("near",.05),distance=v.value("distance",80.0),bias=v.value("bias",.0005),normal=v.value("normal_bias",.01);
         require(shadow_near>=.001 && shadow_near<=100 && distance>shadow_near && distance<=100000 && bias>=0 && bias<=.1 && normal>=0 && normal<=1,"Invalid shadow near/distance/bias/normal_bias bounds.");
         light.shadow.near_plane=static_cast<float>(shadow_near);light.shadow.distance=static_cast<float>(distance);light.shadow.bias=static_cast<float>(bias);light.shadow.normal_bias=static_cast<float>(normal);
+        if(v.contains("angular_size_degrees")) {
+            const auto& angular=v.at("angular_size_degrees");
+            require(light.kind==LightKind::directional,"Shadow angular_size_degrees applies only to directional lights.");
+            require(angular.is_number() && std::isfinite(angular.get<double>()) && angular>=0 && angular<=20,"Shadow angular_size_degrees must be a finite number in [0,20] degrees.");
+            light.shadow.angular_size_degrees=angular.get<float>();
+        }
     }
     try { validate_light(light); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }return light;
 }
@@ -367,8 +373,8 @@ LightingEnvironment environment_value(const Json& value) {
     LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
     if(value.contains("shadow_filter")) {
         const auto& filter=value.at("shadow_filter");
-        require(filter.is_string() && (filter=="pcf3_point" || filter=="pcf3_fractional"),"Environment shadow_filter must be pcf3_point or pcf3_fractional.");
-        result.shadow_filter=filter=="pcf3_fractional" ? ShadowFilter::pcf3_fractional : ShadowFilter::pcf3_point;
+        require(filter.is_string() && (filter=="pcf3_point" || filter=="pcf3_fractional" || filter=="pcss_directional"),"Environment shadow_filter must be pcf3_point, pcf3_fractional or pcss_directional.");
+        result.shadow_filter=filter=="pcss_directional" ? ShadowFilter::pcss_directional : filter=="pcf3_fractional" ? ShadowFilter::pcf3_fractional : ShadowFilter::pcf3_point;
     }
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
     try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
@@ -1812,6 +1818,10 @@ public:
             {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
             {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
                 {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+        if(d.shadow_filter==ShadowFilter::pcss_directional)
+            result["contact_shadows"]={{"blocker_samples",d.shadow_blocker_samples},{"filter_samples",d.shadow_filter_samples},
+                {"max_comparisons",d.shadow_max_comparisons},{"max_radius_texels",d.shadow_max_radius_texels},{"guard_texels",d.shadow_guard_texels},
+                {"local_fallback","pcf3_fractional"},{"zero_angular_size_fallback","pcf3_fractional"},{"no_blocker_fallback","pcf3_fractional"}};
         if(d.viewmodel) {
             const auto& v=*d.viewmodel;
             result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -1826,6 +1836,7 @@ public:
             lights.push_back({{"id",source.entity_id},{"kind",l.kind==LightKind::directional ? "directional" : l.kind==LightKind::point ? "point" : "spot"},
                 {"position",source.position},{"direction",source.direction},{"color",l.color},{"intensity",l.intensity},{"range",l.range},{"inner_angle",l.inner_angle},{"outer_angle",l.outer_angle},
                 {"intensity_unit",l.kind==LightKind::directional ? "lux" : "candela"},{"shadow",{{"enabled",l.shadow.enabled},{"near",l.shadow.near_plane},{"distance",l.shadow.distance},{"bias",l.shadow.bias},{"normal_bias",l.shadow.normal_bias}}}});
+            if(l.shadow.angular_size_degrees)lights.back()["shadow"]["angular_size_degrees"]=*l.shadow.angular_size_degrees;
         }
         Json sun=nullptr;const auto& sky=lighting.environment.sky;
         if(sky.enabled && !sky.sun.empty())for(const auto& light:lighting.lights)if(light.entity_id==sky.sun && light.light.kind==LightKind::directional && light.light.enabled) {
@@ -2506,10 +2517,11 @@ public:
         options.frames = integer("capture_frames", 2, 1, 128);
         if(params.contains("shadow_filter")) {
             const auto& filter=params.at("shadow_filter");
-            require(filter.is_string(),"shadow_filter must be pcf3_point or pcf3_fractional.");
+            require(filter.is_string(),"shadow_filter must be pcf3_point, pcf3_fractional or pcss_directional.");
             if(filter=="pcf3_point")options.shadow_filter=ShadowFilter::pcf3_point;
             else if(filter=="pcf3_fractional")options.shadow_filter=ShadowFilter::pcf3_fractional;
-            else throw Error(-32602,"shadow_filter must be pcf3_point or pcf3_fractional.");
+            else if(filter=="pcss_directional")options.shadow_filter=ShadowFilter::pcss_directional;
+            else throw Error(-32602,"shadow_filter must be pcf3_point, pcf3_fractional or pcss_directional.");
         }
         if(params.contains("lighting_path")) {
             const auto& path=params.at("lighting_path");

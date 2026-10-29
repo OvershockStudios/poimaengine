@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Shared byte layout with FrameConstants/GpuLight/GpuShadow in render_smoke.cpp.
+// Directional cone.z is tan(half emitter diameter); local-light cone.zw retain
+// their existing distance/near values. No GPU byte-layout change.
 struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone;float4 shadow; };
+// splits.xy: camera cascade depths; zw: actual orthographic light-depth span
+// and world metres per shadow texel (zero for local-light views).
 struct ShadowView { column_major float4x4 view_projection;float4 splits; };
 cbuffer Frame : register(b1) {
     column_major float4x4 view_projection;

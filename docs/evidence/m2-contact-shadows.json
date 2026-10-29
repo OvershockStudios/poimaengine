@@ -1,0 +1,1962 @@
+{
+  "format": "poima.directional-contact-shadows.v1",
+  "checkpoint": "0.0.216",
+  "date": "2026-10-29",
+  "passed": true,
+  "scope": "Opt-in bounded directional PCSS authoring, planner, Vulkan quality/cost and retained-image/save controls. No whole-engine or Alpha qualification.",
+  "source": {
+    "include/poima/scene.hpp": {
+      "bytes": 7938,
+      "sha256": "2e49e6cd4ec092c5279c63906486cd9a2d1fdb731b377efd0fd5911c967b8c7e"
+    },
+    "include/poima/core.hpp": {
+      "bytes": 12282,
+      "sha256": "333898eeb8c60322ff4a9f8dbc17551463049cadfb3cd5b02029aaa18739e45d"
+    },
+    "src/lighting.cpp": {
+      "bytes": 5506,
+      "sha256": "95e11abd8775617af7a3f2ec783b9c16ffdfd2c1acf243c5866ce5d813e34039"
+    },
+    "src/shadows.cpp": {
+      "bytes": 5008,
+      "sha256": "5fdf78fe6aac7cf4f8e39d12dfd01ed40fe8c8fcda84c1f3181a301b472fe2bf"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 357206,
+      "sha256": "7fed30d23f22f031b3618a16a66ff60f84963e8da1dadde3052257bde6d0309e"
+    },
+    "src/world.cpp": {
+      "bytes": 360687,
+      "sha256": "4f4b24aa26de36a76ffc2f0dc69d493dc2a694a3c82cdca83cdfdf57ab2e2946"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 138682,
+      "sha256": "067657361d107a41b854fec426887ee9ee3e22cac1b719e9d0e5c1b881b18b53"
+    },
+    "shaders/scene_lighting.hlsli": {
+      "bytes": 12128,
+      "sha256": "9de8827cd6d6b95b97889997f963e5d0c68f731249d14e5c9971f3baae59f832"
+    },
+    "shaders/scene_frame.hlsli": {
+      "bytes": 1298,
+      "sha256": "494f933bff7ebe02500f1ed3706587291dd9ff034d23140b4e1f23972096100c"
+    },
+    "tests/contact_shadow_contract.py": {
+      "bytes": 14842,
+      "sha256": "94580171cb56fc0806d7cf0c65dc84b6af6391c9aab1bca4fff0e2ef8fab8e75"
+    },
+    "tests/contact_shadow_capture_native.cpp": {
+      "bytes": 24072,
+      "sha256": "a8ab91cedb0a745b6008c1f0149a76e5e77031d2066ff334a143eda175e72b78"
+    },
+    "tests/contact_shadow_cost_native.inc": {
+      "bytes": 10144,
+      "sha256": "7e865b528aca3c27bcc8ac1d6f365d7d9bab093a5208412df3ce7f3464ff7fc9"
+    },
+    "tests/shadow_math.cpp": {
+      "bytes": 12984,
+      "sha256": "f183632bb55b2c7ed7f34345e8f8b7012087e2c3ed496352e62ab92c92d2bd5b"
+    }
+  },
+  "contract": {
+    "mode": "pcss_directional",
+    "angular_diameter_degrees": [
+      0,
+      20
+    ],
+    "omitted_angular_degrees": 0.53,
+    "blocker_reads": 16,
+    "filter_locations": 16,
+    "max_filter_depth_comparisons": 64,
+    "blocker_present_radius_texels": [
+      2,
+      16
+    ],
+    "search_radius_cap_texels": 16,
+    "guard_texels": 18,
+    "cascade_blend_may_double_work": true,
+    "fallback": "Existing fractional PCF for local lights, zero angle or no sampled blocker. No sampled blocker is not global absence.",
+    "new_depth_maps": 0,
+    "csharp_services_bytes": 400,
+    "native_cpp_consumers_require_rebuild": true
+  },
+  "cpu": {
+    "linux": {
+      "report": {
+        "bytes": 32705,
+        "sha256": "f515be39b2bade786f701d2f59c51f5c1a9ec280b70a82687f1c75678f74d9ac"
+      },
+      "new_methods": 6,
+      "client_requests": 167,
+      "client_owners": 8,
+      "snapshots": 6,
+      "snapshot_files": 21,
+      "retained_native_suites": 4,
+      "retained_lighting_contract": true,
+      "raw_protocol": {
+        "bytes": 531679,
+        "sha256": "61efa27569c329085265f6098f9309e3d8bff77dda202b771c867ab5e63b4730"
+      },
+      "scope": "Client worlds exclude the separate capabilities query."
+    },
+    "windows": {
+      "report": {
+        "bytes": 1716,
+        "sha256": "8a33ecda0c1a89c43ea8e7ce8c97c161757f780b4bcb6cec11c16f763104579d"
+      },
+      "new_methods": 6,
+      "client_requests": 167,
+      "client_owners": 8,
+      "snapshots": 6,
+      "snapshot_files": 21,
+      "retained_native_suites": 4,
+      "retained_lighting_contract": true,
+      "raw_protocol": {
+        "bytes": 533736,
+        "sha256": "c627f878c4e5d7b007a34e379ef53a5d402bf7dd67a2939f173d83b456fe6cd8"
+      },
+      "scope": "Client worlds exclude the separate capabilities query."
+    }
+  },
+  "quality": [
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 1,
+      "lighting_path": "forward",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 666829,
+        "sha256": "d4d1f10de5d80874a44eccc67a4f933a3a3c8842760faefdcecf3c3e308df8fb"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6658,
+          "sha256": "0cb2bdbcf1343e34dbb894c96b40381d8d73f0dcfab0eda8c5972653eb9c9233"
+        },
+        "seconds": 4.7034996000584215,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 4,
+      "lighting_path": "forward",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 666861,
+        "sha256": "66ba47c6f920d4e215f15578243f59d745e8d41d4d25fe908c3dcc654e9353a6"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6660,
+          "sha256": "18975b36165d3c946a054aade4dd2e9722adb36926715ba3225483a69a56cfef"
+        },
+        "seconds": 3.4297609999775887,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 1,
+      "lighting_path": "deferred",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 667100,
+        "sha256": "07b74c6b38837f8742924c698cc7f585a9c7ea5697f9217c15661eb547f8b52d"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6661,
+          "sha256": "86c6915504e888ddb4db4be34777d287e144b383e1e4100f95d106be21034f8e"
+        },
+        "seconds": 3.5529712000861764,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 1,
+      "lighting_path": "forward",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 666107,
+        "sha256": "f31b9bf0a91bd49d354ba0e62e76577d8820c46fe964e18178d01eec921829a2"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6256,
+          "sha256": "28fe3378c8282da80a83908b0fa41c5996dba6ae1c87555ce4afc9c0d9ab2552"
+        },
+        "seconds": 4.571834000060335,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 4,
+      "lighting_path": "forward",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 666186,
+        "sha256": "a6aafc3ba71e58da6ccbd6e424fd6cfa37ef0e82d50b16fa8d4d0dfe6802eaef"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6258,
+          "sha256": "c076049551f670f7d9ef20ee7c20ac4701cefae1c423867ad40f19d3f531c44b"
+        },
+        "seconds": 3.238131200079806,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "size": [
+        800,
+        600
+      ],
+      "samples": 1,
+      "lighting_path": "deferred",
+      "captures": 50,
+      "penumbras": [
+        {
+          "crossing10": -0.48403816752111367,
+          "crossing90": -0.5178165505146303,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.0337783829935166,
+          "reference_width": 0.02811094793016976,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05622189586033952,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4469020007153984,
+          "crossing90": -0.5552303810134542,
+          "diameter": 3.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.10832838029805586,
+          "reference_width": 0.11244379172067905,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.4744483899330334,
+          "crossing90": -0.5277990323806296,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 0.5,
+          "measured_width": 0.05335064244759624,
+          "reference_width": 0.05626047380722925,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.44672173659329206,
+          "crossing90": -0.5552303810134542,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 1.0,
+          "measured_width": 0.10850864442016217,
+          "reference_width": 0.1125209476144585,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.024987348178137653,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        },
+        {
+          "crossing10": -0.38623310803006805,
+          "crossing90": -0.6151670136548409,
+          "diameter": 6.0,
+          "exterior_max_red_error": 0,
+          "height": 2.0,
+          "measured_width": 0.2289339056247729,
+          "reference_width": 0.225041895228917,
+          "split_far": 4.907366596101028,
+          "split_near": 2.62,
+          "tolerance": 0.033756284284337544,
+          "umbra_max_red_error": 0,
+          "world_units_per_texel": 0.009994939271255061
+        }
+      ],
+      "comparisons": [
+        {
+          "case": "zero-emitter",
+          "whole_bmp_equal": true
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "actual": 31,
+          "case": "masked-aperture",
+          "expected": 31,
+          "opaque": true,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "actual": 172,
+          "case": "masked-aperture",
+          "expected": 172,
+          "opaque": false,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.1088827303087025,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2186169229504926,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 0,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 1.2208563962697128,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.4813739293014003,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.6185997366596103,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 1,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 2.62140026334039,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.680917303087026,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.905079229504927,
+          "umbra_red_error": 0
+        },
+        {
+          "cascade": 2,
+          "case": "cascade-world-probes",
+          "lit_red_error": 0,
+          "receiver_depth": 4.909653962697129,
+          "umbra_red_error": 0
+        },
+        {
+          "case": "point-fallback",
+          "whole_bmp_equal": true
+        },
+        {
+          "case": "spot-fallback",
+          "whole_bmp_equal": true
+        }
+      ],
+      "evidence": {
+        "bytes": 666486,
+        "sha256": "2e84055529b9f70054b3db1d0aad5ca6dd9a131f8e4b26a43f99afd4068c61da"
+      },
+      "owner": {
+        "report": {
+          "bytes": 6259,
+          "sha256": "f661c6a97987f8e64948d317abbaf58551bab02c3854397e47e8f961b1d51c44"
+        },
+        "seconds": 3.1922900999197736,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    }
+  ],
+  "cost": [
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "size": [
+        1920,
+        1080
+      ],
+      "lighting_path": "forward",
+      "samples": 1,
+      "accepted_frames": 464,
+      "warmup_per_block": 8,
+      "measured_per_block": 20,
+      "pairs": [
+        {
+          "fractional_shading_p95_ms": 0.256,
+          "pcss_shading_p95_ms": 0.3328,
+          "round": 0,
+          "signed_median_overhead_ms": 0.07782399999999995,
+          "signed_p95_overhead_ms": 0.07679999999999998
+        },
+        {
+          "fractional_shading_p95_ms": 0.253952,
+          "pcss_shading_p95_ms": 0.33177599999999996,
+          "round": 1,
+          "signed_median_overhead_ms": 0.07679999999999998,
+          "signed_p95_overhead_ms": 0.07782399999999995
+        },
+        {
+          "fractional_shading_p95_ms": 0.254976,
+          "pcss_shading_p95_ms": 0.330752,
+          "round": 2,
+          "signed_median_overhead_ms": 0.07679999999999998,
+          "signed_p95_overhead_ms": 0.07577600000000001
+        },
+        {
+          "fractional_shading_p95_ms": 0.67584,
+          "pcss_shading_p95_ms": 0.3328,
+          "round": 3,
+          "signed_median_overhead_ms": -0.338432,
+          "signed_p95_overhead_ms": -0.34304
+        },
+        {
+          "fractional_shading_p95_ms": 0.67584,
+          "pcss_shading_p95_ms": 0.8959999999999999,
+          "round": 4,
+          "signed_median_overhead_ms": 0.21401599999999998,
+          "signed_p95_overhead_ms": 0.2201599999999999
+        },
+        {
+          "fractional_shading_p95_ms": 0.7168,
+          "pcss_shading_p95_ms": 0.9103359999999999,
+          "round": 5,
+          "signed_median_overhead_ms": 0.19097600000000003,
+          "signed_p95_overhead_ms": 0.19353599999999993
+        },
+        {
+          "fractional_shading_p95_ms": 0.740352,
+          "pcss_shading_p95_ms": 0.9605119999999999,
+          "round": 6,
+          "signed_median_overhead_ms": 0.224256,
+          "signed_p95_overhead_ms": 0.2201599999999999
+        },
+        {
+          "fractional_shading_p95_ms": 0.777216,
+          "pcss_shading_p95_ms": 0.9605119999999999,
+          "round": 7,
+          "signed_median_overhead_ms": 0.187392,
+          "signed_p95_overhead_ms": 0.1832959999999999
+        }
+      ],
+      "statistic": "Per-round PCSS block p95 minus fractional block p95; nearest-rank p95 across eight signed differences.",
+      "signed_paired_p95_overheads": {
+        "median_ms": 0.13055999999999993,
+        "p95_ms": 0.2201599999999999,
+        "samples": 8
+      },
+      "budget_ms": 0.75,
+      "fractional": {
+        "shading": {
+          "median_ms": 0.6686719999999999,
+          "p95_ms": 0.765952,
+          "samples": 160
+        },
+        "total": {
+          "median_ms": 0.817008,
+          "p95_ms": 0.925024,
+          "samples": 160
+        }
+      },
+      "pcss": {
+        "shading": {
+          "median_ms": 0.691712,
+          "p95_ms": 0.958464,
+          "samples": 160
+        },
+        "total": {
+          "median_ms": 0.829056,
+          "p95_ms": 1.116736,
+          "samples": 160
+        }
+      },
+      "evidence": {
+        "bytes": 472199,
+        "sha256": "09ba06406f280d36e9e0ad413cecc8716fcd4eecd4b516a2bffb0a269aa8c7ec"
+      },
+      "owner": {
+        "report": {
+          "bytes": 4329,
+          "sha256": "d929f6386608093def7c6a55880b2737d09ff76abd91450a1a359e9a1611728e"
+        },
+        "seconds": 6.385328700067475,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "size": [
+        1280,
+        720
+      ],
+      "lighting_path": "forward",
+      "samples": 1,
+      "accepted_frames": 464,
+      "warmup_per_block": 8,
+      "measured_per_block": 20,
+      "pairs": [
+        {
+          "fractional_shading_p95_ms": 1.75168,
+          "pcss_shading_p95_ms": 1.9051699999999998,
+          "round": 0,
+          "signed_median_overhead_ms": 0.2896200000000002,
+          "signed_p95_overhead_ms": 0.1534899999999999
+        },
+        {
+          "fractional_shading_p95_ms": 1.46996,
+          "pcss_shading_p95_ms": 2.0132399999999997,
+          "round": 1,
+          "signed_median_overhead_ms": 0.28381999999999996,
+          "signed_p95_overhead_ms": 0.5432799999999998
+        },
+        {
+          "fractional_shading_p95_ms": 1.5859299999999998,
+          "pcss_shading_p95_ms": 2.10322,
+          "round": 2,
+          "signed_median_overhead_ms": 0.2986,
+          "signed_p95_overhead_ms": 0.51729
+        },
+        {
+          "fractional_shading_p95_ms": 1.61055,
+          "pcss_shading_p95_ms": 1.79708,
+          "round": 3,
+          "signed_median_overhead_ms": 0.28695999999999966,
+          "signed_p95_overhead_ms": 0.18653000000000008
+        },
+        {
+          "fractional_shading_p95_ms": 1.65827,
+          "pcss_shading_p95_ms": 2.0349999999999997,
+          "round": 4,
+          "signed_median_overhead_ms": 0.25009999999999977,
+          "signed_p95_overhead_ms": 0.3767299999999998
+        },
+        {
+          "fractional_shading_p95_ms": 1.68,
+          "pcss_shading_p95_ms": 2.0288399999999998,
+          "round": 5,
+          "signed_median_overhead_ms": 0.27925999999999984,
+          "signed_p95_overhead_ms": 0.3488399999999998
+        },
+        {
+          "fractional_shading_p95_ms": 1.6080999999999999,
+          "pcss_shading_p95_ms": 2.02292,
+          "round": 6,
+          "signed_median_overhead_ms": 0.29535999999999984,
+          "signed_p95_overhead_ms": 0.4148200000000002
+        },
+        {
+          "fractional_shading_p95_ms": 1.7858699999999998,
+          "pcss_shading_p95_ms": 2.16729,
+          "round": 7,
+          "signed_median_overhead_ms": 0.2761800000000001,
+          "signed_p95_overhead_ms": 0.3814200000000001
+        }
+      ],
+      "statistic": "Per-round PCSS block p95 minus fractional block p95; nearest-rank p95 across eight signed differences.",
+      "signed_paired_p95_overheads": {
+        "median_ms": 0.37907499999999994,
+        "p95_ms": 0.5432799999999998,
+        "samples": 8
+      },
+      "budget_ms": 1.5,
+      "fractional": {
+        "shading": {
+          "median_ms": 1.44122,
+          "p95_ms": 1.72796,
+          "samples": 160
+        },
+        "total": {
+          "median_ms": 2.237,
+          "p95_ms": 2.99834,
+          "samples": 160
+        }
+      },
+      "pcss": {
+        "shading": {
+          "median_ms": 1.72206,
+          "p95_ms": 2.08112,
+          "samples": 160
+        },
+        "total": {
+          "median_ms": 2.5017199999999997,
+          "p95_ms": 3.40192,
+          "samples": 160
+        }
+      },
+      "evidence": {
+        "bytes": 470950,
+        "sha256": "7ee073f45aceaa17adaefa738927460bf09c71d92d0b2e07e2f8e9e1f3bc012d"
+      },
+      "owner": {
+        "report": {
+          "bytes": 3924,
+          "sha256": "4d37aec3c531de0069ecfcacfbbb2f2a459b6d194d19070999715407d68419a3"
+        },
+        "seconds": 5.3877874000463635,
+        "processes": 2,
+        "forced_cleanup": false,
+        "active_after_close": 0,
+        "terminated_after_close": 0
+      }
+    }
+  ],
+  "retained": {
+    "owner": {
+      "report": {
+        "bytes": 31723,
+        "sha256": "a7a23f8bc832ff57baf7e3cd67c9da513cb69ba82d62e9faa32e6469e0e8b97d"
+      },
+      "seconds": 131.3771793000633,
+      "processes": 19,
+      "forced_cleanup": false,
+      "active_after_close": 0,
+      "terminated_after_close": 0
+    },
+    "instancing_reference_checkpoint": "0.0.211",
+    "whole_instancing_bmp_matches": 64,
+    "fractional_reference_checkpoint": "0.0.214",
+    "fractional_gpu_path_pairs": 4,
+    "fractional_captures": 140,
+    "literal_fixture_rpc": 1012,
+    "legacy_whole_bmp_comparisons": 32,
+    "explicit_true_whole_bmp_comparisons": 12,
+    "results": [
+      {
+        "label": "instancing-gpu0",
+        "evidence": {
+          "bytes": 158154,
+          "sha256": "b046d685eedaf4577b687f11d1655ab04b3029ff4d88888ad250311f40a67ac0"
+        },
+        "captures": 32,
+        "whole_reference_equal": true
+      },
+      {
+        "label": "instancing-gpu1",
+        "evidence": {
+          "bytes": 158503,
+          "sha256": "93fe7f95e1f4f065d412f1f20d8ab502c4a6967da10a6011316918ff4fc768d8"
+        },
+        "captures": 32,
+        "whole_reference_equal": true
+      },
+      {
+        "label": "gpu0-forward-baseline",
+        "evidence": {
+          "bytes": 401918,
+          "sha256": "aead231fb299265c19dc5e6c414324ef3bd8bb67a64a069d90f17a1d777bf9f7"
+        },
+        "captures": 8
+      },
+      {
+        "label": "gpu0-forward-candidate",
+        "evidence": {
+          "bytes": 1338939,
+          "sha256": "6d1c541e0468c447c5ff29b72b318e4ec7360728575d903e2eecbc699e81acaa"
+        },
+        "captures": 27
+      },
+      {
+        "label": "gpu0-deferred-baseline",
+        "evidence": {
+          "bytes": 401904,
+          "sha256": "c2f10cb4519fe015c4eb586db8437ead5788ea9ebbbd7743defeedfdce82ec29"
+        },
+        "captures": 8
+      },
+      {
+        "label": "gpu0-deferred-candidate",
+        "evidence": {
+          "bytes": 1338892,
+          "sha256": "9d4d0f4caf3cf7b4936bb944af10b91b1c9f47a7ff30a5b75116b6374ca95169"
+        },
+        "captures": 27
+      },
+      {
+        "label": "gpu1-forward-baseline",
+        "evidence": {
+          "bytes": 397193,
+          "sha256": "0934e23c6114c3889695c5395633bb630300abe806e22f744119314252245447"
+        },
+        "captures": 8
+      },
+      {
+        "label": "gpu1-forward-candidate",
+        "evidence": {
+          "bytes": 1322985,
+          "sha256": "acd0e63c3dbf3f64714d1e9911668cf7099345abfba8a1ae597f53a893244b3e"
+        },
+        "captures": 27
+      },
+      {
+        "label": "gpu1-deferred-baseline",
+        "evidence": {
+          "bytes": 397188,
+          "sha256": "bf608b1e739842591602c7f5c4beed3663ca7e9f7bde7236128ea760808e3581"
+        },
+        "captures": 8
+      },
+      {
+        "label": "gpu1-deferred-candidate",
+        "evidence": {
+          "bytes": 1322972,
+          "sha256": "f674c283741b2c9fb709816a9d731499acafded7cda25548e5e8658f2d3dbbaa"
+        },
+        "captures": 27
+      }
+    ]
+  },
+  "character": {
+    "owner": {
+      "report": {
+        "bytes": 7381,
+        "sha256": "e517372c23c3c4302944dead947cdd7b7e0da5069ccbbdb632a6b9ffe542df0b"
+      },
+      "seconds": 3.7007570998976007,
+      "processes": 2,
+      "forced_cleanup": false,
+      "active_after_close": 0,
+      "terminated_after_close": 0
+    },
+    "evidence": {
+      "bytes": 1120094,
+      "sha256": "8e1abc54b4cd5fb05dc2780339c759bd3b5e8ecfa3f4eef013bbea3ce1beae16"
+    },
+    "literal_rpc": 27,
+    "captures": 2,
+    "complete_archives": 4,
+    "whole_byte_pairs": 2,
+    "save_exclusions": [],
+    "camera_changed": false,
+    "simulation_ticks": 0,
+    "shadow_resolution": 512,
+    "images": [
+      {
+        "identity": {
+          "bytes": 3686538,
+          "sha256": "578ed3cc9716516fdd483ff73ef8da38d017a79fe7d6f5d13dcf61520b3863f0"
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "size": [
+          1280,
+          720
+        ],
+        "samples": 4,
+        "presented_frames": 2
+      },
+      {
+        "identity": {
+          "bytes": 3686538,
+          "sha256": "b300c6f291f5c59c8a5930ba6ae1f3a4d2e32be50844639bb0ea59e422e0c53e"
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "size": [
+          1280,
+          720
+        ],
+        "samples": 4,
+        "presented_frames": 2
+      }
+    ],
+    "license_reference": "../CHARACTER_LIBRARY.md#original-source",
+    "public_png": {
+      "bytes": 175558,
+      "sha256": "4c7bb706c17e0e8670f7fb280a26cada4c42cd4455a1e31622f2d74f826cba0e"
+    }
+  },
+  "preserved_failures": [
+    {
+      "stage": "qualification-monitor",
+      "report": {
+        "bytes": 12442,
+        "sha256": "d216853fa602aee48ec7a291ab87f2c22b1e62b2f32958e06f2303e377ba49b1"
+      },
+      "passed": false,
+      "forced_cleanup": true,
+      "cause": "A live directory scan raced an atomic native temporary-file rename. The replacement records transient removals during live monitoring and keeps a strict terminal census; rendering assertions are unchanged."
+    },
+    {
+      "stage": "preparation",
+      "actor_started": false,
+      "cause": "An original compiler predecessor identity had a transcription error; a later file-only retained collector counted 17 package members without its separate manifest. Both preparations rejected before their intended actor."
+    },
+    {
+      "stage": "preparation",
+      "actor_started": false,
+      "cause": "The retained consumer collector rejected the changed installed .NET patch membership. A new profile pins the current resolver membership and 10.0.13 critical files while preserving the old compiled inputs and every fixture assertion."
+    }
+  ],
+  "limitations": [
+    "Spatial finite-sample filtering with a resolution floor and radius/search caps; not exact physical area-light integration.",
+    "No temporal history, ray tracing, shadow cache, virtual pages or GI.",
+    "Controlled planes, motion endpoints, selected saved poses and tiny cost fixtures do not qualify general animated character appearance, representative game performance, physical input or Alpha release.",
+    "Native Windows hardware execution and Linux headless authoring are separate scopes; this checkpoint supplies no new platform or whole managed compatibility promise."
+  ],
+  "retained_compiled_consumer": {
+    "report": {
+      "bytes": 4984,
+      "sha256": "b771cd795125fa215957f6fbb49c037fe373c20d775d7584921a763f8d662801"
+    },
+    "evidence": {
+      "bytes": 1005839,
+      "sha256": "3581ceb30fcc23cce8f265ca9247602dbfe36294c4a11a45c48c9c4e7bb127ac"
+    },
+    "backend": "coreclr",
+    "original_game_checkpoint": "0.0.212",
+    "typed_fields": 47,
+    "literal_rpc": 90,
+    "observations": 12,
+    "complete_archives": 7,
+    "whole_byte_pairs": 4,
+    "save_exclusions": [],
+    "natural_native_owners": 2,
+    "job_processes": 4,
+    "forced_cleanup": false,
+    "runtime_scope": "Retained compiled game/bridge and hostfxr 10.0.12; existing LatestPatch config and exact installed membership admit 10.0.13. Selected 10.0.13 critical files are pinned; no loaded-module trace or unchanged-old-runtime claim.",
+    "runtime_critical_identities": {
+      "coreclr.dll": {
+        "bytes": 4613416,
+        "sha256": "18eed8c40d05fc455be95d12cc77eacf379265063b15ca84bd7a11cf29078a22"
+      },
+      "clrjit.dll": {
+        "bytes": 2095912,
+        "sha256": "2a2332c3c0cb023e71deb356b5fb85ce9045fb8434734dcfe9a7529e427dc858"
+      },
+      "hostpolicy.dll": {
+        "bytes": 378704,
+        "sha256": "90f9826f48e6416902199dee0fa1954536fe4c5191f5fd44b1bc6de623eb99c8"
+      },
+      "System.Private.CoreLib.dll": {
+        "bytes": 16033576,
+        "sha256": "0a175cdd09067c52f8b2477cfcebf894b2f926d7302e55ae76fc921529662c7b"
+      },
+      "Microsoft.NETCore.App.deps.json": {
+        "bytes": 29720,
+        "sha256": "4fefc30f6b8fbf008fd280122ff06144b4278bd0d5b324f91d429e1766bd2460"
+      },
+      "Microsoft.NETCore.App.runtimeconfig.json": {
+        "bytes": 54,
+        "sha256": "31c8ce517cddc0deaceb26b5dff6ba5df55ac4e06e9afd0026e51faca23dc8a4"
+      }
+    }
+  },
+  "native_builds": {
+    "linux": {
+      "report": {
+        "bytes": 173787,
+        "sha256": "2c770f8c65a23b8b3bc2ad007e67f6098e1f027214d9a182ad020304047d298e"
+      },
+      "engine_version": "0.0.216"
+    },
+    "windows": {
+      "report": {
+        "bytes": 29396,
+        "sha256": "3c4958be8c91c484f74081f46d245527fd0cffc57821fcfad49239b676508903"
+      },
+      "engine_version": "0.0.216",
+      "selected_images": {
+        "bin/poima.exe": {
+          "bytes": 27466752,
+          "sha256": "c26e182fcc724fa5e3393611c33de173e8bf0639af66add7c64998e26df03adf"
+        },
+        "bin/poima_desktop.dll": {
+          "bytes": 311298560,
+          "sha256": "6a774943ff60f4d4d3228e2ca312e23877dbddce3a914647cb3401c83876e899"
+        },
+        "bin/poima-contact-shadow-test.exe": {
+          "bytes": 15063552,
+          "sha256": "c955563b7b37dd31afe2b2cbb8f2a9438abe9d33e4cd167a213aede0dcc92f76"
+        },
+        "bin/poima-render-instancing-test.exe": {
+          "bytes": 15024128,
+          "sha256": "1747cc0a2be835efe0a21f4a5bca8dd68aa0b6b481fef21767b86fe82d0cb686"
+        }
+      }
+    }
+  },
+  "reproduction": {
+    "cpu": "python tests/contact_shadow_contract.py <native-poima-path>",
+    "native_target": "poima-contact-shadow-test",
+    "quality_argv": [
+      "<new-output>",
+      "<gpu-index>",
+      "<samples:1|4>",
+      "<deferred:0|1>"
+    ],
+    "cost_extra_argument": "cost-1080 or cost-720",
+    "prerequisites": "Native Windows Vulkan build, visible desktop and physical GPU. Deferred uses one sample. Run graphics serially under an owned process with a whole-job deadline. Native fixture retains original BMPs, raw edge profiles and cost samples in evidence.json."
+  }
+}
