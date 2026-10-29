@@ -1,0 +1,578 @@
+{
+  "format": "poima.agent-character-fresh.evidence.v1",
+  "checkpoint_version": "0.0.215",
+  "date": "2026-10-29",
+  "scope": "One fresh agent-authored original-character compiled C# route workflow, with separate original ownership/policy/provenance reviews and an independent Windows headless warm/cold/relocated native campaign. A separate post-workflow nonfocusable Windows background observation captures the original menu and zero-input elapsed play.",
+  "verdicts": {
+    "original_fresh_task_passed": true,
+    "original_provider_completed": true,
+    "original_source_and_artifact_provenance_qualified": true,
+    "independent_native_gameplay_campaign_qualified": true,
+    "whole_engine_or_alpha_qualified": false,
+    "original_headless_phase_visual_or_physical_input_qualified": false,
+    "separate_background_visual_observation_qualified": true,
+    "physical_input_qualified": false
+  },
+  "versions": {
+    "public_checkpoint": "0.0.215",
+    "source_at_execution": "0.0.214",
+    "qualified_native_runtime": "0.0.214",
+    "installed_authoring_pack": "0.0.214",
+    "provider_cli": "codex-cli 0.165.0",
+    "provider_cli_host": "Linux",
+    "native_tool_and_game_host": "Windows x86_64",
+    "windows_python": "3.14",
+    "dotnet_sdk": "10.0.401",
+    "dotnet_nativeaot_runtime": "10.0.12",
+    "msvc_linker": "14.44.35207",
+    "target": "win-x64"
+  },
+  "input_context": {
+    "copied_files": 89,
+    "initial_workspace_files_including_generated_configuration": 92,
+    "scope": "Generic public API documentation, Python and managed SDK sources, selected compiler dependencies, task/schema and original licensed inputs. No game implementation or sample solution was supplied.",
+    "fresh_game_source_authored_during_original_turn": true,
+    "selected_model": "gpt-6.1-sol",
+    "reasoning_policy": "CLI default with user configuration ignored and no effort override.",
+    "model_identity_limit": "Explicit CLI model selection is recorded. The event format does not independently identify the serving model."
+  },
+  "task": {
+    "requirements": "Inspect/import the intact original Knight, derive controller fitting from native rest bounds, and author a fixed court with an ordered two-pad signalling route. Native Begin/Save/Load UI callbacks and named logical input drive compiled gameplay. Idle/Running_A follows committed displacement in every phase, including blocked movement and Complete.",
+    "simulation_hz": 60,
+    "inertial_transition_ticks": 12,
+    "input_scope": "Native logical Held/Pressed/Released sampling; physical devices were not tested.",
+    "gameplay_type": "KnightCourt.Route",
+    "gameplay_identity": "original.knight-two-signals.v1",
+    "state_schema": {
+      "bytes": 96,
+      "fields": [
+        {
+          "name": "ActiveTicks",
+          "kind": "int32",
+          "offset": 12,
+          "bytes": 4
+        },
+        {
+          "name": "HavePrevious",
+          "kind": "int32",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "name": "ObservedEpochHigh",
+          "kind": "int64",
+          "offset": 80,
+          "bytes": 8
+        },
+        {
+          "name": "ObservedEpochLow",
+          "kind": "int64",
+          "offset": 88,
+          "bytes": 8
+        },
+        {
+          "name": "Phase",
+          "kind": "int32",
+          "offset": 0,
+          "bytes": 4
+        },
+        {
+          "name": "PreviousX",
+          "kind": "float64",
+          "offset": 24,
+          "bytes": 8
+        },
+        {
+          "name": "PreviousZ",
+          "kind": "float64",
+          "offset": 32,
+          "bytes": 8
+        },
+        {
+          "name": "Progress",
+          "kind": "int32",
+          "offset": 4,
+          "bytes": 4
+        },
+        {
+          "name": "Refusals",
+          "kind": "int32",
+          "offset": 8,
+          "bytes": 4
+        },
+        {
+          "name": "SaveNotice",
+          "kind": "int32",
+          "offset": 76,
+          "bytes": 4
+        },
+        {
+          "name": "SelectedClip",
+          "kind": "int32",
+          "offset": 40,
+          "bytes": 4
+        },
+        {
+          "name": "TicketHigh",
+          "kind": "int64",
+          "offset": 48,
+          "bytes": 8
+        },
+        {
+          "name": "TicketKind",
+          "kind": "int32",
+          "offset": 72,
+          "bytes": 4
+        },
+        {
+          "name": "TicketLow",
+          "kind": "int64",
+          "offset": 56,
+          "bytes": 8
+        },
+        {
+          "name": "TicketSequence",
+          "kind": "int64",
+          "offset": 64,
+          "bytes": 8
+        }
+      ]
+    }
+  },
+  "original_fresh_workflow": {
+    "provider_turns": 1,
+    "automatic_retry": false,
+    "provider_process_exit_code": 0,
+    "provider_process_seconds": 719.2849914310063,
+    "typed_submissions": {
+      "development.publish": 1,
+      "development.export": 2,
+      "development.compile": 0
+    },
+    "script_lifetimes": {
+      "total": 15,
+      "natural_success": 11,
+      "natural_error": 4
+    },
+    "native_lifetimes": 16,
+    "unknown_or_unqualified_owners": 0,
+    "forced_cleanup": false,
+    "retained_failures": [
+      {
+        "stage": "Three authoring/replay script errors",
+        "outcome": "A UI read omitted a required tick, a save-status key was misread, and a save probe omitted an active-UI guard. Each error closed naturally; the agent corrected its scripts within the same original turn."
+      },
+      {
+        "stage": "First export and its containing script",
+        "outcome": "Native directory publication returned Windows error 5 and terminal exit 4; the script assertion failed. After this known terminal failure, the second export used a new output directory and succeeded. Both submissions and all receipts remain."
+      },
+      {
+        "stage": "Prelaunch selector rejection",
+        "outcome": "One absolute script selector was rejected before a lifetime started; a portable selector was then admitted."
+      }
+    ],
+    "recovery_scope": "All four failed script lifetimes are retained: three harness errors and the script containing the failed first export. No parent game/source repair, old game reuse, failure deletion or acceptance weakening was used. Original producer receipts remain unchanged; the final verdict joins separate independent scopes.",
+    "caps": {
+      "provider_seconds": 5400,
+      "case_bytes": 2147483648,
+      "script_lifetimes": 128,
+      "native_lifetimes": 2000,
+      "development_publish": 8,
+      "development_export_or_project_build": 6
+    }
+  },
+  "content": {
+    "character": "KayKit Adventurers 1.0 Knight",
+    "author": "Kay Lousberg",
+    "license": "CC0-1.0",
+    "original_glb": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_license": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "cooked_model": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    },
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76,
+    "primitive_bindings": {
+      "skinned": 6,
+      "rigid": 9
+    },
+    "selected_clips": {
+      "Idle": 36,
+      "Running_A": 48
+    },
+    "intake": "Exact original source/license copies were retained. Native source inspection and guarded import used the same immutable source and returned parsed-model fingerprint in separate owned lifetimes. Complete take names/indices and cooked bytes joined the resulting project and exports. Native rest bounds supplied controller height and rig offset; import diagnostics were retained."
+  },
+  "new_artifact": {
+    "classification": "Fresh original Native AOT publication, guarded project adoption and completed standalone export.",
+    "csharp_source": {
+      "bytes": 5925,
+      "sha256": "8c217760d653cee0b556ba5f7bf227b95ba7de4c58d42f6154c73c658d314140"
+    },
+    "descriptor": {
+      "bytes": 6490,
+      "sha256": "61b36dd726f255ccbd57bba6077c89659edf95c16047b0541eb24dfa2937c080"
+    },
+    "image": {
+      "bytes": 1370112,
+      "sha256": "b9ae6cfb0d6a8fdb5ca7af2278900bd8a89e6494af606f4f9145bdf851486f2a"
+    },
+    "complete_artifact_files": 8,
+    "complete_artifact_bytes": 1567755,
+    "bundle_files_including_manifest": 62,
+    "bundle_bytes_including_manifest": 109153663,
+    "bundle_manifest": {
+      "bytes": 13473,
+      "sha256": "6707c0570a801055595fa88b18d3e64d26857fee6f29f051cd9481007fcc93e3"
+    },
+    "source_to_artifact_scope": "Delivered C# bytes match their original creation event. The admitted publisher reports the selected project/type, completed native-code generation and exact new image/descriptor; guarded adoption and export retain those identities. This is not a hermetic or reproducible compiler-input attestation."
+  },
+  "independent_native_campaign": {
+    "passed": true,
+    "independent_reader_checks": 1384,
+    "raw_rpc_pairs": 4151,
+    "causally_checked_ticks": 1345,
+    "phases": [
+      {
+        "phase": "warm source",
+        "raw_rpc_pairs": 2340,
+        "causal_ticks": 763
+      },
+      {
+        "phase": "fresh cold source",
+        "raw_rpc_pairs": 907,
+        "causal_ticks": 291
+      },
+      {
+        "phase": "relocated bundled host and connector",
+        "raw_rpc_pairs": 904,
+        "causal_ticks": 291
+      }
+    ],
+    "causal_method": "Each checked single-tick step has fresh complete before/after observations joined by native revision/session/tick. Controls invalidate prior observations. Missing, stale or mismatched pairs fail; no ticks are excluded.",
+    "profile_inspection": "Warm and cold source owners request input.inspect with read_only:true. The frozen complete candidate file membership is preserved.",
+    "checkpoint": {
+      "format_version": 9,
+      "identity": {
+        "bytes": 117845,
+        "sha256": "c60b71ec8cdb58fb8f0e557c4002fea40af361dd877de64d9becf2019385c2bd"
+      },
+      "whole_bytes_and_typed_document_equal": true,
+      "field_exclusions": [],
+      "four_immediate_pairs": [
+        "save-control-immediate",
+        "same-owner-load-immediate",
+        "cold-source-load-immediate",
+        "relocated-export-load-immediate"
+      ],
+      "saved_during_active_inertial_transition": true,
+      "compared_before_next_callback": true,
+      "continuation": "Fresh cold source and relocated bundled host restore and finish the route. Subsequent complete saves retain all fields; selected later continuation is not described as whole-state equality with the earlier partial checkpoint."
+    },
+    "poses": {
+      "count": 6,
+      "nodes_each": 57,
+      "tolerance": 3e-05,
+      "maximum_world_matrix_error": 1.7701131671543635e-09,
+      "samples": [
+        {
+          "label": "initial-settled-idle",
+          "tick": 8,
+          "clip": 36,
+          "sample_time": 0.13333333333333333,
+          "maximum_world_matrix_error": 1.7527681528406447e-09
+        },
+        {
+          "label": "ready-interrupted-then-settled-idle",
+          "tick": 36,
+          "clip": 36,
+          "sample_time": 0.2833333333333333,
+          "maximum_world_matrix_error": 1.7701131671543635e-09
+        },
+        {
+          "label": "settled-running",
+          "tick": 105,
+          "clip": 48,
+          "sample_time": 0.29999998807907113,
+          "maximum_world_matrix_error": 1.419949047232194e-09
+        },
+        {
+          "label": "blocked-intent-settled-idle",
+          "tick": 625,
+          "clip": 36,
+          "sample_time": 0.9333333333333333,
+          "maximum_world_matrix_error": 1.751395917182208e-09
+        },
+        {
+          "label": "complete-walk-and-settled-idle",
+          "tick": 1043,
+          "clip": 36,
+          "sample_time": 0.25,
+          "maximum_world_matrix_error": 1.7467671753479408e-09
+        },
+        {
+          "label": "complete-walk-and-settled-idle",
+          "tick": 1043,
+          "clip": 36,
+          "sample_time": 0.25,
+          "maximum_world_matrix_error": 1.7467671753479408e-09
+        }
+      ]
+    },
+    "save_callback_scope": {
+      "completed_and_loaded_observed": true,
+      "pending_ticket_and_ui_in_complete_saved_payload": true,
+      "failed_callback_exercised_by_independent_campaign": false
+    },
+    "relocation": {
+      "own_bundled_cli": true,
+      "read_only_packaged_host": true,
+      "unrelated_cwd": true,
+      "minimal_declared_environment": true,
+      "original_project_source_input_and_old_bundle_paths_unavailable_during_run": true,
+      "external_save_root": true,
+      "natural_host_shutdown": true,
+      "original_candidate_file_members": 688,
+      "inventory_exclusions": [],
+      "relocated_bundle_unchanged": true,
+      "whole_candidate_file_membership_and_bytes_restored": true,
+      "file_inventory_scope": "Entire original workspace and products trees: 688 files, with no exclusions."
+    },
+    "ownership": {
+      "native_lifetimes": 4,
+      "total_job_processes_including_worker": 5,
+      "active_at_worker_exit": 0,
+      "terminated_at_worker_exit": 0,
+      "forced_cleanup": false,
+      "job_empty_before_restore": true,
+      "all_native_exit_codes_zero": true,
+      "seconds": 27.992037900025025
+    },
+    "caps": {
+      "native_lifetimes": 8,
+      "rpc": 6000,
+      "ticks": 8000,
+      "whole_seconds": 1200,
+      "cleanup_seconds": 60,
+      "output_bytes": 536870912,
+      "output_files": 4096,
+      "stream_bytes": 33554432
+    }
+  },
+  "separate_prerequisite_qualification": {
+    "scope": "Independent installed-tool consumers and file-only setup establish the selected inputs. Their results are separate from the fresh game and its native campaign.",
+    "installed_runtime_files": 49,
+    "installed_authoring_pack_files": 18,
+    "installed_nativeaot_public_consumer": {
+      "public_test": "tests/authoring_tools_workflow.py",
+      "passed": true,
+      "raw_rpc_pairs": 895,
+      "complete_archives": 18,
+      "whole_byte_and_typed_pairs": 8,
+      "job_total_processes": 35,
+      "job_active_at_exit": 0,
+      "job_terminated_at_exit": 0,
+      "scope": "New installed-pack publication/adoption/export and complete source/relocated save continuation; no CoreCLR game-consumer qualification inferred."
+    },
+    "game_stdio_contract": {
+      "public_test": "tests/game_stdio_contract.py",
+      "passed": true,
+      "raw_rpc_pairs": 83,
+      "owners": 3,
+      "complete_archives": 8,
+      "whole_byte_pairs": 5
+    },
+    "file_only_setup": {
+      "passed": true,
+      "copied_files": 89,
+      "initial_workspace_files": 92,
+      "provider_native_compiler_execution": false
+    }
+  },
+  "retained_history": {
+    "preceding_original_fresh_0_0_214": {
+      "aggregate": "UNQUALIFIED",
+      "actual_runtime": "0.0.213",
+      "reason": "Inspection added an empty coordination sidecar beyond the original complete file-membership baseline. Its original result was not repaired or regraded.",
+      "classification_record": {
+        "bytes": 5228,
+        "sha256": "2095d5891e2c8b520fbc8181b42156d8a56257e7037777f6cc8ec0608c389443"
+      },
+      "public_evidence": "docs/evidence/m2-inspection-controls.json"
+    },
+    "earlier_assisted_fixture": {
+      "public_evidence": "docs/evidence/m2-agent-character-intake.json",
+      "public_recipe": "docs/evidence/fixtures/agent-character-intake/README.md",
+      "classification": "Earlier assisted adaptation and separate portable source rebuild, with its original fresh attempt still failed.",
+      "scope": "Those existing public files and original classifications remain unchanged. They are not the new fresh215 source/image/workflow."
+    }
+  },
+  "retained_record_identities": {
+    "original_provider_owner": {
+      "bytes": 16548,
+      "sha256": "3693f80eabf91a008d980cee5c3c46ad4b16e67d4451c7c8dbf90d6b9e6bc555"
+    },
+    "original_provider_ownership_audit": {
+      "bytes": 3802662,
+      "sha256": "0d7a984d7b4c1021099b6759f8046ce6f5f81fedcf9be4b5bf2c109f9ac1b2e3"
+    },
+    "original_provider_policy_review": {
+      "bytes": 44942,
+      "sha256": "77bce205424f78478d84aa981b3df95fa3a57af5d45feeec38c5aee42088570f"
+    },
+    "original_source_artifact_provenance_review": {
+      "bytes": 46896,
+      "sha256": "780331f4dd4ea5ddc7df09a121cbbcbebb1d2bf6be7dd90198833552efb09160"
+    },
+    "independent_native_campaign_owner": {
+      "bytes": 15154,
+      "sha256": "783a3b5c178cc19b8db1ae6c69dead7b8edcdb092219bd1b80fda5c952910786"
+    },
+    "independent_native_campaign_worker": {
+      "bytes": 559001,
+      "sha256": "4c560c8f92133bea6824c672e2a3b8e954a2db135ea42e9abd6226a8bc904a58"
+    },
+    "independent_native_campaign_reader": {
+      "bytes": 487867,
+      "sha256": "7f4b08fce6597885783efccebf0cb5d619b6256bd4636c664087051727f46ada"
+    },
+    "installed_runtime_and_pack_review": {
+      "bytes": 40257,
+      "sha256": "d758de31c93f7e264850ae78633a3f334e4ab72d45cdeb88dd540fb35aa9035c"
+    },
+    "installed_nativeaot_consumer_review": {
+      "bytes": 86504,
+      "sha256": "c0272af2efabd0807f4e576613090add17794038f266c7a8db969b0c0145127d"
+    },
+    "installed_game_stdio_contract_review": {
+      "bytes": 112585,
+      "sha256": "d52cacc5b6d479d07a49e16cbd5b8f40038190d36cd70f0c95e49d377892190f"
+    },
+    "file_only_setup_review": {
+      "bytes": 10403,
+      "sha256": "c24ec48bbab46d13e6aa30add74d67cca7ef73c130e9b06f75f085841ea5b474"
+    },
+    "separate_background_visual_owner": {
+      "bytes": 4370,
+      "sha256": "e306584abd9cd9d2701ac22f1c620848c880f2a4d592e3492901dbd532bcb6e6"
+    },
+    "separate_background_visual_worker": {
+      "bytes": 2183026,
+      "sha256": "0341265466c7bdcdedb6d6a469ccba8e752226b4bb82d1716c016c29658319a6"
+    },
+    "earlier_background_visual_setup_failure": {
+      "bytes": 3874,
+      "sha256": "e8001ce2bb85bc5f94852d66621375136231a335b862f6b71c8c86aee60b56ce"
+    }
+  },
+  "reproduction": {
+    "public_contracts": [
+      "docs/AUTHORING_TOOLS.md",
+      "docs/PROJECT_GAMEPLAY_ADOPTION.md",
+      "docs/GAMEPLAY_SAVES.md",
+      "docs/INPUT_PROFILES.md",
+      "docs/WORLD_SERVICE.md"
+    ],
+    "public_consumer_sources": [
+      "tests/authoring_tools_workflow.py",
+      "tests/authoring_tools_gameplay/InstalledGame.cs",
+      "tests/game_stdio_contract.py"
+    ],
+    "scope": "These public sources document and exercise generic installed-tool and exported-game boundaries. Fresh task originals and independent campaign records are retained under the identified hashes; their complete harness and new game source are not distributed by this evidence file. The older public assisted fixture is identified separately.",
+    "content_notice": "Keep the original character license with distributed source assets and include runtime/gameplay dependency notices."
+  },
+  "limits": [
+    "One bounded task and one selected CLI model run do not establish a model success rate, general agent capability or representative engine performance.",
+    "The original authoring and independent gameplay campaign are headless. The separate two-frame background observation does not qualify full-route rendered play, GUI interaction, physical devices, appearance quality or audio.",
+    "Whole-engine/Alpha completion, broad asset conformance, crowds and production scalability remain unqualified.",
+    "Six settled full-rig comparisons do not qualify every take or exact active inertial-pose equality.",
+    "Complete immediate checkpoint equality and selected later continuation are distinct scopes. Independent failed-save callback coverage is not claimed.",
+    "Same-host source-independent relocation is not clean-machine installation, OS isolation or full engine-checkout absence.",
+    "Empty natural Job accounting and retained exit codes do not establish every OS process exit cause or global native actor absence.",
+    "Selected source/tool/pack identities do not pin every transitive SDK/tool/cache byte. Matching runtime/module/SDK artifacts are required; ABI labels alone are insufficient.",
+    "Earlier unqualified workflows, failed producer attempts and assisted recoveries keep their original classifications."
+  ],
+  "separate_background_visual_observation": {
+    "passed": true,
+    "phase": "After the original headless workflow and native campaign, using its unchanged final bundled CLI and Native AOT image.",
+    "raw_rpc_pairs": 35,
+    "initial_tick": 0,
+    "post_begin_tick": 13,
+    "images": [
+      {
+        "label": "initial-menu",
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "ce6b6e1611e24b224e355c0644cc61a92a323e1a497621c4554265a17d7d612d"
+        },
+        "tick": 0,
+        "width": 1280,
+        "height": 720,
+        "samples": 4,
+        "frames_presented": 3,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "owned_window_was_foreground": false
+      },
+      {
+        "label": "after-begin-zero-input",
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "03a239a30bc6248c6fe628c7471fc001d6c8c7b483bb21ff88d369e31cc8cabe"
+        },
+        "tick": 13,
+        "width": 1280,
+        "height": 720,
+        "samples": 4,
+        "frames_presented": 20,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "owned_window_was_foreground": false
+      }
+    ],
+    "illustration": {
+      "path": "docs/evidence/agent-character-fresh.png",
+      "bytes": 94459,
+      "sha256": "d82d45652cd8a208dba6fc0ace4f7e6f591ce491bbb0ac6d3ee94ad243da2cfb",
+      "conversion": "Lossless original BMP RGB channels to PNG RGB; unused alpha omitted. No crop, rescale or content edits."
+    },
+    "player_mode": "background",
+    "physical_input": false,
+    "foreground_write": false,
+    "offscreen": false,
+    "root_inspected_both_images": true,
+    "elapsed_zero_input_ticks": 13,
+    "menu_state": "Ready",
+    "post_begin_state": "Running",
+    "scope": "Two renderer readbacks in a nonfocusable native window; requires a display. Only compiled Begin and zero-input elapsed play were exercised. No route movement, Running_A locomotion, subjective rendering quality, listening, physical input or performance qualification.",
+    "checkpoints": "Disabled for this separate shared host; save/load was verified by the earlier independent headless campaign.",
+    "ownership": {
+      "native_owners": 2,
+      "total_job_processes": 3,
+      "active_at_worker_exit": 0,
+      "terminated_at_worker_exit": 0,
+      "forced_cleanup": false,
+      "host_exit_code": 0,
+      "connector_exit_code": 0,
+      "seconds": 6.622093499987386
+    },
+    "original_candidate_files_preserved": 942,
+    "earlier_visual_setup": {
+      "passed": false,
+      "classification": "Separate terminal preworker harness failure; public process trampoline interpreted Python -B as the script path. No engine or GPU launched. A new source/plan/output corrected that invocation; original failure remains unchanged.",
+      "total_job_processes": 1,
+      "active_at_exit": 0,
+      "terminated_at_exit": 0,
+      "forced_cleanup": false
+    }
+  }
+}

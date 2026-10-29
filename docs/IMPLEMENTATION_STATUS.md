@@ -1,8 +1,44 @@
 # Implementation status
 
-Updated 2026-10-29 for **0.0.214**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-29 for **0.0.215**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.215 records a [fresh imported-character workflow](evidence/m2-agent-character-fresh.json).
+One Codex CLI session authors new compiled C# gameplay from generic docs/SDK
+sources and an unchanged licensed Knight library, using the installed 0.0.214
+Windows runtime and matching compiled authoring pack. Its original owned turn
+publishes, adopts and exports without a supplied game implementation. Four
+failed script lifetimes and a rejected selector remain recorded; recovery occurs
+within that original turn.
+
+Independent native verification passes 4,151 RPCs and 1,345 causal ticks across
+warm source, fresh source and relocated bundled-host execution. Four immediate
+117,845-byte checkpoint probes match complete bytes and typed state without
+exclusions. Six settled observations compare all 57 nodes against the original
+animation curves. The intact library retains all 76 takes. The exported game
+finishes with its original workspace, source-input and export paths unavailable;
+its owning Windows Job closes empty and unforced before exact restoration of
+the complete 688-file workspace/export inventory.
+
+Separate installed-tool checks qualify a newly published Native AOT consumer
+with 895 RPCs, 18 complete archives and eight whole-byte pairs, plus an 83-RPC
+exported-game transport check. Ordinary tool-owned Windows cache directories
+are prepared before publication; earlier junction/inspection-sidecar failures
+retain their original verdicts. The fresh result closes the selected handoff
+requirement for this library. It does not establish general Mixamo/exporter
+compatibility, physical input, clean-machine delivery, production performance
+or whole Alpha completion. The runtime/artifact identities in the evidence
+remain 0.0.214; the source checkpoint is 0.0.215.
+
+A separate nonfocusable background run captures the unchanged exported game
+at its Ready menu and after Begin plus thirteen zero-input ticks. Both NVIDIA
+1280×720 MSAA4 readbacks have presented frames and zero NVRHI errors; the
+35-RPC owner closes naturally with its three-process Job empty and unforced.
+All 942 original case files remain unchanged. The first visual setup stopped
+before launching the worker/game because of a trampoline argument error; its
+failed record remains. These are renderer readbacks with a display, not
+offscreen rendering, physical-input checks or production graphics evidence.
 
 Version 0.0.214 adds optional Boolean `read_only` to
 [`input.inspect`](INPUT_PROFILES.md), preserving profile summaries and validation

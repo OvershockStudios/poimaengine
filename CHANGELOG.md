@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.215
+
+- Qualify a fresh agent-authored imported-character game through installed
+  authoring tools, compiled C# publication and standalone Windows export.
+- Record independent full-pose, checkpoint and relocated continuation checks,
+  preserving failed attempts and their separate recovery histories.
+- Prepare ordinary tool-owned Windows cache directories before native
+  publication in the installed-authoring consumer.
+
 ## 0.0.214
 
 - Add optional read-only input-profile inspection for quiescent or immutable

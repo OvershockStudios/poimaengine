@@ -138,6 +138,43 @@ gameplay/save continuation pass with the original library intact. The original
 fresh task failed a marker-placement requirement; the published fixture retains
 an explicitly assisted two-value correction. [Results and limits](evidence/m2-agent-character-intake.json).
 
+A later [fresh imported-character agent handoff](evidence/m2-agent-character-fresh.json)
+passes its original authoring, ownership, policy and provenance checks and
+independent native replay. One Codex CLI 0.165.0 session selected
+`gpt-6.1-sol`, using .NET SDK 10.0.401, the installed 0.0.214 Windows runtime
+and its matching compiled authoring pack. General documentation and SDK sources
+were supplied; no game implementation was supplied. The unchanged Knight
+library retains all 76 takes, 57 nodes and original mesh/skin bindings.
+
+Independent replay checks normal Begin/Save/Load controls, committed-displacement
+Idle/Running_A selection, blocked movement, route refusals and completion across
+4,151 RPCs and 1,345 causal ticks. Four immediate Save/Load probes, each 117,845
+bytes, match the earned checkpoint in complete bytes and typed state without
+field exclusions, including its unfinished 12-tick inertial transition. Six
+settled observations compare all 57 node poses with the original curves. Fresh
+source and relocated export owners subsequently complete the route.
+
+During relocated execution, the original workspace, source-input and export
+paths are unavailable. The bundle's own executable runs from an unrelated
+working directory with a minimal environment. After its owning Job becomes
+empty without forced cleanup, the original 688-file workspace/export inventory
+is restored unchanged. This
+qualifies one headless workflow with this library. The separate 0.0.214 attempt
+remains unqualified; earlier failures retain their verdicts. Broader exporter
+and rig families, general Mixamo compatibility, rendered appearance, physical
+input, GUI interaction and representative performance remain unqualified by
+this run. It supplies no controlled speed or success-rate comparison.
+
+A separate background observation of the fresh export captures its Ready menu
+and thirteen zero-input ticks after Begin at 1280×720 MSAA4, without taking input
+focus. Both images were inspected. This is distinct from the original headless
+workflow and does not qualify physical interaction or full-route appearance.
+
+![Fresh character-route export after Begin](evidence/agent-character-fresh.png)
+
+*Original exported game, captured in a nonfocusable background window. This
+greybox illustrates the functional handoff; it is not a rendering-quality target.*
+
 ## Limits and recovery
 
 The [animation profile](ANIMATION_ASSETS.md#supported-profile-and-mathematics)

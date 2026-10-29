@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.214.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.215.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -42,6 +42,14 @@ Earlier exercises include an [escape room](docs/evidence/fixtures/agent-escape/R
 adds public C# source and an intact 76-take character library, with a verified
 source rebuild and native save/export continuation. It is an assisted fixture;
 the original fresh attempt remains failed. [Results](docs/evidence/m2-agent-character-intake.json).
+
+A later [fresh character workflow](docs/evidence/m2-agent-character-fresh.json)
+starts with general API documentation, SDK sources and the original licensed
+character library. Codex authors new compiled C# gameplay and exports a standalone
+game. Independent native checks verify the route, all 57 settled pose nodes and
+complete checkpoint restoration, including completion with the original project
+and export paths unavailable. This qualifies one bounded workflow; the broader
+Alpha gates remain open.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 
