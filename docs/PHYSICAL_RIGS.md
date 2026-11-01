@@ -249,8 +249,11 @@ scales, complete cold saves, template lifecycle, additive/inertial overshoot
 rollback and forged saved-scale rejection. They retain the earlier failed
 float-precision oracle attempts separately. The original-character workflow
 uses three existing takes in one world; it does not establish every possible
-layer, rate, interruption or exporter combination. Windows and rendered
-qualification for this frame are separate scopes.
+layer, rate, interruption or exporter combination.
+[Windows CPU qualification](evidence/m2-bounded-skeletal-scales-windows.json)
+separately passes all 29 selected native suites and the same original-character
+sequence, with retained CoreCLR consumers. Rendered qualification for this
+frame remains separate.
 
 ### Imported full-body specimen
 

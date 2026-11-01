@@ -30,8 +30,18 @@ all 3,591 observed scale axes exactly; saved scale witnesses also match every
 node. The declared source-arithmetic guard remains four ULPs. A separate unchanged
 two-part Native AOT consumer passes its 450-request, 33-field workflow on the
 same Linux host. This does not qualify imported-character Native AOT, Windows
-execution, rendering, active control or representative performance for the new
-frame.
+execution or rendering by inference from those Linux runs.
+
+Separate [Windows qualification](evidence/m2-bounded-skeletal-scales-windows.json)
+passes 35 sequential commands: all 29 selected native suites plus publisher,
+CLI, current CoreCLR, retained-game and two original-character workflows.
+The shared-world sequence independently passes 1,292 requests, fifteen archives
+and eight complete archive pairs. The current two-part CoreCLR consumer retains
+all 33 typed fields; the earlier perception consumer retains all 55. All 51 Job
+processes close without forced cleanup. The selected compiler cohort contains
+31 PE images and core; thirteen other cache images keep their older identities.
+These checks remain separate from rendered qualification, full-body compiled
+gameplay, active control and representative performance.
 
 Version 0.0.219 adds an opt-in `skeletal_fixed_scale` physical frame for imported
 skeletons with initialized positive nonuniform local scales. It preserves those

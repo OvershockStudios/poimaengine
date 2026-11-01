@@ -1,0 +1,777 @@
+{
+  "format": "poima.bounded-skeletal-scales-windows.v1",
+  "checkpoint": "0.0.220",
+  "schema_revision": 124,
+  "date": "2026-11-01",
+  "passed": true,
+  "scope": "Actual Windows CPU qualification of the selected native build, CLI authoring/physical commands, compiled CoreCLR gameplay, retained compatible consumer, original fixed-scale fullbody regression and one-world bounded-scale animation/physical transitions. No renderer or physical input was exercised.",
+  "source": {
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7219,
+      "sha256": "921525a1007a05728dbe7a61d39e84308cea2e5e1ccc4934eec6e9c64f283e7f"
+    },
+    "include/poima/assets.hpp": {
+      "bytes": 3422,
+      "sha256": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 14413,
+      "sha256": "26c29f4bd5b7a5459712d13219c0f3da92ef9d7cbc605aa32591675b5c4a751c"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 13750,
+      "sha256": "787ebe2353866f414689412a7da1d998bef41ceeecf791a631298c8dc4c859d4"
+    },
+    "src/runtime_physical_pose.hpp": {
+      "bytes": 4984,
+      "sha256": "6bead6a634ef56b9436d3722a89aa1521b34f67b4df2d61748a525ebe809ced6"
+    },
+    "src/runtime_physical_pose.cpp": {
+      "bytes": 28426,
+      "sha256": "173ed0ae491ba527be6001ce62938bd8c49727defc3e1d82c9af126138cecf05"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 33113,
+      "sha256": "e500935ab93fe4b4d9d36330043930e8f577bc3585c7a9eb9431bb1f51f997cd"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 52004,
+      "sha256": "5d79332b50b8eec99f51d6e94651d6eea949187a01a3f1baaa63782ede445965"
+    },
+    "tests/physical_rig_bounded_scale_json_native.cpp": {
+      "bytes": 7038,
+      "sha256": "fc5618a6badd90ebda6c2b3f9889e1cf76b9e845c0c5bb5cf691645deec9f561"
+    },
+    "tests/runtime_physical_pose_bounded_scale_native.cpp": {
+      "bytes": 11724,
+      "sha256": "27f9dc46e5ab0caad9e4997abd916ae5468085e3d6d13c5e6aef82f6f0445a98"
+    },
+    "tests/runtime_physical_bounded_scale_integration_native.cpp": {
+      "bytes": 18067,
+      "sha256": "5e3c8cb59b085153a985a8362d16d928e92d9f39491b8e40b4c4945e1bc065bb"
+    },
+    "tests/physical_character_transitions.py": {
+      "bytes": 25878,
+      "sha256": "89d05a1c14de0a997ff6c1f51f6d13e7a0791ae8beed9b40b912dd536b0cbd42"
+    },
+    "tests/physical_character_native.py": {
+      "bytes": 20536,
+      "sha256": "a0aca2869ef0032c1313b7655913409bc708b06b396a66dfeff9ad34f8dc5ae2"
+    },
+    "examples/physical-character-yard/knight_profile.py": {
+      "bytes": 18739,
+      "sha256": "4207b9a4953d6a81ae7c45287f485fb6bbde9db803b93463197945a3fc2242bb"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    }
+  },
+  "compiler": {
+    "passed": true,
+    "partial_selected_cohort": true,
+    "selected_portable_executable_images": 31,
+    "core_archives": 1,
+    "lossless_gzip_artifacts": 32,
+    "lossless_decoded_bytes": 879305452,
+    "selected_test_executables": 29,
+    "selected_other_images": [
+      "poima.exe",
+      "poima_desktop.dll"
+    ],
+    "current_selected_identities": {
+      "bin/poima.exe": {
+        "bytes": 28152320,
+        "sha256": "0748c6b88c295c8101911da955224c1b8b4d3aee0466700b87f2c78ac5edbcf7"
+      },
+      "bin/poima_desktop.dll": {
+        "bytes": 327474688,
+        "sha256": "8195cb34b8ee36ca30824f04c1ac82477e73ce62102b59f996147ba5fd32a6b8"
+      },
+      "bin/poima-physical-rig-bounded-scale-json-test.exe": {
+        "bytes": 1359360,
+        "sha256": "3c0a84c3c67f0a124cd5b0e1c47ffd8c1e0cdb7e281a24e95020cf5adc0b7bf1"
+      },
+      "bin/poima-runtime-physical-pose-bounded-scale-test.exe": {
+        "bytes": 1306112,
+        "sha256": "2f6a3008fc0836eddc567efaba32cbdea8f4bc621bf9e1dece8ad5bd5a01c848"
+      },
+      "bin/poima-runtime-physical-bounded-scale-integration-test.exe": {
+        "bytes": 20011008,
+        "sha256": "30ac582855ac71162d0392ce0e7aefe5bedc4dc172bcda3e7ffac7644f752cea"
+      }
+    },
+    "current_core_archive_identity": {
+      "bytes": 263421676,
+      "sha256": "25dc2471c4b8f56f3c5d46cf85f40950aa9dcd048eead1cbcff840bdccc101ae"
+    },
+    "retained_prior_test_preimages": 26,
+    "proven_absent_new_target_preimages": 3,
+    "unchanged_prior_images_outside_current_cohort": 13,
+    "compiler_input_identity_checks": 569,
+    "tool_identity_checks": 24,
+    "source_inputs_unchanged": true,
+    "raw_report_identity": {
+      "bytes": 59082,
+      "sha256": "cdf3bfbb4bb775abf162f0522abf71d4c14a0c2256a1d6448d4a4ab54d230324"
+    },
+    "raw_builder_report_identity": {
+      "bytes": 192459,
+      "sha256": "cab07ee8f0fdf6a8500db155a6e7d0dc1a365f35bc31dae96d3db6f2080002d8"
+    },
+    "sealed_manifest_identity": {
+      "bytes": 85425,
+      "sha256": "27dad84fbc2c5120bfa73ec172ca90d4014073cf39705c1203906c05ee3a6373"
+    },
+    "scope_limit": "Compilation and streamed whole-gzip identity checks are separate from native execution. The selected31 images and core were sealed;13 prior images remain outside current qualification. A built desktop library is not GUI or GPU qualification."
+  },
+  "windows_cpu": {
+    "passed": true,
+    "commands": 35,
+    "native_executable_commands": 29,
+    "publisher_and_workflow_commands": 6,
+    "command_results": [
+      {
+        "label": "physical-rig-math",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-rig-json",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-pose",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physics-state",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-rig",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-state-json",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-animation",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-save",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-body-ids",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-topology",
+        "exit_code": 0
+      },
+      {
+        "label": "jolt-owner-state",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physics-joined",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-projection",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physics-bootstrap-json",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-body-ids-snapshot",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-gameplay-abi",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-ownership",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-integration",
+        "exit_code": 0
+      },
+      {
+        "label": "world-schema",
+        "exit_code": 0
+      },
+      {
+        "label": "world-session",
+        "exit_code": 0
+      },
+      {
+        "label": "gameplay-compatibility",
+        "exit_code": 0
+      },
+      {
+        "label": "gameplay-player-preferences",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-rig-skeletal-json",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-pose-skeletal",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-skeletal-integration",
+        "exit_code": 0
+      },
+      {
+        "label": "physical-rig-bounded-scale-json",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-pose-bounded-scale",
+        "exit_code": 0
+      },
+      {
+        "label": "runtime-physical-bounded-scale-integration",
+        "exit_code": 0
+      },
+      {
+        "label": "publisher-policy",
+        "exit_code": 0
+      },
+      {
+        "label": "cli-physical",
+        "exit_code": 0
+      },
+      {
+        "label": "managed-physical",
+        "exit_code": 0
+      },
+      {
+        "label": "retained217-perception",
+        "exit_code": 0
+      },
+      {
+        "label": "fullbody-native",
+        "exit_code": 0
+      },
+      {
+        "label": "character-transitions",
+        "exit_code": 0
+      }
+    ],
+    "job": {
+      "passed": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "cleanup_errors": [],
+      "total_processes": 51,
+      "active_processes_at_child_exit": 0,
+      "terminated_processes_at_child_exit": 0,
+      "active_processes_after_cleanup": 0,
+      "terminated_processes_after_cleanup": 0,
+      "observed_seconds_shared_load_not_performance": 54.97144239999761
+    },
+    "unknown_child": false,
+    "final_closed_full_census": true,
+    "transient_file_census": {
+      "retries": 1,
+      "recoveries": 1,
+      "cause": "An authoring pending file disappeared between directory discovery and stat. The full census was retried successfully; the original retry record remains."
+    },
+    "raw_report_identity": {
+      "bytes": 33415,
+      "sha256": "8efb6a59ad37a6b0e084e32dc7aaff0961d9a77618202ab1235197f47c543127"
+    },
+    "raw_worker_identity": {
+      "bytes": 83733,
+      "sha256": "b2bc7f542b3aeac44031e674386cbec6d902632b5ad7192b4f678906a1e3dca9"
+    },
+    "totals": {
+      "literal_rpc_rows": 2752,
+      "naturally_closed_cli_owners": 15,
+      "complete_archives": 59,
+      "whole_archive_pairs": 26,
+      "pair_count_scope": "26 complete byte and parsed-JSON pairs from the four non-CLI workflows. No additional CLI pair count is inferred."
+    }
+  },
+  "workflows": {
+    "cli_physical": {
+      "passed": true,
+      "rpc_calls": 76,
+      "groups": 3,
+      "naturally_closed_cli_owners": 4,
+      "complete_archives": 6,
+      "raw_evidence_identity": {
+        "bytes": 1382319,
+        "sha256": "0277fb4e2a4d810f2c3bac647f5e1be54df09213c1802171eedc0c943fe07c16"
+      },
+      "scope": "Strict authoring, native physical queries and command ordering/rejection, actual allocation identities and complete save continuation. Tiny analytic fixture; no visual or representative performance claim."
+    },
+    "compiled_coreclr_physical": {
+      "passed": true,
+      "rpc_calls": 450,
+      "naturally_closed_cli_owners": 2,
+      "complete_archives": 11,
+      "whole_archive_pairs": 5,
+      "raw_evidence_identity": {
+        "bytes": 3427759,
+        "sha256": "e788dbb759bf446ceb057580c19b2eda143b2a7aef255c56273267f8d477d387"
+      },
+      "backend": "coreclr",
+      "typed_fields": 33,
+      "recorded_field_observations": 85,
+      "native_callback_boundary_observations": 75,
+      "compiled_consumer_identity": {
+        "bytes": 7680,
+        "sha256": "2218662d7b0da9228f0ab65b5d71c6c56ecd950650e12a5f24f1ab23cd20b6c4"
+      },
+      "scope": "The actual compiled consumer exercises staged physical commands, committed native callback reads, impulses, failed-batch restoration and complete same-owner/fresh-owner continuation. Uniform two-part analytic ribbon; not imported-fullbody managed qualification.",
+      "boundary_note": "The two distinct SDK outputs and all selected consumer/source dependencies are individually pinned by the qualification record; byte identity between separate SDK builds is not assumed."
+    },
+    "retained_compatible_perception_consumer": {
+      "passed": true,
+      "rpc_calls": 176,
+      "naturally_closed_cli_owners": 2,
+      "complete_archives": 9,
+      "whole_archive_pairs": 5,
+      "raw_evidence_identity": {
+        "bytes": 2525894,
+        "sha256": "1c79ca623cb9d181976a2a9065bee042681b71c84b960921c9cc1150911d76aa"
+      },
+      "typed_fields": 55,
+      "observations": 42,
+      "scope": "Retained0.0.217 compiled consumer exercising the earlier services prefix, native raycast/handle queries, synthetic controls, typed state and complete rollback/save continuation. No AOT, hearing/navigation/tactics, physical-input or fresh-agent claim."
+    },
+    "original_fixed_scale_fullbody": {
+      "passed": true,
+      "rpc_calls": 758,
+      "naturally_closed_cli_owners": 4,
+      "complete_archives": 18,
+      "whole_archive_pairs": 8,
+      "raw_evidence_identity": {
+        "bytes": 2851633,
+        "sha256": "5685e12c099c0f32e0b0552002b195ba1da23dce24306e1685ebc57362b832f5"
+      },
+      "baseline_rpc_calls": 758,
+      "extra_settling_chunks": 0,
+      "retained_library": {
+        "nodes": 57,
+        "skin_joints": 41,
+        "takes": 76,
+        "vertices": 7024,
+        "triangles": 6952
+      },
+      "cases": [
+        {
+          "clip": 36,
+          "terrain": "stairs",
+          "final_tick": 260,
+          "extra_settling_chunks": 0,
+          "cooked_asset_identity": {
+            "bytes": 8464853,
+            "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+          }
+        },
+        {
+          "clip": 48,
+          "terrain": "slope",
+          "final_tick": 260,
+          "extra_settling_chunks": 0,
+          "cooked_asset_identity": {
+            "bytes": 8464853,
+            "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+          }
+        }
+      ],
+      "scope": "Original57-node/76-take library and fifteen-part rig, separately initialized Idle36/stairs and Running_A48/slope cases. Six played source ticks precede takeover; fall, localized hit, contact settling, wake and complete warm/cold future equality are checked. This retains the exact skeletal_fixed_scale policy; it is separate from the shared-world bounded-scale workflow.",
+      "quality_limit": "Source/model preservation and state continuation do not establish natural humanoid motion, anatomical accuracy or production passive-body quality."
+    },
+    "bounded_original_character_transitions": {
+      "passed": true,
+      "rpc_calls": 1292,
+      "observations": 21,
+      "naturally_closed_sequential_cli_owners": 3,
+      "worlds": 1,
+      "complete_archives": 15,
+      "whole_archive_pairs": 8,
+      "world_and_full_package_identity_joins": 8,
+      "final_tick": 177,
+      "policy": "skeletal_bounded_scale",
+      "authored_max_scale_deviation": 0.00001,
+      "core_max_scale_deviation": 0.01,
+      "reference": "Original initialized local scale of every mapped and unmapped RigNode; saved current poses do not replace the reference. Actual final composed scales are retained in Animated and Passive modes.",
+      "metric_note": "Small visual scale changes do not resize metric proxies, COM offsets, mass, inertia or joint anchors.",
+      "creator": "Kay Lousberg",
+      "content_pack": "KayKit Adventurers 1.0",
+      "license": "CC0-1.0",
+      "source_manifest": "examples/physical-character-yard/source-manifest.json",
+      "original_source_identity": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "license_identity": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "retained_original_library": {
+        "nodes": 57,
+        "skin_joints": 41,
+        "takes": 76,
+        "vertices": 7024,
+        "triangles": 6952
+      },
+      "authored_world_identity": {
+        "bytes": 132957,
+        "sha256": "5dd28a1acd5814f900a762047a8cf59396be0d6cd5bd70fb9d09d46583f9ebfd"
+      },
+      "complete_cooked_asset_identity": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "schedule": [
+        "Original Idle36 at tick0, committed through tick6.",
+        "Crossfade to Running_A48 over ticks6–18 in the same world.",
+        "At tick18 crossfade to original varying-scale Death_B25 over12ticks.",
+        "Transfer to Passive at tick23 using two final committed blend poses, with continuing visual source scales at ticks27 and177.",
+        "Require exact complete same-owner and fresh sequential-owner restore/future pairs for animated and passive midpoints."
+      ],
+      "observed_cases": [
+        {
+          "label": "idle-initial",
+          "tick": 0,
+          "clip": 36,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "idle-committed",
+          "tick": 6,
+          "clip": 36,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-7",
+          "tick": 7,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-8",
+          "tick": 8,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-9",
+          "tick": 9,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-10",
+          "tick": 10,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-11",
+          "tick": 11,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-12",
+          "tick": 12,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-13",
+          "tick": 13,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-14",
+          "tick": 14,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-15",
+          "tick": 15,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-16",
+          "tick": 16,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-17",
+          "tick": 17,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-18",
+          "tick": 18,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-19",
+          "tick": 19,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-20",
+          "tick": 20,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-21",
+          "tick": 21,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-22",
+          "tick": 22,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "takeover-after-distinct-committed-tick",
+          "tick": 23,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        },
+        {
+          "label": "passive-mid-crossfade",
+          "tick": 27,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        },
+        {
+          "label": "passive-varying-source-future",
+          "tick": 177,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        }
+      ],
+      "complete_archive_pairs": [
+        {
+          "kind": "run-warm-restore",
+          "left_slot": "run-mid",
+          "right_slot": "run-warm-restored",
+          "bytes": 85961,
+          "sha256": "5a3a9d42b5ea3dfbd8d19dfbc804dc45621f47c0f328547342a5f95ec61472cb"
+        },
+        {
+          "kind": "run-warm-future",
+          "left_slot": "run-future",
+          "right_slot": "run-warm-future",
+          "bytes": 85397,
+          "sha256": "23932caad908bd9cbd3921e05c74495b11590857ac4a92a8ff76c75b2fdbef67"
+        },
+        {
+          "kind": "run-cold-restore",
+          "left_slot": "run-mid",
+          "right_slot": "run-cold-restored",
+          "bytes": 85961,
+          "sha256": "5a3a9d42b5ea3dfbd8d19dfbc804dc45621f47c0f328547342a5f95ec61472cb"
+        },
+        {
+          "kind": "run-cold-future",
+          "left_slot": "run-future",
+          "right_slot": "run-cold-future",
+          "bytes": 85397,
+          "sha256": "23932caad908bd9cbd3921e05c74495b11590857ac4a92a8ff76c75b2fdbef67"
+        },
+        {
+          "kind": "passive-warm-restore",
+          "left_slot": "passive-mid",
+          "right_slot": "passive-warm-restored",
+          "bytes": 107438,
+          "sha256": "f61ded3605d206f23dec4ed3d05887752d32309579481c642dc5dd1b481b652b"
+        },
+        {
+          "kind": "passive-warm-future",
+          "left_slot": "passive-future",
+          "right_slot": "passive-warm-future",
+          "bytes": 119311,
+          "sha256": "bc0f2807052757954c5979cda383c72505c564caa93f4059ea9742e996079f0a"
+        },
+        {
+          "kind": "passive-cold-restore",
+          "left_slot": "passive-mid",
+          "right_slot": "passive-cold-restored",
+          "bytes": 107438,
+          "sha256": "f61ded3605d206f23dec4ed3d05887752d32309579481c642dc5dd1b481b652b"
+        },
+        {
+          "kind": "passive-cold-future",
+          "left_slot": "passive-future",
+          "right_slot": "passive-cold-future",
+          "bytes": 119311,
+          "sha256": "bc0f2807052757954c5979cda383c72505c564caa93f4059ea9742e996079f0a"
+        }
+      ],
+      "aggregate_takeover_momentum": {
+        "source_tick": 22,
+        "native_tick": 23,
+        "source_linear_momentum": [
+          -35.31676572266224,
+          72.9687081304181,
+          -87.5096717986669
+        ],
+        "expected_after_gravity_drag": [
+          -35.25790450259229,
+          61.09471259850173,
+          -87.363822484762
+        ],
+        "actual_native_momentum": [
+          -35.2579069340491,
+          61.09470863915167,
+          -87.36381926270786
+        ],
+        "absolute_per_axis_bound": 0.3485875968269615,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.0029875968269614753,
+        "scope": "Aggregate linear momentum; solver may redistribute individual velocities. No energy-conservation or active-control claim."
+      },
+      "source_scale_ulp_limit": 4,
+      "clock_phase_and_weight_absolute_limit": 2e-15,
+      "saved_scale_witness": "Exact actual-native versus saved local scale arrays for every one of57 RigNodes in all15 archives;2,565 axes without tolerance.",
+      "raw_evidence_identity": {
+        "bytes": 6698006,
+        "sha256": "a3df35e7ed3954bdeaf985b7412b508d6fbe5700f714f6f89932ef8dcfd38d08"
+      },
+      "scope_limit": "Within-Windows byte equality and source-to-native joins; no cross-platform bitwise replay, rendering, controller, active recovery or human-motion-quality inference."
+    }
+  },
+  "independent_read_only_reviews": {
+    "compiler_and_native_artifacts": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 123640,
+        "sha256": "2194793a5b550d95be0ab284e14265582004b98c5dbb76763b92ea9163fb37b7"
+      },
+      "scope": "Whole32 gzip streams and decoded identities,31 selected PE images plus raw core,26 prior test gzip references,3 absent new-target preimages,117 retained parent records,13 unchanged prior images,24 tools,569 compiler and712 CPU input identities; all35 command logs,2,752 literal RPC rows,59 archives and26 complete byte/JSON pairs."
+    },
+    "original_glb_scale_clock_math": {
+      "passed": true,
+      "native_execution": false,
+      "scope": "Read-only independently decoded original GLB float32 scale channels, analytical linear blending and literal source clocks; metadata/archive/raw transcript checks on naturally closed Windows artifacts. No production or public fixture sampler called.",
+      "raw_evidence_identity": {
+        "bytes": 6698006,
+        "sha256": "a3df35e7ed3954bdeaf985b7412b508d6fbe5700f714f6f89932ef8dcfd38d08"
+      },
+      "actual_transcript_calls": 1292,
+      "natural_owners": 3,
+      "source_inputs_checked": 13,
+      "nodes": 57,
+      "takes": 76,
+      "original_GLBuffer_identity": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "observations": 21,
+      "source_scale_axes_checked": 3591,
+      "maximum_scale_ulp_distance": 0,
+      "scale_ulp_limit": 4,
+      "maximum_target_clock_error": 0,
+      "clock_absolute_limit": 2e-15,
+      "maximum_relative_scale_deviation_observed": 0.0000025629981976758256,
+      "relative_envelope": 0.00001,
+      "complete_archives": 15,
+      "whole_byte_pairs": 8,
+      "exact_native_saved_scale_axes": 2565,
+      "world_package_identity_joins": 8,
+      "final_tick": 177,
+      "limitations": [
+        "Scales and clocks independently rederived; original verifier FK/COM/momentum assertions source-reviewed, not all independently reimplemented here.",
+        "No new native workflow, renderer, controlled performance, physical input or cross-platform bitwise equality claim."
+      ]
+    }
+  },
+  "preserved_initial_preparation_failure": {
+    "original_passed": false,
+    "exit_code": 1,
+    "cause": "Required --with-retained217 admission argument was omitted. The runner rejected before preparation; the same immutable runner later admitted the complete retained-consumer recipe.",
+    "cpu_job_started": false,
+    "compiler_or_gpu_started": false,
+    "cache_mutated": false,
+    "source_modified": false,
+    "raw_failure_record_identity": {
+      "bytes": 439,
+      "sha256": "0566d2a62a1aee898e97269928305192685e3686e80c2c32358557037d82f5d4"
+    },
+    "scope": "A file-only invocation failure, distinct from the later actual passing compiler and Windows CPU owners. The original failed record remains unchanged."
+  },
+  "related_linux_evidence": {
+    "path": "docs/evidence/m2-bounded-skeletal-scales.json",
+    "scope": "Linux covers the actual discovery schema36-case check and composed29-native/14-contract suite coverage, with original native1/2 failures retained. Its retained0.0.218 NativeAOT module exercises a separate uniform two-part fixture. No Windows NativeAOT or bounded-scale imported-fullbody C#/AOT is inferred."
+  },
+  "reproduce": {
+    "prerequisites": [
+      "Use the selected compatible Windows simulation binaries and their native runtime dependencies.",
+      "Obtain the unchanged Knight.glb and matching license through the public sample manifest and verify their recorded hashes.",
+      "Use a fresh verifier output directory and an external finite process-tree owner. The public workflow launches sequential native CLI processes; it does not build or render."
+    ],
+    "focused_native_executables": [
+      "build/windows-runtime/bin/poima-physical-rig-bounded-scale-json-test.exe",
+      "build/windows-runtime/bin/poima-runtime-physical-pose-bounded-scale-test.exe",
+      "build/windows-runtime/bin/poima-runtime-physical-bounded-scale-integration-test.exe"
+    ],
+    "original_character_workflow": "python -B tests/physical_character_transitions.py build/windows-runtime/bin/poima.exe --source /path/to/Knight.glb --license /path/to/LICENSE.txt --output build/physical-character-transitions-windows-check-001",
+    "scope": "These public tests/verifier reproduce their focused checks. The complete retained35-command job and read-only artifact reviews have separate recorded scopes; this does not invent an additional public all-in-one runner."
+  },
+  "limitations": [
+    "No GPU rendering, physical mouse/controller input, audio-device, GUI presentation, standalone export, fresh-agent or controlled-performance qualification is included.",
+    "Compilation of selected images does not qualify the entire build cache or unexecuted images. Actual Windows CPU execution is the separate35-command record.",
+    "Compiled CoreCLR physical gameplay remains the uniform two-part analytic fixture. The imported fifteen-part character workflows use native/CLI controls; no fullbody C#/NativeAOT claim.",
+    "No controller/root-motion/IK ownership transfer, active balance, recovery, facial/cloth interaction, arbitrary animated physical resizing, or production humanoid-quality claim.",
+    "Passive proxy coverage, remaining overlap, T-pose-biased neutral response and response tuning remain provisional. Small visual-scale admission does not resolve those quality limits.",
+    "Linux and Windows each retain within-platform continuation evidence; no cross-platform exact replay or universal save determinism is established.",
+    "Original preparation and historical Linux failures remain failed. Passing Windows qualification does not regrade those records or establish Alpha/full-engine completion."
+  ]
+}

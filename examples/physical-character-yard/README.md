@@ -88,8 +88,10 @@ It retains literal requests/responses, 21 full node observations, fifteen
 archives and eight complete archive comparisons. Every saved scale joins the
 actual native node exactly. Independent source arithmetic allows four ULPs;
 this is distinct from the authored relative envelope. The
-[Linux result](../../docs/evidence/m2-bounded-skeletal-scales.json) qualifies
-this selected sequence, not all animation combinations or visual motion quality.
+[Linux result](../../docs/evidence/m2-bounded-skeletal-scales.json) and separate
+[Windows result](../../docs/evidence/m2-bounded-skeletal-scales-windows.json)
+qualify this selected sequence, not all animation combinations or visual motion
+quality.
 
 ## Native acceptance
 
