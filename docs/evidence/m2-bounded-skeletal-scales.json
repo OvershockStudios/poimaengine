@@ -1,0 +1,635 @@
+{
+  "format": "poima.bounded-skeletal-scales.v1",
+  "checkpoint": "0.0.220",
+  "schema_revision": 124,
+  "date": "2026-11-01",
+  "passed": true,
+  "scope": "Linux headless bounded-scale physical binding, ordinary crossfades on one unchanged licensed imported-character world, midblend passive takeover, complete warm/cold save continuation and a separately scoped retained two-part NativeAOT regression. Native suite coverage is composed across preserved attempts.",
+  "source": {
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7219,
+      "sha256": "921525a1007a05728dbe7a61d39e84308cea2e5e1ccc4934eec6e9c64f283e7f"
+    },
+    "include/poima/assets.hpp": {
+      "bytes": 3422,
+      "sha256": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 14413,
+      "sha256": "26c29f4bd5b7a5459712d13219c0f3da92ef9d7cbc605aa32591675b5c4a751c"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 13750,
+      "sha256": "787ebe2353866f414689412a7da1d998bef41ceeecf791a631298c8dc4c859d4"
+    },
+    "src/runtime_physical_pose.hpp": {
+      "bytes": 4984,
+      "sha256": "6bead6a634ef56b9436d3722a89aa1521b34f67b4df2d61748a525ebe809ced6"
+    },
+    "src/runtime_physical_pose.cpp": {
+      "bytes": 28426,
+      "sha256": "173ed0ae491ba527be6001ce62938bd8c49727defc3e1d82c9af126138cecf05"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 33113,
+      "sha256": "e500935ab93fe4b4d9d36330043930e8f577bc3585c7a9eb9431bb1f51f997cd"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 52004,
+      "sha256": "5d79332b50b8eec99f51d6e94651d6eea949187a01a3f1baaa63782ede445965"
+    },
+    "tests/physical_rig_bounded_scale_json_native.cpp": {
+      "bytes": 7038,
+      "sha256": "fc5618a6badd90ebda6c2b3f9889e1cf76b9e845c0c5bb5cf691645deec9f561"
+    },
+    "tests/runtime_physical_pose_bounded_scale_native.cpp": {
+      "bytes": 11724,
+      "sha256": "27f9dc46e5ab0caad9e4997abd916ae5468085e3d6d13c5e6aef82f6f0445a98"
+    },
+    "tests/runtime_physical_bounded_scale_integration_native.cpp": {
+      "bytes": 18067,
+      "sha256": "5e3c8cb59b085153a985a8362d16d928e92d9f39491b8e40b4c4945e1bc065bb"
+    },
+    "tests/physical_character_transitions.py": {
+      "bytes": 25878,
+      "sha256": "89d05a1c14de0a997ff6c1f51f6d13e7a0791ae8beed9b40b912dd536b0cbd42"
+    },
+    "tests/physical_character_native.py": {
+      "bytes": 20536,
+      "sha256": "a0aca2869ef0032c1313b7655913409bc708b06b396a66dfeff9ad34f8dc5ae2"
+    },
+    "examples/physical-character-yard/knight_profile.py": {
+      "bytes": 18739,
+      "sha256": "4207b9a4953d6a81ae7c45287f485fb6bbde9db803b93463197945a3fc2242bb"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    }
+  },
+  "native_image": {
+    "bytes": 38204560,
+    "sha256": "e49ff4de604fcb1c7c256de2f916d46104e02477f71e31d38ef163c5cb1f96de"
+  },
+  "binding": {
+    "policy": "skeletal_bounded_scale",
+    "legacy_default": "rigid_uniform",
+    "unchanged_exact_skeletal_policy": "skeletal_fixed_scale",
+    "admission": "Every actual final composed local scale axis satisfies abs(current-initial) <= max_scale_deviation * initial; reference is its original authored initialization or template-birth sample.",
+    "coefficient": {
+      "required_for_bounded_policy": true,
+      "minimum_exclusive": 0,
+      "maximum_inclusive": 0.01,
+      "sample_value": 1e-05,
+      "forbidden_on_other_policies": true
+    },
+    "semantics": [
+      "All original RigNodes are checked, mapped and unmapped, in Animated and Passive modes. Actual positive source scales are retained without rounding, clamping or normalization.",
+      "Metric COM offsets, proxy shapes, masses, inertia and joint anchors do not resize with visual scale. Logical quaternion chains define rigid axes; full affine bone matrices define origins.",
+      "The original initialized scale reference is reconstructed before saved clocks load. The bounded policy additionally requires exact saved versus reconstructed scale arrays for every RigNode.",
+      "Late source, additive or inertial bound failures reject and restore the enclosing complete batch. Existing root-motion, IK, controller and hierarchy ownership restrictions remain."
+    ],
+    "contract": "docs/PHYSICAL_RIGS.md"
+  },
+  "linux_native_composed_coverage": {
+    "covered_compiled_native_suites": 29,
+    "covered_contract_and_workflow_suites": 14,
+    "single_all_green_43_suite_cohort": false,
+    "composition": "42 unchanged controls passed in original failed attempt1. Attempt3 separately passed the corrected Runtime integration suite, including all four groups, and checked current build metadata. Attempts1 and2 remain failed.",
+    "new_suites": [
+      "physical_rig_bounded_scale_json_native",
+      "runtime_physical_pose_bounded_scale_native",
+      "runtime_physical_bounded_scale_integration_native"
+    ],
+    "runtime_groups": [
+      "Ordinary crossfade, passive scale progression and exact complete cold future",
+      "Nonzero-phase template birth, retirement and immutable original reference",
+      "Later source, inertial and additive bound failure with complete prior-batch rollback",
+      "Forged unmapped saved-scale witness and passive future/ownership rejection"
+    ],
+    "original_attempts": [
+      {
+        "attempt": 1,
+        "original_passed": false,
+        "forced_cleanup": false,
+        "final_children": 0,
+        "raw_report_identity": {
+          "bytes": 245238,
+          "sha256": "161640cbdf0fdd440c57a46bb0367edaeae555ec79e5e570058ae9df5a258c59"
+        },
+        "commands": [
+          {
+            "label": "verify-native-tools",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "build-native",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "native-and-contract-tests",
+            "exit_code": 8,
+            "natural_descendant_closure": false
+          }
+        ]
+      },
+      {
+        "attempt": 2,
+        "original_passed": false,
+        "forced_cleanup": false,
+        "final_children": 0,
+        "raw_report_identity": {
+          "bytes": 18071,
+          "sha256": "34edf2b00b118eddc0a39ae1dedcac35e08601c31d3a0ada7246346434dd31be"
+        },
+        "commands": [
+          {
+            "label": "verify-native-tools",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "build-diagnostic-test",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "diagnostic-runtime-test",
+            "exit_code": 8,
+            "natural_descendant_closure": false
+          }
+        ]
+      },
+      {
+        "attempt": 3,
+        "original_passed": true,
+        "forced_cleanup": false,
+        "final_children": 0,
+        "raw_report_identity": {
+          "bytes": 19637,
+          "sha256": "9ef4565bdeb958e59a89dd24b020d98bbdb87e697eec6b918894c898bdac4785"
+        },
+        "commands": [
+          {
+            "label": "verify-native-tools",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "build-correct-source-oracle",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "runtime-integration",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          },
+          {
+            "label": "descriptor-current",
+            "exit_code": 0,
+            "natural_descendant_closure": true
+          }
+        ]
+      }
+    ],
+    "test_only_correction": {
+      "cause": "The original analytical test expected ideal Float64 authored percentages, but declared ModelAsset channel keys and times are Float32 sampled into double.",
+      "diagnostic_actual": 1.2502500057220458,
+      "original_expected": 1.2502499999999999,
+      "correct_independent_source_expected": 1.2502500057220458,
+      "unchanged_absolute_tolerance": 1e-12,
+      "fixture_key_bits_unchanged": true,
+      "source_key_time_included": true,
+      "all_four_groups_and_state_assertions_retained": true,
+      "production_source_pin_changes": false,
+      "unchanged_production_input_count": 254,
+      "test_source_identities": [
+        {
+          "bytes": 16942,
+          "sha256": "43088c1cd841e0dbc0a36225f6680d3e5ae339ade6cb9d2f051c25748be6dcb9"
+        },
+        {
+          "bytes": 17411,
+          "sha256": "48a0f4533849e2b2a1ae51022c9c59c27b1f2523ff2c050dcc9cc5bf5fb93662"
+        },
+        {
+          "bytes": 18067,
+          "sha256": "5e3c8cb59b085153a985a8362d16d928e92d9f39491b8e40b4c4945e1bc065bb"
+        }
+      ]
+    },
+    "artifact_scope": "Production input fences and incremental build logs show only the Runtime test object/executable rebuilt. No original core archive was separately sealed for a historical before/after byte comparison.",
+    "current_runtime_test_identity": {
+      "bytes": 15850392,
+      "sha256": "bf6da49aae9e9c9e631343462e75ac505cce4d07d6d497cc361bd8a512e110bd"
+    },
+    "current_core_archive_identity": {
+      "bytes": 27074640,
+      "sha256": "72977a71f7a6d685311718388466ba6c21759439954556f83e44562d72827d3f"
+    },
+    "independent_composition_review_identity": {
+      "bytes": 14156,
+      "sha256": "9188e6033d27ded2154d05df35daba524e5120a46260683f6f2995960aa131c6"
+    }
+  },
+  "linux_cpu_workflow": {
+    "passed": true,
+    "raw_owner_report_identity": {
+      "bytes": 14840,
+      "sha256": "c5e4a47fc473b0baa84b77b63a26695e7ab5b3384dc6670895f4fe33b0bceecb"
+    },
+    "forced_cleanup": false,
+    "final_children": 0,
+    "commands": 3,
+    "selected_input_identities_frozen": 479,
+    "schema": {
+      "native_discovery_rpc": 1,
+      "naturally_closed_cli_owners": 1,
+      "validator": "Draft202012Validator",
+      "validator_version": "4.26.0",
+      "cases": 36,
+      "actual_schema_identity": {
+        "bytes": 12169,
+        "sha256": "c28608d2539803185c346da327418fe8bf36edf63073c2ca228fadf3007c7001"
+      },
+      "raw_evidence_identity": {
+        "bytes": 1249533,
+        "sha256": "5ab753a3203212b725b21abaf79e36602751effc55ffd558c1d61eccb3057dcb"
+      },
+      "scope": "Structural authoring policy schema cases, not profile topology/calibration/simulation qualification."
+    },
+    "original_character": {
+      "creator": "Kay Lousberg",
+      "pack": "KayKit Adventurers 1.0",
+      "license": "CC0-1.0",
+      "source_manifest": "examples/physical-character-yard/source-manifest.json",
+      "original_source": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "license_identity": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "original_library": {
+        "nodes": 57,
+        "skin_joints": 41,
+        "takes": 76,
+        "vertices": 7024,
+        "triangles": 6952
+      },
+      "actual_import": {
+        "nodes": 57,
+        "skins": 1,
+        "primitives": 15,
+        "animations": 76,
+        "triangles": 6952,
+        "cooked_vertices": 7962
+      },
+      "complete_cooked_asset_identity": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "authored_world_identity": {
+        "bytes": 132957,
+        "sha256": "7271e997e88a04501e40a8f5e05e7b0abece91aee1791ef552e1b387a19b0f86"
+      },
+      "physical_parts": 15,
+      "physical_joints": 14,
+      "worlds": 1,
+      "rpc_calls": 1292,
+      "observations": 21,
+      "naturally_closed_sequential_cli_owners": 3,
+      "complete_archives": 15,
+      "whole_archive_pairs": 8,
+      "world_and_full_package_identity_joins": 8,
+      "final_tick": 177,
+      "schedule": [
+        "Initialize original Idle36 at tick0; play through tick6.",
+        "Crossfade to original Running_A48 over ticks6–18. Preserve the complete original source library.",
+        "At tick18 crossfade to original Death_B25 over12ticks. Capture two final committed blend poses before passive takeover at tick23.",
+        "Keep source-scale progression through passive midblend tick27 and original varying-source future tick177.",
+        "Restore animated and passive midpoints in the same owner and fresh sequential owners; require full archive and future byte equality."
+      ],
+      "observed_cases": [
+        {
+          "label": "idle-initial",
+          "tick": 0,
+          "clip": 36,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "idle-committed",
+          "tick": 6,
+          "clip": 36,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-7",
+          "tick": 7,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-8",
+          "tick": 8,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-9",
+          "tick": 9,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-10",
+          "tick": 10,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-11",
+          "tick": 11,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-12",
+          "tick": 12,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-13",
+          "tick": 13,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-14",
+          "tick": 14,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-15",
+          "tick": 15,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-16",
+          "tick": 16,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-17",
+          "tick": 17,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "run-crossfade-18",
+          "tick": 18,
+          "clip": 48,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-19",
+          "tick": 19,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-20",
+          "tick": 20,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-21",
+          "tick": 21,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "death-crossfade-22",
+          "tick": 22,
+          "clip": 25,
+          "mode": "animated",
+          "scale_nodes": 57
+        },
+        {
+          "label": "takeover-after-distinct-committed-tick",
+          "tick": 23,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        },
+        {
+          "label": "passive-mid-crossfade",
+          "tick": 27,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        },
+        {
+          "label": "passive-varying-source-future",
+          "tick": 177,
+          "clip": 25,
+          "mode": "passive",
+          "scale_nodes": 57
+        }
+      ],
+      "complete_archive_pairs": [
+        {
+          "kind": "run-warm-restore",
+          "left_slot": "run-mid",
+          "right_slot": "run-warm-restored",
+          "bytes": 85955,
+          "sha256": "c0ccd0a50f92d9ba5fb00619120571b258b914de0d24543887431369984befa3"
+        },
+        {
+          "kind": "run-warm-future",
+          "left_slot": "run-future",
+          "right_slot": "run-warm-future",
+          "bytes": 85386,
+          "sha256": "09c84ffd7b37dc9103cbb98990a08686b5fdbd2c990ecd24c6a0e04ba5233c8d"
+        },
+        {
+          "kind": "run-cold-restore",
+          "left_slot": "run-mid",
+          "right_slot": "run-cold-restored",
+          "bytes": 85955,
+          "sha256": "c0ccd0a50f92d9ba5fb00619120571b258b914de0d24543887431369984befa3"
+        },
+        {
+          "kind": "run-cold-future",
+          "left_slot": "run-future",
+          "right_slot": "run-cold-future",
+          "bytes": 85386,
+          "sha256": "09c84ffd7b37dc9103cbb98990a08686b5fdbd2c990ecd24c6a0e04ba5233c8d"
+        },
+        {
+          "kind": "passive-warm-restore",
+          "left_slot": "passive-mid",
+          "right_slot": "passive-warm-restored",
+          "bytes": 107460,
+          "sha256": "ea3446cc5b3aa04eaa08e71a5ce92b7f8b6d35ba7a94205e10c441822d030b4a"
+        },
+        {
+          "kind": "passive-warm-future",
+          "left_slot": "passive-future",
+          "right_slot": "passive-warm-future",
+          "bytes": 119305,
+          "sha256": "dd1217717659907383d610ac312a4360a3700cd0a5fb2dce9c81be124d8d4766"
+        },
+        {
+          "kind": "passive-cold-restore",
+          "left_slot": "passive-mid",
+          "right_slot": "passive-cold-restored",
+          "bytes": 107460,
+          "sha256": "ea3446cc5b3aa04eaa08e71a5ce92b7f8b6d35ba7a94205e10c441822d030b4a"
+        },
+        {
+          "kind": "passive-cold-future",
+          "left_slot": "passive-future",
+          "right_slot": "passive-cold-future",
+          "bytes": 119305,
+          "sha256": "dd1217717659907383d610ac312a4360a3700cd0a5fb2dce9c81be124d8d4766"
+        }
+      ],
+      "independent_guards": {
+        "scale_ulp_limit": 4,
+        "clock_phase_and_weight_absolute_limit": 2e-15,
+        "source_fk_absolute_limit": 3e-05,
+        "source_metric_com_absolute_limit": 4e-05,
+        "native_saved_scale_equality": "Exact arrays for all57 nodes in each of15 archives; no tolerance."
+      },
+      "takeover_aggregate_momentum": {
+        "source_tick": 22,
+        "native_tick": 23,
+        "source_linear_momentum": [
+          -35.31676572266226,
+          72.96870813041807,
+          -87.50967179866693
+        ],
+        "expected_after_gravity_drag": [
+          -35.25790450259231,
+          61.0947125985017,
+          -87.36382248476203
+        ],
+        "actual_native_momentum": [
+          -35.2579069340491,
+          61.09470863915167,
+          -87.36381926270786
+        ],
+        "absolute_per_axis_bound": 0.3485875968269615,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.0029875968269614753,
+        "scope": "Aggregate linear momentum; solver may redistribute individual velocities. No energy-conservation or active-control claim."
+      },
+      "raw_evidence_identity": {
+        "bytes": 6691936,
+        "sha256": "d622d32597cba7229f060925b3622c4931a5968fbce5abbc401ff00de4e8fe98"
+      }
+    },
+    "retained_native_aot_regression": {
+      "separate_scope": "Unchanged0.0.218 NativeAOT module running the uniform two-part analytic ribbon fixture on the0.0.220 native host; this is not bounded-scale imported-fullbody managed or AOT qualification.",
+      "passed": true,
+      "artifact_engine_version": "0.0.218",
+      "required_features": [
+        "baseline_v7",
+        "physical_rig_v1"
+      ],
+      "services_bytes": 424,
+      "descriptor_identity": {
+        "bytes": 5657,
+        "sha256": "cb71cdb23d14863ed5fa99e504ffeabaa78cc4a6485b97be94c6aca7dc5799c8"
+      },
+      "native_library_identity": {
+        "bytes": 1628008,
+        "sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845"
+      },
+      "rpc_calls": 450,
+      "complete_typed_fields": 33,
+      "recorded_field_observations": 85,
+      "native_callback_boundary_observations": 75,
+      "complete_archives": 11,
+      "whole_archive_pairs": 5,
+      "naturally_closed_cli_owners": 2,
+      "dynamic_code_supported": false,
+      "dynamic_code_compiled": false,
+      "complete_pair_cases": [
+        "same-owner-animated-cold-restore",
+        "duplicate-activation-whole-rollback",
+        "later-tick-whole-rollback",
+        "fresh-process-whole-restoration",
+        "fresh-process-whole-future-continuation"
+      ],
+      "artifact_provenance": "The existing native image and its source/artifact identities were reused. This run neither republishes it nor regrades any historical publisher failure.",
+      "raw_evidence_identity": {
+        "bytes": 3334030,
+        "sha256": "70d27b0d78a3741a4d245540f423efefd7e0142b868f5e1eec82d15512479303"
+      }
+    },
+    "independent_read_only_review": {
+      "identity": {
+        "bytes": 7937,
+        "sha256": "acf0b7fd73b4766a9ab828008ae4874d96979584b99f5bf4d32f78ef1c8af7b1"
+      },
+      "raw_source_decoder": "Separate original GLB Float32 accessor decoding, analytical linear scale interpolation and crossfade clock schedule; no engine or public fixture sampler supplies expected scales.",
+      "observed_scale_axes": 3591,
+      "maximum_scale_ulp_distance": 0,
+      "declared_scale_ulp_limit": 4,
+      "maximum_target_clock_error": 0.0,
+      "declared_clock_absolute_limit": 2e-15,
+      "exact_native_saved_scale_axes": 2565,
+      "maximum_relative_scale_deviation_observed": 2.5629981976758256e-06,
+      "authored_relative_bound": 1e-05,
+      "artifact_checks": "All literal1,743 RPC rows across6 naturally closed CLI owners,26 complete archives,13 whole-byte pairs,8 world/package joins and479 selected input identities were checked. Actual discovery schema was independently revalidated for all36 cases.",
+      "scope_limit": "This independent review rederives source scales/clocks; the original verifier supplies separate FK, COM and momentum assertions. It is not another native execution or a public benchmark."
+    }
+  },
+  "reproduce": {
+    "prerequisites": [
+      "Configured Linux simulation build with tests; valid native runtime dependencies.",
+      "Obtain the unchanged Knight.glb and matching license using the public sample manifest; check the recorded source identities.",
+      "Use a fresh verifier output directory and an external process-tree owner with finite timeout. The verifier launches sequential native CLI owners, not a compiler or renderer."
+    ],
+    "native_build": "cmake --build build/linux-game --target poima poima-physical-rig-bounded-scale-json-test poima-runtime-physical-pose-bounded-scale-test poima-runtime-physical-bounded-scale-integration-test --parallel 2",
+    "focused_native_tests": "ctest --test-dir build/linux-game -R '^(physical_rig_bounded_scale_json_native|runtime_physical_pose_bounded_scale_native|runtime_physical_bounded_scale_integration_native)$' --output-on-failure",
+    "original_character_workflow": "python3 -B tests/physical_character_transitions.py build/linux-game/poima --source /path/to/Knight.glb --license /path/to/LICENSE.txt --output build/physical-character-transitions-check-001",
+    "evidence": "The public native tests and transition verifier are runnable source. The recorded36-case schema review and composed owner supervision are distinct retained qualification artifacts, not additional claimed public runner commands."
+  },
+  "limitations": [
+    "No Windows or new native Vulkan/GPU qualification is included. Prior219 fixed-scale Windows/render evidence has its own scope and does not qualify this policy.",
+    "No controlled performance or representative character-quality benchmark; elapsed times from shared-load ownership are not engine throughput measurements.",
+    "No fullbody C#/NativeAOT, controller/root-motion/IK transfer, active balance, recovery, facial/cloth interaction or human-motion-quality claim.",
+    "The original passive profile retains provisional tuning, proxy overlaps and T-pose-biased neutral response; accepting small source scale variation does not solve those quality limits.",
+    "No new physical resizing, arbitrary animated scale support, universal save/cross-platform determinism, Alpha completion or full-engine completion claim.",
+    "Failed original native attempts and their records remain failed; the composed evidence must not be presented as one all-green43-suite run."
+  ]
+}

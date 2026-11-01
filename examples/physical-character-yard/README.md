@@ -55,6 +55,42 @@ scale channels are constant within each take but differ on 28 nodes. The test
 does not switch or crossfade them, average a scale, or claim that every take
 supports this binding. A one-ULP sampled scale change is a failure.
 
+## Composing original clips
+
+The strict profile above intentionally remains fixed-scale. For small original
+scale differences in a shared playback world, make an explicit profile variant
+with `pose_frame: "skeletal_bounded_scale"` and `max_scale_deviation: 0.00001`.
+Keep its fifteen bodies, fourteen joints and source artwork unchanged.
+
+That policy preserves actual per-tick source scales in animation and after
+passive takeover. It does not normalize keys or resize physical proxies. The
+bound applies to every final composed node, so source keys fitting the envelope
+do not guarantee that every additive layer or inertial transition will fit.
+Out-of-bound samples reject the complete batch. The
+[physical-frame contract](../../docs/PHYSICAL_RIGS.md#bounded-source-scale-composition)
+describes initialization, errors, exact saved-scale witnesses and ownership.
+Controller handoff, active balance and recovery remain separate systems.
+
+With simulation enabled in a matching 0.0.220 build, run the shared-world
+workflow under an external process-tree supervisor:
+
+```sh
+python3 -B tests/physical_character_transitions.py /path/to/poima \
+  --source /path/to/Knight.glb --license /path/to/LICENSE.txt \
+  --output build/physical-character-transitions
+```
+
+The output must be new. This test preserves the complete original library,
+crossfades Idle → Running_A → Death_B, transfers the last committed blended pose
+to physics, and keeps original scale sampling active afterward. Each fresh
+engine process opens the same world only after the preceding writer closes.
+It retains literal requests/responses, 21 full node observations, fifteen
+archives and eight complete archive comparisons. Every saved scale joins the
+actual native node exactly. Independent source arithmetic allows four ULPs;
+this is distinct from the authored relative envelope. The
+[Linux result](../../docs/evidence/m2-bounded-skeletal-scales.json) qualifies
+this selected sequence, not all animation combinations or visual motion quality.
+
 ## Native acceptance
 
 Use an engine build exposing `PhysicalRig.pose_frame = "skeletal_fixed_scale"`.

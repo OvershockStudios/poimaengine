@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <sstream>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -88,7 +89,7 @@ bool same_pose(const RuntimePhysicalRigPose& a,const RuntimePhysicalRigPose& b) 
 }
 RuntimePhysicalRigPose body_pose(const std::string& name,const P& p) { RuntimePhysicalRigPose result;result.part=name;result.position=p.position;result.rotation=p.rotation;return result; }
 void check_local(const RuntimeTransform& local) { (void)physical_rig::canonical_pose({local.position,local.rotation});(void)metric(local_matrix(local.position,local.rotation,local.scale)); }
-// SkeletalFixedScale uses logical quaternion-chain axes, not an orthogonal fit
+// Both skeletal policies use logical quaternion-chain axes, not an orthogonal fit
 // of the sheared visual matrix. These are explicit admission bounds, not hidden
 // scale conditioning: original positive local scale values are retained exactly.
 constexpr double skeletal_min_scale=1e-8,skeletal_max_scale=1e8,skeletal_max_condition=1e6;
@@ -131,10 +132,14 @@ RuntimePhysicalRigPoseBinding::RuntimePhysicalRigPoseBinding(const RuntimeDefini
     const physical_rig::Definition& physical,const World& world,const Local& local)
     :RuntimePhysicalRigPoseBinding(definition,std::move(rig),physical,world,local,physical_rig::PoseFramePolicy::RigidUniform) {}
 RuntimePhysicalRigPoseBinding::RuntimePhysicalRigPoseBinding(const RuntimeDefinition& definition,std::string rig,
-    const physical_rig::Definition& physical,const World& world,const Local& local,physical_rig::PoseFramePolicy policy)
-    :rig_(std::move(rig)),definition_(physical),policy_(policy) {
-    need(policy_==physical_rig::PoseFramePolicy::RigidUniform||policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale,
-        "Unknown physical pose frame policy.");
+    const physical_rig::Definition& physical,const World& world,const Local& local,physical_rig::PoseFramePolicy policy,double max_scale_deviation)
+    :rig_(std::move(rig)),definition_(physical),policy_(policy),max_scale_deviation_(max_scale_deviation) {
+    need(policy_==physical_rig::PoseFramePolicy::RigidUniform||policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale||
+        policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale,"Unknown physical pose frame policy.");
+    if(policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale)
+        need(std::isfinite(max_scale_deviation_)&&max_scale_deviation_>0&&max_scale_deviation_<=physical_rig::max_skeletal_scale_deviation,
+            "Bounded skeletal scale requires a finite deviation in(0,.01].");
+    else need(max_scale_deviation_==0,"Only bounded skeletal scale accepts a nonzero deviation.");
     need(bool(world)&&bool(local),"Physical pose binding requires world/local providers.");physical_rig::validate(definition_);
     std::map<std::string,const RuntimeEntityDefinition*> entities;
     for(const auto& entity:definition.entities)need(!entity.id.empty()&&entities.emplace(entity.id,&entity).second,"Physical binding requires unique entity identities.");
@@ -175,7 +180,7 @@ RuntimePhysicalRigPoseBinding::RuntimePhysicalRigPoseBinding(const RuntimeDefini
     const auto parent_world=wrapper_parent_.empty()?identity_matrix():world(wrapper_parent_);(void)metric(parent_world);
     const auto verify=[&](const Matrix4& actual,const Matrix4& expected) {for(std::size_t k=0;k<16;++k)need(std::abs(actual[k]-expected[k])<=1e-7,"Physical binding providers disagree on final local/world hierarchy.");};
     verify(wrapper_world,multiply(parent_world,local_matrix(wrapper_local.position,wrapper_local.rotation,wrapper_local.scale)));
-    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale) {
+    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale||policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale) {
         local_scales_.resize(nodes_.size());
         for(const auto node:order_) {
             const auto current=local(nodes_[node]);check_skeletal_local(current);local_scales_[node]=current.scale;
@@ -196,7 +201,7 @@ RuntimePhysicalRigPoseFrame RuntimePhysicalRigPoseBinding::sample(std::uint64_t 
 }
 RuntimePhysicalRigPoseFrame RuntimePhysicalRigPoseBinding::sample(std::uint64_t tick,const World& world,const Local& local) const {
     need(bool(world)&&tick<=max_tick,"Physical final pose requires a provider and valid tick.");
-    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale)return sample_skeletal(tick,world,local);
+    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale||policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale)return sample_skeletal(tick,world,local);
     const auto wrapper=metric(world(rig_));frozen_scale(wrapper,wrapper_scale_);
     RuntimePhysicalRigPoseFrame frame;frame.tick=tick;frame.wrapper=body_pose(rig_,wrapper.pose);
     std::vector<Metric> bones; bones.reserve(nodes_.size());
@@ -219,7 +224,7 @@ RuntimePhysicalRigPoseFrame RuntimePhysicalRigPoseBinding::sample_skeletal(std::
     std::vector<Matrix4> worlds(nodes_.size());std::vector<P> bones(nodes_.size());
     for(const auto node:order_) {
         const auto current=local(nodes_[node]);check_skeletal_local(current);
-        need(current.scale==local_scales_[node],"Skeletal physical local scale changed after initialization.");
+        validate_local_scale(node,current.scale);
         const auto& parent=parents_[node]<0?wrapper_world:worlds[static_cast<std::size_t>(parents_[node])];
         const auto parent_rotation=parents_[node]<0?wrapper.pose.rotation:bones[static_cast<std::size_t>(parents_[node])].rotation;
         auto& actual=worlds[node];actual=world(nodes_[node]);(void)checked_affine_inverse(actual);
@@ -262,7 +267,7 @@ std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved
     std::span<const RuntimePhysicalRigPose> solved,const World& world,const Local& local) const {
     need(state_.root_bone_to_wrapper.has_value()&&bool(world)&&bool(local),"Physical publication requires a captured root reference and current providers.");
     need(solved.size()==definition_.parts.size(),"Physical publication part population differs.");
-    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale)return solved_skeletal(solved,world,local);
+    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale||policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale)return solved_skeletal(solved,world,local);
     // Validate every sampled profile before calculating any output. Root applies
     // the returned array atomically; this function never edits live locals.
     (void)sample(state_.current?state_.current->tick:0,world);
@@ -304,7 +309,7 @@ std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved
         const auto parent_rotation=parents_[node]<0?wrapper_rotation:logical[static_cast<std::size_t>(parents_[node])];
         const auto mapped=node_parts_.find(node);
         auto value=local(nodes_[node]);check_skeletal_local(value);
-        need(value.scale==local_scales_[node],"Skeletal physical local scale changed after initialization.");
+        validate_local_scale(node,value.scale);
         if(mapped!=node_parts_.end()) {
             const auto& desired=bones[mapped->second];
             value.position=affine_point(checked_affine_inverse(parent),desired.position);
@@ -320,6 +325,19 @@ std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved
         }
     }
     return result;
+}
+void RuntimePhysicalRigPoseBinding::validate_local_scale(std::size_t node,const V& current) const {
+    const auto& initial=local_scales_.at(node);
+    if(policy_==physical_rig::PoseFramePolicy::SkeletalFixedScale) {
+        need(current==initial,"Skeletal physical local scale changed after initialization.");return;
+    }
+    need(policy_==physical_rig::PoseFramePolicy::SkeletalBoundedScale,"Local scale check requires a skeletal frame policy.");
+    for(std::size_t axis=0;axis<3;++axis)if(std::abs(current[axis]-initial[axis])>max_scale_deviation_*initial[axis]) {
+        std::ostringstream message;message.precision(std::numeric_limits<double>::max_digits10);
+        message<<"Skeletal physical scale exceeds max_scale_deviation at node "<<node<<" ("<<nodes_.at(node)<<"), axis "<<axis
+            <<": initial="<<initial[axis]<<", current="<<current[axis]<<", bound="<<max_scale_deviation_<<'.';
+        throw std::invalid_argument(message.str());
+    }
 }
 void RuntimePhysicalRigPoseBinding::validate_state(const RuntimePhysicalRigPoseState& state) const {
     need(!state.previous||state.current,"Physical history has a previous frame without its current frame.");

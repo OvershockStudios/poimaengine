@@ -54,9 +54,7 @@
             }
         }
         for(const auto& e:d.entities)if(e.physical_rig) {
-            poima::physical_rig::validate(e.physical_rig->profile);
-            require(e.physical_rig->pose_frame==physical_rig::PoseFramePolicy::RigidUniform ||
-                e.physical_rig->pose_frame==physical_rig::PoseFramePolicy::SkeletalFixedScale,"PhysicalRig pose-frame policy is invalid.");
+            poima::physical_rig::validate(*e.physical_rig);
             require(e.animation_rig.has_value() && e.animation_rig->model && !e.rig_node,
                 "PhysicalRig requires an ordinary AnimationRig wrapper.");
             require(!e.collider && !e.character && !e.mesh_collider,"PhysicalRig wrapper cannot also own an ordinary collider/controller.");
@@ -98,7 +96,7 @@
         if(!d.physical_rig)return;
         require(!physical_owners.contains(d.id),"Physical rig owner already exists.");
         auto owner=std::make_unique<PhysicalOwner>();
-        owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local(),d.physical_rig->pose_frame);
+        owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local(),d.physical_rig->pose_frame,d.physical_rig->max_scale_deviation);
         const auto poses=owner->binding->record_final(tick,physical_world(),physical_local());
         std::span<const JPH::BodyID> ids;
         if(restored) {

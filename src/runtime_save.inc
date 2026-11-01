@@ -581,7 +581,17 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     for(const auto& [id,saved]:locals) {
         const auto& actual=s.registry.get<Node>(s.find(id)).local;
-        require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) && save_near(saved.scale,actual.scale),"Saved local transform does not match reconstructed state/content.");
+        bool exact_physical_scale=false;
+        if(physical_content) {
+            const auto& node_definition=s.topology->definitions.at(id);
+            if(node_definition.rig_node) {
+                const auto& rig=s.topology->definitions.at(node_definition.rig_node->rig);
+                exact_physical_scale=rig.physical_rig && rig.physical_rig->pose_frame==poima::physical_rig::PoseFramePolicy::SkeletalBoundedScale;
+            }
+        }
+        require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) &&
+            (exact_physical_scale ? saved.scale==actual.scale : save_near(saved.scale,actual.scale)),
+            "Saved local transform does not match reconstructed state/content.");
     }
     std::map<std::string,AudioEmitter> emitters;
     for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);

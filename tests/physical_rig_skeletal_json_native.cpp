@@ -58,8 +58,8 @@ int main() {
         need(schema.at("additionalProperties")==false && schema.at("required")==Json::array({"initial_mode","joints","parts","root"}),
             "Root schema must retain exactly the four original required fields.");
         const auto& policy=schema.at("properties").at("pose_frame");
-        need(policy.at("type")=="string" && policy.at("enum")==Json::array({"rigid_uniform","skeletal_fixed_scale"}),
-            "Schema must advertise the exact two policy strings.");
+        need(policy.at("type")=="string" && policy.at("enum")==Json::array({"rigid_uniform","skeletal_fixed_scale","skeletal_bounded_scale"}),
+            "Schema must advertise both retained policies and the new bounded policy.");
         need(!policy.contains("default"),"Schema must not insert authored policy defaults.");
         need(schema.at("properties").at("parts").at("maxItems")==64 &&
             schema.at("properties").at("joints").at("maxItems")==63,"Unrelated profile bounds changed.");

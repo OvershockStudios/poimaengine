@@ -157,7 +157,8 @@ work. No public command returns a Passive rig to Animated mode.
 
 ### Skeletal frame selection
 
-`pose_frame` accepts `rigid_uniform` or `skeletal_fixed_scale`. Omission selects
+`pose_frame` accepts `rigid_uniform`, `skeletal_fixed_scale` or
+`skeletal_bounded_scale`. Omission selects
 `rigid_uniform`; canonical serialization omits this default to preserve earlier
 configuration bytes. The default keeps its existing arithmetic and bounds.
 
@@ -189,6 +190,67 @@ The frozen local-scale baseline derives from original content and birth state
 before a saved playback cursor is restored. It is not re-frozen from a passive
 snapshot. The C# 424-byte services extension is unchanged; native C++ consumers
 must rebuild against changed configuration headers.
+
+### Bounded source-scale composition
+
+Use `skeletal_bounded_scale` when original clips or their composition change
+local scales slightly. Add these two fields to the complete `PhysicalRig`
+profile; every part, joint and other required field remains required:
+
+```json
+{
+  "pose_frame": "skeletal_bounded_scale",
+  "max_scale_deviation": 0.00001
+}
+```
+
+The bound is dimensionless, finite, greater than zero and at most `0.01`.
+For every axis of every original node, admission requires
+`abs(current - initial) <= max_scale_deviation * initial`. The reference is the
+actual initialized animation sample used to construct the binding, including
+original birth configuration. It is immutable and is not recaptured from a
+saved cursor or a later animation. Both earlier policies forbid an authored
+`max_scale_deviation` field. `skeletal_fixed_scale` still rejects a one-ULP
+change; omission still selects the earlier uniform frame and canonical bytes.
+
+The runtime retains the actual composed scale values. It does not round them,
+normalize source keys, clamp a rejected value or drop an animation layer.
+Admission checks every final node, including nodes without physical proxies,
+after crossfades, layers and inertial corrections. Source key extrema alone
+cannot prove that a composition fits: additive layers and inertial corrections
+can exceed their endpoints. A rejected sample identifies its node, axis,
+reference, current value and bound. The complete fixed-tick batch rolls back;
+several earlier ticks in that batch do not remain applied.
+
+The same rules apply in Animated and Passive modes. Existing animation clocks
+continue sampling; solved physics overrides mapped positions and rotations,
+while every node retains its actual sampled scale. There is no hidden freeze at
+takeover. Bone origins use full affine transforms and rigid axes use logical
+quaternion chains, with the same positive-scale and conditioning bounds above.
+
+Rigid proxies remain metric. Their shape dimensions, COM offsets, mass,
+inertia and joint anchors do not resize with visual scale. This policy admits
+small visual-scale variation; it does not implement deforming collision bodies
+or establish proxy quality for every permitted composition. Authors must select
+an appropriate envelope and calibrated proxies for their content.
+
+Cold restore derives the baseline from original content and birth state before
+restoring animation clocks, layers and inertial history. Those existing saved
+states reconstruct the current values; no separate mutable scale buffer is
+added. Every saved `RigNode` scale on a bounded rig must equal its reconstructed
+value exactly, including unmapped nodes. Altering a redundant saved scale by one
+ULP rejects instead of silently replacing it with reconstructed data. Other
+policies retain their earlier save validation. The C# 424-byte services extension
+is unchanged; native C++ configuration consumers must rebuild.
+
+The [Linux checks](evidence/m2-bounded-skeletal-scales.json) cover declared
+boundaries, independent affine/COM publication, crossfades, continued passive
+scales, complete cold saves, template lifecycle, additive/inertial overshoot
+rollback and forged saved-scale rejection. They retain the earlier failed
+float-precision oracle attempts separately. The original-character workflow
+uses three existing takes in one world; it does not establish every possible
+layer, rate, interruption or exporter combination. Windows and rendered
+qualification for this frame are separate scopes.
 
 ### Imported full-body specimen
 

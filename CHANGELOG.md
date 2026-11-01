@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.220
+
+- Add an explicit bounded-scale physical skeleton frame that retains actual
+  composed source scales through animation blending and passive publication.
+- Keep strict fixed-scale behavior and metric physics proxies unchanged; reject
+  samples outside the authored envelope instead of clamping or repairing them.
+- Require exact reconstructed scale witnesses when loading bounded-scale rigs,
+  preserving the existing complete-state rollback and save ownership boundary.
+
 ## 0.0.219
 
 - Add an opt-in physical skeleton frame that preserves initialized nonuniform

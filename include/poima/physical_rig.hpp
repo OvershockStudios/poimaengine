@@ -43,12 +43,19 @@ inline constexpr std::uint32_t max_node=9999;
 // SkeletalFixedScale uses logical quaternion-chain bone axes with affine world
 // origins, preserving initialized positive local scale arrays exactly. Changing
 // any such scale after binding rejects; this is not animated-scale support.
-enum class PoseFramePolicy { RigidUniform, SkeletalFixedScale };
+// SkeletalBoundedScale retains actual composed local scales, allowing a declared
+// relative deviation from their immutable initialized values. Proxy geometry,
+// mass, inertia and metric offsets remain fixed; this does not resize physics.
+enum class PoseFramePolicy { RigidUniform, SkeletalFixedScale, SkeletalBoundedScale };
+inline constexpr double max_skeletal_scale_deviation=.01;
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;
     bool initially_passive=false;
     PoseFramePolicy pose_frame=PoseFramePolicy::RigidUniform;
+    // Required positive bound only for SkeletalBoundedScale, otherwise zero.
+    // Per axis: abs(current-initial)<=max_scale_deviation*initial. No clamping.
+    double max_scale_deviation=0;
 };
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;
@@ -72,6 +79,7 @@ inline constexpr double max_relative_angular_velocity=2*max_angular_velocity,gra
 void validate(const Part& part);
 void validate(const Joint& joint);
 void validate(const Definition& definition);
+void validate(const Configuration& configuration);
 struct MassProperties {
     double volume=0,mass=0,density=0;
     Vec3 center_of_mass{},principal_inertia{}; // Shape-local COM and kg*m^2, X/Y/Z.

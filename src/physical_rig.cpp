@@ -189,6 +189,16 @@ void validate(const Definition& d) {
         while(at!=d.root){const auto parent=parents.find(at);require(parent!=parents.end()&&++count<d.parts.size(),"Physical rig joints must form one connected acyclic rooted tree.");at=parent->second;}
     }
 }
+void validate(const Configuration& c) {
+    validate(c.profile);
+    require(c.pose_frame==PoseFramePolicy::RigidUniform || c.pose_frame==PoseFramePolicy::SkeletalFixedScale ||
+        c.pose_frame==PoseFramePolicy::SkeletalBoundedScale,"Physical rig pose-frame policy is invalid.");
+    if(c.pose_frame==PoseFramePolicy::SkeletalBoundedScale)
+        require(std::isfinite(c.max_scale_deviation) && c.max_scale_deviation>0 &&
+            c.max_scale_deviation<=max_skeletal_scale_deviation,
+            "Bounded skeletal scale needs a finite positive max_scale_deviation no greater than .01.");
+    else require(c.max_scale_deviation==0,"Only bounded skeletal scale accepts max_scale_deviation.");
+}
 PassiveResponse evaluate_passive(const Joint& j,Pose parent,Pose child,Vec3 relative_omega) {
     validate(j);parent=canonical_pose(parent);child=canonical_pose(child);vector(relative_omega,max_relative_angular_velocity,"Relative angular velocity exceeds finite +/-2e4 rad/s per axis.");
     const auto relative=multiply(conjugate(parent.rotation),child.rotation);const auto e=energy(j,relative);

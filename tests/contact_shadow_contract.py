@@ -61,7 +61,7 @@ class ContactShadowContract(unittest.TestCase):
     def test_schema_and_focused_discovery_keep_complete_branches(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 123)
+        self.assertEqual(d['schema_revision'], 124)
         variants = d['components']['Light']['oneOf']
         self.assertEqual(len(variants), 3)
         for branch in variants:

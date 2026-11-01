@@ -1,8 +1,37 @@
 # Implementation status
 
-Updated 2026-11-01 for **0.0.219**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-01 for **0.0.220**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.220 adds an explicit `skeletal_bounded_scale` physical frame for
+small source-scale changes during animation composition. Every original node
+retains its actual composed scale within the authored positive relative bound;
+metric physics proxies and the earlier strict policies remain unchanged.
+[The frame contract](PHYSICAL_RIGS.md#bounded-source-scale-composition) defines
+initialization, passive sampling and rejection. Additive layers and inertial
+corrections are checked after composition, and an out-of-bound tick rejects the
+complete batch. Cold saves additionally require exact reconstructed scale
+witnesses for every affected `RigNode`. The C# services prefix is unchanged;
+native C++ configuration consumers must rebuild.
+
+[Linux qualification](evidence/m2-bounded-skeletal-scales.json) composes 42 passing
+controls from the original failed cohort with the separately passing corrected
+Runtime suite and descriptor check. The original two failed test attempts remain
+failed: their scale oracle assumed ideal double-precision keys rather than the
+fixture's actual float32 keys and key times. No tolerances or state comparisons
+were relaxed. Thirty-six cases independently validate the actual emitted schema.
+
+The original Knight then passes a 1,292-request shared-world workflow: Idle to
+Run to Death_B crossfades, passive takeover during the second fade, 21 complete
+node observations, fifteen archives and eight complete warm/cold archive pairs
+across three sequential engine owners. Independent source sampling reproduces
+all 3,591 observed scale axes exactly; saved scale witnesses also match every
+node. The declared source-arithmetic guard remains four ULPs. A separate unchanged
+two-part Native AOT consumer passes its 450-request, 33-field workflow on the
+same Linux host. This does not qualify imported-character Native AOT, Windows
+execution, rendering, active control or representative performance for the new
+frame.
 
 Version 0.0.219 adds an opt-in `skeletal_fixed_scale` physical frame for imported
 skeletons with initialized positive nonuniform local scales. It preserves those

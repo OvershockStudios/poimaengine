@@ -31,7 +31,11 @@ struct RuntimePhysicalRigLocalUpdate { std::string entity;RuntimeTransform local
 // origins define rigid proxy frames; visual matrices can contain shear. World
 // column norms have the same bounds; ||inverse(A)||inf<=3e8 and
 // ||A||inf*||inverse(A)||inf<=1e6. Wrapper/external frames stay positive-uniform.
-// Sampling this policy requires the current Local callback on each invocation.
+// SkeletalBoundedScale preserves actual final composed local scales within
+// abs(current-initial)<=max_scale_deviation*initial for EVERY node, including
+// Passive mode. The reference is the original initialized sample, not a saved
+// cursor. Rigid proxies/mass/inertia/anchors do not resize with visual scale.
+// Sampling either skeletal policy requires the current Local callback.
 class RuntimePhysicalRigPoseBinding {
 public:
     using World=std::function<Matrix4(const std::string&)>;
@@ -39,7 +43,7 @@ public:
     RuntimePhysicalRigPoseBinding(const RuntimeDefinition&,std::string rig,
         const physical_rig::Definition&,const World&,const Local&);
     RuntimePhysicalRigPoseBinding(const RuntimeDefinition&,std::string rig,
-        const physical_rig::Definition&,const World&,const Local&,physical_rig::PoseFramePolicy);
+        const physical_rig::Definition&,const World&,const Local&,physical_rig::PoseFramePolicy,double max_scale_deviation=0);
     const std::string& rig() const noexcept { return rig_; }
     const physical_rig::Definition& definition() const noexcept { return definition_; }
     const std::vector<std::string>& node_entities() const noexcept { return nodes_; }
@@ -61,11 +65,12 @@ private:
     std::string rig_,wrapper_parent_;
     physical_rig::Definition definition_;
     physical_rig::PoseFramePolicy policy_=physical_rig::PoseFramePolicy::RigidUniform;
+    double max_scale_deviation_=0;
     std::vector<std::string> nodes_;
     std::vector<int> parents_;
     std::vector<std::size_t> order_;
     std::vector<double> scales_;
-    // SkeletalFixedScale immutable constructor data, derived from the actual
+    // Both skeletal policies use immutable constructor data, derived from actual
     // initialized sampled locals. Never inferred from a saved passive pose or
     // normalized to unit/uniform scale. No provider/registry lifetime retained.
     std::vector<physical_rig::Vec3> local_scales_;
@@ -78,6 +83,7 @@ private:
     RuntimePhysicalRigPoseFrame sample_skeletal(std::uint64_t,const World&,const Local&) const;
     std::vector<RuntimePhysicalRigLocalUpdate> solved_skeletal(
         std::span<const RuntimePhysicalRigPose>,const World&,const Local&) const;
+    void validate_local_scale(std::size_t,const physical_rig::Vec3&) const;
     void validate_state(const RuntimePhysicalRigPoseState&) const;
 };
 } // namespace poima

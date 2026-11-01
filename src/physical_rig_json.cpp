@@ -73,15 +73,21 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 
 Configuration parse_configuration(const nlohmann::json& value) {
     need(value.is_object(),"PhysicalRig needs an object.");
-    const bool has_policy=value.contains("pose_frame");
-    need(value.size()==4u+(has_policy?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
-        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame.");
+    const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation");
+    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation.");
     Configuration result;
     if(has_policy) {
         const auto policy=text(value.at("pose_frame"));
-        need(policy=="rigid_uniform" || policy=="skeletal_fixed_scale","PhysicalRig pose_frame must be rigid_uniform or skeletal_fixed_scale.");
-        result.pose_frame=policy=="rigid_uniform" ? PoseFramePolicy::RigidUniform : PoseFramePolicy::SkeletalFixedScale;
+        need(policy=="rigid_uniform" || policy=="skeletal_fixed_scale" || policy=="skeletal_bounded_scale",
+            "PhysicalRig pose_frame must be rigid_uniform, skeletal_fixed_scale or skeletal_bounded_scale.");
+        result.pose_frame=policy=="rigid_uniform" ? PoseFramePolicy::RigidUniform :
+            policy=="skeletal_fixed_scale" ? PoseFramePolicy::SkeletalFixedScale : PoseFramePolicy::SkeletalBoundedScale;
     }
+    if(result.pose_frame==PoseFramePolicy::SkeletalBoundedScale) {
+        need(has_bound,"PhysicalRig skeletal_bounded_scale requires max_scale_deviation.");
+        result.max_scale_deviation=number(value.at("max_scale_deviation"));
+    } else need(!has_bound,"PhysicalRig max_scale_deviation is only valid for skeletal_bounded_scale.");
     result.profile.root=text(value.at("root"));const auto mode=text(value.at("initial_mode"));
     need(mode=="animated" || mode=="passive","PhysicalRig initial_mode must be animated or passive.");result.initially_passive=mode=="passive";
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
@@ -104,13 +110,11 @@ Configuration parse_configuration(const nlohmann::json& value) {
         joint.rest_stiffness=number(entry.at("rest_stiffness"));joint.rest_damping=number(entry.at("rest_damping"));joint.soft_limit_stiffness=number(entry.at("soft_limit_stiffness"));
         joint.soft_limit_zone=number(entry.at("soft_limit_zone"));joint.max_torque=number(entry.at("max_torque"));joint.friction_torque=number(entry.at("friction_torque"));result.profile.joints.push_back(std::move(joint));
     }
-    validate(result.profile);return result;
+    validate(result);return result;
 }
 
 nlohmann::json configuration_json(const Configuration& value) {
-    validate(value.profile);
-    need(value.pose_frame==PoseFramePolicy::RigidUniform || value.pose_frame==PoseFramePolicy::SkeletalFixedScale,
-        "PhysicalRig native pose-frame policy is invalid.");
+    validate(value);
     Json parts=Json::array(),joints=Json::array();
     for(const auto& p:value.profile.parts)parts.push_back({{"name",p.name},{"node",p.node},{"body_in_bone",pose_json(p.body_in_bone)},{"shape",shape_json(p.shape)},
         {"mass",p.mass},{"friction",p.friction},{"restitution",p.restitution},{"linear_damping",p.linear_damping},{"angular_damping",p.angular_damping}});
@@ -120,6 +124,9 @@ nlohmann::json configuration_json(const Configuration& value) {
     Json result={{"root",value.profile.root},{"initial_mode",value.initially_passive?"passive":"animated"},{"parts",std::move(parts)},{"joints",std::move(joints)}};
     // Omit the default policy to preserve legacy canonical content bytes.
     if(value.pose_frame==PoseFramePolicy::SkeletalFixedScale)result["pose_frame"]="skeletal_fixed_scale";
+    if(value.pose_frame==PoseFramePolicy::SkeletalBoundedScale) {
+        result["pose_frame"]="skeletal_bounded_scale";result["max_scale_deviation"]=value.max_scale_deviation;
+    }
     return result;
 }
 
@@ -141,8 +148,16 @@ nlohmann::json configuration_schema() {
     auto result=object({{"root",name},{"initial_mode",{{"enum",{"animated","passive"}}}},
         {"parts",{{"type","array"},{"minItems",1},{"maxItems",max_parts},{"items",part}}},
         {"joints",{{"type","array"},{"maxItems",max_joints},{"items",joint}}}});
-    result["properties"]["pose_frame"]={{"type","string"},{"enum",{"rigid_uniform","skeletal_fixed_scale"}},
-        {"description","Optional rigid_uniform (omitted canonical default) or skeletal_fixed_scale. The latter preserves fixed initialized positive local scales and uses logical quaternion-chain axes with affine bone origins; changing any local scale after binding rejects."}};
+    result["properties"]["pose_frame"]={{"type","string"},{"enum",{"rigid_uniform","skeletal_fixed_scale","skeletal_bounded_scale"}},
+        {"description","Optional rigid_uniform (omitted canonical default), skeletal_fixed_scale or skeletal_bounded_scale. Skeletal frames use logical quaternion-chain axes and actual affine origins. Fixed scale rejects every local scale change; bounded scale retains actual composed values within an explicitly declared relative envelope. Metric physics proxies never resize."}};
+    result["properties"]["max_scale_deviation"]={{"type","number"},{"exclusiveMinimum",0},{"maximum",max_skeletal_scale_deviation},
+        {"description","Required only for skeletal_bounded_scale. Every initialized positive local scale axis admits abs(current-initial)<=max_scale_deviation*initial, on all nodes in Animated and Passive modes. Actual composed values are retained without clamping; source keys alone do not bound layers or inertial overshoot."}};
+    result["oneOf"]=Json::array({
+        {{"properties",{{"pose_frame",{{"enum",{"rigid_uniform","skeletal_fixed_scale"}}}}}},
+            {"not",{{"required",Json::array({"max_scale_deviation"})}}}},
+        {{"properties",{{"pose_frame",{{"const","skeletal_bounded_scale"}}}}},
+            {"required",Json::array({"pose_frame","max_scale_deviation"})}}
+    });
     result["description"]="Calibrated physical proxies and passive joints on an AnimationRig. Names/nodes are unique; root and joints form one connected tree. Joint intervals contain zero and span at least .01 rad; soft zones cannot overlap or exceed cone extents. Frames/neutral rotations must be unit quaternions. Dimensions/offsets are metres independent of model units; mass is kg and inertia uses explicit uniform primitives. Native rig/bone ownership and current-pose compatibility are additionally validated.";
     return result;
 }
