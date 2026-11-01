@@ -37,13 +37,20 @@ The current CoreCLR consumer and retained earlier consumer keep their original
 compiled bytes. The selected Windows compiler cohort contains 28 PE images and
 core; thirteen other cache images retain their earlier identities.
 
-The full-body workflows are headless. Rendered human motion/contact quality,
-active balance, controller transfer, full-body C#/Native AOT and representative
-performance remain unqualified. A first GPU diagnostic matched the source
-silhouette but failed its stale-palette visibility control; that attempt remains
-failed. Completed Vulkan records below retain their 0.0.218 fixture scopes. The
-sample's remaining proxy overlaps and T-pose neutral bias are explicit tuning
-limits, not evidence of production humanoid quality.
+Separate [Windows Vulkan qualification](evidence/m2-skeletal-physical-rigs-rendering.json)
+passes eleven captures. Eight diagnostic frames isolate the original weighted
+right-arm mesh, retaining the complete skeleton and physics, and compare its
+source-derived skin/projection against actual pixels. Fifteen complete archive
+pairs and four whole-BMP pairs cover capture immutability, warm/cold restoration
+and future continuation. Three separately authored original-material views keep
+all fifteen original meshes; visual review shows the character falling onto the
+steps and settling. Still images do not establish motion/contact quality. The
+first full-mesh diagnostic remains failed after its stale-palette visibility
+control found no exposed witnesses; the isolated-arm test does not regrade it.
+Active balance, controller transfer, full-body C#/Native AOT and representative
+performance remain unqualified. The sample's remaining proxy overlaps and
+T-pose neutral bias are explicit tuning limits, not evidence of production
+humanoid quality.
 
 Version 0.0.218 adds opt-in [physical rigs](PHYSICAL_RIGS.md): calibrated primitive
 proxies, explicit mass and inertia, joint limits, soft response and neutral-posture

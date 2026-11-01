@@ -103,8 +103,14 @@ The [Linux qualification](../../docs/evidence/m2-skeletal-physical-rigs.json) an
 [Windows qualification](../../docs/evidence/m2-skeletal-physical-rigs-windows.json)
 each pass both original-take workflows, with four naturally closed engine
 processes, eighteen archives and eight complete warm/cold archive comparisons.
-Source geometry/math and headless execution do not establish visual quality. Rendered
-licensed-character contact/motion, hands/feet/accessories, active balance,
+Separate [Windows Vulkan observations](../../docs/evidence/m2-skeletal-physical-rigs-rendering.json)
+include eight isolated original right-arm diagnostics and three complete
+original-material character views. Four whole-BMP pairs match after warm/cold
+restoration and continued simulation. The arm diagnostics retain all original
+nodes and bodies, but do not test every drawable's pixels. Visual review shows
+the Knight falling onto the steps and settling; still images and source
+geometry/math do not establish motion quality. Production contact/motion,
+hands/feet/accessories, active balance,
 stand-up recovery, controller handoff, animation blending, Native AOT and
 representative performance require separate evidence. Current controller,
 root-motion and IK ownership restrictions remain in force. The analytic ribbon

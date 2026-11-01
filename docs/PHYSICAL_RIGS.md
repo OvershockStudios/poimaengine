@@ -9,11 +9,13 @@ physical poses then drive the render hierarchy.
 
 The initial 0.0.218 integration has bounded native, CLI, CoreCLR and complete-save
 qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
-checks. The opt-in fixed-scale frame additionally has a licensed full-body
-[Linux workflow](evidence/m2-skeletal-physical-rigs.json). Earlier
-[evidence](evidence/m2-physical-rigs.json) covers separate procedural fixtures;
-its Windows Vulkan result does not establish full-body rendering. Production
-humanoid motion/contact quality, active balance and recovery remain separate.
+checks. The opt-in fixed-scale frame additionally has licensed full-body
+[Linux](evidence/m2-skeletal-physical-rigs.json) and
+[Windows](evidence/m2-skeletal-physical-rigs-windows.json) workflows, plus selected
+[Vulkan observations](evidence/m2-skeletal-physical-rigs-rendering.json). Earlier
+[evidence](evidence/m2-physical-rigs.json) covers separate procedural fixtures.
+Production humanoid motion/contact quality, active balance and recovery remain
+separate.
 
 ## Author a profile
 
@@ -219,11 +221,21 @@ CLI owners. The first verifier attempt remains failed after requesting a compact
 projection and then indexing detailed parts; explicit detail flags correct the
 verifier without changing engine bounds or the gameplay assertions.
 
-This full-body result is Linux headless. The earlier Windows/Vulkan captures use
-the two-part analytic ribbon. A retained two-part Native AOT consumer separately
-passes on the 0.0.219 Linux host; that does not qualify full-body Native AOT,
-rendered humanoid quality, active control, controller transfer or representative
-performance.
+The [Windows CPU workflow](evidence/m2-skeletal-physical-rigs-windows.json) also
+passes both original takes. Separate
+[Windows Vulkan checks](evidence/m2-skeletal-physical-rigs-rendering.json) retain
+eleven actual captures: eight isolated original right-arm views with independent
+source skin/projection checks, and three complete original-material character
+views. The isolated mesh keeps all original nodes and physical bodies; it is an
+inspection fixture, not a whole-character pixel oracle. Four whole-BMP pairs
+match through warm/cold restore and future continuation. Visual review confirms
+visible original materials and articulated poses on the steps, without
+establishing motion quality. The first full-mesh diagnostic remains failed
+because its stale-palette control had no exposed witnesses.
+
+A retained two-part Native AOT consumer separately passes on the 0.0.219 Linux
+host; that does not qualify full-body Native AOT, production humanoid quality,
+active control, controller transfer or representative performance.
 
 ## Joint behavior
 
