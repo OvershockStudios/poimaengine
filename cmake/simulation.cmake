@@ -22,6 +22,8 @@ FetchContent_Declare(jolt
 FetchContent_MakeAvailable(jolt)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/jolt_character_ids.cmake")
 poima_patch_jolt_character_ids("${jolt_SOURCE_DIR}")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/jolt_owner_state.cmake")
+poima_patch_jolt_owner_state("${jolt_SOURCE_DIR}")
 if(MINGW)
     # Jolt 5.4 relies on a transitive type_traits include removed by newer
     # libc++. Supply the standard header without modifying the pinned source.
