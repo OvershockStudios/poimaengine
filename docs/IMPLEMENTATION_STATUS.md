@@ -1,8 +1,41 @@
 # Implementation status
 
-Updated 2026-10-29 for **0.0.216**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-31 for **0.0.217**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.217 adds opt-in [procedural-sky environment lighting](ENVIRONMENT_IBL.md)
+with diffuse convolution, roughness-prefiltered reflections and a split-sum BRDF
+lookup. Its 581,600-byte full texel profile is cached by gradient, reused across
+gain/exposure/camera changes and released on disable. Resource preparation is
+synchronous; local reflections, geometry-aware GI and continuous asynchronous
+sky updates remain open. Dedicated Inspector controls remain additional work.
+
+[Qualification](evidence/m2-environment-ibl.json) covers 162 Vulkan captures across
+forward 1×/4× and deferred 1× on both laptop GPUs, 102 independent radiance oracles
+and 54 whole-image controls. Linux and Windows each pass six authoring/persistence
+methods with 229 recorded requests and thirteen Client world owners. Complete
+serial/two-worker bake equality and retained native/lighting checks also pass.
+A separate read-only review compares all 64 retained images and complete capture
+records with their original 0.0.211 results. Its original monitor remains failed
+after indexing an optional field; both native producers passed. The first IBL
+capture attempt also remains failed after an invalid copied foreground identity;
+only that fixture identity was changed for the successful runs. These are small
+correctness fixtures. Concurrent Unity development prevents a controlled
+performance claim from their timing observations.
+
+The optional [Poima.Ai package](../packages/ai/README.md) adds bounded cone/yaw/pitch
+sight, native closest-hit occlusion and explicit last-seen memory. The compiled
+[Perception Yard](../examples/perception-yard/README.md) passes the stronger
+independent verifier on Linux headless and Windows CoreCLR: each run has 176
+requests, all 55 typed fields, 42 observations, nine complete checkpoints and
+five whole-archive byte pairs across rollback, warm/cold restore and continuation.
+All four memory timestamps are predicted from native tick receipts and analytic
+visibility. Eight synthetic managed groups separately pass 392 checks; they are
+not native evidence. The original output-directory setup failure and earlier
+narrower verifier result remain preserved. Hearing, cover/squad behavior, sample
+Native AOT, rendered/physical interaction and production scale remain open.
+[Evidence](evidence/m2-npc-perception.json) distinguishes those scopes.
 
 Version 0.0.216 adds opt-in [directional contact-hardening shadows](SHADOWS.md#directional-contact-hardening).
 Authored emitter size controls bounded spatial filtering; existing filter defaults
@@ -3352,7 +3385,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. Rendering selects the default nine-tap reference or opt-in fractional comparison filter; the latter has bounded directional-character checks on one GPU. GPU occlusion and continuous shadowed replay are checked against independent observations. Per-drawable casting and PBR receiving are independently selectable, with default-true omission. Caching, physical penumbras, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
 
-- Default procedural sky in new projects: editable linear colors, horizon falloff and directional Sun disk, shared by captures, player and desktop. Inspector settings use the native schema and guarded transactions; existing worlds retain their background. This is an artistic background, without atmospheric scattering, IBL, clouds or day/night simulation. [Sky contract](LIGHTING.md#procedural-sky) and [0.0.30 evidence](evidence/m2-procedural-sky.json): 44 captures and 59 GUI actions per laptop GPU.
+- Default procedural sky in new projects: editable linear colors, horizon falloff and directional Sun disk, shared by captures, player and desktop. Inspector settings use the native schema and guarded transactions; existing worlds retain their background. The background is artistic, without atmospheric scattering, clouds or day/night simulation. Optional [sky IBL](ENVIRONMENT_IBL.md) is enabled separately. [Sky contract](LIGHTING.md#procedural-sky) and [0.0.30 evidence](evidence/m2-procedural-sky.json): 44 captures and 59 GUI actions per laptop GPU.
 
 - Authored directional/point/spot lights, ambient fill and exposure, resolved headless inspection, and frozen runtime settings with moving hierarchical light poses. The development renderer supports 1,024 enabled lights with conservative clustered assignment and complete all-light fallback on overflow. Seventeen clustered/reference capture pairs match exactly on each laptop GPU; HDR, lighting, profiler, player and native viewport regressions pass. Eight affected Linux headless contract suites also pass. GI and representative game-scale performance remain unfinished. [Clustered-light evidence](evidence/m2-clustered-lighting.json). [Lighting contract and evidence](LIGHTING.md).
 

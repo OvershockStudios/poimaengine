@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.217
+
+- Add opt-in procedural-sky diffuse/specular environment lighting, shared by
+  forward, deferred and first-person materials with bounded cached resources.
+- Add an optional compiled NPC sight and last-seen-memory package, with a
+  Perception Yard sample using native occlusion queries and saved scalar state.
+- Qualify both laptop GPUs, complete retained image comparisons and Linux/Windows
+  CoreCLR gameplay/save continuation; preserve original failed test attempts.
+
 ## 0.0.216
 
 - Add opt-in directional contact-hardening shadows with authored emitter size,
