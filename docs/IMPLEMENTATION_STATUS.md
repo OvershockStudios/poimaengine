@@ -32,10 +32,19 @@ analytic ribbon, with independent skin/projection occupancy checks, nine complet
 archive pairs and three whole-BMP pairs across warm/cold restore and continuation.
 All captured submissions retire with zero renderer validation errors. Visual
 review confirms the simple ribbon's bend and deformation; this does not establish
-production humanoid motion, active control, Native AOT or representative
+production humanoid motion, active control or representative
 performance. Original failed Linux cohorts, managed-wire attempts, the Windows
 live-census monitor and the pre-GPU emissive-recipe rejection retain their failed
 verdicts.
+
+A separate [Linux Native AOT run](evidence/m2-physical-rigs-native-aot.json)
+passes the same 450-request, 33-field gameplay workflow, eleven complete archives
+and five whole-byte pairs. The loaded native export reports dynamic code support
+and compilation disabled. Its original publisher exited zero, but the publication
+supervisor rejected an adopted zero-exit descendant; that attempt remains failed.
+The finished artifact was independently admitted and executed under a naturally
+closed owner. Windows AOT, standalone export and clean-machine delivery for this
+physical gameplay workflow remain separate checks.
 
 Version 0.0.217 adds opt-in [procedural-sky environment lighting](ENVIRONMENT_IBL.md)
 with diffuse convolution, roughness-prefiltered reflections and a split-sum BRDF

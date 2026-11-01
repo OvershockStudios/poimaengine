@@ -1,0 +1,282 @@
+{
+  "format": "poima.evidence.physical-rigs-native-aot.v1",
+  "engine_version": "0.0.218",
+  "date": "2026-11-01",
+  "passed": true,
+  "scope": "Separate Linux x86_64 NativeAOT artifact admission and real native gameplay execution. The original publication supervisor remains failed; no standalone exported-game or Windows AOT qualification.",
+  "sources": {
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 21119,
+      "sha256": "51c56d2956dd4aa818758b023cec0a03052b0af9e6c5eb8a8f66e7aec2fe30f0"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 6880,
+      "sha256": "9136022d3d3727eea6e763c06417a059238a6530a1b914c3e2d0fbfa81de5974"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7605,
+      "sha256": "1c79da830867eac624aa46a74c40eff0f33f1d887d464ff6733c3a303b358485"
+    },
+    "managed/Poima.Gameplay/PhysicalRig.cs": {
+      "bytes": 14226,
+      "sha256": "c7949873b0c78fd8877bea4172bfeb876adf5809e5f238ae05eca98c20c5023a"
+    },
+    "tests/managed_physical_gameplay_contract.py": {
+      "bytes": 36227,
+      "sha256": "5fcfa820cd70829a1aa677fdc6e19ad03141af3d07fee6b118175fb4b3442662"
+    },
+    "tests/managed_physical_gameplay/Game.cs": {
+      "bytes": 3369,
+      "sha256": "f040d60eace67db9582e9ebcc806073743e2e2178fa84efb6613c3f8f75ff73f"
+    },
+    "tests/managed_physical_gameplay/Poima.ManagedPhysicalGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    }
+  },
+  "native_engine": {
+    "platform": "Linux x86_64 headless",
+    "identity": {
+      "bytes": 38113056,
+      "sha256": "c0723d73f207e82a55557aa2bf3710a25a66799a3ff1666537ccea56fcac15c4"
+    },
+    "runtime_descriptor": {
+      "bytes": 1032,
+      "sha256": "12971fe26c05e1252aed7ab3272d103ccd4213a345374fae874a1ed4aae91d81"
+    },
+    "services_epoch": 7,
+    "services_bytes": 424
+  },
+  "artifact": {
+    "format": "poima.native-gameplay",
+    "version": 2,
+    "engine_version": "0.0.218",
+    "target_os": "Linux",
+    "target_arch": "x86_64",
+    "descriptor_sha256": "cb71cdb23d14863ed5fa99e504ffeabaa78cc4a6485b97be94c6aca7dc5799c8",
+    "library_sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845",
+    "required_features": [
+      "baseline_v7",
+      "physical_rig_v1"
+    ],
+    "services_bytes": 424,
+    "state_bytes": 256,
+    "typed_fields": 33,
+    "inventoried_files": [
+      {
+        "path": "Poima.NativeGame.so",
+        "size": 1628008,
+        "sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845",
+        "role": "library"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+        "size": 1116,
+        "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 76623,
+        "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+        "size": 1116,
+        "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 76623,
+        "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-LICENSE.txt",
+        "size": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+        "size": 21435,
+        "sha256": "24b88db7395a5633d1dac1ab0b699dc502594689f3c0f63c78d1c46a0f593c62",
+        "role": "notice"
+      }
+    ],
+    "notice_version": "10.0.12",
+    "library_identity": {
+      "bytes": 1628008,
+      "sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845"
+    }
+  },
+  "compilation": {
+    "dotnet_sdk": "10.0.401",
+    "runtime_and_native_aot_packages": "10.0.12",
+    "warnings": 0,
+    "reused_sdk": {
+      "bytes": 241152,
+      "sha256": "67bf32b8080f31cc85d8ae37727a36bde6eac910768fdb9cbe64ab8fd4104214"
+    },
+    "game_il": {
+      "prior": {
+        "bytes": 7680,
+        "sha256": "2218662d7b0da9228f0ab65b5d71c6c56ecd950650e12a5f24f1ab23cd20b6c4"
+      },
+      "published_intermediate": {
+        "bytes": 7680,
+        "sha256": "c0eb0085ffd5ee60f4a9626bde337e8523b7e2b32dcdbf1ee9d0378660c40512"
+      },
+      "identical": false
+    },
+    "game_source": "tests/managed_physical_gameplay/Game.cs",
+    "input_fence": {
+      "unchanged_after_publication": true,
+      "selected_files": 931
+    },
+    "scope": "The publisher rebuilt the original game source with the unchanged qualified SDK. The new intermediate game DLL differs from the earlier CoreCLR DLL; exact old-game-IL reuse is not claimed."
+  },
+  "publication_attempt": {
+    "passed": false,
+    "publisher_exit_code": 0,
+    "natural_descendant_closure": false,
+    "adopted_zero_exit_descendants": 1,
+    "forced_cleanup": false,
+    "final_children": [],
+    "observed_groups_absent": true,
+    "owner": {
+      "bytes": 22712,
+      "sha256": "51b2b52dd49de60692731932796d856455e9788e5cd058cdb0a5c876fa1b6274"
+    },
+    "stdout": {
+      "bytes": 3751,
+      "sha256": "a8e28f2c4ea3b7c35c585bfd238936a0268ba597b73c26865fbdf1f0ca847d74"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cause": "The strict supervisor rejected an adopted descendant even though its wait status was zero and the original process group closed without forced cleanup. The publisher had emitted its artifact and exited zero. This unsuccessful owner is not rescored as passed; the artifact was independently admitted and executed later."
+  },
+  "execution": {
+    "passed": true,
+    "backend": "native_aot",
+    "dynamic_code": {
+      "dynamic_code_compiled": false,
+      "dynamic_code_supported": false
+    },
+    "requests": 450,
+    "typed_fields": 33,
+    "observations": 85,
+    "native_boundary_comparisons": 75,
+    "complete_archives": 11,
+    "whole_archive_pairs": [
+      {
+        "label": "same-owner-animated-cold-restore",
+        "bytes_equal": true,
+        "complete_archive_equal": true,
+        "exclusions": [],
+        "identity": {
+          "bytes": 10257,
+          "sha256": "dcb04547d4ab596359713d68d4994e37c91419316e0b421d588e5524f00148ec"
+        }
+      },
+      {
+        "label": "duplicate-activation-whole-rollback",
+        "bytes_equal": true,
+        "complete_archive_equal": true,
+        "exclusions": [],
+        "identity": {
+          "bytes": 12603,
+          "sha256": "d4732817274dbc743bf2c2224c297fe434e3608a6aa272dca5c539a1b323abb1"
+        }
+      },
+      {
+        "label": "later-tick-whole-rollback",
+        "bytes_equal": true,
+        "complete_archive_equal": true,
+        "exclusions": [],
+        "identity": {
+          "bytes": 12602,
+          "sha256": "3db1bc16554986074e9954bf068bc3dc91bdfb7fa8c1fbca0a7de6bb5d54f4f3"
+        }
+      },
+      {
+        "label": "fresh-process-whole-restoration",
+        "bytes_equal": true,
+        "complete_archive_equal": true,
+        "exclusions": [],
+        "identity": {
+          "bytes": 15145,
+          "sha256": "c7eef59f542d8b300af142b629fb45fa050b34ca9c86f2e79e2b24b12ed0763f"
+        }
+      },
+      {
+        "label": "fresh-process-whole-future-continuation",
+        "bytes_equal": true,
+        "complete_archive_equal": true,
+        "exclusions": [],
+        "identity": {
+          "bytes": 15042,
+          "sha256": "e57bf6f61e5fa32090450ee680a3cf724745ed857c22b481047745a56b2671a1"
+        }
+      }
+    ],
+    "native_world_owners": 2,
+    "all_native_owners_natural": true,
+    "external_owner_natural": true,
+    "external_owner_forced_cleanup": false,
+    "external_owner_final_children": [],
+    "evidence": {
+      "bytes": 3333535,
+      "sha256": "f96b422595ee0e4916f59fff3859e45c17ac38d68beaddc42021b2fe4a563c0b"
+    },
+    "owner": {
+      "bytes": 7336,
+      "sha256": "46791caff69cc71244429127e274d3dd93d3264e7cd735d1181c7ba38e7f15c4"
+    },
+    "momentum_oracle": {
+      "authored_masses": [
+        3.0,
+        1.0
+      ],
+      "impulse": [
+        1.0,
+        0.5,
+        0.0
+      ],
+      "applications": [
+        "root",
+        "tip",
+        "root"
+      ],
+      "dt": 0.016666666666666666,
+      "gravity": [
+        0.0,
+        -9.81,
+        0.0
+      ],
+      "linear_damping": 0.05,
+      "expected": [
+        2.9975,
+        0.8452949999999999,
+        0.0
+      ],
+      "actual": [
+        2.997499942779541,
+        0.8452950119972229,
+        0.0
+      ],
+      "tolerance": 2e-05
+    }
+  },
+  "limits": [
+    "Two-part procedural rig; not humanoid motion or representative performance.",
+    "Exact archive equality is within this NativeAOT run; no masked cross-backend save comparison.",
+    "Original publication process-closure qualification failed and remains failed.",
+    "No NativeAOT reload/unload, standalone export/relocation, Windows AOT, clean-machine installation or full Alpha qualification.",
+    "Existing publisher writes source-local intermediate caches outside the supervisor output quota; original sources and selected tools/packages were checked unchanged."
+  ]
+}

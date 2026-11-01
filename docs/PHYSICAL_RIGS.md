@@ -399,8 +399,13 @@ two-part analytic ribbon. Independent CPU skinning/projection checks silhouette
 bounds and deep foreground occupancy; nine complete-archive pairs establish
 capture purity and continuation, and three whole-BMP pairs compare restored and
 future poses. The original render attempt remains failed after authoring rejected
-an invalid emissive value before any GPU capture. Native AOT for this workflow,
-production humanoid motion and representative performance remain unqualified.
+an invalid emissive value before any GPU capture. A separate
+[Linux Native AOT execution](evidence/m2-physical-rigs-native-aot.json) passes
+the complete compiled-game workflow with dynamic code disabled. The publication
+supervisor's adopted-descendant failure remains failed; independent artifact
+admission and native execution use a separate naturally closed owner. Windows
+AOT, standalone export, production humanoid motion and representative performance
+remain unqualified for this physical-rig consumer.
 See the [evidence](evidence/m2-physical-rigs.json) and
 [implementation status](IMPLEMENTATION_STATUS.md).
 
@@ -431,6 +436,19 @@ python3 tests/managed_physical_gameplay_contract.py /path/to/poima --hostfxr /pa
 This checks 33 typed fields, native callback observations, literal repeated
 impulses, failed-batch restoration and complete warm/cold save continuation.
 It retains raw evidence and requires natural closure of its engine children.
-Run it under an owned CI process tree and timeout. Its separate Native AOT
-descriptor mode retains the same gameplay assertions; availability of that mode
-does not itself qualify a published Native AOT artifact.
+Run it under an owned CI process tree and timeout. The separate Native AOT
+descriptor mode retains the same gameplay assertions:
+
+```sh
+python3 scripts/publish_native_gameplay.py --project tests/managed_physical_gameplay/Poima.ManagedPhysicalGame.csproj --type Poima.Tests.PhysicalGame --dotnet /path/to/dotnet10/dotnet --rid linux-x64 --engine-version 0.0.218 --output build/physical-aot-check-001/artifact --work build/physical-aot-check-001/work
+python3 tests/managed_physical_gameplay_contract.py /path/to/poima --native-descriptor build/physical-aot-check-001/artifact/native-gameplay.json --output build/physical-aot-check-001/verification
+```
+
+The publisher needs a supported matching-host .NET 10 SDK, Native AOT packages
+and native linker prerequisites; see [native gameplay](NATIVE_GAMEPLAY.md).
+All three output directories must be new. Publication rebuilds the game source;
+it does not promise identical IL to an earlier CoreCLR build. The verifier admits
+the complete descriptor, payload inventory and typed schema before loading the
+native export, then checks actual callbacks, rollback and cold continuation.
+Whole-archive equality is checked within each backend's run; CoreCLR and Native
+AOT archives have different backend/library identities.
