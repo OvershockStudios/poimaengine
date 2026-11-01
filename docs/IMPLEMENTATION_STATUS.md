@@ -1,8 +1,49 @@
 # Implementation status
 
-Updated 2026-11-01 for **0.0.218**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-01 for **0.0.219**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.219 adds an opt-in `skeletal_fixed_scale` physical frame for imported
+skeletons with initialized positive nonuniform local scales. It preserves those
+exact scales and original affine origins, uses logical quaternion-chain axes for
+rigid proxies, and recovers solved translations through full parent-affine
+transforms. The omitted/default frame retains the earlier uniform-scale behavior.
+Later local-scale changes reject; this does not admit arbitrary scale animation,
+controllers, root motion or IK on physical owners.
+
+[Linux qualification](evidence/m2-skeletal-physical-rigs.json) passes 40 selected
+CTest checks in one cohort and the original licensed
+[Physical Character Yard](../examples/physical-character-yard/README.md) workflow.
+Separate Idle and Running_A worlds preserve the complete 76-take Knight library,
+compare all 57 nodes with original source FK after six playing ticks, transfer
+15 bodies to native physics, apply an offset hit and verify fall, settling and
+wake on stairs or a slope. The 758-request workflow retains eighteen complete
+archives and eight whole-byte pairs across warm/cold restore and future
+continuation, with four naturally closed CLI owners. Independent saved-pose
+history checks cover COM and angular finite-difference velocities; the first
+solver tick checks aggregate linear momentum with gravity and drag. A failed
+verifier attempt omitted detailed parts in its query; its original verdict
+remains failed.
+
+The same Linux host also passes the retained 0.0.218 Native AOT consumer's
+450-request, 33-field workflow and five complete-archive pairs. That consumer
+uses the earlier two-part uniform-scale fixture, not the imported humanoid.
+[Windows qualification](evidence/m2-skeletal-physical-rigs-windows.json) separately
+passes 31 sequential checks: 26 compiled native tests, one three-test publisher
+check, CLI, CoreCLR, retained-game and full-body workflows. The original humanoid
+again passes 758 requests, eighteen archives and eight complete archive pairs.
+The current CoreCLR consumer and retained earlier consumer keep their original
+compiled bytes. The selected Windows compiler cohort contains 28 PE images and
+core; thirteen other cache images retain their earlier identities.
+
+The full-body workflows are headless. Rendered human motion/contact quality,
+active balance, controller transfer, full-body C#/Native AOT and representative
+performance remain unqualified. A first GPU diagnostic matched the source
+silhouette but failed its stale-palette visibility control; that attempt remains
+failed. Completed Vulkan records below retain their 0.0.218 fixture scopes. The
+sample's remaining proxy overlaps and T-pose neutral bias are explicit tuning
+limits, not evidence of production humanoid quality.
 
 Version 0.0.218 adds opt-in [physical rigs](PHYSICAL_RIGS.md): calibrated primitive
 proxies, explicit mass and inertia, joint limits, soft response and neutral-posture
@@ -11,12 +52,13 @@ physics; localized impulses and solved-bone publication share the native runtime
 CLI inspection and an optional 424-byte C# extension expose the same state.
 Earlier service prefixes and absent-feature save layouts remain supported.
 
-The initial profile requires a rigid uniform-scale rig with separate ownership
-from character controllers, root motion, IK and descendant ordinary colliders.
-It supplies passive takeover, rather than active balance or recovery. General
-save upgrades reject physical snapshots. Imported nonuniform-scale rigs,
-controller transfer, active reactions and dedicated editor tools remain required
-work toward the production character workflow.
+The omitted/default frame requires a rigid uniform-scale rig. Both frames keep
+physical ownership separate from character controllers, root motion, IK and
+descendant ordinary colliders. They supply passive takeover; active balance,
+recovery and coordinated controller transfer remain additional work. General
+save upgrades reject physical snapshots. Variable-scale animation, active
+reactions and dedicated editor tools remain required work toward the production
+character workflow.
 
 [Qualification](evidence/m2-physical-rigs.json) covers native momentum, final skin
 palettes, complete cold-save continuation and lifecycle rollback. Linux composes

@@ -13,9 +13,9 @@ template<class State,class Checkpoint>void save_physical_final_history(const Sta
         // actual current wrapper/bone COM poses. Never rewrite saved history or
         // substitute instantaneous Jolt velocities for finite differences.
         auto verification=*owner.binding;verification.restore(row.pose);
-        (void)verification.record_final(s.tick,s.physical_world());
+        (void)verification.record_final(s.tick,s.physical_world(),s.physical_local());
         if(passive) {
-            verification.capture_passive_reference(s.physical_world());
+            verification.capture_passive_reference(s.physical_world(),s.physical_local());
             const auto& actual=*verification.state().root_bone_to_wrapper;const auto& expected=*row.pose.root_bone_to_wrapper;
             require(save_near(actual.position,expected.position) && save_near(actual.rotation,expected.rotation),
                 "Physical saved root reference differs from the actual final-pose calibration.");

@@ -173,7 +173,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     }
     const Json hit_region={{"oneOf",hit_variants},{"description","Immutable query-only region; owner is self or an ancestor. Unique owner/name pairs and at most 4096 regions include disabled members. Local spheres, boxes and Y capsules use exact affine poses; no physics body or collision response."}};
     auto physical_rig_schema=physical_rig::configuration_schema();
-    physical_rig_schema["description"]="Frozen physical profile on an AnimationRig owner. Part nodes refer to the same model's local indices and require matching RigNode entities; joint parents must be model ancestors. No separate asset or editor-only rig state.";
+    physical_rig_schema["description"]="Frozen physical profile on an AnimationRig owner. Part nodes refer to the same model's local indices and require matching RigNode entities; joint parents must be model ancestors. Optional pose_frame selects rigid_uniform (default) or skeletal_fixed_scale with immutable initialized local scales and logical quaternion-chain axes. No separate asset or editor-only rig state.";
     const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
@@ -217,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 122}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 123}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

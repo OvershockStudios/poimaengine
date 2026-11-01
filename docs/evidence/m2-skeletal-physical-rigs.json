@@ -1,0 +1,468 @@
+{
+  "format": "poima.skeletal-physical-rigs.v1",
+  "checkpoint": "0.0.219",
+  "date": "2026-11-01",
+  "passed": true,
+  "scope": "Linux headless qualification of opt-in fixed-scale skeletal binding, an unchanged licensed fifteen-part imported character, complete warm/cold saves and a retained two-part NativeAOT regression. Windows, rendering and production humanoid quality are outside this record.",
+  "source": {
+    "include/poima/physical_rig.hpp": {
+      "bytes": 6654,
+      "sha256": "bff218a9ff5692fa4a2c46045593f33562def78494b3516403917ab872c5b791"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 12218,
+      "sha256": "ccde582ad0b8f46bea88fa206cfb2035851828b7995173f019505e9ec04f5c21"
+    },
+    "src/runtime_physical_pose.hpp": {
+      "bytes": 4535,
+      "sha256": "65edf71c2ba2f202bf66ede8be64334d396ec19dc806627a43de50fe0c0184d8"
+    },
+    "src/runtime_physical_pose.cpp": {
+      "bytes": 26860,
+      "sha256": "6d414beab271a1d17d01acb9dd0b2dd6e4dd8d8952405b5b7b090a721970ac25"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 33320,
+      "sha256": "42d2fad9d0f989b7b312854f427112da187bb541f88103f735bee1f7a453bb4c"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 11315,
+      "sha256": "b26655226ce5192c35e6879f4d6c5ea63629256d8b14c5df1fe09ee446803b2b"
+    },
+    "tests/physical_rig_skeletal_json_native.cpp": {
+      "bytes": 4979,
+      "sha256": "c117d4c3b5177971c376394a89a8f8ced291b14f46a04871e7527a64639219ea"
+    },
+    "tests/runtime_physical_pose_skeletal_native.cpp": {
+      "bytes": 24905,
+      "sha256": "4a7776261980b70675fdd28d12d8d12931e1074e823ac13f07173a35ea1b6d17"
+    },
+    "tests/runtime_physical_skeletal_integration_native.cpp": {
+      "bytes": 16000,
+      "sha256": "62f702ed0dca96622b3e006e65c7f3c6856a824645b427f9cba4e1a1dc5d1459"
+    },
+    "tests/physical_character_calibration.py": {
+      "bytes": 2498,
+      "sha256": "966f4294408eeed19df6b46cf8424eba7fea1022787572a53efad5bce94ffd16"
+    },
+    "tests/physical_character_source.py": {
+      "bytes": 5534,
+      "sha256": "c1b5e2f0667507ae389ce2ce0b091f77a7b2b9447df32baf7b8ddcd0572d9122"
+    },
+    "tests/physical_character_native.py": {
+      "bytes": 20536,
+      "sha256": "a0aca2869ef0032c1313b7655913409bc708b06b396a66dfeff9ad34f8dc5ae2"
+    },
+    "tests/world_physical_contract.py": {
+      "bytes": 22663,
+      "sha256": "e42f6f7c034ae389dfb542a1bbc563f1a345000854d216ab65ba7b712c3cea0c"
+    },
+    "examples/physical-character-yard/knight_profile.py": {
+      "bytes": 18739,
+      "sha256": "4207b9a4953d6a81ae7c45287f485fb6bbde9db803b93463197945a3fc2242bb"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    }
+  },
+  "native_image": {
+    "bytes": 38175120,
+    "sha256": "e020c086291cbafb1d9341ed06cd20506850c93fb0655d5bb0621fd08025ea4a"
+  },
+  "binding": {
+    "policy": "skeletal_fixed_scale",
+    "legacy_default": "rigid_uniform",
+    "semantics": [
+      "Logical quaternion chains provide rigid body axes; full affine bone matrices provide origins. Authored body offsets remain metres.",
+      "Every initialized node-local positive scale is frozen exactly. Sampled scale changes, including one ULP, reject before publication.",
+      "Passive body targets use the actual parent affine inverse for local translation. Ordinary source TRS/FK and unmapped locals are preserved.",
+      "Wrapper and external ancestry retain the positive-uniform requirement. Time-varying skeletal scales and clip-scale changes are outside qualification."
+    ],
+    "contract": "docs/PHYSICAL_RIGS.md"
+  },
+  "linux_native_cohort": {
+    "passed": true,
+    "original_single_owner_pass": true,
+    "elapsed_seconds": 705.1824751019994,
+    "forced_cleanup": false,
+    "final_children": 0,
+    "selected_ctest_suites": 40,
+    "compiled_native_suites": 26,
+    "new_suites": [
+      "physical_rig_skeletal_json_native",
+      "runtime_physical_pose_skeletal_native",
+      "runtime_physical_skeletal_integration_native"
+    ],
+    "selected_suites": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "workflow_api_projection",
+      "authoring_response_compatibility",
+      "authoring_contract_artifacts",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "python_response_contract",
+      "python_workflow_responses",
+      "gameplay_compatibility_policy",
+      "build_metadata_contract",
+      "world_session_native",
+      "gameplay_player_preferences_native",
+      "world_schema_native",
+      "physical_rig_math_native",
+      "physical_rig_json_native",
+      "physical_rig_skeletal_json_native",
+      "jolt_owner_state_native",
+      "runtime_physics_joined_native",
+      "runtime_physical_projection_native",
+      "runtime_physics_bootstrap_json_native",
+      "runtime_body_ids_snapshot_native",
+      "physical_gameplay_abi_native",
+      "runtime_physical_ownership_native",
+      "runtime_physical_integration_native",
+      "runtime_physical_pose_skeletal_native",
+      "runtime_physical_skeletal_integration_native",
+      "physical_gameplay_publish_requirements",
+      "world_physical_contract",
+      "physical_pose_native",
+      "runtime_physics_state_native",
+      "runtime_physical_rig_native",
+      "physical_state_json_native",
+      "runtime_body_ids_native",
+      "runtime_topology_native",
+      "runtime_native",
+      "runtime_save_native",
+      "runtime_animation_native",
+      "contact_shadow_contract",
+      "environment_ibl_contract"
+    ],
+    "raw_report_identity": {
+      "bytes": 232685,
+      "sha256": "cb4b16535868c018a6fc65bc4953162efe4ff1e8360dfc58d04be6769a0074dc"
+    },
+    "ctest_stdout_identity": {
+      "bytes": 5417,
+      "sha256": "1aca543d4c0ca4c754051d74efb3cd95a6eb8fca071c0b6ab64c35a142d761d7"
+    },
+    "qualification_note": "The original native cohort itself passed all 40 selected suites; the count is not composed from separate failed attempts.",
+    "contract_and_workflow_suites": 14,
+    "counting_note": "Counted from actual CTest commands, not name suffixes. gameplay_compatibility_policy runs the compiled C++ compatibility executable. world_physical_contract is one of 14 additional contract/workflow checks and executes the native CLI."
+  },
+  "source_checks": {
+    "analytic_primitive_controls": 16,
+    "source_check_passed": true,
+    "source_only": true,
+    "different_initialized_scale_nodes_between_selected_takes": 28,
+    "native_import_independent_comparison": "Every original triangle corner, skin influence, inverse bind and all 76 animation curve arrays retained in the actual cooked package."
+  },
+  "licensed_character": {
+    "creator": "Kay Lousberg",
+    "pack": "KayKit Adventurers 1.0",
+    "license": "CC0-1.0",
+    "source_manifest": "examples/physical-character-yard/source-manifest.json",
+    "model": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "license_file": {
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "profile": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "parts": 15,
+    "joints": 14,
+    "authored_total_mass_kg": 72,
+    "retained_library": {
+      "nodes": 57,
+      "skin_joints": 41,
+      "takes": 76,
+      "vertices": 7024,
+      "triangles": 6952
+    },
+    "cooked_package": {
+      "bytes": 8464853,
+      "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+    }
+  },
+  "fullbody_attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "elapsed_seconds": 16.33949189499981,
+      "rpc_calls": 182,
+      "world_owners": 1,
+      "world_owners_natural_exit": true,
+      "forced_cleanup": false,
+      "final_children": 0,
+      "cause": "The observer requested the compact physical-rig summary, then accessed omitted parts. Played tick6 and passive tick7 were reached; the overall attempt failed with KeyError: parts.",
+      "observer_source": {
+        "bytes": 20341,
+        "sha256": "ead47a43f7ca3f98b3232857b6b72b94555c305e42bac9ac7a7af6303b971e9e"
+      },
+      "raw_report_identity": {
+        "bytes": 13082,
+        "sha256": "48df7fb774f6268d9433c6c9ce99d50703dca3a8f0554f0ead58f8b24be57732"
+      },
+      "raw_evidence_identity": {
+        "bytes": 810445,
+        "sha256": "39482f4dbb94472fd96b9c289d038fd622e7854960e0aa528e6f25fb40ae6b53"
+      },
+      "original_failure_retained": true
+    },
+    {
+      "attempt": 2,
+      "passed": true,
+      "elapsed_seconds_including_separate_retained_aot": 32.899645821999,
+      "fullbody_command_elapsed_seconds": 24.104520758002764,
+      "change": "Five existing physical-rig query call sites explicitly request include_parts and include_joints. All other predicates, bounds, source model and profile remain unchanged.",
+      "rpc_calls": 758,
+      "world_owners": 4,
+      "world_owners_natural_exit": true,
+      "forced_cleanup": false,
+      "final_children": 0,
+      "archives": 18,
+      "whole_byte_and_complete_typed_json_comparisons": 8,
+      "field_exclusions": [],
+      "raw_report_identity": {
+        "bytes": 11455,
+        "sha256": "fd87f71dea5f86844724cbab84898ccd716c8a23ccc286102b770a4c47269654"
+      },
+      "raw_evidence_identity": {
+        "bytes": 2757184,
+        "sha256": "9d8ffd2134381a9c1907393a7259a46b8624838259f0cf49a2b845a8704c9a93"
+      }
+    }
+  ],
+  "fullbody_cases": [
+    {
+      "clip": 36,
+      "name": "Idle",
+      "terrain": "stairs",
+      "passed": true,
+      "original_node_checks": {
+        "ticks": [
+          0,
+          5,
+          6
+        ],
+        "nodes_per_tick": 57,
+        "exact_initialized_scales": true
+      },
+      "preactivation_history": {
+        "saved_ticks": [
+          5,
+          6
+        ],
+        "frames_per_save": 2,
+        "parts_per_frame": 15,
+        "max_absolute_linear_velocity_error_m_per_s": 4.886268056836229e-09,
+        "max_absolute_angular_velocity_error_rad_per_s": 5.213330527613179e-08
+      },
+      "takeover": {
+        "source_tick": 6,
+        "native_tick": 7,
+        "aggregate_linear_momentum_kg_m_per_s": {
+          "source_linear_momentum": [
+            0.3284053806783227,
+            -2.2222157749873395,
+            0.6618047661147752
+          ],
+          "expected_after_gravity_drag": [
+            0.32785803889917847,
+            -13.970893219907449,
+            0.660701759223161
+          ],
+          "actual_native_momentum": [
+            0.3278581037711201,
+            -13.970893198449623,
+            0.6607018874897731
+          ]
+        },
+        "fixed_absolute_per_axis_bound": 0.3458282631380925,
+        "observed_max_absolute_per_axis_error": 1.282666121094067e-07,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.00022826313809249556,
+        "no_external_cached_contact_pair": true,
+        "no_reported_velocity_caps": true
+      },
+      "contact_cache_observations": [
+        {
+          "observation": "takeover-seven",
+          "cached_body_pairs": 8,
+          "cached_manifolds": 5
+        },
+        {
+          "observation": "checkpoint",
+          "cached_body_pairs": 21,
+          "cached_manifolds": 14
+        },
+        {
+          "observation": "future",
+          "cached_body_pairs": 0,
+          "cached_manifolds": 0
+        }
+      ],
+      "whole_archive_comparisons": [
+        {
+          "kind": "warm_restore",
+          "bytes": 118578,
+          "sha256": "b11a3c9dc4dee7a41b33878d6c0f63eac637f50aff75983fdd6fa7210f0e2242"
+        },
+        {
+          "kind": "warm_future",
+          "bytes": 100730,
+          "sha256": "f0ca61dfaf876edbe2d53bd5a18ccf370744fcd9710426d8b90e5173e52df93a"
+        },
+        {
+          "kind": "cold_restore",
+          "bytes": 118578,
+          "sha256": "b11a3c9dc4dee7a41b33878d6c0f63eac637f50aff75983fdd6fa7210f0e2242"
+        },
+        {
+          "kind": "cold_future",
+          "bytes": 100730,
+          "sha256": "f0ca61dfaf876edbe2d53bd5a18ccf370744fcd9710426d8b90e5173e52df93a"
+        }
+      ],
+      "checkpoint_tick": 139,
+      "future_endpoint_tick": 259,
+      "future_ticks": 120,
+      "all_15_bodies_observed_asleep_at_tick": 259,
+      "all_15_bodies_active_after_waking_hit_at_tick": 260,
+      "final_tick": 260
+    },
+    {
+      "clip": 48,
+      "name": "Running_A",
+      "terrain": "slope",
+      "passed": true,
+      "original_node_checks": {
+        "ticks": [
+          0,
+          5,
+          6
+        ],
+        "nodes_per_tick": 57,
+        "exact_initialized_scales": true
+      },
+      "preactivation_history": {
+        "saved_ticks": [
+          5,
+          6
+        ],
+        "frames_per_save": 2,
+        "parts_per_frame": 15,
+        "max_absolute_linear_velocity_error_m_per_s": 6.066136926108356e-08,
+        "max_absolute_angular_velocity_error_rad_per_s": 2.364263083087792e-07
+      },
+      "takeover": {
+        "source_tick": 6,
+        "native_tick": 7,
+        "aggregate_linear_momentum_kg_m_per_s": {
+          "source_linear_momentum": [
+            -3.3120414074255433,
+            -58.49392929308579,
+            -0.0734117042500996
+          ],
+          "expected_after_gravity_drag": [
+            -3.3065213436775154,
+            -70.14882063825056,
+            -0.07328935152636754
+          ],
+          "actual_native_momentum": [
+            -3.306520718727238,
+            -70.1488187258205,
+            -0.07329486355074022
+          ]
+        },
+        "fixed_absolute_per_axis_bound": 0.34672195787557153,
+        "observed_max_absolute_per_axis_error": 5.5120243726836105e-06,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.0011219578755715094,
+        "no_external_cached_contact_pair": true,
+        "no_reported_velocity_caps": true
+      },
+      "contact_cache_observations": [
+        {
+          "observation": "takeover-seven",
+          "cached_body_pairs": 13,
+          "cached_manifolds": 6
+        },
+        {
+          "observation": "checkpoint",
+          "cached_body_pairs": 34,
+          "cached_manifolds": 16
+        },
+        {
+          "observation": "future",
+          "cached_body_pairs": 0,
+          "cached_manifolds": 0
+        }
+      ],
+      "whole_archive_comparisons": [
+        {
+          "kind": "warm_restore",
+          "bytes": 119942,
+          "sha256": "9903d3549091e46ec9abbb108791f0f7903b364c0fd70bd6008a0df8c7208fe3"
+        },
+        {
+          "kind": "warm_future",
+          "bytes": 98519,
+          "sha256": "5d0a844ba99bec53c771cda2a169e6541a953a83aeddd0225d8c709e06928466"
+        },
+        {
+          "kind": "cold_restore",
+          "bytes": 119942,
+          "sha256": "9903d3549091e46ec9abbb108791f0f7903b364c0fd70bd6008a0df8c7208fe3"
+        },
+        {
+          "kind": "cold_future",
+          "bytes": 98519,
+          "sha256": "5d0a844ba99bec53c771cda2a169e6541a953a83aeddd0225d8c709e06928466"
+        }
+      ],
+      "checkpoint_tick": 139,
+      "future_endpoint_tick": 259,
+      "future_ticks": 120,
+      "all_15_bodies_observed_asleep_at_tick": 259,
+      "all_15_bodies_active_after_waking_hit_at_tick": 260,
+      "final_tick": 260
+    }
+  ],
+  "retained_native_aot_regression": {
+    "passed": true,
+    "scope": "Previously published 0.0.218 two-part scalar PhysicalGame NativeAOT image executed on the 0.0.219 engine; not the new fifteen-part character or a new AOT publication.",
+    "rpc_calls": 450,
+    "world_owners": 2,
+    "typed_gameplay_fields": 33,
+    "archives": 11,
+    "whole_byte_and_complete_typed_json_comparisons": 5,
+    "field_exclusions": [],
+    "compiled_image_sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845",
+    "native_library_sha256": "4042afa32263a3535b4d887e2596e2da82fcd45a5a64253b985ff775cbeed845",
+    "native_descriptor_sha256": "cb71cdb23d14863ed5fa99e504ffeabaa78cc4a6485b97be94c6aca7dc5799c8",
+    "raw_evidence_identity": {
+      "bytes": 3337000,
+      "sha256": "c61b665daf55191342527834ff8e54b421384ae83f26710c8289f8af8e2248a3"
+    }
+  },
+  "independent_file_audit": {
+    "literal_rpc_records_joined_to_original_request_response_jsonl": 1208,
+    "original_archives_rehashed": 29,
+    "whole_pairs_reread_as_bytes_and_complete_typed_json": 13,
+    "successor_input_pins_match": true,
+    "observer_correction_verified_as_query_flags_only": true
+  },
+  "limits": [
+    "The two selected takes initialize independent worlds. Switching, crossfading and all 76 takes are not qualified for this physical binding.",
+    "The source COM position bound is 4e-5 m; its 60 Hz difference yields 0.0048 m/s. Aggregate linear momentum uses a conservative 72 kg-scaled source bound plus explicit float roundoff. It does not prove per-part post-solver velocity preservation or total angular-momentum conservation.",
+    "Imported-character continuation compares complete archives at restored ticks and 120-tick future endpoints, not every intermediate full-body tick.",
+    "All 15 bodies slept by observed tick 259 and woke at 260 in these two fixtures. This is not a representative performance or universal settling guarantee.",
+    "Nonadjacent proxy intersections remain in source diagnostics. Identity rest neutrals retain a T-pose bias; proxy masses, inertias and joint limits are provisional authored approximations.",
+    "No new licensed-character rendered observation, Windows execution, physical input, full-body C#/NativeAOT game, controller handoff, active balance, recovery, anatomical accuracy, competitive quality claim or representative performance is qualified here.",
+    "Earlier 0.0.218 Windows/rendering and NativeAOT records retain their original scopes; they are not promoted to the new character workflow."
+  ]
+}

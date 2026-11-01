@@ -1,0 +1,1123 @@
+{
+  "root": "pelvis",
+  "initial_mode": "animated",
+  "pose_frame": "skeletal_fixed_scale",
+  "parts": [
+    {
+      "name": "pelvis",
+      "node": 30,
+      "body_in_bone": {
+        "position": [
+          0.0,
+          0.09598875045776367,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.17748865008354184,
+          0.1151865005493164,
+          0.15670996718108654
+        ]
+      },
+      "mass": 12.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "chest",
+      "node": 20,
+      "body_in_bone": {
+        "position": [
+          0.0,
+          -0.05309570636739025,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.3094925060868263,
+          0.2639516478653794,
+          0.26698009824752805
+        ]
+      },
+      "mass": 20.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "head",
+      "node": 18,
+      "body_in_bone": {
+        "position": [
+          7.0333480837736495e-06,
+          0.501673549683344,
+          0.03103126406669557
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "shape": {
+        "kind": "sphere",
+        "radius": 0.5258422661861074
+      },
+      "mass": 5.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "upper_arm_l",
+      "node": 9,
+      "body_in_bone": {
+        "position": [
+          0.008127921040761089,
+          0.02842167146461214,
+          0.024065191677493686
+        ],
+        "rotation": [
+          -2.468106546868353e-07,
+          0.0,
+          6.655024665471361e-09,
+          0.9999999999999696
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.14817271508536262,
+        "half_height": 0.029559766034449875
+      },
+      "mass": 2.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "forearm_l",
+      "node": 8,
+      "body_in_bone": {
+        "position": [
+          -0.012551350146299,
+          0.16296594828230312,
+          -0.001986028615202384
+        ],
+        "rotation": [
+          -2.4829093628483173e-10,
+          0.0,
+          0.005894123541029844,
+          0.9999826295029745
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.14678184497148994,
+        "half_height": 0.0030370633651658208
+      },
+      "mass": 1.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "hand_l",
+      "node": 6,
+      "body_in_bone": {
+        "position": [
+          -8.037624914941643e-08,
+          0.09797132689596068,
+          -0.011426271978577277
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.10451936885861553,
+          0.07764698219729932,
+          0.09970594785404156
+        ]
+      },
+      "mass": 0.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "upper_arm_r",
+      "node": 16,
+      "body_in_bone": {
+        "position": [
+          -0.008127920476101948,
+          0.028421675200304464,
+          0.024065191677485914
+        ],
+        "rotation": [
+          -2.468106259429274e-07,
+          0.0,
+          1.4720826170337096e-10,
+          0.9999999999999696
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.14817271448160974,
+        "half_height": 0.029559771015417236
+      },
+      "mass": 2.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "forearm_r",
+      "node": 15,
+      "body_in_bone": {
+        "position": [
+          0.012551350074676518,
+          0.16296594364487874,
+          -0.001986028597841029
+        ],
+        "rotation": [
+          -2.482922667621916e-10,
+          0.0,
+          -0.005894123543752032,
+          0.9999826295029582
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.1467818449846405,
+        "half_height": 0.0030370678082183022
+      },
+      "mass": 1.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "hand_r",
+      "node": 13,
+      "body_in_bone": {
+        "position": [
+          8.036929001475901e-08,
+          0.09797132689595671,
+          -0.011426271883703543
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.10451936878390966,
+          0.07764698219730304,
+          0.09970594799368848
+        ]
+      },
+      "mass": 0.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "thigh_l",
+      "node": 25,
+      "body_in_bone": {
+        "position": [
+          -0.0022951416596961763,
+          0.11752936373287344,
+          0.0001991131033598318
+        ],
+        "rotation": [
+          -1.3519323088402902e-08,
+          0.0,
+          -7.882372475486596e-09,
+          1.0
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.1256721443723209,
+        "half_height": 0
+      },
+      "mass": 8.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "shin_l",
+      "node": 24,
+      "body_in_bone": {
+        "position": [
+          -0.0022895801627930545,
+          0.08466229110776102,
+          -0.021324800198847315
+        ],
+        "rotation": [
+          1.4476697081056025e-07,
+          0.0,
+          -6.130340215671014e-10,
+          0.9999999999999896
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.1352252004092273,
+        "half_height": 0
+      },
+      "mass": 4.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "foot_l",
+      "node": 23,
+      "body_in_bone": {
+        "position": [
+          -0.0024421709445758347,
+          0.13913043568579608,
+          -0.016790027560385612
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.10224586339898414,
+          0.14460027914836043,
+          0.16691553657784458
+        ]
+      },
+      "mass": 1.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "thigh_r",
+      "node": 29,
+      "body_in_bone": {
+        "position": [
+          0.0022951416596962955,
+          0.11752936383873687,
+          0.0001991131033591429
+        ],
+        "rotation": [
+          -1.3519323084583227e-08,
+          0.0,
+          7.88237246354342e-09,
+          1.0
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.1256721443723215,
+        "half_height": 0
+      },
+      "mass": 8.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "shin_r",
+      "node": 28,
+      "body_in_bone": {
+        "position": [
+          0.0022895746123352953,
+          0.08466229272646852,
+          -0.02132480029966158
+        ],
+        "rotation": [
+          1.447669871493652e-07,
+          -0.0,
+          6.130297438058357e-10,
+          0.9999999999999896
+        ]
+      },
+      "shape": {
+        "kind": "capsule",
+        "radius": 0.13522519945618772,
+        "half_height": 0
+      },
+      "mass": 4.0,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    },
+    {
+      "name": "foot_r",
+      "node": 27,
+      "body_in_bone": {
+        "position": [
+          0.0024421713186282834,
+          0.13913043409963383,
+          -0.016790027227198592
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "shape": {
+        "kind": "box",
+        "half_extents": [
+          0.10224586340975153,
+          0.14460028057591,
+          0.16691553684812752
+        ]
+      },
+      "mass": 1.5,
+      "friction": 0.65,
+      "restitution": 0.0,
+      "linear_damping": 0.1,
+      "angular_damping": 0.15
+    }
+  ],
+  "joints": [
+    {
+      "name": "spine",
+      "parent": "pelvis",
+      "child": "chest",
+      "parent_frame": {
+        "position": [
+          0.0,
+          0.47097671031951904,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.7071067811865476,
+          0.7071067811865476
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.0,
+          0.05309570636739025,
+          0.0
+        ],
+        "rotation": [
+          -5.0242958677880805e-15,
+          -5.0242958677880805e-15,
+          0.7071067811865476,
+          0.7071067811865476
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.55,
+        "swing_z": 0.4,
+        "twist_min": -0.45,
+        "twist_max": 0.45
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "neck",
+      "parent": "chest",
+      "child": "head",
+      "parent_frame": {
+        "position": [
+          0.0,
+          0.3218922534943651,
+          0.0
+        ],
+        "rotation": [
+          -5.0242958677880805e-15,
+          -5.0242958677880805e-15,
+          0.7071067811865476,
+          0.7071067811865476
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -7.0333480837736495e-06,
+          -0.501673549683344,
+          -0.03103126406669557
+        ],
+        "rotation": [
+          -5.0242958677880805e-15,
+          -5.0242958677880805e-15,
+          0.7071067811865476,
+          0.7071067811865476
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.6,
+        "swing_z": 0.6,
+        "twist_min": -0.7,
+        "twist_max": 0.7
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "shoulder_l",
+      "parent": "chest",
+      "child": "upper_arm_l",
+      "parent_frame": {
+        "position": [
+          0.21200737357139587,
+          0.18722784520781843,
+          8.40246201505579e-08
+        ],
+        "rotation": [
+          1.2677261582066944e-22,
+          0.028653909570862852,
+          -1.7841659542835936e-08,
+          0.9995893924338656
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -0.008127921419054863,
+          -0.028421659477334237,
+          -0.02406520570703338
+        ],
+        "rotation": [
+          0.49999990664016075,
+          0.49999990664016064,
+          0.500000093359822,
+          0.500000093359822
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 1.45,
+        "swing_z": 1.45,
+        "twist_min": -1.2,
+        "twist_max": 1.2
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "elbow_l",
+      "parent": "upper_arm_l",
+      "child": "forearm_l",
+      "parent_frame": {
+        "position": [
+          -0.008127921419054822,
+          0.21347548180821616,
+          -0.024065205707033348
+        ],
+        "rotation": [
+          0.02026307847965596,
+          0.706814602593961,
+          -0.02026297597448845,
+          0.7068181781866718
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.010629428566956242,
+          -0.16310258103018133,
+          0.0019860285342410897
+        ],
+        "rotation": [
+          -0.014678094300808514,
+          0.7069526672176378,
+          0.01467802143891428,
+          0.7069561765401045
+        ]
+      },
+      "limits": {
+        "kind": "hinge",
+        "minimum": -0.12,
+        "maximum": 2.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "wrist_l",
+      "parent": "forearm_l",
+      "child": "hand_l",
+      "parent_frame": {
+        "position": [
+          0.010629428566956221,
+          0.17068508457478965,
+          0.0019860285342411035
+        ],
+        "rotation": [
+          0.49999992744628935,
+          0.4999999274462894,
+          0.5000000725537,
+          0.5000000725537
+        ]
+      },
+      "child_frame": {
+        "position": [
+          8.037624914941643e-08,
+          -0.09797132689596075,
+          0.011426271978577197
+        ],
+        "rotation": [
+          0.5102721781458471,
+          0.48951202882798994,
+          0.48951230510020827,
+          0.5102724576130666
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.55,
+        "swing_z": 0.55,
+        "twist_min": -0.65,
+        "twist_max": 0.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "shoulder_r",
+      "parent": "chest",
+      "child": "upper_arm_r",
+      "parent_frame": {
+        "position": [
+          -0.21200737357139587,
+          0.18722784520781843,
+          8.40246201505579e-08
+        ],
+        "rotation": [
+          -3.5999982288088284e-21,
+          0.9995893917505756,
+          5.066547088061839e-07,
+          0.02865393340289463
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.008127920467734149,
+          -0.02842166332360396,
+          -0.024065205707025805
+        ],
+        "rotation": [
+          0.49999988465024675,
+          0.4999998846502477,
+          0.5000001153497265,
+          0.5000001153497257
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 1.45,
+        "swing_z": 1.45,
+        "twist_min": -1.2,
+        "twist_max": 1.2
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "elbow_r",
+      "parent": "upper_arm_r",
+      "child": "forearm_r",
+      "parent_frame": {
+        "position": [
+          0.008127920467734119,
+          0.21347550776424923,
+          -0.024065205707025833
+        ],
+        "rotation": [
+          0.020263031559307036,
+          -0.7068146039390336,
+          0.0202629290543751,
+          0.7068181795318164
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -0.010629428549116852,
+          -0.16310257639229273,
+          0.0019860285168792624
+        ],
+        "rotation": [
+          -0.014678136419514366,
+          -0.7069526663431296,
+          -0.014678063557410082,
+          0.7069561756656451
+        ]
+      },
+      "limits": {
+        "kind": "hinge",
+        "minimum": -0.12,
+        "maximum": 2.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "wrist_r",
+      "parent": "forearm_r",
+      "child": "hand_r",
+      "parent_frame": {
+        "position": [
+          -0.010629428549116873,
+          0.17068508921265096,
+          0.001986028516879297
+        ],
+        "rotation": [
+          -0.5000058230798743,
+          -0.5000058230798754,
+          -0.4999941768523084,
+          -0.49999417685230724
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -8.036929002516735e-08,
+          -0.0979713268959568,
+          0.011426271883703588
+        ],
+        "rotation": [
+          -0.48951791266477096,
+          -0.5102783048474366,
+          -0.5102663308386065,
+          -0.48950642119880117
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.55,
+        "swing_z": 0.55,
+        "twist_min": -0.65,
+        "twist_max": 0.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "hip_l",
+      "parent": "pelvis",
+      "child": "thigh_l",
+      "parent_frame": {
+        "position": [
+          0.17094506323337555,
+          0.017598509788513184,
+          1.392327231286572e-08
+        ],
+        "rotation": [
+          0.0,
+          -0.024565714968415055,
+          -0.7066799762787213,
+          0.7071067364795761
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.002295143512516616,
+          -0.11752936369130737,
+          -0.00019911628119471383
+        ],
+        "rotation": [
+          -0.7070000605730342,
+          -0.7070000605730343,
+          0.012284720172879285,
+          0.012284720172879288
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 1.05,
+        "swing_z": 0.7,
+        "twist_min": -0.65,
+        "twist_max": 0.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "knee_l",
+      "parent": "thigh_l",
+      "child": "shin_l",
+      "parent_frame": {
+        "position": [
+          0.002295143512516616,
+          0.10954809473609232,
+          -0.00019911628119471253
+        ],
+        "rotation": [
+          -0.9998490744916418,
+          6.04910019892815e-09,
+          3.4813308048422114e-07,
+          0.01737320460035876
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.0022895802665947765,
+          -0.08466228493069684,
+          0.021324824711453274
+        ],
+        "rotation": [
+          -0.996037490295958,
+          -2.4744611467811955e-08,
+          2.771320841962279e-07,
+          -0.0889343461484474
+        ]
+      },
+      "limits": {
+        "kind": "hinge",
+        "minimum": -0.1,
+        "maximum": 2.45
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "ankle_l",
+      "parent": "shin_l",
+      "child": "foot_l",
+      "parent_frame": {
+        "position": [
+          0.002289580266594777,
+          0.06477479393663926,
+          0.021324824711453277
+        ],
+        "rotation": [
+          -0.7043048765938494,
+          -0.46335991174332186,
+          0.5341325397076028,
+          -0.06288611151001447
+        ]
+      },
+      "child_frame": {
+        "position": [
+          0.0024421709445758407,
+          -0.13913043568579614,
+          0.01679002756038562
+        ],
+        "rotation": [
+          -0.655719585697673,
+          -0.6557194593466159,
+          0.26463558203161847,
+          0.2646352665262897
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.45,
+        "swing_z": 0.3,
+        "twist_min": -0.25,
+        "twist_max": 0.25
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "hip_r",
+      "parent": "pelvis",
+      "child": "thigh_r",
+      "parent_frame": {
+        "position": [
+          -0.17094506323337555,
+          0.017598509788513184,
+          1.392327231286572e-08
+        ],
+        "rotation": [
+          0.0,
+          -0.0245657117712219,
+          -0.7066798843054222,
+          0.7071068285084289
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -0.002295143512516728,
+          -0.11752936379717073,
+          -0.00019911628119402515
+        ],
+        "rotation": [
+          -0.7070000603623372,
+          -0.7070000603623372,
+          0.012284732298735675,
+          0.012284732298735678
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 1.05,
+        "swing_z": 0.7,
+        "twist_min": -0.65,
+        "twist_max": 0.65
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "knee_r",
+      "parent": "thigh_r",
+      "child": "shin_r",
+      "parent_frame": {
+        "position": [
+          -0.0022951435125167278,
+          0.10954809463022894,
+          -0.00019911628119402515
+        ],
+        "rotation": [
+          -0.999849074491642,
+          -6.049099972229041e-09,
+          -3.4813306743737694e-07,
+          0.01737320460036039
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -0.0022895747161362865,
+          -0.08466228654940368,
+          0.021324824812270785
+        ],
+        "rotation": [
+          -0.9960374902959568,
+          2.474460907705982e-08,
+          -2.77132057420489e-07,
+          -0.08893434614846206
+        ]
+      },
+      "limits": {
+        "kind": "hinge",
+        "minimum": -0.1,
+        "maximum": 2.45
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    },
+    {
+      "name": "ankle_r",
+      "parent": "shin_r",
+      "child": "foot_r",
+      "parent_frame": {
+        "position": [
+          -0.002289574716136287,
+          0.06477479231793243,
+          0.021324824812270778
+        ],
+        "rotation": [
+          -0.7043048144248664,
+          -0.4633598946498105,
+          0.5341326470025429,
+          -0.0628860224066375
+        ]
+      },
+      "child_frame": {
+        "position": [
+          -0.002442171318628279,
+          -0.13913043409963383,
+          0.0167900272271986
+        ],
+        "rotation": [
+          -0.6557195865410562,
+          -0.6557194585032534,
+          0.26463558169121404,
+          0.2646352668666429
+        ]
+      },
+      "limits": {
+        "kind": "swing_twist",
+        "swing_y": 0.45,
+        "swing_z": 0.3,
+        "twist_min": -0.25,
+        "twist_max": 0.25
+      },
+      "neutral_rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "rest_stiffness": 0.5,
+      "rest_damping": 0.08,
+      "soft_limit_stiffness": 5.0,
+      "soft_limit_zone": 0.04,
+      "max_torque": 60.0,
+      "friction_torque": 0.1
+    }
+  ]
+}

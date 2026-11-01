@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.219
+
+- Add an opt-in physical skeleton frame that preserves initialized nonuniform
+  bone scales, original affine origins and logical skeletal rotations.
+- Recover solved bone translations through complete parent-affine transforms,
+  retaining unmapped nodes and rejecting later scale changes atomically.
+- Add independent affine-pose, strict-authoring and native lifecycle checks for
+  playback, takeover, full saves, template births and rejected scale changes.
+
 ## 0.0.218
 
 - Add calibrated native physical rigs with explicit masses, inertias, joint

@@ -72,7 +72,16 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 }
 
 Configuration parse_configuration(const nlohmann::json& value) {
-    fields(value,{"root","initial_mode","parts","joints"});Configuration result;
+    need(value.is_object(),"PhysicalRig needs an object.");
+    const bool has_policy=value.contains("pose_frame");
+    need(value.size()==4u+(has_policy?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame.");
+    Configuration result;
+    if(has_policy) {
+        const auto policy=text(value.at("pose_frame"));
+        need(policy=="rigid_uniform" || policy=="skeletal_fixed_scale","PhysicalRig pose_frame must be rigid_uniform or skeletal_fixed_scale.");
+        result.pose_frame=policy=="rigid_uniform" ? PoseFramePolicy::RigidUniform : PoseFramePolicy::SkeletalFixedScale;
+    }
     result.profile.root=text(value.at("root"));const auto mode=text(value.at("initial_mode"));
     need(mode=="animated" || mode=="passive","PhysicalRig initial_mode must be animated or passive.");result.initially_passive=mode=="passive";
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
@@ -99,13 +108,19 @@ Configuration parse_configuration(const nlohmann::json& value) {
 }
 
 nlohmann::json configuration_json(const Configuration& value) {
-    validate(value.profile);Json parts=Json::array(),joints=Json::array();
+    validate(value.profile);
+    need(value.pose_frame==PoseFramePolicy::RigidUniform || value.pose_frame==PoseFramePolicy::SkeletalFixedScale,
+        "PhysicalRig native pose-frame policy is invalid.");
+    Json parts=Json::array(),joints=Json::array();
     for(const auto& p:value.profile.parts)parts.push_back({{"name",p.name},{"node",p.node},{"body_in_bone",pose_json(p.body_in_bone)},{"shape",shape_json(p.shape)},
         {"mass",p.mass},{"friction",p.friction},{"restitution",p.restitution},{"linear_damping",p.linear_damping},{"angular_damping",p.angular_damping}});
     for(const auto& j:value.profile.joints)joints.push_back({{"name",j.name},{"parent",j.parent},{"child",j.child},{"parent_frame",pose_json(j.parent_frame)},{"child_frame",pose_json(j.child_frame)},
         {"limits",limits_json(j.limits)},{"neutral_rotation",j.neutral_rotation},{"rest_stiffness",j.rest_stiffness},{"rest_damping",j.rest_damping},{"soft_limit_stiffness",j.soft_limit_stiffness},
         {"soft_limit_zone",j.soft_limit_zone},{"max_torque",j.max_torque},{"friction_torque",j.friction_torque}});
-    return {{"root",value.profile.root},{"initial_mode",value.initially_passive?"passive":"animated"},{"parts",std::move(parts)},{"joints",std::move(joints)}};
+    Json result={{"root",value.profile.root},{"initial_mode",value.initially_passive?"passive":"animated"},{"parts",std::move(parts)},{"joints",std::move(joints)}};
+    // Omit the default policy to preserve legacy canonical content bytes.
+    if(value.pose_frame==PoseFramePolicy::SkeletalFixedScale)result["pose_frame"]="skeletal_fixed_scale";
+    return result;
 }
 
 nlohmann::json configuration_schema() {
@@ -126,6 +141,8 @@ nlohmann::json configuration_schema() {
     auto result=object({{"root",name},{"initial_mode",{{"enum",{"animated","passive"}}}},
         {"parts",{{"type","array"},{"minItems",1},{"maxItems",max_parts},{"items",part}}},
         {"joints",{{"type","array"},{"maxItems",max_joints},{"items",joint}}}});
+    result["properties"]["pose_frame"]={{"type","string"},{"enum",{"rigid_uniform","skeletal_fixed_scale"}},
+        {"description","Optional rigid_uniform (omitted canonical default) or skeletal_fixed_scale. The latter preserves fixed initialized positive local scales and uses logical quaternion-chain axes with affine bone origins; changing any local scale after binding rejects."}};
     result["description"]="Calibrated physical proxies and passive joints on an AnimationRig. Names/nodes are unique; root and joints form one connected tree. Joint intervals contain zero and span at least .01 rad; soft zones cannot overlap or exceed cone extents. Frames/neutral rotations must be unit quaternions. Dimensions/offsets are metres independent of model units; mass is kg and inertia uses explicit uniform primitives. Native rig/bone ownership and current-pose compatibility are additionally validated.";
     return result;
 }

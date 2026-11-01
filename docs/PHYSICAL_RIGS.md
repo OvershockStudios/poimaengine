@@ -7,11 +7,13 @@ imported `AnimationRig`. Animation owns the skeleton initially; explicit
 activation transfers its committed pose and momentum to native physics. Solved
 physical poses then drive the render hierarchy.
 
-This experimental integration has bounded native, CLI, CoreCLR and complete-save
+The initial 0.0.218 integration has bounded native, CLI, CoreCLR and complete-save
 qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
-checks. [Evidence](evidence/m2-physical-rigs.json) separates those workflows from
-synthetic ABI tests and preserved failed attempts. These small procedural rigs do
-not establish production humanoid quality, active balance or recovery.
+checks. The opt-in fixed-scale frame additionally has a licensed full-body
+[Linux workflow](evidence/m2-skeletal-physical-rigs.json). Earlier
+[evidence](evidence/m2-physical-rigs.json) covers separate procedural fixtures;
+its Windows Vulkan result does not establish full-body rendering. Production
+humanoid motion/contact quality, active balance and recovery remain separate.
 
 ## Author a profile
 
@@ -92,7 +94,8 @@ matching imported nodes:
 }
 ```
 
-Every displayed field is required. Objects reject unknown fields, missing fields,
+Every displayed field is required. The optional `pose_frame` field is described
+below. Objects reject unknown fields, missing fields,
 wrong vector dimensions, nonfinite numbers, numeric strings and Boolean numeric
 substitutes. `initial_mode` is exactly `animated` or `passive`. Discover the
 component schema through `world.describe`; semantic tree, calibration and native
@@ -140,14 +143,87 @@ The initial integration rejects:
   in its ancestry.
 - Ordinary box/mesh colliders or controllers beneath the PhysicalRig. Their
   native poses would otherwise remain separate from the moving render hierarchy.
-- Reflection, shear, nonuniform scale, or changes to the binding's frozen positive
-  uniform world scales.
+- Reflection, invalid or changing admitted scales. The default frame additionally
+  rejects skeletal shear and nonuniform scale; the opt-in frame below preserves
+  fixed nonuniform local scales.
 
 Static ancestry and unrelated ordinary bodies remain available. These are
 initial ownership limits, not the final FPS feature boundary. Coordinated
 controller/root-motion/IK transfer, attached equipment bodies, active balance,
 physical animation, recovery blending and stand-up behavior remain separate
 work. No public command returns a Passive rig to Animated mode.
+
+### Skeletal frame selection
+
+`pose_frame` accepts `rigid_uniform` or `skeletal_fixed_scale`. Omission selects
+`rigid_uniform`; canonical serialization omits this default to preserve earlier
+configuration bytes. The default keeps its existing arithmetic and bounds.
+
+With `skeletal_fixed_scale`, every original node retains its exact initialized
+positive local scale, including nodes without physical proxies. The initialized
+sample comes from the authored starting animation, rather than an averaged or
+normalized model rest pose. A later scale difference rejects atomically, even if
+it comes from another internally constant-scale clip. Select the intended initial
+clip before starting the runtime. This policy does not support arbitrary scale
+curves or blends that change the initialized scales.
+
+A bone's rigid axes are the ordered quaternion product through its ancestry;
+its origin is the translation of its actual full affine world matrix. Metric
+`body_in_bone` offsets use those logical axes. After physics, the complete parent
+affine inverse recovers local translation, the logical parent quaternion recovers
+local rotation, and the original local scale remains unchanged. Unmapped nodes
+retain their sampled locals. A sheared visual basis is therefore distinct from
+the explicit orthonormal frame of its rigid proxy; the render mesh is not silently
+repaired or converted into a rigid collision surface.
+
+Local scale axes and world-column norms must lie in `1e-8..1e8`. The world linear
+inverse infinity norm is at most `3e8`, and its infinity-norm condition number is
+at most `1e6`. All complete candidate transforms must remain finite and reproduce
+the requested origins and logical rotations within the documented native bounds
+before publication. The wrapper and external ancestry retain their proper,
+positive-uniform requirements. Every existing ownership guard still applies.
+
+The frozen local-scale baseline derives from original content and birth state
+before a saved playback cursor is restored. It is not re-frozen from a passive
+snapshot. The C# 424-byte services extension is unchanged; native C++ consumers
+must rebuild against changed configuration headers.
+
+### Imported full-body specimen
+
+[Physical Character Yard](../examples/physical-character-yard/README.md) supplies
+a reviewable 15-part, 14-joint, 72 kg profile for the unchanged CC0 KayKit Knight.
+It retains all 57 original nodes, 41 skin joints and 76 animation takes. The original
+Idle and Running_A takes have different initialized scales and are exercised in
+separate worlds; no scale-channel removal, crossfade or asset repair is used.
+The original base animation plays for six committed ticks before takeover.
+
+Capsule directions and shoulder/wrist twist axes derive from actual source
+segments. Torso proxies use explicit source landmarks. The source audit records
+all nonadjacent proxy pairs, including remaining overlaps; it does not add
+collision exclusions or require zero internal contact in every authored pose.
+Geometry coverage and source math alone do not establish contact quality. The
+profile's identity neutral rotations refer to its original rest/T-pose joint
+frames, so nonzero rest stiffness can bias a fallen body toward that pose.
+Relaxed neutrals need explicit calibration within hard limits.
+
+The [0.0.219 Linux qualification](evidence/m2-skeletal-physical-rigs.json) passes
+40 selected CTest checks and the 758-request full-body workflow. It compares all
+57 initialized/played nodes against original source FK, independently checks
+saved COM and angular finite-difference history, then checks actual first-step
+aggregate momentum with gravity and drag. Individual post-solver velocities may
+change through joint and contact impulses. Both selected worlds fall, receive an
+offset shoulder hit, settle and wake; one has stairs and the other a slope.
+Eighteen complete archives and eight whole-byte pairs cover same-owner warm and
+fresh-process cold restore plus future continuation across four naturally closed
+CLI owners. The first verifier attempt remains failed after requesting a compact
+projection and then indexing detailed parts; explicit detail flags correct the
+verifier without changing engine bounds or the gameplay assertions.
+
+This full-body result is Linux headless. The earlier Windows/Vulkan captures use
+the two-part analytic ribbon. A retained two-part Native AOT consumer separately
+passes on the 0.0.219 Linux host; that does not qualify full-body Native AOT,
+rendered humanoid quality, active control, controller transfer or representative
+performance.
 
 ## Joint behavior
 
@@ -385,9 +461,9 @@ state. Keep the matching content and gameplay build for those saves. Supporting
 upgrades while preserving physical state requires separate implementation and
 qualification.
 
-This is not a general save-schema migration system. The native integration
+This is not a general save-schema migration system. The 0.0.218 native integration
 fixture checks exact warm/cold snapshot continuation, final skin palettes and
-structural rollback. Linux qualification composes 23 selected native suites from
+structural rollback. That checkpoint's Linux qualification composes 23 selected native suites from
 separately retained cohorts; their original failed aggregate verdicts remain
 failed. Windows passes all 23 selected native tests and the 76-request CLI
 workflow. On both platforms, the engine-hosted CoreCLR consumer checks all 33
@@ -423,6 +499,24 @@ The CLI output directory must be new. It retains original requests, responses,
 imported input, complete save files and closure results. The native test uses
 analytic mass/momentum and skinning oracles; it also requires exact snapshot
 continuation, including contact state and subsequent body-ID allocation.
+
+For the imported full-body specimen, obtain the unchanged source and license
+listed in [Physical Character Yard](../examples/physical-character-yard/README.md).
+Use a 0.0.219+ build advertising the fixed-scale frame, fresh output directories
+and an external process-tree owner:
+
+```sh
+python3 -B tests/physical_character_calibration.py
+python3 -B tests/physical_character_source.py --source /path/to/Knight.glb --license /path/to/LICENSE.txt
+python3 -B tests/physical_character_native.py /path/to/poima --source /path/to/Knight.glb --license /path/to/LICENSE.txt --output build/physical-character-check-001
+```
+
+The first two checks inspect original source/math without running the engine.
+The native verifier preserves the complete imported library, literal RPC traces,
+all detailed observations and save archives. It requests `include_parts` and
+`include_joints` explicitly; the default physical projection is compact.
+The source recipe must reproduce every byte of the selected checked-in profile.
+These checks launch no compiler, renderer or content-generation tool.
 
 The compiled consumer is
 [`tests/managed_physical_gameplay`](../tests/managed_physical_gameplay).

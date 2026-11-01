@@ -55,6 +55,8 @@
         }
         for(const auto& e:d.entities)if(e.physical_rig) {
             poima::physical_rig::validate(e.physical_rig->profile);
+            require(e.physical_rig->pose_frame==physical_rig::PoseFramePolicy::RigidUniform ||
+                e.physical_rig->pose_frame==physical_rig::PoseFramePolicy::SkeletalFixedScale,"PhysicalRig pose-frame policy is invalid.");
             require(e.animation_rig.has_value() && e.animation_rig->model && !e.rig_node,
                 "PhysicalRig requires an ordinary AnimationRig wrapper.");
             require(!e.collider && !e.character && !e.mesh_collider,"PhysicalRig wrapper cannot also own an ordinary collider/controller.");
@@ -96,8 +98,8 @@
         if(!d.physical_rig)return;
         require(!physical_owners.contains(d.id),"Physical rig owner already exists.");
         auto owner=std::make_unique<PhysicalOwner>();
-        owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local());
-        const auto poses=owner->binding->record_final(tick,physical_world());
+        owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local(),d.physical_rig->pose_frame);
+        const auto poses=owner->binding->record_final(tick,physical_world(),physical_local());
         std::span<const JPH::BodyID> ids;
         if(restored) {
             const auto& row=restored->rigs.at(d.id);owner->collision_group=row.collision_group;ids=row.parts;
@@ -109,7 +111,7 @@
         // Cold mode/poses arrive later from the fully checked saved extension;
         // do not enroll an authored initial mode in front of that restoration.
         if(d.physical_rig->initially_passive && !restored) {
-            owner->binding->capture_passive_reference(physical_world());owner->backend->enter_passive(poses);
+            owner->binding->capture_passive_reference(physical_world(),physical_local());owner->backend->enter_passive(poses);
         }
         for(const auto& part:d.physical_rig->profile.parts) {
             const auto raw=owner->backend->body_id(part.name).GetIndexAndSequenceNumber();
@@ -153,7 +155,7 @@
         }catch(...){physical_overlay_busy=false;throw;}
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_record_final() try {
-        for(const auto& id:topology->physical_rigs)physical_owners.at(id)->binding->record_final(tick,physical_world());
+        for(const auto& id:topology->physical_rigs)physical_owners.at(id)->binding->record_final(tick,physical_world(),physical_local());
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_before_step() try {
         for(const auto& id:topology->physical_rigs)physical_owners.at(id)->backend->before_step(Runtime::fixed_dt);
@@ -206,7 +208,7 @@
             const auto found=physical_owners.find(command.entity);require(found!=physical_owners.end() && topology->identities.contains(command.entity),"Physical command needs a live PhysicalRig owner.");auto& owner=*found->second;
             if(command.activate) {
                 require(owner.backend->mode()==RuntimePhysicalRigMode::Animated && owner.binding->state().current && owner.binding->state().current->tick==tick,"Physical activation requires the current committed animated pose.");
-                owner.binding->capture_passive_reference(physical_world());owner.backend->enter_passive(owner.binding->state().current->bodies);
+                owner.binding->capture_passive_reference(physical_world(),physical_local());owner.backend->enter_passive(owner.binding->state().current->bodies);
             }
             if(command.impulse)owner.backend->impulse(command.impulse->part,command.impulse->world_point,command.impulse->impulse);
         }};

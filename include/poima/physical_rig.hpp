@@ -39,10 +39,16 @@ struct Joint {
 struct Definition { std::string root;std::vector<Part> parts;std::vector<Joint> joints; };
 inline constexpr std::size_t max_parts=64,max_joints=63;
 inline constexpr std::uint32_t max_node=9999;
+// RigidUniform retains the original strict uniform-scale metric frame.
+// SkeletalFixedScale uses logical quaternion-chain bone axes with affine world
+// origins, preserving initialized positive local scale arrays exactly. Changing
+// any such scale after binding rejects; this is not animated-scale support.
+enum class PoseFramePolicy { RigidUniform, SkeletalFixedScale };
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;
     bool initially_passive=false;
+    PoseFramePolicy pose_frame=PoseFramePolicy::RigidUniform;
 };
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;

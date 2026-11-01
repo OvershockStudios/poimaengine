@@ -1,0 +1,19 @@
+{
+  "format": "poima.physical-character-source.v1",
+  "creator": "Kay Lousberg",
+  "pack": "KayKit Adventurers 1.0",
+  "license": "CC0-1.0",
+  "repository": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+  "revision": "672074b73ba276876a19e8816ecdc5241817ab47",
+  "model": {
+    "relative_source": "addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
+    "bytes": 3659532,
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+  },
+  "license_file": {
+    "relative_source": "LICENSE.txt",
+    "bytes": 891,
+    "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+  },
+  "publication": "Original artwork is supplied separately by the caller; this example contains source references and a metric physics profile."
+}
