@@ -39,6 +39,11 @@ struct Joint {
 struct Definition { std::string root;std::vector<Part> parts;std::vector<Joint> joints; };
 inline constexpr std::size_t max_parts=64,max_joints=63;
 inline constexpr std::uint32_t max_node=9999;
+// Frozen authoring profile; live mode/solver state belong to the runtime.
+struct Configuration {
+    Definition profile;
+    bool initially_passive=false;
+};
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;
 inline constexpr double max_stiffness=1e6,max_damping=1e4,max_torque=1e5;

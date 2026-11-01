@@ -205,6 +205,50 @@ struct RuntimePhysicalRigBackend::Impl {
             joint_pose(j.child,d.child_frame),subtract(vector(parts[j.child].body->GetAngularVelocity()),
                 vector(parts[j.parent].body->GetAngularVelocity())));
     }
+    RuntimePhysicalRigPartState part_state(std::size_t n) const {
+        const auto& part=parts[n];const auto* motion=part.body->GetMotionProperties();
+        RuntimePhysicalRigPartState state;state.pose=body_pose(n);state.body=part.id;
+        state.mass=1.0/static_cast<double>(motion->GetInverseMass());
+        // Invert the actual native inertia; reporting the authored doubles
+        // would hide backend rounding/conditioning. Supports rotated principals.
+        const auto inv=motion->GetInverseInertiaDiagonal();
+        const auto r=JPH::Mat44::sRotation(motion->GetInertiaRotation());
+        const auto tensor=r*JPH::Mat44::sScale({1/inv.GetX(),1/inv.GetY(),1/inv.GetZ()})*r.Transposed3x3();
+        for(JPH::uint row=0;row<3;++row)for(JPH::uint col=0;col<3;++col)
+            state.inertia[row*3+col]=tensor.GetColumn3(col)[row];
+        state.enrolled=part.body->IsInBroadPhase();state.active=part.body->IsActive();
+        state.sleeping=state.enrolled&&!state.active;
+        state.max_linear_velocity=motion->GetMaxLinearVelocity();state.max_angular_velocity=motion->GetMaxAngularVelocity();
+        state.linear_damping=motion->GetLinearDamping();state.angular_damping=motion->GetAngularDamping();
+        state.friction=part.body->GetFriction();state.restitution=part.body->GetRestitution();
+        state.at_linear_velocity_limit=part.body->GetLinearVelocity().Length()>=state.max_linear_velocity*(1-1e-5);
+        state.at_angular_velocity_limit=part.body->GetAngularVelocity().Length()>=state.max_angular_velocity*(1-1e-5);
+        return state;
+    }
+    RuntimePhysicalRigJointState joint_state(std::size_t n) const {
+        const auto& j=joints[n];const auto& d=definition.joints[n];
+        const auto parent=joint_pose(j.parent,d.parent_frame),child=joint_pose(j.child,d.child_frame);
+        RuntimePhysicalRigJointState state;state.name=d.name;state.parent=d.parent;state.child=d.child;
+        state.relative_rotation=physical_rig::multiply(physical_rig::conjugate(parent.rotation),child.rotation);
+        state.relative_angular_velocity=subtract(vector(parts[j.child].body->GetAngularVelocity()),
+            vector(parts[j.parent].body->GetAngularVelocity()));
+        state.passive_child_torque=response(n).child_torque_world;state.friction_torque=d.friction_torque;
+        if(const auto* limits=std::get_if<physical_rig::Hinge>(&d.limits)) {
+            (void)limits;const auto* constraint=static_cast<const JPH::HingeConstraint*>(j.constraint.GetPtr());
+            state.hinge=true;state.twist_min=constraint->GetLimitsMin();state.twist_max=constraint->GetLimitsMax();
+            state.friction_torque=constraint->GetMaxFrictionTorque();state.twist_angle=constraint->GetCurrentAngle();
+        } else {
+            const auto* constraint=static_cast<const JPH::SwingTwistConstraint*>(j.constraint.GetPtr());
+            state.twist_min=constraint->GetTwistMinAngle();state.twist_max=constraint->GetTwistMaxAngle();
+            state.swing_y_limit=constraint->GetPlaneHalfConeAngle();state.swing_z_limit=constraint->GetNormalHalfConeAngle();
+            state.friction_torque=constraint->GetMaxFrictionTorque();
+            const auto q=quat(state.relative_rotation);JPH::Quat swing,twist;q.GetSwingTwist(swing,twist);
+            state.twist_angle=2*std::atan2(static_cast<double>(twist.GetX()),static_cast<double>(twist.GetW()));
+            state.swing_y_angle=2*std::asin(std::clamp(static_cast<double>(swing.GetY()),-1.0,1.0));
+            state.swing_z_angle=2*std::asin(std::clamp(static_cast<double>(swing.GetZ()),-1.0,1.0));
+        }
+        return state;
+    }
 };
 
 RuntimePhysicalRigBackend::RuntimePhysicalRigBackend(JPH::PhysicsSystem& physics,RuntimeBodyIds& ids,
@@ -418,53 +462,22 @@ void RuntimePhysicalRigBackend::impulse(std::string_view name,const Vec3& at,con
 }
 
 RuntimePhysicalRigObservation RuntimePhysicalRigBackend::observe() const {
+    return observe(true,true);
+}
+RuntimePhysicalRigObservation RuntimePhysicalRigBackend::observe(bool include_parts,bool include_joints) const {
     RuntimePhysicalRigObservation out;out.mode=impl_->mode;
-    out.parts.reserve(impl_->parts.size());out.joints.reserve(impl_->joints.size());
-    for(std::size_t n=0;n<impl_->parts.size();++n) {
-        const auto& part=impl_->parts[n];const auto* motion=part.body->GetMotionProperties();
-        RuntimePhysicalRigPartState state;state.pose=impl_->body_pose(n);state.body=part.id;
-        state.mass=1.0/static_cast<double>(motion->GetInverseMass());
-        // Invert the actual native inertia; reporting the authored doubles
-        // would hide backend rounding/conditioning. Supports rotated principals.
-        const auto inv=motion->GetInverseInertiaDiagonal();
-        const auto r=JPH::Mat44::sRotation(motion->GetInertiaRotation());
-        const auto tensor=r*JPH::Mat44::sScale({1/inv.GetX(),1/inv.GetY(),1/inv.GetZ()})*r.Transposed3x3();
-        for(JPH::uint row=0;row<3;++row)for(JPH::uint col=0;col<3;++col)
-            state.inertia[row*3+col]=tensor.GetColumn3(col)[row];
-        state.enrolled=part.body->IsInBroadPhase();state.active=part.body->IsActive();
-        state.sleeping=state.enrolled&&!state.active;
-        state.max_linear_velocity=motion->GetMaxLinearVelocity();state.max_angular_velocity=motion->GetMaxAngularVelocity();
-        state.linear_damping=motion->GetLinearDamping();state.angular_damping=motion->GetAngularDamping();
-        state.friction=part.body->GetFriction();state.restitution=part.body->GetRestitution();
-        state.at_linear_velocity_limit=part.body->GetLinearVelocity().Length()>=state.max_linear_velocity*(1-1e-5);
-        state.at_angular_velocity_limit=part.body->GetAngularVelocity().Length()>=state.max_angular_velocity*(1-1e-5);
-        out.parts.push_back(std::move(state));
+    if(include_parts) {
+        out.parts.reserve(impl_->parts.size());
+        for(std::size_t n=0;n<impl_->parts.size();++n)out.parts.push_back(impl_->part_state(n));
     }
-    for(std::size_t n=0;n<impl_->joints.size();++n) {
-        const auto& j=impl_->joints[n];const auto& d=impl_->definition.joints[n];
-        const auto parent=impl_->joint_pose(j.parent,d.parent_frame),child=impl_->joint_pose(j.child,d.child_frame);
-        RuntimePhysicalRigJointState state;state.name=d.name;state.parent=d.parent;state.child=d.child;
-        state.relative_rotation=physical_rig::multiply(physical_rig::conjugate(parent.rotation),child.rotation);
-        state.relative_angular_velocity=subtract(vector(impl_->parts[j.child].body->GetAngularVelocity()),
-            vector(impl_->parts[j.parent].body->GetAngularVelocity()));
-        state.passive_child_torque=impl_->response(n).child_torque_world;state.friction_torque=d.friction_torque;
-        if(const auto* limits=std::get_if<physical_rig::Hinge>(&d.limits)) {
-            (void)limits;const auto* constraint=static_cast<const JPH::HingeConstraint*>(j.constraint.GetPtr());
-            state.hinge=true;state.twist_min=constraint->GetLimitsMin();state.twist_max=constraint->GetLimitsMax();
-            state.friction_torque=constraint->GetMaxFrictionTorque();state.twist_angle=constraint->GetCurrentAngle();
-        } else {
-            const auto* constraint=static_cast<const JPH::SwingTwistConstraint*>(j.constraint.GetPtr());
-            state.twist_min=constraint->GetTwistMinAngle();state.twist_max=constraint->GetTwistMaxAngle();
-            state.swing_y_limit=constraint->GetPlaneHalfConeAngle();state.swing_z_limit=constraint->GetNormalHalfConeAngle();
-            state.friction_torque=constraint->GetMaxFrictionTorque();
-            const auto q=quat(state.relative_rotation);JPH::Quat swing,twist;q.GetSwingTwist(swing,twist);
-            state.twist_angle=2*std::atan2(static_cast<double>(twist.GetX()),static_cast<double>(twist.GetW()));
-            state.swing_y_angle=2*std::asin(std::clamp(static_cast<double>(swing.GetY()),-1.0,1.0));
-            state.swing_z_angle=2*std::asin(std::clamp(static_cast<double>(swing.GetZ()),-1.0,1.0));
-        }
-        out.joints.push_back(std::move(state));
+    if(include_joints) {
+        out.joints.reserve(impl_->joints.size());
+        for(std::size_t n=0;n<impl_->joints.size();++n)out.joints.push_back(impl_->joint_state(n));
     }
     return out;
+}
+RuntimePhysicalRigPartState RuntimePhysicalRigBackend::observe_part(std::string_view part) const {
+    return impl_->part_state(impl_->index(part));
 }
 
 RuntimePhysicalRigMembership RuntimePhysicalRigBackend::snapshot_membership() const {

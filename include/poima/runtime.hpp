@@ -4,6 +4,7 @@
 #include "poima/scene.hpp"
 #include "poima/navigation.hpp"
 #include "poima/animation_layers.hpp"
+#include "poima/runtime_physical.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
@@ -323,6 +324,7 @@ struct RuntimeEntityDefinition {
     std::optional<AcousticMaterial> acoustics;
     std::optional<AudioEmitter> emitter;
     std::optional<RuntimeAnimationRig> animation_rig;
+    std::optional<physical_rig::Configuration> physical_rig;
     std::optional<RuntimeRigNode> rig_node;
     std::optional<RuntimeSkinnedMesh> skinned_mesh;
     std::optional<MeshCollider> mesh_collider;
@@ -480,9 +482,11 @@ struct RuntimeControlResult {
 // One authoritative owner, no GUI/graphics dependency. Native animation jobs
 // evaluate frozen inputs; physics, gameplay and publication remain on the owner.
 // Structural recipes are frozen; presentation snapshots own their data.
+struct RuntimePhysicsBootstrap;
 class Runtime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    Runtime(const RuntimeDefinition&,std::shared_ptr<jobs::Executor>,const RuntimePhysicsBootstrap*);
     // Detached source restoration shared by validation and exact code binding.
     static std::unique_ptr<Runtime> restore_snapshot_data(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
@@ -581,9 +585,13 @@ public:
         const std::vector<RuntimeCharacterStanceCommand>& character_stances={},
         const std::vector<RuntimeGroundingCommand>& grounding={},
         const std::vector<AnimationRateCommand>& animation_rates={},
-        const std::vector<RuntimeCameraPoseCommand>& camera_poses={});
+        const std::vector<RuntimeCameraPoseCommand>& camera_poses={},
+        const std::vector<PhysicalRigCommand>& physical_rigs={});
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
+    std::optional<PhysicalRigObservation> physical_rig(const std::string& id,
+        bool include_parts=false,bool include_joints=false) const;
+    std::optional<PhysicalRigPartObservation> physical_part(const std::string& id,const std::string& part) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeGroundingCommand> grounding(const std::string& id,std::uint32_t slot) const;

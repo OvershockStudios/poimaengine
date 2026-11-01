@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <nlohmann/json.hpp>
 
-namespace JPH { class PhysicsSystem; }
+namespace JPH { class PhysicsSystem; struct PoimaBodyOwnerState; }
 namespace poima {
 inline constexpr std::size_t runtime_physics_state_max_bodies=4096;
 inline constexpr std::size_t runtime_physics_state_max_pairs=8192;
@@ -36,4 +36,20 @@ void validate_runtime_physics_state(const JPH::PhysicsSystem&,const nlohmann::js
 // PhysicsSystem must be initialized with >=4096 bodies/8192 pairs/manifolds,
 // or the caller must independently prove the snapshot fits its configuration.
 void restore_runtime_physics_state(JPH::PhysicsSystem&,const nlohmann::json&);
+
+// Joined portable state for a consistently owner-state-patched pinned SDK.
+// Caller holds one external owner/quiescence barrier over the ENTIRE call.
+// Pending invalidations are admitted only with complete typed owner metadata.
+// Capture leaves out_owner unchanged on any failure. The enclosing bootstrap
+// validator separately verifies the owned identity ledger/generation history.
+nlohmann::json capture_runtime_physics_state_joined(const JPH::PhysicsSystem&,
+    JPH::PoimaBodyOwnerState& out_owner);
+void validate_runtime_physics_state_joined(const JPH::PhysicsSystem&,const nlohmann::json&,
+    const JPH::PoimaBodyOwnerState&);
+// Restores GBC then owner metadata, verifies exact native bytes+typed owner
+// state, and restores BOTH trusted backups after failure. Explicit discard-
+// candidate errors mean rollback did not fully verify; root publication stays
+// separate from this native-module boundary. No arbitrary user bytes accepted.
+void restore_runtime_physics_state_joined(JPH::PhysicsSystem&,const nlohmann::json&,
+    const JPH::PoimaBodyOwnerState&);
 }

@@ -54,13 +54,23 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==400u &&
+    // Explicit pre-physical host fixture, not a downgraded current response.
+    Contract legacy400;legacy400.services_bytes=400;
+    legacy400.features={baseline_feature,persistence_feature,collections_feature,animation_feature,animation_layers_feature,
+        character_input_feature,instances_feature,player_preferences_feature,input_actions_feature,hit_regions_feature,
+        two_bone_ik_feature,root_motion_feature,camera_lens_feature,character_stance_feature,two_bone_ik_orientation_feature,
+        grounding_control_feature,animation_rate_feature,camera_pose_feature,capsule_cast_feature};
+    if(poima::runtime_navigation_available())legacy400.features.push_back(navigation_feature);
+    check(compatibility_error(baseline,legacy400).empty(),"Explicit old400 host fixture is invalid.");
+
+    check(capable.services_version==7 && capable.services_bytes==physical_rig_services_bytes && capable.services_bytes==424u &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),input_actions_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),hit_regions_feature)!=capable.features.end() &&
-        std::find(capable.features.begin(),capable.features.end(),two_bone_ik_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
+        std::find(capable.features.begin(),capable.features.end(),two_bone_ik_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),physical_rig_feature)!=capable.features.end(),"Runtime did not declare its actual named service extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
     check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
     check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
@@ -83,7 +93,7 @@ void policy() {
     check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
     auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
-    auto appended=capable;appended.services_bytes=400;appended.features.push_back("future_available_v1");
+    auto appended=legacy400;appended.services_bytes=400;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
     for(unsigned animation_kind:{0u,1u,2u}) {
@@ -112,20 +122,10 @@ void policy() {
     // Navigation is an independent named opt-in: an opaque larger allocation
     // never grants animation, character input, or a missing world binding.
     auto navigation=baseline;navigation.services_bytes=224;navigation.features.push_back(navigation_feature);
-    auto synthetic=capable;synthetic.services_bytes=224;std::erase(synthetic.features,std::string(instances_feature));
-    std::erase(synthetic.features,std::string(player_preferences_feature));
-    std::erase(synthetic.features,std::string(input_actions_feature));
-    std::erase(synthetic.features,std::string(hit_regions_feature));
-    std::erase(synthetic.features,std::string(two_bone_ik_feature));
-    std::erase(synthetic.features,std::string(root_motion_feature));
-    std::erase(synthetic.features,std::string(camera_lens_feature));
-    std::erase(synthetic.features,std::string(character_stance_feature));
-    std::erase(synthetic.features,std::string(two_bone_ik_orientation_feature));
-    std::erase(synthetic.features,std::string(grounding_control_feature));
-    std::erase(synthetic.features,std::string(animation_rate_feature));
-    std::erase(synthetic.features,std::string(camera_pose_feature));
-    std::erase(synthetic.features,std::string(capsule_cast_feature));
-    if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
+    // Independent historical host, not a truncated current availability DTO.
+    Contract synthetic;synthetic.services_bytes=224;
+    synthetic.features={baseline_feature,persistence_feature,collections_feature,
+        animation_feature,animation_layers_feature,character_input_feature,navigation_feature};
     check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
     check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
     check((std::find(capable.features.begin(),capable.features.end(),navigation_feature)!=capable.features.end())==runtime_navigation_available(),"Navigation advertisement differs from actual runtime backend.");
@@ -177,7 +177,7 @@ void policy() {
     check(!compatibility_error(baseline,short_instances).empty(),"Instance capability advertised without allocation.");
     auto duplicate_instances=instances;duplicate_instances.features.push_back(instances_feature);
     check(!compatibility_error(duplicate_instances,capable).empty(),"Duplicate instance requirement accepted.");
-    auto future_instances=capable;future_instances.services_bytes=400;future_instances.features.push_back("future_available_v1");
+    auto future_instances=legacy400;future_instances.services_bytes=400;future_instances.features.push_back("future_available_v1");
     check(compatibility_error(instances,future_instances).empty(),"Larger same-epoch host rejects instance prefix.");
     auto preferences=baseline;preferences.services_bytes=256;preferences.features.push_back(player_preferences_feature);
     check(compatibility_error(preferences,capable).empty() && compatibility_error(preferences,preferences).empty(),
@@ -292,8 +292,16 @@ void policy() {
     check(!compatibility_error(baseline,short_rate_host).empty(),"Rate advertised beyond allocation.");
     auto duplicate_rate=rate;duplicate_rate.features.push_back(animation_rate_feature);
     check(!compatibility_error(duplicate_rate,capable).empty(),"Duplicate rate feature accepted.");
+    auto physical=baseline;physical.services_bytes=424;physical.features.push_back(physical_rig_feature);
+    check(compatibility_error(physical,capable).empty() && compatibility_error(physical,physical).empty(),"Independent physical424 requirement rejected.");
+    check(!compatibility_error(physical,legacy400).empty(),"Old400 host granted physical424 requirement.");
+    auto lying400=legacy400;lying400.features.push_back(physical_rig_feature);
+    check(!compatibility_error(baseline,lying400).empty(),"400-byte host advertised unallocated physical callbacks.");
+    auto future_physical=capable;future_physical.services_bytes=432;future_physical.features.push_back("future_available_v1");
+    check(compatibility_error(physical,future_physical).empty(),"Larger432 same-epoch allocation rejected physical424 requirement.");
     auto capsule=baseline;capsule.services_bytes=400;capsule.features.push_back(capsule_cast_feature);
     check(compatibility_error(capsule,capsule).empty() && compatibility_error(capsule,capable).empty(),"Independent capsule requirement rejected.");
+    check(compatibility_error(capsule,legacy400).empty(),"Old400 capsule requirement no longer works with explicit old400 host.");
     auto missing_capsule=capable;std::erase(missing_capsule.features,std::string(capsule_cast_feature));
     check(!compatibility_error(capsule,missing_capsule).empty(),"Opaque extent granted undeclared capsule casts.");
     for(unsigned bytes:{176u,376u,392u,399u,401u}){auto wrong=capsule;wrong.services_bytes=bytes;check(!compatibility_error(wrong,capable).empty(),"Wrong capsule prefix accepted.");}
@@ -317,7 +325,7 @@ void policy() {
         const bool valid=(!(mask&2) || bool(mask&1)) && (!(mask&128) || bool(mask&1));
         check(compatibility_error(requested,capable).empty()==valid,"Camera pose extent bypassed older feature dependencies.");
     }
-    auto retained_rate=capable;std::erase(retained_rate.features,std::string(capsule_cast_feature));retained_rate.services_bytes=376;std::erase(retained_rate.features,std::string(camera_pose_feature));
+    auto retained_rate=legacy400;std::erase(retained_rate.features,std::string(capsule_cast_feature));retained_rate.services_bytes=376;std::erase(retained_rate.features,std::string(camera_pose_feature));
     check(compatibility_error(rate,retained_rate).empty() && compatibility_error(baseline,retained_rate).empty(),"New camera pose broke actual old376 service metadata.");
     check(!compatibility_error(pose,retained_rate).empty(),"Old376 host grants new camera pose.");
     auto stance=baseline;stance.services_bytes=336;stance.features.push_back(character_stance_feature);

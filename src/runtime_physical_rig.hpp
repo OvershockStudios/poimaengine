@@ -128,6 +128,12 @@ public:
     void impulse(std::string_view part,const std::array<double,3>& world_point,
                  const std::array<double,3>& impulse);
     RuntimePhysicalRigObservation observe() const;
+    // Selective, read-only projections. Summary mode (false,false) reads mode
+    // only; omitted parts/joints are neither materialized nor evaluated.
+    RuntimePhysicalRigObservation observe(bool include_parts,bool include_joints) const;
+    // Exact same canonical-pose/native-mass/inertia fields as full observation,
+    // with a bounded name lookup and one body read; no joint evaluation/wake.
+    RuntimePhysicalRigPartState observe_part(std::string_view part) const;
     std::vector<RuntimePhysicalRigJointWarmStart> warm_start() const;
     void restore_warm_start(std::span<const RuntimePhysicalRigJointWarmStart>);
     RuntimePhysicalRigMembership snapshot_membership() const;

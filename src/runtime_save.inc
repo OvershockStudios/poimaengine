@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included after Runtime::Impl: the save adapter uses typed engine state and
-// public Jolt setters. No serialized bytes enter Jolt's StateRecorder.
+// public Jolt setters. The optional physical extension reconstructs a trusted
+// recorder from strictly validated typed fields; arbitrary bytes are not accepted.
 namespace {
 using SaveJson=nlohmann::json;
 constexpr std::size_t snapshot_bytes_limit=64*1024*1024;
@@ -100,6 +101,8 @@ void save_stance_flags(bool requested,bool crouched,bool blocked) {
         "Snapshot character stance flags are inconsistent.");
 }
 }
+
+#include "runtime_physical_save.inc"
 
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
@@ -216,6 +219,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         if(!payload.contains("ui"))payload["ui"]=nullptr;
         payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
     }
+    if(s.physical_content)payload["physical"]=save_physical_extension(s);
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
@@ -236,6 +240,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
     // Authenticate the original complete payload before validating a separately
     // named optional extension; every legacy field and unknown-key rejection stays exact.
+    const bool physical_content=Impl::definition_has_physical(definition);
+    SaveJson physical_extension=nullptr;
+    require(data.contains("physical")==physical_content,"Physical content requires its complete versioned physics extension; legacy worlds cannot add one.");
+    if(physical_content) {
+        physical_extension=data.at("physical");data.erase("physical");save_physical_extension_fields(physical_extension);
+    }
     SaveJson pose_extension=nullptr;
     if(data.contains("camera_poses")) {
         require(version>=7,"Camera pose extension requires Camera snapshot membership.");
@@ -359,7 +369,13 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     require(data.at("gameplay").is_null() ? game_revision==0 : game_revision>0,"Snapshot gameplay revision does not match module presence.");
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
-    auto candidate=std::make_unique<Runtime>(restored_definition,std::move(executor));auto& s=*candidate->impl_;s.tick=tick;
+    std::optional<RuntimePhysicsBootstrap> physical_bootstrap;
+    if(physical_content)physical_bootstrap=save_physical_parse_bootstrap(physical_extension,restored_definition);
+    // Exact IDs/generations are installed at first allocation, never remapped.
+    // The private constructor also initializes Jolt before owner-vector parsing.
+    auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
+    std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
+    if(physical_content)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
     if(structural) {
         // Bootstrap may see generated objects as definitions, but exclusions
         // must come exclusively from the complete original authored inventory.
@@ -546,10 +562,23 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Logical virtual poses are separate from their zero-velocity query proxies.
     // Restore them only after all platforms/body poses and motion clocks exist.
     for(const auto& motor:motors)s.registry.get<Controller>(motor.entity).character->RestoreMotorPose(motor.position,motor.rotation,motor.integration,motor.reported);
+    // Enroll exact articulated identities before support reconstruction. These
+    // detached candidate mutations are superseded by the joined native state.
+    if(physical_checkpoint)s.restore_physical_before_jolt(*physical_checkpoint);
     // Rebuild support from current geometry only after every body is restored.
     s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
     s.validate_planting_membership();
     if(s.animations->has_ik() || s.animations->has_root_motion()) { s.animation_locals();s.sync(); }
+    if(physical_checkpoint) {
+        // Broadphase membership/global constraint order already match. Restore
+        // all GBC/contact bytes and exact active/invalidation owner state only
+        // after legacy character/support setup, which may touch native caches.
+        validate_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
+        save_physical_lineage(physical_extension.at("physics"),physical_bootstrap->ledger);
+        restore_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
+        s.sync(); // publishes solved physical locals before final comparisons
+        save_physical_verify_restored(s,*physical_checkpoint,rows);
+    }
     for(const auto& [id,saved]:locals) {
         const auto& actual=s.registry.get<Node>(s.find(id)).local;
         require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) && save_near(saved.scale,actual.scale),"Saved local transform does not match reconstructed state/content.");

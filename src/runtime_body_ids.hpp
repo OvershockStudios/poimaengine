@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <stdexcept>
+#include <vector>
 
 namespace poima {
 // Runtime-owned Jolt identity allocation, independent of public entity IDs.
@@ -23,6 +24,20 @@ class RuntimeBodyIds {
     };
 public:
     static constexpr std::uint32_t capacity=4096;
+    // Every row is a used slot, including unoccupied retired generations and
+    // reserved generation zero. An omitted slot is exactly never-used, not a
+    // free slot whose generation may be discarded. Wider generation storage
+    // admits strict validation before narrowing to Jolt's uint8 sequence.
+    struct SnapshotRow {
+        std::uint32_t index=0,generation=0;
+        bool occupied=false;
+        bool operator==(const SnapshotRow&) const = default;
+    };
+    struct Snapshot {
+        bool sealed=false;
+        std::vector<SnapshotRow> rows; // Strict ascending index, at most capacity.
+        bool operator==(const Snapshot&) const = default;
+    };
 private:
     std::array<Slot,capacity> slots_{};
     std::uint32_t live_=0,exhausted_=0;
@@ -73,6 +88,39 @@ public:
     std::uint32_t live() const noexcept { return live_; }
     std::uint32_t available() const noexcept { return capacity-live_-exhausted_; }
     std::uint32_t exhausted() const noexcept { return exhausted_; }
+    Snapshot snapshot() const {
+        Snapshot result;result.sealed=sealed_;
+        for(std::uint32_t index=0;index<capacity;++index)if(slots_[index].used)
+            result.rows.push_back({index,slots_[index].generation,slots_[index].occupied});
+        return result;
+    }
+    // Only reconstructs the owned ledger value. The integration caller must
+    // separately join every live row to the actual Jolt body/part inventory;
+    // this is not allocation, solver-state restoration or a contact-ID remap.
+    static RuntimeBodyIds from_snapshot(const Snapshot& value) {
+        if(value.rows.size()>capacity)throw std::invalid_argument("Runtime body ID snapshot exceeds slot capacity.");
+        bool first=true;std::uint32_t previous=0;
+        for(const auto& row:value.rows) {
+            if(row.index>=capacity || (!first && row.index<=previous))
+                throw std::invalid_argument("Runtime body ID snapshot rows must be unique, in range and strictly sorted.");
+            if(row.generation>JPH::BodyID::cMaxSequenceNumber)
+                throw std::invalid_argument("Runtime body ID snapshot generation exceeds the native sequence domain.");
+            // reserve() alone may leave startup unsealed, including gen0 or
+            // gen255, but any release/allocation necessarily seals the ledger.
+            if(!value.sealed && !row.occupied)
+                throw std::invalid_argument("Unsealed runtime body ID snapshot cannot contain retired slots.");
+            first=false;previous=row.index;
+        }
+        // Full typed admission precedes installing any row. Counters are derived,
+        // never trusted redundant inputs or copied estimates of broadphase state.
+        RuntimeBodyIds result;result.sealed_=value.sealed;
+        for(const auto& row:value.rows) {
+            result.slots_[row.index]={static_cast<std::uint8_t>(row.generation),true,row.occupied};
+            if(row.occupied)++result.live_;
+            else if(row.generation==JPH::BodyID::cMaxSequenceNumber)++result.exhausted_;
+        }
+        return result;
+    }
     bool operator==(const RuntimeBodyIds&) const = default;
 };
 }

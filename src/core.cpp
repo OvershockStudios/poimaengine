@@ -151,6 +151,7 @@ Reply capabilities() {
         ",\"runtime_inertial_transitions\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_animation_layers\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_animation_jobs\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"physical_rig_authoring\":true,\"runtime_physical_rigs\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"compiled_gameplay_inertial_transitions\":" + boolean(POIMA_SIMULATION != 0 && (POIMA_MANAGED_GAMEPLAY != 0 || POIMA_NATIVE_GAMEPLAY != 0)) +
         ",\"static_gltf_import\":true,\"fbx_model_import\":true,\"native_job_executor\":true,\"native_job_profiling\":true,\"exact_skeleton_animation_composition\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"

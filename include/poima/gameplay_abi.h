@@ -450,6 +450,43 @@ typedef struct PoimaGameCapsuleQueryServicesV1 {
     int32_t (POIMA_CALL *capsule_cast)(void*,const PoimaGameCapsuleCastRequestV1*,PoimaGameCapsuleCastResultV1*,PoimaGameError*);
 } PoimaGameCapsuleQueryServicesV1;
 
+/* physical_rig_v1: optional Tick-only committed allocation reads and staged
+ * writes. Epoch7 and every earlier table/layout are unchanged. Names are1..64
+ * ASCII profile bytes, borrowed only during the callback and copied for writes.
+ * Animated parts report their actual allocated/off-world COM state, never an
+ * inferred live animation target. Output entity echoes the requested rig even
+ * when absent; every other absent payload byte is zero. All V1 sizes are exact.
+ * Part flags: enrolled1, active2, sleeping4, linear-at-cap8, angular-at-cap16.
+ * Command flags: activate1, localized impulse2. Impulse does not implicitly
+ * activate; both flags may be combined. Absent impulse fields are canonical0. */
+typedef struct PoimaGamePhysicalRigSummaryV1 {
+    uint32_t version,bytes,present,mode; PoimaEntityId entity;
+    uint32_t body_count,joint_count; uint64_t reserved;
+} PoimaGamePhysicalRigSummaryV1;
+typedef struct PoimaGamePhysicalRigPartRequestV1 {
+    uint32_t version,bytes; PoimaEntityId entity;
+    const char* part; uint32_t part_bytes,reserved;
+} PoimaGamePhysicalRigPartRequestV1;
+typedef struct PoimaGamePhysicalRigPartStateV1 {
+    uint32_t version,bytes,present,flags; PoimaEntityId entity,node_entity;
+    uint32_t node,body_id,part_bytes,reserved; char part[64];
+    double position[3],rotation[4],linear_velocity[3],angular_velocity[3];
+    double mass,inertia[9]; /* symmetric body-space row-major kg*m^2 */
+    double max_linear_velocity,max_angular_velocity,linear_damping,angular_damping,friction,restitution;
+    uint64_t reserved_tail;
+} PoimaGamePhysicalRigPartStateV1;
+typedef struct PoimaGamePhysicalRigCommandV1 {
+    uint32_t version,bytes; PoimaEntityId entity; uint32_t flags,reserved;
+    const char* part; uint32_t part_bytes,reserved_name;
+    double world_point[3],impulse[3];
+} PoimaGamePhysicalRigCommandV1;
+typedef struct PoimaGamePhysicalRigServicesV1 {
+    PoimaGameCapsuleQueryServicesV1 capsule;
+    int32_t (POIMA_CALL *physical_rig_summary)(void*,const PoimaEntityId*,PoimaGamePhysicalRigSummaryV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_part)(void*,const PoimaGamePhysicalRigPartRequestV1*,PoimaGamePhysicalRigPartStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_command)(void*,const PoimaGamePhysicalRigCommandV1*,PoimaGameError*);
+} PoimaGamePhysicalRigServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -457,6 +494,11 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGamePhysicalRigServicesV1)==424 && alignof(PoimaGamePhysicalRigServicesV1)==8 && offsetof(PoimaGamePhysicalRigServicesV1,capsule)==0 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_summary)==400 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_part)==408 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_command)==416);
+static_assert(sizeof(PoimaGamePhysicalRigSummaryV1)==48 && offsetof(PoimaGamePhysicalRigSummaryV1,entity)==16 && offsetof(PoimaGamePhysicalRigSummaryV1,body_count)==32 && offsetof(PoimaGamePhysicalRigSummaryV1,reserved)==40);
+static_assert(sizeof(PoimaGamePhysicalRigPartRequestV1)==40 && offsetof(PoimaGamePhysicalRigPartRequestV1,entity)==8 && offsetof(PoimaGamePhysicalRigPartRequestV1,part)==24 && offsetof(PoimaGamePhysicalRigPartRequestV1,part_bytes)==32 && offsetof(PoimaGamePhysicalRigPartRequestV1,reserved)==36);
+static_assert(sizeof(PoimaGamePhysicalRigPartStateV1)==368 && offsetof(PoimaGamePhysicalRigPartStateV1,entity)==16 && offsetof(PoimaGamePhysicalRigPartStateV1,node_entity)==32 && offsetof(PoimaGamePhysicalRigPartStateV1,node)==48 && offsetof(PoimaGamePhysicalRigPartStateV1,body_id)==52 && offsetof(PoimaGamePhysicalRigPartStateV1,part_bytes)==56 && offsetof(PoimaGamePhysicalRigPartStateV1,reserved)==60 && offsetof(PoimaGamePhysicalRigPartStateV1,part)==64 && offsetof(PoimaGamePhysicalRigPartStateV1,position)==128 && offsetof(PoimaGamePhysicalRigPartStateV1,rotation)==152 && offsetof(PoimaGamePhysicalRigPartStateV1,linear_velocity)==184 && offsetof(PoimaGamePhysicalRigPartStateV1,angular_velocity)==208 && offsetof(PoimaGamePhysicalRigPartStateV1,mass)==232 && offsetof(PoimaGamePhysicalRigPartStateV1,inertia)==240 && offsetof(PoimaGamePhysicalRigPartStateV1,max_linear_velocity)==312 && offsetof(PoimaGamePhysicalRigPartStateV1,restitution)==352 && offsetof(PoimaGamePhysicalRigPartStateV1,reserved_tail)==360);
+static_assert(sizeof(PoimaGamePhysicalRigCommandV1)==96 && offsetof(PoimaGamePhysicalRigCommandV1,entity)==8 && offsetof(PoimaGamePhysicalRigCommandV1,flags)==24 && offsetof(PoimaGamePhysicalRigCommandV1,reserved)==28 && offsetof(PoimaGamePhysicalRigCommandV1,part)==32 && offsetof(PoimaGamePhysicalRigCommandV1,part_bytes)==40 && offsetof(PoimaGamePhysicalRigCommandV1,reserved_name)==44 && offsetof(PoimaGamePhysicalRigCommandV1,world_point)==48 && offsetof(PoimaGamePhysicalRigCommandV1,impulse)==72);
 static_assert(sizeof(PoimaGameCameraPoseV1)==56 && alignof(PoimaGameCameraPoseV1)==8 && offsetof(PoimaGameCameraPoseV1,rotation)==24);
 static_assert(sizeof(PoimaGameCameraPoseCommandV1)==144 && offsetof(PoimaGameCameraPoseCommandV1,entity)==8 && offsetof(PoimaGameCameraPoseCommandV1,channels)==24 && offsetof(PoimaGameCameraPoseCommandV1,reserved)==28 && offsetof(PoimaGameCameraPoseCommandV1,world)==32 && offsetof(PoimaGameCameraPoseCommandV1,viewmodel)==88);
 static_assert(sizeof(PoimaGameCameraPoseStateV1)==272 && offsetof(PoimaGameCameraPoseStateV1,present)==8 && offsetof(PoimaGameCameraPoseStateV1,flags)==12 && offsetof(PoimaGameCameraPoseStateV1,entity)==16 && offsetof(PoimaGameCameraPoseStateV1,world)==32 && offsetof(PoimaGameCameraPoseStateV1,viewmodel)==88 && offsetof(PoimaGameCameraPoseStateV1,base_world)==144);

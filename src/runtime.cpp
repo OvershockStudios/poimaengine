@@ -6,6 +6,12 @@
 #include "poima/jobs.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
+#include "runtime_physical_restore.hpp"
+#include "runtime_physical_state_json.hpp"
+#include "runtime_physics_bootstrap_json.hpp"
+#include "runtime_physics_state.hpp"
+#include "runtime_physical_rig.hpp"
+#include "runtime_physical_pose.hpp"
 #include "runtime_entity_ids.hpp"
 #include "runtime_hit_regions.hpp"
 #include "runtime_assertions.hpp"
@@ -27,6 +33,7 @@
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Body/BodyLock.h>
+#include <Jolt/Physics/Body/MotionProperties.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Character/Character.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
@@ -150,6 +157,8 @@ struct Runtime::Impl {
         std::map<std::string,entt::entity> identities;
         std::vector<entt::entity> order,hierarchy,characters,kinematics;
         std::map<JPH::uint32,std::string> body_names;
+        std::set<JPH::uint32> physical_bodies;
+        std::vector<std::string> physical_rigs;
         std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>> mesh_shapes;
     };
     // One immutable live membership root. Retired native owners must remain in
@@ -218,7 +227,9 @@ struct Runtime::Impl {
     const std::string presentation_source_id=new_presentation_source_id();
     std::string world_id;
     std::uint64_t revision=0, tick=0, material_revision=0;
+    #include "runtime_physical.inc"
     ~Impl() {
+        physical_owners.clear(); // Constraints/bodies die while allocator/physics live.
         for (auto e : owned_entities) {
             if (auto* c=registry.try_get<Controller>(e); c && c->character) {
                 if(!c->character->GetBodyID().IsInvalid() && physics.GetBodyInterface().IsAdded(c->character->GetBodyID()))c->character->RemoveFromPhysicsSystem();
@@ -367,6 +378,7 @@ struct Runtime::Impl {
             },contacts,support_frames))registry.get<Node>(find(pose.entity)).local=pose.local;
             world_matrices();
         } else for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
+        physical_overlay();
     }
     void sync() {
         profiling::Scope profile("runtime.sync",static_cast<std::int64_t>(tick));
@@ -390,7 +402,7 @@ struct Runtime::Impl {
                 }
             }
         }
-        world_matrices();
+        world_matrices();physical_overlay();
     }
 #include "runtime_navigation.inc"
     void create_entity(const RuntimeEntityDefinition& d,Topology& candidate) {
@@ -425,7 +437,7 @@ struct Runtime::Impl {
         require(int(bool(d.collider))+int(bool(d.character))+int(bool(d.mesh_collider))<=1,"An entity cannot combine BoxCollider, MeshCollider and CharacterController.");
     }
     void create_physics(const RuntimeEntityDefinition& d,Topology& candidate,bool bootstrap,
-        const std::set<std::string>& moving_roots,std::set<std::string>& controlled_cameras) {
+        const std::set<std::string>& moving_roots,std::set<std::string>& controlled_cameras,const RuntimePhysicsBootstrap* restored=nullptr) {
         auto e=find(d.id); const auto& node=registry.get<Node>(e);
         if(d.mesh_collider) {
             const auto& collider=*d.mesh_collider;
@@ -456,7 +468,7 @@ struct Runtime::Impl {
             settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
             auto& body=registry.emplace<Body>(e);
             auto& bodies=physics.GetBodyInterface();
-            auto* native=bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
+            auto* native=restored ? bodies.CreateBodyWithID(restored->bodies.at(d.id),settings) : bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
             require(native!=nullptr,"Jolt mesh body allocation failed.");body.id=native->GetID();
             if(bootstrap)bodies.AddBody(body.id,JPH::EActivation::DontActivate);
             require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
@@ -491,7 +503,7 @@ struct Runtime::Impl {
             auto& body=registry.emplace<Body>(e);
             body.motion=collider.motion;
             auto& bodies=physics.GetBodyInterface();
-            auto* native=bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
+            auto* native=restored ? bodies.CreateBodyWithID(restored->bodies.at(d.id),settings) : bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
             require(native!=nullptr,"Jolt body allocation failed.");body.id=native->GetID();
             if(bootstrap)bodies.AddBody(body.id,collider.motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
             require(!body.id.IsInvalid(),"Jolt body allocation failed.");
@@ -548,7 +560,7 @@ struct Runtime::Impl {
             }
             controller.yaw=JPH::ATan2(static_cast<float>(node.world[8]),static_cast<float>(node.world[0]))/radians;
             controller.character=std::make_unique<CharacterMotor>(config,settings.locomotion,p.position,p.rotation,physics,allocator,
-                bootstrap ? std::optional<JPH::BodyID>{} : std::optional<JPH::BodyID>{body_ids.allocate()});
+                restored ? std::optional<JPH::BodyID>{restored->bodies.at(d.id)} : bootstrap ? std::optional<JPH::BodyID>{} : std::optional<JPH::BodyID>{body_ids.allocate()});
             require(!controller.character->GetBodyID().IsInvalid(),"Jolt character body allocation failed.");
             if(bootstrap)controller.character->AddToPhysicsSystem();
             if(!controller.character->IsVirtual())physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
@@ -573,6 +585,7 @@ struct Runtime::Impl {
             require(seen.insert(id).second,"Duplicate ignored ray entity.");const auto e=find(id);
             if(const auto* b=registry.try_get<Body>(e))filter.IgnoreBody(b->id);
             if(const auto* c=registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
+            physical_ignore(id,filter);
         }
         // Proxy owners are trusted enabled live-region owners, independently
         // bounded by the region catalog; they do not consume caller's 128 IDs.
@@ -580,6 +593,7 @@ struct Runtime::Impl {
             const auto e=find(id);
             if(const auto* b=registry.try_get<Body>(e))filter.IgnoreBody(b->id);
             if(const auto* c=registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
+            physical_ignore(id,filter);
         }
         // Keep one hit without early-out pruning so exact equal-distance ties use
         // stable entity IDs rather than broad-phase visitation order.
@@ -592,7 +606,7 @@ struct Runtime::Impl {
                 bool better=!hit || value.mFraction<hit->mFraction;
                 if(hit && value.mFraction==hit->mFraction) {
                     const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
-                    better=names.at(id)<names.at(old);
+                    better=names.at(id)<names.at(old) || (names.at(id)==names.at(old) && id!=old && id<old);
                     if(id==old)if(const auto mesh=meshes.find(id);mesh!=meshes.end())
                         better=mesh->second->GetTriangleUserData(value.mSubShapeID2)<mesh->second->GetTriangleUserData(hit->mSubShapeID2);
                 }
@@ -617,11 +631,13 @@ struct Runtime::Impl {
     }
 #include "runtime_capsule_query.inc"
 #include "runtime_viewmodel_clearance.inc"
-    void initialize(const RuntimeDefinition& definition) {
+    void initialize(const RuntimeDefinition& definition,const RuntimePhysicsBootstrap* restored=nullptr) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
         auto candidate=std::make_shared<Topology>();candidate->live=definition;topology=candidate;
         world_id=definition.world_id; revision=definition.authored_revision;
+        physical_content=definition_has_physical(definition);validate_physical_ownership(definition);
+        if(restored) {validate_physical_bootstrap(definition,*restored);body_ids=restored->ledger;physical_next_collision_group=restored->next_collision_group;}
         initialize_navigation(definition.navigation);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
@@ -642,6 +658,7 @@ struct Runtime::Impl {
         for (const auto& d : definitions) {
             create_entity(d,*candidate);
             if(d.collider || d.character || d.mesh_collider)++body_count;
+            body_count+=physical_part_count(d);
         }
         std::size_t lights=0,environments=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
         for(const auto& d:definitions) {
@@ -677,16 +694,19 @@ struct Runtime::Impl {
         animation_locals();world_matrices();
         std::set<std::string> controlled_cameras,moving_roots;
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
-        for(const auto& d:definitions)create_physics(d,*candidate,true,moving_roots,controlled_cameras);
+        for(const auto& d:definitions)create_physics(d,*candidate,true,moving_roots,controlled_cameras,restored);
         // Character constructors allocate their own Jolt IDs. Finish all bootstrap
         // creation before inventorying slots; subsequent structural creation must
         // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
-        for(const auto& [id,name]:candidate->body_names) {
-            (void)name;
-            body_ids.reserve(JPH::BodyID(id));
+        if(!restored) {
+            for(const auto& [id,name]:candidate->body_names) {(void)name;body_ids.reserve(JPH::BodyID(id));}
+            body_ids.seal();
         }
-        body_ids.seal();
+        for(const auto& d:definitions)create_physical(d,*candidate,restored);
         require(body_ids.live()==physics.GetNumBodies(),"Runtime physics identity inventory is incomplete.");
+        JPH::BodyIDVector inventory;physics.GetBodies(inventory);
+        require(inventory.size()==candidate->body_names.size(),"Runtime physical/ordinary body routes are incomplete.");
+        for(const auto id:inventory)require(body_ids.owns(id)&&candidate->body_names.contains(id.GetIndexAndSequenceNumber()),"Runtime body ID inventory differs from its exact ledger/routes.");
         std::vector<PoimaEntityId> authored_ids;authored_ids.reserve(candidate->identities.size());
         for(const auto& [id,native_entity]:candidate->identities) {
             (void)native_entity;
@@ -1262,6 +1282,7 @@ struct Runtime::Impl {
     };
     StructureCheckpoint checkpoint_structure() const { return {topology,owned_entities.size(),*entity_ids,body_ids,structure_revision}; }
     void destroy_prop_owner(entt::entity e,bool release_id) {
+        physical_owners.erase(registry.get<Node>(e).id);
         auto& bodies=physics.GetBodyInterface();
         if(auto* controller=registry.try_get<Controller>(e);controller && controller->character) {
             const auto id=controller->character->GetBodyID();
@@ -1283,7 +1304,7 @@ struct Runtime::Impl {
         auto& bodies=physics.GetBodyInterface();
         for(const auto& [raw,name]:topology->body_names) {
             (void)name;const JPH::BodyID id(raw);
-            if(!bodies.IsAdded(id))bodies.AddBody(id,JPH::EActivation::DontActivate);
+            if(!topology->physical_bodies.contains(raw) && !bodies.IsAdded(id))bodies.AddBody(id,JPH::EActivation::DontActivate);
         }
         *entity_ids=saved.entities;body_ids=saved.bodies;structure_revision=saved.revision;
     }
@@ -1320,6 +1341,7 @@ struct Runtime::Impl {
         for(const auto& [id,d]:candidate.definitions) {
             (void)id;
             if(d.collider || d.character || d.mesh_collider)++bodies;
+            bodies+=physical_part_count(d);
             if(d.emitter && d.emitter->enabled)++emitters;
             if(d.light && d.light->enabled)++lights;
             if(d.light)shadows+=shadow_view_count(*d.light);
@@ -1354,6 +1376,13 @@ struct Runtime::Impl {
                 (void)local;const auto e=candidate->identities.at(id);
                 require(removed.size()<4096,"Instance removal exceeds structural node budget.");
                 retired.push_back(e);removed.push_back(gameplay_id(id));removed_names.push_back(id);
+                if(const auto rig=physical_owners.find(id);rig!=physical_owners.end()) {
+                    for(const auto& part:rig->second->backend->definition().parts) {
+                        const auto raw=rig->second->backend->body_id(part.name).GetIndexAndSequenceNumber();
+                        candidate->body_names.erase(raw);candidate->physical_bodies.erase(raw);
+                    }
+                    std::erase(candidate->physical_rigs,id);
+                }
                 candidate->identities.erase(id);candidate->definitions.erase(id);
                 std::erase(candidate->order,e);std::erase(candidate->hierarchy,e);std::erase(candidate->kinematics,e);std::erase(candidate->characters,e);
                 if(const auto* body=registry.try_get<Body>(e)) {
@@ -1381,6 +1410,7 @@ struct Runtime::Impl {
             for(const auto& entity:birth.entities) {
                 require(cursor.allocated(gameplay_id(entity.id)),"Spawn identity was not reserved by this runtime.");
                 if(entity.collider || entity.character || entity.mesh_collider)++new_bodies;
+                new_bodies+=physical_part_count(entity);
                 for(const auto& [type_id,payload]:entity.components) {
                     (void)type_id;require(payload.size()<=components::max_command_bytes-payload_bytes,"Spawn payload command budget exceeded.");payload_bytes+=payload.size();
                 }
@@ -1409,7 +1439,7 @@ struct Runtime::Impl {
         candidate->live=live_definition(*candidate);const auto& definition=candidate->live;
         validate_runtime_mesh_colliders(definition);
         validate_runtime_hit_regions(definition);
-        validate_runtime_camera_draw(definition);
+        validate_runtime_camera_draw(definition);validate_physical_ownership(definition);
         // Private candidate binding lets existing helpers resolve the complete
         // hierarchy. Outer tick/structure checkpoints restore it on any failure.
         topology=candidate;animations->rebind(definition,tick);animation_locals();world_matrices();
@@ -1421,6 +1451,7 @@ struct Runtime::Impl {
             const auto& camera=registry.get<Controller>(e).settings.camera;if(!camera.empty())controlled_cameras.insert(camera);
         }
         for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physics(entity,*candidate,false,moving_roots,controlled_cameras);
+        for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physical(entity,*candidate);
         std::sort(candidate->kinematics.begin(),candidate->kinematics.end(),by_id);
         std::sort(candidate->characters.begin(),candidate->characters.end(),by_id);
         components->prepare_tick(cells,removed);
@@ -1430,6 +1461,7 @@ struct Runtime::Impl {
         auto& bodies=physics.GetBodyInterface();
         // All allocating preparation and reference checks precede publication.
         for(const auto e:retired) {
+            if(const auto rig=physical_owners.find(registry.get<Node>(e).id);rig!=physical_owners.end())rig->second->backend->enter_animated();
             if(const auto* body=registry.try_get<Body>(e))bodies.RemoveBody(body->id);
             if(const auto* character=registry.try_get<Controller>(e))character->character->RemoveFromPhysicsSystem();
         }
@@ -1445,7 +1477,7 @@ struct Runtime::Impl {
         const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
         require(expected_revision==structure_revision,"Stale runtime structure revision.");
         require(!save_queue.pending(),"Resolve pending gameplay save intent before structural edits.");
-        const auto saved=checkpoint_structure();auto animation_checkpoint=animations->checkpoint();
+        const auto saved=checkpoint_structure();auto physical_checkpoint=checkpoint_physical();auto animation_checkpoint=animations->checkpoint();
         auto sound_checkpoint=sounds;
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
@@ -1460,13 +1492,15 @@ struct Runtime::Impl {
             components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
+            restore_physical_before_jolt(physical_checkpoint);
             checkpoint.Rewind();require(physics.RestoreState(checkpoint),"Structural physics rollback failed.");
             for(auto e:topology->characters)registry.get<Controller>(e).character->RestoreState(checkpoint);
+            restore_physical_after_jolt(physical_checkpoint);
             require(!checkpoint.IsFailed(),"Structural character rollback failed.");sync();
             throw;
         }
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1490,7 +1524,8 @@ struct Runtime::Impl {
         require(sound_commands.size()<=64,"At most 64 sound commands per batch.");
         validate_stance_commands(stance_commands);
         auto prepared=prepare_motions(motions);
-        const auto structure_checkpoint=checkpoint_structure();
+        validate_physical_commands(physical_commands);
+        const auto structure_checkpoint=checkpoint_structure();auto physical_checkpoint=checkpoint_physical();
         std::vector<std::pair<entt::entity,std::optional<Motion>>> previous_motions;previous_motions.reserve(topology->kinematics.size());
         for(auto e:topology->kinematics)previous_motions.emplace_back(e,registry.get<Body>(e).target);
         // Internal rollback remains distinct from the portable save format.
@@ -1515,6 +1550,7 @@ struct Runtime::Impl {
         checkpoint_profile.reset();
         components->begin_batch();
         try {
+            reject_physical_pose_conflicts(physical_commands,animation_commands,animation_rates,ik_commands,root_commands);
             apply_camera_lenses(lens_commands);apply_camera_poses(pose_commands);
             animations->apply_grounding(grounding_commands);
             if(!animation_commands.empty() || !animation_rates.empty() || !ik_commands.empty() || !root_commands.empty()) {
@@ -1523,7 +1559,7 @@ struct Runtime::Impl {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
-                game_character_inputs.clear();
+                game_character_inputs.clear();game_physical_commands.clear();
                 for(auto e:topology->characters) {
                     registry.get<Controller>(e).character->BeginTick();
                     const RuntimeInput neutral;
@@ -1550,10 +1586,10 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1658,11 +1694,19 @@ struct Runtime::Impl {
                 apply_camera_lenses(game_camera_lens_commands);game_camera_lens_commands.clear();
                 apply_camera_poses(game_camera_pose_commands);game_camera_pose_commands.clear();
                 animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
+                validate_physical_commands(game_physical_commands);
+                if(frame==0) {
+                    reject_physical_pose_conflicts(physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands);
+                    reject_physical_pose_conflicts(game_physical_commands,animation_commands,animation_rates,ik_commands,root_commands);
+                }
+                reject_physical_pose_conflicts(game_physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands);
                 if(!game_animation_commands.empty() || !game_animation_rate_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
                     animations->apply(game_animation_commands,tick,game_animation_rate_commands);animations->apply_ik(game_ik_commands);
                     animations->apply_root_motion(game_root_motion_commands);animation_locals();sync();
                 }
                 game_animation_commands.clear();game_animation_rate_commands.clear();game_ik_commands.clear();game_root_motion_commands.clear();
+                const std::vector<PhysicalRigCommand> no_physical_commands;
+                apply_physical_commands(frame==0 ? physical_commands : no_physical_commands,game_physical_commands);game_physical_commands.clear();
                 // Membership has now published. Newly born kinematic bodies can
                 // receive their first movement before this tick's physics step.
                 if(game) {
@@ -1710,6 +1754,7 @@ struct Runtime::Impl {
                     profiling::Scope motor_profile("runtime.character.virtual.update");
                     for(auto e:topology->characters)registry.get<Controller>(e).character->UpdateVirtual(1.0f/60.0f);
                 }
+                physical_before_step();
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
                     JPH_IF_ENABLE_ASSERTS(runtime_assertions::PhysicsUpdateScope assertion_scope;)
@@ -1730,7 +1775,7 @@ struct Runtime::Impl {
                         registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
-                ++tick;animation_locals(true);sync();
+                ++tick;animation_locals(true);sync();physical_record_final();
             }
             sync();
             validate_player_preferences_boundary();
@@ -1754,12 +1799,15 @@ struct Runtime::Impl {
             // Jolt PhysicsState records motion/contact state but does not own
             // collision shapes. Select the original shapes before replaying it.
             for(const auto& saved:angles)restore_character_stance(registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
+            restore_physical_before_jolt(physical_checkpoint);
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
+            game_physical_commands.clear();
             for(const auto& saved:angles) {
                 auto& c=registry.get<Controller>(saved.entity);c.character->RestoreState(checkpoint);c.yaw=saved.yaw;c.pitch=saved.pitch;
             }
             for(auto& [e,motion]:previous_motions)registry.get<Body>(e).target=std::move(motion);
+            restore_physical_after_jolt(physical_checkpoint);
             require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync();
             }
             throw;
@@ -1939,11 +1987,13 @@ bool Runtime::commit_textures(PreparedTextureUpdate&& prepared) noexcept {
     impl_->topology.swap(data->candidate);impl_->revision=impl_->topology->live.authored_revision;
     ++impl_->material_revision;return true;
 }
-Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor) {
+Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor)
+    :Runtime(definition,std::move(executor),nullptr) {}
+Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor,const RuntimePhysicsBootstrap* restored) {
     static Library library;
     impl_=std::make_unique<Impl>();impl_->owner=this;
     impl_->executor=executor ? std::move(executor) : jobs::owner_executor();
-    impl_->initialize(definition);
+    impl_->initialize(definition,restored);
 }
 Runtime::~Runtime()=default;
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const {return impl_->templates;}
@@ -2001,7 +2051,14 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands); }
+std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string& id,bool include_parts,bool include_joints) const {
+    (void)impl_->find(id);if(!impl_->physical_owners.contains(id))return {};
+    return impl_->observe_physical(id,include_parts,include_joints);
+}
+std::optional<PhysicalRigPartObservation> Runtime::physical_part(const std::string& id,const std::string& part) const {
+    (void)impl_->find(id);require(Impl::physical_part_name(part),"Physical part must be portable ASCII1..64 bytes.");return impl_->observe_physical_part(id,part);
+}
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {

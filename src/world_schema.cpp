@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "world_schema.hpp"
 #include "poima/runtime.hpp"
+#include "physical_rig_json.hpp"
 #include "poima/scene.hpp"
 #include "input_profile_store.hpp"
 #include "player_settings_store.hpp"
@@ -30,7 +31,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion"}}};
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
@@ -171,7 +172,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         hit_variants.push_back(object_schema(props,required));
     }
     const Json hit_region={{"oneOf",hit_variants},{"description","Immutable query-only region; owner is self or an ancestor. Unique owner/name pairs and at most 4096 regions include disabled members. Local spheres, boxes and Y capsules use exact affine poses; no physics body or collision response."}};
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
+    auto physical_rig_schema=physical_rig::configuration_schema();
+    physical_rig_schema["description"]="Frozen physical profile on an AnimationRig owner. Part nodes refer to the same model's local indices and require matching RigNode entities; joint parents must be model ancestors. No separate asset or editor-only rig state.";
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -184,7 +187,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh", "HitRegion"}}}}}, {"type"});
+    op("component.remove", {{"type", {{"enum", {"Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion"}}}}}, {"type"});
     ops.push_back(object_schema({{"op",{{"const","navigation.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
     const auto reference_owner=object_schema({{"kind",{{"enum",{"entity","template","world"}}}},{"id",id}},{"kind","id"});
@@ -214,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 121}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 122}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -376,6 +379,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.camera_pose"]["description"]="Read committed additive local world and optional foreground-only poses and base_world_matrix with exact session/tick. Base matrix excludes all ancestor and local camera pose effects while retaining native look/stance and physical motion. Existing noncamera returns state=null; missing entity rejects. Does not advance, render or acknowledge.";
     methods["runtime.camera_lens"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.camera_lens"]["description"]="Read committed world and optional first-person lenses plus immutable authored_world with exact session/tick. Existing noncamera returns state=null; missing entity rejects. No tick advancement, rendering or acknowledgement.";
+    methods["runtime.physical_rig"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},
+        {"include_parts",{{"type","boolean"},{"default",false}}},{"include_joints",{{"type","boolean"},{"default",false}}}},
+        {"session_id","tick","entity"});
+    methods["runtime.physical_rig"]["description"]="Inspect committed native PhysicalRig summary with exact session/tick; absent component returns state=null, missing entity rejects. Optional parts expose actual allocated Jolt COM poses/velocities, including Animated off-broadphase allocations: those are not current animated targets. Joints expose instantaneous evaluated passive torques, not historical applied forces. Reads never sample, synchronize, wake or tick. Outside frozen runtime-game-session-v1.";
     methods["runtime.root_motion"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.root_motion"]["description"]="Read cached committed planar root-motion controls and requested/actual interval diagnostics with exact session/tick. Existing nonrig or unconfigured rigs return state=null; missing entities reject. Inspection never samples, consumes or advances.";
     methods["runtime.grounding"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},{"slot",ik_slot}},{"session_id","tick","entity","slot"});
@@ -423,6 +430,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.step"]["properties"]["camera_lenses"]={{"type","array"},{"maxItems",64},{"items",lens_command}};
     methods["runtime.step"]["properties"]["animation_rates"]={{"type","array"},{"maxItems",64},{"items",object_schema({{"entity",id},{"speed",{{"type","number"},{"minimum",0},{"maximum",8}}},{"layer",{{"type","integer"},{"minimum",1},{"maximum",4}}}},{"entity","speed"})}};
     result["invariants"].push_back("Animation rate commands change only destination speed, preserving committed phase and an active fade's original source, correction and deadline. Omitted layer selects the base; layer1..4 must be configured. Speeds0..8; zero holds phase while fade ticks continue, without resuming stopped/ended clips. Full replacements and rates share64 unique-clock writes per Tick across caller/gameplay; conflicts reject the whole batch. Same-speed writes consume admission but do not reanchor. Retimed clocks select nested animation-statev9 with explicit legacy_version; unretimed saves retain their original version. Existing animation inspection reports the effective rate/phase; no getter samples or advances.");
+    const Json physical_point={{"type","array"},{"minItems",3},{"maxItems",3},{"items",{{"type","number"},{"minimum",-1e6},{"maximum",1e6}}}};
+    const Json physical_impulse_vector={{"type","array"},{"minItems",3},{"maxItems",3},{"items",{{"type","number"},{"minimum",-1e5},{"maximum",1e5}}}};
+    const auto physical_impulse=object_schema({{"part",{{"type","string"},{"minLength",1},{"maxLength",64},{"pattern","^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"}}},
+        {"world_point",physical_point},{"impulse",physical_impulse_vector}},{"part","world_point","impulse"});
+    auto physical_command=object_schema({{"entity",id},{"activate",{{"type","boolean"},{"default",false}}},{"impulse",physical_impulse}},{"entity"});
+    physical_command["anyOf"]=Json::array({{{"required",{"activate"}},{"properties",{{"activate",{{"const",true}}}}}},{{"required",{"impulse"}}}});
+    methods["runtime.step"]["properties"]["physical_rigs"]={{"type","array"},{"maxItems",64},{"items",physical_command}};
+    result["invariants"].push_back("PhysicalRig commands join full fixed-tick batch rollback. At most64 ordered caller/gameplay commands apply on their first Tick; at mostone activation per rig. Multiple per-part impulses are preserved in order. Activation copies final committed animation COM poses/momentum; impulses require Passive mode and use world-metre impact points and Newton-seconds, with a100m native lever bound. No implicit mode flip, recovery or active balance is implied. Physical rig part allocations belong to their exact compound rig owner for existing physical queries/ignores; arbitrary hierarchy descendants remain separate.");
     methods["runtime.step"]["properties"]["grounding"]={{"type","array"},{"maxItems",64},{"items",object_schema({{"entity",id},{"slot",ik_slot},{"enabled",{{"type","boolean"}}},{"weight",unit}},{"entity","slot","enabled","weight"})}};
     result["invariants"].push_back("Grounding commands control only frozen automatic slots. Complete unique entity/slot/enabled/weight rows apply on the first Tick; gameplay stages writes with a combined64-per-Tick budget and same-slot conflicts reject. Enabled is ANDed with authored enable and weight multiplies authored weight; defaults true/1 preserve prior behavior. Disabling never releases automatic-slot ownership. No control read/write issues a probe: only the existing final postphysics phase computes effective contacts. Requested policy, decisions, counters and game/physics state share whole-batch rollback. Nonidentity policy selects nested animationv8; default identity retains exactv7 and v7 loads reset multipliers.");
     methods["runtime.step"]["properties"]["character_stances"]={{"type","array"},{"maxItems",32},{"items",object_schema({{"entity",id},{"crouch",{{"type","boolean"}}}},{"entity","crouch"})}};

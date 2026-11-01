@@ -7,6 +7,7 @@
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
+#include "physical_rig_json.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
@@ -656,7 +657,12 @@ ViewmodelClearanceProfile viewmodel_clearance_value(const Json& value) {
     try{validate_viewmodel_clearance_profile(profile);}catch(const std::exception& error){throw Error(-32602,error.what());}
     return profile;
 }
+physical_rig::Configuration physical_rig_value(const Json& value) {
+    try { return physical_rig::parse_configuration(value); }
+    catch(const std::exception& error) { throw Error(-32602,error.what()); }
+}
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="PhysicalRig") { (void)physical_rig_value(value);return; }
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
@@ -1040,6 +1046,38 @@ void validate(const Json& doc) {
             "Stance controller camera cannot be an animation-owned RigNode.");
     }
     camera_draw_references(entities);
+    // Profiles reference model-local nodes, never a second asset or hidden
+    // authoring graph. Validate exactly the same membership for world and
+    // detached hierarchical-template documents before atomic publication.
+    if(std::any_of(entities.begin(),entities.end(),[](const Json& entity){return entity.at("components").contains("PhysicalRig");})) {
+        std::map<std::string,std::map<std::uint32_t,std::size_t>> physical_nodes;
+        for(const auto& [id,entity]:entities.items()) {
+            (void)id;const auto& bag=entity.at("components");
+            if(bag.contains("BoxCollider") || bag.contains("MeshCollider") || bag.contains("CharacterController")) {
+                std::size_t depth=0;auto parent=entity.at("parent");
+                while(!parent.is_null()) {
+                    const auto ancestor=identifier(parent);require(entities.contains(ancestor) && ++depth<=entities.size(),"Invalid physical attachment ancestor graph.");
+                    const auto& value=entities.at(ancestor);
+                    require(!value.at("components").contains("PhysicalRig"),"Ordinary colliders/controllers cannot descend from PhysicalRig until attachment ownership is supported.");
+                    parent=value.at("parent");
+                }
+            }
+            if(bag.contains("RigNode")) {
+                const auto& ref=bag.at("RigNode");
+                ++physical_nodes[identifier(ref.at("rig"))][static_cast<std::uint32_t>(revision(ref.at("node")))];
+            }
+        }
+        for(const auto& [id,entity]:entities.items()) {
+            const auto& bag=entity.at("components");if(!bag.contains("PhysicalRig"))continue;
+            require(bag.contains("AnimationRig"),"PhysicalRig requires AnimationRig on the same entity.");
+            const auto profile=physical_rig_value(bag.at("PhysicalRig"));
+            for(const auto& part:profile.profile.parts) {
+                const auto owner=physical_nodes.find(id);
+                require(owner!=physical_nodes.end() && owner->second.contains(part.node) && owner->second.at(part.node)==1,
+                    "PhysicalRig part requires exactly one matching model-local RigNode on its AnimationRig.");
+            }
+        }
+    }
     std::set<std::pair<std::string,std::string>> regions;
     for(const auto& [id,entity]:entities.items())if(entity.at("components").contains("HitRegion")) {
         const auto region=hit_region_value(entity.at("components").at("HitRegion"));
@@ -1683,7 +1721,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -2867,7 +2905,7 @@ public:
         // meshes/audio are intentionally not loaded by this structural check.
         for(const auto& e:document.at("entities")) {
             const auto& c=e.at("components");
-            if(c.contains("AnimationRig") || c.contains("RigNode") || c.contains("SkinnedMesh")) {
+            if(c.contains("AnimationRig") || c.contains("PhysicalRig") || c.contains("RigNode") || c.contains("SkinnedMesh")) {
                 (void)runtime_definition(false,&document,true);return;
             }
         }
@@ -2900,6 +2938,7 @@ public:
                 catch(const std::exception& error) { throw Error(-32050,error.what()); }
                 rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));if(ref.contains("ik"))rig.ik=animation_ik_value(ref.at("ik"));if(ref.contains("root_motion"))rig.root_motion=root_motion_value(ref.at("root_motion"));value.animation_rig=std::move(rig);
             }
+            if(components.contains("PhysicalRig"))value.physical_rig=physical_rig_value(components.at("PhysicalRig"));
             if(components.contains("RigNode")) {
                 const auto& ref=components.at("RigNode");value.rig_node=RuntimeRigNode{identifier(ref.at("rig")),static_cast<std::uint32_t>(revision(ref.at("node")))};
             }
@@ -2946,6 +2985,31 @@ public:
             if(components.contains("HitRegion"))value.hit_region=hit_region_value(components.at("HitRegion"));
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()};if(c.contains("stance"))value.character->stance=character_stance_value(c.at("stance"),c.at("radius").get<double>(),c.at("height").get<double>());if(c.contains("locomotion"))value.character->locomotion=character_locomotion_value(c.at("locomotion")); }
             result.entities.push_back(std::move(value));
+        }
+        // The imported model is available here in both full preparation and
+        // headless animation-only validation. No Jolt allocation or renderer is
+        // needed to reject out-of-model parts or anatomically disconnected maps.
+        for(const auto& entity:result.entities)if(entity.physical_rig) {
+            require(entity.animation_rig.has_value() && entity.animation_rig->model,
+                "PhysicalRig requires a resolved AnimationRig model.");
+            const auto& model=*entity.animation_rig->model;const auto& profile=entity.physical_rig->profile;
+            for(const auto& part:profile.parts)require(part.node<model.nodes.size(),"PhysicalRig part model node does not exist.");
+            std::map<std::string,std::uint32_t> part_nodes;
+            for(const auto& part:profile.parts)part_nodes.emplace(part.name,part.node);
+            const auto ancestor=[&](std::uint32_t parent,std::uint32_t child) {
+                auto node=static_cast<int>(child);std::size_t depth=0;
+                while(node>=0) {
+                    require(static_cast<std::size_t>(node)<model.nodes.size() && ++depth<=model.nodes.size(),
+                        "PhysicalRig imported model hierarchy is invalid.");
+                    if(static_cast<std::uint32_t>(node)==parent)return true;
+                    node=model.nodes[static_cast<std::size_t>(node)].parent;
+                }
+                return false;
+            };
+            for(const auto& part:profile.parts)require(ancestor(part_nodes.at(profile.root),part.node),
+                "PhysicalRig root part must be a model ancestor of every physical part.");
+            for(const auto& joint:profile.joints)require(ancestor(part_nodes.at(joint.parent),part_nodes.at(joint.child)),
+                "PhysicalRig joint parent must be a model ancestor of its child part.");
         }
         if(!animation_only && !audio_only) {
             result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache);
@@ -3269,6 +3333,7 @@ public:
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"component_revision",runtime_->component_revision()},{"structure_revision",runtime_->structure_revision()}};
     }
 #include "world_observe.inc"
+#include "world_physical.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
         if(method=="runtime.components") {
@@ -3628,6 +3693,7 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
+        if(method=="runtime.physical_rig")return physical_runtime_query(params);
         if(method=="runtime.root_motion") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -3734,7 +3800,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -3752,6 +3818,9 @@ public:
             const auto character_stances=parse_character_stances(normalized.at("character_stances"));
             if(!normalized.contains("grounding"))normalized["grounding"]=Json::array();
             const auto grounding=parse_grounding(normalized.at("grounding"));
+            if(!normalized.contains("physical_rigs"))normalized["physical_rigs"]=Json::array();
+            const auto physical_rigs=parse_physical_rigs(normalized.at("physical_rigs"));
+            for(auto& command:normalized["physical_rigs"])if(!command.contains("activate"))command["activate"]=false;
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
                 if(!command.contains("enabled"))command["enabled"]=true;
@@ -3796,7 +3865,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }
@@ -3994,7 +4063,7 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

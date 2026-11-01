@@ -14,6 +14,7 @@
 #include <bit>
 #include <cmath>
 #include <cstring>
+#include <exception>
 #include <limits>
 #include <set>
 #include <stdexcept>
@@ -73,7 +74,7 @@ std::uint32_t body_id(const Json& v) {
     return id;
 }
 struct BodyInfo {std::uint32_t id;int motion;bool properties;};
-std::vector<BodyInfo> body_info(const JPH::PhysicsSystem& system) {
+std::vector<BodyInfo> body_info(const JPH::PhysicsSystem& system,bool allow_pending=false) {
     JPH::BodyIDVector ids;system.GetBodies(ids);
     if(ids.size()>runtime_physics_state_max_bodies)invalid("Physics world exceeds the portable body limit.");
     std::vector<BodyInfo> out;
@@ -82,7 +83,7 @@ std::vector<BodyInfo> body_info(const JPH::PhysicsSystem& system) {
         if(!lock.Succeeded())invalid("Physics state body disappeared during owner-thread capture.");
         const auto& b=lock.GetBody();
         if(!b.IsRigidBody())invalid("Soft-body state is outside the pinned portable profile.");
-        if(b.IsCollisionCacheInvalid())
+        if(!allow_pending&&b.IsCollisionCacheInvalid())
             invalid("Portable physics state requires a committed boundary without pending live contact-cache invalidation.");
         if(b.IsInBroadPhase())out.push_back({id.GetIndexAndSequenceNumber(),int(b.GetMotionType()),b.GetMotionPropertiesUnchecked()!=nullptr});
     }
@@ -248,6 +249,49 @@ JPH::StateRecorderImpl native_capture(const JPH::PhysicsSystem& system) {
     if(r.IsFailed()||r.GetDataSize()>runtime_physics_state_max_native_bytes)throw std::runtime_error("Native physics capture exceeded its owned byte budget.");
     return r;
 }
+bool equal_owner(const JPH::PoimaBodyOwnerState& a,const JPH::PoimaBodyOwnerState& b) {
+    return a.mActiveRigidOrder==b.mActiveRigidOrder&&a.mInvalidationQueue==b.mInvalidationQueue&&
+        a.mInvalidatedBodies==b.mInvalidatedBodies;
+}
+JPH::PoimaBodyOwnerState capture_owner(const JPH::PhysicsSystem& system) {
+    JPH::PoimaBodyOwnerState owner;
+    if(!system.CapturePoimaOwnerState(owner))
+        invalid("Physics owner state is inconsistent or outside the pinned rigid profile.");
+    return owner;
+}
+void validate_owner(const JPH::PhysicsSystem& system,const Json& state,const JPH::PoimaBodyOwnerState& owner) {
+    if(owner.mActiveRigidOrder.size()>runtime_physics_state_max_bodies||
+       owner.mInvalidatedBodies.size()>runtime_physics_state_max_bodies||
+       owner.mInvalidationQueue.size()>JPH::PoimaBodyOwnerState::cMaxInvalidationQueue)
+        invalid("Joined physics owner state exceeds bounded counts.");
+    JPH::BodyIDVector all;system.GetBodies(all);
+    if(all.size()>runtime_physics_state_max_bodies)invalid("Joined physics target exceeds body capacity.");
+    std::set<std::uint32_t> allocated;
+    for(auto id:all)allocated.insert(body_id(Json(id.GetIndexAndSequenceNumber())));
+    std::set<std::uint32_t> expected_active,seen_active,flagged,queued_live;
+    for(const auto& b:state.at("bodies"))if(b.at("active").get<bool>())expected_active.insert(b.at("id").get<std::uint32_t>());
+    for(auto id:owner.mActiveRigidOrder) {
+        auto raw=body_id(Json(id.GetIndexAndSequenceNumber()));
+        if(!expected_active.contains(raw)||!seen_active.insert(raw).second)
+            invalid("Joined owner active order differs from incoming GBC active membership.");
+    }
+    if(seen_active!=expected_active)invalid("Joined owner active order omits incoming active bodies.");
+    std::uint32_t previous_slot=0;bool first=true;
+    for(auto id:owner.mInvalidatedBodies) {
+        auto raw=body_id(Json(id.GetIndexAndSequenceNumber()));const auto slot=id.GetIndex();
+        if(!allocated.contains(raw)||(!first&&slot<=previous_slot)||!flagged.insert(raw).second)
+            invalid("Joined invalidated bodies are missing, repeated, stale or outside native slot order.");
+        previous_slot=slot;first=false;
+    }
+    for(auto id:owner.mInvalidationQueue) {
+        auto raw=body_id(Json(id.GetIndexAndSequenceNumber()));
+        // Full-generation retired IDs are retained as tokens; bootstrap ledger
+        // history, not the current live inventory alone, rules out future IDs.
+        if(allocated.contains(raw)&&(!flagged.contains(raw)||!queued_live.insert(raw).second))
+            invalid("Joined invalidation queue has an unflagged or duplicated live ID.");
+    }
+    if(queued_live!=flagged)invalid("Joined live invalidation flags and queue do not match.");
+}
 }
 Json capture_runtime_physics_state(const JPH::PhysicsSystem& system) {
     const auto infos=body_info(system);auto native=native_capture(system);const auto bytes=native.GetData();
@@ -270,6 +314,46 @@ void restore_runtime_physics_state(JPH::PhysicsSystem& system,const Json& state)
     if(!restored) {
         old.Rewind();if(!system.RestoreState(old)||old.IsFailed())throw std::runtime_error("Native physics restore failed and trusted rollback failed; discard the candidate world.");
         throw std::runtime_error("Native physics restore failed; trusted previous state restored.");
+    }
+}
+Json capture_runtime_physics_state_joined(const JPH::PhysicsSystem& system,JPH::PoimaBodyOwnerState& out_owner) {
+    auto owner=capture_owner(system);const auto infos=body_info(system,true);
+    auto native=native_capture(system);const auto bytes=native.GetData();
+    auto result=decode(bytes,infos);validate(result,infos);validate_owner(system,result,owner);
+    auto encoded=encode(result);
+    if(encoded.GetData()!=bytes)throw std::runtime_error("Joined named physics state did not exactly re-encode native SaveState bytes.");
+    // No allocation/partial assignment after success: preserve caller output
+    // exactly if any preceding capture, validation or encoding failed.
+    out_owner.mActiveRigidOrder.swap(owner.mActiveRigidOrder);
+    out_owner.mInvalidationQueue.swap(owner.mInvalidationQueue);
+    out_owner.mInvalidatedBodies.swap(owner.mInvalidatedBodies);
+    return result;
+}
+void validate_runtime_physics_state_joined(const JPH::PhysicsSystem& system,const Json& state,
+    const JPH::PoimaBodyOwnerState& owner) {
+    validate(state,body_info(system,true));validate_owner(system,state,owner);(void)encode(state);
+}
+void restore_runtime_physics_state_joined(JPH::PhysicsSystem& system,const Json& state,
+    const JPH::PoimaBodyOwnerState& owner) {
+    validate(state,body_info(system,true));validate_owner(system,state,owner);
+    auto fresh=encode(state);const auto expected_bytes=fresh.GetData();
+    auto old_owner=capture_owner(system);auto old=native_capture(system);const auto old_bytes=old.GetData();
+    try {
+        fresh.Rewind();
+        if(!system.RestoreState(fresh)||fresh.IsFailed())throw std::runtime_error("Joined native GBC restore failed.");
+        if(!system.RestorePoimaOwnerState(owner))throw std::runtime_error("Joined typed owner restore failed.");
+        if(native_capture(system).GetData()!=expected_bytes||!equal_owner(capture_owner(system),owner))
+            throw std::runtime_error("Joined native and typed owner state did not verify exactly after restoration.");
+    } catch(...) {
+        const auto failure=std::current_exception();bool gbc_restored=false,owner_restored=false;
+        try {
+            old.Rewind();gbc_restored=system.RestoreState(old)&&!old.IsFailed();
+            owner_restored=system.RestorePoimaOwnerState(old_owner);
+            if(!gbc_restored||!owner_restored||native_capture(system).GetData()!=old_bytes||
+               !equal_owner(capture_owner(system),old_owner))
+                throw std::runtime_error("Joined rollback verification failed.");
+        } catch(...) {throw std::runtime_error("Joined physics restore failed and both trusted backups did not fully restore; discard the candidate world.");}
+        std::rethrow_exception(failure);
     }
 }
 }
