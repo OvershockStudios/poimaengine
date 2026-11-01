@@ -18,15 +18,24 @@ save upgrades reject physical snapshots. Imported nonuniform-scale rigs,
 controller transfer, active reactions and dedicated editor tools remain required
 work toward the production character workflow.
 
-Linux qualification covers native momentum, final skin palettes, exact cold-save
-continuation, lifecycle rollback and the complete CLI workflow. The real CoreCLR
-consumer passes 450 requests, all 33 typed fields, 75 native boundary comparisons,
+[Qualification](evidence/m2-physical-rigs.json) covers native momentum, final skin
+palettes, complete cold-save continuation and lifecycle rollback. Linux composes
+23 selected native suites from retained cohorts; Windows passes all 23 selected
+native tests. Both platforms pass the 76-request CLI workflow and a real CoreCLR
+consumer with 450 requests, all 33 typed fields, 75 native boundary comparisons,
 eleven complete archives and five whole-byte pairs across two naturally closed
-owners. A retained earlier bridge/game also passes its independent workflow.
-The separate managed ABI suite uses synthetic callbacks. Windows, rendered
-physical-rig publication and Native AOT qualification are separate scopes still
-being checked; these records do not establish production humanoid quality or
-representative performance. Original failed attempts remain preserved.
+owners. An unchanged earlier bridge/game also passes its independent workflow;
+104 recorded managed ABI check descriptions use synthetic callbacks.
+
+Six Windows Vulkan captures qualify physical skin publication on a two-part
+analytic ribbon, with independent skin/projection occupancy checks, nine complete
+archive pairs and three whole-BMP pairs across warm/cold restore and continuation.
+All captured submissions retire with zero renderer validation errors. Visual
+review confirms the simple ribbon's bend and deformation; this does not establish
+production humanoid motion, active control, Native AOT or representative
+performance. Original failed Linux cohorts, managed-wire attempts, the Windows
+live-census monitor and the pre-GPU emissive-recipe rejection retain their failed
+verdicts.
 
 Version 0.0.217 adds opt-in [procedural-sky environment lighting](ENVIRONMENT_IBL.md)
 with diffuse convolution, roughness-prefiltered reflections and a split-sum BRDF

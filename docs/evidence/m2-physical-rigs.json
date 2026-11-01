@@ -1,0 +1,909 @@
+{
+  "format": "poima.physical-rigs.v1",
+  "checkpoint": "0.0.218",
+  "date": "2026-11-01",
+  "passed": true,
+  "scope": "Bounded imported-rig passive takeover, native CLI/CoreCLR callbacks, typed full saves and Windows Vulkan skin publication. Qualification is composed from separately retained records; original failed attempts remain failed.",
+  "source": {
+    "include/poima/physical_rig.hpp": {
+      "bytes": 6217,
+      "sha256": "6f7e581193ace04902a5c7874a73e3c5c48a8c326c9217a0b6f22ff9b5612500"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 2104,
+      "sha256": "b27d67d4d3874d63c3eef30527dd5bca6ab48438af5c31be3d26fa89e3228b1c"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 53879,
+      "sha256": "e03890fef2d30de89e2b22c5460fcdb219b82702cbf16f46ccd7e83d342ec34e"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 13712,
+      "sha256": "24fc680525736ba6a570a4887ff36a65b685f74dcc8244f5d8a8cf9f0ba6c49a"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 10790,
+      "sha256": "cce1170be498401e74edd8a5d2d071d78008388042bfc35cfa7ca60910cfea40"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 32990,
+      "sha256": "974814e110a70f66a0e5747fe7615ab3b19be44f8c5db40c0598cd52a6428795"
+    },
+    "src/runtime_physical_rig.cpp": {
+      "bytes": 38192,
+      "sha256": "920a832921b5ebfcd3363433264c3566fccab5554e07f306b18ade21fde193aa"
+    },
+    "src/runtime_physical_pose.cpp": {
+      "bytes": 18262,
+      "sha256": "14ac70f608a8280ecfda8014ebceeb3048506e0921d0e571b1d9a68bc101193f"
+    },
+    "src/runtime_physics_state.cpp": {
+      "bytes": 23857,
+      "sha256": "6ce0d1773d471c372f831e477ce47d69e6a0a68bfc8aeba4a8ab2a4012712d50"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 10440,
+      "sha256": "638e95d33dad79c06f33d8a62e0763e4d6a3e7dccf109765933a2c12617f5713"
+    },
+    "src/runtime_physics_bootstrap_json.cpp": {
+      "bytes": 12926,
+      "sha256": "2ea985e8365b3b6f38b92923a73e07bc912ecd857a216c6b891fb1e769477501"
+    },
+    "src/world_physical.inc": {
+      "bytes": 6134,
+      "sha256": "a32b396e525cc84124586f0d100d53eabb89aa4d9f76b5015e42815ffdb94e69"
+    },
+    "managed/Poima.Gameplay/PhysicalRig.cs": {
+      "bytes": 14226,
+      "sha256": "c7949873b0c78fd8877bea4172bfeb876adf5809e5f238ae05eca98c20c5023a"
+    },
+    "tests/world_physical_contract.py": {
+      "bytes": 22663,
+      "sha256": "e42f6f7c034ae389dfb542a1bbc563f1a345000854d216ab65ba7b712c3cea0c"
+    },
+    "tests/managed_physical_gameplay_contract.py": {
+      "bytes": 36227,
+      "sha256": "5fcfa820cd70829a1aa677fdc6e19ad03141af3d07fee6b118175fb4b3442662"
+    },
+    "tests/managed_physical_gameplay/Game.cs": {
+      "bytes": 3369,
+      "sha256": "f040d60eace67db9582e9ebcc806073743e2e2178fa84efb6613c3f8f75ff73f"
+    }
+  },
+  "contract": {
+    "schema_revision": 122,
+    "services_epoch": 7,
+    "optional_feature": "physical_rig_v1",
+    "services_prefix_bytes": 424,
+    "previous_prefix_bytes": 400,
+    "maximum_parts": 64,
+    "maximum_joints": 63,
+    "body_id_index_bits": 23,
+    "body_id_sequence_shift": 23,
+    "body_id_broadphase_bit": 31,
+    "cpp_consumers_require_rebuild": true
+  },
+  "native": {
+    "linux": {
+      "selected_suite_count": 23,
+      "composition": true,
+      "suites": [
+        {
+          "name": "physical_rig_math_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "physical_rig_json_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "physical_pose_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physics_state_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physical_rig_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "physical_state_json_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_animation_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_save_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_body_ids_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_topology_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "jolt_owner_state_native",
+          "cohort": "native-10",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physics_joined_native",
+          "cohort": "native-11",
+          "original_cohort_passed": true
+        },
+        {
+          "name": "runtime_physical_projection_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physics_bootstrap_json_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_body_ids_snapshot_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "physical_gameplay_abi_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physical_ownership_native",
+          "cohort": "native-9",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "runtime_physical_integration_native",
+          "cohort": "native-10",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "world_schema_native",
+          "cohort": "native-12",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "world_session_native",
+          "cohort": "native-12",
+          "original_cohort_passed": false
+        },
+        {
+          "name": "gameplay_compatibility_policy",
+          "cohort": "native-13",
+          "original_cohort_passed": true
+        },
+        {
+          "name": "gameplay_player_preferences_native",
+          "cohort": "native-12",
+          "original_cohort_passed": false
+        }
+      ],
+      "metadata_scope": "Initial19 suites used development0.0.217 metadata. Four retained suites and CLI/version followup use0.0.218/schema122. This is not one all-pass23-suite invocation.",
+      "original_cohorts": {
+        "native-9": {
+          "passed": false,
+          "test_command_exit_code": 8,
+          "owner": {
+            "bytes": 203788,
+            "sha256": "44c25ebbeba301c214414881ac9c263a8e08383a999e317de30fac518c02ad15"
+          },
+          "ctest_stdout": {
+            "bytes": 2777,
+            "sha256": "139589b59a2f65ad60ad5d4ecad9fbc044d132674d718505bc560d1ecc01519a"
+          }
+        },
+        "native-10": {
+          "passed": false,
+          "test_command_exit_code": 8,
+          "owner": {
+            "bytes": 32365,
+            "sha256": "f060606412f66e6844c7292fcf0559e1ce29c7a354984b80eaae1ad8643a0921"
+          },
+          "ctest_stdout": {
+            "bytes": 1152,
+            "sha256": "0eb7f7fa8820269e44eb3d8e309a1eadf3c96e158eb5c3b04cc085df488a2694"
+          }
+        },
+        "native-11": {
+          "passed": true,
+          "test_command_exit_code": 0,
+          "owner": {
+            "bytes": 19080,
+            "sha256": "a55a553a52f3f8e4d8bd0cee7fa44198b40facfa72f4a4a822f5ea2f373b6a68"
+          },
+          "ctest_stdout": {
+            "bytes": 356,
+            "sha256": "5a2f43bbb28a1acb2bc320aa9d3867684ea8dd275ebc6bcb49be0efd7dd37530"
+          }
+        },
+        "native-12": {
+          "passed": false,
+          "test_command_exit_code": 8,
+          "owner": {
+            "bytes": 78118,
+            "sha256": "3976728ecfca7d9d09ef2802ff9ef2b0400605c95370cef739b0569672edd8d1"
+          },
+          "ctest_stdout": {
+            "bytes": 2293,
+            "sha256": "e8273012aff2799e73446863d05f8de9bf6529af509b2b76be67ad8b34bf765b"
+          }
+        },
+        "native-13": {
+          "passed": true,
+          "test_command_exit_code": 0,
+          "owner": {
+            "bytes": 19485,
+            "sha256": "db881812a2855b44e19ad91564b16d98e8f7f3a71a77906da47beee533b790c2"
+          },
+          "ctest_stdout": {
+            "bytes": 244,
+            "sha256": "45c59873b56ad118a46ff7f8d50fd2fae6cd2cf4081cc608d65dfc3cddd2540e"
+          }
+        }
+      }
+    },
+    "windows": {
+      "selected_suite_count": 23,
+      "suites": [
+        "physical-rig-math",
+        "physical-rig-json",
+        "physical-pose",
+        "runtime-physics-state",
+        "runtime-physical-rig",
+        "physical-state-json",
+        "runtime",
+        "runtime-animation",
+        "runtime-save",
+        "runtime-body-ids",
+        "runtime-topology",
+        "jolt-owner-state",
+        "runtime-physics-joined",
+        "runtime-physical-projection",
+        "runtime-physics-bootstrap-json",
+        "runtime-body-ids-snapshot",
+        "physical-gameplay-abi",
+        "runtime-physical-ownership",
+        "runtime-physical-integration",
+        "world-schema",
+        "world-session",
+        "gameplay-compatibility",
+        "gameplay-player-preferences"
+      ],
+      "campaign_commands": 27,
+      "cpu_owner": {
+        "bytes": 18733,
+        "sha256": "5b1f37c80009dabf6b7379e3444ce6e99a8773b5eb03a7f38a41d057929396b2"
+      },
+      "cpu_worker": {
+        "bytes": 34886,
+        "sha256": "2b213da402e696be85c10bd4726d410b989d31822c28a7f502e5f48a17b76b79"
+      },
+      "naturally_closed_empty_unforced_job": true,
+      "compiler": {
+        "engine_version": "0.0.218",
+        "cache_generation": 62,
+        "partial_cohort": true,
+        "selected_pe_images": 25,
+        "cli": {
+          "bytes": 28119040,
+          "sha256": "d5ba5365364da63156a1a92fe73fcb6ac2fd423ac8ce4e1d5361b5f099221835"
+        },
+        "desktop": {
+          "bytes": 327059968,
+          "sha256": "9040f3e3942335e703227e223812bda555836b449a2bb3a90fa8fc143a31fc05"
+        },
+        "core": {
+          "bytes": 262865828,
+          "sha256": "132397744f427239e4616e48b5fcc072e14cba464a95e1d3aae1aa388af884cd"
+        },
+        "manifest": {
+          "bytes": 46576,
+          "sha256": "01ba421b505c16fa2364c104a56ce6a24af2643c918898d03c1e3e27e77e556b"
+        }
+      }
+    }
+  },
+  "cli": [
+    {
+      "platform": "Linux",
+      "engine_metadata": "0.0.218",
+      "schema_revision": 122,
+      "requests": 76,
+      "groups": [
+        "authoring",
+        "runtime",
+        "fresh-continuation"
+      ],
+      "native_world_owners": 4,
+      "complete_archives": 6,
+      "comparison_scope": "Complete typed JSON snapshot/document equality; archive hashes retained. This CLI fixture does not assert complete raw archive byte-pair equality.",
+      "evidence": {
+        "bytes": 1340626,
+        "sha256": "856c43c55ac3715d56c86d5eb2bd3f6968c4b3435940c49aac7f0e1f668476ee"
+      }
+    },
+    {
+      "platform": "Windows",
+      "engine_metadata": "0.0.218",
+      "schema_revision": 122,
+      "requests": 76,
+      "groups": [
+        "authoring",
+        "runtime",
+        "fresh-continuation"
+      ],
+      "native_world_owners": 4,
+      "complete_archives": 6,
+      "comparison_scope": "Complete typed JSON snapshot/document equality; archive hashes retained. This CLI fixture does not assert complete raw archive byte-pair equality.",
+      "evidence": {
+        "bytes": 1371146,
+        "sha256": "b856a719ea96513711e9a598faf11883920b3388c36aa4abcc17eefac75de2e8"
+      }
+    }
+  ],
+  "compiled_gameplay": [
+    {
+      "platform": "Linux",
+      "backend": "CoreCLR",
+      "native_engine_metadata": "0.0.217",
+      "requests": 450,
+      "typed_fields": 33,
+      "observations": 85,
+      "native_boundary_comparisons": 75,
+      "complete_archives": 11,
+      "whole_archive_pairs": [
+        {
+          "label": "same-owner-animated-cold-restore",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "duplicate-activation-whole-rollback",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "later-tick-whole-rollback",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "fresh-process-whole-restoration",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "fresh-process-whole-future-continuation",
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ],
+      "native_world_owners": 2,
+      "verifier_sha256": "c5efb99ba60eeca0763f5987630d06d374033abc74205b31b8a8547dc7252394",
+      "native_cli_sha256": "119fae0c32a99fc4e147e68a780711877dda9cfcfa2b4b8e3d44dbafea00d3cc",
+      "game_assembly_sha256": "2218662d7b0da9228f0ab65b5d71c6c56ecd950650e12a5f24f1ab23cd20b6c4",
+      "momentum_oracle": {
+        "authored_masses": [
+          3.0,
+          1.0
+        ],
+        "impulse": [
+          1.0,
+          0.5,
+          0.0
+        ],
+        "applications": [
+          "root",
+          "tip",
+          "root"
+        ],
+        "dt": 0.016666666666666666,
+        "gravity": [
+          0.0,
+          -9.81,
+          0.0
+        ],
+        "linear_damping": 0.05,
+        "expected": [
+          2.9975,
+          0.8452949999999999,
+          0.0
+        ],
+        "actual": [
+          2.997499942779541,
+          0.8452950119972229,
+          0.0
+        ],
+        "tolerance": 2e-05
+      },
+      "evidence": {
+        "bytes": 3318065,
+        "sha256": "cc7cec90393381c3cc151ba6bd9b5e4c354bb78a469bdf446bc284b7841b3e80"
+      }
+    },
+    {
+      "platform": "Windows",
+      "backend": "CoreCLR",
+      "native_engine_metadata": "0.0.218",
+      "requests": 450,
+      "typed_fields": 33,
+      "observations": 85,
+      "native_boundary_comparisons": 75,
+      "complete_archives": 11,
+      "whole_archive_pairs": [
+        {
+          "label": "same-owner-animated-cold-restore",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "duplicate-activation-whole-rollback",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "later-tick-whole-rollback",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "fresh-process-whole-restoration",
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "fresh-process-whole-future-continuation",
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ],
+      "native_world_owners": 2,
+      "verifier_sha256": "5fcfa820cd70829a1aa677fdc6e19ad03141af3d07fee6b118175fb4b3442662",
+      "native_cli_sha256": "d5ba5365364da63156a1a92fe73fcb6ac2fd423ac8ce4e1d5361b5f099221835",
+      "game_assembly_sha256": "2218662d7b0da9228f0ab65b5d71c6c56ecd950650e12a5f24f1ab23cd20b6c4",
+      "momentum_oracle": {
+        "authored_masses": [
+          3.0,
+          1.0
+        ],
+        "impulse": [
+          1.0,
+          0.5,
+          0.0
+        ],
+        "applications": [
+          "root",
+          "tip",
+          "root"
+        ],
+        "dt": 0.016666666666666666,
+        "gravity": [
+          0.0,
+          -9.81,
+          0.0
+        ],
+        "linear_damping": 0.05,
+        "expected": [
+          2.9975,
+          0.8452949999999999,
+          0.0
+        ],
+        "actual": [
+          2.997499942779541,
+          0.8452950119972229,
+          0.0
+        ],
+        "tolerance": 2e-05
+      },
+      "evidence": {
+        "bytes": 3425780,
+        "sha256": "7597e257c85e3672baf7c8ba8b20f1434c891dcbbe6877cd1b4c3fd30a5420a7"
+      }
+    }
+  ],
+  "retained_earlier_consumer": {
+    "scope": "Unchanged0.0.217 bridge/SDK and Perception Yard game remain compatible in their bounded native workflows; this does not exercise every optional service through400bytes or claim that game requires400bytes.",
+    "runs": [
+      {
+        "platform": "Linux",
+        "requests": 176,
+        "typed_fields": 55,
+        "observations": 42,
+        "complete_archives": 9,
+        "whole_archive_pairs": 5,
+        "evidence": {
+          "bytes": 2523081,
+          "sha256": "c69db285dee4d2b0a3da56602a6168e1a071634edb78e9e966e09336d6b4c6f0"
+        }
+      },
+      {
+        "platform": "Windows",
+        "requests": 176,
+        "typed_fields": 55,
+        "observations": 42,
+        "complete_archives": 9,
+        "whole_archive_pairs": 5,
+        "evidence": {
+          "bytes": 2525853,
+          "sha256": "3e387d65fac22f452859915da8f5ec83de1460bc636059b50fa2c62ab8e362b3"
+        }
+      }
+    ]
+  },
+  "managed_wire": {
+    "passed": true,
+    "callbacks": "synthetic; separate from native Jolt gameplay",
+    "evidence": {
+      "bytes": 11301,
+      "sha256": "54e064b95dfd5ea25edc515aeea04da3dedbdd520ca9aafb2993f20786c723c9"
+    },
+    "recorded_checks": 104,
+    "count_scope": "Recorded check descriptions, not 104 independently counted test groups."
+  },
+  "vulkan": {
+    "platform": "Windows",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "requested_gpu_index": 1,
+    "width": 640,
+    "height": 480,
+    "samples": 4,
+    "frames_in_flight": 1,
+    "frames_per_capture": 1,
+    "reconstruction": "none",
+    "jitter_pixels": [
+      0.0,
+      0.0
+    ],
+    "requests": 60,
+    "captures": [
+      {
+        "label": "animated-rest",
+        "tick": 0,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "33338acb33474907ddf010ac206d2fe8c08e32a0a43163e1eb6106c43f102f76"
+        },
+        "foreground_pixels": 13777,
+        "deep_interior_pixels": 11026,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.39505264851351285
+      },
+      {
+        "label": "passive",
+        "tick": 6,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "889664b102910f3de6b7bf9ff7d0945b7897960aeca7ecb5eec5c8fdc21a4e0d"
+        },
+        "foreground_pixels": 13716,
+        "deep_interior_pixels": 10993,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.19579932229981978
+      },
+      {
+        "label": "warm-restored",
+        "tick": 6,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "889664b102910f3de6b7bf9ff7d0945b7897960aeca7ecb5eec5c8fdc21a4e0d"
+        },
+        "foreground_pixels": 13716,
+        "deep_interior_pixels": 10993,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.19579932229981978
+      },
+      {
+        "label": "warm-future",
+        "tick": 12,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "8ae3cc644f45c4ac5117790a071b318900bb1b75bd565e3b5df0414b68a26df1"
+        },
+        "foreground_pixels": 13716,
+        "deep_interior_pixels": 11015,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.6675612766165955
+      },
+      {
+        "label": "cold-restored",
+        "tick": 6,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "889664b102910f3de6b7bf9ff7d0945b7897960aeca7ecb5eec5c8fdc21a4e0d"
+        },
+        "foreground_pixels": 13716,
+        "deep_interior_pixels": 10993,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.19579932229981978
+      },
+      {
+        "label": "cold-future",
+        "tick": 12,
+        "image": {
+          "bytes": 1228938,
+          "sha256": "8ae3cc644f45c4ac5117790a071b318900bb1b75bd565e3b5df0414b68a26df1"
+        },
+        "foreground_pixels": 13716,
+        "deep_interior_pixels": 11015,
+        "missing_interior_pixels": 0,
+        "maximum_bounds_error_pixels": 0.6675612766165955
+      }
+    ],
+    "native_world_owners": 2,
+    "complete_archives": 12,
+    "complete_archive_pairs": [
+      {
+        "label": "animated-rest-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "passive-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "warm-restored-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "warm-complete",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "warm-future-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "cold-restored-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "cold-complete",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "cold-future-capture-pure",
+        "bytes_equal": true,
+        "exclusions": []
+      },
+      {
+        "label": "cold-future-complete",
+        "bytes_equal": true,
+        "exclusions": []
+      }
+    ],
+    "whole_bmp_pairs": [
+      {
+        "label": "warm-same-pose",
+        "whole_bytes_equal": true,
+        "excluded_pixels": 0
+      },
+      {
+        "label": "cold-same-pose",
+        "whole_bytes_equal": true,
+        "excluded_pixels": 0
+      },
+      {
+        "label": "cold-future",
+        "whole_bytes_equal": true,
+        "excluded_pixels": 0
+      }
+    ],
+    "renderer_validation_errors": 0,
+    "naturally_closed_empty_unforced_job": true,
+    "independent_oracle": {
+      "recipe": "Original analytic six-vertex/two-part ribbon; CPU linear-blend skinning from known weights/inverse bind plus native solved bone-world matrices, independent camera projection and red-emissive occupancy.",
+      "bounds_tolerance_pixels": 3,
+      "interior_edge_guard_pixels": 2.5,
+      "missing_deep_interior_pixels": 0,
+      "minimum_nonrigid_vs_stale_palette_separation_pixels": 5,
+      "observed_nonrigid_separation_pixels": 13.603078890106447,
+      "minimum_changed_pixels": 256,
+      "observed_changed_pixels": 3813,
+      "scope": "Silhouette/deep occupancy correctness; no claim that every shaded output channel matches an independent renderer."
+    },
+    "evidence": {
+      "bytes": 344678,
+      "sha256": "ec947b08c3afeccbab7111d1da4dace5da06665e30aa94ae4d02db3a2fee7656"
+    },
+    "owner": {
+      "bytes": 13476,
+      "sha256": "1c96c547fa0adbf44bf943833cfe987781a83e366d054634bc7a512643069152"
+    },
+    "verifier": {
+      "bytes": 18864,
+      "sha256": "cf1b652569408892a78f8d7f4d188e1a96aeb1025288e8549dcb36a257880fa4"
+    },
+    "limits": {
+      "seconds": 180,
+      "captures": 6,
+      "bytes": 134217728,
+      "files": 4096,
+      "rpc": 300
+    },
+    "visual_review": {
+      "unique_frames": 3,
+      "original_bmps_unchanged": true,
+      "lossless_format_conversion": true,
+      "review": {
+        "bytes": 778,
+        "sha256": "c62e1f285f4b5b27c407c10c124c657c6ce71e6960766ae1ed8c974863338ce6"
+      },
+      "scope": "Upright analytic ribbon, passive joint bend and further deformation; no humanoid anatomy, natural-motion or contact-aesthetic conclusion."
+    }
+  },
+  "runtime_scope": {
+    "linux": "Portable compiled .NET10 gameplay; initial native host metadata0.0.217, followed by0.0.218 CLI/schema checks.",
+    "windows": "hostfxr/runtime10.0.14, explicit LatestPatch configuration and critical-file/membership pins; no complete loaded-module inventory.",
+    "cross_platform_bitwise_replay_qualified": false
+  },
+  "preserved_failures": [
+    {
+      "kind": "Linux integrated cohort 9",
+      "passed": false,
+      "cause": "Two malformed test builders appended an element from their own reallocating Jolt array and trapped during fixture construction; the original cohort remains failed.",
+      "owner": {
+        "bytes": 203788,
+        "sha256": "44c25ebbeba301c214414881ac9c263a8e08383a999e317de30fac518c02ad15"
+      }
+    },
+    {
+      "kind": "Linux integrated cohort 10",
+      "passed": false,
+      "cause": "The joined CCD fixture passed a loop index as seconds; the CLI and SDK validators also used the wrong Jolt body-ID bit mask. Original requests/IDs and failed verdicts remain unchanged.",
+      "owner": {
+        "bytes": 32365,
+        "sha256": "f060606412f66e6844c7292fcf0559e1ce29c7a354984b80eaae1ad8643a0921"
+      }
+    },
+    {
+      "kind": "Linux integrated cohort 12",
+      "passed": false,
+      "cause": "A compatibility test derived an earlier service host from the new host while retaining its physical feature. Explicit earlier-host fixtures corrected the oracle; the original cohort remains failed.",
+      "owner": {
+        "bytes": 78118,
+        "sha256": "3976728ecfca7d9d09ef2802ff9ef2b0400605c95370cef739b0569672edd8d1"
+      }
+    },
+    {
+      "kind": "Managed wire initial attempt",
+      "passed": false,
+      "cause": "The synthetic oracle read distinct static fields across collectible/default assembly contexts. Literal generation-specific probes fixed the test; no native execution was established by that wire attempt.",
+      "owner": {
+        "bytes": 21560,
+        "sha256": "178e47df34e8ba799c6f4854ef6fe08ae0fd3a96da8f82cfb88cf288d8e1fbf3"
+      }
+    },
+    {
+      "kind": "Windows CPU initial monitor",
+      "passed": false,
+      "cause": "The live output census raced an atomic world-save rename. The replacement tolerates observed live removals and requires a strict final closed census. Original failure retained.",
+      "owner": {
+        "bytes": 9182,
+        "sha256": "c4131b4b0dc24a75526388c79391a0cf992d946f9d102f18c2dbe847a23451ae"
+      }
+    },
+    {
+      "kind": "Windows render initial recipe",
+      "passed": false,
+      "cause": "The fixture supplied emissive2 outside the existing0..1 material bound. Authoring rejected it before any GPU capture. Only the recipe changed to emissive1; image/state oracles and engine bounds were preserved.",
+      "owner": {
+        "bytes": 6338,
+        "sha256": "2eb5c6b330d019bf82a3b74774e60f8ab0acb6513aa820468ce9b58183952ba4"
+      }
+    }
+  ],
+  "earlier_foundation_attempts": [
+    {
+      "cohort": 1,
+      "passed": false,
+      "owner": {
+        "bytes": 20445,
+        "sha256": "10210d09ff86e87574e32ad51471b38512697c8d99c7d1999b226c2d7d541d41"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 2,
+      "passed": false,
+      "owner": {
+        "bytes": 29962,
+        "sha256": "a7895f3cd3258cc1f12ed77c8a885bce42dd1c96889b617e73abe356a856771a"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 3,
+      "passed": false,
+      "owner": {
+        "bytes": 34113,
+        "sha256": "6ba5b01c9178d0fa51fc6d0a88f1d506ea5e5613f65ac8441ff5912be86bc5bd"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 4,
+      "passed": false,
+      "owner": {
+        "bytes": 41374,
+        "sha256": "409ae82a8853f047998c3e63981ccdcc46b2b90851eea2749ed5cc54a7793d8f"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 5,
+      "passed": false,
+      "owner": {
+        "bytes": 48538,
+        "sha256": "9b6949b0cc7891d909bacbe66b615c2736ad72d579d8c32153d90dae711c6f81"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 6,
+      "passed": false,
+      "owner": {
+        "bytes": 24261,
+        "sha256": "348d256dca44a351427c39f45d7057e10f644881d8d21ed95d8cfe34d0406b62"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 7,
+      "passed": false,
+      "owner": {
+        "bytes": 23603,
+        "sha256": "70ffe7f7f69a88f090059a0aa22a1252b62212589157c6842e726e7ba6b845aa"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    },
+    {
+      "cohort": 8,
+      "passed": true,
+      "owner": {
+        "bytes": 22499,
+        "sha256": "f5e87328cbde953a351f216897dddc090321377b7e5de58026176bff608bdd9e"
+      },
+      "scope": "Earlier foundation development record; not substituted for the later integrated qualification."
+    }
+  ],
+  "limits": [
+    "Tiny procedural two-part fixtures; not production humanoid motion/anatomy/contact aesthetics or a representative performance benchmark.",
+    "Passive takeover only; active balance, recovery, controller/root-motion/IK ownership transfer and nonuniform rig scales remain outside the initial profile.",
+    "Physical save upgrades remain rejected; saves require matching frozen content and native physics profile.",
+    "Native AOT for this physical gameplay workflow was not executed in this qualification; other earlier AOT results do not qualify it.",
+    "No physical-input, console, browser, multiplayer or full Alpha qualification claim."
+  ]
+}

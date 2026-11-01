@@ -7,10 +7,11 @@ imported `AnimationRig`. Animation owns the skeleton initially; explicit
 activation transfers its committed pose and momentum to native physics. Solved
 physical poses then drive the render hierarchy.
 
-This is an experimental integration contract. End-to-end runtime, managed,
-portable-save and rendered workflow qualification is pending. The behavior below
-describes the implementation; it is not evidence of production ragdoll quality,
-full-body active control or exact cold future continuation.
+This experimental integration has bounded native, CLI, CoreCLR and complete-save
+qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
+checks. [Evidence](evidence/m2-physical-rigs.json) separates those workflows from
+synthetic ABI tests and preserved failed attempts. These small procedural rigs do
+not establish production humanoid quality, active balance or recovery.
 
 ## Author a profile
 
@@ -386,11 +387,22 @@ qualification.
 
 This is not a general save-schema migration system. The native integration
 fixture checks exact warm/cold snapshot continuation, final skin palettes and
-structural rollback. The separate engine-hosted CoreCLR fixture checks every
-saved gameplay field and complete archive bytes through warm and fresh-process
-continuation. These are bounded procedural-rig fixtures. Rendered publication,
-Windows, Native AOT and production character quality have separate qualification
-scopes; see the [implementation status](IMPLEMENTATION_STATUS.md).
+structural rollback. Linux qualification composes 23 selected native suites from
+separately retained cohorts; their original failed aggregate verdicts remain
+failed. Windows passes all 23 selected native tests and the 76-request CLI
+workflow. On both platforms, the engine-hosted CoreCLR consumer checks all 33
+fields, 75 native boundary comparisons, eleven complete archives and five
+whole-byte pairs through rollback and warm/fresh-process continuation.
+
+Six Windows Vulkan captures separately qualify physical skin publication on a
+two-part analytic ribbon. Independent CPU skinning/projection checks silhouette
+bounds and deep foreground occupancy; nine complete-archive pairs establish
+capture purity and continuation, and three whole-BMP pairs compare restored and
+future poses. The original render attempt remains failed after authoring rejected
+an invalid emissive value before any GPU capture. Native AOT for this workflow,
+production humanoid motion and representative performance remain unqualified.
+See the [evidence](evidence/m2-physical-rigs.json) and
+[implementation status](IMPLEMENTATION_STATUS.md).
 
 ## Reproduce the focused checks
 
