@@ -1,0 +1,228 @@
+{
+  "format": "poima.npc-perception.v1",
+  "checkpoint": "0.0.217",
+  "date": "2026-10-31",
+  "passed": true,
+  "scope": "Optional compiled deterministic sight and last-seen memory, native ray occlusion/committed kinematic boxes, synthetic UI controls and complete warm/cold saves.",
+  "source": {
+    "packages/ai/Poima.Ai.csproj": {
+      "bytes": 661,
+      "sha256": "484691b24b56939129ab963421afd37113d3bc4dcc35ac27ded9b3df61b606ef"
+    },
+    "packages/ai/Perception.cs": {
+      "bytes": 25080,
+      "sha256": "0178bb53d8226eb787fed7e1d9f6608047e5d53aaa2f13d061868fc558982409"
+    },
+    "tests/ai_perception/Program.cs": {
+      "bytes": 37545,
+      "sha256": "4a961944ef8af2de4d5f8af504b367ce3eb85acbe8fa16b3cb93efa5e3bd196d"
+    },
+    "tests/ai_perception/Poima.Ai.Tests.csproj": {
+      "bytes": 596,
+      "sha256": "373ff8f9bbc2f9e4ea866ad21cb03dcaf541fbb7a6ffbc2767716bc768d3c69e"
+    },
+    "examples/perception-yard/Game.cs": {
+      "bytes": 8075,
+      "sha256": "3168e17c54e2ec7f5c7959052130eba4cdff51b33ebd547b30eb6aa3b1305bb5"
+    },
+    "examples/perception-yard/Poima.PerceptionYardGame.csproj": {
+      "bytes": 605,
+      "sha256": "05b9119954849b4832d0ad0c0085a58c9e43ef40b21ec1d14dbedf43b7df9242"
+    },
+    "examples/perception-yard/prepare.py": {
+      "bytes": 9285,
+      "sha256": "e50e13511a46b2712ebe942ba8077622c9ba8724d839ea41e769ec2fc0530f22"
+    },
+    "tests/ai_perception_gameplay_contract.py": {
+      "bytes": 35656,
+      "sha256": "d8d1e803778aba5616b1c1bf121053bcfbfc2c4a6f6c332ec2a1eed18f3792c8"
+    }
+  },
+  "contract": {
+    "sample_points": [
+      1,
+      8
+    ],
+    "target_colliders_maximum": 32,
+    "ignored_colliders_maximum": 128,
+    "ray_budget": "Caller-owned per evaluation; unchecked differs from occluded. Aggregate NPC/tick budget is game policy.",
+    "angles": "Radians; cone and horizontal/vertical limits.",
+    "memory": "Explicit scalar state over fixed ticks, no hidden clock/RNG.",
+    "native_queries": [
+      "GameContext.Raycast",
+      "GameContext.IsAlive"
+    ],
+    "new_native_abi": false
+  },
+  "managed": {
+    "sdk": "10.0.401",
+    "language": "C#14",
+    "release_builds": 2,
+    "warnings": 0,
+    "errors": 0,
+    "compiler_owner": {
+      "bytes": 11306,
+      "sha256": "aa5c5ebf04695f623655a053e8c690fed3c59ae4a9a57e147a871b45ad8b6168"
+    },
+    "synthetic_test_groups": 8,
+    "synthetic_checks": 392,
+    "synthetic_scope": "Scripted providers/analytic boxes, not native physics.",
+    "synthetic_owner": {
+      "bytes": 78,
+      "sha256": "9b65bd48692bbc7001f28233dbfc97fa967eefce58306f8218743d40abe82e9d"
+    },
+    "compiled_sdk_identity_scope": "Bridge and consumer SDK DLLs have distinct separately pinned identities from current source builds. Both copies accompany real integration runs; no complete loaded-module inventory is claimed."
+  },
+  "native": [
+    {
+      "platform": "Linux",
+      "backend": "CoreCLR",
+      "requests": 176,
+      "typed_fields": 55,
+      "observations": 42,
+      "complete_archives": 9,
+      "whole_archive_pairs": 5,
+      "native_world_owners": 2,
+      "evidence": {
+        "bytes": 2522862,
+        "sha256": "37c7b02babd3f005e7ac6654eb6a84eb5b16d5312972bd0ca2b4c163e1f79b7c"
+      },
+      "owner": {
+        "bytes": 6140,
+        "sha256": "83ffe50439f6a0d692a02c29b45a39c471d873c7f7d8b657b4618cfd04859331"
+      },
+      "archive_pairs": [
+        {
+          "label": "invalid-settings-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "second-tick-fault-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "same-owner-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-five-tick-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ]
+    },
+    {
+      "platform": "Windows",
+      "backend": "CoreCLR",
+      "requests": 176,
+      "typed_fields": 55,
+      "observations": 42,
+      "complete_archives": 9,
+      "whole_archive_pairs": 5,
+      "native_world_owners": 2,
+      "evidence": {
+        "bytes": 2525740,
+        "sha256": "724756941624c416df6e7107cfb2ff1fccf02c5d57b4e08918d50519aa0ca828"
+      },
+      "owner": {
+        "bytes": 5596,
+        "sha256": "6b7eb2f5e682180f94edc4d49b20f660aa4656957bca6c790c100bb1f63e11f0"
+      },
+      "archive_pairs": [
+        {
+          "label": "invalid-settings-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "second-tick-fault-rollback",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "same-owner-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        },
+        {
+          "label": "cold-five-tick-complete",
+          "equal": true,
+          "bytes_equal": true,
+          "exclusions": []
+        }
+      ]
+    }
+  ],
+  "independent_checks": [
+    "Analytic authored-box intersection/range/angle expectations",
+    "Self and compound-target identity rules",
+    "Budget exhaustion distinct from occlusion",
+    "All four memory timestamps predicted from native receipt ticks and analytic visibility",
+    "Signed64 range checked without accepting coerced types",
+    "Complete checkpoint byte equality across two failed-batch rollbacks, warm restore, cold restore and five-tick continuation"
+  ],
+  "preserved_attempts": [
+    {
+      "kind": "first_managed_tool_selection",
+      "passed": false,
+      "engine_executed": false,
+      "cause": "System dotnet6 did not support selected build flags; corrected to the installed qualified dotnet10 toolchain."
+    },
+    {
+      "kind": "first_native_setup",
+      "passed": false,
+      "engine_executed": false,
+      "cause": "Fixture output collided with supervisor command-log directory; new disjoint output used, source unchanged.",
+      "owner": {
+        "bytes": 6251,
+        "sha256": "2a89f7cc181dfad5be836fd3e2f2787c6a9b85bb202d2c52133468d2a9f07b68"
+      }
+    },
+    {
+      "kind": "earlier_native_verifier",
+      "passed": true,
+      "scope": "Original Linuxnative2 narrower PASS retained; later verifier independently predicts all memory timestamps and bounds Int64 values.",
+      "evidence": {
+        "bytes": 2522805,
+        "sha256": "d5e289f233b44ef6dde473de836008b41fc75e0c213b060177d678a57873a9d1"
+      }
+    }
+  ],
+  "runtime_scope": {
+    "linux": "Selected dotnet10.0.12 runtime inputs",
+    "windows": "hostfxr10.0.12, LatestPatch selection10.0.13 inferred from config/membership with critical-file pins; no complete loaded-module trace"
+  },
+  "performance": {
+    "controlled_benchmark": false,
+    "context": "Concurrent owner Unity development; no performance score claimed."
+  },
+  "not_qualified": [
+    "Hearing/navigation/cover/squad behavior",
+    "NativeAOT for this sample",
+    "Rendered or physical interaction",
+    "Fresh agent game-creation benchmark",
+    "General production NPC scale or cross-platform bit identity"
+  ]
+}
