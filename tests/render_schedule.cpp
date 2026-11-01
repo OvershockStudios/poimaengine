@@ -60,6 +60,15 @@ struct Fixture {
     }
     Schedule plan()const{return build(f,settings);}
 };
+void environment_inputs(Fixture& fixture,bool dummy=false) {
+    auto image=[&](unsigned size,Format format) {
+        const auto id=fixture.add(Kind::texture,Lifetime::imported,true);auto& r=fixture.f.resources[id];
+        r.width=r.height=size;r.format=format;return id;
+    };
+    fixture.f.ibl_diffuse=image(dummy?1:16,dummy?Format::rgba8_unorm:Format::rgba32_float);
+    fixture.f.ibl_specular=image(dummy?1:64,dummy?Format::rgba8_unorm:Format::rgba32_float);
+    fixture.f.ibl_brdf=image(dummy?1:64,dummy?Format::rgba8_unorm:Format::rg32_float);
+}
 Pass& pass(Schedule& p,PassId id){auto i=std::find_if(p.passes.begin(),p.passes.end(),[&](const auto& v){return v.id==id;});check(i!=p.passes.end(),"Fixture required pass absent");return *i;}
 void erase_access(Schedule& p,PassId id,ResourceId resource,Use use){auto& accesses=pass(p,id).accesses;const auto n=std::erase_if(accesses,[&](const auto& a){return a.resource==resource && a.use==use;});check(n>0,"Fixture mutation did not remove an access");}
 Settings rich(){Settings s;s.scene=s.clustered=s.sky=s.game_ui=s.capture=true;s.slot=1;s.image=2;return s;}
@@ -366,6 +375,14 @@ void viewmodel_contracts(){
     }
     // Default omission retains the old graph with no new pass/resources.
     auto ordinary=Fixture(rich(),4,true).plan();ordinary.validate();check(std::none_of(ordinary.passes.begin(),ordinary.passes.end(),[](const Pass& work){return work.id>=PassId::viewmodel_lights && work.id<=PassId::viewmodel_composite;}),"Default graph acquired foreground passes");
+    for(bool deferred:{false,true}) {
+        auto s=rich();s.deferred=s.products=deferred;Fixture environment(s,deferred?1:4);foreground(environment);environment_inputs(environment);
+        const auto valid=environment.plan();valid.validate();++accepted;
+        for(auto id:{environment.f.ibl_diffuse,environment.f.ibl_specular,environment.f.ibl_brdf}) {
+            auto broken=valid;erase_access(broken,PassId::viewmodel_opaque,id,Use::sampled);
+            rejects("foreground omits shared environment input",[&]{broken.validate();});
+        }
+    }
 }
 
 void deferred_contracts(){
@@ -530,5 +547,29 @@ void masked_shadow_contracts(){
     bad=masked;bad.frame.resources[material].initialized=false;rejects("masked shadow samples uninitialized alpha",[&]{bad.validate();});
     bad=masked;bad.frame.shadow_draws.front().textures={none};rejects("masked shadow alpha binding absent",[&]{bad.validate();});
 }
+void environment_contracts(){
+    for(bool deferred:{false,true})for(bool dummy:{false,true}) {
+        auto settings=rich();settings.deferred=settings.products=deferred;
+        Fixture fixture(settings,deferred?1:4);environment_inputs(fixture,dummy);const auto original=fixture.plan();original.validate();++accepted;
+        const auto shading=deferred?PassId::deferred_lighting:PassId::opaque;
+        auto bad=[&](const char* label,const auto& change){auto p=original;change(p);rejects(label,[&]{p.validate();});};
+        for(auto id:{fixture.f.ibl_diffuse,fixture.f.ibl_specular,fixture.f.ibl_brdf}) {
+            bad("environment input not sampled",[&](auto& p){erase_access(p,shading,id,Use::sampled);});
+            bad("environment input not initialized",[&](auto& p){p.frame.resources[id].initialized=false;});
+            bad("environment input not shader-readable",[&](auto& p){p.frame.resources[id].supported&=~use_bit(Use::sampled);});
+            bad("environment input has wrong format",[&](auto& p){p.frame.resources[id].format=Format::rgba16_float;});
+            bad("environment input is multisampled",[&](auto& p){p.frame.resources[id].samples=4;});
+            bad("environment input extent mismatch",[&](auto& p){++p.frame.resources[id].height;});
+            bad("environment input has wrong lifetime",[&](auto& p){p.frame.resources[id].lifetime=Lifetime::shared;});
+        }
+        bad("environment tuple incomplete",[](auto& p){p.frame.ibl_brdf=none;});
+        bad("environment roles alias",[](auto& p){p.frame.ibl_specular=p.frame.ibl_diffuse;});
+        bad("environment aliases scene output",[](auto& p){p.frame.ibl_brdf=p.frame.hdr;});
+        bad("environment aliases material image",[](auto& p){p.frame.ibl_diffuse=p.frame.camera_draws.front().textures.front();});
+        bad("environment physical image alias",[](auto& p){p.frame.resources[p.frame.ibl_brdf].identity=p.frame.resources[p.frame.ibl_diffuse].identity;});
+    }
+    Fixture triangle(Settings{});environment_inputs(triangle);rejects("environment without scene",[&]{triangle.plan().validate();});
+    auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

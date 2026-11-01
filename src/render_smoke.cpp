@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
+#include "poima/environment_ibl.hpp"
 #include "poima/player.hpp"
 #include "poima/player_preferences.hpp"
 #include "poima/input_profile.hpp"
@@ -238,9 +239,9 @@ inline constexpr std::uint32_t cluster_x=16,cluster_y=9,cluster_z=24,cluster_cap
 inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
 struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
-    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{};
+    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{},ibl_parameters[4]{};
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1584);
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1600);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
@@ -384,7 +385,7 @@ struct Context {
     nvrhi::BindingLayoutHandle deferred_layout;
     nvrhi::BindingSetHandle deferred_bindings;
     nvrhi::ComputePipelineHandle deferred_pipeline;
-    std::array<const void*,14> deferred_binding_key{};
+    std::array<const void*,18> deferred_binding_key{};
     AmbientOcclusionOptions ambient_occlusion;
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     std::optional<ShadowFilter> shadow_filter_override;
@@ -493,6 +494,15 @@ struct Context {
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
     std::shared_ptr<const TextureImage> white_image;
     std::size_t texture_bytes=0;
+    struct EnvironmentResources {
+        nvrhi::TextureHandle diffuse,specular,brdf;
+        std::array<float,10> key{};
+        std::uint64_t bytes=0;
+        double prepare_cpu_ms=0;
+    };
+    EnvironmentResources environment_dummy,environment_resources;
+    nvrhi::SamplerHandle environment_sampler;
+    std::uint64_t environment_generation=0;
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
@@ -584,6 +594,7 @@ struct Context {
         cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
         light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
         vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
+        environment_resources={};environment_dummy={};environment_sampler=nullptr;
         framebuffers.clear();sky_framebuffers.clear();
 #if POIMA_EDITOR
         ui_scene=nullptr;
@@ -844,6 +855,8 @@ struct Context {
             for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             for(std::uint32_t slot=6;slot<=9;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
+            for(std::uint32_t slot=10;slot<=12;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
+            layout.addItem(nvrhi::BindingLayoutItem::Sampler(5));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
@@ -1232,6 +1245,7 @@ struct Context {
 
     void prepare_scene() {
         auto white=std::make_shared<TextureImage>();white->mips.push_back({1,1,{255,255,255,255}});white_image=white;
+        prepare_environment_dummy();
         bindings=mesh_bindings(nullptr,nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
@@ -1357,6 +1371,121 @@ struct Context {
             throw std::runtime_error("GPU skinning rejected instance "+id+" vertex "+std::to_string(errors[2])+": singular, nonfinite or out-of-range result; capture was not published.");
         }
     }
+    const EnvironmentResources& bound_environment() const {
+        return environment_resources.diffuse ? environment_resources : environment_dummy;
+    }
+    nvrhi::BindingSetDesc& bind_environment(nvrhi::BindingSetDesc& desc) const {
+        const auto& value=bound_environment();
+        require(value.diffuse && value.specular && value.brdf && environment_sampler,"Environment bindings are unavailable.");
+        return desc.addItem(nvrhi::BindingSetItem::Texture_SRV(10,value.diffuse))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(11,value.specular))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(12,value.brdf))
+            .addItem(nvrhi::BindingSetItem::Sampler(5,environment_sampler));
+    }
+    EnvironmentResources allocate_environment(std::uint32_t diffuse_size,std::uint32_t specular_size,std::uint32_t levels,std::uint32_t brdf_size) {
+        const auto features=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eSampledImageFilterLinear|vk::FormatFeatureFlagBits::eTransferDst;
+        for(auto format:{vk::Format::eR32G32B32A32Sfloat,vk::Format::eR32G32Sfloat})
+            require((physical.getFormatProperties(format,dispatch).optimalTilingFeatures&features)==features,"Linear floating-point environment texture sampling is unavailable.");
+        EnvironmentResources value;
+        auto cube=[&](std::uint32_t size,std::uint32_t mips,const char* name) {
+            nvrhi::TextureDesc desc;desc.width=desc.height=size;desc.arraySize=6;desc.mipLevels=mips;
+            desc.dimension=nvrhi::TextureDimension::TextureCube;desc.format=nvrhi::Format::RGBA32_FLOAT;
+            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
+            auto image=checked->createTexture(desc);require(bool(image),"Environment cube allocation failed.");return image;
+        };
+        value.diffuse=cube(diffuse_size,1,"Diffuse environment E over pi");
+        value.specular=cube(specular_size,levels,"Roughness-prefiltered environment");
+        nvrhi::TextureDesc desc;desc.width=desc.height=brdf_size;desc.format=nvrhi::Format::RG32_FLOAT;
+        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Environment split-sum BRDF";
+        value.brdf=checked->createTexture(desc);require(bool(value.brdf),"Environment BRDF allocation failed.");
+        value.bytes=std::uint64_t(diffuse_size)*diffuse_size*6*16+std::uint64_t(brdf_size)*brdf_size*8;
+        for(std::uint32_t level=0,size=specular_size;level<levels;++level,size=std::max(1u,size/2))value.bytes+=std::uint64_t(size)*size*6*16;
+        require(value.bytes<=1024*1024,"Environment texture payload exceeds one MiB.");return value;
+    }
+    template<class Upload> void upload_environment(Upload&& upload) {
+        try {
+            commands->open();upload();commands->close();checked->executeCommandList(commands);
+            ++diagnostics.frame_execution.device_idle_waits;
+            require(checked->waitForIdle(),"Environment upload did not retire.");
+            require(messages.errors==0,"Environment upload reported a validation/backend error.");
+        } catch(...) {
+            // Submitted uploads may retain staging memory and candidate images.
+            // Fence them before a candidate's local handles can be destroyed.
+            renderer_fault=true;
+            try {++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);}catch(...) {}
+            throw;
+        }
+    }
+    void prepare_environment_dummy() {
+        if(environment_dummy.diffuse)return;
+        // Disabled legacy worlds must not acquire a new float32 filtering
+        // requirement. Normalized black dummies satisfy the float SRV types.
+        EnvironmentResources candidate;
+        nvrhi::TextureDesc desc;desc.width=desc.height=1;desc.arraySize=6;desc.dimension=nvrhi::TextureDimension::TextureCube;
+        desc.format=nvrhi::Format::RGBA8_UNORM;desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
+        desc.debugName="Disabled diffuse environment";candidate.diffuse=checked->createTexture(desc);
+        desc.debugName="Disabled specular environment";candidate.specular=checked->createTexture(desc);
+        desc.arraySize=1;desc.dimension=nvrhi::TextureDimension::Texture2D;desc.debugName="Disabled environment BRDF";candidate.brdf=checked->createTexture(desc);
+        require(candidate.diffuse && candidate.specular && candidate.brdf,"Disabled environment binding allocation failed.");candidate.bytes=52;
+        nvrhi::SamplerDesc sd;sd.addressU=sd.addressV=sd.addressW=nvrhi::SamplerAddressMode::Clamp;
+        sd.minFilter=sd.magFilter=sd.mipFilter=true;
+        auto sampler=checked->createSampler(sd);require(bool(sampler),"Environment sampler allocation failed.");
+        const std::array<std::uint8_t,4> black{};
+        upload_environment([&] {
+            for(unsigned face=0;face<6;++face) {
+                commands->writeTexture(candidate.diffuse,face,0,black.data(),sizeof(black));
+                commands->writeTexture(candidate.specular,face,0,black.data(),sizeof(black));
+            }
+            commands->writeTexture(candidate.brdf,0,0,black.data(),sizeof(black));
+        });
+        environment_dummy=std::move(candidate);environment_sampler=std::move(sampler);
+    }
+    void invalidate_environment_bindings() {
+        material_cache.clear();bindings=nullptr;deferred_bindings=nullptr;deferred_binding_key={};
+        viewmodel_draws.clear();if(viewmodel)viewmodel->materials.clear();
+    }
+    void prepare_environment(const LightingEnvironment& lighting) {
+        std::fill_n(frame_constants.ibl_parameters,4,0.0f);
+        const bool enabled=lighting.ibl && lighting.ibl->enabled;
+        if(!enabled) {
+            if(environment_resources.diffuse) {retire_frames(true);invalidate_environment_bindings();environment_resources={};checked->runGarbageCollection();}
+            diagnostics.environment_ibl.reset();
+            if(lighting.ibl) {diagnostics.environment_ibl.emplace();diagnostics.environment_ibl->generation=environment_generation;}
+            return;
+        }
+        require(lighting.sky.enabled,"Enabled environment IBL requires the procedural sky.");
+        const auto& sky=lighting.sky;
+        const std::array<float,10> key={sky.zenith[0],sky.zenith[1],sky.zenith[2],sky.horizon[0],sky.horizon[1],sky.horizon[2],sky.ground[0],sky.ground[1],sky.ground[2],sky.horizon_falloff};
+        if(!environment_resources.diffuse || environment_resources.key!=key) {
+            require(environment_generation<std::numeric_limits<std::uint64_t>::max(),"Environment generation exhausted.");
+            const auto started=SteadyClock::now();
+            const auto baked=bake_environment_ibl(sky);
+            const auto prepare_cpu_ms=elapsed_ms(started);
+            require(baked.diffuse.size==ibl_diffuse_size && baked.diffuse.texels.size()==std::size_t(ibl_diffuse_size)*ibl_diffuse_size*6 && baked.brdf.size()==std::size_t(ibl_brdf_size)*ibl_brdf_size,"Environment bake dimensions differ from the fixed profile.");
+            // CPU preparation can overlap completion of the last old frame;
+            // replacing any image/binding waits for every old consumer.
+            retire_frames(true);
+            EnvironmentResources candidate=allocate_environment(ibl_diffuse_size,ibl_specular_size,ibl_specular_levels,ibl_brdf_size);
+            require(candidate.bytes==581600 && candidate.bytes+environment_resources.bytes<=2*581600,"Environment staged payload exceeds the two-generation bound.");
+            upload_environment([&] {
+                const auto write_cube=[&](nvrhi::ITexture* image,const EnvironmentIblLevel& level,unsigned mip) {
+                    require(level.texels.size()==std::size_t(level.size)*level.size*6,"Malformed environment face payload.");
+                    for(unsigned face=0;face<6;++face)commands->writeTexture(image,face,mip,level.texels.data()+std::size_t(face)*level.size*level.size,std::size_t(level.size)*16);
+                };
+                write_cube(candidate.diffuse.Get(),baked.diffuse,0);
+                for(unsigned level=0;level<ibl_specular_levels;++level) {
+                    require(baked.specular[level].size==std::max(1u,ibl_specular_size>>level),"Malformed environment mip size.");
+                    write_cube(candidate.specular.Get(),baked.specular[level],level);
+                }
+                commands->writeTexture(candidate.brdf,0,0,baked.brdf.data(),std::size_t(ibl_brdf_size)*8);
+            });
+            candidate.key=key;candidate.prepare_cpu_ms=prepare_cpu_ms;
+            invalidate_environment_bindings();environment_resources=std::move(candidate);++environment_generation;checked->runGarbageCollection();
+        }
+        frame_constants.ibl_parameters[0]=1;frame_constants.ibl_parameters[1]=lighting.ibl->diffuse_intensity;
+        frame_constants.ibl_parameters[2]=lighting.ibl->specular_intensity;frame_constants.ibl_parameters[3]=float(ibl_specular_levels-1);
+        diagnostics.environment_ibl=EnvironmentIblDiagnostics{true,ibl_diffuse_size,ibl_specular_size,ibl_specular_levels,ibl_brdf_size,environment_resources.bytes,environment_generation,environment_resources.prepare_cpu_ms};
+    }
     nvrhi::TextureHandle upload_texture(const std::shared_ptr<const TextureImage>& image) {
         if(const auto found=texture_cache.find(image.get());found!=texture_cache.end())return found->second;
         std::size_t bytes=0;for(const auto& mip:image->mips)bytes+=mip.rgba.size();
@@ -1393,6 +1522,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,foreground ? viewmodel->counts : cluster_counts))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,foreground ? viewmodel->indices : cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,foreground ? viewmodel->objects : object_buffer));
+        bind_environment(desc);
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");cache.emplace(key_material,result);return result;
     }
     nvrhi::BindingSetHandle masked_shadow_material(const MeshAsset* mesh,const MaterialTextures* textures,const nvrhi::BindingSetHandle& material) {
@@ -1559,12 +1689,15 @@ struct Context {
             for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             for(std::uint32_t i=6;i<=8;++i)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(i));
+            for(std::uint32_t i=10;i<=12;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
+            layout.addItem(nvrhi::BindingLayoutItem::Sampler(5));
             if(ao_enabled)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
             deferred_layout=checked->createBindingLayout(layout);require(deferred_cs && deferred_layout,"Deferred shader/layout creation failed.");
             deferred_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(deferred_cs).addBindingLayout(deferred_layout));
             require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
         }
-        const std::array<const void*,14> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get()};
+        const auto& environment=bound_environment();
+        const std::array<const void*,18> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse.Get(),environment.specular.Get(),environment.brdf.Get(),environment_sampler.Get()};
         if(deferred_bindings && key==deferred_binding_key)return;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
@@ -1574,6 +1707,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
             .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
         if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,ao_filtered));
+        bind_environment(desc);
         deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
     }
     void dispatch_deferred_lighting() {
@@ -1933,8 +2067,9 @@ struct Context {
         prepare_reconstruction();validate_game_ui();prepare_scene_output();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();object_data.clear();pending_draws={};
-        retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
+        retain_scene_resources();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
+        prepare_environment(lighting.environment);bindings=mesh_bindings(nullptr,nullptr);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
         const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
@@ -1979,7 +2114,7 @@ struct Context {
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
         frame_constants.light_count[1]=lighting.environment.shadow_resolution;
-        // Reserved scalar in the unchanged 1,584-byte shared frame layout.
+        // Reserved scalar retains its original offset in the shared frame layout.
         // Write every scene preparation, including light/pose/session changes.
         frame_constants.light_count[3]=static_cast<std::uint32_t>(shadow_filter);
         for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
@@ -2071,6 +2206,7 @@ struct Context {
         profiling::counter("renderer.images",texture_cache.size());
         profiling::counter("renderer.skin_instances",skin_instances.size());
         profiling::counter("renderer.texture_payload_bytes",texture_bytes);
+        profiling::counter("renderer.environment_texture_payload_bytes",environment_resources.bytes);
         profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
         diagnostics.scene_observed=renderer_scene_result(*scene);
     }
@@ -2854,6 +2990,7 @@ struct Context {
             r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : desc.format==nvrhi::Format::RG32_FLOAT ? rs::Format::rg32_float : desc.format==nvrhi::Format::R8_UNORM ? rs::Format::r8_unorm : rs::Format::unspecified;
             if(desc.format==nvrhi::Format::R32_FLOAT)r.format=rs::Format::r32_float;else if(desc.format==nvrhi::Format::RG16_FLOAT)r.format=rs::Format::rg16_float;else if(desc.format==nvrhi::Format::R32_UINT)r.format=rs::Format::r32_uint;
             if(desc.format==nvrhi::Format::RGBA32_FLOAT)r.format=rs::Format::rgba32_float;
+            if(desc.format==nvrhi::Format::RGBA8_UNORM)r.format=rs::Format::rgba8_unorm;
             if(desc.format==nvrhi::Format::R16_FLOAT)r.format=rs::Format::r16_float;
             r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
@@ -2875,6 +3012,10 @@ struct Context {
         f.color=f.output;
         if(scene) {
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
+            const auto& environment=bound_environment();
+            f.ibl_diffuse=texture(environment.diffuse,rs::Lifetime::imported,true);
+            f.ibl_specular=texture(environment.specular,rs::Lifetime::imported,true);
+            f.ibl_brdf=texture(environment.brdf,rs::Lifetime::imported,true);
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             if(settings.reconstruction) {f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);f.reactive=texture(reactive,rs::Lifetime::shared,false);f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);}
             if(ao_enabled) {f.ao_raw=texture(ao_raw,rs::Lifetime::shared,false);f.ao_filtered=texture(ao_filtered,rs::Lifetime::shared,false);f.ao_constants=buffer(ao_buffer,rs::Lifetime::shared,false);}
@@ -2973,6 +3114,10 @@ struct Context {
         auto identity=[&](rs::ResourceId id,const void* actual) {
             require(id!=rs::none && plan.resource(id).identity==reinterpret_cast<std::uintptr_t>(actual),"Recorded resource differs from its validated schedule binding.");
         };
+        const auto environment_identity=[&](std::uint32_t slot,const void* actual) {
+            require(slot>=10 && slot<=12,"Unexpected environment texture binding slot.");
+            identity(slot==10 ? f.ibl_diffuse : slot==11 ? f.ibl_specular : f.ibl_brdf,actual);
+        };
         auto framebuffer=[&](nvrhi::IFramebuffer* value,rs::ResourceId color,rs::ResourceId depth_id,rs::ResourceId normal_id=rs::none) {
             const auto& desc=value->getDesc();
             if(color!=rs::none) {require(desc.colorAttachments.size()==(normal_id==rs::none ? 1u : 4u),"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);if(normal_id!=rs::none) {identity(normal_id,desc.colorAttachments[1].texture);identity(f.motion,desc.colorAttachments[2].texture);identity(f.motion_valid,desc.colorAttachments[3].texture);}}
@@ -2985,6 +3130,7 @@ struct Context {
             identity(f.hdr,desc.colorAttachments[2].texture);identity(f.material_correspondence,desc.colorAttachments[3].texture);identity(f.depth,desc.depthAttachment.texture);
             for(const auto& binding:deferred_bindings->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::Texture_SRV) {
+                    if(binding.slot>=10) {environment_identity(binding.slot,binding.resourceHandle);continue;}
                     const auto id=binding.slot==0 ? f.material_base : binding.slot==1 ? f.material_surface : binding.slot==2 ? f.material_correspondence : binding.slot==3 ? f.depth : binding.slot==4 ? f.ao_filtered : f.shadow;identity(id,binding.resourceHandle);
                 } else if(binding.type==nvrhi::ResourceType::Texture_UAV) {
                     const auto id=binding.slot==0 ? f.hdr : binding.slot==1 ? f.normal : binding.slot==2 ? f.motion : f.motion_valid;identity(id,binding.resourceHandle);
@@ -3038,7 +3184,10 @@ struct Context {
                 if(scene_visible && draw.camera_visible) {
                     const auto& input=f.camera_draws.at(camera_index++);geometry(input);std::size_t material_index=0;
                     for(const auto& binding:draw.bindings->getDesc()->bindings) {
-                        if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot<5 ? input.textures.at(material_index++) : f.shadow,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV) {
+                            if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle);
+                            else identity(binding.slot<5 ? input.textures.at(material_index++) : f.shadow,binding.resourceHandle);
+                        }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
                             const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : binding.slot==8 ? f.indices : f.objects;
@@ -3067,7 +3216,10 @@ struct Context {
                     if(!draw.camera_visible)continue;
                     const auto& input=f.viewmodel_draws.at(foreground_index++);identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());std::size_t texture_index=0;
                     for(const auto& binding:draw.bindings->getDesc()->bindings) {
-                        if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot<5 ? input.textures.at(texture_index++) : f.shadow,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV) {
+                            if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle);
+                            else identity(binding.slot<5 ? input.textures.at(texture_index++) : f.shadow,binding.resourceHandle);
+                        }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
                     }

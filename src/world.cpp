@@ -366,7 +366,7 @@ SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -377,6 +377,17 @@ LightingEnvironment environment_value(const Json& value) {
         result.shadow_filter=filter=="pcss_directional" ? ShadowFilter::pcss_directional : filter=="pcf3_fractional" ? ShadowFilter::pcf3_fractional : ShadowFilter::pcf3_point;
     }
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
+    if(value.contains("ibl")) {
+        const auto& ibl=value.at("ibl");
+        fields(ibl,{"enabled","diffuse_intensity","specular_intensity"},{"enabled","diffuse_intensity","specular_intensity"});
+        require(ibl.at("enabled").is_boolean(),"IBL enabled must be Boolean.");
+        for(const auto* key:{"diffuse_intensity","specular_intensity"}) {
+            const auto& gain=ibl.at(key);
+            require(gain.is_number() && std::isfinite(gain.get<double>()) && gain>=0 && gain<=64,
+                    std::string("IBL ")+key+" must be a finite number in [0,64].");
+        }
+        result.ibl=IblSettings{ibl.at("enabled").get<bool>(),ibl.at("diffuse_intensity").get<float>(),ibl.at("specular_intensity").get<float>()};
+    }
     try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     return result;
 }
@@ -1822,6 +1833,12 @@ public:
             result["contact_shadows"]={{"blocker_samples",d.shadow_blocker_samples},{"filter_samples",d.shadow_filter_samples},
                 {"max_comparisons",d.shadow_max_comparisons},{"max_radius_texels",d.shadow_max_radius_texels},{"guard_texels",d.shadow_guard_texels},
                 {"local_fallback","pcf3_fractional"},{"zero_angular_size_fallback","pcf3_fractional"},{"no_blocker_fallback","pcf3_fractional"}};
+        if(d.environment_ibl) {
+            const auto& ibl=*d.environment_ibl;
+            result["environment_ibl"]={{"enabled",ibl.enabled},{"diffuse_size",ibl.diffuse_size},{"specular_size",ibl.specular_size},
+                {"specular_levels",ibl.specular_levels},{"brdf_size",ibl.brdf_size},{"texture_bytes",ibl.texture_bytes},
+                {"generation",ibl.generation},{"prepare_cpu_ms",ibl.prepare_cpu_ms}};
+        }
         if(d.viewmodel) {
             const auto& v=*d.viewmodel;
             result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -1843,8 +1860,13 @@ public:
             std::array<double,3> direction=light.direction;for(auto& value:direction)value=-value;
             sun={{"id",light.entity_id},{"direction",direction},{"color",light.light.color},{"intensity",light.light.intensity}};break;
         }
-        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
+        Json result={{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
             {"sky",sky_json(sky)},{"sky_sun",sun}};
+        if(lighting.environment.ibl) {
+            const auto& ibl=*lighting.environment.ibl;
+            result["ibl"]={{"enabled",ibl.enabled},{"diffuse_intensity",ibl.diffuse_intensity},{"specular_intensity",ibl.specular_intensity}};
+        }
+        return result;
     }
     SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
         SceneLighting result;

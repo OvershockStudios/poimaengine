@@ -38,6 +38,13 @@ void validate_environment(const LightingEnvironment& e) {
     require(std::isfinite(e.sky.horizon_falloff) && e.sky.horizon_falloff>=.1f && e.sky.horizon_falloff<=16,"Sky horizon falloff must be in [0.1,16].");
     require(std::isfinite(e.sky.sun_size_degrees) && e.sky.sun_size_degrees>=.1f && e.sky.sun_size_degrees<=20,"Sky sun angular diameter must be in [0.1,20] degrees.");
     require(std::isfinite(e.sky.sun_intensity) && e.sky.sun_intensity>=0 && e.sky.sun_intensity<=1e6f,"Sky sun intensity must be in [0,1e6].");
+    if(e.ibl) {
+        const auto& ibl=*e.ibl;
+        require(std::isfinite(ibl.diffuse_intensity) && ibl.diffuse_intensity>=0 && ibl.diffuse_intensity<=64 &&
+                std::isfinite(ibl.specular_intensity) && ibl.specular_intensity>=0 && ibl.specular_intensity<=64,
+                "IBL diffuse_intensity and specular_intensity must be in [0,64].");
+        require(!ibl.enabled || e.sky.enabled,"Enabled IBL requires an enabled procedural sky.");
+    }
 }
 std::size_t shadow_view_count(const Light& l) { return l.enabled && l.shadow.enabled ? (l.kind==LightKind::directional ? 4 : l.kind==LightKind::point ? 6 : 1) : 0; }
 void validate_shadow_budget(std::size_t views,std::uint32_t resolution) {

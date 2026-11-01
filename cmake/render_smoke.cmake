@@ -85,7 +85,7 @@ foreach(stage vs ps cs)
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
     endif()
     if(shader STREQUAL "ambient_occlusion" OR shader STREQUAL "ambient_occlusion_filter" OR shader STREQUAL "deferred_lighting_ao" OR shader STREQUAL "scene_deferred" OR shader STREQUAL "deferred_lighting" OR shader STREQUAL "scene" OR shader STREQUAL "scene_products" OR shader STREQUAL "shadow")
-        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_lighting.hlsli" "${CMAKE_SOURCE_DIR}/shaders/scene_surface.hlsli")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_lighting.hlsli" "${CMAKE_SOURCE_DIR}/shaders/scene_surface.hlsli" "${CMAKE_SOURCE_DIR}/shaders/environment_ibl.hlsli")
     endif()
     set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.hpp")
     add_custom_command(OUTPUT "${header}"

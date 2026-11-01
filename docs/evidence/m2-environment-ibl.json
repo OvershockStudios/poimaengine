@@ -1,0 +1,331 @@
+{
+  "format": "poima.environment-ibl.v1",
+  "checkpoint": "0.0.217",
+  "date": "2026-10-31",
+  "passed": true,
+  "scope": "Procedural-sky diffuse/specular environment lighting, authoring/persistence, independent native math and bounded Vulkan surfaces. No geometry GI or representative performance qualification.",
+  "source": {
+    "CMakeLists.txt": {
+      "bytes": 101722,
+      "sha256": "73c3076450e89e913a4c94d9af4a205dda1f76d8974401a2d098c2d62874bf67"
+    },
+    "include/poima/environment_ibl.hpp": {
+      "bytes": 1083,
+      "sha256": "eddbaaf90e60e1c340a4c05da2f98b268bbe4b03b8e6f6eb29a931e71b0ec8a7"
+    },
+    "include/poima/scene.hpp": {
+      "bytes": 8069,
+      "sha256": "9653e26ea2cfc1d83cc49a07e99162f769fa4ec4607f51687059c5dc2b358d11"
+    },
+    "include/poima/core.hpp": {
+      "bytes": 12563,
+      "sha256": "b30cb7182692d65cde1119282d482380f0f28c277d0dd8e2512fe7d477acee01"
+    },
+    "include/poima/render_schedule.hpp": {
+      "bytes": 51703,
+      "sha256": "a49720bcb84290b6863374cbabd53f08fcfbab7ea21eeef468978797fc90013d"
+    },
+    "src/environment_ibl.cpp": {
+      "bytes": 11486,
+      "sha256": "972b3a38e294534629fcb9d7af9380512eacc80a1389e494f8d66a2458071577"
+    },
+    "src/lighting.cpp": {
+      "bytes": 5969,
+      "sha256": "bf1b1d14a3fad47c0b40d1f54b5814268e04afad1897f0ee655f1071a663be8f"
+    },
+    "src/render_smoke.cpp": {
+      "bytes": 368886,
+      "sha256": "c4430e278f840197552bbf400fec1316e1812c45ce2138e52fbf2b782afd57b4"
+    },
+    "src/world.cpp": {
+      "bytes": 362139,
+      "sha256": "e3f494094f5e1ee238718779f01a32932c470dce241098bb0e2bda98db4271d0"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 140244,
+      "sha256": "557077523009857177a712b364ef9a3857b0c974ad13c9b64721924fd4fb8106"
+    },
+    "shaders/environment_ibl.hlsli": {
+      "bytes": 1345,
+      "sha256": "caf5be4295323d4ab19bcbd7735ae00b7bff44739f6fd6e2fe4aef2f159df0c7"
+    },
+    "shaders/scene_frame.hlsli": {
+      "bytes": 1459,
+      "sha256": "3a5fdb171ead4effc71835e9f2cd935bbe47b9bfec440d1726ccdfc4efccda20"
+    },
+    "shaders/scene_surface.hlsli": {
+      "bytes": 2025,
+      "sha256": "f9d6861c1254235efa3929e9b6deba243c6a4739837b303123b31d81b86a138a"
+    },
+    "tests/environment_ibl_native.cpp": {
+      "bytes": 13566,
+      "sha256": "d1be9ed9fedc99ea7eb9a68317be374caf0cd1a16e3a1678a1f803fbd0b58ad1"
+    },
+    "tests/environment_ibl_contract.py": {
+      "bytes": 13335,
+      "sha256": "1311e25894d15199c3862b3c327e8c1832f4e4d47649e4d4b628cce03c50ef07"
+    },
+    "tests/environment_ibl_capture_native.cpp": {
+      "bytes": 22978,
+      "sha256": "79447356cf30fee9a73931d04aa1e46f8300ce37b21bdfab896f3687c4a1f4d7"
+    },
+    "tests/render_schedule.cpp": {
+      "bytes": 55167,
+      "sha256": "3957ce2442954cf87644db91b5d5e6b563f8383a4f113e2d54bb643a20431a4e"
+    }
+  },
+  "contract": {
+    "schema_revision": 121,
+    "optional": true,
+    "enabled_requires_enabled_procedural_sky": true,
+    "gains": [
+      0,
+      64
+    ],
+    "diffuse_face_size": 16,
+    "specular_face_size": 64,
+    "specular_levels": 7,
+    "brdf_size": 64,
+    "full_profile_texel_bytes": 581600,
+    "disabled_dummy_texel_bytes": 52,
+    "staged_full_profiles_maximum": 2,
+    "sun_disk_excluded": true,
+    "renderer_preparation": "Synchronous serial convolution/upload; gradient-key caching. The pure helper also qualifies complete two-worker equality.",
+    "csharp_services_bytes": 400,
+    "native_cpp_consumers_require_rebuild": true
+  },
+  "cpu": {
+    "linux": {
+      "owner": {
+        "bytes": 39829,
+        "sha256": "d8f12e50c0c57e19a25b567ea239c0bd60ff6ee1da0bf0847d68d6560c401404"
+      },
+      "retained_ctest_suites": 7,
+      "new_methods": 6,
+      "requests": 229,
+      "client_world_owners": 13,
+      "retained_snapshot_files": 40,
+      "raw_protocol": {
+        "bytes": 573124,
+        "sha256": "b4013c85d5c49ed9583bcb990b87bdab7addc8e252aafda47f2d3188e93c79b7"
+      }
+    },
+    "windows": {
+      "owner": {
+        "bytes": 6954,
+        "sha256": "bdaef215f5f637cb85b216cb125c1eafaf8a13fcd62c7a39f2dd3e47e6868803"
+      },
+      "native_suites": 6,
+      "retained_lighting_contract": true,
+      "new_methods": 6,
+      "requests": 229,
+      "client_world_owners": 13,
+      "raw_protocol": {
+        "bytes": 574417,
+        "sha256": "b825fc0982a8e73ab1ddb55faacef9902f4c34c7a80f2282894223be07fe67f3"
+      }
+    }
+  },
+  "vulkan": {
+    "configurations": [
+      {
+        "case": "nvidia-2",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 1,
+        "deferred": false,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 83069,
+          "sha256": "eb50cf98fc45c36d500de6a6db438b57e63531634f33db521b542ea3baf20d69"
+        },
+        "owner": {
+          "bytes": 5026,
+          "sha256": "3580ef2bcb261437d487f5215c4bb96152a59ea74fddf273dd190472a660ece8"
+        }
+      },
+      {
+        "case": "nvidia4-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 4,
+        "deferred": false,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 83069,
+          "sha256": "b95c215cc69b7f59c66697985626344e4551a9bec3acb846697a1f2287751171"
+        },
+        "owner": {
+          "bytes": 5025,
+          "sha256": "5c5b1e68fa1a075ffc129d9a10e6c8d80b5dc149ef5383dad49f9f79a0c2cb11"
+        }
+      },
+      {
+        "case": "nvidiad-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "samples": 1,
+        "deferred": true,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 83043,
+          "sha256": "0a276f6048b7d2c69866d61e8d3493d299ddd91efde49570d92ca30626ccc898"
+        },
+        "owner": {
+          "bytes": 5028,
+          "sha256": "3d45db32088fb128ae4707d2a834ba726e0eb12d6b93f23b918d0659421b1fab"
+        }
+      },
+      {
+        "case": "amd-1",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "samples": 1,
+        "deferred": false,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 82773,
+          "sha256": "ed9921baf0cd3ce4a57232f5244f41e83c8f168373f7dd9abf0ada7c5645cfbe"
+        },
+        "owner": {
+          "bytes": 4625,
+          "sha256": "05b7ecba2997ad11122a7c44e0e00238057029996b5b89727bf4c482a1d127d4"
+        }
+      },
+      {
+        "case": "amd4-1",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "samples": 4,
+        "deferred": false,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 82772,
+          "sha256": "b078129484ad4c2feca56d7f68e61d9a6db0027b823569aa4302e96bf04be3d3"
+        },
+        "owner": {
+          "bytes": 4626,
+          "sha256": "24c1f844f3431403b351f6239a8e5a29a8644f432836bf500ef0367740b76608"
+        }
+      },
+      {
+        "case": "amdd-1",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "samples": 1,
+        "deferred": true,
+        "width": 800,
+        "height": 600,
+        "captures": 27,
+        "radiance_oracles": 17,
+        "central_rgb_samples": 153,
+        "whole_image_controls": 9,
+        "maximum_encoded_error": 1,
+        "original_evidence": {
+          "bytes": 82728,
+          "sha256": "1cae2c4415f735f185dca974946133188861351db024017e068d89e32538eeb2"
+        },
+        "owner": {
+          "bytes": 4628,
+          "sha256": "677bac86b3c3c6469f24bfceb87e5bfdce56455842251843b185fc19a5115063"
+        }
+      }
+    ],
+    "captures": 162,
+    "independent_radiance_oracles": 102,
+    "central_rgb_samples": 918,
+    "whole_image_controls": 54,
+    "renderer_validation_errors": 0,
+    "receipts": "Requested/submitted/presented snapshot identities joined; captures retire before comparison.",
+    "limits": "Flat controlled surfaces, constant-environment specular and analytic directional diffuse, foreground MSAA and profile lifetime controls. No full-scene reflection/GI quality or scale claim."
+  },
+  "retained_images": {
+    "native_producers_passed": 2,
+    "whole_bmp_equal": 64,
+    "complete_capture_dictionaries_equal": 64,
+    "original_checkpoint": "0.0.211",
+    "original_monitor_workflow_passed": false,
+    "later_read_only_artifact_comparison_passed": true,
+    "comparison": {
+      "bytes": 131872,
+      "sha256": "3132baa8f63a584a7b777593ca61c31cc3c1da7061dd4e2bb7abfcf2c890cbb7"
+    },
+    "failure": "Monitor indexed foreground unconditionally for dense captures; both old and current dense records omit it. Original aggregate remains FAILED. The later review compares complete dictionaries and bytes, preserving optional presence."
+  },
+  "preserved_attempts": [
+    {
+      "kind": "native_bake_compile",
+      "passed": false,
+      "cause": "Test used direct member access after the contract was finalized as optional. Corrected test access; numerical requirements unchanged."
+    },
+    {
+      "kind": "first_nvidia_capture",
+      "passed": false,
+      "captures": 18,
+      "cause": "Fixture reused a world entity ID in foreground geometry; renderer correctly rejected it. One copied fixture ID corrected; production renderer, color oracles and tolerances unchanged.",
+      "evidence": {
+        "bytes": 56266,
+        "sha256": "97934b2b591fc3dfc613ae03ab5fe72879990d0e029ebfb0b2ec1b96b6bdfba8"
+      }
+    },
+    {
+      "kind": "legacy_monitor",
+      "passed": false,
+      "native_producers_passed": 2,
+      "cause": "Missing conditional foreground key in monitoring code; separate later complete artifact comparison described above.",
+      "owner": {
+        "bytes": 9983,
+        "sha256": "78471f494d2ae9ff288fa7b2ff195be684b303a12184ecbdf182114ec60aa04e"
+      }
+    }
+  ],
+  "compiler_scope": {
+    "production_generation": 60,
+    "fixture_only_generation": 61,
+    "fixture_repair": "One foreground identity insertion only; all production core/runtime and other classified executable bytes retain generation60.",
+    "production_owner": {
+      "bytes": 29603,
+      "sha256": "458619f9479d6de332b3c546eff3465aeaa63f8a776ce2323642fba20745629c"
+    },
+    "fixture_owner": {
+      "bytes": 9221,
+      "sha256": "3e85e1849b50240fdaabebd8de24aec85f76f88a1f836ea23915849d513647b2"
+    }
+  },
+  "performance": {
+    "controlled_benchmark": false,
+    "context": "Owner reported concurrent Unity development by another agent. Timings are workload observations; no FPS, latency improvement or competitive engine score claimed."
+  },
+  "not_qualified": [
+    "Geometry-aware GI",
+    "Local probes or imported HDR environment maps",
+    "Continuous asynchronous sky updates",
+    "Production-scale performance",
+    "Native Linux graphics",
+    "Physical input or editor controls"
+  ]
+}

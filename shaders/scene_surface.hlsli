@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "scene_lighting.hlsli"
+#include "environment_ibl.hlsli"
 struct SceneSurface {
     float3 normal,geometric_normal,base,emission;
     float metallic,roughness,occlusion;
@@ -26,6 +27,10 @@ float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambie
     } else {
         const float3 v=normalize(camera.xyz-world);
         color=material.base*(1-material.metallic)*ambient_exposure.rgb*material.occlusion*ambient_visibility+material.emission;
+        // Material and screen-space AO are each applied once to environment
+        // response, including specular. Direct light and emission are unchanged.
+        [branch] if(ibl_parameters.x>0)
+            color+=environment_indirect(material.normal,v,material.base,material.metallic,material.roughness)*material.occlusion*ambient_visibility;
         accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness,material.receive_shadows);
     }
     // Bound final linear radiance before half-float storage, as in forward.

@@ -64,7 +64,11 @@ struct SkySettings {
     std::string sun; // Empty means no sun disk; otherwise an authored directional Light ID.
     float sun_size_degrees=.53f,sun_intensity=20; // Angular diameter; background radiance multiplier.
 };
-struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky;ShadowFilter shadow_filter=ShadowFilter::pcf3_point; };
+struct IblSettings {
+    bool enabled=false;
+    float diffuse_intensity=1,specular_intensity=1;
+};
+struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky;ShadowFilter shadow_filter=ShadowFilter::pcf3_point;std::optional<IblSettings> ibl; };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
     std::vector<SceneLight> lights;

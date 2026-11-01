@@ -227,6 +227,12 @@ inline bool same_renderer_snapshot(const RendererSceneResult& a,const RendererSc
         a.material_revision==b.material_revision && a.camera_draw==b.camera_draw && a.camera_lens==b.camera_lens && a.camera_pose==b.camera_pose &&
         a.viewmodel_clearance==b.viewmodel_clearance;
 }
+struct EnvironmentIblDiagnostics {
+    bool enabled=false;
+    std::uint32_t diffuse_size=0,specular_size=0,specular_levels=0,brdf_size=0;
+    std::uint64_t texture_bytes=0,generation=0;
+    double prepare_cpu_ms=0;
+};
 struct RenderDiagnostics {
     gpu_memory::Diagnostics memory_budget;
     bool deferred=false;
@@ -249,6 +255,7 @@ struct RenderDiagnostics {
     // Configured directional contact-filter bounds; zero for retained PCF modes.
     std::uint32_t shadow_blocker_samples=0,shadow_filter_samples=0,shadow_max_comparisons=0;
     double shadow_max_radius_texels=0,shadow_guard_texels=0;
+    std::optional<EnvironmentIblDiagnostics> environment_ibl;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
 };

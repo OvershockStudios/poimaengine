@@ -1,10 +1,10 @@
 # Authored lighting
 
-Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure to the native world service, Vulkan capture and player. Agents can author these through the same atomic transactions as meshes and materials, then inspect the resolved poses without a GPU. This is direct lighting; Poima 0.0.11 adds optional [shadow maps](SHADOWS.md). Poima 0.0.30 adds an asset-free procedural sky background. The current renderer adds bounded clustered light assignment. Environment reflections, GI, volumetric lighting and production-scale performance qualification remain outstanding.
+Directional, point and spot lights, ambient fill and exposure share the native world service, Vulkan capture and player. Agents author these through the same atomic transactions as meshes and materials, then inspect resolved poses without a GPU. The renderer supplies bounded clustered light assignment, optional [shadow maps](SHADOWS.md), a procedural sky and opt-in [sky environment lighting](ENVIRONMENT_IBL.md). Local reflection probes, geometry-aware GI, volumetric lighting and production-scale performance qualification remain outstanding.
 
 ## Components and units
 
-Use `component.set` on an existing entity. `world.describe` schema revision 42 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
+Use `component.set` on an existing entity. `world.describe` schema revision 121 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
 
 ```json
 {"op":"component.set","id":"00000000000000000000000000000002","type":"Light","value":{"kind":"spot","color":[1,0.65,0.3],"intensity":100,"enabled":true,"range":12,"inner_angle":15,"outer_angle":40}}
@@ -82,7 +82,7 @@ Materials use the existing GGX/Smith/Schlick specular and Lambert diffuse terms.
 
 Point/spot intensity follows inverse-square attenuation, with squared distance clamped to 0.0001 m² to bound the singularity within 1 cm. A finite range multiplies it by `clamp(1 - (distance/range)^4, 0, 1)`. Spot falloff is the square of the normalized cosine interval between outer and inner cones. Colors from all lights accumulate in linear space. The renderer stores bounded half-float radiance and resolves MSAA before shared exposure, Reinhard mapping and sRGB encoding. Ambient fill affects diffuse color and receives material AO; emission receives exposure but no direct-light multiplier. The renderer uses float precision; extremely narrow cones and extreme world scales are not precision-qualified.
 
-Lights with enabled [shadow maps](SHADOWS.md) are occluded by visible cast-enabled opaque geometry; unshadowed lights retain their previous behavior. [Per-drawable controls](SHADOWS.md#per-drawable-controls) independently select casting and PBR direct-light receiving, without changing ambient/AO/emission or physics/acoustics. Metallic surfaces receive direct highlights but lack environment reflections. Clustered assignment reduces the candidate list for finite-range lights; overflow and unsupported camera configurations retain the complete light loop. There is no shadow cache or measured production performance claim. The player still waits for the GPU each frame. NVRHI error checks are not full Vulkan validation.
+Lights with enabled [shadow maps](SHADOWS.md) are occluded by visible cast-enabled opaque geometry; unshadowed lights retain their previous behavior. [Per-drawable controls](SHADOWS.md#per-drawable-controls) independently select casting and PBR direct-light receiving, without changing ambient/AO/emission or physics/acoustics. Metallic surfaces receive direct highlights and optional [sky environment reflections](ENVIRONMENT_IBL.md); local geometry reflections remain separate work. Clustered assignment reduces the candidate list for finite-range lights; overflow and unsupported camera configurations retain the complete light loop. There is no shadow cache or measured production performance claim. The player still waits for the GPU each frame. NVRHI error checks are not full Vulkan validation.
 
 ## Clustered assignment and reference mode
 

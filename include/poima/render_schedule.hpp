@@ -13,7 +13,7 @@ namespace poima::render_schedule {
 using ResourceId=std::uint32_t;
 inline constexpr ResourceId none=std::numeric_limits<ResourceId>::max();
 enum class Kind { buffer,texture };
-enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint,rgba32_float,r16_float };
+enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint,rgba32_float,r16_float,rgba8_unorm };
 enum class Lifetime { imported,shared,history,slot,capture,swapchain };
 // Prefix describes the used prefix, not the larger physical allocation.
 // Cluster members are only the entries selected by the accompanying count buffer.
@@ -66,6 +66,7 @@ struct FrameResources {
     std::vector<Resource> resources;
     ResourceId swapchain=none,color=none,depth=none,normal=none,motion=none,motion_valid=none,hdr=none,output=none,frame=none,objects=none,lights=none;
     ResourceId material_base=none,material_surface=none,material_correspondence=none;
+    ResourceId ibl_diffuse=none,ibl_specular=none,ibl_brdf=none;
     ResourceId ao_raw=none,ao_filtered=none,ao_constants=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
@@ -105,6 +106,26 @@ struct Schedule {
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
         if(settings.scene) {required(frame.frame);required(frame.objects);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+        if(frame.ibl_diffuse!=none || frame.ibl_specular!=none || frame.ibl_brdf!=none) {
+            if(!settings.scene)fail("environment inputs without scene shading");
+            const ResourceId inputs[]={frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf};
+            for(auto id:inputs)required(id);
+            std::unordered_set<ResourceId> distinct={frame.swapchain,frame.color,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.output,frame.frame,frame.objects,frame.lights,
+                frame.material_base,frame.material_surface,frame.material_correspondence,frame.ao_raw,frame.ao_filtered,frame.ao_constants,frame.shadow,frame.counts,frame.indices,frame.cluster_readback,
+                frame.skin_errors,frame.skin_readback,frame.capture,frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,
+                frame.viewmodel_frame,frame.viewmodel_objects,frame.viewmodel_counts,frame.viewmodel_indices,frame.viewmodel_readback,frame.viewmodel_color,frame.viewmodel_depth,frame.viewmodel_resolved,frame.composite,
+                frame.game_vertices,frame.game_indices,frame.overlay_vertices,frame.editor_vertices,frame.editor_indices};
+            for(const auto* draws:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*draws)for(auto id:draw.textures)distinct.insert(id);
+            for(auto id:frame.game_textures)distinct.insert(id);
+            for(auto id:frame.editor_textures)distinct.insert(id);
+            const bool dummy=resource(frame.ibl_diffuse).width==1;
+            const std::uint32_t widths[]={dummy?1u:16u,dummy?1u:64u,dummy?1u:64u};
+            const Format formats[]={dummy?Format::rgba8_unorm:Format::rgba32_float,dummy?Format::rgba8_unorm:Format::rgba32_float,dummy?Format::rgba8_unorm:Format::rg32_float};
+            for(std::size_t i=0;i<3;++i) {
+                const auto& r=resource(inputs[i]);
+                if(!distinct.insert(inputs[i]).second || r.kind!=Kind::texture || r.format!=formats[i] || r.width!=widths[i] || r.height!=widths[i] || r.samples!=1 || !r.initialized || r.lifetime!=Lifetime::imported || !(r.supported&use_bit(Use::sampled)))fail("invalid or aliased environment input");
+            }
+        }
         if(settings.products_debug && !settings.products)fail("diagnostic output requires scene products");
         if(settings.products) {
             required(frame.normal);required(frame.motion);required(frame.motion_valid);
@@ -233,6 +254,8 @@ struct Schedule {
             if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
                 for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
             if(pass.id==PassId::opaque)world_opaque=true;
+            if((pass.id==PassId::opaque && !settings.deferred) || pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque)
+                for(auto id:{frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf})if(id!=none && !has(id,Use::sampled))fail("missing environment lighting input");
             if(pass.id==PassId::resolve)world_resolved=true;
             if(settings.deferred && pass.id==PassId::scene_clear)
                 for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence})if(!has(id,Use::clear_color))fail("missing deferred material clear");
@@ -411,7 +434,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
-    if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
+    if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);
         if(settings.ambient_occlusion) {
@@ -424,6 +447,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
             }
         }
         auto& lighting=pass(PassId::deferred_lighting);
+        for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(lighting,id,Use::sampled);
         if(settings.ambient_occlusion)add(lighting,f.ao_filtered,Use::sampled);
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence,f.depth,f.shadow})add(lighting,id,Use::sampled);
         add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
@@ -444,6 +468,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
         if(settings.viewmodel_clustered) {auto& cluster=pass(PassId::viewmodel_lights);add(cluster,f.viewmodel_frame,Use::constant);add(cluster,f.lights,Use::storage_read);add(cluster,f.viewmodel_counts,Use::storage_write,true);add(cluster,f.viewmodel_indices,Use::storage_write,true);add(cluster,f.viewmodel_counts,Use::copy_source);add(cluster,f.viewmodel_readback,Use::copy_destination,true);}
         auto& clear=pass(PassId::viewmodel_clear);add(clear,f.viewmodel_color,Use::clear_color,true);add(clear,f.viewmodel_depth,Use::clear_depth,true);
         auto& draw=pass(PassId::viewmodel_opaque);add(draw,f.viewmodel_color,Use::color);add(draw,f.viewmodel_depth,Use::depth);add(draw,f.viewmodel_frame,Use::constant);add(draw,f.viewmodel_objects,Use::storage_read);add(draw,f.lights,Use::storage_read);add(draw,f.shadow,Use::sampled);
+        for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(draw,id,Use::sampled);
         if(settings.viewmodel_clustered) {add(draw,f.viewmodel_counts,Use::storage_read);add(draw,f.viewmodel_indices,Use::storage_read);}
         for(const auto& d:f.viewmodel_draws) {add(draw,d.vertices,Use::vertex);add(draw,d.indices,Use::index);for(auto t:d.textures)add(draw,t,Use::sampled);}
         if(settings.viewmodel_samples!=1) {auto& resolve=pass(PassId::viewmodel_resolve);add(resolve,f.viewmodel_color,Use::sampled);add(resolve,f.viewmodel_resolved,Use::color_overwrite,true);}
