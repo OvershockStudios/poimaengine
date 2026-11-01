@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-10-31 for **0.0.217**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-01 for **0.0.218**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.218 adds opt-in [physical rigs](PHYSICAL_RIGS.md): calibrated primitive
+proxies, explicit mass and inertia, joint limits, soft response and neutral-posture
+forces. Animation can transfer its final committed pose and momentum to passive
+physics; localized impulses and solved-bone publication share the native runtime.
+CLI inspection and an optional 424-byte C# extension expose the same state.
+Earlier service prefixes and absent-feature save layouts remain supported.
+
+The initial profile requires a rigid uniform-scale rig with separate ownership
+from character controllers, root motion, IK and descendant ordinary colliders.
+It supplies passive takeover, rather than active balance or recovery. General
+save upgrades reject physical snapshots. Imported nonuniform-scale rigs,
+controller transfer, active reactions and dedicated editor tools remain required
+work toward the production character workflow.
+
+Linux qualification covers native momentum, final skin palettes, exact cold-save
+continuation, lifecycle rollback and the complete CLI workflow. The real CoreCLR
+consumer passes 450 requests, all 33 typed fields, 75 native boundary comparisons,
+eleven complete archives and five whole-byte pairs across two naturally closed
+owners. A retained earlier bridge/game also passes its independent workflow.
+The separate managed ABI suite uses synthetic callbacks. Windows, rendered
+physical-rig publication and Native AOT qualification are separate scopes still
+being checked; these records do not establish production humanoid quality or
+representative performance. Original failed attempts remain preserved.
 
 Version 0.0.217 adds opt-in [procedural-sky environment lighting](ENVIRONMENT_IBL.md)
 with diffuse convolution, roughness-prefiltered reflections and a split-sum BRDF

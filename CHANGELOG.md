@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.218
+
+- Add calibrated native physical rigs with explicit masses, inertias, joint
+  limits, soft-limit response and neutral-posture forces.
+- Transfer committed animation poses and momentum into passive simulation,
+  apply localized impulses and publish solved bones through existing skinning.
+- Preserve body-ID history, rig membership, joint warm starts, contact caches
+  and physics ownership through rollback and complete cold snapshots.
+- Expose committed inspection and ordered commands through the CLI and an
+  optional 424-byte C# services extension, preserving older service prefixes.
+
 ## 0.0.217
 
 - Add opt-in procedural-sky diffuse/specular environment lighting, shared by
