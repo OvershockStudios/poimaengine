@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.226**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.227**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.227 adds opt-in [grounded physical handoff](GROUNDED_PHYSICAL_HANDOFF.md).
+Automatic contacts and planted-foot corrections feed the completed pose and
+momentum transferred to physics. Captured decisions, prior controls, requested
+multipliers and actual native ray/support observations retain their original
+tick; physical characters do not probe or retarget old anchors when a platform
+moves or retires. Physical extension 4 also retains an animated capture for
+immediate takeover after cold loading. Other animated rigs keep grounding.
+
+The [Linux headless record](evidence/m2-grounded-physical-handoff.json) covers
+ten native feature groups and 7,895 checks with an actual compiled C++ gameplay
+callback, within a passing selected 50-test cohort. Its 324 complete archive
+files include twelve negative inputs and 119 whole warm/cold pairs.
+Complete saves cover moving supports, both support-retirement timings,
+mixed manual/grounded slots, rollback, nonidentity births and seven noncontact
+scenarios. Coherent foreign-body-ID and raw-normal negative tests first exposed
+acceptance bugs, then passed the same frozen assertions after the fixes;
+the original failed records remain failed. The new combined policy's Windows,
+C# CoreCLR/AOT, rendered imported-character quality and representative
+performance qualification remain separate follow-ups.
 
 Version 0.0.226 [qualifies procedural handoff on Windows](evidence/m2-procedural-physical-handoff-windows.json)
 and adds a compiled C# consumer on Windows and Linux. The Windows run passes
@@ -38,7 +58,7 @@ eleven complete warm/cold pairs across three naturally closed owners. Earlier
 failed startup, donor-record and spawned-frame checks retain their original
 verdicts; exact equality and numerical bounds were not relaxed. The Windows and
 CoreCLR follow-up is recorded above. Native AOT and rendered-character
-qualification, automatic-grounding/root-motion coordination, active balance and
+qualification, root-motion coordination, active balance and
 recovery remain open.
 
 Version 0.0.224 integrates the original Knight's virtual movement, capsule

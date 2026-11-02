@@ -137,3 +137,12 @@ snapshots, negative inputs and a literal SHA manifest under its
 directory containing its manifest rejects rather than replacing earlier
 records. The checks exercise new `Runtime` objects within one process;
 fresh-process and other-platform qualification remain separate.
+
+The [0.0.227 evidence](evidence/m2-grounded-physical-handoff.json) records a
+passing selected 50-test Linux cohort. Its actual C++ callback fixture passes
+ten feature groups and 7,895 checks. Independent review reopens all 324 complete
+archive files, including twelve negative inputs, and all 119 complete warm/cold
+pairs. Seven noncontact scenarios cover disabled and zero-weight requests,
+lifted feet, actual misses, correction and slope rejection, and lost support.
+Original foreign-owner and raw-normal acceptance failures remain retained;
+the corresponding unchanged assertions pass after the fixes.

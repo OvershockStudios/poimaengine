@@ -1,0 +1,407 @@
+{
+  "format": "poima.grounded-physical-handoff.qualification.v1",
+  "checkpoint": "0.0.227",
+  "date": "2026-11-02",
+  "passed": true,
+  "platform": "Linux x86_64 headless",
+  "contract": "../GROUNDED_PHYSICAL_HANDOFF.md",
+  "schema_revision": 127,
+  "qualified_source_commit": "d73ef784bc9e86315e91a2113c733abd959e7f5d",
+  "original_build_parent_commit": "12c44831f82ff8dbd20533b9d44d902c27ba2e45",
+  "qualified_source_files": {
+    "CMakeLists.txt": {
+      "bytes": 112255,
+      "sha256": "7f430c660a3d15607b3f6fc6f39425a7a8c5409e6ae73741f6ed99f5c1ac6d72"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7921,
+      "sha256": "fe52ba2fe5fc3428629fc45de0324a252ff45620fca455d98a0585d037179864"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 14041,
+      "sha256": "13284db1c50bedcc43a8f576ff9eaab5c56307e65421a72b1de7d4e28f902dfa"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 15466,
+      "sha256": "cb00b17fb364824b1cad3190be9f087e6451eefb5b1caccf4f18dae9f1092da8"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 17206,
+      "sha256": "a76694e40e282b6061a681d960a3818eb1140ee4d8f0c62ac4f2da6a4ce605ea"
+    },
+    "src/runtime.cpp": {
+      "bytes": 180179,
+      "sha256": "6ffc78d43b3baa39dcee307c9d172939b9251dfaee7b51f00278ebf8c99c7e0c"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 145334,
+      "sha256": "b2682aae12e7aa535f972fd956d31bcd7e77bb2f78c92e4063e6bc1813e31142"
+    },
+    "src/runtime_animation_procedural.inc": {
+      "bytes": 24695,
+      "sha256": "49e9f35b74a6f48b7edaea49384ac8428a3a3a2a0b95e893fa9249a67704a445"
+    },
+    "src/runtime_animation_procedural_grounding.inc": {
+      "bytes": 17842,
+      "sha256": "d556e43d3bfbd81257b97e1319185912b7a3637738d81deed873f6e310e16aaa"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 42321,
+      "sha256": "131953209f018ce0038e73cf689dd3d8ca5e813150eee087cf3cce4e7937e13c"
+    },
+    "src/runtime_physical_restore.hpp": {
+      "bytes": 1445,
+      "sha256": "a5ceb5171f220471c48d8758fb02c302c08e1f379d949108e7f6312e3ea55166"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 23582,
+      "sha256": "8c42192b02869cec50e572583a52f5591689d3fe497e99322dc8829b931d1187"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 56166,
+      "sha256": "fe4fa13036445e5fcd25c112e5b60ba2251e29856c4dcde32baeefd4aa7d0615"
+    },
+    "src/world.cpp": {
+      "bytes": 373169,
+      "sha256": "8d0ce1b777686c6c4dfff6d6c2859c901e1f83d44d6fa1658065f51c51dce62a"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 144641,
+      "sha256": "6361305df56147aa0ed3f735a98fcf814d3733fbacbd46272b302d4a86663d6f"
+    },
+    "tests/physical_controller_handoff_json_native.cpp": {
+      "bytes": 37333,
+      "sha256": "73698da9b99f93fb574c41f334cec0ccd90a39ea028cca3e3599531725101ec2"
+    },
+    "tests/physical_grounded_gameplay_fixture.cpp": {
+      "bytes": 5803,
+      "sha256": "26abb608835e15ad9b1099c6dae91e0c55ad6e9d7547864c5a8968c8c04c27a9"
+    },
+    "tests/physical_grounded_gameplay_fixture.hpp": {
+      "bytes": 1509,
+      "sha256": "e4c12259b6add1b00f12ccf9912c9afc1e04b770e4b3f2e3d75c0efa64e3bd63"
+    },
+    "tests/physical_grounded_pose_tests.cpp": {
+      "bytes": 53036,
+      "sha256": "e979a4f2bd328731175c49c34c9baf45f19a46ea80b5d58ed4098c492f45eef5"
+    },
+    "tests/physical_grounded_test_artifacts.hpp": {
+      "bytes": 4272,
+      "sha256": "6adb8f7345fbd0b8ea3f28bfba3e436e8405ce2a5f0f5c99befca9c855873f54"
+    }
+  },
+  "gameplay_abi": {
+    "epoch": 7,
+    "optional_services_bytes": 424,
+    "changed": false
+  },
+  "feature": {
+    "policy": "PhysicalRig.procedural_pose=grounded_animated_only",
+    "physical_extension": 4,
+    "terminal_version": 2,
+    "requires": [
+      "unique linked root virtual-locomotion actor; direct-child Animated rig",
+      "at least one authored grounding slot; manual slots may coexist",
+      "all solver root/middle/end nodes mapped to physical parts",
+      "existing grounding metrics and two-foot limit; canonical support identities",
+      "Camera on separate child entities; no root motion or independent descendant pose/body writer"
+    ],
+    "ownership": [
+      "capture completed source/layer/grounding/IK pose and finite-difference momentum",
+      "freeze original requested multipliers, generated controls and full contact/plant cache at takeover",
+      "journal actual native decision inputs and ray/support replies during final sampling",
+      "pure bounded historical replay consumes every recorded reply exactly once",
+      "suspend only transferred owner; other live grounding continues",
+      "retain active capture for immediate takeover after cold load",
+      "join active frames to current native supports, and passive frames to original captured support history",
+      "reject foreign current body ownership and non-native raw normal precision; retain old body generations"
+    ],
+    "older_formats": "Manual animated_only remains manual-only with terminal v1/E3; absent grounded policy preserves prior physical extension selection and field shapes."
+  },
+  "native_qualification": {
+    "groups": 10,
+    "checks": 7895,
+    "combined_tests": 50,
+    "failed_tests": 0,
+    "actual_compiled_CPP_callback": true,
+    "actual_CPP_fixture_argument": "build/linux-game/libpoima-physical-grounded-gameplay-fixture.so",
+    "fresh_Runtime_objects": "same OS process; not a fresh-process gameplay qualification",
+    "preview": {
+      "repeated_previews": 32,
+      "additional_provider_calls": 0,
+      "original_native_ray_support_binding_calls": [
+        60,
+        60,
+        120
+      ]
+    },
+    "noncontact_scenarios": [
+      "requested disabled",
+      "requested zero weight",
+      "authored lifted foot",
+      "actual ray miss",
+      "actual correction-limit rejection",
+      "actual tilted-support slope rejection",
+      "live support retirement produces plant-support-lost"
+    ],
+    "scope": [
+      "actual translating/rotating rigid support with distinct render scale",
+      "independent complete final COM/angular histories and first-passive free-flight momentum",
+      "support retirement after takeover and inside activation batch",
+      "native body-index reuse with later generation and historical support retention",
+      "requested/generated policy separation, disjoint manual/grounded branches and complete late-failure rollback",
+      "nonidentity-yaw birth, dormant recipe, last spawned owner retirement and source-scale continuation",
+      "complete active/passive saves, immediate post-cold takeover and future whole-state pairs"
+    ],
+    "complete_archives": {
+      "files": 324,
+      "bytes": 14574119,
+      "roles": {
+        "source": 74,
+        "warm": 119,
+        "cold": 119,
+        "negative": 12
+      },
+      "literal_payload_checksums": 324,
+      "whole_byte_and_typed_pairs": 119,
+      "accepted_E4_capture_rows": 305,
+      "phase_rows": {
+        "animated": 94,
+        "physical": 211
+      },
+      "manifest_identity": {
+        "bytes": 137355,
+        "sha256": "d9c544785696c2d65e3dde3617793405312aa159ca44a1eeb203e423fb918a93"
+      },
+      "native5_to_final": "Complete manifests and all324 files, including negative inputs, measured byte/typed equal; not inferred."
+    },
+    "frozen_oracle_bounds": {
+      "proxies": 7,
+      "total_mass_kg": 11,
+      "sphere_radius_m": 0.04,
+      "linear_and_angular_damping": 0,
+      "consecutive_COM_velocity_and_angular_history_absolute_error": 2e-06,
+      "first_free_step_total_linear_momentum_absolute_error_per_axis": 0.001,
+      "first_free_step_total_angular_momentum_absolute_error_per_axis": 0.005,
+      "free_step_preconditions": [
+        "actual source/platform momentum",
+        "separated proxies above support",
+        "actual saved contact cache has no pair involving any rig proxy"
+      ]
+    }
+  },
+  "compiler": {
+    "id": "GNU",
+    "version": "16.2.0",
+    "configuration": "Debug",
+    "build_workers": 2,
+    "images": {
+      "poima": {
+        "bytes": 39127712,
+        "sha256": "601eab2f6fae0cd355333dc47fa504554048fd2295d1f5a64d1fa541d07aa48b",
+        "decode_verified": true
+      },
+      "poima-runtime-physical-grounded-test": {
+        "bytes": 17009768,
+        "sha256": "d60c0330878e23e2eb77e5b6c666a2bd021c3a1d9c7727d01d3855188358a039",
+        "decode_verified": true
+      },
+      "libpoima-physical-grounded-gameplay-fixture.so": {
+        "bytes": 1164408,
+        "sha256": "e1356f725948a1287be059c6e253d910dacd69a00e92efea8453dc48c4a55ce9",
+        "decode_verified": true
+      }
+    },
+    "source_pins": {
+      "count": 970,
+      "manifest_identity": {
+        "bytes": 151856,
+        "sha256": "2b45b4a0f19b8c66d0d770cf55702f37a95c2b45b98bceac52f177bab30ab0a7"
+      },
+      "source_exclusions": []
+    },
+    "decoded_preserved_products": {
+      "count": 41,
+      "bytes": 397201752
+    }
+  },
+  "independent_audits": {
+    "audit_grounded_final1_v1.json": {
+      "bytes": 776340,
+      "sha256": "9b5242b72b70feb8ce05eb7efa800f813ea4d43bc54acfbbbd34ab1c58f3692d"
+    },
+    "audit_grounded_final1_relations_v1.json": {
+      "bytes": 25300,
+      "sha256": "9821e1d233a0b791375744fe994a937cee2c6ec8aa1c94a031031be07c31d744"
+    },
+    "audit_grounded_native3_relations_v1.json": {
+      "bytes": 15187,
+      "sha256": "ebe1bfa73deee61bdb1438e6b6cbec632a79b1069ccac5b6fcd588c3d16d16f4"
+    },
+    "audit_grounded_native5_relations_v2.json": {
+      "bytes": 18606,
+      "sha256": "b60a5f22d0ab3b1e3094c71ea78124656b3caf25ed6c4cd9bf295f6af84f4082"
+    }
+  },
+  "causal_negative_tests": [
+    {
+      "red": {
+        "case": "build/physical-grounded-pose-0.0.227/native-2-foreign-owner-counterexample",
+        "passed": false,
+        "report_identity": {
+          "bytes": 5940,
+          "sha256": "73abd0049967b78811167c0ef31ff80d5a5b33423fada92fc0e5008aae037fda"
+        },
+        "forced_cleanup": false,
+        "commands": [
+          {
+            "label": "build",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "version",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "tests",
+            "exit_code": 8,
+            "natural_closure": true
+          }
+        ]
+      },
+      "green": {
+        "case": "build/physical-grounded-pose-0.0.227/native-3-owner-join",
+        "passed": true,
+        "report_identity": {
+          "bytes": 5010,
+          "sha256": "b003417e7ad58230c56f0803e48908f0d913fce471eb946283c92ab3acc589a6"
+        },
+        "forced_cleanup": false,
+        "commands": [
+          {
+            "label": "build",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "version",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "tests",
+            "exit_code": 0,
+            "natural_closure": true
+          }
+        ]
+      },
+      "counterexample": "Coherently substitute the actual replacement body ID in every old-support journal binding, preserving old entity/context/cache/pose and a valid outer checksum.",
+      "result": "Two original native assertions fail before the fix; identical retained test sources pass after current native ownership is joined. Genuine retired generations and actual positive cold-load controls remain valid."
+    },
+    {
+      "red": {
+        "case": "build/physical-grounded-pose-0.0.227/native-4-normal-counterexample",
+        "passed": false,
+        "report_identity": {
+          "bytes": 5886,
+          "sha256": "7b20d0ab3118c30415d2ea3086ce28280ac03546a8e35055c0ccb807baae5d4d"
+        },
+        "forced_cleanup": false,
+        "commands": [
+          {
+            "label": "build",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "version",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "tests",
+            "exit_code": 8,
+            "natural_closure": true
+          }
+        ]
+      },
+      "green": {
+        "case": "build/physical-grounded-pose-0.0.227/native-5-normal-shape",
+        "passed": true,
+        "report_identity": {
+          "bytes": 5026,
+          "sha256": "ca5b3f52ad40b9ed9e9d8c59a57a7ec34693d8fa48ccae850bca8e0cc87a6b09"
+        },
+        "forced_cleanup": false,
+        "commands": [
+          {
+            "label": "build",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "version",
+            "exit_code": 0,
+            "natural_closure": true
+          },
+          {
+            "label": "tests",
+            "exit_code": 0,
+            "natural_closure": true
+          }
+        ]
+      },
+      "counterexample": "Only raw normal Y in one ray changes from1.0 to nextafter(1.0,2.0), duplicated consistently in capture/terminal; only the outer payload digest is resealed.",
+      "result": "Original negative assertion fails before float32-shape validation; identical tests pass after it. All324 source/positive/negative archive files are measured identical across red4/green5. Existing unit-length tolerance unchanged."
+    }
+  ],
+  "final_case": {
+    "case": "build/physical-grounded-pose-0.0.227/final-1",
+    "passed": true,
+    "report_identity": {
+      "bytes": 31836,
+      "sha256": "5f7734971f0c19196f8c3bb957da6ac8e6ba95ff951db869200ddd25e09cff9d"
+    },
+    "forced_cleanup": false,
+    "commands": [
+      {
+        "label": "build",
+        "exit_code": 0,
+        "natural_closure": true
+      },
+      {
+        "label": "version",
+        "exit_code": 0,
+        "natural_closure": true
+      },
+      {
+        "label": "tests",
+        "exit_code": 0,
+        "natural_closure": true
+      }
+    ]
+  },
+  "detailed_native_log_identity": {
+    "bytes": 155176,
+    "sha256": "cb3499315f9ef00ec7118a449afe59145d5929a81948f49021baa92863cc7808"
+  },
+  "reproduction": [
+    "Configure a simulation-enabled build with native gameplay enabled.",
+    "cmake --build build/linux-game --target poima-runtime-physical-grounded-test poima-physical-controller-handoff-json-test --parallel 2",
+    "POIMA_JOB_WORKERS=2 ctest --test-dir build/linux-game -R '^(runtime_physical_grounded|physical_controller_handoff_json_native)$' --output-on-failure --parallel 1",
+    "Use fresh POIMA_TEST_ARTIFACTS to retain original complete snapshots and negative inputs in physical-grounded/."
+  ],
+  "limits": [
+    "Analytic seven-part graph, not imported humanoid or rendered contact quality.",
+    "New combined policy has no new Windows, CoreCLR, Native AOT, standalone export, physical-input or GPU qualification here.",
+    "Actual CPP shared-library transport is not evidence of an AOT compiler.",
+    "Only same-platform complete selected-fixture state equality; no cross-OS bitwise guarantee.",
+    "Captured-query replay and ID/generation checks establish bounded internal consistency, not arbitrary past-world nearest-hit authenticity.",
+    "No recovery/get-up, active balance, root-motion transfer, gait fitting or general affine grounding added.",
+    "Concurrent system workloads were permitted; elapsed qualification times are not controlled performance measurements.",
+    "Original failed producers and all their inputs/images/logs remain failed and unmodified. No requirements, numerical bounds or original archive fields were weakened.",
+    "Broader engine/Alpha gates remain open."
+  ]
+}
