@@ -1,0 +1,534 @@
+{
+  "format": "poima.controller-handoff-windows-followup.v1",
+  "date": "2026-11-02",
+  "checkpoint": "0.0.223",
+  "native_engine_version": "0.0.222",
+  "schema_revision": 125,
+  "passed": true,
+  "scope": "Selected Windows native runtime/CLI and compiled CoreCLR ownership/save workflows, with a corrected literal-wire recorder and separately recorded recovery. Current223 Linux CLI version metadata is checked separately.",
+  "runtime_source_commit": "57d0466",
+  "runtime_source_identities": {
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7644,
+      "sha256": "ff5449860830ab16e840ddb656f9b325a446c7db675c2224d3a6a7664fb680ad"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 31749,
+      "sha256": "0ab29d9a06db2cbc61762ac79ab3eeebb202831f94accd1e35d69ee7d24fcc10"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 2573,
+      "sha256": "515a3e9db482459a2ee6cd6b7d321984024abf9ede00583dbe225001fed3c771"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 15025,
+      "sha256": "136d673fac7d612d3642245453f3d1abe28efe71dd8f3d8bd5cdb04a66b805a4"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 15137,
+      "sha256": "e377edff79aa17be9fac0ad992e205b31434b2768cafa7443ed87bc5f197df39"
+    },
+    "src/runtime.cpp": {
+      "bytes": 173049,
+      "sha256": "2f92027435f5c24001debacd67f7f5fe5fc1e5e28be6fbbcd8aa62ad2fba00b1"
+    },
+    "src/runtime_camera_pose_state.inc": {
+      "bytes": 5458,
+      "sha256": "cad29ed8b5153108548e65926e751dacd8ad1886c6fd26b7c526be1e8bf521f0"
+    },
+    "src/runtime_controller_handoff.inc": {
+      "bytes": 5967,
+      "sha256": "8436f150b79cbb3e752a6810ab07e8e0de12adfda1c2a10d0af08a85a0702f73"
+    },
+    "src/runtime_controller_handoff_state.hpp": {
+      "bytes": 2492,
+      "sha256": "9510ba686d8939d4562ae372172a0401f7ad7f455266101e647e5e9d255a91b4"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 10591,
+      "sha256": "cfe1e1f07f5eaef0aa7505d3d199f10e24f7120a89f4d4aed6f8a6bf0b879f6e"
+    },
+    "src/runtime_motor.inc": {
+      "bytes": 16845,
+      "sha256": "1698f9e38803db8543c3d317d7f573b518050b7ef472f48a6e8232434776372e"
+    },
+    "src/runtime_navigation.inc": {
+      "bytes": 9730,
+      "sha256": "0bc52ada148ff69345a843180c9af6cefadce4e0b2309408ecaf017bf7905333"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 40090,
+      "sha256": "7db2763877ce9bb16f6b7229e7b9a292e358bf1c307e054f1a1c533d17cc89b3"
+    },
+    "src/runtime_physical_restore.hpp": {
+      "bytes": 1057,
+      "sha256": "783c80005df31e5e4683c83b90073e9acb3db64a423e01d7700ca540f0af7b1f"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 17240,
+      "sha256": "393e2caccee1eeb2dd47f2dae56873eba30d81cf3ec6e56727fa82e8ef3a99d7"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 15013,
+      "sha256": "59a4771f994dde35fbe229d97e6dff8bcbd14dc896f4ac73756dc13d38da0de6"
+    },
+    "src/runtime_physical_state_json.hpp": {
+      "bytes": 2120,
+      "sha256": "767e3da055cf647193b59bf9bd931855f1b07123f171d82850e3c3588572a5ff"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 55239,
+      "sha256": "3c3d5f690d1173ac39c70e362e8d76865c45eac18222dd21d3338b9ab284bb4b"
+    },
+    "src/runtime_templates.cpp": {
+      "bytes": 18755,
+      "sha256": "875c95c11b0828ed11a186d64771075fac5b8d57f64c714d650404b5efd9c451"
+    },
+    "src/world.cpp": {
+      "bytes": 371007,
+      "sha256": "8bc4d9b9bd757e7b0032eb9f4b2de5547843ed7bbdf269a70c64c8c7306c2703"
+    },
+    "src/world_physical.inc": {
+      "bytes": 7561,
+      "sha256": "e4a74ccfe3c584e920f81bc1e463c8c118c88fb933069e4e891cc496d2184e10"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 65910,
+      "sha256": "d7329394adbd88ab213e978ef6d1d488646a6c648e4903a90ae55ba4e6c193fa"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 143848,
+      "sha256": "1218730b62bcb7c1357ab0134f2fc4e3525cf77a3e7d686c7577b97e0d869462"
+    }
+  },
+  "windows_recorder_source_identities": {
+    "tests/world_physical_contract.py": {
+      "bytes": 22769,
+      "sha256": "49f29751412621bf6e49d01e57f83365861b0ac72e7b6ee1f0f3b9fa67114b26"
+    },
+    "tests/controller_handoff_gameplay_contract.py": {
+      "bytes": 23695,
+      "sha256": "f15ca2471c30c62476fe3a1b6194752f07e04db3f9d879840ec18b44abffa87e"
+    }
+  },
+  "current_verifier_source_identities": {
+    "tests/world_physical_contract.py": {
+      "bytes": 22769,
+      "sha256": "49f29751412621bf6e49d01e57f83365861b0ac72e7b6ee1f0f3b9fa67114b26"
+    },
+    "tests/controller_handoff_gameplay_contract.py": {
+      "bytes": 23962,
+      "sha256": "4696cc4e7ff5ead976fa7a8b577473e38fdb6b306cdb64339c7a533ed4d17937"
+    }
+  },
+  "windows_compilation": {
+    "passed": true,
+    "compiler_owner_identity": {
+      "bytes": 209689,
+      "sha256": "1162dfe3aeab086ebfc2b87efad757e1a737bf0d2908c24ed5019ccfbe03de78"
+    },
+    "seal_report_identity": {
+      "bytes": 67979,
+      "sha256": "124d68e12b96c18d59c00957120cda2562ba723f87087baf0d4e4354ed6d46b2"
+    },
+    "selected_PE_images": 37,
+    "selected_native_test_images": 35,
+    "whole_cache_requalified": false,
+    "desktop_bridge_loaded": false,
+    "forced_cleanup": false,
+    "final_children": [],
+    "images": {
+      "bin/poima.exe": {
+        "bytes": 28254208,
+        "sha256": "9bb7ba1d53bd1599a985d21e19a55f1f102a02d8e4c43313d329e168db66f092"
+      },
+      "bin/poima_desktop.dll": {
+        "bytes": 328845824,
+        "sha256": "670c3d9527da4d32289298f91728060b8f6d326210c3cab15bce210b7051fb59"
+      },
+      "bin/poima-physical-rig-math-test.exe": {
+        "bytes": 1196032,
+        "sha256": "cb4503cdaf7d4fa15ca0840c4346d273250275f12047d3060b15572286d7fc02"
+      },
+      "bin/poima-physical-rig-json-test.exe": {
+        "bytes": 1375744,
+        "sha256": "94bea65c16570749687dbead316fe2e744c2f4bb8158e158ab36f00f9612c02d"
+      },
+      "bin/poima-physical-pose-test.exe": {
+        "bytes": 2223616,
+        "sha256": "f25a0d2464522a7b8144b9c7775de492a35a3648427a4ca1c5fef6686de6a0b8"
+      },
+      "bin/poima-runtime-physics-state-test.exe": {
+        "bytes": 3130880,
+        "sha256": "65e9ad71895f8aacf244a86c3d22addc6c14e9d8db08c821d16ac2e7bfd939bc"
+      },
+      "bin/poima-runtime-physical-rig-test.exe": {
+        "bytes": 3001344,
+        "sha256": "8001f757301d5e65ed5d3ffaaf9bfb1175f50ac519579bb4ffe06d0adfa05d67"
+      },
+      "bin/poima-physical-state-json-test.exe": {
+        "bytes": 1507328,
+        "sha256": "8b9f18f16fbd126b407dbd195f9f14106e12d1bbc35376716a1030abb226688a"
+      },
+      "bin/poima-runtime-test.exe": {
+        "bytes": 20371968,
+        "sha256": "caec8584715035125f072f5cdd4913f2ce9f424458a6e182939b4758149378d3"
+      },
+      "bin/poima-runtime-animation-test.exe": {
+        "bytes": 20222464,
+        "sha256": "65e75ffe405018eb4a49859a331a7487553c199e17ba4be555cfc8727701b33e"
+      },
+      "bin/poima-runtime-save-test.exe": {
+        "bytes": 20275712,
+        "sha256": "a5c82b0d2b1b02e9429b81e89797f7ba542f7cbb3c3989ae67bdbcee53151ea2"
+      },
+      "bin/poima-runtime-body-ids-test.exe": {
+        "bytes": 1121280,
+        "sha256": "3438b072d8b0f849e3857712a215538e67bca7d246006ea6f88b19879394e301"
+      },
+      "bin/poima-runtime-topology-test.exe": {
+        "bytes": 2847232,
+        "sha256": "9a844a5da4fdf9fbca3efb2d198b225ca98f8d4f83f895eeed111f494b10893b"
+      },
+      "bin/poima-jolt-owner-state-test.exe": {
+        "bytes": 2896384,
+        "sha256": "955c386cf4a73d8a9f91d6437e1bb105e118c887891e6477bfcea2080fe4eacb"
+      },
+      "bin/poima-runtime-physics-joined-test.exe": {
+        "bytes": 3121152,
+        "sha256": "e7fd51964394775bccfd0dc3b4bc25a1b24485eaf5641a814582052e256ccc1f"
+      },
+      "bin/poima-runtime-physical-projection-test.exe": {
+        "bytes": 2955264,
+        "sha256": "883f696dc0d17c2f59c5aad9c44e47c7cec264d0b28533d6d55fde64d9e3f770"
+      },
+      "bin/poima-runtime-physics-bootstrap-json-test.exe": {
+        "bytes": 1491968,
+        "sha256": "24fe185a2d6ee8cd45893050bf272e2fd60402e76fbf7162c6477aeecce50810"
+      },
+      "bin/poima-runtime-body-ids-snapshot-test.exe": {
+        "bytes": 1133568,
+        "sha256": "fff3178a92a3dc078809586abc0b28614d1897a83ee044969e503d3d795c50d7"
+      },
+      "bin/poima-physical-gameplay-abi-test.exe": {
+        "bytes": 1130496,
+        "sha256": "c37469640cd351f5acdd0f491cdceb9e60417acc3492f256d323a99ed8b9a448"
+      },
+      "bin/poima-runtime-physical-ownership-test.exe": {
+        "bytes": 19983360,
+        "sha256": "f2791e850f77e44fcea63043eea77397ad4a0dd8765e5541ba41ae3afab66aec"
+      },
+      "bin/poima-runtime-physical-integration-test.exe": {
+        "bytes": 20063232,
+        "sha256": "2d6f97bcaac996f65aabb6670417620b1dcc9809f286e8e84e0d4461782cf87f"
+      },
+      "bin/poima-world-schema-test.exe": {
+        "bytes": 26798080,
+        "sha256": "fac074e494e5f5fb38b1030111d055ed99bd3e685aa3dd60154d8e60a4d68471"
+      },
+      "bin/poima-world-session-test.exe": {
+        "bytes": 27177472,
+        "sha256": "3d9f17523f9a7542e8543c305643841d36a3a653be36474e90fae1cec6533a58"
+      },
+      "bin/poima-gameplay-compatibility-test.exe": {
+        "bytes": 15899648,
+        "sha256": "a2185426b6d8fb8af742cff5e5d70c906d2a45b0207e7cd7ec2d0e425f73f839"
+      },
+      "bin/poima-gameplay-player-preferences-test.exe": {
+        "bytes": 15566336,
+        "sha256": "12a18629e26a4363e3e8803354d058deafec4c58ef7453d61810ff9d5384de33"
+      },
+      "bin/poima-physical-rig-skeletal-json-test.exe": {
+        "bytes": 1355264,
+        "sha256": "6b7e4cc00a9683c79559b773f3d2c9349d1369c72020180eef154431a040c361"
+      },
+      "bin/poima-runtime-physical-pose-skeletal-test.exe": {
+        "bytes": 1344512,
+        "sha256": "5cab1c784524a0b21257932466de5ea0dbd1dd46d2377e6159427dc9cbb62c59"
+      },
+      "bin/poima-runtime-physical-skeletal-integration-test.exe": {
+        "bytes": 20071936,
+        "sha256": "78b6318626432d8fe98e4f00129561003edfd33cffb9561a4d104f1d44b6f6e5"
+      },
+      "bin/poima-physical-rig-bounded-scale-json-test.exe": {
+        "bytes": 1368576,
+        "sha256": "fc257a0dc7a6393835e21ba80e1ab7c7d24198f94afd8443f67ad9459ffd65d7"
+      },
+      "bin/poima-runtime-physical-pose-bounded-scale-test.exe": {
+        "bytes": 1310720,
+        "sha256": "753f7dd6762e99857cfa216c06c97efa5a9c575ca83f74343ef937804254facb"
+      },
+      "bin/poima-runtime-physical-bounded-scale-integration-test.exe": {
+        "bytes": 20084224,
+        "sha256": "24ef05d944f9d673940e8b7c71d07f93279afb01c2eda83c49a2b7fbf58ff26d"
+      },
+      "bin/poima-runtime-character-input-plan-test.exe": {
+        "bytes": 1114112,
+        "sha256": "259c73144e32624270c6e90d0ef172c9580059a5710308aaeeaa8c0fefb79a81"
+      },
+      "bin/poima-runtime-physical-follow-test.exe": {
+        "bytes": 1315328,
+        "sha256": "f6f61a16a1c14456d67aafa079986d800b08edd98eaaa93f758bf8a2a39f8808"
+      },
+      "bin/poima-physical-controller-handoff-json-test.exe": {
+        "bytes": 26765312,
+        "sha256": "eda75876b83ff8874ecfea771d6c439e1f4d8e0ec714ea2461275fd1a2e49497"
+      },
+      "bin/poima-runtime-controller-handoff-state-test.exe": {
+        "bytes": 1405952,
+        "sha256": "08fda722d90b732eb85b97da91207aaa3d49f989afe286d140fd0bf2ba713e72"
+      },
+      "bin/poima-runtime-controller-handoff-test.exe": {
+        "bytes": 20081664,
+        "sha256": "0d0c29145adb7fce53124d1fb5b458f86002dfe0a7f886c1eeee62e5d5824ec8"
+      },
+      "bin/poima-runtime-controller-handoff-motion-test.exe": {
+        "bytes": 20114944,
+        "sha256": "385028912feb1cd8bb664698c7123f66b54949ca068462d1be71c2d1d5902eb3"
+      }
+    },
+    "core_library": {
+      "bytes": 265174150,
+      "sha256": "8253bbdb5c75386f1190ce2852f694464d468a53f094c672e3f0883802fbb949"
+    },
+    "scope": "Actual cross-compilation and preserved prior-generation products; native execution evidence is separate."
+  },
+  "windows_native_execution": {
+    "source_report_identity": {
+      "bytes": 25340,
+      "sha256": "87a69332410283b18422739e324c7f989412c6a4b58f8062a9bcc19f7240fa79"
+    },
+    "source_worker_identity": {
+      "bytes": 50162,
+      "sha256": "52c38a1f5063a023d2dfa2361a104d39ee323190edaa2053f9981e5b50278752"
+    },
+    "original_aggregate_passed": false,
+    "selected_native_executables": [
+      "physical-rig-math",
+      "physical-rig-json",
+      "physical-pose",
+      "runtime-physics-state",
+      "runtime-physical-rig",
+      "physical-state-json",
+      "runtime",
+      "runtime-animation",
+      "runtime-save",
+      "runtime-body-ids",
+      "runtime-topology",
+      "jolt-owner-state",
+      "runtime-physics-joined",
+      "runtime-physical-projection",
+      "runtime-physics-bootstrap-json",
+      "runtime-body-ids-snapshot",
+      "physical-gameplay-abi",
+      "runtime-physical-ownership",
+      "runtime-physical-integration",
+      "world-schema",
+      "world-session",
+      "gameplay-compatibility",
+      "gameplay-player-preferences",
+      "physical-rig-skeletal-json",
+      "runtime-physical-pose-skeletal",
+      "runtime-physical-skeletal-integration",
+      "physical-rig-bounded-scale-json",
+      "runtime-physical-pose-bounded-scale",
+      "runtime-physical-bounded-scale-integration",
+      "runtime-character-input-plan",
+      "runtime-physical-follow",
+      "physical-controller-handoff-json",
+      "runtime-controller-handoff-state",
+      "runtime-controller-handoff",
+      "runtime-controller-handoff-motion"
+    ],
+    "selected_native_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "motion_cases": 5,
+    "motion_checks": 278,
+    "publisher_policy_groups": 3,
+    "forced_cleanup": false,
+    "job_active_processes_after_cleanup": 0,
+    "scope": "All35 actual native binaries and publisher policy returned0 in the original campaign. The39-command aggregate remains failed at its later literal-request audit."
+  },
+  "recovered_windows_workflows": {
+    "passed": true,
+    "source_report_identity": {
+      "bytes": 18293,
+      "sha256": "b5a10200d1ccd6dae130822214b3d8c5e20bbb0408c917fd29a0e073128ecbef"
+    },
+    "source_worker_identity": {
+      "bytes": 25675,
+      "sha256": "e0769000bab9ca0c23fb97ac4c95426ab09b5543d82fcdaefda24050e99e6be3"
+    },
+    "command_labels": [
+      "cli-physical",
+      "managed-physical",
+      "controller-handoff"
+    ],
+    "exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "forced_cleanup": false,
+    "job_active_processes_at_exit": 0,
+    "job_active_processes_after_cleanup": 0,
+    "cli": {
+      "requests": 76,
+      "groups": 3,
+      "world_owners": 4
+    },
+    "retained_33_field_CoreCLR": {
+      "report_identity": {
+        "bytes": 3431719,
+        "sha256": "7d21a14ef0606d7091eff5d5fd7bdfeb55e603d8de9f5d5f71d846397772ace8"
+      },
+      "requests": 450,
+      "fields": 33,
+      "whole_archives_reopened": 11,
+      "whole_byte_and_typed_json_pairs": 5,
+      "natural_cli_owners": 2
+    },
+    "new_52_field_CoreCLR": {
+      "report_identity": {
+        "bytes": 1627344,
+        "sha256": "afc60b4fbda5a9cd04e4b8259a7cb43a293c55f5dff8bbc1f508f4bbf88c70e4"
+      },
+      "requests": 134,
+      "fields": 52,
+      "whole_archives_reopened": 14,
+      "whole_byte_and_typed_json_pairs": 7,
+      "natural_cli_owners": 2
+    },
+    "independent_audit_identity": {
+      "bytes": 1804,
+      "sha256": "e42eedc4a8545b18d911bea5757dfdd5bfcee2b2853c0cda67ef0a8fa8ee71b4"
+    },
+    "independent_totals": {
+      "requests": 584,
+      "whole_archives_reopened": 25,
+      "whole_byte_and_typed_json_pairs": 12,
+      "natural_cli_owners": 4
+    },
+    "scope": "Only affected CLI/managed workflows were repeated. Native35 were not rerun. The original failed campaign was not regraded."
+  },
+  "linux_corrected_recorder": {
+    "passed": true,
+    "native_engine_version": "0.0.223",
+    "cli_image": {
+      "bytes": 38456304,
+      "sha256": "a8994083fd92ab12e206cabc5d12886a97398396b2773b30a459c58faabe63ae"
+    },
+    "owner_report_identity": {
+      "bytes": 5803,
+      "sha256": "53f39863690b9b592e7265768124440c797ab732713d95ac02d3881db2757c20"
+    },
+    "report_identity": {
+      "bytes": 1626496,
+      "sha256": "2e23acd174665a4dd2f85ae2936ab4c4c921b5a9e8ac7faa49e43b1a554d36f3"
+    },
+    "requests": 134,
+    "fields": 52,
+    "reopened_whole_archives": 14,
+    "complete_byte_and_typed_json_pairs": 7,
+    "literal_recording_files_rehashed_and_rejoined": 4,
+    "natural_cli_owners": 2,
+    "terminal_join_after_closure": true
+  },
+  "terminal_recording_scope": "Windows independent audits rejoin complete files after natural WindowsJob closure. The later current Linux verifier closes both native owners before its own terminal join; these source revisions are identified separately.",
+  "checkpoint_metadata": {
+    "version": "0.0.223",
+    "owner_identity": {
+      "bytes": 19385,
+      "sha256": "61514034877319b4ee53f5a8c56e34b7536041c709a594b9ba6975ff58e666c4"
+    },
+    "passed": true,
+    "scope": "Linux CLI rebuilt with223 version metadata; build_metadata_contract passed. The Windows tests above executed the pinned222 image."
+  },
+  "recording_correction": {
+    "original_handoff_reports_affected": [
+      "0.0.222 Linux controller CoreCLR",
+      "first0.0.222 Windows controller CoreCLR"
+    ],
+    "request_id": 15,
+    "field": "params.session_id",
+    "cause": "The recorder retained a caller-owned ray-query dictionary. A later query updated its session_id, changing the earlier request summary after transmission. Literal request/reply files, native replies and saved artifacts remained unchanged.",
+    "implementation": "Snapshot request/reply values from their emitted/received JSON strings. The handoff verifier independently rejoins complete original streams before acceptance. No engine request, receipt, state field or saved artifact is repaired or excluded.",
+    "superseded_claim": "The earlier222 handoff report did not establish full request-summary versus literal-wire equality. Its call counts, native responses and complete-save checks remain separate evidence; its full-request-history claim is corrected here.",
+    "original_windows_aggregate_passed": false,
+    "original_artifacts_rewritten": false,
+    "discrepancy_audit_identity": {
+      "bytes": 1468,
+      "sha256": "9323aa83c527b8e4d7477e630f596084b05fb884e41f63d8e27f4c15b7a5d96d"
+    }
+  },
+  "admission_failures_preserved": [
+    {
+      "phase": "first file-only Windows preparation",
+      "cause": "Two required retained parser suites were absent from the current Linux ledger. They were subsequently linked against the actual current core and passed as a separate two-suite owner; original preparation remains failed.",
+      "current_parser_control_owner": {
+        "bytes": 17208,
+        "sha256": "08ef792f5de642f2c3c77cbf237c86e6806d7b1b2200801b909a5aa7778f45f2"
+      }
+    },
+    {
+      "phase": "first compiler-owner admission",
+      "cause": "The Python argv alias was not the exact resolved executable identity in the pin map. Supervisor refused before output/cache mutation; successor selected the actual pinned executable. Original refused admission remains failed."
+    }
+  ],
+  "storage": {
+    "scope": "Observed sizes in the admitted Windows cache and new output paths only, no cleanup or OS quota. The existing prior-generation seals are retained by authenticated reference.",
+    "capacity_guard_passed": true,
+    "max_observed_increment_bytes": 105806320,
+    "minimum_observed_free_bytes": 18921127936,
+    "forced_cleanup": false
+  },
+  "reproduction": {
+    "native": "Build the selected physical/controller native test targets with simulation enabled and run the resulting native executables on Windows. The list above names the exact executed targets.",
+    "managed": "Use .NET10, the compatible424-byte SDK/bridge and the compiled test game. Run tests/controller_handoff_gameplay_contract.py with --binary, --hostfxr, --bridge, --assembly and a fresh --output using native Windows Python. Do not pass --windows-interop under native Windows Python.",
+    "recording_checks": "The fixture requires every literal request and reply to match its retained call history, plus complete typed state and whole-save comparisons."
+  },
+  "limits": [
+    "No rendered or presented frames, GUI interaction, physical input or production humanoid appearance is qualified here.",
+    "The desktop bridge was compiled but not loaded in this campaign.",
+    "CoreCLR uses the portable previously compiled consumer/bridge with native Windows .NET10.0.14. No new-feature NativeAOT shipping qualification.",
+    "Native motion cold/future comparisons are test assertions, distinct from the independently reopened CLI files.",
+    "Exact saves are compared within each pinned native profile, not bitwise across operating systems or compilers.",
+    "No recovery/active balance/root-motion/IK handoff or linked-content save migration.",
+    "Shared laptop timings and storage observations are not controlled performance measurements. Overall Alpha gates remain open."
+  ]
+}

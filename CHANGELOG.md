@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.223
+
+- Retain RPC request/reply history from literal wire JSON so later caller edits
+  cannot change an earlier recorded request or response.
+- Rejoin complete handoff request/reply files before accepting the workflow.
+- Qualify controller handoff on Windows with native and compiled C# workflows;
+  preserve the original failed transcript audit and recovered runs separately.
+
 ## 0.0.222
 
 - Add opt-in controller-to-physical-rig takeover with committed pose/momentum,

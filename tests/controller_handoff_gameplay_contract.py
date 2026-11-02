@@ -294,6 +294,18 @@ def main():
              compiled['CommittedYaw'] == 0.0 and compiled['CommittedPitch'] == 0.0 and compiled['Writes'] == 3 and compiled['Dead'] == 1 and
              c.entity(ACTOR)['yaw'] == 0.0, 'Compiled held intents were applied after activation or leaked into staged reads')
         c.snapshot(saves, 'compiled-held-takeover')
+        io.close(); io = None
+        report['recordings'] = []
+        for owner in report['owners']:
+            need(owner['natural_exit'] is True and owner['forced_cleanup'] is False and
+                 owner['exit_code'] == 0 and owner['reader_failure'] is None, 'Native owner did not close naturally before transcript verification')
+            directory = Path(owner['directory'])
+            calls = [row for row in report['calls'] if Path(row['owner']) == directory]
+            for name, field in (('requests', 'request'), ('responses', 'response')):
+                path = directory/(name+'.jsonl')
+                rows = [strict_json(line) for line in path.read_bytes().splitlines() if line.strip()]
+                need(exact(rows, [row[field] for row in calls]), 'Literal '+name+' differ from retained call history')
+                report['recordings'].append(dict(path=str(path), bytes=path.stat().st_size, sha256=sha(path)))
         report['checks'] = ['Independent analytic same-Tick actor/camera/BaseWorld/effect and attached-region/native-ray joins through actual compiled CoreCLR callbacks',
                             'Caller-held and compiled-held movement/look/jump/crouch superseded by one-way transfer; unrelated controller retains its input',
                             'Actual capsule ray disappears, physical-part ray appears, raw capsule identity retained and support labeled historical',

@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.222**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.223**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.223 fixes mutable RPC history in the physical-workflow recorder and
+requires complete literal request/reply joins before accepting the handoff
+fixture. [Windows qualification](evidence/m2-controller-handoff-windows.json)
+executes the retained 0.0.222 native image: all 35 selected native tests return
+success, followed by separately recovered CLI and compiled CoreCLR workflows.
+Independent review reopens 25 whole saves and 12 complete byte/JSON pairs across
+584 managed-workflow requests. A fresh Linux handoff run also verifies its
+complete streams and saves. The original Windows campaign remains failed at its
+audit step: request 15's retained parameters had been changed by a later caller
+edit. Its literal files, replies and saves remain intact. This also corrects
+the earlier Linux handoff report's request-history claim; historical evidence
+is preserved. Rendered humanoid quality, physical input and new-feature AOT
+remain separate qualification.
 
 Version 0.0.222 adds opt-in one-way virtual-controller to physical-rig ownership.
 Valid held controls are superseded at takeover, the capsule keeps its ID outside
@@ -13,8 +27,8 @@ operation labels ownership and historical support; physical extension 2 retains
 complete off-world proxy, motor, support and follow witnesses through cold saves
 and rollback. [Contract and Linux evidence](PHYSICAL_RIGS.md#controller-handoff)
 cover the supported graph and phase boundaries. Root motion/IK coordination,
-recovery, production humanoid quality, new-feature Windows execution, Native AOT
-and rendered qualification remain separate.
+recovery, production humanoid quality, new-feature Native AOT and rendered
+qualification remain separate. Windows CPU evidence is recorded above.
 
 The [0.0.222 evidence](evidence/m2-controller-handoff.json) records 36 passing
 Linux native/contract suites and a separate five-case motion suite. Actual CLI
@@ -37,8 +51,8 @@ pairs and four complete byte/JSON save pairs across both controller backends,
 optional stance and a moving support. Four CLI processes close naturally;
 fresh old/current owners restore the original old-image save and continue
 identically. That checkpoint did not enable a runtime controller link; the
-0.0.222 integration above adds that ownership boundary. Windows execution remains
-separate qualification.
+0.0.222 integration above adds that ownership boundary; the separate Windows
+record above qualifies its selected native and CoreCLR paths.
 
 
 Version 0.0.220 adds an explicit `skeletal_bounded_scale` physical frame for

@@ -114,7 +114,8 @@ class Session:
         need(reply is not None and len(reply.encode()) <= MAX_LINE, 'Missing/oversized native RPC reply')
         self.recorded += len(line.encode())+len(reply.encode()); need(self.recorded <= MAX_RECORDED, 'Recorded RPC byte bound exceeded')
         value = json.loads(reply)
-        REPORT['calls'].append(dict(owner=self.owner['directory'], request=request, response=value))
+        # Retain the literal wire values independently of caller-owned dictionaries.
+        REPORT['calls'].append(dict(owner=self.owner['directory'], request=json.loads(line), response=json.loads(reply)))
         need(type(value) is dict and value.get('jsonrpc') == '2.0' and type(value.get('id')) is int and value['id'] == request['id'], 'Native RPC identity/type differs')
         if error is not None:
             need(set(value) == {'jsonrpc', 'id', 'error'} and value['error'].get('code') == error and type(value['error']['code']) is int, f'Expected error{error}: {value}')

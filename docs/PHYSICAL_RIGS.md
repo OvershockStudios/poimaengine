@@ -713,6 +713,10 @@ physics state and ownership together. Linked actor and rig retire together.
 
 [Linux qualification](evidence/m2-controller-handoff.json) covers native and
 CoreCLR ownership, joined callback aim, exact saves, lifecycle and negative
-queries. Earlier [input-planning checks](evidence/m2-character-input-planning.json)
-cover the separate 0.0.221 prerequisites. New-feature Windows execution,
-Native AOT, imported humanoid quality and rendered observations remain separate.
+queries. The [Windows follow-up](evidence/m2-controller-handoff-windows.json)
+records native and CoreCLR execution, the original transcript-audit failure and
+separately recovered workflows with corrected literal RPC recording. It also
+corrects the earlier Linux request-history claim without rewriting its records.
+Earlier [input-planning checks](evidence/m2-character-input-planning.json) cover
+the separate 0.0.221 prerequisites. New-feature Native AOT, imported humanoid
+quality and rendered observations remain separate.
