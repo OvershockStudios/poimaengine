@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.224**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.225**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.225 adds opt-in [manual-IK ownership](PHYSICAL_RIGS.md#manual-ik-ownership)
+for linked physical rigs. Animated chains solve normally; takeover consumes the
+last committed corrected pose and momentum. Callback node and IK observations
+share a pure candidate under prepared actor input. Passive source clocks/scales
+continue while diagnostics retain their original animated tick. Physical
+extension 3 joins the complete historical terminal to current clock continuation
+and the frozen motor frame. Separate child cameras remain supported; camera
+sidecar writers on the driver, wrapper or model nodes reject with this policy.
+
+[Linux qualification](evidence/m2-procedural-physical-handoff.json) passes twelve
+native feature groups, including an actual compiled C++ gameplay callback, and
+a 49-test animation/physics regression cohort. The existing original-character
+workflow also passes with 1,376 literal RPCs, eighteen complete archives and
+eleven complete warm/cold pairs across three naturally closed owners. Earlier
+failed startup, donor-record and spawned-frame checks retain their original
+verdicts; exact equality and numerical bounds were not relaxed. New-feature
+Windows, C# compiler/AOT and rendered-character qualification remain open, along
+with automatic-grounding/root-motion coordination, active balance and recovery.
 
 Version 0.0.224 integrates the original Knight's virtual movement, capsule
 stance, imported crossfades and full-body physical takeover in one shared world.

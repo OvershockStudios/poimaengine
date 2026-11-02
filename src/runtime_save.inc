@@ -376,7 +376,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
     std::optional<RuntimePhysicsBootstrap> physical_bootstrap;
-    if(physical_content)physical_bootstrap=save_physical_parse_bootstrap(physical_extension,restored_definition);
+    if(physical_content)physical_bootstrap=save_physical_parse_bootstrap(physical_extension,restored_definition,tick);
     // Exact IDs/generations are installed at first allocation, never remapped.
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
@@ -619,6 +619,9 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         save_physical_lineage(physical_extension.at("physics"),physical_bootstrap->ledger);
         restore_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
         s.sync(); // publishes solved physical locals before final comparisons
+        for(const auto& id:s.topology->physical_rigs)
+            if(s.animations->procedural_enabled(id) && !s.animations->procedural_suspended(id))
+                s.animations->record_procedural_final(id,tick,s.registry.template get<Node>(s.find(id)).world);
         save_physical_verify_restored(s,*physical_checkpoint,rows);
     }
     for(const auto& [id,saved]:locals) {

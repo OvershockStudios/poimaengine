@@ -73,9 +73,10 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 
 Configuration parse_configuration(const nlohmann::json& value) {
     need(value.is_object(),"PhysicalRig needs an object.");
-    const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation"),has_handoff=value.contains("controller_handoff");
-    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
-        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff.");
+    const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation"),has_handoff=value.contains("controller_handoff"),
+        has_procedural=value.contains("procedural_pose");
+    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u)+(has_procedural?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff/procedural_pose.");
     Configuration result;
     if(has_policy) {
         const auto policy=text(value.at("pose_frame"));
@@ -94,6 +95,10 @@ Configuration parse_configuration(const nlohmann::json& value) {
         const auto& link=value.at("controller_handoff");fields(link,{"actor","follow"});
         const auto follow=text(link.at("follow"));need(follow=="translate_keep_heading","Physical controller follow must be translate_keep_heading.");
         result.controller_handoff=ControllerHandoff{text(link.at("actor")),ControllerFollowPolicy::TranslateKeepHeading};
+    }
+    if(has_procedural) {
+        need(text(value.at("procedural_pose"))=="animated_only","PhysicalRig procedural_pose must be animated_only.");
+        result.procedural_pose=ProceduralPosePolicy::AnimatedOnly;
     }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
@@ -133,6 +138,7 @@ nlohmann::json configuration_json(const Configuration& value) {
         result["pose_frame"]="skeletal_bounded_scale";result["max_scale_deviation"]=value.max_scale_deviation;
     }
     if(value.controller_handoff)result["controller_handoff"]={{"actor",value.controller_handoff->actor},{"follow","translate_keep_heading"}};
+    if(value.procedural_pose)result["procedural_pose"]="animated_only";
     return result;
 }
 
@@ -161,10 +167,15 @@ nlohmann::json configuration_schema() {
     result["properties"]["controller_handoff"]=object({
         {"actor",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},
         {"follow",{{"const","translate_keep_heading"}}}});
-    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig, root motion or IK/grounding.";
+    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may use manual IK; grounding remains unsupported.";
+    result["properties"]["procedural_pose"]={{"type","string"},{"const","animated_only"},
+        {"description","Optional final manual-IK pose ownership while Animated, requiring controller_handoff and initial_mode=animated. Only the own AnimationRig may configure IK, with all chain root/middle/end nodes mapped to physical parts. Configured grounding and root motion remain forbidden, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted."}};
     Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
     linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";
-    result["allOf"]=Json::array({std::move(linked_mode)});
+    Json procedural_mode=Json::object();procedural_mode["if"]["required"]=Json::array({"procedural_pose"});
+    procedural_mode["then"]["required"]=Json::array({"controller_handoff"});
+    procedural_mode["then"]["properties"]["initial_mode"]["const"]="animated";
+    result["allOf"]=Json::array({std::move(linked_mode),std::move(procedural_mode)});
     result["oneOf"]=Json::array({
         {{"properties",{{"pose_frame",{{"enum",{"rigid_uniform","skeletal_fixed_scale"}}}}}},
             {"not",{{"required",Json::array({"max_scale_deviation"})}}}},

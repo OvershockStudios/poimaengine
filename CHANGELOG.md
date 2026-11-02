@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.225
+
+- Coordinate opt-in manual IK with linked controller-to-physics takeover,
+  transferring the last committed corrected pose and momentum.
+- Join prepared callback node poses and IK diagnostics without changing live
+  animation or physics history.
+- Preserve historical procedural diagnostics, clock continuation and captured
+  motor frames through exact saves, rollback and template lifecycle.
+- Qualify Linux native callback/ownership workflows and the existing imported
+  character path; retain failed cases and their causes separately.
+
 ## 0.0.224
 
 - Add an original-character example combining virtual movement, crouch, imported

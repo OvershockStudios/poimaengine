@@ -61,7 +61,7 @@ class EnvironmentIblContract(unittest.TestCase):
     def test_discovery_preserves_complete_environment_and_mutation_envelope(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 125)
+        self.assertEqual(d['schema_revision'], 126)
         full = d['components']['LightingEnvironment']
         self.assertNotIn('ibl', full['required'])
         branch = full['properties']['ibl']

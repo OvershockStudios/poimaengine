@@ -206,6 +206,11 @@ void validate(const Configuration& c) {
         require(link.follow==ControllerFollowPolicy::TranslateKeepHeading,"Physical controller follow policy is invalid.");
         require(!c.initially_passive,"A linked physical rig must start Animated before controller takeover.");
     }
+    if(c.procedural_pose) {
+        require(*c.procedural_pose==ProceduralPosePolicy::AnimatedOnly,"Physical rig procedural-pose policy is invalid.");
+        require(c.controller_handoff.has_value(),"Physical procedural pose requires an explicit controller_handoff.");
+        require(!c.initially_passive,"Physical procedural pose must start Animated.");
+    }
 }
 PassiveResponse evaluate_passive(const Joint& j,Pose parent,Pose child,Vec3 relative_omega) {
     validate(j);parent=canonical_pose(parent);child=canonical_pose(child);vector(relative_omega,max_relative_angular_velocity,"Relative angular velocity exceeds finite +/-2e4 rad/s per axis.");

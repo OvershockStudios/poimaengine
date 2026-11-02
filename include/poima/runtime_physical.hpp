@@ -64,4 +64,11 @@ struct ControllerHandoffObservation {
     };
     std::optional<CachedSupport> cached_support;
 };
+// Separate additive inspection; IK diagnostics are historical after takeover.
+struct ProceduralPoseObservation {
+    std::string entity;
+    bool suspended=false;
+    std::uint64_t sampled_tick=0;
+    std::vector<std::uint32_t> slots;
+};
 } // namespace poima

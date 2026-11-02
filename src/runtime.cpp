@@ -654,6 +654,8 @@ struct Runtime::Impl {
         validate_runtime_camera_draw(definition);
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
         animations=std::make_unique<RuntimeAnimations>(definition,executor);
+        if(restored)for(const auto& [id,terminal]:restored->procedural_terminals)
+            animations->install_procedural_terminal(id,terminal,restored->snapshot_tick);
         validate_runtime_mesh_colliders(definition);
         physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
@@ -708,6 +710,21 @@ struct Runtime::Impl {
             for(const auto& [id,name]:candidate->body_names) {(void)name;body_ids.reserve(JPH::BodyID(id));}
             body_ids.seal();
         }
+        if(std::any_of(definitions.begin(),definitions.end(),[](const auto& d){return d.physical_rig && d.physical_rig->procedural_pose;})) {
+            // Controller creation canonicalizes native pose/rotation. Solve
+            // opted-in world-space IK in that actual frame before binding any
+            // initial physical pose; repeated publication is not another tick.
+            // Cold suppression must not leave the authored double frame here:
+            // the binding's frozen metric scale was initialized in the original
+            // native-canonical motor frame. Saved logical/presentation poses
+            // arrive later, after this detached constructor initialization.
+            if(restored)for(const auto& d:definitions)if(d.physical_rig && d.physical_rig->procedural_pose) {
+                const auto actor=find(d.physical_rig->controller_handoff->actor);
+                const auto& motor=*registry.get<Controller>(actor).character;
+                if(motor.IsSuppressed())set_pose(registry.get<Node>(actor),motor.GetPosition(),motor.GetRotation());
+            }
+            sync();animation_locals();world_matrices();
+        }
         for(const auto& d:definitions)create_physical(d,*candidate,restored);
         require(body_ids.live()==physics.GetNumBodies(),"Runtime physics identity inventory is incomplete.");
         JPH::BodyIDVector inventory;physics.GetBodies(inventory);
@@ -729,6 +746,9 @@ struct Runtime::Impl {
         physics.OptimizeBroadPhase();
         for (auto e : candidate->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
+        for(const auto& id:candidate->physical_rigs)
+            if(animations->procedural_enabled(id) && !animations->procedural_suspended(id))
+                animations->record_procedural_final(id,tick,registry.get<Node>(find(id)).world);
     }
     std::map<entt::entity,Motion> prepare_motions(const std::vector<KinematicTarget>& motions) {
         require(motions.size()<=128,"At most 128 kinematic targets per batch.");
@@ -1464,6 +1484,10 @@ struct Runtime::Impl {
             const auto& camera=registry.get<Controller>(e).settings.camera;if(!camera.empty())controlled_cameras.insert(camera);
         }
         for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physics(entity,*candidate,false,moving_roots,controlled_cameras);
+        const bool procedural_birth=std::any_of(prepared.begin(),prepared.end(),[](const auto& birth){
+            return std::any_of(birth.entities.begin(),birth.entities.end(),[](const auto& d){return d.physical_rig && d.physical_rig->procedural_pose;});
+        });
+        if(procedural_birth) {sync();animation_locals();world_matrices();}
         for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physical(entity,*candidate);
         std::sort(candidate->kinematics.begin(),candidate->kinematics.end(),by_id);
         std::sort(candidate->characters.begin(),candidate->characters.end(),by_id);
@@ -1484,7 +1508,11 @@ struct Runtime::Impl {
         }
         sounds.retire_emitters(removed_names);components->publish_tick();
         for(const auto e:topology->characters)registry.get<Controller>(e).character->PostSimulation(0.05f);
-        sync();structure_revision=result.revision;return result;
+        sync();
+        for(const auto& birth:prepared)for(const auto& entity:birth.entities)
+            if(entity.physical_rig && animations->procedural_enabled(entity.id))
+                animations->record_procedural_final(entity.id,tick,registry.get<Node>(find(entity.id)).world);
+        structure_revision=result.revision;return result;
     }
     RuntimeStructureResult change_structure(std::uint64_t expected_revision,
         const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
@@ -1563,7 +1591,7 @@ struct Runtime::Impl {
         checkpoint_profile.reset();
         components->begin_batch();
         try {
-            reject_physical_pose_conflicts(physical_commands,animation_commands,animation_rates,ik_commands,root_commands);
+            reject_physical_pose_conflicts(physical_commands,animation_commands,animation_rates,ik_commands,root_commands,grounding_commands);
             apply_camera_lenses(lens_commands);apply_camera_poses(pose_commands);
             animations->apply_grounding(grounding_commands);
             if(!animation_commands.empty() || !animation_rates.empty() || !ik_commands.empty() || !root_commands.empty()) {
@@ -1708,13 +1736,13 @@ struct Runtime::Impl {
                 }
                 apply_camera_lenses(game_camera_lens_commands);game_camera_lens_commands.clear();
                 apply_camera_poses(game_camera_pose_commands);game_camera_pose_commands.clear();
-                animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
                 validate_physical_commands(game_physical_commands);
                 if(frame==0) {
-                    reject_physical_pose_conflicts(physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands);
-                    reject_physical_pose_conflicts(game_physical_commands,animation_commands,animation_rates,ik_commands,root_commands);
+                    reject_physical_pose_conflicts(physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands,game_grounding_commands);
+                    reject_physical_pose_conflicts(game_physical_commands,animation_commands,animation_rates,ik_commands,root_commands,grounding_commands);
                 }
-                reject_physical_pose_conflicts(game_physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands);
+                reject_physical_pose_conflicts(game_physical_commands,game_animation_commands,game_animation_rate_commands,game_ik_commands,game_root_motion_commands,game_grounding_commands);
+                animations->apply_grounding(game_grounding_commands);game_grounding_commands.clear();
                 if(!game_animation_commands.empty() || !game_animation_rate_commands.empty() || !game_ik_commands.empty() || !game_root_motion_commands.empty()) {
                     animations->apply(game_animation_commands,tick,game_animation_rate_commands);animations->apply_ik(game_ik_commands);
                     animations->apply_root_motion(game_root_motion_commands);animation_locals();sync();
@@ -2093,13 +2121,21 @@ std::optional<ControllerHandoffObservation> Runtime::controller_handoff(const st
     }
     return result;
 }
+std::optional<ProceduralPoseObservation> Runtime::procedural_pose(const std::string& id) const {
+    (void)impl_->find(id);if(!impl_->animations->procedural_enabled(id))return {};
+    ProceduralPoseObservation result;result.entity=id;result.suspended=impl_->animations->procedural_suspended(id);
+    const auto sampled=impl_->animations->procedural_tick(id);require(sampled.has_value(),"Procedural pose has no committed diagnostic boundary.");
+    result.sampled_tick=*sampled;
+    for(const auto& chain:impl_->topology->definitions.at(id).animation_rig->ik)result.slots.push_back(chain.slot);
+    return result;
+}
 std::optional<PhysicalRigPartObservation> Runtime::physical_part(const std::string& id,const std::string& part) const {
     (void)impl_->find(id);require(Impl::physical_part_name(part),"Physical part must be portable ASCII1..64 bytes.");return impl_->observe_physical_part(id,part);
 }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {
-    (void)impl_->find(id);require(slot>=1 && slot<=8,"IK slot must be 1..8.");return impl_->animations->ik_state(id,slot);
+    (void)impl_->find(id);require(slot>=1 && slot<=8,"IK slot must be 1..8.");return impl_->observation_ik(id,slot);
 }
 std::optional<RuntimeGroundingCommand> Runtime::grounding(const std::string& id,std::uint32_t slot) const {
     (void)impl_->find(id);require(slot>=1 && slot<=8,"Grounding slot must be 1..8.");return impl_->animations->grounding_control(id,slot);

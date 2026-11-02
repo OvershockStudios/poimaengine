@@ -94,6 +94,34 @@ void rejection_and_schema(){
     check(schema["allOf"][0]["if"]["required"]==Json::array({"controller_handoff"}) &&
         schema["allOf"][0]["then"]["properties"]["initial_mode"]["const"]=="animated","Linked initial-mode schema differs.");
 }
+void procedural_pose_configuration(){
+    for(const char* frame:{"rigid_uniform","skeletal_fixed_scale","skeletal_bounded_scale"}) {
+        auto base=linked();if(std::string(frame)!="rigid_uniform")base["pose_frame"]=frame;
+        if(std::string(frame)=="skeletal_bounded_scale")base["max_scale_deviation"]=1e-5;
+        const auto original_bytes=base.dump();auto configured=base;configured["procedural_pose"]="animated_only";
+        auto c=parse_configuration(configured);
+        check(c.procedural_pose==ProceduralPosePolicy::AnimatedOnly,"Explicit procedural-pose policy was lost.");
+        check(configuration_json(c).dump()==configured.dump(),"Procedural-pose canonical fields did not roundtrip.");
+        c.procedural_pose.reset();check(configuration_json(c).dump()==original_bytes,"Omitted policy changed existing linked canonical bytes.");
+        check(!parse_configuration(base).procedural_pose,"Absent procedural pose inserted a native default.");
+    }
+    for(const auto& bad:Json::array({nullptr,false,true,0,1,.5,Json::array(),Json::object(),"","AnimatedOnly","animated-only","animated_only ","always"})) {
+        auto value=linked();value["procedural_pose"]=bad;reject(value);
+    }
+    auto missing=original();missing["procedural_pose"]="animated_only";reject(missing);
+    auto passive=linked();passive["procedural_pose"]="animated_only";passive["initial_mode"]="passive";reject(passive);
+    auto unknown=linked();unknown["procedural_pose"]="animated_only";unknown["procedural"]=true;reject(unknown);
+    auto native=parse_configuration(linked());native.procedural_pose=ProceduralPosePolicy::AnimatedOnly;native.controller_handoff.reset();
+    reject_any([&]{validate(native);});reject_any([&]{(void)configuration_json(native);});
+    native=parse_configuration(linked());native.procedural_pose=static_cast<ProceduralPosePolicy>(999);
+    reject_any([&]{validate(native);});reject_any([&]{(void)configuration_json(native);});
+    const auto schema=configuration_schema();const auto& policy=schema["properties"]["procedural_pose"];
+    check(policy["type"]=="string" && policy["const"]=="animated_only" && !policy.contains("default"),"Procedural-pose schema type/constant/default differs.");
+    check(schema["required"]==Json::array({"initial_mode","joints","parts","root"}),"Procedural pose changed required legacy fields.");
+    check(schema["allOf"].size()==2 && schema["allOf"][1]["if"]["required"]==Json::array({"procedural_pose"}) &&
+        schema["allOf"][1]["then"]["required"]==Json::array({"controller_handoff"}) &&
+        schema["allOf"][1]["then"]["properties"]["initial_mode"]["const"]=="animated","Procedural-pose schema dependencies differ from parser.");
+}
 void template_identity_remapping(){
     RuntimeSpawnTemplate recipe;recipe.id=id(20);recipe.name="Linked character";recipe.root=id(1);
     RuntimeEntityDefinition actor;actor.id=id(1);actor.character=CharacterController{};actor.character->locomotion=RuntimeCharacterLocomotionProfile{};
@@ -103,6 +131,12 @@ void template_identity_remapping(){
     auto born=runtime_template_entities(recipe,births,RuntimeTransform{},{});
     check(born.size()==2 && born[1].parent==id(101) && born[1].physical_rig->controller_handoff->actor==id(101),"Template link was not remapped with its parent/actor.");
     check(configuration_json(*recipe.entities[1].physical_rig).dump()==source,"Remapping changed frozen recipe data.");
+    recipe.entities[1].physical_rig->procedural_pose=ProceduralPosePolicy::AnimatedOnly;
+    const auto procedural_source=configuration_json(*recipe.entities[1].physical_rig).dump();
+    born=runtime_template_entities(recipe,births,RuntimeTransform{},{});
+    check(born[1].physical_rig->procedural_pose==ProceduralPosePolicy::AnimatedOnly &&
+        born[1].physical_rig->controller_handoff->actor==id(101),"Template remapping lost opt-in procedural pose or linked actor.");
+    check(configuration_json(*recipe.entities[1].physical_rig).dump()==procedural_source,"Remapping changed frozen procedural recipe data.");
     recipe.entities[1].physical_rig->controller_handoff->actor=id(999);
     reject_any([&]{(void)runtime_template_entities(recipe,births,RuntimeTransform{},{});});
     recipe.entities[1].physical_rig->controller_handoff->actor.clear();
@@ -164,7 +198,7 @@ void authoring_ownership(){
         refused(Json::array({create(4),component(4,"AnimationRig",external)}),"another root-motion writer");
     }
     check(bytes(package)==cooked,"Authoring validation modified immutable cooked package bytes.");
-    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==125,"Discovery schema revision is stale.");
+    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==126,"Discovery schema revision is stale.");
     if(Runtime::available()) {
         const auto session=id(7000);
         const auto success=[&](const Json& reply) {
@@ -210,6 +244,17 @@ void authoring_ownership(){
         params=guard;params["session_id"]=1;error(params,-32602);
         params=guard;params.erase("entity");error(params,-32602);
         error(nullptr,-32602);
+        const auto no_procedural=success(rpc("runtime.procedural_pose",guard));
+        check(no_procedural.size()==4 && no_procedural["session_id"]==session && no_procedural["tick"].is_number_unsigned() &&
+            no_procedural["tick"]==0 && no_procedural["source"]=="runtime" && no_procedural["state"].is_null(),"Absent opt-in must preserve null procedural inspection.");
+        const auto procedural_error=[&](Json bad,int code){const auto reply=rpc("runtime.procedural_pose",std::move(bad));check(reply.is_object() && reply.size()==3 && reply["jsonrpc"]=="2.0" && reply["id"].is_number_unsigned() && reply["id"]==request && reply.contains("error") &&
+            reply["error"].is_object() && reply["error"].size()==2 && reply["error"]["code"].is_number_integer() && reply["error"]["code"]==code && reply["error"]["message"].is_string(),"Procedural inspection rejection envelope/types/code differ.");};
+        params=guard;params["tick"]=1;procedural_error(params,-32009);
+        params=guard;params["entity"]=id(999);procedural_error(params,-32004);
+        params=guard;params["session_id"]=id(7001);procedural_error(params,-32030);
+        params=guard;params["tick"]=false;procedural_error(params,-32602);
+        params=guard;params["entity"]=true;procedural_error(params,-32602);
+        params=guard;params["include_slots"]=true;procedural_error(params,-32602);
         check(inspect().dump()==before_reads.dump(),"Successful/rejected query changed complete runtime inspection or tick.");
         const auto first=success(rpc("runtime.step",{{"session_id",session},{"request_id",id(8000)},{"expected_tick",0},{"ticks",1}}));
         check(first["tick"].is_number_unsigned() && first["tick"]==1,"Completed locomotion tick did not advance exactly once.");
@@ -234,6 +279,7 @@ void authoring_ownership(){
             for(const auto& value:support[name])check(value.is_number_float() && std::isfinite(value.get<double>()),"Cached support numeric type/finite bound differs.");
         }
         params["entity"]=id(1);check(query(params,2).is_null(),"Suppressed actor alone acquired a rig component.");
+        params=guard;params["tick"]=2;check(success(rpc("runtime.procedural_pose",params))["state"].is_null(),"Unconfigured passive rig acquired procedural inspection state.");
         check(inspect().dump()==before_passive_reads.dump(),"Physical query changed complete runtime inspection or tick.");
         const auto stopped=success(rpc("runtime.stop",{{"session_id",session}}));
         check(stopped["session_id"]==session && stopped["stopped"].is_boolean() && stopped["stopped"]==true,"Native runtime did not stop.");
@@ -243,9 +289,69 @@ void authoring_ownership(){
     check(rpc("session.close",Json::object()).contains("result"),"Authoring owner did not close.");
     std::cout<<"Authoring transcript retained at "<<directory.string()<<'\n';
 }
+void procedural_pose_authoring(){
+    const auto directory=fs::temp_directory_path()/fs::path("poima-procedural-authoring-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    check(fs::create_directory(directory),"Could not create procedural authoring fixture.");const auto path=directory/"world.json";
+    auto triangle=std::make_shared<MeshAsset>();triangle->vertices.resize(3);triangle->indices={0,1,2};triangle->has_uv=true;
+    triangle->vertices[1].position={1,0,0};triangle->vertices[2].position={0,1,0};triangle->vertices[1].uv={1,0};triangle->vertices[2].uv={0,1};
+    for(auto& vertex:triangle->vertices){vertex.normal={0,0,1};vertex.tangent={1,0,0,1};}
+    ModelAsset model;model.primitives={triangle};model.nodes.resize(4);model.roots={0};model.nodes[0].primitives={0};
+    for(unsigned i=0;i<4;++i){model.nodes[i].name="Procedural source node "+std::to_string(i);model.nodes[i].parent=static_cast<int>(i)-1;model.nodes[i].position={0,i==0?1.:.5,0};}
+    const auto cooked=encode_model(model);const auto asset=sha256(std::as_bytes(std::span(cooked.data(),cooked.size())));const auto store=fs::path(path).concat(".assets");
+    check(fs::create_directory(store),"Could not create procedural asset store.");const auto package=store/(asset+".pmodel");
+    {std::ofstream output(package,std::ios::binary);output.write(cooked.data(),static_cast<std::streamsize>(cooked.size()));output.close();check(bool(output),"Could not publish complete procedural model.");}
+    check(bytes(package)==cooked && decode_model(cooked)->nodes.size()==4,"Procedural model whole-package roundtrip differs.");
+    auto physical=linked();physical["procedural_pose"]="animated_only";
+    const Json frame={{"position",{0.,0.,0.}},{"rotation",{0.,0.,0.,1.}}};
+    for(unsigned i=1;i<3;++i){auto part=physical["parts"][0];part["name"]=i==1?"middle":"end";part["node"]=i;physical["parts"].push_back(part);}
+    for(unsigned i=0;i<2;++i)physical["joints"].push_back({{"name",i==0?"root-middle":"middle-end"},{"parent",i==0?"pelvis":"middle"},{"child",i==0?"middle":"end"},
+        {"parent_frame",{{"position",{0.,.5,0.}},{"rotation",{0.,0.,0.,1.}}}},{"child_frame",frame},
+        {"limits",{{"kind","swing_twist"},{"swing_y",.7},{"swing_z",.7},{"twist_min",-.5},{"twist_max",.5}}},
+        {"neutral_rotation",{0.,0.,0.,1.}},{"rest_stiffness",0.},{"rest_damping",0.},{"soft_limit_stiffness",0.},{"soft_limit_zone",.1},{"max_torque",1000.},{"friction_torque",0.}});
+    const Json chain={{"slot",1},{"root",0},{"middle",1},{"end",2},{"target",{.1,1.98,0.}},{"pole",{0.,0.,1.}},{"enabled",false}};
+    auto own_animation=animation(asset);own_animation["ik"]=Json::array({chain});
+    const Json eye_camera={{"vertical_fov",70},{"near",.05},{"far",100}};
+    auto controlled=controller();controlled["camera"]=id(30);
+    auto ops=Json::array({create(1),component(1,"CharacterController",controlled),create(2,id(1)),component(2,"AnimationRig",own_animation),component(2,"PhysicalRig",physical),
+        create(30,id(1)),component(30,"Camera",eye_camera),component(30,"Transform",{{"position",{0.,1.6,0.}},{"rotation",{0.,0.,0.,1.}},{"scale",{1.,1.,1.}}})});
+    for(unsigned i=0;i<4;++i){ops.push_back(create(10+i,id(i==0?2:9+i)));ops.push_back(component(10+i,"Transform",{{"position",{0.,i==0?1.:.5,0.}},{"rotation",{0.,0.,0.,1.}},{"scale",{1.,1.,1.}}}));ops.push_back(component(10+i,"RigNode",{{"rig",id(2)},{"node",i}}));}
+    const auto u8=path.u8string();WorldSession world(std::string(u8.begin(),u8.end()));std::ofstream transcript(directory/"requests-responses.jsonl");unsigned request=0;
+    const auto rpc=[&](const char* method,Json params){const Json message={{"jsonrpc","2.0"},{"id",++request},{"method",method},{"params",std::move(params)}};const auto reply=Json::parse(world.request(message.dump()));transcript<<Json{{"request",message},{"response",reply}}.dump()<<'\n';transcript.flush();return reply;};
+    const auto published=rpc("world.transact",{{"request_id",id(9000)},{"base_revision",0},{"ops",ops}});
+    check(published.contains("result") && published["result"]["revision"]==1,"Own mapped manual IK with explicit policy was rejected.");const auto authored=bytes(path);
+    const auto refused=[&](Json changes,const char* message){const auto reply=rpc("world.transact",{{"request_id",id(9000+request)},{"base_revision",1},{"ops",std::move(changes)}});check(reply.contains("error") && reply["error"]["code"]==-32602 && reply["error"]["message"].get<std::string>().find(message)!=std::string::npos,"Invalid procedural authoring missed its ownership guard.");check(bytes(path)==authored,"Rejected procedural edit changed complete authored world.");};
+    auto missing=physical;missing.erase("procedural_pose");refused(Json::array({component(2,"PhysicalRig",missing)}),"root motion, IK or grounding");
+    for(unsigned shared:{1u,2u,10u,13u})refused(Json::array({component(shared,"Camera",eye_camera)}),"Place Camera on a separate child entity");
+    for(const char* node:{"root","middle","end"}){auto changed=own_animation;changed["ik"][0][node]=3;refused(Json::array({component(2,"AnimationRig",changed)}),"must all map to physical parts");}
+    for(bool enabled:{false,true}) {
+        auto changed=own_animation;changed["ik"][0]["enabled"]=enabled;changed["ik"][0]["grounding"]={{"sole_offset",{0.,0.,0.}},{"sole_up",{0.,1.,0.}},{"sole_forward",{0.,0.,1.}},{"reference_height",0.}};
+        refused(Json::array({component(2,"AnimationRig",changed)}),"never configured grounding");
+        changed=own_animation;changed["root_motion"]={{"node",0},{"mode","extract"},{"enabled",enabled}};refused(Json::array({component(2,"AnimationRig",changed)}),"cannot configure root motion");
+    }
+    refused(Json::array({create(20,id(1)),component(20,"AnimationRig",own_animation)}),"root motion, IK or grounding");
+    auto external=animation(asset);external["root_motion"]={{"node",0},{"mode","character"},{"actor",id(1)},{"enabled",false}};
+    refused(Json::array({create(20),component(20,"AnimationRig",external)}),"another root-motion writer");
+    if(Runtime::available()) {
+        const auto session=id(9100);const auto started=rpc("runtime.start",{{"session_id",session},{"revision",1}});check(started.contains("result") && started["result"]["tick"]==0,"Opt-in manual IK fixture did not start.");
+        const auto before=rpc("runtime.inspect",{{"session_id",session}});
+        const auto observed=rpc("runtime.procedural_pose",{{"session_id",session},{"tick",0},{"entity",id(2)}});
+        check(observed.size()==3 && observed["jsonrpc"]=="2.0" && observed["id"].is_number_unsigned() && observed["id"]==request && observed.contains("result"),"Opt-in procedural inspection failed.");const auto& value=observed["result"];
+        check(value.is_object() && value.size()==4 && value["session_id"]==session && value["tick"].is_number_unsigned() && value["tick"]==0 && value["source"]=="runtime","Procedural inspection envelope differs.");
+        const auto& state=value["state"];check(state.is_object() && state.size()==5 && state["entity"]==id(2) && state["phase"]=="animated" && state["diagnostics"]=="current" && state["sampled_tick"].is_number_unsigned() && state["sampled_tick"]==0 && state["slots"]==Json::array({1}),"Procedural inspection complete animated ownership state differs.");
+        const auto after=rpc("runtime.inspect",{{"session_id",session}});check(before["result"].dump()==after["result"].dump(),"Procedural inspection changed complete runtime state or Tick.");
+        check(rpc("runtime.stop",{{"session_id",session}}).contains("result"),"Opt-in procedural runtime did not stop.");
+    }
+    auto plain=own_animation;plain.erase("ik");const auto restored=rpc("world.transact",{{"request_id",id(9900)},{"base_revision",1},{"ops",Json::array({component(2,"AnimationRig",plain),component(2,"PhysicalRig",missing)})}});
+    check(restored.contains("result") && restored["result"]["revision"]==2,"Removing manual IK and optional policy did not restore old authoring boundary.");
+    check(!Json::parse(bytes(path))["entities"][id(2)]["components"]["PhysicalRig"].contains("procedural_pose"),"Absent policy was silently inserted into authored content.");
+    const auto legacy_cameras=rpc("world.transact",{{"request_id",id(9901)},{"base_revision",2},{"ops",Json::array({component(1,"Camera",eye_camera),component(2,"Camera",eye_camera),component(10,"Camera",eye_camera),component(13,"Camera",eye_camera)})}});
+    check(legacy_cameras.contains("result") && legacy_cameras["result"]["revision"]==3,"New policy camera ownership guards changed default-profile authoring.");
+    check(bytes(package)==cooked,"Procedural validation/runtime inspection changed original cooked bytes.");check(rpc("session.close",Json::object()).contains("result"),"Procedural authoring owner did not close.");
+    std::cout<<"Procedural authoring transcript retained at "<<directory.string()<<'\n';
+}
 }
 int main(){
-    try{configuration_roundtrips();rejection_and_schema();template_identity_remapping();authoring_ownership();
+    try{configuration_roundtrips();rejection_and_schema();procedural_pose_configuration();template_identity_remapping();authoring_ownership();procedural_pose_authoring();
         std::cout<<"Controller handoff authoring: "<<checks<<" checks passed.\n";return 0;}
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

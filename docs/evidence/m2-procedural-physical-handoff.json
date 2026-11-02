@@ -1,0 +1,314 @@
+{
+  "format": "poima.procedural-physical-handoff.qualification.v1",
+  "checkpoint": "0.0.225",
+  "date": "2026-11-02",
+  "passed": true,
+  "platform": "Linux headless",
+  "schema_revision": 126,
+  "gameplay_abi": {
+    "epoch": 7,
+    "optional_services_bytes": 424,
+    "changed": false
+  },
+  "contract": "../PHYSICAL_RIGS.md#manual-ik-ownership",
+  "feature": {
+    "policy": "PhysicalRig.procedural_pose=animated_only",
+    "requires": [
+      "linked root virtual controller",
+      "animated startup",
+      "all configured manual IK root/middle/end nodes mapped to physical parts",
+      "one transform owner on actor/wrapper/model nodes; cameras use separate children"
+    ],
+    "ownership": [
+      "final source/layers/manual IK feed committed COM/angular finite differences",
+      "prepared callback node transforms and IK getters share pure scratch evaluation",
+      "physical mode skips only the transferred rig manual solver; unrelated live grounding continues",
+      "source/layer clocks and source scales continue",
+      "historical diagnostics preserve their original sampled tick",
+      "complete terminal self-replay joins bounded source continuation and exact frozen-motor/authored-mount frame"
+    ],
+    "inspection": "runtime.procedural_pose",
+    "physical_snapshot_extension": 3,
+    "default_physical_extensions": [
+      1,
+      2
+    ]
+  },
+  "native_feature": {
+    "image_identities": {
+      "poima": {
+        "bytes": 38808600,
+        "sha256": "26a6ecf97c262e5d084426e51c6a10ae975ee61fa38687489c1a072d200cf9e1"
+      },
+      "poima-runtime-physical-ik-test": {
+        "bytes": 16559288,
+        "sha256": "b4620487ee9b797a1ce16de4c8aaf7f8e0108ab939813d7f55270133638e5a0c"
+      },
+      "libpoima-physical-ik-gameplay-fixture.so": {
+        "bytes": 1106088,
+        "sha256": "a34b51f9348cf4afc011dab1f2a3f25390f55838ea0ac9555f8ee8c3ec777c76"
+      }
+    },
+    "groups": 12,
+    "assertions": 3861,
+    "actual_callback": "Compiled C++ shared-library fixture hosted through the native gameplay ABI; no C# or Native AOT compiler claim.",
+    "fixture": "Four source nodes, three mapped spherical proxies, independent manual and enabled auto-grounding rigs.",
+    "group_log_identity": {
+      "bytes": 114888,
+      "sha256": "548592aefe6ed99b3929e869d6460fdfba2b3c7feeaf25272348af47948f4267"
+    },
+    "archive_manifest_identity": {
+      "bytes": 97097,
+      "sha256": "7f40c2d4a4e95b9cbe4ac044a46d39a4f93182d192fe53a85756b4d76f91fbc8"
+    },
+    "independent_audit_identity": {
+      "bytes": 69503,
+      "sha256": "291d85fce618f4283e9f47ad5989564719fb11c4ef8f93ac98c18159e2453665"
+    },
+    "independent_archive_review": {
+      "reopened_complete_files": 192,
+      "raw_bytes": 3594980,
+      "raw_payload_span_checksums": 192,
+      "accepted_roundtrip_files": 186,
+      "whole_byte_and_complete_typed_json_pairs": 93,
+      "typed_equality": "Complete recursive values/types, signed-zero bit equality, no fields omitted.",
+      "accepted_passive_terminal_joins": 160,
+      "accepted_animated_phase_rows": 26,
+      "selected_wire_profile_counts": {
+        "1->6": 12,
+        "4->6": 40,
+        "6->6": 88,
+        "6->7": 20
+      },
+      "negative_input_files_excluded_from_accepted_count": 6
+    }
+  },
+  "regression": {
+    "tests": [
+      "animation_composition_diagnostics_native",
+      "animation_frame_transfer_native",
+      "animation_frame_transfer_protocol",
+      "animation_rotation_retarget_native",
+      "animation_rotation_retarget_protocol",
+      "animation_native",
+      "animation_layers_math",
+      "runtime_animation_save_native",
+      "runtime_animation_save_reset",
+      "runtime_animation_save_write",
+      "runtime_animation_save_read",
+      "runtime_animation_save_cleanup",
+      "runtime_animation_jobs",
+      "runtime_two_bone_ik_native",
+      "runtime_grounding_native",
+      "runtime_foot_planting_native",
+      "runtime_grounding_control_native",
+      "runtime_animation_rate_native",
+      "runtime_root_motion_native",
+      "physical_rig_math_native",
+      "physical_rig_json_native",
+      "physical_rig_skeletal_json_native",
+      "physical_rig_bounded_scale_json_native",
+      "physical_controller_handoff_json_native",
+      "runtime_animation_membership_native",
+      "runtime_physical_ik",
+      "runtime_physical_projection_native",
+      "physical_gameplay_abi_native",
+      "runtime_physical_ownership_native",
+      "runtime_physical_integration_native",
+      "runtime_physical_pose_skeletal_native",
+      "runtime_physical_skeletal_integration_native",
+      "runtime_physical_pose_bounded_scale_native",
+      "runtime_physical_bounded_scale_integration_native",
+      "runtime_physical_follow_native",
+      "runtime_controller_handoff_state_native",
+      "runtime_controller_handoff_native",
+      "runtime_controller_handoff_motion_native",
+      "world_physical_contract",
+      "physical_pose_native",
+      "runtime_physical_rig_native",
+      "physical_state_json_native",
+      "runtime_animation_native",
+      "runtime_animation_layers_native",
+      "animation_contract",
+      "runtime_animation_contract",
+      "runtime_animation_blend_contract",
+      "runtime_animation_layers_contract",
+      "runtime_animation_inertial_contract"
+    ],
+    "passed": 49,
+    "failed": 0,
+    "parallel_tests": 1,
+    "build_workers": 2,
+    "report_identity": {
+      "bytes": 5830,
+      "sha256": "48ab4b87101793e60090dfb465162296bf50018d3b93785f2c67abcbad1dfaf6"
+    },
+    "log_identity": {
+      "bytes": 153308,
+      "sha256": "d29b5ebbe9ed582ceadd4f0807c0ea4d2c03ec0bc2c1983e60b2382059d81d99"
+    },
+    "same_three_native_images": true
+  },
+  "original_character_regression": {
+    "literal_rpc_pairs": 1376,
+    "natural_owners": 3,
+    "literal_files": 6,
+    "whole_archives": 18,
+    "whole_byte_and_typed_pairs": 11,
+    "full_manifest_joins": 18,
+    "selected_observations": 20,
+    "field_exclusions": [],
+    "coercions": []
+  },
+  "original_character_scope": "Unchanged original licensed Knight and previous controller-handoff policy without procedural_pose. Preserves imported locomotion/crossfades/takeover/save workflows, not proof of imported humanoid IK quality.",
+  "original_character_report_identity": {
+    "bytes": 9934524,
+    "sha256": "f8cfda5b6dfff2e3dc599cf5336fb7329cf55a3f8508911175ceef3d67cf8136"
+  },
+  "current_source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 110202,
+      "sha256": "6ba8f73450706a28a4ba8094a80df01c60590974c4608eb290405b12ea2b9bde"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7901,
+      "sha256": "c3aa7ad2b2e04feb8a3f99dbb18b41da2703c96b8f9ee63ba7fc51ea4752f2ce"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 31840,
+      "sha256": "2e30a0c2614beb7ac9c0e9d974df94fe6c2c458b8736b439bbf1860abc41e527"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 11577,
+      "sha256": "7162ba45d78dcf12d5664f4c26ff5010bd70ef03ad306e4c12aa69dc2a522665"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 2812,
+      "sha256": "ed9a47541a8fb7aa50fce493cfe978a976114a5a6113c7fb3e3cd8503b45b317"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 15388,
+      "sha256": "470d745a1781c9d2b4c51f1a658ceafd4a5310a9c008caa3f420cedf52fb68b2"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 16582,
+      "sha256": "8a34a81459964927095a69b282fb3dc4779d1d2d35a187ec2b24210865ee9f19"
+    },
+    "src/runtime.cpp": {
+      "bytes": 175941,
+      "sha256": "e2ced6b5c963f3e7f6c7c1cac69a9d45b43609f6e938e224138f8439daed9688"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 140639,
+      "sha256": "b58153235d07fd2558eff53d0632e925d505e85f70b73e747ec1ba7123559649"
+    },
+    "src/runtime_animation_procedural.inc": {
+      "bytes": 15062,
+      "sha256": "8e8dacef1f7b5ec72f76f1d7e15b16783494a2075168b03cba1f9f60f43f52d6"
+    },
+    "src/runtime_controller_handoff.inc": {
+      "bytes": 7446,
+      "sha256": "9f8faa800b157c5ba0599a9032478586542f64f0af4cbdca6a5d995058d6838d"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 41879,
+      "sha256": "9d6407aa3fbf33fab5ab38101041407e87b8b8666f286387bd66316dbd59a70a"
+    },
+    "src/runtime_physical_restore.hpp": {
+      "bytes": 1230,
+      "sha256": "285400cee372a138ebf38c960d7a3bb23b1594512e2e52e446d7ce36001cb2f4"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 20943,
+      "sha256": "48c31db98f11a8ba05237da8019c4fa76cab0dfcd6005f54f5d6da7055fcaf63"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 55506,
+      "sha256": "15c60af233fdbe11117c8f1ffbcff7bb35cd65cf6a071117cdebebe46eb96151"
+    },
+    "src/world.cpp": {
+      "bytes": 372795,
+      "sha256": "86c7a5626ec3e2353111c6a725fde389e4cf2ff6a1e00d86f2f21e613f473cff"
+    },
+    "src/world_physical.inc": {
+      "bytes": 8573,
+      "sha256": "d00d43edfb05863bf2c23f5322fbe8f512ba4aa4b6e2487dc75c1a2b94858be5"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 144444,
+      "sha256": "6668f26e48d530db09a8f56d641959dc5cd899d95222ca0c4774442a7aec51fb"
+    },
+    "tests/physical_controller_handoff_json_native.cpp": {
+      "bytes": 34732,
+      "sha256": "1a23a12b4ae532e599339a54a54545b065102d896a1898d4121ffa19c4459efc"
+    },
+    "tests/runtime_physical_ik_tests.cpp": {
+      "bytes": 52865,
+      "sha256": "33b5547d419b36524a351d6c26e2dcf3ddcb961a1519d56eb6b5fb0977611e06"
+    },
+    "tests/runtime_physical_ik_fixture.hpp": {
+      "bytes": 1582,
+      "sha256": "525dcf15aea79e50aa55c8f73d0004589b2f5c9ad97da9f53259f3dfc7b59517"
+    },
+    "tests/runtime_physical_ik_gameplay_fixture.cpp": {
+      "bytes": 6172,
+      "sha256": "6649623390b4e2e0e885e99fa1a54c616c70e556d2b4e90e07970e09179da142"
+    }
+  },
+  "qualification_comment_delta": {
+    "qualified_header_sha256": "4a4f732628763bd298479370d38fb7cecc2d8dfb134c6f8666ec9e601a9743f7",
+    "current_header_sha256": "7162ba45d78dcf12d5664f4c26ff5010bd70ef03ad306e4c12aa69dc2a522665",
+    "only_change": {
+      "before": "// retain their original shared immutable buffers; no per-frame JSON work.",
+      "after": "// retain shared immutable buffers; complete terminals serialize on transfer."
+    },
+    "line_count_unchanged": true,
+    "complete_preprocessed_header_identity": {
+      "bytes": 2622419,
+      "sha256": "4336aa5d39ef99750c82ffe3184529adf171014d110a4a5c027e2500ad55ce32"
+    },
+    "preprocessing_identical": true
+  },
+  "retained_prior_attempts": [
+    {
+      "attempt": "native-1",
+      "passed": false,
+      "cause": "Build environment omitted the existing owned lld from PATH; shared fixture linking failed. No tests ran."
+    },
+    {
+      "attempt": "native-2-edges-before-fix",
+      "passed": false,
+      "cause": "Actual zero-slot startup, authored-yaw startup and spawned-yaw startup regressions failed. Other selected groups passed."
+    },
+    {
+      "attempt": "native-3-witness-counterexamples",
+      "passed": false,
+      "cause": "Startup fixes passed, but rotated spawned passive restore differed in complete saved locals; two internally valid donor terminals were incorrectly accepted."
+    },
+    {
+      "attempt": "native-4-joined-witnesses",
+      "passed": false,
+      "cause": "Both donor grafts correctly rejected. Rotated spawned passive cold restore still differed in derived locals despite identical physical/native/historical state."
+    }
+  ],
+  "corrections": [
+    "Permit zero configured IK slots consistently with authoring.",
+    "Sample opted-in IK after native controller pose canonicalization before initial physical binding, including births.",
+    "Validate historical animation continuation and independently reconstruct the capture wrapper from frozen motor state.",
+    "Initialize cold suppressed opted-in actors in the original native canonical frame before freezing binding metrics; retain Node.initial and current snapshot restoration.",
+    "Keep all original equality assertions, fields and numerical tolerances."
+  ],
+  "audit_scope": [
+    "192 complete feature snapshot files and 93 entire byte/typed pairs reopened; six donor-group inputs are separately labeled.",
+    "Literal imported-character request/reply files, whole archives and complete manifests rejoined.",
+    "Private audit preparation assumptions about version-default representations, archive envelopes and post-qualification comment identities were corrected in the auditors; original inputs and native verdicts were not changed."
+  ],
+  "limits": [
+    "Manual IK only on the explicitly coordinated rig; automatic-grounding/root-motion transfer, active balance and recovery remain open.",
+    "New feature is qualified on Linux headless and the actual compiled C++ ABI fixture, not Windows, new-feature C#/Native AOT compilation or graphics.",
+    "Procedural fixture is not imported-humanoid motion/contact quality or a representative performance workload.",
+    "State equality is within the tested matching native image/profile, not a cross-platform or universal determinism guarantee.",
+    "Historical checks validate stored context and supported continuation, not an authenticated history of every earlier gameplay event.",
+    "Early failed reports retain original sources/logs. Failed native-2 executable bytes were not separately preserved; later qualified/preserved images have explicit identities."
+  ]
+}

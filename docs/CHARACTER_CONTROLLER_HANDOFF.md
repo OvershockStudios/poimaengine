@@ -42,8 +42,11 @@ frames and source references; its explicit variant adds:
 This is a fragment of the complete profile. Keep `initial_mode: "animated"` and
 all required body/joint fields. The [physical-rig contract](PHYSICAL_RIGS.md)
 defines the complete schema, scale policy and unsupported ownership combinations.
-Configured root motion, IK/grounding, additional colliders/controllers and other
-physical rigs currently reject within the linked actor subtree.
+This example leaves procedural ownership disabled. Configured root motion,
+automatic grounding, additional colliders/controllers and other physical rigs
+reject within the linked actor subtree. The separate opt-in
+[manual-IK policy](PHYSICAL_RIGS.md#manual-ik-ownership) coordinates the linked
+rig's own physically mapped chains with takeover.
 
 The example starts at `[1, 3, -0.5]`, with a 0.46-radian heading. Its virtual
 capsule uses radius `0.3`, standing height `1.8`, crouched height `1.0`, walking

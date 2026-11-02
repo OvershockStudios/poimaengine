@@ -4,6 +4,7 @@
     std::map<std::string,detail::CharacterInputPlan> deferred_controller_inputs;
     std::map<std::string,RuntimeTransform> callback_pose_locals;
     std::map<std::string,Matrix4> callback_pose_worlds;
+    std::map<std::pair<std::string,std::uint32_t>,RuntimeIkState> callback_ik_states;
     bool callback_pose_preview=false;
 
     bool linked_controller(const std::string& actor) const {
@@ -12,7 +13,7 @@
         return false;
     }
     void clear_controller_preview() noexcept {
-        callback_pose_preview=false;callback_pose_locals.clear();callback_pose_worlds.clear();
+        callback_pose_preview=false;callback_pose_locals.clear();callback_pose_worlds.clear();callback_ik_states.clear();
     }
     const RuntimeTransform& observation_local(const std::string& id) const {
         if(callback_pose_preview && game_phase==GamePhase::tick) {
@@ -25,6 +26,13 @@
             const auto found=callback_pose_worlds.find(id);if(found!=callback_pose_worlds.end())return found->second;
         }
         return registry.get<Node>(find(id)).world;
+    }
+    std::optional<RuntimeIkState> observation_ik(const std::string& id,std::uint32_t slot) const {
+        if(callback_pose_preview && game_phase==GamePhase::tick) {
+            const auto found=callback_ik_states.find({id,slot});
+            if(found!=callback_ik_states.end())return found->second;
+        }
+        return animations->ik_state(id,slot);
     }
     const detail::CharacterInputPlan* observation_character(const std::string& id) const {
         if(!callback_pose_preview || game_phase!=GamePhase::tick)return nullptr;
@@ -54,18 +62,33 @@
             if(c.settings.stance) {local.position=camera.initial.position;if(c.crouched)local.position[1]-=c.settings.stance->camera_drop;}
             callback_pose_locals.emplace(c.settings.camera,local);
         }
-        for(const auto e:topology->hierarchy) {
-            const auto& node=registry.get<Node>(e);const auto local=callback_pose_locals.find(node.id);
-            const auto parent=callback_pose_worlds.find(node.parent);
-            if(local==callback_pose_locals.end() && parent==callback_pose_worlds.end())continue;
-            const auto& value=local==callback_pose_locals.end()?node.local:local->second;
-            auto world=local_matrix(value.position,value.rotation,value.scale);
-            if(!node.parent.empty())world=multiply(parent==callback_pose_worlds.end()?registry.get<Node>(find(node.parent)).world:parent->second,world);
-            if(const auto* camera=registry.try_get<RuntimeCamera>(e);camera && camera->world_pose!=RuntimeCameraPose{})
-                world=multiply(world,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
-            for(double v:world)require(std::isfinite(v) && std::abs(v)<=1e12,"Planned callback hierarchy exceeds the supported range.");
-            callback_pose_worlds.emplace(node.id,world);
+        const auto rebuild=[&] {
+            callback_pose_worlds.clear();
+            for(const auto e:topology->hierarchy) {
+                const auto& node=registry.get<Node>(e);const auto local=callback_pose_locals.find(node.id);
+                const auto parent=callback_pose_worlds.find(node.parent);
+                if(local==callback_pose_locals.end() && parent==callback_pose_worlds.end())continue;
+                const auto& value=local==callback_pose_locals.end()?node.local:local->second;
+                auto world=local_matrix(value.position,value.rotation,value.scale);
+                if(!node.parent.empty())world=multiply(parent==callback_pose_worlds.end()?registry.get<Node>(find(node.parent)).world:parent->second,world);
+                if(const auto* camera=registry.try_get<RuntimeCamera>(e);camera && camera->world_pose!=RuntimeCameraPose{})
+                    world=multiply(world,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
+                for(double v:world)require(std::isfinite(v) && std::abs(v)<=1e12,"Planned callback hierarchy exceeds the supported range.");
+                callback_pose_worlds.emplace(node.id,world);
+            }
+        };
+        rebuild();
+        for(const auto& [id,physical]:physical_owners) {
+            if(!topology->identities.contains(id) || !physical->handoff ||
+                !deferred_controller_inputs.contains(physical->handoff->actor) ||
+                !animations->procedural_enabled(id) || animations->procedural_suspended(id))continue;
+            const auto world=callback_pose_worlds.find(id);
+            const auto& wrapper=world==callback_pose_worlds.end()?registry.get<Node>(find(id)).world:world->second;
+            const auto preview=animations->preview_procedural(id,tick,wrapper);
+            for(const auto& pose:preview.poses)callback_pose_locals.insert_or_assign(pose.entity,pose.local);
+            for(const auto& state:preview.states)callback_ik_states.insert_or_assign({id,state.slot},state);
         }
+        if(!callback_ik_states.empty())rebuild();
         callback_pose_preview=true;
     }
     void commit_linked_controller_inputs() {

@@ -109,8 +109,10 @@ transitions and animation-database cost. Integrate ragdolls, damage-directed
 hit reactions and recovery with explicit animation/physics ownership.
 The [original-character handoff](CHARACTER_CONTROLLER_HANDOFF.md) now connects
 virtual movement and imported crossfades to passive full-body physics, complete
-saves and selected rendered observations. Active balance, recovery and broader
-root-motion/IK coordination remain part of this segment.
+saves and selected rendered observations. Opt-in
+[manual-IK ownership](PHYSICAL_RIGS.md#manual-ik-ownership) adds corrected-pose
+transfer and historical diagnostics. Active balance, recovery and coordinated
+root motion/automatic grounding remain part of this segment.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;

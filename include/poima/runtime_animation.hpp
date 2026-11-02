@@ -28,6 +28,7 @@ class RuntimeAnimations {
         std::vector<NodePose> baseline;
         std::vector<int> model_parents;
         std::vector<RuntimeTwoBoneIk> ik;
+        bool procedural_pose=false;
         std::optional<RuntimeRootMotionDefinition> root_motion;
         poima::root_motion::Planar root_rest;
         std::vector<std::string> nodes;
@@ -94,6 +95,21 @@ public:
         root_motion::Planar last_velocity;
         std::optional<RootFade> fade;
     };
+    struct ProceduralPreview {
+        std::vector<RuntimeAnimationPose> poses;
+        std::vector<RuntimeIkState> states;
+    };
+    // Captured only at the owner's committed final-pose boundary. Histories
+    // retain shared immutable buffers; complete terminals serialize on transfer.
+    struct ProceduralFinal {
+        std::uint64_t tick=0;
+        Matrix4 wrapper=identity_matrix();
+        Clock base;
+        std::vector<LayerPlayback> layers;
+        std::vector<RuntimeIkCommand> controls;
+        std::vector<RuntimeIkState> states;
+        std::string terminal;
+    };
     struct Checkpoint {
         std::vector<Clock> bases;
         std::vector<std::vector<LayerPlayback>> layers;
@@ -105,6 +121,7 @@ public:
         bool grounding_restore_pending=false;
         std::vector<std::vector<RuntimeGroundingControl>> grounding_controls;
         bool grounding_controls_pending=false;
+        std::map<std::string,std::shared_ptr<const ProceduralFinal>> procedural_finals,procedural_terminals;
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
@@ -120,6 +137,14 @@ private:
     std::vector<RootPlayback> roots_;
     bool grounding_restore_pending_=false;
     bool grounding_controls_pending_=false;
+    std::map<std::string,std::shared_ptr<const ProceduralFinal>> procedural_finals_,procedural_terminals_;
+    RuntimeAnimations isolate_procedural(std::size_t index) const;
+    ProceduralPreview evaluate_procedural(std::size_t index,std::uint64_t tick,
+        const Matrix4& wrapper) const;
+    std::string encode_procedural_final(std::size_t index,const ProceduralFinal& captured) const;
+    void verify_procedural_progression(std::size_t index,std::uint64_t tick,const Clock& base,
+        const std::vector<LayerPlayback>& layers,const std::vector<RuntimeIkCommand>& controls) const;
+    std::string save_state_impl(std::uint64_t tick,bool verify_procedural) const;
     root_motion::Planar root_interval(std::size_t,const Clock&,const RootPlayback&,std::uint64_t) const;
     void strip_root(std::size_t,ModelPose&) const;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
@@ -162,8 +187,19 @@ public:
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_,grounding_restore_pending_,grounding_controls_,grounding_controls_pending_}; }
-    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots);std::swap(grounding_restore_pending_,checkpoint.grounding_restore_pending);grounding_controls_.swap(checkpoint.grounding_controls);std::swap(grounding_controls_pending_,checkpoint.grounding_controls_pending); }
+    bool procedural_enabled(const std::string& entity) const;
+    bool procedural_suspended(const std::string& entity) const;
+    std::optional<std::uint64_t> procedural_tick(const std::string& entity) const;
+    std::optional<Matrix4> procedural_wrapper(const std::string& entity) const;
+    ProceduralPreview preview_procedural(const std::string& entity,std::uint64_t tick,
+        const Matrix4& wrapper) const;
+    void record_procedural_final(const std::string& entity,std::uint64_t tick,const Matrix4& wrapper);
+    void suspend_procedural(const std::string& entity,std::uint64_t takeover_tick);
+    std::optional<std::string> procedural_terminal(const std::string& entity) const;
+    void install_procedural_terminal(const std::string& entity,const std::string& terminal,
+        std::uint64_t current_tick);
+    Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_,grounding_restore_pending_,grounding_controls_,grounding_controls_pending_,procedural_finals_,procedural_terminals_}; }
+    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots);std::swap(grounding_restore_pending_,checkpoint.grounding_restore_pending);grounding_controls_.swap(checkpoint.grounding_controls);std::swap(grounding_controls_pending_,checkpoint.grounding_controls_pending);procedural_finals_.swap(checkpoint.procedural_finals);procedural_terminals_.swap(checkpoint.procedural_terminals); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

@@ -43,6 +43,7 @@ std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t, const std::vect
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string&,bool,bool) const { throw std::runtime_error("Simulation support is not built."); }
 std::optional<ControllerHandoffObservation> Runtime::controller_handoff(const std::string&) const { throw std::runtime_error("Simulation support is not built."); }
+std::optional<ProceduralPoseObservation> Runtime::procedural_pose(const std::string&) const { throw std::runtime_error("Simulation support is not built."); }
 std::optional<PhysicalRigPartObservation> Runtime::physical_part(const std::string&,const std::string&) const { throw std::runtime_error("Simulation support is not built."); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }

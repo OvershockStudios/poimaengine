@@ -22,5 +22,8 @@ struct RuntimePhysicsBootstrap {
     // field in the existing version-1 bootstrap JSON. Installed before the
     // first controller enrollment, support refresh or presentation sync.
     std::map<std::string,RuntimeControllerHandoffState> handoffs;
+    // Extension-3 historical manual-IK ownership, validated before sampling.
+    std::map<std::string,std::string> procedural_terminals;
+    std::uint64_t snapshot_tick=0;
 };
 }

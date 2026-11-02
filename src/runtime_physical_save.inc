@@ -8,6 +8,12 @@ bool save_controller_handoff_definition(const RuntimeDefinition& definition) {
     for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),linked))return true;
     return false;
 }
+bool save_procedural_pose_definition(const RuntimeDefinition& definition) {
+    const auto enabled=[](const auto& entity){return entity.physical_rig && entity.physical_rig->procedural_pose.has_value();};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),enabled))return true;
+    for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
+    return false;
+}
 void save_handoff_support_lineage(const RuntimeControllerSupportState& support,const RuntimeBodyIds& ledger) {
     if(support.ground_body_id==JPH::BodyID::cInvalidBodyID)return;
     const JPH::BodyID id(support.ground_body_id);const auto snapshot=ledger.snapshot();
@@ -15,7 +21,7 @@ void save_handoff_support_lineage(const RuntimeControllerSupportState& support,c
     require(found!=snapshot.rows.end() && found->generation>=id.GetSequenceNumber(),
         "Frozen controller support is outside the complete used body-ID lineage.");
 }
-template<class State>void save_handoff_witnesses(const State& s,const RuntimeControllerHandoffState& handoff) {
+template<class State>void save_handoff_witnesses(const State& s,const std::string& rig,const RuntimeControllerHandoffState& handoff) {
     const auto& c=s.registry.template get<Controller>(s.find(handoff.actor));
     require(c.character->IsVirtual() && c.character->IsSuppressed()==handoff.passive.has_value(),
         "Physical handoff and controller ownership phase differ.");
@@ -25,6 +31,22 @@ template<class State>void save_handoff_witnesses(const State& s,const RuntimeCon
     require(c.character->CaptureProxy()==handoff.passive->proxy && c.character->CaptureSupport()==handoff.passive->support,
         "Suppressed proxy/support differs from its complete named witness.");
     save_handoff_support_lineage(handoff.passive->support,s.body_ids);
+    if(s.animations->procedural_enabled(rig)) {
+        // The logical motor remains at its last animated pose while its
+        // presentation actor follows physics. The opt-in graph excludes camera
+        // sidecar writers on the actor/wrapper/model nodes; separate camera
+        // children are unaffected. Reconstruct the capture frame independently
+        // of the historical animation document and the current corpse pose.
+        const auto p=c.character->GetPosition();const auto q=c.character->GetRotation();
+        const auto& actor=s.registry.template get<Node>(s.find(handoff.actor)).initial;
+        const auto& wrapper=s.registry.template get<Node>(s.find(rig)).initial;
+        const auto expected=multiply(local_matrix({p.GetX(),p.GetY(),p.GetZ()},
+            {q.GetX(),q.GetY(),q.GetZ(),q.GetW()},actor.scale),
+            local_matrix(wrapper.position,wrapper.rotation,wrapper.scale));
+        const auto captured=s.animations->procedural_wrapper(rig);
+        require(captured && detail::handoff_array_same_bits(*captured,expected),
+            "Historical procedural wrapper differs from the frozen controller and authored local frame.");
+    }
 }
 template<class State,class Checkpoint>void save_physical_final_history(const State& s,const Checkpoint& checkpoint) {
     require(checkpoint.rigs.size()==s.topology->physical_rigs.size(),"Physical save history owner membership differs.");
@@ -39,7 +61,12 @@ template<class State,class Checkpoint>void save_physical_final_history(const Sta
         if(row.handoff) {
             require(row.handoff->passive.has_value()==passive,"Linked controller phase differs from physical mode.");
             require(!row.handoff->passive || row.handoff->passive->takeover_tick<=s.tick,"Controller takeover tick is in the future.");
-            save_handoff_witnesses(s,*row.handoff);
+            save_handoff_witnesses(s,id,*row.handoff);
+        }
+        if(s.animations->procedural_enabled(id)) {
+            require(s.animations->procedural_suspended(id)==passive,"Procedural pose ownership differs from physical mode.");
+            require(s.animations->procedural_tick(id)==std::optional{passive ? row.handoff->passive->takeover_tick : s.tick},
+                "Procedural pose witness differs from the last committed animated boundary.");
         }
         // A copy validates chronological finite-difference velocities and the
         // actual current wrapper/bone COM poses. Never rewrite saved history or
@@ -79,36 +106,53 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
     require(physical_bootstrap_json::owner_json(owner)==physical_bootstrap_json::owner_json(checkpoint.owner),
         "Physical save capture changed its quiescent owner state.");
     physical_bootstrap_json::validate_owner_history(owner,bootstrap.ledger);save_physical_lineage(physics,bootstrap.ledger);
-    const bool handoffs=save_controller_handoff_definition(s.topology->live);SaveJson rigs=SaveJson::array();
+    const bool handoffs=save_controller_handoff_definition(s.topology->live);
+    const bool procedural=save_procedural_pose_definition(s.topology->live);SaveJson rigs=SaveJson::array();
     for(const auto& [id,row]:checkpoint.rigs) {
         SaveJson rig={{"entity",id},{"membership",physical_state_json::membership_json(row.membership)},
             {"pose",physical_state_json::pose_state_json(row.pose)}};
         if(handoffs)rig["handoff"]=row.handoff?physical_state_json::handoff_state_json(*row.handoff):SaveJson(nullptr);
+        if(procedural) {
+            const auto terminal=s.animations->procedural_terminal(id);
+            rig["procedural_terminal"]=terminal ? SaveJson::parse(*terminal) : SaveJson(nullptr);
+        }
         rigs.push_back(std::move(rig));
     }
-    return {{"version",std::uint32_t(handoffs?2:1)},
+    return {{"version",std::uint32_t(procedural?3:(handoffs?2:1))},
         {"bootstrap",physical_bootstrap_json::bootstrap_json(bootstrap,s.topology->live)},
         {"rigs",std::move(rigs)},{"constraint_order",physical_state_json::constraint_order_json(checkpoint.constraint_order)},
         {"owner",physical_bootstrap_json::owner_json(owner)},{"physics",std::move(physics)}};
 } catch(const std::invalid_argument& error) {throw std::runtime_error(std::string("Physical snapshot: ")+error.what());}
 void save_physical_extension_fields(const SaveJson& extension,const RuntimeDefinition& definition) {
     save_fields(extension,{"version","bootstrap","rigs","constraint_order","owner","physics"});
-    const auto expected=save_controller_handoff_definition(definition)?2u:1u;
-    require(extension.at("version").is_number_unsigned() && extension.at("version")==expected,"Physical snapshot extension version differs from frozen controller linkage.");
+    const auto expected=save_procedural_pose_definition(definition)?3u:(save_controller_handoff_definition(definition)?2u:1u);
+    require(extension.at("version").is_number_unsigned() && extension.at("version")==expected,"Physical snapshot extension version differs from frozen ownership policy.");
     require(extension.at("rigs").is_array() && extension.at("rigs").size()<=RuntimeBodyIds::capacity,"Physical snapshot rig population exceeds its bound.");
 }
-RuntimePhysicsBootstrap save_physical_parse_bootstrap(const SaveJson& extension,const RuntimeDefinition& definition) try {
+RuntimePhysicsBootstrap save_physical_parse_bootstrap(const SaveJson& extension,const RuntimeDefinition& definition,std::uint64_t tick) try {
     auto result=physical_bootstrap_json::parse_bootstrap(extension.at("bootstrap"),definition);
-    if(extension.at("version")==2u) {
+    result.snapshot_tick=tick;
+    if(extension.at("version")>=2u) {
         std::map<std::string,const RuntimeEntityDefinition*> expected;std::set<std::string> actors;
         for(const auto& entity:definition.entities)if(entity.physical_rig)expected.emplace(entity.id,&entity);
         std::string previous;
         for(const auto& row:extension.at("rigs")) {
-            save_fields(row,{"entity","membership","pose","handoff"});const auto rig=save_text(row.at("entity"));
+            if(extension.at("version")==3u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal"});
+            else save_fields(row,{"entity","membership","pose","handoff"});
+            const auto rig=save_text(row.at("entity"));
             require(previous.empty() || previous<rig,"Physical handoff bootstrap rows must be sorted and unique.");previous=rig;
             const auto found=expected.find(rig);require(found!=expected.end(),"Physical handoff bootstrap names an unknown rig.");
             const auto& configured=found->second->physical_rig->controller_handoff;
             require(row.at("handoff").is_null()==!configured,"Physical handoff bootstrap differs from frozen linkage.");
+            if(extension.at("version")==3u) {
+                const auto& terminal=row.at("procedural_terminal");
+                const bool suspended=found->second->physical_rig->procedural_pose && configured && !row.at("handoff").at("passive").is_null();
+                require(terminal.is_null()==!suspended,"Procedural terminal membership differs from frozen phase/policy.");
+                if(suspended) {
+                    require(terminal.is_object(),"Procedural terminal must be a typed versioned object.");
+                    require(result.procedural_terminals.emplace(rig,terminal.dump()).second,"Duplicate procedural terminal owner.");
+                }
+            }
             if(!configured)continue;
             auto handoff=physical_state_json::parse_handoff_state(row.at("handoff"));
             require(handoff.actor==configured->actor && actors.insert(handoff.actor).second,"Physical handoff bootstrap actor differs or is multiply owned.");
@@ -131,7 +175,8 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
     const auto& rigs=extension.at("rigs");require(rigs.size()==s.topology->physical_rigs.size(),"Saved physical rig membership differs from the complete restored graph.");
     std::string previous;std::set<std::pair<std::string,std::string>> expected_constraints;
     for(const auto& value:rigs) {
-        if(extension.at("version")==2u)save_fields(value,{"entity","membership","pose","handoff"});
+        if(extension.at("version")==3u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal"});
+        else if(extension.at("version")==2u)save_fields(value,{"entity","membership","pose","handoff"});
         else save_fields(value,{"entity","membership","pose"});
         const auto id=save_text(value.at("entity"));
         require(previous.empty() || previous<id,"Physical save owners must be sorted and unique.");previous=id;
@@ -150,6 +195,9 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
                 row.handoff->passive.has_value()==row.membership.enrolled,"Physical saved controller phase/owner differs from rig mode.");
             require(!row.handoff->passive || row.handoff->passive->takeover_tick<=tick,"Controller saved takeover tick is in the future.");
         }
+        if(configured.procedural_pose && row.membership.enrolled)
+            require(s.animations->procedural_suspended(id) && s.animations->procedural_tick(id)==std::optional{row.handoff->passive->takeover_tick},
+                "Historical procedural tick differs from controller takeover.");
         require(!configured.initially_passive || row.membership.mode==RuntimePhysicalRigMode::Passive,"An initially passive rig cannot return to Animated without a recovery policy.");
         for(std::size_t n=0;n<profile.parts.size();++n)require(row.membership.poses[n].part==profile.parts[n].name,"Physical saved part order differs from its profile.");
         for(std::size_t n=0;n<profile.joints.size();++n) {
@@ -191,7 +239,7 @@ template<class State,class Checkpoint>void save_physical_verify_restored(const S
         const auto& actual=s.physical_owners.at(id)->handoff;
         require(actual && physical_state_json::handoff_state_json(*actual)==physical_state_json::handoff_state_json(*row.handoff),
             "Physical handoff state differs after joined restoration.");
-        save_handoff_witnesses(s,*row.handoff);
+        save_handoff_witnesses(s,id,*row.handoff);
     }
     save_physical_final_history(s,checkpoint);
 } catch(const std::invalid_argument& error) {throw std::runtime_error(std::string("Physical snapshot: ")+error.what());}

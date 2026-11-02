@@ -1054,6 +1054,8 @@ void validate(const Json& doc) {
     if(std::any_of(entities.begin(),entities.end(),[](const Json& entity){return entity.at("components").contains("PhysicalRig");})) {
         std::map<std::string,std::map<std::uint32_t,std::size_t>> physical_nodes;
         std::map<std::string,std::string> linked_actors;
+        std::set<std::string> procedural_physical_rigs;
+        std::set<std::string> camera_rig_owners;
         for(const auto& [id,entity]:entities.items()) {
             (void)id;const auto& bag=entity.at("components");
             if(bag.contains("BoxCollider") || bag.contains("MeshCollider") || bag.contains("CharacterController")) {
@@ -1068,6 +1070,7 @@ void validate(const Json& doc) {
             if(bag.contains("RigNode")) {
                 const auto& ref=bag.at("RigNode");
                 ++physical_nodes[identifier(ref.at("rig"))][static_cast<std::uint32_t>(revision(ref.at("node")))];
+                if(bag.contains("Camera"))camera_rig_owners.insert(identifier(ref.at("rig")));
             }
         }
         for(const auto& [id,entity]:entities.items()) {
@@ -1091,6 +1094,21 @@ void validate(const Json& doc) {
                 const auto owner=physical_nodes.find(id);
                 require(owner!=physical_nodes.end() && owner->second.contains(part.node) && owner->second.at(part.node)==1,
                     "PhysicalRig part requires exactly one matching model-local RigNode on its AnimationRig.");
+            }
+            if(profile.procedural_pose) {
+                procedural_physical_rigs.insert(id);
+                require(!bag.contains("Camera") &&
+                    !entities.at(profile.controller_handoff->actor).at("components").contains("Camera") && !camera_rig_owners.contains(id),
+                    "Physical procedural pose requires one transform owner. Place Camera on a separate child entity instead of the linked actor, rig wrapper or model RigNode.");
+                const auto& animation=bag.at("AnimationRig");
+                require(!animation.contains("root_motion"),"Physical procedural pose cannot configure root motion, including disabled profiles.");
+                std::set<std::uint32_t> mapped;
+                for(const auto& part:profile.profile.parts)mapped.insert(part.node);
+                if(animation.contains("ik"))for(const auto& chain:animation_ik_value(animation.at("ik"))) {
+                    require(!chain.grounding,"Physical procedural pose permits only manual IK, never configured grounding.");
+                    require(mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
+                        "Physical procedural IK root, middle and end must all map to physical parts.");
+                }
             }
         }
         if(!linked_actors.empty()) {
@@ -1121,7 +1139,9 @@ void validate(const Json& doc) {
                 require(!bag.contains("PhysicalRig") || id==linked->second,"Linked physical actor subtree cannot contain another PhysicalRig.");
                 if(bag.contains("AnimationRig")) {
                     const auto& animation=bag.at("AnimationRig");
-                    require(!animation.contains("root_motion") && (!animation.contains("ik") || animation.at("ik").empty()),
+                    require(!animation.contains("root_motion"),"Linked physical actor subtree cannot contain root motion, IK or grounding ownership.");
+                    require(!animation.contains("ik") || animation.at("ik").empty() ||
+                        (id==linked->second && procedural_physical_rigs.contains(id)),
                         "Linked physical actor subtree cannot contain root motion, IK or grounding ownership.");
                 }
             }
@@ -3744,6 +3764,7 @@ public:
         }
         if(method=="runtime.physical_rig")return physical_runtime_query(params);
         if(method=="runtime.controller_handoff")return controller_handoff_runtime_query(params);
+        if(method=="runtime.procedural_pose")return procedural_pose_runtime_query(params);
         if(method=="runtime.root_motion") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);

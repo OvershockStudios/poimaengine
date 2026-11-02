@@ -140,7 +140,8 @@ The initial integration rejects:
 
 - An ordinary collider/controller on the PhysicalRig wrapper.
 - Configured root motion or IK/grounding on that rig, including disabled
-  configurations.
+  configurations, except the explicit [manual-IK ownership](#manual-ik-ownership)
+  policy below.
 - A moving ordinary body, animated `RigNode` or another PhysicalRig in its
   ancestry. Controller ancestry requires the explicit root-actor link described
   in [Controller handoff](#controller-handoff); unlinked ancestry rejects.
@@ -152,8 +153,8 @@ The initial integration rejects:
 
 Static ancestry and unrelated ordinary bodies remain available. These are
 initial ownership limits, not the final FPS feature boundary. The opt-in
-controller handoff below supports one-way takeover; coordinated root-motion/IK
-transfer, attached equipment bodies, active balance,
+controller handoff below supports one-way takeover; opt-in manual IK uses the
+ownership policy below. Coordinated root motion/grounding, attached equipment bodies, active balance,
 physical animation, recovery blending and stand-up behavior remain separate
 work. No public command returns a Passive rig to Animated mode.
 
@@ -645,7 +646,9 @@ The actor ID names the controller, not a bone. The profile must start
 cannot transfer in its birth tick. Hierarchical templates use recipe-local
 actor IDs, remapped with the complete instance. The link is frozen content.
 One actor owns one linked rig. Additional colliders/controllers, another physical
-rig, root motion, IK and grounding in that actor's subtree are unsupported.
+rig and root motion in that actor's subtree are unsupported. Manual IK requires
+its own rig's explicit [procedural ownership](#manual-ik-ownership); automatic
+grounding and IK on other descendant rigs remain unsupported.
 An outside rig also cannot reserve the linked actor as its root-motion target.
 These ownership restrictions apply even to disabled configurations.
 
@@ -727,3 +730,83 @@ fifteen articulated bodies. Its selected Windows Vulkan observations retain
 all original meshes and materials; source depth, complete saves and restored
 images have separate [evidence](evidence/m2-character-controller-handoff.json).
 Broader motion quality and character families remain open.
+
+
+## Manual IK ownership
+
+Add `"procedural_pose": "animated_only"` to a linked `PhysicalRig` to coordinate
+its own manual two-bone IK with one-way physical takeover. The profile must have
+`controller_handoff`, start `animated`, and map every configured chain's root,
+middle and end to physical parts. An IK chain with automatic grounding or planted
+contacts rejects, even when disabled. Root motion and independent descendant
+pose writers remain unsupported. Omit the policy to retain the earlier ownership
+checks and physical save format.
+
+For this policy, place `Camera` on a separate child entity: it cannot share the
+linked actor, rig wrapper or any of the rig's model `RigNode` entities, because
+camera effects otherwise add a transform writer outside the IK source pose.
+Ordinary child cameras, including the controller's eye camera, remain supported.
+
+While animated, source animation and layers compose before the ordinary manual
+IK solve. The committed final corrected pose supplies physical COM and angular
+finite differences at takeover. Caller movement, look and jump accepted during
+that callback are still staged and may be superseded by activation. A callback
+observes a pure scratch IK solution under the prepared actor/wrapper transform;
+its node transforms and IK diagnostics belong to that same candidate pose. This
+preview writes no live clocks, animation history, solver diagnostics or physics.
+Staged gameplay IK edits become visible at their usual command boundary. An
+activation combined with an animation/rate/IK/grounding/root-motion edit on the
+same rig rejects the complete batch.
+
+After takeover, only physics writes the mapped bones. Source/layer clocks and
+source scales continue; manual IK no longer solves that rig. Other rigs continue
+their own procedural evaluation. Existing IK inspection and compiled gameplay
+getters retain the last committed animated controls and diagnostics; those values
+are historical, not the current corpse's end position. Use
+`runtime.procedural_pose` with exact `session_id`, `tick` and `entity` to distinguish
+`phase: "animated"`, `diagnostics: "current"` from `phase: "physical"`,
+`diagnostics: "last_animated_pose"`. `sampled_tick` retains the original animated
+boundary, and `slots` lists the configured chains. No policy returns `state: null`;
+a missing entity or stale session/tick rejects. The query does not sample or
+advance the world. This additive inspection is outside runtime-game-session-v1.
+
+Frozen content containing the policy, including dormant templates, uses physical
+snapshot extension 3. Its per-rig `procedural_terminal` is null while animated or
+for other rigs; after takeover it retains a separately versioned historical
+animation context, captured wrapper and solved diagnostics. Restoration validates
+the historical context before installing its ownership and never solves IK under
+the corpse's later wrapper. The historical sample tick must equal the controller
+takeover tick. The complete current animation, source scales, physical history,
+native bodies and controller witnesses remain separate and must also agree.
+Extension 1 and 2 retain their earlier shapes when the new policy is absent.
+
+No recovery command is provided. Automatic ground-contact/planting suspension
+needs explicit historical contact and support semantics; root-motion handoff
+needs its own controller-driver transfer. These remain follow-up character
+requirements. Native C++ configuration consumers must rebuild; the C# services
+prefix and ABI epoch are unchanged.
+
+
+### Qualification and reproduction
+
+The [0.0.225 record](evidence/m2-procedural-physical-handoff.json) qualifies Linux
+headless ownership, source/physics observations, exact complete saves and an
+actual compiled C++ gameplay callback. Its four-node procedural model has three
+mapped spherical proxies; it does not establish imported-humanoid motion quality,
+new-feature C#/Native AOT compilation, Windows graphics or representative speed.
+The separate original-character regression retains its earlier policy and checks
+that existing imported movement, crossfades, takeover and complete saves survive.
+
+In a configured simulation build with native gameplay enabled:
+
+```sh
+cmake --build build/linux-game --target poima-runtime-physical-ik-test poima-physical-controller-handoff-json-test --parallel 2
+ctest --test-dir build/linux-game -R '^(runtime_physical_ik|physical_controller_handoff_json_native)$' --output-on-failure
+```
+
+`POIMA_TEST_ARTIFACTS` may point to a fresh output directory to retain every
+complete compared snapshot and the donor-record rejection inputs, with a SHA
+manifest and a 128 MiB cap. Without it, the native test writes no archive files.
+The shared-library fixture exercises the native gameplay ABI; it is compiled C++
+and makes no C# or Native AOT compiler claim. The compatibility record leaves
+older physical save extensions unchanged when the policy is absent.

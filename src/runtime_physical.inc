@@ -63,13 +63,27 @@
             require(e.animation_rig.has_value() && e.animation_rig->model && !e.rig_node,
                 "PhysicalRig requires an ordinary AnimationRig wrapper.");
             require(!e.collider && !e.character && !e.mesh_collider,"PhysicalRig wrapper cannot also own an ordinary collider/controller.");
-            require(!e.animation_rig->root_motion && e.animation_rig->ik.empty(),
-                "Initial PhysicalRig ownership does not yet coordinate root motion or IK/grounding; transfer/recovery remains separate work.");
+            require(!e.animation_rig->root_motion && (e.animation_rig->ik.empty() || e.physical_rig->procedural_pose),
+                "PhysicalRig requires explicit procedural_pose ownership for manual IK; root motion remains unsupported.");
+            if(e.physical_rig->procedural_pose) {
+                require(!e.camera,"Physical procedural pose requires Camera on a separate child entity, not the rig wrapper.");
+                for(const auto& node:d.entities)if(node.rig_node && node.rig_node->rig==e.id)
+                    require(!node.camera,"Physical procedural pose requires Camera on a separate child entity, not a model RigNode.");
+                std::set<std::uint32_t> mapped;
+                for(const auto& part:e.physical_rig->profile.parts)mapped.insert(part.node);
+                for(const auto& chain:e.animation_rig->ik) {
+                    require(!chain.grounding,"Physical procedural_pose does not yet coordinate automatic grounding/planting.");
+                    require(mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
+                        "Physical procedural_pose requires every IK root/middle/end to be physically mapped.");
+                }
+            }
             if(e.physical_rig->controller_handoff) {
                 const auto& link=*e.physical_rig->controller_handoff;
                 const auto found=entities.find(link.actor);
                 require(found!=entities.end() && e.parent==link.actor,"Physical handoff needs its direct controller parent.");
                 const auto& actor=*found->second;
+                require(!e.physical_rig->procedural_pose || !actor.camera,
+                    "Physical procedural pose requires Camera on a separate child entity, not the linked actor.");
                 require(actor.parent.empty() && actor.character && actor.character->locomotion && !actor.animation_rig && !actor.rig_node && !actor.physical_rig && !actor.collider && !actor.mesh_collider,
                     "Physical handoff requires an otherwise unowned root virtual controller.");
                 require(linked.emplace(link.actor,e.id).second,"A controller can link to only one physical rig.");
@@ -96,7 +110,9 @@
             const bool actor=e.id==ancestor;const bool rig=e.id==linked.at(ancestor);
             require(actor || (!e.character && !e.collider && !e.mesh_collider),"A linked actor subtree cannot own additional independent bodies/controllers.");
             require(!e.physical_rig || rig,"A linked actor subtree cannot have another physical rig.");
-            require(!e.animation_rig || (!e.animation_rig->root_motion && e.animation_rig->ik.empty()),"Linked controller preview does not permit descendant root motion, IK or grounding.");
+            require(!e.animation_rig || (!e.animation_rig->root_motion &&
+                (e.animation_rig->ik.empty() || (rig && e.physical_rig->procedural_pose))),
+                "Linked controller permits manual IK only on its explicitly coordinated own physical rig.");
         }
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void validate_physical_bootstrap(const RuntimeDefinition& d,const RuntimePhysicsBootstrap& restored) const try {
@@ -215,7 +231,11 @@
         }catch(...){physical_overlay_busy=false;throw;}
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_record_final() try {
-        for(const auto& id:topology->physical_rigs)physical_owners.at(id)->binding->record_final(tick,physical_world(),physical_local());
+        for(const auto& id:topology->physical_rigs) {
+            physical_owners.at(id)->binding->record_final(tick,physical_world(),physical_local());
+            if(animations->procedural_enabled(id) && !animations->procedural_suspended(id))
+                animations->record_procedural_final(id,tick,registry.get<Node>(find(id)).world);
+        }
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_before_step() try {
         for(const auto& id:topology->physical_rigs)physical_owners.at(id)->backend->before_step(Runtime::fixed_dt);
@@ -246,15 +266,16 @@
     }
     void reject_physical_pose_conflicts(const std::vector<PhysicalRigCommand>& commands,
         const std::vector<AnimationCommand>& bases,const std::vector<AnimationRateCommand>& rates,
-        const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots) const {
+        const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,
+        const std::vector<RuntimeGroundingCommand>& grounding) const {
         for(const auto& c:commands) {
             const auto found=physical_owners.find(c.entity);
             if(c.activate || (found!=physical_owners.end() && found->second->backend->mode()==RuntimePhysicalRigMode::Passive))
-                require(!physical_targets(bases,c.entity) && !physical_targets(rates,c.entity) && !physical_targets(ik,c.entity) && !physical_targets(roots,c.entity),
-                    "Physical ownership conflicts with a same-tick animation/rate/IK/root-motion edit.");
+                require(!physical_targets(bases,c.entity) && !physical_targets(rates,c.entity) && !physical_targets(ik,c.entity) && !physical_targets(roots,c.entity) && !physical_targets(grounding,c.entity),
+                    "Physical ownership conflicts with a same-tick animation/rate/IK/grounding/root-motion edit.");
         }
         for(const auto& [id,owner]:physical_owners)if(topology->identities.contains(id) && owner->backend->mode()==RuntimePhysicalRigMode::Passive)
-            require(!physical_targets(bases,id) && !physical_targets(rates,id) && !physical_targets(ik,id) && !physical_targets(roots,id),"Passive rig does not accept animation/rate/IK/root-motion writes before a recovery policy exists.");
+            require(!physical_targets(bases,id) && !physical_targets(rates,id) && !physical_targets(ik,id) && !physical_targets(roots,id) && !physical_targets(grounding,id),"Passive rig does not accept animation/rate/IK/grounding/root-motion writes before a recovery policy exists.");
     }
     void apply_physical_commands(const std::vector<PhysicalRigCommand>& caller,const std::vector<PhysicalRigCommand>& gameplay) try {
         require(caller.size()+gameplay.size()<=64,"Caller and gameplay exceed64 physical rig commands.");
@@ -278,6 +299,7 @@
                     passive.support=c.character->CaptureSupport();
                     // History already includes resolved actor/platform motion.
                     // Never add motor velocity a second time.
+                    if(animations->procedural_enabled(command.entity))animations->suspend_procedural(command.entity,tick);
                     owner.binding->capture_passive_reference(physical_world(),physical_local());
                     c.character->Suppress(passive.support);passive.proxy=c.character->CaptureProxy();owner.handoff->passive=passive;
                     owner.backend->enter_passive(owner.binding->state().current->bodies);

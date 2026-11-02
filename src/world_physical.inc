@@ -98,3 +98,17 @@
         }}catch(const std::exception& error){throw Error(-32602,error.what());}
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
     }
+
+    Json procedural_pose_runtime_query(const Json& params) {
+        fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+        require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto entity=identifier(params.at("entity"));
+        try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+        Json value=nullptr;
+        try {if(const auto state=runtime_->procedural_pose(entity))
+            value={{"entity",state->entity},{"phase",state->suspended?"physical":"animated"},
+                {"diagnostics",state->suspended?"last_animated_pose":"current"},
+                {"sampled_tick",state->sampled_tick},{"slots",state->slots}};
+        }catch(const std::exception& error){throw Error(-32602,error.what());}
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
+    }
