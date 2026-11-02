@@ -1,0 +1,185 @@
+{
+  "format": "poima.character-input-planning-evidence.v1",
+  "date": "2026-11-02",
+  "engine_version": "0.0.221",
+  "schema_revision": 124,
+  "passed": true,
+  "scope": "Linux native input planning and existing solved-wrapper publication, plus isolated actor-follow math. Runtime controller-to-physical ownership remains unsupported.",
+  "changes": [
+    "Existing caller, post-stance and compiled movement use a value-only input plan before the existing motor commit boundary. Float quaternion/vector arithmetic, grounded jump and zero-yaw no-write behavior are retained.",
+    "A checked pure follow candidate retains actor world heading and local scales while reconstructing an absolute solved wrapper against the new actor transform. It does not suspend a capsule or enable a runtime link.",
+    "Both existing rigid and skeletal physical publication paths share absolute solved-wrapper calculation; complete solved-part validation remains required."
+  ],
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 107764,
+      "sha256": "78be88d54a6e794bccb00a092ae85feced720f03e8256dcfec3fb7aaa65732ca"
+    },
+    "src/runtime.cpp": {
+      "bytes": 169938,
+      "sha256": "8ec281fe828129a70478ee9b85c3793d7d1e8cb1df02bd397a4ad0104a62928c"
+    },
+    "src/runtime_character_input_plan.hpp": {
+      "bytes": 1948,
+      "sha256": "abf7f47c8861c0206085fd33587129dc58b54f14e1bdcc5e8cf7e2f80092cce4"
+    },
+    "src/runtime_physical_pose.hpp": {
+      "bytes": 6580,
+      "sha256": "a9f6a205dc387a32e6a1238fda6bf3ec2526dc499d2ad5f8a7e12a8a462805ed"
+    },
+    "src/runtime_physical_pose.cpp": {
+      "bytes": 31843,
+      "sha256": "a43e18fed7a4a9269a467ebab817c59513fb7d35804870f92dabfa116e3a12fb"
+    },
+    "tests/runtime_character_input_plan_native.cpp": {
+      "bytes": 3578,
+      "sha256": "4d7f9516f33b1ec86c7a32762d510769cda7c19c67fd2e5ad4f36155a01d279e"
+    },
+    "tests/runtime_physical_follow_native.cpp": {
+      "bytes": 11939,
+      "sha256": "a2d5251254631f0e2951c3354b2b4047196a49e06dd8df97f2666208bc2fc321"
+    },
+    "tests/character_input_plan_compatibility.py": {
+      "bytes": 16470,
+      "sha256": "31cab4a3c4036830ec79bc64bfbb76ea5253f481ee8781de2a0015377130b69c"
+    },
+    "tests/components_gameplay_contract.py": {
+      "bytes": 18301,
+      "sha256": "0ef5d4da4521e8d616ef232356388428a6ec40d2c91a70cc6c064464650734ba"
+    },
+    "tests/input_actions_gameplay_contract.py": {
+      "bytes": 21158,
+      "sha256": "126e243afe92c6e1125d77022f734f013486041e3e55dbd0781957c3eb8ccfe7"
+    },
+    "tests/character_gameplay_contract.py": {
+      "bytes": 12031,
+      "sha256": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a"
+    }
+  },
+  "native": {
+    "passed": true,
+    "selected_suites": [
+      "runtime_character_input_plan_native",
+      "runtime_physical_follow_native",
+      "runtime_native",
+      "runtime_character_stance_native",
+      "runtime_character_locomotion_native",
+      "runtime_camera_pose_native",
+      "runtime_camera_lens_native",
+      "runtime_save_native",
+      "physical_pose_native",
+      "runtime_physics_state_native",
+      "runtime_physical_rig_native",
+      "runtime_physical_ownership_native",
+      "runtime_physical_integration_native",
+      "runtime_physical_pose_skeletal_native",
+      "runtime_physical_skeletal_integration_native",
+      "runtime_physical_pose_bounded_scale_native",
+      "runtime_physical_bounded_scale_integration_native",
+      "world_schema_native",
+      "gameplay_compatibility_policy"
+    ],
+    "count": 19,
+    "follow_math_checks": 4522,
+    "follow_frames": 41,
+    "natural_closure": true,
+    "report_identity": {
+      "bytes": 103023,
+      "sha256": "d77f5860228be44e8036a51629098908a7269d4ddc22f0ed7147662eedfb2015"
+    },
+    "ctest_record_identity": {
+      "bytes": 15950,
+      "sha256": "45ff2c12041ed93d4ef6bd497cad35c9e9121f96ed79fa01b5508fe71788e598"
+    },
+    "descriptor_check": true
+  },
+  "old_current": {
+    "passed": true,
+    "baseline_version": "0.0.220",
+    "baseline_image": {
+      "bytes": 38204560,
+      "sha256": "e49ff4de604fcb1c7c256de2f916d46104e02477f71e31d38ef163c5cb1f96de"
+    },
+    "candidate_image": {
+      "bytes": 38209016,
+      "sha256": "a247f1f2c380b456404eedc3d39f3d728d74e624b9b63e544031f9ada6522902"
+    },
+    "profiles": [
+      "legacy",
+      "legacy_stance",
+      "virtual",
+      "virtual_stance",
+      "virtual_supported"
+    ],
+    "rpc_count": 893,
+    "complete_observation_pairs": 20,
+    "complete_archives": 8,
+    "whole_byte_and_json_pairs": 4,
+    "complete_step_result_pairs_independently_rejoined": 18,
+    "original_old_save_cold_roundtrip_exact": true,
+    "natural_cli_owners": 4,
+    "identity_policy": "Same authored bytes and explicitly shared session IDs in independent hosts; no response/snapshot fields removed or rewritten.",
+    "raw_fixture_record_identity": {
+      "bytes": 1506009,
+      "sha256": "ffdb371fa82e93bb8f5b713252ea6c885ee6bf7870390664c1f87704c84822be"
+    },
+    "process_owner_report_identity": {
+      "bytes": 6397,
+      "sha256": "3ac976b1d2d495c91f3686a5ce875410d30521f28bf22e28bc6981d8817b92a8"
+    },
+    "checks": [
+      "Complete old/current replies and archives match for both motor backends, optional stance, held edges, jumps, diagonal input, yaw/pitch limits, walls, cameras and moving support",
+      "Fresh current and old native owners restore the exact original old-image archive and retain complete archive equality through future input; no state fields are excluded"
+    ],
+    "archive_pairs": [
+      {
+        "label": "crouched-input-state",
+        "bytes": 11633,
+        "sha256": "d5b851327a4fd2d8c7e2d2d86d0b277052534ccb05ee1a2064c78f1a4e48179a"
+      },
+      {
+        "label": "before-cold-replay",
+        "bytes": 12515,
+        "sha256": "6ef4f5f99a6c257dde8d2d3faf2bfc6d434f056eb1ca736be5fa95341ba22618"
+      },
+      {
+        "label": "fresh-old-save-roundtrip",
+        "bytes": 12515,
+        "sha256": "6ef4f5f99a6c257dde8d2d3faf2bfc6d434f056eb1ca736be5fa95341ba22618"
+      },
+      {
+        "label": "complete-cold-continuation",
+        "bytes": 12466,
+        "sha256": "ab8bb7bcb83a996515bc19a1aa8a4d6d5d5b3f69ee3e3587b2bcad7e6c1b3086"
+      }
+    ]
+  },
+  "independent_review": {
+    "passed": true,
+    "scope": "Rehashed all eight actual archives and receipts, rejoined all four whole byte/JSON pairs and the old-save cold roundtrip, rejoined eighteen raw full step result pairs, and checked natural owner closure.",
+    "identity": {
+      "bytes": 684,
+      "sha256": "daa6a0601808febe3e4d4e538a025539cd96190e56a21933b6d10fc01bc0eb51"
+    }
+  },
+  "reproduce": [
+    "Configure a simulation-enabled Linux build with POIMA_BUILD_TESTS=ON. Build poima and the native targets corresponding to the selected suites.",
+    "Run ctest --test-dir <build> --output-on-failure -R \"^(runtime_character_input_plan_native|runtime_physical_follow_native)$\". The retained regression cohort also contains the seventeen other listed suites.",
+    "Under a process-tree owner, run python3 tests/character_input_plan_compatibility.py --binary <candidate-poima> --legacy-binary <preserved-0.0.220-poima> --output <fresh-output-directory>. Both executables must retain their own required dynamic libraries."
+  ],
+  "limits": [
+    "The new code was executed on Linux headless. This record does not establish Windows execution of 0.0.221, rendered observations, GUI or physical input.",
+    "The comparison covers caller inputs. Compiled callback preview, same-tick aim/fire joins and linked-controller suppression are not implemented or qualified by this record.",
+    "No runtime actor-follow configuration, new command, save extension or gameplay ABI was introduced. Existing controller ancestry restrictions remain enforced.",
+    "The synthetic native fixtures and shared-machine timings do not establish representative performance or production ragdoll quality."
+  ],
+  "build_metadata": {
+    "passed": true,
+    "expected_version": "0.0.221",
+    "scope": "CLI/MCP/profiler metadata agreement, not a provider workflow or delivery test.",
+    "report_identity": {
+      "bytes": 6040,
+      "sha256": "30fa36127e78fec4fd8fd5f2b142b9ad8174d8c54c39e7fc396f9ac356d4cdc7"
+    }
+  }
+}

@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.221
+
+- Separate native character-input planning from motor publication, preserving
+  existing look/jump edges, stance movement and contact invalidation behavior.
+- Add checked fixed-heading actor-follow candidates and share absolute solved
+  wrapper calculation between existing physical skeleton publication paths.
+- Compare both controller backends against the prior engine with complete
+  observations, byte-identical saves and fresh-process old-save continuation.
+
 ## 0.0.220
 
 - Add an explicit bounded-scale physical skeleton frame that retains actual

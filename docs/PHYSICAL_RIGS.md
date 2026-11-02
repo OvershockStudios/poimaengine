@@ -623,3 +623,18 @@ the complete descriptor, payload inventory and typed schema before loading the
 native export, then checks actual callbacks, rollback and cold continuation.
 Whole-archive equality is checked within each backend's run; CoreCLR and Native
 AOT archives have different backend/library identities.
+
+## Character ownership preparation
+
+The native runtime calculates character inputs as a value before publishing
+rotation, jump and velocity to the motor at the existing boundary. Physical
+pose publication exposes an absolute solved wrapper independently of its
+presentation parent. A pure fixed-heading follow calculation can then prepare
+actor and wrapper local transforms together while preserving their local scales.
+These internal calculations do not enable controller ancestry or remove a
+movement capsule. Coordinated controller takeover still requires input preview,
+physics membership, lifecycle and save integration.
+
+[The Linux checks](evidence/m2-character-input-planning.json) cover the isolated
+math and existing runtime paths, including actual prior/current full replies
+and complete saves. They do not qualify runtime controller transfer.

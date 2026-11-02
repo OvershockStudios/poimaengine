@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-11-01 for **0.0.220**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.221**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.221 separates native character-input calculation from its existing
+motor commit boundary and shares absolute solved-wrapper calculation between
+physical publication paths. A pure fixed-heading actor-follow planner preserves
+local scales and reconstructs the absolute solved wrapper without moving it
+twice. [Linux qualification](evidence/m2-character-input-planning.json) passes
+nineteen selected native suites, including 4,522 follow-math checks. The real
+0.0.220/current comparison passes 893 requests, twenty complete observation
+pairs and four complete byte/JSON save pairs across both controller backends,
+optional stance and a moving support. Four CLI processes close naturally;
+fresh old/current owners restore the original old-image save and continue
+identically. Controller-to-ragdoll ownership, callback preview and capsule
+suppression remain unimplemented; this does not enable a runtime controller
+link. Windows execution of these new paths remains separate qualification.
+
 
 Version 0.0.220 adds an explicit `skeletal_bounded_scale` physical frame for
 small source-scale changes during animation composition. Every original node

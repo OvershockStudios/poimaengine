@@ -128,6 +128,47 @@ V affine_point(const Matrix4& m,const V& p) {
 Q local_rotation(const RuntimeTransform& value) {return physical_rig::canonical_quaternion(value.rotation);}
 } // namespace
 
+RuntimePhysicalActorFollowReference capture_actor_follow(
+    const Matrix4& actor_world,const Matrix4& wrapper_world) {
+    const auto actor=metric(actor_world),wrapper=metric(wrapper_world);
+    RuntimePhysicalActorFollowReference result;
+    for(std::size_t axis=0;axis<3;++axis)
+        result.actor_minus_wrapper_world[axis]=actor.pose.position[axis]-wrapper.pose.position[axis];
+    bounded_vector(result.actor_minus_wrapper_world,2*max_position,"Physical actor follow offset exceeds bounds.");
+    result.actor_world_rotation=actor.pose.rotation;return result;
+}
+RuntimePhysicalActorFollowCandidate plan_actor_follow(
+    const RuntimePhysicalActorFollowReference& reference,const Matrix4& desired_wrapper_world,
+    const Matrix4& actor_parent_world,const RuntimeTransform& actor_local,
+    const RuntimeTransform& wrapper_local) {
+    bounded_vector(reference.actor_minus_wrapper_world,2*max_position,"Physical actor follow offset exceeds bounds.");
+    const auto captured=physical_rig::canonical_quaternion(reference.actor_world_rotation);
+    const auto desired=metric(desired_wrapper_world),parent=metric(actor_parent_world);
+    check_local(actor_local);check_local(wrapper_local);
+    RuntimePhysicalActorFollowCandidate result;result.actor_local=actor_local;result.wrapper_local=wrapper_local;
+    V actor_position;
+    for(std::size_t axis=0;axis<3;++axis)
+        actor_position[axis]=desired.pose.position[axis]+reference.actor_minus_wrapper_world[axis];
+    bounded_vector(actor_position,max_position,"Physical actor follow origin exceeds world bounds.");
+    result.actor_local.position=affine_point(checked_affine_inverse(actor_parent_world),actor_position);
+    result.actor_local.rotation=physical_rig::multiply(physical_rig::conjugate(parent.pose.rotation),captured);
+    check_local(result.actor_local);
+    result.actor_world=multiply(actor_parent_world,local_matrix(result.actor_local.position,result.actor_local.rotation,result.actor_local.scale));
+    const auto actor=metric(result.actor_world);
+    for(std::size_t axis=0;axis<4;++axis)need(std::abs(actor.pose.rotation[axis]-captured[axis])<=1e-10,
+        "Physical actor follow cannot preserve its captured world orientation.");
+    result.wrapper_local.position=affine_point(checked_affine_inverse(result.actor_world),desired.pose.position);
+    result.wrapper_local.rotation=physical_rig::multiply(physical_rig::conjugate(actor.pose.rotation),desired.pose.rotation);
+    check_local(result.wrapper_local);
+    result.wrapper_world=multiply(result.actor_world,local_matrix(result.wrapper_local.position,result.wrapper_local.rotation,result.wrapper_local.scale));
+    (void)metric(result.wrapper_world);
+    // The target is absolute: publishing a followed parent must not translate
+    // or rotate the already solved wrapper for a second time. Scale mismatch
+    // rejects rather than changing either retained local scale array.
+    verify_world(result.wrapper_world,desired_wrapper_world);
+    return result;
+}
+
 RuntimePhysicalRigPoseBinding::RuntimePhysicalRigPoseBinding(const RuntimeDefinition& definition,std::string rig,
     const physical_rig::Definition& physical,const World& world,const Local& local)
     :RuntimePhysicalRigPoseBinding(definition,std::move(rig),physical,world,local,physical_rig::PoseFramePolicy::RigidUniform) {}
@@ -263,6 +304,13 @@ void RuntimePhysicalRigPoseBinding::capture_passive_reference(const World& world
     const auto root=physical_rig::compose(rigid(actual.bodies[root_part_]),physical_rig::inverse(definition_.parts[root_part_].body_in_bone));
     auto next=state_;next.root_bone_to_wrapper=physical_rig::compose(physical_rig::inverse(root),rigid(actual.wrapper));validate_state(next);state_=std::move(next);
 }
+Matrix4 RuntimePhysicalRigPoseBinding::solved_wrapper_world(std::span<const RuntimePhysicalRigPose> solved) const {
+    need(state_.root_bone_to_wrapper.has_value(),"Physical wrapper publication requires a captured root reference.");
+    need(solved.size()==definition_.parts.size(),"Physical publication part population differs.");
+    for(std::size_t i=0;i<solved.size();++i)validate_pose(solved[i],definition_.parts[i].name);
+    const auto root=physical_rig::compose(rigid(solved[root_part_]),physical_rig::inverse(definition_.parts[root_part_].body_in_bone));
+    return matrix({physical_rig::compose(root,*state_.root_bone_to_wrapper),wrapper_scale_});
+}
 std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved_locals(
     std::span<const RuntimePhysicalRigPose> solved,const World& world,const Local& local) const {
     need(state_.root_bone_to_wrapper.has_value()&&bool(world)&&bool(local),"Physical publication requires a captured root reference and current providers.");
@@ -271,9 +319,9 @@ std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved
     // Validate every sampled profile before calculating any output. Root applies
     // the returned array atomically; this function never edits live locals.
     (void)sample(state_.current?state_.current->tick:0,world);
+    const auto wrapper=solved_wrapper_world(solved);
     std::vector<P> bones; bones.reserve(solved.size());
-    for(std::size_t i=0;i<solved.size();++i){validate_pose(solved[i],definition_.parts[i].name);bones.push_back(physical_rig::compose(rigid(solved[i]),physical_rig::inverse(definition_.parts[i].body_in_bone)));}
-    const auto wrapper=matrix({physical_rig::compose(bones[root_part_],*state_.root_bone_to_wrapper),wrapper_scale_});
+    for(std::size_t i=0;i<solved.size();++i)bones.push_back(physical_rig::compose(rigid(solved[i]),physical_rig::inverse(definition_.parts[i].body_in_bone)));
     const auto external=wrapper_parent_.empty()?identity_matrix():world(wrapper_parent_);(void)metric(external);
     std::vector<RuntimePhysicalRigLocalUpdate> result;result.reserve(solved.size()+1);result.push_back({rig_,relative(metric(external),metric(wrapper))});
     std::vector<Matrix4> final_world(nodes_.size());
@@ -293,12 +341,11 @@ std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved
 std::vector<RuntimePhysicalRigLocalUpdate> RuntimePhysicalRigPoseBinding::solved_skeletal(
     std::span<const RuntimePhysicalRigPose> solved,const World& world,const Local& local) const {
     (void)sample(state_.current?state_.current->tick:0,world,local);
+    const auto wrapper=solved_wrapper_world(solved);
     std::vector<P> bones;bones.reserve(solved.size());
     for(std::size_t i=0;i<solved.size();++i) {
-        validate_pose(solved[i],definition_.parts[i].name);
         bones.push_back(physical_rig::compose(rigid(solved[i]),physical_rig::inverse(definition_.parts[i].body_in_bone)));
     }
-    const auto wrapper=matrix({physical_rig::compose(bones[root_part_],*state_.root_bone_to_wrapper),wrapper_scale_});
     const auto external=wrapper_parent_.empty()?identity_matrix():world(wrapper_parent_);(void)metric(external);
     std::vector<RuntimePhysicalRigLocalUpdate> result;result.reserve(solved.size()+1);
     result.push_back({rig_,relative(metric(external),metric(wrapper))});

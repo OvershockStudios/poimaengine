@@ -12,6 +12,7 @@
 #include "runtime_physics_state.hpp"
 #include "runtime_physical_rig.hpp"
 #include "runtime_physical_pose.hpp"
+#include "runtime_character_input_plan.hpp"
 #include "runtime_entity_ids.hpp"
 #include "runtime_hit_regions.hpp"
 #include "runtime_assertions.hpp"
@@ -1246,21 +1247,15 @@ struct Runtime::Impl {
     }
     void apply_character_input(entt::entity entity,const RuntimeInput& input,bool edges) {
         auto& controller=registry.get<Controller>(entity);
-        if(edges) {
-            controller.yaw=std::remainder(controller.yaw+input.look[0],360.0);controller.pitch=std::clamp(controller.pitch+input.look[1],-85.0,85.0);
-            // Reapplying an unchanged rotation invalidates Jolt contact caches.
-            if(input.look[0]!=0)controller.character->SetRotation(JPH::Quat::sRotation(JPH::Vec3::sAxisY(),static_cast<float>(controller.yaw*radians)));
-        }
-        JPH::Vec3 movement(input.move[0],0,-input.move[1]);
-        if(movement.LengthSq()>1)movement=movement.Normalized();
         const auto speed=controller.crouched ? controller.settings.stance->crouched_speed : controller.settings.speed;
-        const auto desired=controller.character->GetRotation()*movement*speed;
-        float y=controller.character->GetIntegrationVelocity().GetY();
-        if(edges && input.jump && controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround) {
-            y=controller.settings.jump_speed;
-            if(controller.character->IsVirtual())controller.character->RequestJump(controller.settings.jump_speed);
-        }
-        controller.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
+        const auto plan=detail::prepare_character_input(controller.yaw,controller.pitch,
+            controller.character->GetRotation(),controller.character->GetIntegrationVelocity().GetY(),
+            controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround,
+            speed,controller.settings.jump_speed,input,edges);
+        controller.yaw=plan.yaw;controller.pitch=plan.pitch;
+        if(plan.write_rotation)controller.character->SetRotation(plan.rotation);
+        if(plan.request_jump && controller.character->IsVirtual())controller.character->RequestJump(controller.settings.jump_speed);
+        controller.character->SetLinearVelocity(plan.requested_velocity);
     }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
         auto e=find(emitter);require(registry.all_of<AudioEmitter>(e),"Sound target needs an AudioEmitter.");

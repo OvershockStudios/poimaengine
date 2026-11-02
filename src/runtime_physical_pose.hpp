@@ -23,6 +23,29 @@ struct RuntimePhysicalRigPoseState {
 };
 struct RuntimePhysicalRigLocalUpdate { std::string entity;RuntimeTransform local; };
 
+// Pure publication seam for a future one-way controller handoff. The actor
+// follows the solved wrapper's translation while retaining its captured world
+// orientation. These values do not suspend a controller or confer ownership.
+struct RuntimePhysicalActorFollowReference {
+    physical_rig::Vec3 actor_minus_wrapper_world{};
+    physical_rig::Quat actor_world_rotation{0,0,0,1};
+};
+struct RuntimePhysicalActorFollowCandidate {
+    RuntimeTransform actor_local,wrapper_local;
+    Matrix4 actor_world,wrapper_world;
+};
+RuntimePhysicalActorFollowReference capture_actor_follow(
+    const Matrix4& actor_world,const Matrix4& wrapper_world);
+// Actor and wrapper are direct parent/child. External, actor and wrapper
+// frames must be positive uniform metric frames. Retains both supplied local
+// scale arrays exactly, computes affine origins against the candidate parent,
+// and rejects inconsistent target scale or malformed input before returning.
+// All arguments/history/providers remain untouched on success and failure.
+RuntimePhysicalActorFollowCandidate plan_actor_follow(
+    const RuntimePhysicalActorFollowReference&,const Matrix4& desired_wrapper_world,
+    const Matrix4& actor_parent_world,const RuntimeTransform& actor_local,
+    const RuntimeTransform& wrapper_local);
+
 // Owner-thread seam between final animation publication and the physical rig.
 // Callbacks return committed world matrices / current sampled local transforms;
 // no registry pointer, worker, clock or layer history is retained or modified.
@@ -54,6 +77,10 @@ public:
     std::vector<RuntimePhysicalRigPose> record_final(std::uint64_t tick,const World&,const Local&);
     void capture_passive_reference(const World&);
     void capture_passive_reference(const World&,const Local&);
+    // Absolute solved wrapper, independent of the current presentation parent.
+    // Validates the complete solved population and requires captured ownership;
+    // does not sample providers or change committed pose history.
+    Matrix4 solved_wrapper_world(std::span<const RuntimePhysicalRigPose>) const;
     // Does not change history. Root applies the complete returned local updates
     // after animation sampling, then rebuilds world matrices before skinning.
     std::vector<RuntimePhysicalRigLocalUpdate> solved_locals(
