@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.223**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.224**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.224 integrates the original Knight's virtual movement, capsule
+stance, imported crossfades and full-body physical takeover in one shared world.
+The [example workflow](CHARACTER_CONTROLLER_HANDOFF.md) preserves all 57 source
+nodes and 76 takes. Each Windows/Linux run passes 1,376 requests, 18 complete
+archives and eleven whole-state comparisons across three naturally closed
+processes. Actor-composed source FK, source scales, committed momentum and
+held-input suppression are checked independently of the animation sampler.
+
+The separate [Vulkan record](evidence/m2-character-controller-handoff.json)
+captures all original meshes/materials at six poses and repeats restored
+takeover/future poses. Ten captures pass 608 ordered device-depth samples,
+including 32 stale-palette witnesses per changed-pose capture. Twenty-one whole
+archive comparisons verify cold/warm restoration and capture purity; four BMP
+pairs match completely. The first capture run remains failed after its storage
+monitor attempted to open an exclusively locked live file. Its successor uses
+metadata for size accounting with the same bounds and explicit content hashes.
+These are selected single-sample still-image checks, not production motion,
+contact fitting, active balance, recovery, physical input or performance proof.
 
 Version 0.0.223 fixes mutable RPC history in the physical-workflow recorder and
 requires complete literal request/reply joins before accepting the handoff

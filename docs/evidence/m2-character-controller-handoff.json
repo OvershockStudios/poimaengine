@@ -1,0 +1,772 @@
+{
+  "format": "poima.character-controller-handoff-evidence.v1",
+  "date": "2026-11-02",
+  "checkpoint": "0.0.224",
+  "schema_revision": 125,
+  "passed": true,
+  "scope": "Original imported Knight with virtual movement/stance, raw-source animation composition and one-way15body physics in one frozen world. Selected Windows Vulkan original-material captures, complete saves and restored images. No production-character or full-engine completion claim.",
+  "source_identities": {
+    "tests/physical_character_controller_handoff.py": {
+      "bytes": 32490,
+      "sha256": "a9567736975810e7f6ab99ba5fdb4797dc2091ce06a568acb76d8eaa863fb731"
+    },
+    "tests/character_depth_oracle.py": {
+      "bytes": 18361,
+      "sha256": "109dd9e81c7a2b3c6a49970f2e6b6a086f18e1285d3b80593cbda3911b407576"
+    },
+    "tests/physical_character_transitions.py": {
+      "bytes": 25878,
+      "sha256": "89d05a1c14de0a997ff6c1f51f6d13e7a0791ae8beed9b40b912dd536b0cbd42"
+    },
+    "tests/physical_character_native.py": {
+      "bytes": 20536,
+      "sha256": "a0aca2869ef0032c1313b7655913409bc708b06b396a66dfeff9ad34f8dc5ae2"
+    },
+    "tests/world_physical_contract.py": {
+      "bytes": 22769,
+      "sha256": "49f29751412621bf6e49d01e57f83365861b0ac72e7b6ee1f0f3b9fa67114b26"
+    },
+    "tests/character_library_intake.py": {
+      "bytes": 35899,
+      "sha256": "0957370e9a90590ecc8cddc53f630f346dd408159d20602354529463c8fe94f7"
+    },
+    "tests/imported_character_contract.py": {
+      "bytes": 31982,
+      "sha256": "038190fba749b5cda6d7dd5f2fb682fdb7c9ad1b945715085d7144ee5e6c39f1"
+    },
+    "tests/scene_capture.py": {
+      "bytes": 9825,
+      "sha256": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1"
+    },
+    "examples/physical-character-yard/knight_profile.py": {
+      "bytes": 18739,
+      "sha256": "4207b9a4953d6a81ae7c45287f485fb6bbde9db803b93463197945a3fc2242bb"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "examples/physical-character-yard/source-manifest.json": {
+      "bytes": 815,
+      "sha256": "9bac7bdd307ec44db66786632e8ca82be5fcf14ad5f15412b83d97dffa872f29"
+    }
+  },
+  "original_source": {
+    "creator": "Kay Lousberg",
+    "pack": "KayKit Adventurers 1.0",
+    "license": "CC0-1.0",
+    "repository": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+    "revision": "672074b73ba276876a19e8816ecdc5241817ab47",
+    "model": {
+      "relative_source": "addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_notice": {
+      "relative_source": "LICENSE.txt",
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76,
+    "meshes": 15,
+    "skinned_meshes": 6,
+    "rigid_meshes": 9,
+    "source_vertices": 7024,
+    "source_triangles": 6952,
+    "physical_bodies": 15,
+    "physical_joints": 14,
+    "total_mass_kg": 72,
+    "artwork_and_library_modified": false
+  },
+  "recipe": {
+    "actor_initial_transform": {
+      "position": [
+        1.0,
+        3.0,
+        -0.5
+      ],
+      "rotation": [
+        0.0,
+        0.2279775235351884,
+        0.0,
+        0.9736663950053749
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "controller": {
+      "radius": 0.3,
+      "height": 1.8,
+      "speed": 2.0,
+      "jump_speed": 5.0,
+      "camera": "00000000000000000000000000000002",
+      "stance": {
+        "crouched_height": 1.0,
+        "crouched_speed": 1.0,
+        "camera_drop": 0.5
+      },
+      "locomotion": {
+        "step_height": 0.4,
+        "ground_snap": 0.5,
+        "max_slope_degrees": 45.0
+      }
+    },
+    "wrapper_local": {
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "pose_frame": "skeletal_bounded_scale",
+    "max_scale_deviation": 1e-05,
+    "controller_follow": "translate_keep_heading",
+    "input_ticks_1_to_22": {
+      "move": [
+        0.35,
+        0.65
+      ],
+      "look": [
+        0.5,
+        -0.125
+      ],
+      "jump": false
+    },
+    "crouch_tick": 13,
+    "animations": [
+      {
+        "name": "Idle",
+        "clip": 36,
+        "anchor": 0
+      },
+      {
+        "name": "Running_A",
+        "clip": 48,
+        "anchor": 6,
+        "fade_ticks": 12
+      },
+      {
+        "name": "Death_B",
+        "clip": 25,
+        "anchor": 18,
+        "fade_ticks": 12
+      }
+    ],
+    "activation_consumes_committed_tick": 22,
+    "first_physical_tick": 23,
+    "held_takeover_input": {
+      "move": [
+        -0.75,
+        0.5
+      ],
+      "look": [
+        37,
+        21
+      ],
+      "jump": true,
+      "crouch": false
+    },
+    "actual_airborne_displacement_before_takeover": [
+      -0.02129895891448541,
+      -0.6894251697231084,
+      -0.4172208411619067
+    ],
+    "late_source_tick": 177,
+    "observer_camera": {
+      "parent": "root actor",
+      "local": {
+        "position": [
+          0.0,
+          3.5,
+          9.0
+        ],
+        "rotation": [
+          -0.12477422427683947,
+          0.0,
+          0.0,
+          0.9921851606207951
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "vertical_fov": 45,
+      "near": 0.1,
+      "far": 100,
+      "width": 640,
+      "height": 480
+    },
+    "visible_floor_matches_collider": true
+  },
+  "native_workflows": {
+    "linux_current": {
+      "passed": true,
+      "native_engine_version": "0.0.224",
+      "owner_report_identity": {
+        "bytes": 11700,
+        "sha256": "2ab228966da13bf27d4944a9569428f92185c6e915b9209fe2c76873d4628e92"
+      },
+      "workflow_report_identity": {
+        "bytes": 9930078,
+        "sha256": "417e2702c90d994047bf75a827c04659e6123e2ad249bd25a0de360a158ed856"
+      },
+      "native_image": {
+        "bytes": 38456304,
+        "sha256": "a16bfd5e38d3bd6d7fafc4efc7e99ef74596e7f8cf9a6a22424ce888ccb05baf"
+      },
+      "requests": 1376,
+      "full_observations": 20,
+      "whole_archives": 18,
+      "complete_byte_and_JSON_pairs": 11,
+      "natural_owners": 3,
+      "postclosure_transcript_files": 6,
+      "late_source_tick": 177,
+      "authored_world_unchanged": true,
+      "momentum": {
+        "source_tick": 22,
+        "native_tick": 23,
+        "source_linear_momentum": [
+          -57.11277530720044,
+          -186.01537897914756,
+          -133.72802148779098
+        ],
+        "expected_after_gravity_drag": [
+          -57.017587439133415,
+          -197.45773477752545,
+          -133.50514166453297
+        ],
+        "actual_native_momentum": [
+          -57.01759029464002,
+          -197.45773460818071,
+          -133.50512291575134
+        ],
+        "absolute_per_axis_bound": 0.351520112058734,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.005920112058734006,
+        "last_resolved_motor_velocity": [
+          -0.11619013547897339,
+          -3.597001075744629,
+          -0.7290403842926025
+        ],
+        "scope": "Aggregate linear momentum from actor-composed source COM finite differences. Native motor velocity is recorded, never added again."
+      }
+    },
+    "windows": {
+      "passed": true,
+      "native_engine_version": "0.0.222",
+      "owner_report_identity": {
+        "bytes": 9978,
+        "sha256": "bf1000c3dd19b91d8cd353739acef5689b14c3b5cb57c0dbf72218ee0f553b11"
+      },
+      "workflow_report_identity": {
+        "bytes": 9927475,
+        "sha256": "588b6009482b193bb390faf5a8929b777aaf2d42361dc7ddb3eb9da22fdd211b"
+      },
+      "native_image": {
+        "bytes": 28254208,
+        "sha256": "9bb7ba1d53bd1599a985d21e19a55f1f102a02d8e4c43313d329e168db66f092"
+      },
+      "requests": 1376,
+      "full_observations": 20,
+      "whole_archives": 18,
+      "complete_byte_and_JSON_pairs": 11,
+      "natural_owners": 3,
+      "postclosure_transcript_files": 6,
+      "late_source_tick": 177,
+      "authored_world_unchanged": true,
+      "momentum": {
+        "source_tick": 22,
+        "native_tick": 23,
+        "source_linear_momentum": [
+          -57.11277530720044,
+          -186.01537897914753,
+          -133.72802148779098
+        ],
+        "expected_after_gravity_drag": [
+          -57.017587439133415,
+          -197.4577347775254,
+          -133.50514166453297
+        ],
+        "actual_native_momentum": [
+          -57.01759029464002,
+          -197.45773460818071,
+          -133.50512291575134
+        ],
+        "absolute_per_axis_bound": 0.351520112058734,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.0059201120587340055,
+        "last_resolved_motor_velocity": [
+          -0.11619013547897339,
+          -3.597001075744629,
+          -0.7290403842926025
+        ],
+        "scope": "Aggregate linear momentum from actor-composed source COM finite differences. Native motor velocity is recorded, never added again."
+      }
+    },
+    "earlier_linux": {
+      "passed": true,
+      "native_engine_version": "0.0.223",
+      "owner_report_identity": {
+        "bytes": 6073,
+        "sha256": "26f89da2df8de650fb13e6a520ab910552444d0d11b9a37018a3dba6936efe47"
+      },
+      "workflow_report_identity": {
+        "bytes": 9921186,
+        "sha256": "1e84c3b594349b734bb641f908b7bd8ed4ae0a059bb004b9b59665c8256cb7d5"
+      },
+      "native_image": {
+        "bytes": 38456304,
+        "sha256": "a8994083fd92ab12e206cabc5d12886a97398396b2773b30a459c58faabe63ae"
+      },
+      "requests": 1376,
+      "full_observations": 20,
+      "whole_archives": 18,
+      "complete_byte_and_JSON_pairs": 11,
+      "natural_owners": 3,
+      "postclosure_transcript_files": 6,
+      "late_source_tick": 177,
+      "authored_world_unchanged": true,
+      "momentum": {
+        "source_tick": 22,
+        "native_tick": 23,
+        "source_linear_momentum": [
+          -57.11277530720044,
+          -186.01537897914756,
+          -133.72802148779098
+        ],
+        "expected_after_gravity_drag": [
+          -57.017587439133415,
+          -197.45773477752545,
+          -133.50514166453297
+        ],
+        "actual_native_momentum": [
+          -57.01759029464002,
+          -197.45773460818071,
+          -133.50512291575134
+        ],
+        "absolute_per_axis_bound": 0.351520112058734,
+        "source_difference_bound": 0.3456,
+        "float_roundoff_bound": 0.005920112058734006,
+        "last_resolved_motor_velocity": [
+          -0.11619013547897339,
+          -3.597001075744629,
+          -0.7290403842926025
+        ],
+        "scope": "Aggregate linear momentum from actor-composed source COM finite differences. Native motor velocity is recorded, never added again."
+      }
+    },
+    "scope": "Full native assertions and raw artifacts. Cross-OS derived floating numbers are not required to match bitwise; whole-save equality is within each pinned native profile."
+  },
+  "source_math": {
+    "raw_source_scale_axes_per_run": 3420,
+    "fixed_scale_arithmetic_ULP_limit": 4,
+    "animated_source_FK_node_checks_per_run": 627,
+    "full_native_node_actor_camera_wrapper_joins_per_run": 1220,
+    "matrix_tolerance": 3e-05,
+    "COM_tolerance": 4e-05,
+    "history_linear_velocity_tolerance": 0.0048,
+    "history_angular_velocity_tolerance": 0.001,
+    "method": "All source keys/scales are retained. Animated FK and body history compose the actual resolved actor transform with an independent raw-source sampler. Momentum uses original masses, gravity and drag, without adding controller velocity again. Passive source scales and physical-to-bone joins are distinct checks."
+  },
+  "actual_state_preflight": {
+    "passed": true,
+    "report_identity": {
+      "bytes": 146851,
+      "sha256": "1632cc1bf4520e5282cb6b18101d98d947ab8d4a60be113a1e0312e258f81542"
+    },
+    "native_or_GPU_started": false,
+    "cases": [
+      {
+        "label": "idle6",
+        "tick": 6,
+        "ordered_probes": 32,
+        "stale_positive": false,
+        "framing_passed": true,
+        "stale_candidate_pixels": 0
+      },
+      {
+        "label": "run12",
+        "tick": 12,
+        "ordered_probes": 64,
+        "stale_positive": true,
+        "framing_passed": true,
+        "stale_candidate_pixels": 2410
+      },
+      {
+        "label": "death22",
+        "tick": 22,
+        "ordered_probes": 64,
+        "stale_positive": true,
+        "framing_passed": true,
+        "stale_candidate_pixels": 2538
+      },
+      {
+        "label": "takeover23",
+        "tick": 23,
+        "ordered_probes": 64,
+        "stale_positive": true,
+        "framing_passed": true,
+        "stale_candidate_pixels": 2401
+      },
+      {
+        "label": "passive27",
+        "tick": 27,
+        "ordered_probes": 64,
+        "stale_positive": true,
+        "framing_passed": true,
+        "stale_candidate_pixels": 2052
+      },
+      {
+        "label": "late",
+        "tick": 177,
+        "ordered_probes": 64,
+        "stale_positive": true,
+        "framing_passed": true,
+        "stale_candidate_pixels": 1703
+      }
+    ],
+    "depth_acceptance_tolerance": 3e-06,
+    "stale_expected_depth_separation": 3e-05,
+    "source_oracle_ray_control": "Twenty-four current and twelve stale reference depths independently agree with ray/triangle intersection within1e-12; that source-math study uses source/retained poses and is not extra GPU evidence."
+  },
+  "vulkan": {
+    "passed": true,
+    "native_engine_version": "0.0.222",
+    "owner_report_identity": {
+      "bytes": 14424,
+      "sha256": "449e79e2634ef6705d9512f37dfe2f5dbf81e499abc1dbdca91697a5178af37a"
+    },
+    "workflow_report_identity": {
+      "bytes": 3892402,
+      "sha256": "d263493db9c167c809885efca918797eedac59f34ba40323dccc5eebb1a5bb11"
+    },
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "API": "Vulkan/NVRHI",
+    "requests": 687,
+    "captures": 10,
+    "unique_pose_checkpoints": 6,
+    "rendered_original_meshes": 15,
+    "rendered_original_triangles": 6952,
+    "total_camera_objects": 16,
+    "total_camera_triangles": 6964,
+    "skinned_vertices": 4269,
+    "samples": 1,
+    "reconstruction": "none",
+    "original_materials_and_atlas_preserved": true,
+    "native_errors": 0,
+    "whole_archives": 21,
+    "complete_archive_pairs": 21,
+    "CPU_original_to_restored_pairs": 11,
+    "capture_purity_pairs": 10,
+    "whole_BMP_pairs": 4,
+    "natural_owners": 3,
+    "postclosure_transcript_files": 6,
+    "ordered_device_depth_samples": 608,
+    "stale_palette_rejections": 288,
+    "max_device_depth_error": 6.99206086696158e-07,
+    "minimum_actual_stale_depth_gap": 4.6051294206983506e-05,
+    "stale_control": "Freeze each skinned drawable mesh-local palette at played-six, then apply its current model transform. Keep all rigid accessories current. All original geometry and the bounded y=0 floor participate in nearest-depth occlusion.",
+    "captures_detail": [
+      {
+        "name": "original-idle6",
+        "tick": 6,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "82eba48d6c3fde60cf2beafb2928888933a70ac9f7af7a98ae54271fd66d2a79"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 32,
+        "max_depth_error": 1.7422353282281478e-07,
+        "stale_rejections": 0
+      },
+      {
+        "name": "original-run12",
+        "tick": 12,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "edc79c69c6e4431b6bdc95b3bcf3aab5fbd47905d12c6b098e3931313f6bf835"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 2.0559860003377395e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "original-death22",
+        "tick": 22,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "0eb62f8b5558bc1e50b81ce19fbc65fc13f745598586671e6990c81cf34d30a9"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 1.990197445733699e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "original-takeover23",
+        "tick": 23,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "3a69c8b0f7c8805a39b7f75d5096464f8938a4b0055e13097c710a0c6afaf6fd"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 6.99206086696158e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "original-passive27",
+        "tick": 27,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "bad368b3ff3bb77be37e22626fc8048e326c0a192eb4a5d86aa3b122b856fbda"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 4.318513785461775e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "original-late",
+        "tick": 177,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "86a7a4afb479e15d1da041b2a3372be723dcabeeecb2139d3499f2906dd6dcb2"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 3.3468030247174596e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "warm-takeover23",
+        "tick": 23,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "3a69c8b0f7c8805a39b7f75d5096464f8938a4b0055e13097c710a0c6afaf6fd"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 6.99206086696158e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "warm-passive27",
+        "tick": 27,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "bad368b3ff3bb77be37e22626fc8048e326c0a192eb4a5d86aa3b122b856fbda"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 4.318513785461775e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "cold-takeover23",
+        "tick": 23,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "3a69c8b0f7c8805a39b7f75d5096464f8938a4b0055e13097c710a0c6afaf6fd"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 6.99206086696158e-07,
+        "stale_rejections": 32
+      },
+      {
+        "name": "cold-passive27",
+        "tick": 27,
+        "BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "bad368b3ff3bb77be37e22626fc8048e326c0a192eb4a5d86aa3b122b856fbda"
+        },
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 1,
+        "depth_samples": 64,
+        "max_depth_error": 4.318513785461775e-07,
+        "stale_rejections": 32
+      }
+    ],
+    "images": [
+      {
+        "file": "docs/evidence/character-controller-moving.png",
+        "identity": {
+          "bytes": 23679,
+          "sha256": "ca57879adb5d12d947ba135cc7ad54251405bc297d2c9232571efa927a46a7d6"
+        },
+        "source_capture_name": "original-run12",
+        "source_BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "edc79c69c6e4431b6bdc95b3bcf3aab5fbd47905d12c6b098e3931313f6bf835"
+        },
+        "native_RGB_sha256": "251b5f34f1be83835f822ab5ee3ee61d41400f917917079da55178586476f9de",
+        "width": 640,
+        "height": 480,
+        "lossless_RGB_conversion": true,
+        "visual_review": "Inspected all six unique original-material frames. Character remains connected through first/future physical poses; late pose is on the floor. Single-sample reference images do not establish polished AA or motion quality."
+      },
+      {
+        "file": "docs/evidence/character-controller-takeover.png",
+        "identity": {
+          "bytes": 22228,
+          "sha256": "9bef285b341ef598f13e472bd890f0c9f6de44f62dc80a1e3d59e79543561420"
+        },
+        "source_capture_name": "original-takeover23",
+        "source_BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "3a69c8b0f7c8805a39b7f75d5096464f8938a4b0055e13097c710a0c6afaf6fd"
+        },
+        "native_RGB_sha256": "f36d7d3dc9ff62f3df208863ef487791301faeec3ddea1c1895f1dc3c418ea1b",
+        "width": 640,
+        "height": 480,
+        "lossless_RGB_conversion": true,
+        "visual_review": "Inspected all six unique original-material frames. Character remains connected through first/future physical poses; late pose is on the floor. Single-sample reference images do not establish polished AA or motion quality."
+      },
+      {
+        "file": "docs/evidence/character-controller-late.png",
+        "identity": {
+          "bytes": 17009,
+          "sha256": "56988a418313220956bcd12e4bd0fed5689f9f8b32f159a72f5ea7439c7b71dc"
+        },
+        "source_capture_name": "original-late",
+        "source_BMP_identity": {
+          "bytes": 1228938,
+          "sha256": "86a7a4afb479e15d1da041b2a3372be723dcabeeecb2139d3499f2906dd6dcb2"
+        },
+        "native_RGB_sha256": "6cec63f9df7c39101c8b1cc87ca61f9f4baaf0bd039a4f65760be715b7e03f4f",
+        "width": 640,
+        "height": 480,
+        "lossless_RGB_conversion": true,
+        "visual_review": "Inspected all six unique original-material frames. Character remains connected through first/future physical poses; late pose is on the floor. Single-sample reference images do not establish polished AA or motion quality."
+      }
+    ]
+  },
+  "public_reference": {
+    "source": "tests/character_depth_oracle.py",
+    "verification": {
+      "format": "poima.public-depth-reference-check.v1",
+      "passed": true,
+      "all7oracle_functions_AST_identical": true,
+      "all6actual_reference_cases_identical": true,
+      "captures_rejoined": 10,
+      "samples": 608,
+      "stale_rejections": 288,
+      "max_depth_error": 6.99206086696158e-07
+    },
+    "scope": "Public reference tool reproduces the six actual source-raster cases and checks all ten actual capture responses. Seven math-function ASTs match the admitted oracle; no GPU process is opened by this tool."
+  },
+  "independent_audit": {
+    "report_identity": {
+      "bytes": 2985,
+      "sha256": "2ea7c43a68447d061abc478fd2fd3d018654d078657a313b9125a30de293024b"
+    },
+    "passed": true,
+    "literal_requests_rejoined": 3439,
+    "whole_archive_files_reopened": 57,
+    "complete_byte_and_typed_json_pairs": 43,
+    "naturally_closed_owners": 9,
+    "whole_BMP_pairs": 4,
+    "method": "Reopen original request/reply files after natural process closure; rehash all whole archives/manifests, join native receipts and compare full typed JSON plus complete bytes. Independently recompute actor-composed momentum from saved nativeCOM history and rejoin raw device-depth samples to the admitted source reference. No state fields or pixels excluded."
+  },
+  "attempts_preserved": [
+    {
+      "name": "first_GPU_workflow",
+      "passed": false,
+      "owner_report_identity": {
+        "bytes": 7601,
+        "sha256": "bc745a54966c30c788f8dfc09a8ecda4ac68d2d0d28303737522a498d0b298bc"
+      },
+      "workflow_report_identity": {
+        "bytes": 392008,
+        "sha256": "4d9298e5f39f1dfc0b3907d4dd0a88851a93974adabc6eb346eba17002e097b8"
+      },
+      "captures_before_failure": 1,
+      "complete_archive_pairs_before_failure": 2,
+      "forced_cleanup": false,
+      "active_processes_after_cleanup": 0,
+      "cause": "After the first successful original-material capture/depth/purity checks, the live size monitor tried to hash the engine exclusively locked world.lock file and failed with PermissionError. Original source, files and failed verdict remain intact."
+    },
+    {
+      "name": "recovered_GPU_workflow",
+      "passed": true,
+      "owner_report_identity": {
+        "bytes": 14424,
+        "sha256": "449e79e2634ef6705d9512f37dfe2f5dbf81e499abc1dbdca91697a5178af37a"
+      },
+      "correction": "Only census accounting changed to lstat sizes for every ordinary nonreparse row, including locked files. The same file/byte/free-space bounds and explicit source/archive/image hashes remain. All other worker function ASTs and depth/source thresholds are unchanged. Full10capture workflow used fresh output; first attempt was not regraded."
+    },
+    {
+      "name": "first_metadata_owner",
+      "passed": false,
+      "owner_report_identity": {
+        "bytes": 13726,
+        "sha256": "a3de3278dc8fa2b1a67b1a53919d03362da3362cd3ffab40937d1402434e6777"
+      },
+      "build_command_exit_code": 0,
+      "cause": "Successful224 native CLI build changed its generated runtime descriptor, which had mistakenly been pinned as an invariant source input. Supervisor stopped before the next commands. Original failed owner retained."
+    },
+    {
+      "name": "remaining_metadata_and_current_native_workflow",
+      "passed": true,
+      "owner_report_identity": {
+        "bytes": 11700,
+        "sha256": "2ab228966da13bf27d4944a9569428f92185c6e915b9209fe2c76873d4628e92"
+      },
+      "correction": "Execute the not-yet-run metadata gate and original-character workflow with the actual produced224 CLI/descriptor pinned as consumed inputs. Do not rerun or relabel the completed build."
+    }
+  ],
+  "reproduction": {
+    "native": "python3 -B tests/physical_character_controller_handoff.py <poima> --source <original-Knight.glb> --license <original-LICENSE.txt> --output <fresh-output>",
+    "depth_reference": "python3 -B tests/character_depth_oracle.py --source <original-Knight.glb> --cpu-report <completed-output/evidence.json> --output <fresh-reference.json>",
+    "documentation": "docs/CHARACTER_CONTROLLER_HANDOFF.md",
+    "requirements": "Simulation-enabled engine with controller_handoff discovery. Original model/notice supplied separately; external owned process-tree supervisor; native paths under native Windows Python. Camera700 and visible floor are already in the authored content."
+  },
+  "limits": [
+    "One original library, provisional metric body profile and selected source crossfades. All76takes remain intact; not all combinations are qualified.",
+    "Capsule stance is checked; visual crouch-animation selection is separate game policy.",
+    "Single-sample still-image/depth checks do not establish polished AA, natural motion/contact fitting or temporal presentation quality.",
+    "No fullbody compiled C# or NativeAOT consumer, active balance, recovery, rootmotion/IK coordination or linked-save migration qualification. Earlier compiled API fixtures remain separate.",
+    "No physical input/GUI interaction, representative performance/crowds or cross-OS/compiler bitwise state guarantee. Concurrent laptop workloads make timings shared-load observations.",
+    "Windows executes retained222/native65, Linux current224. Native feature source is unchanged across these metadata checkpoints; API/feature qualification is separate from packaging or entire-cache qualification.",
+    "Overall Alpha and full-engine goals remain open."
+  ]
+}

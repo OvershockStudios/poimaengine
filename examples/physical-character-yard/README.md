@@ -69,7 +69,9 @@ do not guarantee that every additive layer or inertial transition will fit.
 Out-of-bound samples reject the complete batch. The
 [physical-frame contract](../../docs/PHYSICAL_RIGS.md#bounded-source-scale-composition)
 describes initialization, errors, exact saved-scale witnesses and ownership.
-Controller handoff, active balance and recovery remain separate systems.
+An explicit root-controller link is exercised by the
+[movement-to-physics workflow](../../docs/CHARACTER_CONTROLLER_HANDOFF.md).
+Active balance, root-motion/IK coordination and recovery remain separate work.
 
 With simulation enabled in a matching 0.0.220 build, run the shared-world
 workflow under an external process-tree supervisor:
@@ -147,9 +149,10 @@ original-material character views. Four whole-BMP pairs match after warm/cold
 restoration and continued simulation. The arm diagnostics retain all original
 nodes and bodies, but do not test every drawable's pixels. Visual review shows
 the Knight falling onto the steps and settling; still images and source
-geometry/math do not establish motion quality. Production contact/motion,
-hands/feet/accessories, active balance,
-stand-up recovery, controller handoff, animation blending, Native AOT and
-representative performance require separate evidence. Current controller,
-root-motion and IK ownership restrictions remain in force. The analytic ribbon
-continues to provide a separate clean skin/projection oracle.
+geometry/math do not establish motion quality. Shared-world crossfades and
+root-controller handoff now have the separate selected evidence linked above.
+Production contact/motion, hands/feet/accessories, active balance, stand-up
+recovery, Native AOT and representative performance remain open. The linked
+actor's root-only graph and root-motion/IK restrictions follow the
+[ownership contract](../../docs/PHYSICAL_RIGS.md#controller-handoff). The analytic
+ribbon continues to provide a separate clean skin/projection oracle.

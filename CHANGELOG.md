@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.224
+
+- Add an original-character example combining virtual movement, crouch, imported
+  animation crossfades and one-way full-body physical takeover.
+- Verify all source nodes, actor-composed momentum and complete warm/cold saves
+  on Windows and Linux with the unchanged licensed animation library.
+- Qualify original-material Vulkan depth observations and exact restored images;
+  keep the first storage-monitor failure separate from the recovered run.
+
 ## 0.0.223
 
 - Retain RPC request/reply history from literal wire JSON so later caller edits

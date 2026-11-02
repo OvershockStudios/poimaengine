@@ -718,5 +718,12 @@ records native and CoreCLR execution, the original transcript-audit failure and
 separately recovered workflows with corrected literal RPC recording. It also
 corrects the earlier Linux request-history claim without rewriting its records.
 Earlier [input-planning checks](evidence/m2-character-input-planning.json) cover
-the separate 0.0.221 prerequisites. New-feature Native AOT, imported humanoid
-quality and rendered observations remain separate.
+the separate 0.0.221 prerequisites. New-feature Native AOT and broader imported
+humanoid quality remain open.
+
+The [original-character example](CHARACTER_CONTROLLER_HANDOFF.md) combines this
+link with a moving/falling virtual actor, original clip crossfades and all
+fifteen articulated bodies. Its selected Windows Vulkan observations retain
+all original meshes and materials; source depth, complete saves and restored
+images have separate [evidence](evidence/m2-character-controller-handoff.json).
+Broader motion quality and character families remain open.
