@@ -56,9 +56,9 @@ struct ControllerHandoff {
     std::string actor;
     ControllerFollowPolicy follow=ControllerFollowPolicy::TranslateKeepHeading;
 };
-// Opt-in final manual-IK pose ownership while Animated. The linked controller
-// and physical rig retain their explicit one-way transition boundary.
-enum class ProceduralPosePolicy { AnimatedOnly };
+// Opt-in final procedural pose ownership while Animated. Manual-only and
+// grounded ownership retain separate admission/serialization boundaries.
+enum class ProceduralPosePolicy { AnimatedOnly, GroundedAnimatedOnly };
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;

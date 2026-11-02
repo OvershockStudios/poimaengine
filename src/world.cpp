@@ -1104,11 +1104,15 @@ void validate(const Json& doc) {
                 require(!animation.contains("root_motion"),"Physical procedural pose cannot configure root motion, including disabled profiles.");
                 std::set<std::uint32_t> mapped;
                 for(const auto& part:profile.profile.parts)mapped.insert(part.node);
+                const bool grounded=*profile.procedural_pose==physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
+                std::size_t grounded_slots=0;
                 if(animation.contains("ik"))for(const auto& chain:animation_ik_value(animation.at("ik"))) {
-                    require(!chain.grounding,"Physical procedural pose permits only manual IK, never configured grounding.");
+                    require(grounded || !chain.grounding,"Physical procedural pose permits only manual IK, never configured grounding.");
+                    if(chain.grounding)++grounded_slots;
                     require(mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
                         "Physical procedural IK root, middle and end must all map to physical parts.");
                 }
+                require(!grounded || grounded_slots>0,"Physical grounded_animated_only requires at least one configured grounding slot.");
             }
         }
         if(!linked_actors.empty()) {

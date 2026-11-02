@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.227
+
+- Coordinate automatic grounding and planted-foot poses with linked physical
+  takeover through a separate opt-in ownership policy.
+- Retain complete final-decision inputs, native query results and support
+  identities, with bounded replay and distinct live/historical validation.
+- Preserve current grounded captures for immediate takeover after cold loading;
+  keep transferred contact history when supports move or retire.
+
 ## 0.0.226
 
 - Qualify linked manual-IK takeover on Windows with native callbacks, complete

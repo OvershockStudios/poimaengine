@@ -97,8 +97,10 @@ Configuration parse_configuration(const nlohmann::json& value) {
         result.controller_handoff=ControllerHandoff{text(link.at("actor")),ControllerFollowPolicy::TranslateKeepHeading};
     }
     if(has_procedural) {
-        need(text(value.at("procedural_pose"))=="animated_only","PhysicalRig procedural_pose must be animated_only.");
-        result.procedural_pose=ProceduralPosePolicy::AnimatedOnly;
+        const auto policy=text(value.at("procedural_pose"));
+        need(policy=="animated_only" || policy=="grounded_animated_only",
+            "PhysicalRig procedural_pose must be animated_only or grounded_animated_only.");
+        result.procedural_pose=policy=="animated_only" ? ProceduralPosePolicy::AnimatedOnly : ProceduralPosePolicy::GroundedAnimatedOnly;
     }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
@@ -138,7 +140,7 @@ nlohmann::json configuration_json(const Configuration& value) {
         result["pose_frame"]="skeletal_bounded_scale";result["max_scale_deviation"]=value.max_scale_deviation;
     }
     if(value.controller_handoff)result["controller_handoff"]={{"actor",value.controller_handoff->actor},{"follow","translate_keep_heading"}};
-    if(value.procedural_pose)result["procedural_pose"]="animated_only";
+    if(value.procedural_pose)result["procedural_pose"]=*value.procedural_pose==ProceduralPosePolicy::AnimatedOnly ? "animated_only" : "grounded_animated_only";
     return result;
 }
 
@@ -167,9 +169,9 @@ nlohmann::json configuration_schema() {
     result["properties"]["controller_handoff"]=object({
         {"actor",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},
         {"follow",{{"const","translate_keep_heading"}}}});
-    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may use manual IK; grounding remains unsupported.";
-    result["properties"]["procedural_pose"]={{"type","string"},{"const","animated_only"},
-        {"description","Optional final manual-IK pose ownership while Animated, requiring controller_handoff and initial_mode=animated. Only the own AnimationRig may configure IK, with all chain root/middle/end nodes mapped to physical parts. Configured grounding and root motion remain forbidden, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted."}};
+    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may configure IK, with grounding allowed only by grounded_animated_only.";
+    result["properties"]["procedural_pose"]={{"type","string"},{"enum",{"animated_only","grounded_animated_only"}},
+        {"description","Optional final procedural pose ownership while Animated, requiring controller_handoff and initial_mode=animated. animated_only admits manual IK, including zero slots, and rejects every configured grounding profile. grounded_animated_only requires at least one configured grounding slot and also admits manual slots. Only the own AnimationRig may configure IK, with every chain root/middle/end node mapped to physical parts. Both policies reject root motion, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted. AnimationRig slot membership and cross-entity ownership are additionally validated against the complete world or template."}};
     Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
     linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";
     Json procedural_mode=Json::object();procedural_mode["if"]["required"]=Json::array({"procedural_pose"});

@@ -66,16 +66,20 @@
             require(!e.animation_rig->root_motion && (e.animation_rig->ik.empty() || e.physical_rig->procedural_pose),
                 "PhysicalRig requires explicit procedural_pose ownership for manual IK; root motion remains unsupported.");
             if(e.physical_rig->procedural_pose) {
+                const bool grounded=*e.physical_rig->procedural_pose==poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
                 require(!e.camera,"Physical procedural pose requires Camera on a separate child entity, not the rig wrapper.");
                 for(const auto& node:d.entities)if(node.rig_node && node.rig_node->rig==e.id)
                     require(!node.camera,"Physical procedural pose requires Camera on a separate child entity, not a model RigNode.");
                 std::set<std::uint32_t> mapped;
                 for(const auto& part:e.physical_rig->profile.parts)mapped.insert(part.node);
                 for(const auto& chain:e.animation_rig->ik) {
-                    require(!chain.grounding,"Physical procedural_pose does not yet coordinate automatic grounding/planting.");
+                    require(grounded || !chain.grounding,"Manual physical procedural_pose does not coordinate automatic grounding/planting.");
                     require(mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
                         "Physical procedural_pose requires every IK root/middle/end to be physically mapped.");
                 }
+                require(!grounded || std::any_of(e.animation_rig->ik.begin(),e.animation_rig->ik.end(),
+                    [](const auto& chain){return chain.grounding.has_value();}),
+                    "Grounded physical procedural_pose requires at least one configured grounding slot.");
             }
             if(e.physical_rig->controller_handoff) {
                 const auto& link=*e.physical_rig->controller_handoff;

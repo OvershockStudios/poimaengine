@@ -282,12 +282,71 @@ struct Runtime::Impl {
         profiling::counter("runtime.hierarchy.recomputed",recomputed);
         profiling::counter("runtime.hierarchy.reused",topology->hierarchy.size()-recomputed);
     }
+    std::optional<RuntimeAnimations::ProceduralSupportBinding> procedural_support(
+        const std::string& rig,const std::string& support) const {
+        const auto found=topology->identities.find(support);
+        if(found==topology->identities.end())return {};
+        const auto* body=registry.try_get<Body>(found->second);
+        if(!body || (body->motion!=BodyMotion::Static && body->motion!=BodyMotion::Kinematic))return {};
+        std::string self=rig;
+        for(auto id=rig;!id.empty();id=registry.get<Node>(find(id)).parent)
+            if(registry.any_of<Body,Controller>(find(id))){self=id;break;}
+        for(auto id=support;!id.empty();id=registry.get<Node>(find(id)).parent)
+            if(id==self)return {};
+        JPH::RVec3 position;JPH::Quat rotation;
+        physics.GetBodyInterface().GetPositionAndRotation(body->id,position,rotation);
+        return RuntimeAnimations::ProceduralSupportBinding{support,body->id.GetIndexAndSequenceNumber(),body->motion,
+            local_matrix({position.GetX(),position.GetY(),position.GetZ()},
+                {rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()},{1,1,1})};
+    }
+    void validate_procedural_supports(const std::string& rig) const {
+        const auto supports=animations->terminal_supports(rig);
+        if(supports.empty())return;
+        const bool historical=animations->procedural_suspended(rig);
+        const auto ledger=body_ids.snapshot();
+        for(const auto& support:supports) {
+            require(support.motion==BodyMotion::Static || support.motion==BodyMotion::Kinematic,
+                "Historical procedural support must have a static or kinematic capture kind.");
+            const JPH::BodyID id(support.body_id);
+            require(!id.IsInvalid() && !(support.body_id&JPH::BodyID::cBroadPhaseBit) && id.GetIndex()<RuntimeBodyIds::capacity,
+                "Historical procedural support has invalid body identity bits.");
+            const auto row=std::find_if(ledger.rows.begin(),ledger.rows.end(),[&](const auto& value){return value.index==id.GetIndex();});
+            require(row!=ledger.rows.end() && row->generation>=id.GetSequenceNumber(),
+                "Historical procedural support is outside the used body identity lineage.");
+            bool known=false;
+            if(support.entity.size()==32 && support.entity.find_first_not_of("0123456789abcdef")==std::string::npos) {
+                const auto public_id=gameplay_id(support.entity);
+                known=entity_ids && (entity_ids->authored(public_id) || entity_ids->allocated(public_id));
+            }
+            require(known,"Historical procedural support is outside the original authored or allocated entity lineage.");
+            if(body_ids.owns(id)) {
+                const auto current=topology->body_names.find(support.body_id);
+                require(current!=topology->body_names.end() && current->second==support.entity,
+                    "Captured procedural support identity is currently owned by a different native entity.");
+            }
+            if(topology->identities.contains(support.entity)) {
+                const auto current=procedural_support(rig,support.entity);
+                require(current && current->body_id==support.body_id && current->motion==support.motion,
+                    "Historical procedural support differs from its surviving native owner.");
+                require(historical || detail::handoff_array_same_bits(current->frame,support.frame),
+                    "Current grounded capture support frame differs from its native owner.");
+            } else {
+                require(historical,"Current grounded capture names a retired native support.");
+            }
+        }
+    }
     void validate_planting_membership() const {
         // Restore validation only: verify stored anchors against already
         // restored body poses. No contact ray, SupportQuery callback, capture
         // or correction is performed and saved values remain untouched.
         for(const auto& [rig,definition]:topology->definitions) {
             if(!definition.animation_rig)continue;
+            if(animations->procedural_suspended(rig)) {
+                // The terminal replay joins complete anchor/target geometry to
+                // its captured rigid frame. Current support motion or retirement
+                // must not retarget a historical foot or trigger a fresh query.
+                validate_procedural_supports(rig);continue;
+            }
             for(const auto& chain:definition.animation_rig->ik) {
                 if(!chain.grounding || !chain.grounding->plant_lock)continue;
                 const auto state=animations->ik_state(rig,chain.slot);
@@ -378,7 +437,9 @@ struct Runtime::Impl {
             }
             for(const auto& pose:animations->sample(tick,[&](const std::string& id)->const Matrix4& {
                 return registry.get<Node>(find(id)).world;
-            },contacts,support_frames))registry.get<Node>(find(pose.entity)).local=pose.local;
+            },contacts,support_frames,[&](const std::string& rig,const std::string& support) {
+                return procedural_support(rig,support);
+            }))registry.get<Node>(find(pose.entity)).local=pose.local;
             world_matrices();
         } else for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
         physical_overlay();

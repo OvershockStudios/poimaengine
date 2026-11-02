@@ -207,7 +207,8 @@ void validate(const Configuration& c) {
         require(!c.initially_passive,"A linked physical rig must start Animated before controller takeover.");
     }
     if(c.procedural_pose) {
-        require(*c.procedural_pose==ProceduralPosePolicy::AnimatedOnly,"Physical rig procedural-pose policy is invalid.");
+        require(*c.procedural_pose==ProceduralPosePolicy::AnimatedOnly ||
+            *c.procedural_pose==ProceduralPosePolicy::GroundedAnimatedOnly,"Physical rig procedural-pose policy is invalid.");
         require(c.controller_handoff.has_value(),"Physical procedural pose requires an explicit controller_handoff.");
         require(!c.initially_passive,"Physical procedural pose must start Animated.");
     }

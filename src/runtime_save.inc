@@ -609,6 +609,13 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         if(!motor.IsSuppressed())motor.PostSimulation(.05f);
     }
     s.sync();
+    if(physical_bootstrap)for(const auto& [rig,capture]:physical_bootstrap->procedural_captures) {
+        s.animations->install_procedural_terminal(rig,capture,tick,false);
+        const auto captured=save_vector<16>(SaveJson::parse(capture).at("wrapper"),1e12);
+        require(detail::handoff_array_same_bits(captured,s.registry.template get<Node>(s.find(rig)).world),
+            "Live grounded capture wrapper differs from its restored native actor frame.");
+        s.validate_procedural_supports(rig);
+    }
     s.validate_planting_membership();
     if(s.animations->has_ik() || s.animations->has_root_motion()) { s.animation_locals();s.sync(); }
     if(physical_checkpoint) {
@@ -620,7 +627,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         restore_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
         s.sync(); // publishes solved physical locals before final comparisons
         for(const auto& id:s.topology->physical_rigs)
-            if(s.animations->procedural_enabled(id) && !s.animations->procedural_suspended(id))
+            if(s.animations->procedural_enabled(id) && !s.animations->procedural_suspended(id) &&
+                s.topology->definitions.at(id).physical_rig->procedural_pose!=poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly)
                 s.animations->record_procedural_final(id,tick,s.registry.template get<Node>(s.find(id)).world);
         save_physical_verify_restored(s,*physical_checkpoint,rows);
     }

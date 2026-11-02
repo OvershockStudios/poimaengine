@@ -14,6 +14,13 @@ bool save_procedural_pose_definition(const RuntimeDefinition& definition) {
     for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
     return false;
 }
+bool save_grounded_procedural_definition(const RuntimeDefinition& definition) {
+    const auto enabled=[](const auto& entity){return entity.physical_rig &&
+        entity.physical_rig->procedural_pose==poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),enabled))return true;
+    for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
+    return false;
+}
 void save_handoff_support_lineage(const RuntimeControllerSupportState& support,const RuntimeBodyIds& ledger) {
     if(support.ground_body_id==JPH::BodyID::cInvalidBodyID)return;
     const JPH::BodyID id(support.ground_body_id);const auto snapshot=ledger.snapshot();
@@ -27,6 +34,7 @@ template<class State>void save_handoff_witnesses(const State& s,const std::strin
         "Physical handoff and controller ownership phase differ.");
     require(s.physics.GetBodyInterface().IsAdded(c.character->GetBodyID())==!handoff.passive.has_value(),
         "Physical handoff and actual capsule broadphase membership differ.");
+    s.validate_procedural_supports(rig);
     if(!handoff.passive)return;
     require(c.character->CaptureProxy()==handoff.passive->proxy && c.character->CaptureSupport()==handoff.passive->support,
         "Suppressed proxy/support differs from its complete named witness.");
@@ -107,7 +115,8 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
         "Physical save capture changed its quiescent owner state.");
     physical_bootstrap_json::validate_owner_history(owner,bootstrap.ledger);save_physical_lineage(physics,bootstrap.ledger);
     const bool handoffs=save_controller_handoff_definition(s.topology->live);
-    const bool procedural=save_procedural_pose_definition(s.topology->live);SaveJson rigs=SaveJson::array();
+    const bool procedural=save_procedural_pose_definition(s.topology->live);
+    const bool grounded=save_grounded_procedural_definition(s.topology->live);SaveJson rigs=SaveJson::array();
     for(const auto& [id,row]:checkpoint.rigs) {
         SaveJson rig={{"entity",id},{"membership",physical_state_json::membership_json(row.membership)},
             {"pose",physical_state_json::pose_state_json(row.pose)}};
@@ -116,16 +125,26 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
             const auto terminal=s.animations->procedural_terminal(id);
             rig["procedural_terminal"]=terminal ? SaveJson::parse(*terminal) : SaveJson(nullptr);
         }
+        if(grounded) {
+            const auto& configured=*s.topology->definitions.at(id).physical_rig;
+            const bool captures=configured.procedural_pose==poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
+            const auto witness=captures?s.animations->procedural_witness(id):std::optional<std::string>{};
+            require(witness.has_value()==captures,"Grounded physical save requires its complete committed capture.");
+            rig["procedural_capture"]=witness?SaveJson::parse(*witness):SaveJson(nullptr);
+            if(captures && row.membership.enrolled)
+                require(rig.at("procedural_capture").dump()==rig.at("procedural_terminal").dump(),"Passive grounded capture differs from its terminal.");
+        }
         rigs.push_back(std::move(rig));
     }
-    return {{"version",std::uint32_t(procedural?3:(handoffs?2:1))},
+    return {{"version",std::uint32_t(grounded?4:(procedural?3:(handoffs?2:1)))},
         {"bootstrap",physical_bootstrap_json::bootstrap_json(bootstrap,s.topology->live)},
         {"rigs",std::move(rigs)},{"constraint_order",physical_state_json::constraint_order_json(checkpoint.constraint_order)},
         {"owner",physical_bootstrap_json::owner_json(owner)},{"physics",std::move(physics)}};
 } catch(const std::invalid_argument& error) {throw std::runtime_error(std::string("Physical snapshot: ")+error.what());}
 void save_physical_extension_fields(const SaveJson& extension,const RuntimeDefinition& definition) {
     save_fields(extension,{"version","bootstrap","rigs","constraint_order","owner","physics"});
-    const auto expected=save_procedural_pose_definition(definition)?3u:(save_controller_handoff_definition(definition)?2u:1u);
+    const auto expected=save_grounded_procedural_definition(definition)?4u:
+        (save_procedural_pose_definition(definition)?3u:(save_controller_handoff_definition(definition)?2u:1u));
     require(extension.at("version").is_number_unsigned() && extension.at("version")==expected,"Physical snapshot extension version differs from frozen ownership policy.");
     require(extension.at("rigs").is_array() && extension.at("rigs").size()<=RuntimeBodyIds::capacity,"Physical snapshot rig population exceeds its bound.");
 }
@@ -137,20 +156,32 @@ RuntimePhysicsBootstrap save_physical_parse_bootstrap(const SaveJson& extension,
         for(const auto& entity:definition.entities)if(entity.physical_rig)expected.emplace(entity.id,&entity);
         std::string previous;
         for(const auto& row:extension.at("rigs")) {
-            if(extension.at("version")==3u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal"});
+            if(extension.at("version")==4u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal","procedural_capture"});
+            else if(extension.at("version")==3u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal"});
             else save_fields(row,{"entity","membership","pose","handoff"});
             const auto rig=save_text(row.at("entity"));
             require(previous.empty() || previous<rig,"Physical handoff bootstrap rows must be sorted and unique.");previous=rig;
             const auto found=expected.find(rig);require(found!=expected.end(),"Physical handoff bootstrap names an unknown rig.");
             const auto& configured=found->second->physical_rig->controller_handoff;
             require(row.at("handoff").is_null()==!configured,"Physical handoff bootstrap differs from frozen linkage.");
-            if(extension.at("version")==3u) {
+            if(extension.at("version")>=3u) {
                 const auto& terminal=row.at("procedural_terminal");
                 const bool suspended=found->second->physical_rig->procedural_pose && configured && !row.at("handoff").at("passive").is_null();
                 require(terminal.is_null()==!suspended,"Procedural terminal membership differs from frozen phase/policy.");
                 if(suspended) {
                     require(terminal.is_object(),"Procedural terminal must be a typed versioned object.");
                     require(result.procedural_terminals.emplace(rig,terminal.dump()).second,"Duplicate procedural terminal owner.");
+                }
+            }
+            if(extension.at("version")==4u) {
+                const auto& capture=row.at("procedural_capture");
+                const bool grounded=found->second->physical_rig->procedural_pose==poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
+                require(capture.is_null()==!grounded,"Grounded capture membership differs from frozen policy.");
+                if(grounded) {
+                    require(capture.is_object(),"Grounded capture must be a complete typed witness.");
+                    if(!row.at("procedural_terminal").is_null())
+                        require(capture.dump()==row.at("procedural_terminal").dump(),"Passive grounded capture and terminal differ.");
+                    else require(result.procedural_captures.emplace(rig,capture.dump()).second,"Duplicate live grounded capture.");
                 }
             }
             if(!configured)continue;
@@ -175,7 +206,8 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
     const auto& rigs=extension.at("rigs");require(rigs.size()==s.topology->physical_rigs.size(),"Saved physical rig membership differs from the complete restored graph.");
     std::string previous;std::set<std::pair<std::string,std::string>> expected_constraints;
     for(const auto& value:rigs) {
-        if(extension.at("version")==3u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal"});
+        if(extension.at("version")==4u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal","procedural_capture"});
+        else if(extension.at("version")==3u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal"});
         else if(extension.at("version")==2u)save_fields(value,{"entity","membership","pose","handoff"});
         else save_fields(value,{"entity","membership","pose"});
         const auto id=save_text(value.at("entity"));

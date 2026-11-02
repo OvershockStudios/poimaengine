@@ -98,25 +98,32 @@ void procedural_pose_configuration(){
     for(const char* frame:{"rigid_uniform","skeletal_fixed_scale","skeletal_bounded_scale"}) {
         auto base=linked();if(std::string(frame)!="rigid_uniform")base["pose_frame"]=frame;
         if(std::string(frame)=="skeletal_bounded_scale")base["max_scale_deviation"]=1e-5;
-        const auto original_bytes=base.dump();auto configured=base;configured["procedural_pose"]="animated_only";
-        auto c=parse_configuration(configured);
-        check(c.procedural_pose==ProceduralPosePolicy::AnimatedOnly,"Explicit procedural-pose policy was lost.");
-        check(configuration_json(c).dump()==configured.dump(),"Procedural-pose canonical fields did not roundtrip.");
-        c.procedural_pose.reset();check(configuration_json(c).dump()==original_bytes,"Omitted policy changed existing linked canonical bytes.");
+        const auto original_bytes=base.dump();
+        for(const char* policy:{"animated_only","grounded_animated_only"}) {
+            auto configured=base;configured["procedural_pose"]=policy;auto c=parse_configuration(configured);
+            check(c.procedural_pose==(std::string(policy)=="animated_only" ? ProceduralPosePolicy::AnimatedOnly : ProceduralPosePolicy::GroundedAnimatedOnly),
+                "Explicit procedural-pose policy was lost.");
+            check(configuration_json(c).dump()==configured.dump(),"Procedural-pose canonical fields did not roundtrip.");
+            c.procedural_pose.reset();check(configuration_json(c).dump()==original_bytes,"Omitted policy changed existing linked canonical bytes.");
+        }
         check(!parse_configuration(base).procedural_pose,"Absent procedural pose inserted a native default.");
     }
-    for(const auto& bad:Json::array({nullptr,false,true,0,1,.5,Json::array(),Json::object(),"","AnimatedOnly","animated-only","animated_only ","always"})) {
+    for(const auto& bad:Json::array({nullptr,false,true,0,1,.5,Json::array(),Json::object(),"","AnimatedOnly","animated-only","animated_only ",
+        "GroundedAnimatedOnly","grounded-animated-only","grounded_animated_only ","always"})) {
         auto value=linked();value["procedural_pose"]=bad;reject(value);
     }
-    auto missing=original();missing["procedural_pose"]="animated_only";reject(missing);
-    auto passive=linked();passive["procedural_pose"]="animated_only";passive["initial_mode"]="passive";reject(passive);
+    for(const char* policy:{"animated_only","grounded_animated_only"}) {
+        auto missing=original();missing["procedural_pose"]=policy;reject(missing);
+        auto passive=linked();passive["procedural_pose"]=policy;passive["initial_mode"]="passive";reject(passive);
+    }
     auto unknown=linked();unknown["procedural_pose"]="animated_only";unknown["procedural"]=true;reject(unknown);
     auto native=parse_configuration(linked());native.procedural_pose=ProceduralPosePolicy::AnimatedOnly;native.controller_handoff.reset();
     reject_any([&]{validate(native);});reject_any([&]{(void)configuration_json(native);});
     native=parse_configuration(linked());native.procedural_pose=static_cast<ProceduralPosePolicy>(999);
     reject_any([&]{validate(native);});reject_any([&]{(void)configuration_json(native);});
     const auto schema=configuration_schema();const auto& policy=schema["properties"]["procedural_pose"];
-    check(policy["type"]=="string" && policy["const"]=="animated_only" && !policy.contains("default"),"Procedural-pose schema type/constant/default differs.");
+    check(policy["type"]=="string" && policy["enum"]==Json::array({"animated_only","grounded_animated_only"}) &&
+        !policy.contains("const") && !policy.contains("default"),"Procedural-pose schema type/enum/default differs.");
     check(schema["required"]==Json::array({"initial_mode","joints","parts","root"}),"Procedural pose changed required legacy fields.");
     check(schema["allOf"].size()==2 && schema["allOf"][1]["if"]["required"]==Json::array({"procedural_pose"}) &&
         schema["allOf"][1]["then"]["required"]==Json::array({"controller_handoff"}) &&
@@ -198,7 +205,7 @@ void authoring_ownership(){
         refused(Json::array({create(4),component(4,"AnimationRig",external)}),"another root-motion writer");
     }
     check(bytes(package)==cooked,"Authoring validation modified immutable cooked package bytes.");
-    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==126,"Discovery schema revision is stale.");
+    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==127,"Discovery schema revision is stale.");
     if(Runtime::available()) {
         const auto session=id(7000);
         const auto success=[&](const Json& reply) {
@@ -331,6 +338,31 @@ void procedural_pose_authoring(){
     refused(Json::array({create(20,id(1)),component(20,"AnimationRig",own_animation)}),"root motion, IK or grounding");
     auto external=animation(asset);external["root_motion"]={{"node",0},{"mode","character"},{"actor",id(1)},{"enabled",false}};
     refused(Json::array({create(20),component(20,"AnimationRig",external)}),"another root-motion writer");
+    // Authoring previews exercise the new policy without changing the original
+    // manual fixture or claiming that its grounded runtime is already qualified.
+    auto grounded_physical=physical;grounded_physical["procedural_pose"]="grounded_animated_only";
+    refused(Json::array({component(2,"PhysicalRig",grounded_physical)}),"at least one configured grounding slot");
+    auto empty=own_animation;empty["ik"]=Json::array();
+    refused(Json::array({component(2,"AnimationRig",empty),component(2,"PhysicalRig",grounded_physical)}),"at least one configured grounding slot");
+    const Json grounding={{"sole_offset",{0.,0.,0.}},{"sole_up",{0.,1.,0.}},{"sole_forward",{0.,0.,1.}},{"reference_height",0.}};
+    auto grounded_animation=own_animation;grounded_animation["ik"][0]["grounding"]=grounding;
+    for(bool enabled:{false,true}) {
+        grounded_animation["ik"][0]["enabled"]=enabled;
+        const auto preview=rpc("world.transact",{{"request_id",id(9000+request)},{"base_revision",1},{"preview",true},
+            {"ops",Json::array({component(2,"AnimationRig",grounded_animation),component(2,"PhysicalRig",grounded_physical)})}});
+        check(preview.contains("result") && preview["result"]["committed"]==false && bytes(path)==authored,
+            "Grounded policy rejected configured grounding or changed original authored bytes.");
+    }
+    for(unsigned shared:{1u,2u,10u,13u})refused(Json::array({component(2,"AnimationRig",grounded_animation),component(2,"PhysicalRig",grounded_physical),
+        component(shared,"Camera",eye_camera)}),"Place Camera on a separate child entity");
+    for(const char* node:{"root","middle","end"}) {
+        auto changed=grounded_animation;changed["ik"][0][node]=3;
+        refused(Json::array({component(2,"AnimationRig",changed),component(2,"PhysicalRig",grounded_physical)}),"must all map to physical parts");
+    }
+    for(bool enabled:{false,true}) {
+        auto changed=grounded_animation;changed["root_motion"]={{"node",0},{"mode","extract"},{"enabled",enabled}};
+        refused(Json::array({component(2,"AnimationRig",changed),component(2,"PhysicalRig",grounded_physical)}),"cannot configure root motion");
+    }
     if(Runtime::available()) {
         const auto session=id(9100);const auto started=rpc("runtime.start",{{"session_id",session},{"revision",1}});check(started.contains("result") && started["result"]["tick"]==0,"Opt-in manual IK fixture did not start.");
         const auto before=rpc("runtime.inspect",{{"session_id",session}});

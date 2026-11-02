@@ -112,9 +112,11 @@ virtual movement and imported crossfades to passive full-body physics, complete
 saves and selected rendered observations. Opt-in
 [manual-IK ownership](PHYSICAL_RIGS.md#manual-ik-ownership) adds corrected-pose
 transfer and historical diagnostics. Its [Windows/CoreCLR follow-up](evidence/m2-procedural-physical-handoff-windows.json)
-checks complete managed/native state across fresh engine processes. Active
-balance, recovery and coordinated
-root motion/automatic grounding remain part of this segment.
+checks complete managed/native state across fresh engine processes. Automatic
+ground-contact and planted-foot ownership now have a separate
+[grounded handoff](GROUNDED_PHYSICAL_HANDOFF.md) path with recorded decisions,
+support frames and historical save validation. Active balance, recovery,
+broader gait fitting and coordinated root motion remain part of this segment.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;

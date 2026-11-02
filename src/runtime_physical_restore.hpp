@@ -22,8 +22,11 @@ struct RuntimePhysicsBootstrap {
     // field in the existing version-1 bootstrap JSON. Installed before the
     // first controller enrollment, support refresh or presentation sync.
     std::map<std::string,RuntimeControllerHandoffState> handoffs;
-    // Extension-3 historical manual-IK ownership, validated before sampling.
+    // Extension-3/4 historical procedural ownership, validated before sampling.
     std::map<std::string,std::string> procedural_terminals;
+    // Extension-4 live grounded captures are joined after current animation,
+    // motor and body restoration. They do not suspend the animated owner.
+    std::map<std::string,std::string> procedural_captures;
     std::uint64_t snapshot_tick=0;
 };
 }

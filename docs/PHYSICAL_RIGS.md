@@ -154,7 +154,7 @@ The initial integration rejects:
 Static ancestry and unrelated ordinary bodies remain available. These are
 initial ownership limits, not the final FPS feature boundary. The opt-in
 controller handoff below supports one-way takeover; opt-in manual IK uses the
-ownership policy below. Coordinated root motion/grounding, attached equipment bodies, active balance,
+ownership policies below. Coordinated root motion, attached equipment bodies, active balance,
 physical animation, recovery blending and stand-up behavior remain separate
 work. No public command returns a Passive rig to Animated mode.
 
@@ -782,9 +782,9 @@ native bodies and controller witnesses remain separate and must also agree.
 Extension 1 and 2 retain their earlier shapes when the new policy is absent.
 
 No recovery command is provided. Automatic ground-contact/planting suspension
-needs explicit historical contact and support semantics; root-motion handoff
-needs its own controller-driver transfer. These remain follow-up character
-requirements. Native C++ configuration consumers must rebuild; the C# services
+uses the separate [grounded ownership policy](GROUNDED_PHYSICAL_HANDOFF.md);
+root-motion handoff still needs its own controller-driver transfer.
+Native C++ configuration consumers must rebuild; the C# services
 prefix and ABI epoch are unchanged.
 
 

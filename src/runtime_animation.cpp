@@ -360,12 +360,15 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
         rig.ik=source.ik;for(auto& chain:rig.ik)chain.end_orientation=canonical_ik_end_orientation(chain.end_orientation);
         rig.procedural_pose=entity.physical_rig && entity.physical_rig->procedural_pose.has_value();
         if(rig.procedural_pose) {
-            check(*entity.physical_rig->procedural_pose==physical_rig::ProceduralPosePolicy::AnimatedOnly,"Unknown physical procedural-pose policy.");
+            rig.procedural_grounding=*entity.physical_rig->procedural_pose==physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
+            check(rig.procedural_grounding || *entity.physical_rig->procedural_pose==physical_rig::ProceduralPosePolicy::AnimatedOnly,"Unknown physical procedural-pose policy.");
             check(entity.physical_rig->controller_handoff.has_value() && !entity.physical_rig->initially_passive &&
                 !source.root_motion,"Animated-only physical posing requires linked animated startup and manual IK ownership.");
             std::set<std::uint32_t> mapped;for(const auto& part:entity.physical_rig->profile.parts)mapped.insert(part.node);
-            for(const auto& chain:source.ik)check(!chain.grounding && mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
+            for(const auto& chain:source.ik)check((rig.procedural_grounding || !chain.grounding) && mapped.contains(chain.root) && mapped.contains(chain.middle) && mapped.contains(chain.end),
                 "Animated-only procedural IK requires every chain joint physically mapped and no automatic grounding.");
+            check(!rig.procedural_grounding || std::any_of(source.ik.begin(),source.ik.end(),[](const auto& chain){return chain.grounding.has_value();}),
+                "Grounded procedural ownership requires at least one automatic grounding slot.");
         }
         rig.root_motion=source.root_motion;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
@@ -459,7 +462,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
         check(previous.model==next.model && previous.nodes==next.nodes && previous.parents==next.parents &&
             previous.skins==next.skins && previous.skin_geometry==next.skin_geometry && previous.clip_durations==next.clip_durations &&
             previous.model_parents==next.model_parents && poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers) && ik_equal(previous.ik,next.ik) &&
-            previous.procedural_pose==next.procedural_pose &&
+            previous.procedural_pose==next.procedural_pose && previous.procedural_grounding==next.procedural_grounding &&
             previous.root_motion.has_value()==next.root_motion.has_value() && (!previous.root_motion ||
                 (previous.root_motion->node==next.root_motion->node&&previous.root_motion->mode==next.root_motion->mode&&previous.root_motion->actor==next.root_motion->actor&&previous.root_motion->enabled==next.root_motion->enabled&&previous.root_motion->yaw==next.root_motion->yaw)),
             "Surviving animation rig bindings cannot change during membership replacement.");
@@ -469,6 +472,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
         candidate.roots_[index]=roots_[old->second];
         if(const auto saved=procedural_finals_.find(entity);saved!=procedural_finals_.end())candidate.procedural_finals_.emplace(entity,saved->second);
         if(const auto saved=procedural_terminals_.find(entity);saved!=procedural_terminals_.end())candidate.procedural_terminals_.emplace(entity,saved->second);
+        if(const auto saved=procedural_grounding_inputs_.find(entity);saved!=procedural_grounding_inputs_.end())candidate.procedural_grounding_inputs_.emplace(entity,saved->second);
         auto history_at_boundary=[tick](const Clock& clock) {
             check(!clock.current || clock.current->tick<=tick,"Animation membership boundary predates retained output history.");
         };
@@ -484,6 +488,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     membership_.swap(candidate.membership_);clocks_.swap(candidate.clocks_);layers_.swap(candidate.layers_);ik_.swap(candidate.ik_);ik_states_.swap(candidate.ik_states_);roots_.swap(candidate.roots_);
     grounding_controls_.swap(candidate.grounding_controls_);
     procedural_finals_.swap(candidate.procedural_finals_);procedural_terminals_.swap(candidate.procedural_terminals_);
+    procedural_grounding_inputs_.swap(candidate.procedural_grounding_inputs_);
     std::swap(grounding_restore_pending_,candidate.grounding_restore_pending_);
     std::swap(grounding_controls_pending_,candidate.grounding_controls_pending_);
 }
@@ -779,6 +784,7 @@ void RuntimeAnimations::apply_grounding(const std::vector<RuntimeGroundingComman
         const RuntimeGroundingControl control{command.enabled,command.weight};validate_grounding_control(control);
         check(seen.emplace(command.entity,command.slot).second,"Duplicate grounding command entity/slot.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Grounding command entity has no AnimationRig.");
+        check(!procedural_suspended(command.entity),"Physical ownership has suspended this rig's grounding writes.");
         const auto& chains=membership_->rigs[found->second].ik;
         const auto chain=std::find_if(chains.begin(),chains.end(),[&](const RuntimeTwoBoneIk& value){return value.slot==command.slot&&value.grounding.has_value();});
         check(chain!=chains.end(),"Grounding command slot is not automatically owned.");
@@ -805,8 +811,8 @@ void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) 
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
     const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
-    const grounding::SupportQuery& support_query) {
-    if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query,support_query);
+    const grounding::SupportQuery& support_query,const ProceduralSupportQuery& procedural_support_query) {
+    if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query,support_query,procedural_support_query);
     check(!grounding_restore_pending_||bool(wrapper_world),"Grounding restore verification requires the restored physical wrapper.");
     // Every job owns one candidate clock/layer/output partition. Nothing live
     // changes until all evaluations and output allocations have succeeded.
@@ -849,7 +855,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
             candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);
             candidate_ik_states[index][i].grounding=retained;
         }
-        if(grounding_restore_pending_)for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding)
+        if(grounding_restore_pending_ && !procedural_suspended(rig.entity))for(std::size_t i=0;i<rig.ik.size();++i)if(rig.ik[i].grounding)
             verify_grounding_geometry(*candidate_ik_states[index][i].grounding,pose,rig.ik[i],wrappers[index],tick);
         auto& output=outputs[index];
         for(std::size_t node=0;node<rig.nodes.size();++node) {
@@ -877,11 +883,12 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64_t tick,
     const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
-    const grounding::SupportQuery& support_query) {
+    const grounding::SupportQuery& support_query,const ProceduralSupportQuery& procedural_support_query) {
     check(!grounding_restore_pending_,"Verify restored grounding pose before refreshing contacts.");
     // Two joined candidate phases. Physics is queried only by the owner between
     // them, using the same root-stripped incoming poses that the solver consumes.
     auto candidate=clocks_;auto candidate_layers=layers_;auto controls=ik_;auto states=ik_states_;
+    auto recorded=procedural_grounding_inputs_;
     const auto count=membership_->rigs.size();
     std::vector<Matrix4> wrappers(count,identity_matrix());
     if(wrapper_world)for(std::size_t i=0;i<count;++i)if(!membership_->rigs[i].ik.empty())
@@ -926,13 +933,50 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64
     // foot: every decision must observe the same uncorrected animation frame.
     for(std::size_t index=0;index<count;++index) {
         const auto& rig=membership_->rigs[index];
+        std::shared_ptr<ProceduralGroundingInput> input;
+        if(rig.procedural_grounding && !procedural_suspended(rig.entity)) {
+            input=std::make_shared<ProceduralGroundingInput>();input->tick=tick;input->prepared=true;
+            input->wrapper=wrappers[index];input->requested=grounding_controls_[index];
+            for(const auto& state:states[index])input->previous.push_back(state.grounding);
+            input->previous_controls=ik_[index];
+            input->previous_requested.assign(rig.ik.size(),RuntimeGroundingControl{});
+            if(const auto final=procedural_finals_.find(rig.entity);final!=procedural_finals_.end() && final->second->grounding)
+                input->previous_requested=final->second->grounding->requested;
+        }
+        auto binding=[&](const std::string& owner,const std::string& entity) {
+            check(bool(procedural_support_query),"Grounded procedural ownership requires native support identity capture during the final sample.");
+            return procedural_support_query(owner,entity);
+        };
+        grounding::Query query=contact_query;
+        grounding::SupportQuery support=support_query;
+        if(input) {
+            query=[&](const std::string& owner,const RuntimeRay& ray) {
+                check(input->journal.size()<32,"Grounded procedural query journal exceeds32 entries.");
+                ProceduralGroundingQuery entry;entry.owner=owner;entry.ray=ray;entry.hit=contact_query(owner,ray);
+                if(entry.hit) {
+                    entry.binding=binding(owner,entry.hit->entity);
+                    check(entry.binding.has_value(),"Ground contact has no eligible captured native support identity.");
+                }
+                const auto hit=entry.hit;input->journal.push_back(std::move(entry));return hit;
+            };
+            support=[&](const std::string& owner,const std::string& entity) {
+                check(input->journal.size()<32,"Grounded procedural query journal exceeds32 entries.");
+                check(bool(support_query),"Grounded plant support provider is unavailable.");
+                ProceduralGroundingQuery entry;entry.support=true;entry.owner=owner;entry.entity=entity;
+                entry.frame=support_query(owner,entity);entry.binding=binding(owner,entity);
+                check(entry.frame.has_value()==entry.binding.has_value() && (!entry.frame || *entry.frame==entry.binding->frame),
+                    "Captured support identity/frame differs from the actual grounding support response.");
+                const auto frame=entry.frame;input->journal.push_back(std::move(entry));return frame;
+            };
+        }
         for(std::size_t i=0;!procedural_suspended(rig.entity) && i<rig.ik.size();++i)if(rig.ik[i].grounding) {
             check(states[index][i].grounding.has_value(),"Configured grounding state is absent.");
             const auto chain=effective_grounding_chain(rig.ik[i],grounding_controls_[index][i]);
-            auto decision=grounding::prepare(rig.model_parents,poses[index],chain,wrappers[index],rig.entity,tick,*states[index][i].grounding,contact_query,support_query);
+            auto decision=grounding::prepare(rig.model_parents,poses[index],chain,wrappers[index],rig.entity,tick,*states[index][i].grounding,query,support);
             validate_ik_command(decision.control);controls[index][i]=std::move(decision.control);
             states[index][i].grounding=std::move(decision.state);
         }
+        if(input)recorded.insert_or_assign(rig.entity,std::move(input));
     }
     joined([&](std::size_t index) {
         const auto& rig=membership_->rigs[index];auto& pose=poses[index];
@@ -948,7 +992,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64
         }
     },"animation.grounding.solve");
     for(auto& output:outputs)for(auto& pose:output)result.push_back(std::move(pose));
-    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(controls);ik_states_.swap(states);grounding_controls_pending_=false;return result;
+    clocks_.swap(candidate);layers_.swap(candidate_layers);ik_.swap(controls);ik_states_.swap(states);procedural_grounding_inputs_.swap(recorded);grounding_controls_pending_=false;return result;
 }
 namespace {
 using StateJson=nlohmann::json;
@@ -1363,7 +1407,9 @@ std::string RuntimeAnimations::save_state_impl(std::uint64_t tick,bool verify_pr
             check(procedural_controls_equal(ik_[index],terminal->second->controls),"Live suspended IK controls differ from their terminal witness.");
             check(procedural_states_json(ik_states_[index]).dump()==procedural_states_json(terminal->second->states).dump(),
                 "Live suspended IK diagnostics differ from their captured historical witness.");
-            if(verify_procedural)verify_procedural_progression(index,tick,clocks_[index],layers_[index],ik_[index]);
+            if(terminal->second->grounding)check(grounding_controls_[index]==terminal->second->grounding->requested,
+                "Live suspended grounding multipliers differ from their captured requested controls.");
+            if(verify_procedural)verify_procedural_progression(index,tick,clocks_[index],layers_[index],ik_[index],grounding_controls_[index]);
         }
         auto record=save_clock(index,clocks_[index],entity);
         if(layered) {
@@ -1399,7 +1445,8 @@ std::string RuntimeAnimations::save_state_impl(std::uint64_t tick,bool verify_pr
                         const auto& planting=ik_states_[index][i].grounding->planting;
                         if(planting)state.planting=read_planting(state_planting(*planting),state.decision_tick);
                         const auto effective=state.status=="uninitialized"?frozen:effective_grounding_chain(frozen,multiplier);
-                        validate_grounding_cache(state,effective,control,tick);
+                        const auto decision_boundary=rig.procedural_grounding && procedural_suspended(entity)?procedural_terminals_.at(entity)->tick:tick;
+                        validate_grounding_cache(state,effective,control,decision_boundary);
                     }
                     saved.back()["grounding"]=frozen.grounding ? StateJson{{"definition",state_grounding_definition(*frozen.grounding)},
                         {"state",state_grounding(*ik_states_[index][i].grounding)}} : StateJson(nullptr);
@@ -1612,7 +1659,8 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                         check(state.status!="uninitialized"||candidate_grounding[index][i]==RuntimeGroundingControl{},
                             "Uninitialized grounding state requires identity requested controls.");
                         const auto effective=state.status=="uninitialized"?frozen:effective_grounding_chain(frozen,candidate_grounding[index][i]);
-                        validate_grounding_cache(state,effective,control,tick);
+                        const auto decision_boundary=rig.procedural_grounding && procedural_suspended(entity)?procedural_terminals_.at(entity)->tick:tick;
+                        validate_grounding_cache(state,effective,control,decision_boundary);
                     }
                 }
                 candidate_ik[index][i]=std::move(control);
@@ -1625,6 +1673,8 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                 const auto& terminal=*procedural_terminals_.at(entity);
                 check(procedural_controls_equal(candidate_ik[index],terminal.controls),
                     "Saved suspended IK controls differ from the captured terminal witness.");
+                if(terminal.grounding)check(candidate_grounding[index]==terminal.grounding->requested,
+                    "Saved suspended grounding multipliers differ from the captured requested controls.");
                 if(grounded)check(procedural_states_json(candidate_ik_states[index]).dump()==procedural_states_json(terminal.states).dump(),
                     "Grounded-world restoration changed suspended manual IK diagnostics.");
             }
@@ -1633,7 +1683,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         }
         if(configured_root||oriented){const auto& rig=membership_->rigs[index];const auto& root=rig.root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root){candidate_roots[index]=read_root(saved,entity,*root,rig.clip_durations.size(),tick,candidate[index],retimed,rig.clip_durations);
             if(candidate_roots[index].fade)any_rate=any_rate||candidate_roots[index].fade->source_rate.has_value();}}
-        if(procedural_suspended(entity))verify_procedural_progression(index,tick,candidate[index],candidate_layers[index],candidate_ik[index]);
+        if(procedural_suspended(entity))verify_procedural_progression(index,tick,candidate[index],candidate_layers[index],candidate_ik[index],candidate_grounding[index]);
     }
     check(!retimed||any_rate,planted?"Retimed version 10 animation state requires a retained rate segment.":"Version 9 animation state requires a retained rate segment.");
     check(!retimed||version!=1||!any_inertial,"Legacy profile 1 cannot contain inertial history flags.");
