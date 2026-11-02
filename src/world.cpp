@@ -908,6 +908,8 @@ void validate_template_graph(const Json& document,const Json& recipe,
         if(bag.contains("RigNode"))local_reference(bag.at("RigNode").at("rig"),"AnimationRig");
         if(bag.contains("AnimationRig") && bag.at("AnimationRig").contains("root_motion") && bag.at("AnimationRig").at("root_motion").contains("actor"))
             local_reference(bag.at("AnimationRig").at("root_motion").at("actor"),"CharacterController");
+        if(bag.contains("PhysicalRig") && bag.at("PhysicalRig").contains("controller_handoff"))
+            local_reference(bag.at("PhysicalRig").at("controller_handoff").at("actor"),"CharacterController");
         if(bag.contains("SkinnedMesh"))local_reference(bag.at("SkinnedMesh").at("rig"),"AnimationRig");
         if(bag.contains("LightingEnvironment") && bag.at("LightingEnvironment").contains("sky"))
             local_reference(bag.at("LightingEnvironment").at("sky").at("sun"),"Light");
@@ -1051,6 +1053,7 @@ void validate(const Json& doc) {
     // detached hierarchical-template documents before atomic publication.
     if(std::any_of(entities.begin(),entities.end(),[](const Json& entity){return entity.at("components").contains("PhysicalRig");})) {
         std::map<std::string,std::map<std::uint32_t,std::size_t>> physical_nodes;
+        std::map<std::string,std::string> linked_actors;
         for(const auto& [id,entity]:entities.items()) {
             (void)id;const auto& bag=entity.at("components");
             if(bag.contains("BoxCollider") || bag.contains("MeshCollider") || bag.contains("CharacterController")) {
@@ -1071,10 +1074,56 @@ void validate(const Json& doc) {
             const auto& bag=entity.at("components");if(!bag.contains("PhysicalRig"))continue;
             require(bag.contains("AnimationRig"),"PhysicalRig requires AnimationRig on the same entity.");
             const auto profile=physical_rig_value(bag.at("PhysicalRig"));
+            if(profile.controller_handoff) {
+                const auto actor=identifier(profile.controller_handoff->actor);
+                require(actor!=id && entities.contains(actor) && entity.at("parent")==actor,
+                    "Physical controller handoff actor must exist and directly parent its rig.");
+                const auto& owner=entities.at(actor);const auto& actor_bag=owner.at("components");
+                require(owner.at("parent").is_null() && actor_bag.contains("CharacterController") &&
+                    actor_bag.at("CharacterController").contains("locomotion"),
+                    "Physical controller handoff requires a root virtual-locomotion CharacterController.");
+                require(!actor_bag.contains("PhysicalRig") && !actor_bag.contains("AnimationRig") && !actor_bag.contains("RigNode") &&
+                    !actor_bag.contains("BoxCollider") && !actor_bag.contains("MeshCollider"),
+                    "Physical controller actor cannot have independent collider or animation ownership.");
+                require(linked_actors.emplace(actor,id).second,"A controller actor can link to only one PhysicalRig.");
+            }
             for(const auto& part:profile.profile.parts) {
                 const auto owner=physical_nodes.find(id);
                 require(owner!=physical_nodes.end() && owner->second.contains(part.node) && owner->second.at(part.node)==1,
                     "PhysicalRig part requires exactly one matching model-local RigNode on its AnimationRig.");
+            }
+        }
+        if(!linked_actors.empty()) {
+            // Linked actors are roots, so each descendant has at most one
+            // owner. Cache root membership instead of walking every subtree
+            // once for each rig on large authored graphs.
+            std::map<std::string,std::string> roots;
+            for(const auto& [id,entity]:entities.items()) {
+                (void)entity;if(roots.contains(id))continue;
+                std::vector<std::string> chain;auto at=id;
+                while(!roots.contains(at)) {
+                    chain.push_back(at);const auto& parent=entities.at(at).at("parent");
+                    if(parent.is_null())break;
+                    at=identifier(parent);
+                }
+                const auto root=roots.contains(at)?roots.at(at):at;
+                for(const auto& member:chain)roots.emplace(member,root);
+            }
+            for(const auto& [id,entity]:entities.items()) {
+                const auto& bag=entity.at("components");
+                if(bag.contains("AnimationRig") && bag.at("AnimationRig").contains("root_motion")) {
+                    const auto motion=root_motion_value(bag.at("AnimationRig").at("root_motion"));
+                    require(!linked_actors.contains(motion.actor),"A handoff controller cannot have another root-motion writer.");
+                }
+                const auto linked=linked_actors.find(roots.at(id));if(linked==linked_actors.end())continue;
+                if(id!=linked->first)require(!bag.contains("CharacterController") && !bag.contains("BoxCollider") && !bag.contains("MeshCollider"),
+                    "Linked physical actor subtree cannot contain independently simulated bodies or controllers.");
+                require(!bag.contains("PhysicalRig") || id==linked->second,"Linked physical actor subtree cannot contain another PhysicalRig.");
+                if(bag.contains("AnimationRig")) {
+                    const auto& animation=bag.at("AnimationRig");
+                    require(!animation.contains("root_motion") && (!animation.contains("ik") || animation.at("ik").empty()),
+                        "Linked physical actor subtree cannot contain root motion, IK or grounding ownership.");
+                }
             }
         }
     }
@@ -3694,6 +3743,7 @@ public:
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
         if(method=="runtime.physical_rig")return physical_runtime_query(params);
+        if(method=="runtime.controller_handoff")return controller_handoff_runtime_query(params);
         if(method=="runtime.root_motion") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);

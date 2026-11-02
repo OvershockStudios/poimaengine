@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.221**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.222**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.222 adds opt-in one-way virtual-controller to physical-rig ownership.
+Valid held controls are superseded at takeover, the capsule keeps its ID outside
+broadphase, and the actor/camera follow solved physics with captured heading.
+Joined callback actor/camera/HitRegion observations preserve prepared caller aim
+without mutating native pose history before the decision. A separate inspection
+operation labels ownership and historical support; physical extension 2 retains
+complete off-world proxy, motor, support and follow witnesses through cold saves
+and rollback. [Contract and Linux evidence](PHYSICAL_RIGS.md#controller-handoff)
+cover the supported graph and phase boundaries. Root motion/IK coordination,
+recovery, production humanoid quality, new-feature Windows execution, Native AOT
+and rendered qualification remain separate.
+
+The [0.0.222 evidence](evidence/m2-controller-handoff.json) records 36 passing
+Linux native/contract suites and a separate five-case motion suite. Actual CLI
+workflows retain 1,927 requests across ten naturally closed processes, including
+the new 52-field compiled CoreCLR consumer. Independent review reopens 44 whole
+save files and rejoins 21 complete byte/JSON pairs. Five additional cold restores
+and forty future-save pairs are native-test assertions, separately scoped from
+those reopened files. Earlier failed authoring, proxy-math and stair-precondition
+attempts retain their original verdicts.
+
 
 Version 0.0.221 separates native character-input calculation from its existing
 motor commit boundary and shares absolute solved-wrapper calculation between
@@ -14,9 +36,9 @@ nineteen selected native suites, including 4,522 follow-math checks. The real
 pairs and four complete byte/JSON save pairs across both controller backends,
 optional stance and a moving support. Four CLI processes close naturally;
 fresh old/current owners restore the original old-image save and continue
-identically. Controller-to-ragdoll ownership, callback preview and capsule
-suppression remain unimplemented; this does not enable a runtime controller
-link. Windows execution of these new paths remains separate qualification.
+identically. That checkpoint did not enable a runtime controller link; the
+0.0.222 integration above adds that ownership boundary. Windows execution remains
+separate qualification.
 
 
 Version 0.0.220 adds an explicit `skeletal_bounded_scale` physical frame for

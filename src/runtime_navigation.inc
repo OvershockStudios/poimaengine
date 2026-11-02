@@ -35,6 +35,7 @@
         const auto entity=find(request.entity);
         const auto* controller=registry.try_get<Controller>(entity);
         require(controller,"Navigation queries require a live CharacterController.");
+        require(!controller->character->IsSuppressed(),"Navigation requires locomotion ownership; the controller is suppressed by its physical rig.");
         require(controller->settings.radius<=navigation_radius && controller->settings.height<=navigation_height,
             "Character capsule exceeds the baked navigation clearance.");
         const auto position=controller->character->GetPosition();

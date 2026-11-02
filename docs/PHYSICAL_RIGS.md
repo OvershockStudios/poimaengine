@@ -141,8 +141,9 @@ The initial integration rejects:
 - An ordinary collider/controller on the PhysicalRig wrapper.
 - Configured root motion or IK/grounding on that rig, including disabled
   configurations.
-- A controller, moving ordinary body, animated `RigNode` or another PhysicalRig
-  in its ancestry.
+- A moving ordinary body, animated `RigNode` or another PhysicalRig in its
+  ancestry. Controller ancestry requires the explicit root-actor link described
+  in [Controller handoff](#controller-handoff); unlinked ancestry rejects.
 - Ordinary box/mesh colliders or controllers beneath the PhysicalRig. Their
   native poses would otherwise remain separate from the moving render hierarchy.
 - Reflection, invalid or changing admitted scales. The default frame additionally
@@ -150,8 +151,9 @@ The initial integration rejects:
   fixed nonuniform local scales.
 
 Static ancestry and unrelated ordinary bodies remain available. These are
-initial ownership limits, not the final FPS feature boundary. Coordinated
-controller/root-motion/IK transfer, attached equipment bodies, active balance,
+initial ownership limits, not the final FPS feature boundary. The opt-in
+controller handoff below supports one-way takeover; coordinated root-motion/IK
+transfer, attached equipment bodies, active balance,
 physical animation, recovery blending and stand-up behavior remain separate
 work. No public command returns a Passive rig to Animated mode.
 
@@ -624,17 +626,93 @@ native export, then checks actual callbacks, rollback and cold continuation.
 Whole-archive equality is checked within each backend's run; CoreCLR and Native
 AOT archives have different backend/library identities.
 
-## Character ownership preparation
+## Controller handoff
 
-The native runtime calculates character inputs as a value before publishing
-rotation, jump and velocity to the motor at the existing boundary. Physical
-pose publication exposes an absolute solved wrapper independently of its
-presentation parent. A pure fixed-heading follow calculation can then prepare
-actor and wrapper local transforms together while preserving their local scales.
-These internal calculations do not enable controller ancestry or remove a
-movement capsule. Coordinated controller takeover still requires input preview,
-physics membership, lifecycle and save integration.
+A physical rig can take over from an explicitly linked virtual character.
+The controller must be an unscaled hierarchy root with `locomotion` configured;
+its `AnimationRig`/`PhysicalRig` wrapper must be a direct child. Add this member
+to the existing complete physical profile:
 
-[The Linux checks](evidence/m2-character-input-planning.json) cover the isolated
-math and existing runtime paths, including actual prior/current full replies
-and complete saves. They do not qualify runtime controller transfer.
+```json
+"controller_handoff": {
+  "actor": "00000000000000000000000000000100",
+  "follow": "translate_keep_heading"
+}
+```
+
+The actor ID names the controller, not a bone. The profile must start
+`animated`. Run at least one completed native tick before activation; a rig
+cannot transfer in its birth tick. Hierarchical templates use recipe-local
+actor IDs, remapped with the complete instance. The link is frozen content.
+One actor owns one linked rig. Additional colliders/controllers, another physical
+rig, root motion, IK and grounding in that actor's subtree are unsupported.
+An outside rig also cannot reserve the linked actor as its root-motion target.
+These ownership restrictions apply even to disabled configurations.
+
+Use the existing ordered `physical_rigs` activation command or
+`GameContext.ActivatePhysicalRig`. Takeover uses the last committed final pose
+and its COM/angular finite-difference history, including resolved controller
+and support motion. It does not add motor velocity again. The movement capsule
+leaves broadphase before the articulated bodies enter it, retaining its exact
+allocated body ID. Returning to locomotion requires a future recovery policy;
+repeated activation rejects.
+
+Valid held move, look, jump and stance requests are superseded for the actor on
+the takeover tick and subsequent ticks. Malformed inputs, duplicate writers and
+command-budget violations still reject the complete batch. Other actors retain
+their controls. During `Game.Tick`, caller-input preparation remains visible
+through a pure, joined actor/camera/HitRegion preview. It does not rotate the
+native capsule, touch contact caches or rewrite committed pose history. Staged
+gameplay movement and activation remain invisible until the normal command
+boundary. Explicit native ray/capsule queries still use real collision geometry.
+Ignoring the linked actor also ignores its physical parts; HitRegion owner-proxy
+suppression follows the same ownership route.
+
+`translate_keep_heading` follows the solved wrapper's translation while retaining
+the actor's captured world heading. Actor and wrapper locals are prepared
+together, preserving their scales and absolute solved bone poses. An owned
+camera inherits that translation and retains its captured local pitch and
+stance height. Camera effects retain their separate controls. This is a simple
+death-camera policy, not an eye attachment, spectator controller or polished
+cinematic transition.
+
+### Inspect ownership
+
+`runtime.controller_handoff` accepts exact `session_id`, `tick` and rig `entity`
+guards. Its envelope contains `session_id`, `tick`, `source: "runtime"` and
+`state`; an existing unlinked entity returns `state: null`, while a missing
+entity rejects. This additive method is outside runtime-game-session-v1.
+
+| State field | Meaning |
+| --- | --- |
+| `entity`, `actor` | Physical wrapper and its frozen controller reference. |
+| `phase` | `locomotion` or `physical`. |
+| `capsule_body_id` | Full native allocation identity, retained after removal. |
+| `capsule_enrolled` | Actual broadphase membership. |
+| `takeover_tick` | Last committed pose boundary consumed by activation; null during locomotion. |
+| `support` | Null during locomotion; otherwise `semantics: "cached_at_takeover"`, ground state, body ID, normal and velocity. |
+
+Suppressed `runtime.entity` controller velocity/grounding and stance observations
+retain the last motor state. They do not describe current corpse motion or
+support. Read physical parts for current native velocities and the entity world
+transform for current followed position. Cached support IDs can name retired
+bodies; `4294967295` means no support. Navigation refuses a suppressed controller
+rather than starting from its frozen motor position. Reads never sample, tick,
+wake or publish proxies.
+
+### Preserve the ownership phase
+
+Frozen content containing links, including dormant templates, uses physical
+snapshot extension 2. It adds named per-rig handoff state: phase, takeover tick,
+follow reference, frozen support and exact off-world capsule witness. Existing
+body/controller fields remain present. Content without links retains extension 1.
+Cold construction installs suppression before support queries or synchronization,
+replays the original logical-to-native COM publication, and verifies the exact
+saved proxy. Complete rollback restores capsule membership, IDs, shape, native
+physics state and ownership together. Linked actor and rig retire together.
+
+[Linux qualification](evidence/m2-controller-handoff.json) covers native and
+CoreCLR ownership, joined callback aim, exact saves, lifecycle and negative
+queries. Earlier [input-planning checks](evidence/m2-character-input-planning.json)
+cover the separate 0.0.221 prerequisites. New-feature Windows execution,
+Native AOT, imported humanoid quality and rendered observations remain separate.

@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.222
+
+- Add opt-in controller-to-physical-rig takeover with committed pose/momentum,
+  retained capsule IDs, control suppression and fixed-heading actor follow.
+- Preserve joined same-tick caller aim through read-only callback previews while
+  activation and compiled input remain staged at their command boundary.
+- Expose ownership inspection and preserve off-world capsule, cached support and
+  follow state through complete physical snapshots, rollback and template life.
+- Qualify native ownership and compiled CoreCLR aim/save workflows while keeping
+  the earlier failed attempts and their causes separate.
+
 ## 0.0.221
 
 - Separate native character-input planning from motor publication, preserving

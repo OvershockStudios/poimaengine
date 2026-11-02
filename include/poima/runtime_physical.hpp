@@ -51,4 +51,17 @@ struct PhysicalRigObservation {
     std::vector<PhysicalRigPartObservation> parts;
     std::vector<PhysicalRigJointObservation> joints;
 };
+struct ControllerHandoffObservation {
+    std::string entity,actor;
+    bool suppressed=false,capsule_enrolled=false;
+    std::uint32_t capsule_body_id=0;
+    std::optional<std::uint64_t> takeover_tick;
+    // Historical support at takeover, never current corpse grounding.
+    struct CachedSupport {
+        std::string ground;
+        std::uint32_t body_id=0;
+        physical_rig::Vec3 normal{},velocity{};
+    };
+    std::optional<CachedSupport> cached_support;
+};
 } // namespace poima

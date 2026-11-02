@@ -1,0 +1,959 @@
+{
+  "format": "poima.controller-handoff-evidence.v1",
+  "date": "2026-11-02",
+  "engine_version": "0.0.222",
+  "schema_revision": 125,
+  "passed": true,
+  "scope": "Linux native opt-in virtual-controller to passive physical ownership, actual compiled CoreCLR callback observations, complete snapshots and fresh-process continuation. One-way takeover only.",
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 108530,
+      "sha256": "30c82238786a79d9376a4e72f807bacf015ba56d795ec20012d01e3ecaed6920"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 7644,
+      "sha256": "ff5449860830ab16e840ddb656f9b325a446c7db675c2224d3a6a7664fb680ad"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 31749,
+      "sha256": "0ab29d9a06db2cbc61762ac79ab3eeebb202831f94accd1e35d69ee7d24fcc10"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 2573,
+      "sha256": "515a3e9db482459a2ee6cd6b7d321984024abf9ede00583dbe225001fed3c771"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 15025,
+      "sha256": "136d673fac7d612d3642245453f3d1abe28efe71dd8f3d8bd5cdb04a66b805a4"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 15137,
+      "sha256": "e377edff79aa17be9fac0ad992e205b31434b2768cafa7443ed87bc5f197df39"
+    },
+    "src/runtime.cpp": {
+      "bytes": 173049,
+      "sha256": "2f92027435f5c24001debacd67f7f5fe5fc1e5e28be6fbbcd8aa62ad2fba00b1"
+    },
+    "src/runtime_camera_pose_state.inc": {
+      "bytes": 5458,
+      "sha256": "cad29ed8b5153108548e65926e751dacd8ad1886c6fd26b7c526be1e8bf521f0"
+    },
+    "src/runtime_controller_handoff.inc": {
+      "bytes": 5967,
+      "sha256": "8436f150b79cbb3e752a6810ab07e8e0de12adfda1c2a10d0af08a85a0702f73"
+    },
+    "src/runtime_controller_handoff_state.hpp": {
+      "bytes": 2492,
+      "sha256": "9510ba686d8939d4562ae372172a0401f7ad7f455266101e647e5e9d255a91b4"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 10591,
+      "sha256": "cfe1e1f07f5eaef0aa7505d3d199f10e24f7120a89f4d4aed6f8a6bf0b879f6e"
+    },
+    "src/runtime_motor.inc": {
+      "bytes": 16845,
+      "sha256": "1698f9e38803db8543c3d317d7f573b518050b7ef472f48a6e8232434776372e"
+    },
+    "src/runtime_navigation.inc": {
+      "bytes": 9730,
+      "sha256": "0bc52ada148ff69345a843180c9af6cefadce4e0b2309408ecaf017bf7905333"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 40090,
+      "sha256": "7db2763877ce9bb16f6b7229e7b9a292e358bf1c307e054f1a1c533d17cc89b3"
+    },
+    "src/runtime_physical_restore.hpp": {
+      "bytes": 1057,
+      "sha256": "783c80005df31e5e4683c83b90073e9acb3db64a423e01d7700ca540f0af7b1f"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 17240,
+      "sha256": "393e2caccee1eeb2dd47f2dae56873eba30d81cf3ec6e56727fa82e8ef3a99d7"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 15013,
+      "sha256": "59a4771f994dde35fbe229d97e6dff8bcbd14dc896f4ac73756dc13d38da0de6"
+    },
+    "src/runtime_physical_state_json.hpp": {
+      "bytes": 2120,
+      "sha256": "767e3da055cf647193b59bf9bd931855f1b07123f171d82850e3c3588572a5ff"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 55239,
+      "sha256": "3c3d5f690d1173ac39c70e362e8d76865c45eac18222dd21d3338b9ab284bb4b"
+    },
+    "src/runtime_templates.cpp": {
+      "bytes": 18755,
+      "sha256": "875c95c11b0828ed11a186d64771075fac5b8d57f64c714d650404b5efd9c451"
+    },
+    "src/world.cpp": {
+      "bytes": 371007,
+      "sha256": "8bc4d9b9bd757e7b0032eb9f4b2de5547843ed7bbdf269a70c64c8c7306c2703"
+    },
+    "src/world_physical.inc": {
+      "bytes": 7561,
+      "sha256": "e4a74ccfe3c584e920f81bc1e463c8c118c88fb933069e4e891cc496d2184e10"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 65910,
+      "sha256": "d7329394adbd88ab213e978ef6d1d488646a6c648e4903a90ae55ba4e6c193fa"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 143848,
+      "sha256": "1218730b62bcb7c1357ab0134f2fc4e3525cf77a3e7d686c7577b97e0d869462"
+    },
+    "tests/contact_shadow_contract.py": {
+      "bytes": 14842,
+      "sha256": "b4b722657b3f629269d4ee63c607b80ec8f783a32ba19efe197ac417125f3a30"
+    },
+    "tests/controller_handoff_gameplay_contract.py": {
+      "bytes": 23019,
+      "sha256": "52c9b9b5d15f33b54ebebedd362cdfe7f9a600ccfe9e1a5f53f9032fbe715103"
+    },
+    "tests/environment_ibl_contract.py": {
+      "bytes": 13335,
+      "sha256": "3e12ae1680f9a22d8bcc896d56ceebd0ee159a055ca330a47fa3f81297e49d4e"
+    },
+    "tests/managed_controller_handoff_gameplay/ManagedControllerHandoffGame.cs": {
+      "bytes": 7567,
+      "sha256": "7ffa8928d4cf6f22551ec5b5201f278b5ea8885dcc0c4c28f7756f14ae39276a"
+    },
+    "tests/managed_controller_handoff_gameplay/Poima.ManagedControllerHandoffGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    },
+    "tests/physical_controller_handoff_json_native.cpp": {
+      "bytes": 20867,
+      "sha256": "defc32c381097372bb0f61b7426f9d9da15411430355feafb6e4e53cd4d0e00f"
+    },
+    "tests/runtime_controller_handoff_motion_native.cpp": {
+      "bytes": 21921,
+      "sha256": "e44a0b499e7dcc6e578d1cac7a476d438fddd8d1062022e28b30f9d2bca9a7c2"
+    },
+    "tests/runtime_controller_handoff_native.cpp": {
+      "bytes": 21582,
+      "sha256": "82dee5254b6ff8e4e62d7fad1cf0f1835711d600868524b2de5c88697f2dcd20"
+    },
+    "tests/runtime_controller_handoff_state_native.cpp": {
+      "bytes": 6529,
+      "sha256": "f1d2bf8a9b9ed78b6a6963d614219c00af63e99f8bf84c168cce69855a87fced"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "0c80121a2396d4e9257fd025f6d4d72bb4f9f01e3656fdbd8775132d73165b59"
+    }
+  },
+  "native_images": {
+    "current": {
+      "bytes": 38456304,
+      "sha256": "8cffd882983f7c837e27be02f5bdfcf58eea2de3585df215051a32535e9b9a2c"
+    },
+    "prior_0.0.221": {
+      "bytes": 38209016,
+      "sha256": "a247f1f2c380b456404eedc3d39f3d728d74e624b9b63e544031f9ada6522902"
+    }
+  },
+  "compatibility": {
+    "csharp_abi_epoch": 7,
+    "optional_services_bytes": 424,
+    "sdk_and_bridge_rebuilt": false,
+    "physical_snapshot_extension_for_linked_content": 2,
+    "unlinked_physical_snapshot_extension": 1,
+    "ordinary_snapshot_shape_preserved": true,
+    "runtime_controller_handoff_in_frozen_game_session_contract": false
+  },
+  "native_regression": {
+    "run": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 106412,
+        "sha256": "560cc7c5697d28dd48cd1f1da59cdb1e71f4f49093558840c4b5514858c5e1c2"
+      },
+      "forced_cleanup": false,
+      "final_children": [],
+      "commands": [
+        {
+          "label": "verify-native-tools",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        },
+        {
+          "label": "build-final-controller-handoff",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        },
+        {
+          "label": "final-native-and-contract-regression",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        },
+        {
+          "label": "descriptor-current",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        }
+      ]
+    },
+    "native_suites": [
+      "runtime_character_input_plan_native",
+      "runtime_physical_follow_native",
+      "runtime_native",
+      "runtime_character_stance_native",
+      "runtime_character_locomotion_native",
+      "runtime_camera_pose_native",
+      "runtime_camera_lens_native",
+      "runtime_save_native",
+      "physical_pose_native",
+      "runtime_physics_state_native",
+      "runtime_physical_rig_native",
+      "runtime_physical_ownership_native",
+      "runtime_physical_integration_native",
+      "runtime_physical_pose_skeletal_native",
+      "runtime_physical_skeletal_integration_native",
+      "runtime_physical_pose_bounded_scale_native",
+      "runtime_physical_bounded_scale_integration_native",
+      "world_schema_native",
+      "gameplay_compatibility_policy",
+      "physical_controller_handoff_json_native",
+      "runtime_controller_handoff_state_native",
+      "runtime_controller_handoff_native"
+    ],
+    "contract_suites": [
+      "build_metadata_contract",
+      "world_physical_contract",
+      "contact_shadow_contract",
+      "environment_ibl_contract",
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "workflow_api_projection",
+      "authoring_response_compatibility",
+      "authoring_contract_artifacts",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "python_response_contract",
+      "python_workflow_responses",
+      "physical_gameplay_publish_requirements"
+    ],
+    "total_suites": 36,
+    "new_authoring_checks": 171,
+    "new_state_codec_checks": 106,
+    "new_runtime_checks": 3727,
+    "new_runtime_groups": 3
+  },
+  "motion": {
+    "run": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 13095,
+        "sha256": "834473be33c1765bd43ac288b0a348cb8e4733d0b6cc8f745bb73e784eae2bc5"
+      },
+      "forced_cleanup": false,
+      "final_children": [],
+      "commands": [
+        {
+          "label": "build-geometric-stair-cohort",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        },
+        {
+          "label": "five-motion-cases",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        }
+      ]
+    },
+    "separate_ctest_suites": 1,
+    "checks": 278,
+    "scenario_preconditioning_revision": 2,
+    "cases": [
+      {
+        "case": "airborne",
+        "passed": true,
+        "expected_momentum": [
+          8.000000417232513,
+          16.730002776781717,
+          0.0
+        ],
+        "actual_momentum": [
+          7.999999821186071,
+          16.73000298298889,
+          0.0
+        ],
+        "max_independently_recomputed_momentum_error": 5.960464424248357e-07,
+        "momentum_absolute_tolerance": 0.0005,
+        "preconditions": {
+          "foot": [
+            -0.8666666597127914,
+            0.3060833278810605,
+            0.0
+          ],
+          "ground": "in_air",
+          "resolved_velocity": [
+            2.0,
+            4.346000671386719,
+            0.0
+          ],
+          "settled_height": -3.8393773132971987e-08
+        },
+        "native_asserted_complete_cold_roundtrips": 1,
+        "native_asserted_complete_future_pairs": 8
+      },
+      {
+        "case": "wall-blocked",
+        "passed": true,
+        "expected_momentum": [
+          0.0,
+          -0.6540000279744466,
+          0.0
+        ],
+        "actual_momentum": [
+          0.0,
+          -0.6540000292509789,
+          0.0
+        ],
+        "max_independently_recomputed_momentum_error": 1.2765323242902582e-09,
+        "momentum_absolute_tolerance": 0.0005,
+        "preconditions": {
+          "foot": [
+            0.6800000071525574,
+            -4.658975036320179e-08,
+            0.0
+          ],
+          "ground": "on_ground",
+          "integration_velocity": [
+            2.0,
+            -0.16350001096725464,
+            0.0
+          ],
+          "resolved_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "native_asserted_complete_cold_roundtrips": 1,
+        "native_asserted_complete_future_pairs": 8
+      },
+      {
+        "case": "supported-stair-ascent",
+        "passed": true,
+        "expected_momentum": [
+          4.17954683303833,
+          1.45746597747008,
+          0.0
+        ],
+        "actual_momentum": [
+          4.179546739618181,
+          1.4574658544928019,
+          0.0
+        ],
+        "max_independently_recomputed_momentum_error": 1.2297727813859183e-07,
+        "momentum_absolute_tolerance": 0.0005,
+        "preconditions": {
+          "ascent_from_baseline": 0.13865379508324024,
+          "complete_control_course": {
+            "actual_surface": {
+              "distance": 1.0000000298023224,
+              "entity": "00000000000000000000000000000002",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "position": [
+                0.2680139195613265,
+                0.20000001233975429,
+                0.0
+              ]
+            },
+            "baseline_foot": [
+              -1.0,
+              -3.8393773132971987e-08,
+              0.0
+            ],
+            "complete_top_tolerance": 0.005,
+            "final_foot": [
+              0.2680139195613265,
+              0.20000001233975417,
+              0.0
+            ],
+            "ground": "on_ground",
+            "total_rise": 0.2000000507335273,
+            "walk_ticks": 40
+          },
+          "first_phase_tick": 25,
+          "foot": [
+            -0.1825851808794141,
+            0.1386537566894671,
+            0.0
+          ],
+          "foot_rise": 0.008797775022685528,
+          "ground": "on_ground",
+          "integration_velocity": [
+            2.0,
+            -0.6540000438690186,
+            0.0
+          ],
+          "policy": {
+            "changed_scope": "Scenario preconditioning only; unchanged geometry, momentum and complete-state predicates",
+            "maximum_foot_x": 0.2,
+            "maximum_integration_y": 0,
+            "maximum_walk_ticks": 40,
+            "minimum_foot_x": -0.4,
+            "minimum_positive_rise": 0.001,
+            "name": "supported-stair-ascent",
+            "original_instantaneous_rise_cohorts_remain_failed": true,
+            "requires_actual_step_ahead": false,
+            "requires_on_ground": true,
+            "requires_upper_half": true,
+            "step_height": 0.2
+          },
+          "resolved_velocity": [
+            1.0448867082595825,
+            0.5278664827346802,
+            0.0
+          ]
+        },
+        "native_asserted_complete_cold_roundtrips": 1,
+        "native_asserted_complete_future_pairs": 8
+      },
+      {
+        "case": "stair-upward-correction",
+        "passed": true,
+        "expected_momentum": [
+          8.000000338652171,
+          13.010423863639298,
+          0.0
+        ],
+        "actual_momentum": [
+          7.999999821186071,
+          13.010423369472699,
+          0.0
+        ],
+        "max_independently_recomputed_momentum_error": 5.174661001916547e-07,
+        "momentum_absolute_tolerance": 0.0005,
+        "preconditions": {
+          "ascent_from_baseline": 0.05693507347141888,
+          "complete_control_course": {
+            "actual_surface": {
+              "distance": 1.0000000298023224,
+              "entity": "00000000000000000000000000000002",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "position": [
+                0.2680139195613265,
+                0.20000001233975429,
+                0.0
+              ]
+            },
+            "baseline_foot": [
+              -1.0,
+              -3.8393773132971987e-08,
+              0.0
+            ],
+            "complete_top_tolerance": 0.005,
+            "final_foot": [
+              0.2680139195613265,
+              0.20000001233975417,
+              0.0
+            ],
+            "ground": "on_ground",
+            "total_rise": 0.2000000507335273,
+            "walk_ticks": 40
+          },
+          "first_phase_tick": 22,
+          "foot": [
+            -0.26666662874777103,
+            0.056935035077645746,
+            0.0
+          ],
+          "foot_rise": 0.05693509954839057,
+          "ground": "in_air",
+          "integration_velocity": [
+            2.0,
+            -0.16350001096725464,
+            0.0
+          ],
+          "policy": {
+            "changed_scope": "Scenario preconditioning only; unchanged geometry, momentum and complete-state predicates",
+            "maximum_foot_x": 0.2,
+            "maximum_integration_y": 0,
+            "maximum_walk_ticks": 40,
+            "minimum_foot_x": -0.4,
+            "minimum_positive_rise": 0.001,
+            "name": "stair-upward-correction",
+            "original_instantaneous_rise_cohorts_remain_failed": true,
+            "requires_actual_step_ahead": true,
+            "requires_on_ground": false,
+            "requires_upper_half": false,
+            "step_height": 0.2
+          },
+          "resolved_velocity": [
+            2.0,
+            3.4161057472229004,
+            0.0
+          ]
+        },
+        "native_asserted_complete_cold_roundtrips": 1,
+        "native_asserted_complete_future_pairs": 8
+      },
+      {
+        "case": "translating-rotating-support",
+        "passed": true,
+        "expected_momentum": [
+          4.680179804563522,
+          -0.6540384729703,
+          -2.250516414642334
+        ],
+        "actual_momentum": [
+          4.680179491337103,
+          -0.6540384742459997,
+          -2.250516364339374
+        ],
+        "max_independently_recomputed_momentum_error": 3.13226419024204e-07,
+        "momentum_absolute_tolerance": 0.0005,
+        "preconditions": {
+          "foot": [
+            1.4049638118594885,
+            0.9999999052612893,
+            0.31876006629318
+          ],
+          "ground": "on_ground",
+          "initial_foot": [
+            1.0,
+            0.9999999499646948,
+            0.5
+          ],
+          "point_velocity": [
+            1.165109634399414,
+            3.199045863766514e-07,
+            -0.5640971064567566
+          ],
+          "resolved_velocity": [
+            1.1700448989868164,
+            -9.611248060537037e-06,
+            -0.5626291036605835
+          ],
+          "support_angular_velocity": [
+            0.0,
+            0.5257129669189453,
+            0.0
+          ],
+          "support_linear_velocity": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "support_world": [
+            0.984808457064859,
+            0.0,
+            -0.1736441847385964,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.1736441847385964,
+            0.0,
+            0.984808457064859,
+            0.0,
+            0.33333333395421505,
+            0.5,
+            0.0,
+            1.0
+          ]
+        },
+        "native_asserted_complete_cold_roundtrips": 1,
+        "native_asserted_complete_future_pairs": 8
+      }
+    ],
+    "state_scope": "Five cold roundtrips and forty future complete-save pairs are asserted inside the native integration test. They are separate from the independently reopened CLI archive files below."
+  },
+  "managed_build": {
+    "run": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 5806,
+        "sha256": "13cead24913c995bd7c0a164cb4ed35687e1ee2bcff325f6ed0b03e48e7f54f6"
+      },
+      "forced_cleanup": false,
+      "final_children": [],
+      "commands": [
+        {
+          "label": "build-coreclr-consumer",
+          "exit_code": 0,
+          "descendants_at_leader_exit": 0,
+          "cleanup_actions": 0
+        }
+      ]
+    },
+    "runtime": ".NET 10 CoreCLR",
+    "warnings": 0,
+    "errors": 0,
+    "shipping_aot_of_new_feature_qualified": false
+  },
+  "cli_workflows": {
+    "prior_current": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 1506249,
+        "sha256": "44fc045b060c9a9ea4a018f503c9812cc4e73d7cfdfec21562172887b7ce2e48"
+      },
+      "literal_rpc": 893,
+      "native_cli_owners": 4,
+      "whole_archives_rehashed": 8,
+      "whole_byte_and_json_pairs_rejoined": 4,
+      "pair_labels": [
+        "crouched-input-state",
+        "before-cold-replay",
+        "fresh-old-save-roundtrip",
+        "complete-cold-continuation"
+      ],
+      "gameplay_fields": null
+    },
+    "retained_coreclr": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 3321152,
+        "sha256": "b8175b136a3914e960d02a946b8f613855a1f01d2a484675529280cb57336002"
+      },
+      "literal_rpc": 450,
+      "native_cli_owners": 2,
+      "whole_archives_rehashed": 11,
+      "whole_byte_and_json_pairs_rejoined": 5,
+      "pair_labels": [
+        "same-owner-animated-cold-restore",
+        "duplicate-activation-whole-rollback",
+        "later-tick-whole-rollback",
+        "fresh-process-whole-restoration",
+        "fresh-process-whole-future-continuation"
+      ],
+      "gameplay_fields": 33
+    },
+    "retained_native_aot": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 3333533,
+        "sha256": "db6f2f932d05e713e043056f6eb634fe4254f555a9fb4bcd0c5ab4fe1391c1b6"
+      },
+      "literal_rpc": 450,
+      "native_cli_owners": 2,
+      "whole_archives_rehashed": 11,
+      "whole_byte_and_json_pairs_rejoined": 5,
+      "pair_labels": [
+        "same-owner-animated-cold-restore",
+        "duplicate-activation-whole-rollback",
+        "later-tick-whole-rollback",
+        "fresh-process-whole-restoration",
+        "fresh-process-whole-future-continuation"
+      ],
+      "gameplay_fields": 33
+    },
+    "controller_coreclr": {
+      "passed": true,
+      "report_identity": {
+        "bytes": 1625351,
+        "sha256": "2fe7b726a5ff140c0c9f7af9bf2ca6b68ace990d065b01f38e4ed8e03583e938"
+      },
+      "literal_rpc": 134,
+      "native_cli_owners": 2,
+      "whole_archives_rehashed": 14,
+      "whole_byte_and_json_pairs_rejoined": 7,
+      "pair_labels": [
+        "whole callback rollback 3",
+        "whole callback rollback 6",
+        "whole later-Tick ownership/capsule/game rollback",
+        "warm passive complete roundtrip",
+        "warm restored complete future",
+        "cold passive complete roundtrip",
+        "cold restored complete future"
+      ],
+      "gameplay_fields": 52,
+      "assembly_sha256": "239c256d3629505061d5e02c703c0bb59bd4c7e844643849b694dd1639a479c7"
+    }
+  },
+  "independent_audit": {
+    "report_identity": {
+      "bytes": 4024,
+      "sha256": "7002282634de25f9a5824203586d0341e61fc8ba89ccdfdb748e6d8f8d914d52"
+    },
+    "passed": true,
+    "literal_rpc": 1927,
+    "native_cli_owners": 10,
+    "whole_archive_files_rehashed": 44,
+    "whole_byte_and_json_pairs_rejoined": 21,
+    "method": "Reopen the literal RPC transcripts, archive receipts and original files; rehash whole files and compare full duplicate-free typed JSON and bytes without exclusions or coercions. Recompute five motion momentum oracles from emitted actual COM data."
+  },
+  "proxy_arithmetic_audit": {
+    "report_identity": {
+      "bytes": 449,
+      "sha256": "6bd74f50c2a2f7e15fd9e5d9b06735ab88664cb7d122ee18f3cdf78bec806e5b"
+    },
+    "passed": true,
+    "complete_52_field_archives": 14,
+    "passive_proxy_body_membership_joins": 7,
+    "exact_reconstructed_native_origin_rows": 7,
+    "scope": "Independent Float32 capsule-height/padding and Double COM add/subtract for this Y-only capsule fixture; not a general kinematic reimplementation."
+  },
+  "retained_attempts": [
+    {
+      "attempt": "native-1",
+      "result": {
+        "passed": false,
+        "report_identity": {
+          "bytes": 193968,
+          "sha256": "1c4fb092e3f491ad198338b860b67b0a2b9a9971d71e47fdc7b171a248ed2c0f"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "verify-native-tools",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "build-controller-handoff",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "native-regression",
+            "exit_code": 8,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "20 of 22 suites passed. The new authoring fixture lacked a valid imported asset store; the runtime exposed an invalid exact proxy-origin versus logical-target predicate. Original source, complete failing executables and logs retained."
+    },
+    {
+      "attempt": "native-2",
+      "result": {
+        "passed": false,
+        "report_identity": {
+          "bytes": 24705,
+          "sha256": "abf1b6cce34de46190f02b796ba0068475cf23afc12e503ed8b4251696e4ec90"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "build-diagnostic",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "original-failures-diagnostic",
+            "exit_code": 8,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "Corrected authoring fixture passed. Numeric-only runtime diagnostic retained the failing predicate and proved actual COM/quaternion equality with a 2.7e-17 origin roundtrip difference. No tolerance or assertion was relaxed."
+    },
+    {
+      "attempt": "native-3",
+      "result": {
+        "passed": true,
+        "report_identity": {
+          "bytes": 31632,
+          "sha256": "75be5bd9225b079aa21729e95b216c349d4108e72861211d8f35082f3957472c"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "build-native-com-identity",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "handoff-native",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "descriptor-current",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "Replay actual logical-to-native COM arithmetic and compare exact COM, rotation and reconstructed origin. Corrected three-suite native run passed; earlier failures remain failed."
+    },
+    {
+      "attempt": "cpu-linux-1",
+      "result": {
+        "passed": false,
+        "report_identity": {
+          "bytes": 11620,
+          "sha256": "12804db98bf13c885214967e084e99203c14e27dcf28f20e3a831e49ec0177c0"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "prior-current-input",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "retained-coreclr",
+            "exit_code": 1,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "The 893-RPC prior/current workflow passed. Next workflow failed before RPC/native launch because its requested directory already held the supervisor command logs. Remaining workflows ran in fresh distinct directories under cpu-linux-2; the failed owner was not regraded."
+    },
+    {
+      "attempt": "cpu-linux-2",
+      "result": {
+        "passed": true,
+        "report_identity": {
+          "bytes": 14625,
+          "sha256": "861b46034262579dbfee2e106268057026c7b53ce492bb5c1a701cac5d4518a4"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "retained-coreclr",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "retained-native-aot",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "new-controller-coreclr",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "Retained CoreCLR and prior-feature NativeAOT consumers plus the new CoreCLR handoff consumer passed."
+    },
+    {
+      "attempt": "motion-native-1",
+      "result": {
+        "passed": false,
+        "report_identity": {
+          "bytes": 17323,
+          "sha256": "2a56ecfda3a6b6db574f95e464441bfc41394329e3f817880eed0d3e4b825a9b"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "build-motion-cohort",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "motion-cohort",
+            "exit_code": 8,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "Frozen stair precondition incorrectly required a single-tick 0.12 m rise on a 0.2 m step; no takeover event was found. Failure retained."
+    },
+    {
+      "attempt": "motion-native-2",
+      "result": {
+        "passed": false,
+        "report_identity": {
+          "bytes": 14170,
+          "sha256": "a96c242f241bbd7ba83ba5289e0795b75fbc3068a0fca983a7e251097692e5d6"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "build-motion-diagnostic",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "motion-diagnostic",
+            "exit_code": 8,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "Original precondition unchanged; all four cases run independently. Airborne, wall and moving/rotating support passed; stair remained failed. Recorded trajectory completed the full 0.2 m climb with maximum per-tick rise 0.05693509954839057 m."
+    },
+    {
+      "attempt": "motion-native-3",
+      "result": {
+        "passed": true,
+        "report_identity": {
+          "bytes": 13095,
+          "sha256": "834473be33c1765bd43ac288b0a348cb8e4733d0b6cc8f745bb73e784eae2bc5"
+        },
+        "forced_cleanup": false,
+        "final_children": [],
+        "commands": [
+          {
+            "label": "build-geometric-stair-cohort",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          },
+          {
+            "label": "five-motion-cases",
+            "exit_code": 0,
+            "descendants_at_leader_exit": 0,
+            "cleanup_actions": 0
+          }
+        ]
+      },
+      "cause": "New explicitly revised preconditioning checks two real ascent phases plus independent control-course completion. Geometry, 5e-4 momentum tolerance, contact-free first-step requirement and full-save equality unchanged. Original stair attempts remain failed."
+    }
+  ],
+  "reproduction": {
+    "requirements": "Configure the engine with the pinned simulation backend. Use .NET 10, a compatible 424-byte SDK/bridge, and a fresh output directory for each CLI workflow. Keep the original full reports and artifacts for exact-image reproduction.",
+    "native_build": "cmake --build <simulation-build> --target poima poima-physical-controller-handoff-json-test poima-runtime-controller-handoff-state-test poima-runtime-controller-handoff-test poima-runtime-controller-handoff-motion-test --parallel 2",
+    "native_tests": "ctest --test-dir <simulation-build> --output-on-failure -R \"^(physical_controller_handoff_json_native|runtime_controller_handoff_state_native|runtime_controller_handoff_native|runtime_controller_handoff_motion_native)$\"",
+    "managed_build": "dotnet build tests/managed_controller_handoff_gameplay/Poima.ManagedControllerHandoffGame.csproj -c Release --artifacts-path <managed-output> --disable-build-servers -m:1 -nodeReuse:false -p:UseSharedCompilation=false -p:UseAppHost=false -p:RestoreConfigFile=<absolute-path-to-tests/managed_service_abi/NuGet.Config> -p:PoimaGameplayAssembly=<compatible-Poima.Gameplay.dll> -p:BuildProjectReferences=false",
+    "managed_workflow": "python3 tests/controller_handoff_gameplay_contract.py --binary <poima> --hostfxr <hostfxr> --bridge <Poima.ManagedBridge.dll> --assembly <Poima.ManagedControllerHandoffGame.dll> --output <fresh-output>"
+  },
+  "limits": [
+    "Linux execution only. No new Windows execution or rendered/presented-frame qualification.",
+    "The earlier retained NativeAOT game exercises unlinked physical rigs; it does not qualify new handoff AOT.",
+    "Analytic small rigs, not production humanoid appearance or original-character rendered quality.",
+    "Exact equality is within the pinned native profile; no cross-architecture or cross-toolchain bitwise guarantee.",
+    "Suppressed controller motion/support observations remain historical; actor world position follows physics and physical parts report current velocities.",
+    "No return to locomotion, recovery, active balance, root-motion/IK ownership coordination or linked save-schema migration.",
+    "Shared laptop workload timings are not controlled performance results. No representative scaling, hardware comparison or complete Alpha claim."
+  ]
+}

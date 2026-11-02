@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -48,6 +49,13 @@ inline constexpr std::uint32_t max_node=9999;
 // mass, inertia and metric offsets remain fixed; this does not resize physics.
 enum class PoseFramePolicy { RigidUniform, SkeletalFixedScale, SkeletalBoundedScale };
 inline constexpr double max_skeletal_scale_deviation=.01;
+// Immutable one-way ownership link. The runtime additionally validates the
+// actor, direct parent/child graph and virtual-controller ownership boundary.
+enum class ControllerFollowPolicy { TranslateKeepHeading };
+struct ControllerHandoff {
+    std::string actor;
+    ControllerFollowPolicy follow=ControllerFollowPolicy::TranslateKeepHeading;
+};
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;
@@ -56,6 +64,7 @@ struct Configuration {
     // Required positive bound only for SkeletalBoundedScale, otherwise zero.
     // Per axis: abs(current-initial)<=max_scale_deviation*initial. No clamping.
     double max_scale_deviation=0;
+    std::optional<ControllerHandoff> controller_handoff;
 };
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;

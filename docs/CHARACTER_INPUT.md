@@ -98,3 +98,15 @@ each run. The fixture checks movement, wall contact, jump, player ownership,
 neutral ticks, rejected commands, second-tick rollback and fresh-process saves.
 The separate `character_legacy_compatibility.py` compares preserved and current
 executables, including the original saved payload and continued input replay.
+
+## Physical ownership
+
+An opt-in [controller handoff](PHYSICAL_RIGS.md#controller-handoff) lets a linked
+physical rig supersede valid movement/look/jump/stance commands after takeover.
+Caller input remains available to gameplay. A live linked actor's prepared
+caller input is visible through joined callback observations without mutating
+its native motor before the ownership decision. Staged gameplay input retains
+its existing later application boundary. A suppressed actor follows its corpse;
+its motor velocity, ground and stance fields are historical. Inspect
+`runtime.controller_handoff` and physical parts to distinguish ownership from
+current physical motion. Navigation requires locomotion ownership.

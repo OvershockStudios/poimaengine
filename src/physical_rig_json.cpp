@@ -73,9 +73,9 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 
 Configuration parse_configuration(const nlohmann::json& value) {
     need(value.is_object(),"PhysicalRig needs an object.");
-    const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation");
-    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
-        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation.");
+    const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation"),has_handoff=value.contains("controller_handoff");
+    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff.");
     Configuration result;
     if(has_policy) {
         const auto policy=text(value.at("pose_frame"));
@@ -90,6 +90,11 @@ Configuration parse_configuration(const nlohmann::json& value) {
     } else need(!has_bound,"PhysicalRig max_scale_deviation is only valid for skeletal_bounded_scale.");
     result.profile.root=text(value.at("root"));const auto mode=text(value.at("initial_mode"));
     need(mode=="animated" || mode=="passive","PhysicalRig initial_mode must be animated or passive.");result.initially_passive=mode=="passive";
+    if(has_handoff) {
+        const auto& link=value.at("controller_handoff");fields(link,{"actor","follow"});
+        const auto follow=text(link.at("follow"));need(follow=="translate_keep_heading","Physical controller follow must be translate_keep_heading.");
+        result.controller_handoff=ControllerHandoff{text(link.at("actor")),ControllerFollowPolicy::TranslateKeepHeading};
+    }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
     need(joints.is_array() && joints.size()<=max_joints,"PhysicalRig accepts at most 63 joints.");
@@ -127,6 +132,7 @@ nlohmann::json configuration_json(const Configuration& value) {
     if(value.pose_frame==PoseFramePolicy::SkeletalBoundedScale) {
         result["pose_frame"]="skeletal_bounded_scale";result["max_scale_deviation"]=value.max_scale_deviation;
     }
+    if(value.controller_handoff)result["controller_handoff"]={{"actor",value.controller_handoff->actor},{"follow","translate_keep_heading"}};
     return result;
 }
 
@@ -152,6 +158,13 @@ nlohmann::json configuration_schema() {
         {"description","Optional rigid_uniform (omitted canonical default), skeletal_fixed_scale or skeletal_bounded_scale. Skeletal frames use logical quaternion-chain axes and actual affine origins. Fixed scale rejects every local scale change; bounded scale retains actual composed values within an explicitly declared relative envelope. Metric physics proxies never resize."}};
     result["properties"]["max_scale_deviation"]={{"type","number"},{"exclusiveMinimum",0},{"maximum",max_skeletal_scale_deviation},
         {"description","Required only for skeletal_bounded_scale. Every initialized positive local scale axis admits abs(current-initial)<=max_scale_deviation*initial, on all nodes in Animated and Passive modes. Actual composed values are retained without clamping; source keys alone do not bound layers or inertial overshoot."}};
+    result["properties"]["controller_handoff"]=object({
+        {"actor",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},
+        {"follow",{{"const","translate_keep_heading"}}}});
+    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig, root motion or IK/grounding.";
+    Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
+    linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";
+    result["allOf"]=Json::array({std::move(linked_mode)});
     result["oneOf"]=Json::array({
         {{"properties",{{"pose_frame",{{"enum",{"rigid_uniform","skeletal_fixed_scale"}}}}}},
             {"not",{{"required",Json::array({"max_scale_deviation"})}}}},

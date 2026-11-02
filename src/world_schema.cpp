@@ -217,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 124}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 125}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -383,6 +383,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"include_parts",{{"type","boolean"},{"default",false}}},{"include_joints",{{"type","boolean"},{"default",false}}}},
         {"session_id","tick","entity"});
     methods["runtime.physical_rig"]["description"]="Inspect committed native PhysicalRig summary with exact session/tick; absent component returns state=null, missing entity rejects. Optional parts expose actual allocated Jolt COM poses/velocities, including Animated off-broadphase allocations: those are not current animated targets. Joints expose instantaneous evaluated passive torques, not historical applied forces. Reads never sample, synchronize, wake or tick. Outside frozen runtime-game-session-v1.";
+    methods["runtime.controller_handoff"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
+    methods["runtime.controller_handoff"]["description"]="Inspect committed opt-in PhysicalRig controller ownership with exact session/tick. Reports actor, locomotion/physical phase, allocated capsule ID/enrollment and takeover tick. Passive support is historical cached_at_takeover, never current corpse grounding. Absent link returns state=null; missing entity rejects. No sampling, synchronization, waking or tick advance. Additive boundary outside runtime-game-session-v1.";
     methods["runtime.root_motion"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.root_motion"]["description"]="Read cached committed planar root-motion controls and requested/actual interval diagnostics with exact session/tick. Existing nonrig or unconfigured rigs return state=null; missing entities reject. Inspection never samples, consumes or advances.";
     methods["runtime.grounding"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},{"slot",ik_slot}},{"session_id","tick","entity","slot"});

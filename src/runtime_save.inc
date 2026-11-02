@@ -154,10 +154,16 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
                     (void)save_vector<3>(controller["motor"]["integration_velocity"],1e6);
                     require(bodies.GetLinearVelocity(id)==JPH::Vec3::sZero() && bodies.GetAngularVelocity(id)==JPH::Vec3::sZero(),
                         "Virtual query proxy must not have independent velocity.");
-                    require(save_near(save_xyz(p).get<std::array<double,3>>(),
-                        save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>()) &&
-                        save_near(save_xyzw(q).get<std::array<double,4>>(),save_xyzw(rotation).get<std::array<double,4>>()),
-                        "Virtual query proxy differs from logical motor pose.");
+                    const auto proxy_position=save_xyz(p).get<std::array<double,3>>();
+                    const auto logical_proxy=save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>();
+                    const auto proxy_rotation=save_xyzw(q).get<std::array<double,4>>(),logical_rotation=save_xyzw(rotation).get<std::array<double,4>>();
+                    bool proxy_agrees;
+                    if(c->character->IsSuppressed()) {
+                        const auto shape=bodies.GetShape(id);
+                        const auto reported=save_xyz(CharacterMotor::ProxyOriginForMotor(position,rotation,shape.GetPtr())).get<std::array<double,3>>();
+                        proxy_agrees=c->character->ProxyMatchesMotor() && proxy_position==reported && proxy_rotation==logical_rotation;
+                    }else proxy_agrees=save_near(proxy_position,logical_proxy) && save_near(proxy_rotation,logical_rotation);
+                    require(proxy_agrees,"Virtual query proxy differs from logical motor pose.");
                 }
             }
         }
@@ -244,7 +250,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     SaveJson physical_extension=nullptr;
     require(data.contains("physical")==physical_content,"Physical content requires its complete versioned physics extension; legacy worlds cannot add one.");
     if(physical_content) {
-        physical_extension=data.at("physical");data.erase("physical");save_physical_extension_fields(physical_extension);
+        physical_extension=data.at("physical");data.erase("physical");save_physical_extension_fields(physical_extension,definition);
     }
     SaveJson pose_extension=nullptr;
     if(data.contains("camera_poses")) {
@@ -480,14 +486,24 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
                 "Snapshot motor velocity exceeds the configured limits.");
             const auto& body=row.at("body");save_fields(body,{"motion","position","rotation","linear_velocity","angular_velocity","active","motion_state"});
             const auto proxy=save_vector<3>(body.at("position"),1e6);const auto proxy_rotation=save_rotation(body.at("rotation"));
-            const auto expected_proxy=save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>();
+            auto expected_proxy=save_xyz(position+JPH::Vec3(0,CharacterMotor::query_padding,0)).get<std::array<double,3>>();
+            if(controller->character->IsSuppressed()) {
+                // The saved stance has been validated but its shape has not
+                // been installed yet. Use that selected frozen shape, rather
+                // than the constructor's standing proxy, for native COM math.
+                const bool crouched=controller->settings.stance && saved.at("crouched").get<bool>();
+                const auto* shape=crouched ? controller->crouched_shape.GetPtr() : controller->standing_shape.GetPtr();
+                expected_proxy=save_xyz(CharacterMotor::ProxyOriginForMotor(position,rotation,shape)).get<std::array<double,3>>();
+            }
             require(body.at("motion")=="character" && body.at("motion_state").is_null() &&
-                save_near(proxy,expected_proxy) && save_near(proxy_rotation,q),"Snapshot query proxy differs from logical motor pose.");
+                (controller->character->IsSuppressed() ? (proxy==expected_proxy && proxy_rotation==q) :
+                    (save_near(proxy,expected_proxy) && save_near(proxy_rotation,q))),"Snapshot query proxy differs from logical motor pose.");
             require(save_vector<3>(body.at("linear_velocity"),1e6)==std::array<double,3>{} &&
                 save_vector<3>(body.at("angular_velocity"),1e6)==std::array<double,3>{},"Virtual query proxy cannot have independent velocity.");
             const auto expected_yaw=JPH::Quat::sRotation(JPH::Vec3::sAxisY(),static_cast<float>(saved.at("yaw").get<double>()*radians));
             const auto local=save_transform(row.at("local"));
-            require(std::abs(std::abs(rotation.Dot(expected_yaw))-1)<1e-5 && save_near(local.position,p) && save_near(local.rotation,q),
+            require(std::abs(std::abs(rotation.Dot(expected_yaw))-1)<1e-5 &&
+                (controller->character->IsSuppressed() || (save_near(local.position,p) && save_near(local.rotation,q))),
                 "Snapshot logical motor pose differs from yaw/local state.");
             motors.push_back({e,position,rotation,integration,velocity});
         }
@@ -510,6 +526,10 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         if(c) {
             const auto& ctrl=row.at("controller");
             c->yaw=save_number(ctrl.at("yaw"),180.00001);c->pitch=save_number(ctrl.at("pitch"),85);
+            // A suppressed motor remains frozen at its last locomotion pose;
+            // the root actor is independently owned by physical presentation.
+            // Preserve the saved candidate until solved publication verifies it.
+            if(c->character->IsSuppressed())node.local=locals.at(id);
         }
         if(!b && !c)continue;
         save_fields(record,{"motion","position","rotation","linear_velocity","angular_velocity","active","motion_state"});
@@ -559,6 +579,24 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             b->target=std::move(m);
         }
     }
+    // Ordinary sync reconstructs a live controller's owned camera from its
+    // initial local pose and current float pitch. Suppressed sync deliberately
+    // leaves that camera alone, so reconstruct and validate this one owned
+    // channel explicitly before accepting the saved original local values.
+    for(const auto e:s.topology->characters) {
+        const auto& c=s.registry.get<Controller>(e);
+        if(!c.character->IsSuppressed() || c.settings.camera.empty())continue;
+        auto& camera=s.registry.get<Node>(s.find(c.settings.camera));auto expected=camera.initial;
+        const auto& q=camera.initial.rotation;
+        const auto rotation=JPH::Quat(static_cast<float>(q[0]),static_cast<float>(q[1]),static_cast<float>(q[2]),static_cast<float>(q[3])).Normalized()
+            * JPH::Quat::sRotation(JPH::Vec3::sAxisX(),static_cast<float>(c.pitch*radians));
+        expected.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
+        if(c.settings.stance && c.crouched)expected.position[1]-=c.settings.stance->camera_drop;
+        const auto& saved=locals.at(c.settings.camera);
+        require(saved.position==expected.position && saved.rotation==expected.rotation && saved.scale==expected.scale,
+            "Suppressed controller camera differs from its frozen initial pose, pitch or stance.");
+        camera.local=saved;
+    }
     // Logical virtual poses are separate from their zero-velocity query proxies.
     // Restore them only after all platforms/body poses and motion clocks exist.
     for(const auto& motor:motors)s.registry.get<Controller>(motor.entity).character->RestoreMotorPose(motor.position,motor.rotation,motor.integration,motor.reported);
@@ -566,7 +604,11 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // detached candidate mutations are superseded by the joined native state.
     if(physical_checkpoint)s.restore_physical_before_jolt(*physical_checkpoint);
     // Rebuild support from current geometry only after every body is restored.
-    s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
+    s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters) {
+        auto& motor=*s.registry.get<Controller>(e).character;
+        if(!motor.IsSuppressed())motor.PostSimulation(.05f);
+    }
+    s.sync();
     s.validate_planting_membership();
     if(s.animations->has_ik() || s.animations->has_root_motion()) { s.animation_locals();s.sync(); }
     if(physical_checkpoint) {

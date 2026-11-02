@@ -116,6 +116,10 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(entity.camera_draw)remap(entity.camera_draw->camera);
         if(entity.rig_node)remap(entity.rig_node->rig);
         if(entity.animation_rig && entity.animation_rig->root_motion)remap(entity.animation_rig->root_motion->actor);
+        if(entity.physical_rig && entity.physical_rig->controller_handoff) {
+            auto& actor=entity.physical_rig->controller_handoff->actor;
+            check(!actor.empty(),"Native template controller handoff requires a local actor reference.");remap(actor);
+        }
         // Frozen IK chains use model indices in AnimationRig, not world IDs.
         // Copy their configuration unchanged; remapped RigNode ownership
         // is validated against that exact model and direct-parent graph.

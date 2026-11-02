@@ -81,3 +81,20 @@
         }catch(const std::exception& error){throw Error(-32602,error.what());}
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
     }
+
+    Json controller_handoff_runtime_query(const Json& params) {
+        fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+        require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto entity=identifier(params.at("entity"));
+        try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+        Json value=nullptr;
+        try {if(const auto state=runtime_->controller_handoff(entity)) {
+            Json support=nullptr;
+            if(state->cached_support)support={{"semantics","cached_at_takeover"},{"ground",state->cached_support->ground},
+                {"body_id",state->cached_support->body_id},{"normal",state->cached_support->normal},{"velocity",state->cached_support->velocity}};
+            value={{"entity",state->entity},{"actor",state->actor},{"phase",state->suppressed?"physical":"locomotion"},
+                {"capsule_body_id",state->capsule_body_id},{"capsule_enrolled",state->capsule_enrolled},
+                {"takeover_tick",state->takeover_tick?Json(*state->takeover_tick):Json(nullptr)},{"support",std::move(support)}};
+        }}catch(const std::exception& error){throw Error(-32602,error.what());}
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
+    }

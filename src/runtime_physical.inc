@@ -4,12 +4,14 @@
         std::unique_ptr<RuntimePhysicalRigPoseBinding> binding;
         std::unique_ptr<RuntimePhysicalRigBackend> backend;
         std::uint32_t collision_group=0;
+        std::optional<RuntimeControllerHandoffState> handoff;
     };
     struct PhysicalSavedRig {
         RuntimePhysicalRigMembership membership;
         RuntimePhysicalRigPoseState pose;
         std::vector<JPH::BodyID> ids;
         std::uint32_t collision_group=0;
+        std::optional<RuntimeControllerHandoffState> handoff;
     };
     struct PhysicalCheckpoint {
         bool enabled=false;
@@ -38,9 +40,12 @@
         return false;
     }
     void validate_physical_ownership(const RuntimeDefinition& d) const try {
-        if(std::none_of(d.entities.begin(),d.entities.end(),[](const auto& e){return bool(e.physical_rig);}))return;
         std::map<std::string,const RuntimeEntityDefinition*> entities;
         for(const auto& e:d.entities)require(entities.emplace(e.id,&e).second,"Duplicate physical runtime entity identity.");
+        if(topology)for(const auto& [rig,owner]:physical_owners)if(owner->handoff && topology->identities.contains(rig))
+            require(entities.contains(rig)==entities.contains(owner->handoff->actor),"A linked controller and physical rig must retire together.");
+        if(std::none_of(d.entities.begin(),d.entities.end(),[](const auto& e){return bool(e.physical_rig);}))return;
+        std::map<std::string,std::string> linked;
         // Ordinary attached colliders do not follow the solved hierarchy. Until
         // an explicit attachment-body owner exists, reject the ghost obstacle
         // rather than leave its Jolt pose frozen while its rendered node moves.
@@ -60,14 +65,38 @@
             require(!e.collider && !e.character && !e.mesh_collider,"PhysicalRig wrapper cannot also own an ordinary collider/controller.");
             require(!e.animation_rig->root_motion && e.animation_rig->ik.empty(),
                 "Initial PhysicalRig ownership does not yet coordinate root motion or IK/grounding; transfer/recovery remains separate work.");
+            if(e.physical_rig->controller_handoff) {
+                const auto& link=*e.physical_rig->controller_handoff;
+                const auto found=entities.find(link.actor);
+                require(found!=entities.end() && e.parent==link.actor,"Physical handoff needs its direct controller parent.");
+                const auto& actor=*found->second;
+                require(actor.parent.empty() && actor.character && actor.character->locomotion && !actor.animation_rig && !actor.rig_node && !actor.physical_rig && !actor.collider && !actor.mesh_collider,
+                    "Physical handoff requires an otherwise unowned root virtual controller.");
+                require(linked.emplace(link.actor,e.id).second,"A controller can link to only one physical rig.");
+            }
             std::size_t depth=0;
             for(auto parent=e.parent;!parent.empty();) {
                 const auto found=entities.find(parent);require(found!=entities.end() && ++depth<=entities.size(),"Invalid PhysicalRig ancestor graph.");
                 const auto& a=*found->second;
-                require(!a.character && !a.rig_node && !a.physical_rig && (!a.collider || a.collider->motion==BodyMotion::Static),
+                const bool linked_parent=e.physical_rig->controller_handoff && parent==e.physical_rig->controller_handoff->actor && parent==e.parent;
+                require((!a.character || linked_parent) && !a.rig_node && !a.physical_rig && (!a.collider || a.collider->motion==BodyMotion::Static),
                     "Initial PhysicalRig cannot inherit a controller, moving body, animated node or another physical rig; coordinated transfer remains required.");
                 parent=a.parent;
             }
+        }
+        if(linked.empty())return;
+        for(const auto& e:d.entities) {
+            if(e.animation_rig && e.animation_rig->root_motion)
+                require(!linked.contains(e.animation_rig->root_motion->actor),"A handoff controller cannot have another root-motion writer.");
+            auto ancestor=e.id;std::size_t depth=0;
+            while(!ancestor.empty() && !linked.contains(ancestor)) {
+                const auto found=entities.find(ancestor);require(found!=entities.end() && ++depth<=entities.size(),"Invalid linked controller graph.");ancestor=found->second->parent;
+            }
+            if(ancestor.empty())continue;
+            const bool actor=e.id==ancestor;const bool rig=e.id==linked.at(ancestor);
+            require(actor || (!e.character && !e.collider && !e.mesh_collider),"A linked actor subtree cannot own additional independent bodies/controllers.");
+            require(!e.physical_rig || rig,"A linked actor subtree cannot have another physical rig.");
+            require(!e.animation_rig || (!e.animation_rig->root_motion && e.animation_rig->ik.empty()),"Linked controller preview does not permit descendant root motion, IK or grounding.");
         }
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void validate_physical_bootstrap(const RuntimeDefinition& d,const RuntimePhysicsBootstrap& restored) const try {
@@ -96,6 +125,13 @@
         if(!d.physical_rig)return;
         require(!physical_owners.contains(d.id),"Physical rig owner already exists.");
         auto owner=std::make_unique<PhysicalOwner>();
+        if(d.physical_rig->controller_handoff) {
+            owner->handoff=RuntimeControllerHandoffState{d.physical_rig->controller_handoff->actor,{}};
+            if(restored) {
+                const auto found=restored->handoffs.find(d.id);require(found!=restored->handoffs.end() && found->second.actor==owner->handoff->actor,"Cold handoff ownership differs from authored link.");
+                owner->handoff=found->second;
+            }
+        }
         owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local(),d.physical_rig->pose_frame,d.physical_rig->max_scale_deviation);
         const auto poses=owner->binding->record_final(tick,physical_world(),physical_local());
         std::span<const JPH::BodyID> ids;
@@ -137,14 +173,40 @@
             world_matrices();std::size_t count=0;
             for(const auto& id:topology->physical_rigs) {
                 const auto found=physical_owners.find(id);if(found!=physical_owners.end() && found->second->backend->mode()==RuntimePhysicalRigMode::Passive)
-                    count+=found->second->backend->definition().parts.size()+1;
+                    count+=found->second->backend->definition().parts.size()+1+(found->second->handoff?1:0);
             }
             std::vector<RuntimePhysicalRigLocalUpdate> prepared;prepared.reserve(count);
             for(const auto& id:topology->physical_rigs) {
                 const auto found=physical_owners.find(id);if(found==physical_owners.end())continue;auto& owner=*found->second;
                 if(owner.backend->mode()!=RuntimePhysicalRigMode::Passive)continue;
                 const auto bodies=physical_native_poses(owner);
-                auto updates=owner.binding->solved_locals(bodies,physical_world(),physical_local());
+                auto world=physical_world();auto local=physical_local();
+                std::map<std::string,Matrix4> candidate_worlds;
+                std::optional<RuntimePhysicalActorFollowCandidate> follow;
+                if(owner.handoff) {
+                    require(owner.handoff->passive.has_value(),"Passive linked rig requires transferred controller ownership.");
+                    const auto& actor=owner.handoff->actor;
+                    follow=plan_actor_follow(owner.handoff->passive->follow,owner.binding->solved_wrapper_world(bodies),identity_matrix(),
+                        registry.get<Node>(find(actor)).local,registry.get<Node>(find(id)).local);
+                    candidate_worlds.emplace(actor,follow->actor_world);
+                    // Rebuild a coherent pre-overlay source hierarchy against
+                    // the candidate parent. Pose binding still checks every
+                    // actual sampled scale; only rigid ownership moves here.
+                    for(const auto e:topology->hierarchy) {
+                        const auto& node=registry.get<Node>(e);
+                        if(node.id==actor || !candidate_worlds.contains(node.parent))continue;
+                        auto value=multiply(candidate_worlds.at(node.parent),local_matrix(node.local.position,node.local.rotation,node.local.scale));
+                        if(const auto* camera=registry.try_get<RuntimeCamera>(e);camera && camera->world_pose!=RuntimeCameraPose{})
+                            value=multiply(value,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
+                        candidate_worlds.emplace(node.id,value);
+                    }
+                    world=[&,fallback=physical_world()](const std::string& name){const auto found=candidate_worlds.find(name);return found==candidate_worlds.end()?fallback(name):found->second;};
+                }
+                auto updates=owner.binding->solved_locals(bodies,world,local);
+                if(follow) {
+                    prepared.push_back({owner.handoff->actor,follow->actor_local});
+                    for(auto& update:updates)if(update.entity==id)update.local=follow->wrapper_local;
+                }
                 for(auto& update:updates)prepared.push_back(std::move(update));
             }
             for(const auto& update:prepared)registry.get<Node>(find(update.entity)).local=update.local;
@@ -159,9 +221,10 @@
         for(const auto& id:topology->physical_rigs)physical_owners.at(id)->backend->before_step(Runtime::fixed_dt);
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_ignore(const std::string& id,JPH::IgnoreMultipleBodiesFilter& filter) const {
-        const auto found=physical_owners.find(id);
-        if(found==physical_owners.end() || !topology->identities.contains(id))return;
-        for(const auto& part:found->second->backend->definition().parts)filter.IgnoreBody(found->second->backend->body_id(part.name));
+        for(const auto& [rig,owner]:physical_owners) {
+            if(!topology->identities.contains(rig) || (rig!=id && (!owner->handoff || owner->handoff->actor!=id)))continue;
+            for(const auto& part:owner->backend->definition().parts)filter.IgnoreBody(owner->backend->body_id(part.name));
+        }
     }
     void validate_physical_commands(const std::vector<PhysicalRigCommand>& commands) const {
         require(commands.size()<=64,"At most64 physical rig commands per tick.");std::set<std::string> activations;
@@ -206,7 +269,21 @@
             const auto found=physical_owners.find(command.entity);require(found!=physical_owners.end() && topology->identities.contains(command.entity),"Physical command needs a live PhysicalRig owner.");auto& owner=*found->second;
             if(command.activate) {
                 require(owner.backend->mode()==RuntimePhysicalRigMode::Animated && owner.binding->state().current && owner.binding->state().current->tick==tick,"Physical activation requires the current committed animated pose.");
-                owner.binding->capture_passive_reference(physical_world(),physical_local());owner.backend->enter_passive(owner.binding->state().current->bodies);
+                if(owner.handoff) {
+                    require(owner.binding->state().previous.has_value(),"Controller handoff requires a completed committed locomotion tick; birth plus activation in one tick is unsupported.");
+                    auto& c=registry.get<Controller>(find(owner.handoff->actor));
+                    require(!owner.handoff->passive && !c.character->IsSuppressed(),"Controller ownership was already transferred.");
+                    RuntimeControllerSuppression passive;passive.takeover_tick=tick;
+                    passive.follow=capture_actor_follow(registry.get<Node>(find(owner.handoff->actor)).world,registry.get<Node>(find(command.entity)).world);
+                    passive.support=c.character->CaptureSupport();
+                    // History already includes resolved actor/platform motion.
+                    // Never add motor velocity a second time.
+                    owner.binding->capture_passive_reference(physical_world(),physical_local());
+                    c.character->Suppress(passive.support);passive.proxy=c.character->CaptureProxy();owner.handoff->passive=passive;
+                    owner.backend->enter_passive(owner.binding->state().current->bodies);
+                }else {
+                    owner.binding->capture_passive_reference(physical_world(),physical_local());owner.backend->enter_passive(owner.binding->state().current->bodies);
+                }
             }
             if(command.impulse)owner.backend->impulse(command.impulse->part,command.impulse->world_point,command.impulse->impulse);
         }};
@@ -219,7 +296,7 @@
         std::map<const JPH::Constraint*,std::pair<std::string,std::string>> names;
         for(const auto& id:topology->physical_rigs) {
             const auto& owner=*physical_owners.at(id);PhysicalSavedRig row;
-            row.membership=owner.backend->snapshot_membership();row.pose=owner.binding->snapshot();row.collision_group=owner.collision_group;
+            row.membership=owner.backend->snapshot_membership();row.pose=owner.binding->snapshot();row.collision_group=owner.collision_group;row.handoff=owner.handoff;
             for(const auto& part:owner.backend->definition().parts)row.ids.push_back(owner.backend->body_id(part.name));
             saved.rigs.emplace(id,std::move(row));
             if(owner.backend->mode()==RuntimePhysicalRigMode::Passive)for(const auto& [joint,ref]:owner.backend->constraints())require(names.emplace(ref.GetPtr(),std::pair{id,joint}).second,"Duplicate physical constraint identity.");
@@ -235,7 +312,12 @@
         for(const auto& [id,row]:saved.rigs) {
             auto& owner=*physical_owners.at(id);require(owner.collision_group==row.collision_group && row.ids.size()==owner.backend->definition().parts.size(),"Physical rollback allocation/profile differs.");
             for(std::size_t n=0;n<row.ids.size();++n)require(owner.backend->body_id(owner.backend->definition().parts[n].name)==row.ids[n],"Physical rollback must preserve exact body IDs.");
-            owner.backend->restore_membership(row.membership);owner.binding->restore(row.pose);
+            owner.backend->restore_membership(row.membership);owner.binding->restore(row.pose);owner.handoff=row.handoff;
+            if(row.handoff) {
+                auto& motor=*registry.get<Controller>(find(row.handoff->actor)).character;
+                motor.RestoreSuppression(row.handoff->passive ? std::optional{row.handoff->passive->support} : std::nullopt);
+                if(row.handoff->passive)motor.RestoreProxy(row.handoff->passive->proxy);
+            }
         }
         std::vector<JPH::Ref<JPH::Constraint>> constraints;constraints.reserve(saved.constraint_order.size());
         for(const auto& [rig,joint]:saved.constraint_order)constraints.push_back(physical_owners.at(rig)->backend->constraint(joint));
@@ -253,6 +335,7 @@
         }
         for(const auto& id:topology->physical_rigs) {
             const auto& owner=*physical_owners.at(id);RuntimePhysicalRigIdentity row;row.collision_group=owner.collision_group;
+            if(owner.handoff)value.handoffs.emplace(id,*owner.handoff);
             for(const auto& part:owner.backend->definition().parts)row.parts.push_back(owner.backend->body_id(part.name));value.rigs.emplace(id,std::move(row));
         }
         return value;

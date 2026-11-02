@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "runtime_physical_state_json.hpp"
+#include "runtime_body_ids.hpp"
 #include <cmath>
 #include <initializer_list>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 
@@ -115,5 +117,62 @@ nlohmann::json constraint_order_json(std::span<const std::pair<std::string,std::
 ConstraintOrder parse_constraint_order(const nlohmann::json& value) {
     count(value,0,max_constraint_keys);ConstraintOrder result;result.reserve(value.size());
     for(const auto& key:value){fields(key,{"rig","joint"});result.emplace_back(text(key.at("rig"),true),text(key.at("joint")));}return result;
+}
+nlohmann::json handoff_state_json(const RuntimeControllerHandoffState& value) {
+    text_valid(value.actor,true);Json passive=nullptr;
+    if(value.passive) {
+        const auto& p=*value.passive;
+        passive={{"takeover_tick",p.takeover_tick},
+            {"follow",{{"actor_minus_wrapper_world",p.follow.actor_minus_wrapper_world},{"actor_world_rotation",p.follow.actor_world_rotation}}},
+            {"support",{{"ground_state",p.support.ground_state},{"ground_body_id",p.support.ground_body_id},
+                {"normal",p.support.normal},{"velocity",p.support.velocity}}},
+            {"proxy",{{"body_id",p.proxy.body_id},{"position",p.proxy.position},{"rotation",p.proxy.rotation},
+                {"linear_velocity",p.proxy.linear_velocity},{"angular_velocity",p.proxy.angular_velocity},{"active",p.proxy.active}}}};
+    }
+    Json result={{"actor",value.actor},{"passive",std::move(passive)}};
+    (void)parse_handoff_state(result);return result;
+}
+RuntimeControllerHandoffState parse_handoff_state(const nlohmann::json& value) {
+    fields(value,{"actor","passive"});RuntimeControllerHandoffState result;result.actor=text(value.at("actor"),true);
+    if(value.at("passive").is_null())return result;
+    const auto integer=[](const Json& n,std::uint64_t bound) {
+        need(n.is_number_unsigned() && n.get<std::uint64_t>()<=bound,"Controller handoff integers must be canonical unsigned values within bounds.");
+        return n.get<std::uint64_t>();
+    };
+    const auto raw_id=[&](const Json& n,bool allow_invalid) {
+        const auto raw=static_cast<std::uint32_t>(integer(n,std::numeric_limits<std::uint32_t>::max()));
+        if(allow_invalid && raw==JPH::BodyID::cInvalidBodyID)return raw;
+        need(raw!=JPH::BodyID::cInvalidBodyID && !(raw&JPH::BodyID::cBroadPhaseBit) &&
+            (raw&JPH::BodyID::cMaxBodyIndex)<RuntimeBodyIds::capacity,"Controller handoff body ID has invalid bits or slot.");return raw;
+    };
+    const auto native_vector=[](const Json& n,double bound) {
+        const auto values=vector<3>(n,bound);
+        for(double x:values)need(std::isfinite(static_cast<float>(x)) && static_cast<double>(static_cast<float>(x))==x,
+            "Controller support values must retain exact native float32 values.");
+        return values;
+    };
+    const auto& p=value.at("passive");fields(p,{"takeover_tick","follow","support","proxy"});RuntimeControllerSuppression saved;
+    saved.takeover_tick=integer(p.at("takeover_tick"),max_tick);
+    const auto& follow=p.at("follow");fields(follow,{"actor_minus_wrapper_world","actor_world_rotation"});
+    saved.follow.actor_minus_wrapper_world=vector<3>(follow.at("actor_minus_wrapper_world"),2*runtime_physical_rig_world_limit);
+    saved.follow.actor_world_rotation=rotation(follow.at("actor_world_rotation"));
+    const auto& support=p.at("support");fields(support,{"ground_state","ground_body_id","normal","velocity"});
+    saved.support.ground_state=static_cast<std::uint32_t>(integer(support.at("ground_state"),3));
+    saved.support.ground_body_id=raw_id(support.at("ground_body_id"),true);
+    saved.support.normal=native_vector(support.at("normal"),1+physical_rig::unit_tolerance);
+    need(std::hypot(saved.support.normal[0],saved.support.normal[1],saved.support.normal[2])<=1+physical_rig::unit_tolerance,
+        "Controller support normal exceeds its native unit bound.");
+    saved.support.velocity=native_vector(support.at("velocity"),runtime_physical_rig_world_limit);
+    const auto& proxy=p.at("proxy");fields(proxy,{"body_id","position","rotation","linear_velocity","angular_velocity","active"});
+    saved.proxy.body_id=raw_id(proxy.at("body_id"),false);
+    saved.proxy.position=vector<3>(proxy.at("position"),runtime_physical_rig_world_limit);
+    saved.proxy.rotation=rotation(proxy.at("rotation"));
+    for(double x:saved.proxy.rotation)need(static_cast<double>(static_cast<float>(x))==x,"Suppressed proxy rotation must retain exact native float32 values.");
+    saved.proxy.linear_velocity=native_vector(proxy.at("linear_velocity"),runtime_physical_rig_world_limit);
+    saved.proxy.angular_velocity=native_vector(proxy.at("angular_velocity"),physical_rig::max_angular_velocity);
+    saved.proxy.active=boolean(proxy.at("active"));
+    need(!saved.proxy.active && saved.proxy.linear_velocity==physical_rig::Vec3{} && saved.proxy.angular_velocity==physical_rig::Vec3{},
+        "A suppressed virtual proxy must be inactive with zero independent velocities.");
+    result.passive=std::move(saved);return result;
 }
 } // namespace poima::physical_state_json

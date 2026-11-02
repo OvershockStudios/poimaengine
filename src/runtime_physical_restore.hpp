@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "runtime_body_ids.hpp"
+#include "runtime_controller_handoff_state.hpp"
 #include <map>
 #include <string>
 #include <vector>
@@ -17,5 +18,9 @@ struct RuntimePhysicsBootstrap {
     std::map<std::string,JPH::BodyID> bodies;
     std::map<std::string,RuntimePhysicalRigIdentity> rigs;
     std::uint32_t next_collision_group=1;
+    // Derived from the separately checked physical extension, not an extra
+    // field in the existing version-1 bootstrap JSON. Installed before the
+    // first controller enrollment, support refresh or presentation sync.
+    std::map<std::string,RuntimeControllerHandoffState> handoffs;
 };
 }

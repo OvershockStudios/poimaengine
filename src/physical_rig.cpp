@@ -198,6 +198,14 @@ void validate(const Configuration& c) {
             c.max_scale_deviation<=max_skeletal_scale_deviation,
             "Bounded skeletal scale needs a finite positive max_scale_deviation no greater than .01.");
     else require(c.max_scale_deviation==0,"Only bounded skeletal scale accepts max_scale_deviation.");
+    if(c.controller_handoff) {
+        const auto& link=*c.controller_handoff;
+        require(!link.actor.empty() && link.actor.size()<=256 &&
+            std::none_of(link.actor.begin(),link.actor.end(),[](unsigned char ch){return ch<32 || ch==127;}),
+            "Physical controller handoff requires a nonempty actor identity of at most256 bytes without controls.");
+        require(link.follow==ControllerFollowPolicy::TranslateKeepHeading,"Physical controller follow policy is invalid.");
+        require(!c.initially_passive,"A linked physical rig must start Animated before controller takeover.");
+    }
 }
 PassiveResponse evaluate_passive(const Joint& j,Pose parent,Pose child,Vec3 relative_omega) {
     validate(j);parent=canonical_pose(parent);child=canonical_pose(child);vector(relative_omega,max_relative_angular_velocity,"Relative angular velocity exceeds finite +/-2e4 rad/s per axis.");

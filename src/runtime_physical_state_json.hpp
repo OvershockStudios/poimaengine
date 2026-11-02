@@ -2,6 +2,7 @@
 #pragma once
 #include "runtime_physical_pose.hpp"
 #include "runtime_physical_rig.hpp"
+#include "runtime_controller_handoff_state.hpp"
 #include <nlohmann/json.hpp>
 #include <span>
 #include <utility>
@@ -29,4 +30,8 @@ nlohmann::json pose_state_json(const RuntimePhysicalRigPoseState&);
 RuntimePhysicalRigPoseState parse_pose_state(const nlohmann::json&);
 nlohmann::json constraint_order_json(std::span<const std::pair<std::string,std::string>>);
 ConstraintOrder parse_constraint_order(const nlohmann::json&);
+// Optional link state uses exact local values and explicit null while still
+// locomotion-owned. World/configuration/ledger joins belong to the save adapter.
+nlohmann::json handoff_state_json(const RuntimeControllerHandoffState&);
+RuntimeControllerHandoffState parse_handoff_state(const nlohmann::json&);
 } // namespace poima::physical_state_json

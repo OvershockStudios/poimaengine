@@ -13,6 +13,7 @@ class CharacterMotor {
     JPH::Vec3 reported_velocity_=JPH::Vec3::sZero();
     JPH::RVec3 tick_origin_=JPH::RVec3::sZero();
     float pending_seconds_=0;
+    std::optional<RuntimeControllerSupportState> suppressed_support_;
     JPH::CharacterBase& base() const {return virtual_ ? static_cast<JPH::CharacterBase&>(*virtual_) : static_cast<JPH::CharacterBase&>(*physical_);}
     JPH::Vec3 bounded_velocity(JPH::Vec3Arg velocity) const {
         const float maximum=physics_.GetBodyInterface().GetMaxLinearVelocity(proxy_);
@@ -57,6 +58,62 @@ public:
             virtual_=nullptr;bodies.DestroyBody(proxy_);
         }
     }
+    // Jolt stores COM=publicationOrigin+rotatedShapeCOM, then reports the
+    // origin by subtracting that offset. Replay those actual operations;
+    // reportedOrigin need not be bit-identical to publicationOrigin.
+    static JPH::RVec3 ProxyOriginForMotor(JPH::RVec3Arg position,JPH::QuatArg rotation,const JPH::Shape* shape) {
+        require(shape!=nullptr,"Controller proxy shape is absent.");
+        const auto offset=rotation*shape->GetCenterOfMass();
+        const auto com=position+JPH::Vec3(0,query_padding,0)+offset;
+        return com-offset;
+    }
+    bool ProxyMatchesMotor() const {
+        if(!IsVirtual())return false;
+        JPH::BodyLockRead lock(physics_.GetBodyLockInterface(),proxy_);if(!lock.Succeeded())return false;
+        const auto& body=lock.GetBody();const auto q=virtual_->GetRotation();
+        const auto offset=q*body.GetShape()->GetCenterOfMass();
+        const auto com=virtual_->GetPosition()+JPH::Vec3(0,query_padding,0)+offset;
+        return body.GetCenterOfMassPosition()==com && body.GetRotation()==q && body.GetPosition()==com-offset;
+    }
+    bool IsSuppressed() const {return suppressed_support_.has_value();}
+    RuntimeControllerSupportState CaptureSupport() const {
+        if(suppressed_support_)return *suppressed_support_;
+        const auto normal=base().GetGroundNormal(),velocity=base().GetGroundVelocity();
+        return {static_cast<std::uint32_t>(base().GetGroundState()),base().GetGroundBodyID().GetIndexAndSequenceNumber(),
+            {normal.GetX(),normal.GetY(),normal.GetZ()},{velocity.GetX(),velocity.GetY(),velocity.GetZ()}};
+    }
+    RuntimeControllerProxyState CaptureProxy() const {
+        auto& bodies=physics_.GetBodyInterface();const auto id=GetBodyID();JPH::RVec3 p;JPH::Quat q;bodies.GetPositionAndRotation(id,p,q);
+        const auto v=bodies.GetLinearVelocity(id),w=bodies.GetAngularVelocity(id);
+        return {id.GetIndexAndSequenceNumber(),{p.GetX(),p.GetY(),p.GetZ()},
+            {v.GetX(),v.GetY(),v.GetZ()},{w.GetX(),w.GetY(),w.GetZ()},
+            {q.GetX(),q.GetY(),q.GetZ(),q.GetW()},bodies.IsActive(id)};
+    }
+    // Phase changes preserve the allocated proxy ID. Portable restore owns the
+    // off-world native witness separately from Jolt's enrolled-body recorder.
+    void RestoreSuppression(const std::optional<RuntimeControllerSupportState>& support) {
+        require(IsVirtual() || !support,"Only a virtual motor supports physical ownership transfer.");
+        auto& bodies=physics_.GetBodyInterface();const auto id=GetBodyID();
+        if(support && bodies.IsAdded(id))RemoveFromPhysicsSystem();
+        if(!support && !bodies.IsAdded(id))AddToPhysicsSystem();
+        suppressed_support_=support;
+    }
+    void Suppress(const RuntimeControllerSupportState& support) {
+        require(IsVirtual() && !IsSuppressed(),"Physical takeover requires a live locomotion motor.");
+        RestoreSuppression(support);
+    }
+    void RestoreProxy(const RuntimeControllerProxyState& state) {
+        require(IsSuppressed() && state.body_id==GetBodyID().GetIndexAndSequenceNumber() && !state.active,
+            "Suppressed controller proxy identity/phase differs.");
+        auto& bodies=physics_.GetBodyInterface();require(!bodies.IsAdded(GetBodyID()),"Suppressed proxy must be outside broadphase.");
+        // Never feed a previously reported origin through COM arithmetic a
+        // second time. Replay the frozen logical publication and certify its
+        // resulting native witness against the unmodified saved values.
+        publish_proxy_pose();
+        bodies.SetLinearAndAngularVelocity(GetBodyID(),JPH::Vec3(static_cast<float>(state.linear_velocity[0]),static_cast<float>(state.linear_velocity[1]),static_cast<float>(state.linear_velocity[2])),
+            JPH::Vec3(static_cast<float>(state.angular_velocity[0]),static_cast<float>(state.angular_velocity[1]),static_cast<float>(state.angular_velocity[2])));
+        require(ProxyMatchesMotor() && CaptureProxy()==state,"Restored suppressed proxy differs from its exact saved native witness.");
+    }
     bool IsVirtual() const {return virtual_!=nullptr;}
     JPH::BodyID GetBodyID() const {return virtual_ ? proxy_ : physical_->GetBodyID();}
     void AddToPhysicsSystem() {
@@ -81,11 +138,11 @@ public:
         if(virtual_) {reported_velocity_=bounded_velocity(velocity);virtual_->SetLinearVelocity(reported_velocity_);}
         else physical_->SetLinearVelocity(velocity);
     }
-    JPH::CharacterBase::EGroundState GetGroundState() const {return base().GetGroundState();}
-    JPH::BodyID GetGroundBodyID() const {return base().GetGroundBodyID();}
-    JPH::Vec3 GetGroundNormal() const {return base().GetGroundNormal();}
-    JPH::Vec3 GetGroundVelocity() const {return base().GetGroundVelocity();}
-    void BeginTick() {jump_pending_=false;jump_speed_=0;}
+    JPH::CharacterBase::EGroundState GetGroundState() const {return suppressed_support_ ? static_cast<JPH::CharacterBase::EGroundState>(suppressed_support_->ground_state) : base().GetGroundState();}
+    JPH::BodyID GetGroundBodyID() const {return suppressed_support_ ? JPH::BodyID(suppressed_support_->ground_body_id) : base().GetGroundBodyID();}
+    JPH::Vec3 GetGroundNormal() const {return suppressed_support_ ? JPH::Vec3(static_cast<float>(suppressed_support_->normal[0]),static_cast<float>(suppressed_support_->normal[1]),static_cast<float>(suppressed_support_->normal[2])) : base().GetGroundNormal();}
+    JPH::Vec3 GetGroundVelocity() const {return suppressed_support_ ? JPH::Vec3(static_cast<float>(suppressed_support_->velocity[0]),static_cast<float>(suppressed_support_->velocity[1]),static_cast<float>(suppressed_support_->velocity[2])) : base().GetGroundVelocity();}
+    void BeginTick() {if(IsSuppressed())return;jump_pending_=false;jump_speed_=0;}
     void RequestJump(float speed) {jump_pending_=true;jump_speed_=speed;}
     void CheckCollision(JPH::RVec3Arg position,JPH::QuatArg rotation,JPH::Vec3Arg movement,float separation,
         const JPH::Shape* shape,JPH::RVec3Arg offset,JPH::CollideShapeCollector& collector) const {
@@ -103,7 +160,7 @@ public:
         publish_proxy_pose();return true;
     }
     void UpdateVirtual(float seconds) {
-        if(!virtual_)return;
+        if(!virtual_ || IsSuppressed())return;
         require(seconds>0 && std::isfinite(seconds),"Invalid virtual character integration interval.");
         const auto previous=virtual_->GetPosition();
         tick_origin_=previous;pending_seconds_=seconds;
@@ -139,6 +196,7 @@ public:
         publish_proxy_pose();
     }
     void PostSimulation(float separation) {
+        if(IsSuppressed())return;
         if(!virtual_) {physical_->PostSimulation(separation);return;}
         const bool supported=virtual_->IsSupported();
         const bool descending=reported_velocity_.GetY()<=1.0e-6f &&
@@ -177,6 +235,6 @@ public:
         require(IsVirtual(),"Saved motor state requires a virtual character.");
         virtual_->SetPosition(position);virtual_->SetRotation(rotation);virtual_->SetLinearVelocity(bounded_velocity(velocity));
         reported_velocity_=reported;
-        jump_pending_=false;jump_speed_=0;pending_seconds_=0;publish_proxy_pose();
+        jump_pending_=false;jump_speed_=0;pending_seconds_=0;if(!IsSuppressed())publish_proxy_pose();
     }
 };

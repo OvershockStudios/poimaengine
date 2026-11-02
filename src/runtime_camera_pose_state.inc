@@ -12,7 +12,7 @@
         while(!current.empty()) {
             require(ancestry.size()<10000,"Base camera hierarchy exceeds10000 nodes.");
             if(allow_pending)if(const auto* pending=pending_entity(current)) {ancestry.push_back(pending->transform);current=pending->parent;continue;}
-            const auto& node=registry.get<Node>(find(current));ancestry.push_back(node.local);current=node.parent;
+            const auto& node=registry.get<Node>(find(current));ancestry.push_back(observation_local(current));current=node.parent;
         }
         auto result=identity_matrix();bool first=true;
         for(auto i=ancestry.rbegin();i!=ancestry.rend();++i) {
