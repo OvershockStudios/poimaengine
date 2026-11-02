@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.226
+
+- Qualify linked manual-IK takeover on Windows with native callbacks, complete
+  state restoration and surrounding animation/physics regressions.
+- Add a real C# point/oriented-IK consumer covering 80 typed fields, staged
+  writes, failure recovery and three-process saved continuation on both hosts.
+- Link the Windows test DLL with the existing portable static-runtime policy;
+  inspect its actual imports/export before executing callbacks.
+- Document the C# ownership workflow and preserve distinct platform, compiler,
+  process and archive evidence scopes.
+
 ## 0.0.225
 
 - Coordinate opt-in manual IK with linked controller-to-physics takeover,

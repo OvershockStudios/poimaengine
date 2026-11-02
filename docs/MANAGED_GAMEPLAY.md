@@ -39,7 +39,7 @@ Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its
 | Native engine | Explicit hostfxr path |
 | --- | --- |
 | Linux x64 | `.cache/toolchains/dotnet-10.0.401/host/fxr/10.0.12/libhostfxr.so` |
-| Windows x64 | `C:/Program Files/dotnet/host/fxr/10.0.12/hostfxr.dll` |
+| Windows x64 | `C:/Program Files/dotnet/host/fxr/10.0.14/hostfxr.dll` |
 
 No runtime is installed or redistributed by the engine build. Hostfxr and the stable bridge remain loaded for the process lifetime. Changing their selected paths requires restarting the engine process; only game assemblies are replaced during gameplay reload.
 
@@ -87,7 +87,7 @@ public sealed class CounterGame : Game<CounterState>
 | `Raycast(origin, direction, distance, ignore)` | Closest collider hit, or null; see the [native ray contract](PHYSICS_INTERACTIONS.md). |
 | `PlaySound(emitter, gain)` / `StopSound(voice)` | Create/stop a native voice in the gameplay transaction; [event/recording contract](AUDIO_EVENTS.md). |
 | `MoveKinematic(entity, position, rotation, ticks)` | Queue a validated native kinematic target for this tick. |
-| `GetTwoBoneIk(entity, slot)` | Tick-only committed controls and cached solved diagnostics; requires independent `ITwoBoneIkGame`. |
+| `GetTwoBoneIk(entity, slot)` | Tick-only current controls and phase-dependent pose diagnostics; requires independent `ITwoBoneIkGame`. |
 | `SetTwoBoneIk(entity, slot, target, pole, enabled, space, weight)` | Stage complete persistent controls for a configured chain slot; requires `ITwoBoneIkGame`. |
 | `GetAnimation(entity)` | Copy native playback and active transition state; null for an existing non-rig entity. |
 | `SetAnimation(entity, clip, time, speed, loop, playing, blendTicks)` | Queue complete native playback state and an optional fixed-tick crossfade for this tick. |
@@ -371,9 +371,11 @@ layer, input, hit-region or other extension rights; declare each marker your
 game uses. Existing unmarked games retain their 176-byte view.
 
 `GameContext.GetTwoBoneIk(entity, slot)` returns an immutable nullable `IkState`
-with the frozen root/middle/end model indices, committed controls and cached
-solved endpoint/error/clamp/pole-fallback diagnostics. It does not solve or
-advance animation. An existing non-rig or absent configured slot returns null;
+with the frozen root/middle/end model indices, current controls and joined
+endpoint/error/clamp/pole-fallback diagnostics. Ordinary rigs use their cached
+solve; linked opt-in physical rigs use the prepared callback pose while
+Animated and the captured historical diagnostic while Passive, as described
+below. The getter itself does not solve or advance animation. An existing non-rig or absent configured slot returns null;
 an unknown live entity rejects. `SetTwoBoneIk` accepts complete persistent
 controls, either through the arguments below or an immutable `IkCommand`.
 Both APIs are Tick-only: at most 1,024 admitted reads and 64 admitted writes per
@@ -408,7 +410,7 @@ and fresh saved continuation; compatible reload is checked only with CoreCLR.
 Declare `ITwoBoneIkOrientationGame`, which inherits `ITwoBoneIkGame`. It requests
 `animation_ik_end_orientation_v1` together with `animation_ik_v1` through the
 352-byte epoch-7 prefix. It grants no unrelated intermediate extension rights.
-`GetTwoBoneIkOrientation` reads the committed point state and optional rig-frame
+`GetTwoBoneIkOrientation` reads the same point state and optional rig-frame
 orientation diagnostics. `SetTwoBoneIkOrientation` stages one complete
 `IkOrientedCommand`, including all positional controls and its nullable goal.
 
@@ -505,3 +507,46 @@ complete replacement. Neither probes physics. Automatic slot ownership remains
 frozen while disabled, and calibration stays part of the authored content.
 See [control placement from gameplay](GROUND_CONTACTS.md#control-placement-from-gameplay)
 for timing, budgets, save versions, conflicts and recovery.
+
+
+## Transfer procedural posing to physics
+
+Declare `IPhysicalRigGame` together with the IK marker your game uses, such as
+`ITwoBoneIkOrientationGame`. Their combined requirements use the existing
+424-byte epoch-7 services prefix. Author the linked rig with
+[`procedural_pose: "animated_only"`](PHYSICAL_RIGS.md#manual-ik-ownership), a root
+virtual controller and physical mappings for every chain joint. Put cameras on
+separate child entities.
+
+During an animated Tick, `Get` bone transforms, `GetTwoBoneIk` and
+`GetTwoBoneIkOrientation` observe one joined pose under the prepared caller aim.
+Setters remain staged: reading again in that callback does not expose the new
+controls. The basic setter clears a retained orientation goal; the oriented
+setter supplies the complete nullable rig-space goal.
+
+After at least one completed native locomotion tick, the game can choose to
+transfer ownership. Activation in the rig's birth tick rejects:
+
+```csharp
+if (context.GetPhysicalRig(state.Rig)?.Mode == PhysicalRigMode.Animated)
+    context.ActivatePhysicalRig(state.Rig);
+```
+
+Do not also write that rig's IK, animation or grounding controls in the activation
+Tick; the complete batch would reject. Takeover uses the previous committed
+corrected pose and momentum. The same callback's prepared aim is observable but
+can be superseded by activation.
+
+In Passive mode, physical parts and bone transforms show the current solved
+body. IK getters retain the last animated diagnostic; its endpoint is historical.
+Check `GetPhysicalRig(...).Mode` before using it as a current-world measurement.
+The core's `runtime.procedural_pose` query reports the original diagnostic tick.
+An unrelated animated rig keeps solving normally.
+
+The [complete C# fixture](../tests/managed_procedural_handoff_gameplay/README.md)
+exercises actual point/oriented setters, callback observation, rejection and
+recovery, and full saved continuation across three engine processes. Its
+[Windows/Linux record](evidence/m2-procedural-physical-handoff-windows.json)
+qualifies CoreCLR with all 80 verification fields retained. Those extra fields
+and assertions are test instrumentation. New-feature Native AOT, rendered
+humanoid quality and automatic-grounding/root-motion transfer remain separate.

@@ -384,8 +384,8 @@ are at most 64 combined commands per tick and at most one activation per rig,
 including caller/gameplay combinations. A command may activate and then apply
 its own impulse. An impulse placed before activation rejects.
 
-Activation conflicts with same-tick base/layer animation, animation-rate, IK or
-root-motion writes to its owner. Passive owners also reject those writes until a
+Activation conflicts with same-tick base/layer animation, animation-rate, IK,
+grounding or root-motion writes to its owner. Passive owners also reject those writes until a
 recovery policy exists. Failed commands, callbacks, structural edits, evaluated
 poses, physics steps or later ticks roll back the complete enclosing batch,
 including membership, body IDs, animation history, constraints, physics state,
@@ -766,7 +766,8 @@ are historical, not the current corpse's end position. Use
 `runtime.procedural_pose` with exact `session_id`, `tick` and `entity` to distinguish
 `phase: "animated"`, `diagnostics: "current"` from `phase: "physical"`,
 `diagnostics: "last_animated_pose"`. `sampled_tick` retains the original animated
-boundary, and `slots` lists the configured chains. No policy returns `state: null`;
+boundary, and `slots` lists the configured chains. When no policy is configured,
+`state` is null;
 a missing entity or stale session/tick rejects. The query does not sample or
 advance the world. This additive inspection is outside runtime-game-session-v1.
 
@@ -810,3 +811,19 @@ manifest and a 128 MiB cap. Without it, the native test writes no archive files.
 The shared-library fixture exercises the native gameplay ABI; it is compiled C++
 and makes no C# or Native AOT compiler claim. The compatibility record leaves
 older physical save extensions unchanged when the policy is absent.
+
+
+The [0.0.226 follow-up](evidence/m2-procedural-physical-handoff-windows.json)
+qualifies the Windows native path and an actual compiled C# CoreCLR consumer on
+Windows and Linux. The Windows cohort executes 51 native tests, four owned
+inertial-save lifecycle commands and three CLI protocols. Five older Python
+protocols that use source-relative scratch directories are explicitly outside
+that Windows cohort; the earlier Linux 49-test record remains separate.
+
+The new [C# fixture](../tests/managed_procedural_handoff_gameplay/README.md)
+checks all 80 gameplay fields and the complete native state across three fresh
+CLI processes per platform. Each run retains 30 archives, 30 observations and
+17 complete save pairs. Point and oriented setters, prepared aim, conflicting
+writes, late-Tick rollback and passive historical reads execute in real managed
+callbacks. This extends development-host qualification; it does not qualify
+Native AOT compilation or rendering for the combined procedural handoff.

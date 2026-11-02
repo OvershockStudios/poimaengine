@@ -111,7 +111,9 @@ The [original-character handoff](CHARACTER_CONTROLLER_HANDOFF.md) now connects
 virtual movement and imported crossfades to passive full-body physics, complete
 saves and selected rendered observations. Opt-in
 [manual-IK ownership](PHYSICAL_RIGS.md#manual-ik-ownership) adds corrected-pose
-transfer and historical diagnostics. Active balance, recovery and coordinated
+transfer and historical diagnostics. Its [Windows/CoreCLR follow-up](evidence/m2-procedural-physical-handoff-windows.json)
+checks complete managed/native state across fresh engine processes. Active
+balance, recovery and coordinated
 root motion/automatic grounding remain part of this segment.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported

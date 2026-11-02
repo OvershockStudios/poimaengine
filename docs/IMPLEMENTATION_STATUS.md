@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.225**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-02 for **0.0.226**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.226 [qualifies procedural handoff on Windows](evidence/m2-procedural-physical-handoff-windows.json)
+and adds a compiled C# consumer on Windows and Linux. The Windows run passes
+51 native executables, four owned inertial-save lifecycle commands and three
+CLI protocols. Its actual C++ callback suite passes twelve groups and retains
+192 complete snapshot files with 93 complete roundtrip pairs. Five older Python
+protocols with source-relative scratch paths are excluded from this Windows
+cohort; the earlier Linux 49-test result remains separate.
+
+Each CoreCLR run passes 855 literal requests across three fresh, naturally
+closed CLI processes, retaining all 80 gameplay fields, thirty complete archives
+and seventeen whole-save comparisons. The callbacks exercise joined planned aim,
+point/oriented IK, delayed writes, activation, history, failure rollback and
+future continuation. Windows DLL import/export checks and static runtime linking
+are recorded separately from actual callback execution. These are analytic
+headless fixtures; new-feature Native AOT, rendered humanoid motion/contact
+quality, physical input and representative performance remain open.
 
 Version 0.0.225 adds opt-in [manual-IK ownership](PHYSICAL_RIGS.md#manual-ik-ownership)
 for linked physical rigs. Animated chains solve normally; takeover consumes the
@@ -19,9 +36,10 @@ a 49-test animation/physics regression cohort. The existing original-character
 workflow also passes with 1,376 literal RPCs, eighteen complete archives and
 eleven complete warm/cold pairs across three naturally closed owners. Earlier
 failed startup, donor-record and spawned-frame checks retain their original
-verdicts; exact equality and numerical bounds were not relaxed. New-feature
-Windows, C# compiler/AOT and rendered-character qualification remain open, along
-with automatic-grounding/root-motion coordination, active balance and recovery.
+verdicts; exact equality and numerical bounds were not relaxed. The Windows and
+CoreCLR follow-up is recorded above. Native AOT and rendered-character
+qualification, automatic-grounding/root-motion coordination, active balance and
+recovery remain open.
 
 Version 0.0.224 integrates the original Knight's virtual movement, capsule
 stance, imported crossfades and full-body physical takeover in one shared world.

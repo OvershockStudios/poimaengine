@@ -1,0 +1,309 @@
+{
+  "format": "poima.procedural-physical-handoff.windows-coreclr.v1",
+  "checkpoint": "0.0.226",
+  "date": "2026-11-02",
+  "passed": true,
+  "schema_revision": 126,
+  "contract": "../PHYSICAL_RIGS.md#manual-ik-ownership",
+  "previous_linux_record": "m2-procedural-physical-handoff.json",
+  "production_code_delta": "Existing 0.0.225 ownership implementation. The new checkpoint changes version metadata and adds MinGW-only static C++ runtime linkage for the test DLL; the new C# consumer and its verifier are original test sources.",
+  "gameplay_abi": {
+    "epoch": 7,
+    "optional_services_bytes": 424,
+    "changed": false
+  },
+  "compiler": {
+    "target": "Windows x86_64",
+    "engine_version": "0.0.226",
+    "generation": 66,
+    "selected_PE_images": 54,
+    "lossless_encoded_products": 56,
+    "auxiliary_products": [
+      "core archive",
+      "fixture import library"
+    ],
+    "build_workers": 2,
+    "native_execution_inferred": false,
+    "report_identity": {
+      "bytes": 100540,
+      "sha256": "0a5b40339d63cc6aeab0d4b7966eab1c6076e344063462282a5a06a487630a87"
+    },
+    "original_owner_identity": {
+      "bytes": 296926,
+      "sha256": "d4674ffffae09656c38333a9163bae27145143065da88eae60fd61ca0cb0c541"
+    },
+    "image_identities": {
+      "bin/poima.exe": {
+        "bytes": 28381184,
+        "sha256": "7ce59b203077b4969c81f44c794709808165f6eaf2f9a1c372295db3daeca4cf"
+      },
+      "bin/poima_desktop.dll": {
+        "bytes": 330557952,
+        "sha256": "bf89251e977964edcea17a632b02ed1e0002487161553a3db3ed9f29ba232223"
+      },
+      "bin/poima-runtime-physical-ik-test.exe": {
+        "bytes": 20346368,
+        "sha256": "23f8bbc5557908dbe21f423e638e922febba43684888251333e87cc5560c0daa"
+      },
+      "bin/libpoima-physical-ik-gameplay-fixture.dll": {
+        "bytes": 1955328,
+        "sha256": "41f31d54a27512ec76d381acad94fb17ace9cae8c08c599307c1e28825539605"
+      }
+    },
+    "fixture_PE_inspection": {
+      "export": "poima_gameplay_entry",
+      "imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll"
+      ],
+      "system_imports_only": true,
+      "independent_binary_header_parse": true,
+      "scope": "PE export/import verification is separate from actual DLL callback execution."
+    }
+  },
+  "windows_execution": {
+    "native_executables": 51,
+    "owned_inertial_save_lifecycle_commands": 4,
+    "CLI_protocols": [
+      "animation_frame_transfer",
+      "animation_rotation_retarget",
+      "world_physical_contract"
+    ],
+    "total_commands": 58,
+    "passed_commands": 58,
+    "unknown_children": false,
+    "natural_unforced_Windows_Job": true,
+    "active_processes_at_child_exit": 0,
+    "active_processes_after_cleanup": 0,
+    "native_feature_groups": 12,
+    "native_feature_assertions": 3861,
+    "actual_CPP_callback_Dll_argument": true,
+    "new_native_fixture_audit": {
+      "reopened_complete_files": 192,
+      "raw_bytes": 3595406,
+      "literal_inner_payload_SHA_checks": 192,
+      "roles": {
+        "warm": 93,
+        "cold": 93,
+        "recipient": 2,
+        "donor": 2,
+        "grafted": 2
+      },
+      "accepted_roundtrip_files": 186,
+      "complete_byte_and_typed_JSON_pairs": 93,
+      "accepted_passive_captureframe_joins": 160,
+      "accepted_animated_rows": 26,
+      "negative_input_files": 6
+    },
+    "independent_audit_identity": {
+      "bytes": 218272,
+      "sha256": "1deb3d438e25211c3fec30e6db69965cda240d5a33d841cd2eee89377755a234"
+    },
+    "report_identity": {
+      "bytes": 81449,
+      "sha256": "95f3076c25080eca7f30f3f9a35e89a4022c67135396e3fb1f43c72b54b4d070"
+    },
+    "worker_identity": {
+      "bytes": 166034,
+      "sha256": "8629299fab9b7f4e4322e5d1ca9d8ddca78c36e18a7cf7f28136e213e6623602"
+    },
+    "restore_scope": "The C++ fixture creates fresh Runtime objects within one OS process. The separate CoreCLR workflow below qualifies fresh OS processes.",
+    "excluded_protocols": [
+      {
+        "name": "animation_contract",
+        "reason": "Existing protocol hardcodes source-ROOT build scratch outside CASE-only ownership/census. Omitted for path ownership, not a known engine failure. Original Linux49 remains separately qualified; future byte-identical source relocation may qualify these on Windows."
+      },
+      {
+        "name": "runtime_animation_contract",
+        "reason": "Existing protocol hardcodes source-ROOT build scratch outside CASE-only ownership/census. Omitted for path ownership, not a known engine failure. Original Linux49 remains separately qualified; future byte-identical source relocation may qualify these on Windows."
+      },
+      {
+        "name": "runtime_animation_blend_contract",
+        "reason": "Existing protocol hardcodes source-ROOT build scratch outside CASE-only ownership/census. Omitted for path ownership, not a known engine failure. Original Linux49 remains separately qualified; future byte-identical source relocation may qualify these on Windows."
+      },
+      {
+        "name": "runtime_animation_layers_contract",
+        "reason": "Existing protocol hardcodes source-ROOT build scratch outside CASE-only ownership/census. Omitted for path ownership, not a known engine failure. Original Linux49 remains separately qualified; future byte-identical source relocation may qualify these on Windows."
+      },
+      {
+        "name": "runtime_animation_inertial_contract",
+        "reason": "Existing protocol hardcodes source-ROOT build scratch outside CASE-only ownership/census. Omitted for path ownership, not a known engine failure. Original Linux49 remains separately qualified; future byte-identical source relocation may qualify these on Windows."
+      }
+    ],
+    "earlier_Linux_49_test_cohort": "Retained separately; not relabeled as a Windows 49-test pass."
+  },
+  "CoreCLR_workflows": {
+    "Linux": {
+      "backend": "CoreCLR",
+      "counts": {
+        "rpc": 855,
+        "owners": 3,
+        "archives": 30,
+        "whole_pairs": 17,
+        "observations": 30,
+        "entity_observations": 390,
+        "typed_fields": 80,
+        "typed_values": 4800,
+        "snapshot_literal_checksums": 30,
+        "manifest_literal_checksums": 30,
+        "animated_archives": 14,
+        "passive_archives": 16
+      },
+      "state_bytes": 632,
+      "distinct_natural_cli_owners": 3,
+      "outer_process_owner_natural_unforced": true,
+      "consumer_identity": {
+        "bytes": 10408202,
+        "sha256": "8a77dff85844ea9e25098d4df098ecb40f8701f570747c16764f66e7031c0afa"
+      },
+      "owner_identity": {
+        "bytes": 7193,
+        "sha256": "a968b73591df3210ded027aa0224d05973592eef310632508370f8d22382a0af"
+      },
+      "independent_audit_identity": {
+        "bytes": 55982,
+        "sha256": "da98d0172524eef98e6f98628f208b2947d02e230addd4f49df31054ec799248"
+      },
+      "checks": [
+        "Actual C# point/oriented IK getters and setters execute in native callbacks.",
+        "Prepared camera/actor/bone/IK observations join; staged writes remain invisible within the callback.",
+        "Malformed/duplicate/activation-conflict/immediate/late-Tick/passive writes preserve complete rollback.",
+        "Physical takeover freezes the last committed manual diagnostic while another C#-controlled rig keeps solving.",
+        "Alive, passive and initialized-history checkpoints continue across three sequential fresh CLI processes.",
+        "Every complete archive, manifest, receipt and literal RPC stream reopened; inner checksums use original lexical payload spans."
+      ],
+      "comparison_scope": "Complete byte/typed state pairs within this platform and native image; no Windows/Linux value equality claim."
+    },
+    "Windows": {
+      "backend": "CoreCLR",
+      "counts": {
+        "rpc": 855,
+        "owners": 3,
+        "archives": 30,
+        "whole_pairs": 17,
+        "observations": 30,
+        "entity_observations": 390,
+        "typed_fields": 80,
+        "typed_values": 4800,
+        "snapshot_literal_checksums": 30,
+        "manifest_literal_checksums": 30,
+        "animated_archives": 14,
+        "passive_archives": 16
+      },
+      "state_bytes": 632,
+      "distinct_natural_cli_owners": 3,
+      "outer_process_owner_natural_unforced": true,
+      "consumer_identity": {
+        "bytes": 10404552,
+        "sha256": "7df69af7adcf24fab913a5ba5496b3fa5c7ede2b84e52c92728aa6387a13e3b8"
+      },
+      "owner_identity": {
+        "bytes": 12531,
+        "sha256": "fbd5fadf78f0af89d69b1089f9f755f710583fd87a2183206fb5427f18de51f7"
+      },
+      "independent_audit_identity": {
+        "bytes": 57496,
+        "sha256": "47e8b93ddc6dd443db2ad4c1b6d21ab0947f1871c9fb3c718b407792a8fe6edf"
+      },
+      "checks": [
+        "Actual C# point/oriented IK getters and setters execute in native callbacks.",
+        "Prepared camera/actor/bone/IK observations join; staged writes remain invisible within the callback.",
+        "Malformed/duplicate/activation-conflict/immediate/late-Tick/passive writes preserve complete rollback.",
+        "Physical takeover freezes the last committed manual diagnostic while another C#-controlled rig keeps solving.",
+        "Alive, passive and initialized-history checkpoints continue across three sequential fresh CLI processes.",
+        "Every complete archive, manifest, receipt and literal RPC stream reopened; inner checksums use original lexical payload spans."
+      ],
+      "comparison_scope": "Complete byte/typed state pairs within this platform and native image; no Windows/Linux value equality claim."
+    }
+  },
+  "managed_build": {
+    "compiler_SDK": "10.0.401",
+    "target_framework": "net10.0",
+    "source_language": "C# 14",
+    "only_new_game_compiled": true,
+    "retained_SDK_and_bridge_not_rebuilt": true,
+    "game_image": {
+      "bytes": 16384,
+      "sha256": "ca1850d780744c71f6ed9db8df54c1d824254d79068ba8fc5325c227d0fe0727"
+    },
+    "bridge_image": {
+      "bytes": 65024,
+      "sha256": "433c1caff5ef0fe065cac97b924287312eb7a3b0a869914df7540ad23d0d1dca"
+    },
+    "SDK_image": {
+      "bytes": 241152,
+      "sha256": "67bf32b8080f31cc85d8ae37727a36bde6eac910768fdb9cbe64ab8fd4104214"
+    },
+    "SDK_copy_byte_equal": true,
+    "compiler_owner_identity": {
+      "bytes": 6097,
+      "sha256": "65c133c3d414f816caa99c5bb781fe3e8ee90f7bf747626f7f40cdbd825b3891"
+    },
+    "SDK_provenance_scope": "The consumed SDK/bridge were built by successful selected commands in an earlier compiler campaign whose aggregate verdict remained failed. Original aggregate is not regraded; exact consumed images and the new actual runtime execution are separately verified.",
+    "hostfxr_versions": {
+      "Linux": "10.0.12",
+      "Windows": "10.0.14"
+    },
+    "scope": "Portable IL and real CoreCLR execution, not a Native AOT compiler output."
+  },
+  "Linux_current_image": "f8745eef0a24a67d1713866789fb7493e2f977b01b81399a71e799fbd30d8758",
+  "current_source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 110392,
+      "sha256": "694c2d6f15320bc60ae88f2a5d1f6b911b41d68a8dc5cd9a6ead5f5430ee0ac2"
+    },
+    "tests/runtime_physical_ik_tests.cpp": {
+      "bytes": 52865,
+      "sha256": "33b5547d419b36524a351d6c26e2dcf3ddcb961a1519d56eb6b5fb0977611e06"
+    },
+    "tests/runtime_physical_ik_gameplay_fixture.cpp": {
+      "bytes": 6172,
+      "sha256": "6649623390b4e2e0e885e99fa1a54c616c70e556d2b4e90e07970e09179da142"
+    },
+    "tests/runtime_physical_ik_fixture.hpp": {
+      "bytes": 1582,
+      "sha256": "525dcf15aea79e50aa55c8f73d0004589b2f5c9ad97da9f53259f3dfc7b59517"
+    },
+    "tests/procedural_handoff_gameplay_contract.py": {
+      "bytes": 38431,
+      "sha256": "d5cbd499e2f25c13f5931c0de28674c2a90dc872e24cdf82a22e71e7174195f7"
+    },
+    "tests/managed_procedural_handoff_gameplay/Game.cs": {
+      "bytes": 12537,
+      "sha256": "a86f49f64ff377d8b80e01b68ea542b093d01f6fa365b3aa74efa1eb92ba46ab"
+    },
+    "tests/managed_procedural_handoff_gameplay/Poima.ManagedProceduralHandoffGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    }
+  },
+  "record_integrity": [
+    "Full typed JSON and whole-byte comparisons retain all fields; signed-zero equality and source/image pins are checked.",
+    "Path mappings in independent auditors change filesystem access only; original Windows/Linux evidence values remain literal.",
+    "Six negative-test files are two recipients, two donors and two deliberately rejected grafts; they are separate from 186 complete roundtrip files.",
+    "Actual linked DLL imports only Windows API/UCRT libraries; it introduces no unowned dynamic C++ runtime dependency."
+  ],
+  "preparation_history": [
+    "The first source-only generated-DLL parser assumed a single Ninja output. Read-only review found the real DLL plus import-library rule before producer admission; immutable v1 source/plan remain and v2 records both outputs.",
+    "A managed-owner preflight refused a missing owned output parent before creating any actor; the parent was created and the identical frozen plan then compiled successfully.",
+    "The original CPU source-only audit expected six grafts instead of six donor-group files. Its preserved successor requires exact roles and two grafts; all raw files remain.",
+    "These preparation issues are not reclassified as native engine failures; actual admitted compiler, Windows execution and both CoreCLR workflows pass their original gates."
+  ],
+  "limits": [
+    "Analytic three-joint/three-proxy content for the C# workflow; original imported humanoid procedural handoff and rendered motion/contact quality remain separate.",
+    "No new-feature Native AOT, graphics, physical input, representative performance or cross-platform bitwise-determinism qualification.",
+    "The native shared-library fixture is compiled C++, not evidence of a C# AOT compiler.",
+    "Selected native fixture module path is ASCII; arbitrary Unicode module paths are not qualified by this fixture.",
+    "Automatic grounding/root-motion transfer, recovery and active balance remain further character work.",
+    "The five named legacy Python animation protocols are outside this Windows cohort due to source-relative scratch ownership, not known engine failures."
+  ]
+}
