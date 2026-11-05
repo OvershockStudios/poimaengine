@@ -146,3 +146,41 @@ pairs. Seven noncontact scenarios cover disabled and zero-weight requests,
 lifted feet, actual misses, correction and slope rejection, and lost support.
 Original foreign-owner and raw-normal acceptance failures remain retained;
 the corresponding unchanged assertions pass after the fixes.
+
+## Compiled C# controls and fresh-process saves
+
+A game implementing `IGroundingControlGame` and `IPhysicalRigGame` can inspect
+physical ownership and stage grounding controls on an animated rig. For example,
+reduce a requested foot multiplier without taking ownership of its automatically
+generated IK target:
+
+```csharp
+if (context.GetPhysicalRig(state.Rig)?.Mode == PhysicalRigMode.Animated)
+    context.SetGroundingControl(new(state.Rig, 1, true, 0.75));
+```
+
+Activation and grounding/IK writes for the same rig must occur in separate
+Ticks; a conflicting batch rejects atomically. Getters within a callback observe the committed
+requested controls, while staged writes publish at the supported boundary.
+The multiplier is a request, not a guarantee of contact or achieved IK weight.
+
+`GetGroundingControl` exposes `Enabled` and `Weight`. It does not expose the
+contact or planting cache. Use `runtime.ik` with `include_grounding` and
+`include_planting` for those complete native diagnostics. After takeover, the
+point/oriented IK diagnostics retain the last animated pose; physical parts
+and bone transforms describe the current solved body instead.
+
+The [compiled fixture](../tests/managed_grounded_handoff_gameplay/README.md)
+combines two planted feet, a translating/rotating support, a linked controller
+and an independent live rig. It checks staged controls, prepared callback
+observations, whole-state rejection, both support-retirement timings and native
+body-generation reuse. A surviving game-held live `EntityId` must be cleared or
+rebound when its entity is despawned; the fixture clears it. The native historical
+contact may still retain that old identity. These are different lifetimes.
+
+The [0.0.228 Windows/CoreCLR record](evidence/m2-grounded-physical-handoff-windows.json)
+records separate Windows native and Windows/Linux CoreCLR execution. Each
+managed run retains all 116 typed fields, 46 complete saves and 27 complete
+byte/typed-state pairs across three sequential engine processes. This extends
+fresh-process evidence beyond the same-process C++ fixture; it does not qualify
+Native AOT, imported-character motion, rendering or representative performance.

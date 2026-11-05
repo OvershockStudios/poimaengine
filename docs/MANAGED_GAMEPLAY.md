@@ -549,4 +549,14 @@ recovery, and full saved continuation across three engine processes. Its
 [Windows/Linux record](evidence/m2-procedural-physical-handoff-windows.json)
 qualifies CoreCLR with all 80 verification fields retained. Those extra fields
 and assertions are test instrumentation. New-feature Native AOT, rendered
-humanoid quality and automatic-grounding/root-motion transfer remain separate.
+humanoid quality and root-motion transfer remain separate.
+
+The distinct [grounded handoff policy](GROUNDED_PHYSICAL_HANDOFF.md#compiled-c-controls-and-fresh-process-saves)
+also composes automatic contacts and planted-foot anchors with this ownership
+boundary. Its [compiled fixture](../tests/managed_grounded_handoff_gameplay/README.md)
+checks 116 typed fields and complete save continuation across three processes
+on Windows and Linux CoreCLR. Requested grounding controls remain separate
+from native contact/plant diagnostics. Do not stage grounding or IK writes for
+a rig in its activation Tick, and clear or repair surviving live game-owned
+entity bindings when despawning their entities; historical native witnesses
+retain their own lifetime.

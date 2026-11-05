@@ -1,0 +1,392 @@
+{
+  "format": "poima.grounded-physical-handoff.windows-coreclr.v1",
+  "checkpoint": "0.0.228",
+  "date": "2026-11-05",
+  "passed": true,
+  "schema_revision": 127,
+  "contract": "../GROUNDED_PHYSICAL_HANDOFF.md",
+  "previous_linux_record": "m2-grounded-physical-handoff.json",
+  "native_implementation_commit": "d73ef784bc9e86315e91a2113c733abd959e7f5d",
+  "qualified_fixture_commit": "70fb16f",
+  "production_delta": "Version metadata only relative to 0.0.227. New original compiled C# fixture and verifier; no runtime ownership, save-format or SDK ABI change.",
+  "gameplay_abi": {
+    "epoch": 7,
+    "optional_services_bytes": 424,
+    "changed": false
+  },
+  "fixture_source_files": {
+    "tests/grounded_handoff_gameplay_contract.py": {
+      "bytes": 51422,
+      "sha256": "067e37f67f7c1fd917d6744324860f886b953ae79f53be200434450116b451eb"
+    },
+    "tests/managed_grounded_handoff_gameplay/Game.cs": {
+      "bytes": 17657,
+      "sha256": "af4296dccd865f70d85e9b086896d14665d606536e6c2e0f5afad67f60c8c403"
+    },
+    "tests/managed_grounded_handoff_gameplay/Poima.ManagedGroundedHandoffGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    },
+    "tests/managed_grounded_handoff_gameplay/README.md": {
+      "bytes": 4722,
+      "sha256": "398e333105cec248064674a4c13a3c09356f2d1d54c1abdd0e70404d3da2553e"
+    }
+  },
+  "version_source_files": {
+    "CMakeLists.txt": {
+      "bytes": 112255,
+      "sha256": "c61274952f3b6deb41b00e4992f28f3481ed79377f1b7d294834c6f5ee3afe34"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "a6bb72dcd22d09180d09c316ec908406cc7155d944293c1560db7c403200771c"
+    }
+  },
+  "windows_compiler": {
+    "target": "Windows x86_64",
+    "generation": 67,
+    "selected_PE_images": 56,
+    "native_test_executables": 52,
+    "lossless_encoded_outputs": 59,
+    "other_selected_products": [
+      "CLI",
+      "desktop DLL",
+      "two native fixture DLLs",
+      "core archive",
+      "two fixture import libraries"
+    ],
+    "untouched_older_PE_images": 7,
+    "untouched_images_requalified": false,
+    "build_workers": 2,
+    "report_identity": {
+      "bytes": 108034,
+      "sha256": "9140274b873ee47b4a6b04314fbc21c89435828db77b62cc6877b27eae8086ba"
+    },
+    "original_owner_identity": {
+      "bytes": 287942,
+      "sha256": "62a27f5288ec3263fe94a27b4e48683c8167b0d7af1207f247f1da4429083fa5"
+    },
+    "independent_metadata_audit_identity": {
+      "bytes": 46902,
+      "sha256": "763a6146b8d6492799149662a9d9afbef32a719dd63fa251d88e026c9f50dff9"
+    },
+    "audit_scope": "368 bounded metadata/source/policy/product-record checks. All 59 lossless outputs were verified by the original owner; the separate metadata audit does not independently rehash/decode every large product.",
+    "original_commands": [
+      {
+        "label": "configure",
+        "exit_code": 0,
+        "natural_descendant_closure": true
+      },
+      {
+        "label": "fixture-generated-path",
+        "exit_code": 0,
+        "natural_descendant_closure": true
+      },
+      {
+        "label": "build",
+        "exit_code": 0,
+        "natural_descendant_closure": true
+      },
+      {
+        "label": "fixture-pe-imports-export",
+        "exit_code": 0,
+        "natural_descendant_closure": true
+      }
+    ],
+    "image_identities": {
+      "bin/poima.exe": {
+        "bytes": 28525056,
+        "sha256": "33ee8e4cd0daa51f73c4ecf45d8c76c538b4c49b89436e0078569d0daa769cbf"
+      },
+      "bin/poima_desktop.dll": {
+        "bytes": 332000768,
+        "sha256": "dd9b340e6971f463750024f4c4b964fae9ddbafab41f679fa03cc68d54410096"
+      },
+      "bin/poima-runtime-physical-grounded-test.exe": {
+        "bytes": 20551168,
+        "sha256": "7f464bf26add7e667ced6221ec0f590f9f539c33e7b93f77c9722592fa987879"
+      },
+      "bin/libpoima-physical-grounded-gameplay-fixture.dll": {
+        "bytes": 1986048,
+        "sha256": "5ee0cee6c4587a847747b0eac657ba74ff5c443729900563c9c60f0c6ede4ffa"
+      }
+    },
+    "source_inputs_unchanged": true,
+    "compiler_warnings_retained": true,
+    "native_execution_inferred": false
+  },
+  "windows_native_execution": {
+    "commands": 59,
+    "native_executables": 52,
+    "owned_inertial_save_lifecycle_commands": 4,
+    "CLI_protocols": 3,
+    "excluded_protocols": [
+      {
+        "name": "animation_contract",
+        "reason": "Existing protocol writes source-relative scratch outside the selected owned output; omitted, not counted as passing."
+      },
+      {
+        "name": "runtime_animation_contract",
+        "reason": "Existing protocol writes source-relative scratch outside the selected owned output; omitted, not counted as passing."
+      },
+      {
+        "name": "runtime_animation_blend_contract",
+        "reason": "Existing protocol writes source-relative scratch outside the selected owned output; omitted, not counted as passing."
+      },
+      {
+        "name": "runtime_animation_layers_contract",
+        "reason": "Existing protocol writes source-relative scratch outside the selected owned output; omitted, not counted as passing."
+      },
+      {
+        "name": "runtime_animation_inertial_contract",
+        "reason": "Existing protocol writes source-relative scratch outside the selected owned output; omitted, not counted as passing."
+      }
+    ],
+    "process_tree": {
+      "total_processes": 80,
+      "active_processes": 0,
+      "terminated_processes": 0,
+      "forced_cleanup": false
+    },
+    "grounded_CPP_groups": 10,
+    "grounded_CPP_checks": 7895,
+    "archive_counts": {
+      "entries": 324,
+      "pairs": 119,
+      "negative_inputs": 12,
+      "accepted_inputs": 312,
+      "raw_bytes": 14562629,
+      "valid_literal_checksums": 324,
+      "selected_capture_rows": 305,
+      "exact_native_ray_joins": 387
+    },
+    "archive_roles": {
+      "source": 74,
+      "warm": 119,
+      "cold": 119,
+      "negative": 12
+    },
+    "report_identity": {
+      "bytes": 112126,
+      "sha256": "0b9a51e36fe60c663095e80de405b75b233d8c9ada2242fa15b513717f718a6d"
+    },
+    "worker_identity": {
+      "bytes": 856500,
+      "sha256": "49b04c07199e0f9944fe7b479b713239b3b38de0163df815cb666661fb255000"
+    },
+    "independent_owner_audit_identity": {
+      "bytes": 82334,
+      "sha256": "6fb216a1ca09b829d4f01f178e4cc802a4b9145e2bf45fd7e637fae6a18de97d"
+    },
+    "independent_archive_audit_identity": {
+      "bytes": 868905,
+      "sha256": "2c4fef874a1c8bb473c6d9f601b0146ab6c965d5070141f1074189e4de90505a"
+    },
+    "scope": "Actual Windows C++ DLL callbacks and complete same-process Runtime save checks. 119 whole byte/typed pairs; fresh OS processes are separately qualified by managed consumers. No Windows/Linux numerical equality claim."
+  },
+  "managed_compiler": {
+    "SDK": "10.0.401",
+    "target": "net10.0 portable IL",
+    "state_fields": 116,
+    "state_bytes": 920,
+    "field_kinds": {
+      "entity": 12,
+      "int32": 27,
+      "int64": 10,
+      "float64": 67
+    },
+    "report_identity": {
+      "bytes": 6411,
+      "sha256": "13a936868d49e81c70daaea90b25f9e45325776fe523b3d1d8c5a2b87b163a5d"
+    },
+    "game_image": {
+      "bytes": 19968,
+      "sha256": "14d38a9f61f4631154376ecfbf85bb1c9ac0d0a4e0aa2217e67c1c5a43f24119"
+    },
+    "SDK_image": {
+      "bytes": 241152,
+      "sha256": "67bf32b8080f31cc85d8ae37727a36bde6eac910768fdb9cbe64ab8fd4104214"
+    },
+    "bridge_image": {
+      "bytes": 65024,
+      "sha256": "433c1caff5ef0fe065cac97b924287312eb7a3b0a869914df7540ad23d0d1dca"
+    },
+    "retained_image_scope": "SDK/bridge are unchanged selected outputs of original successful compiler commands. The enclosing older 0.0.218 aggregate remains failed; no aggregate verdict was changed.",
+    "native_AOT": false
+  },
+  "managed_execution": {
+    "Linux": {
+      "backend": "CoreCLR",
+      "runtime": "10.0.12",
+      "passed": true,
+      "counts": {
+        "rpc": 2079,
+        "owners": 3,
+        "archives": 46,
+        "whole_pairs": 27,
+        "observations": 46,
+        "entity_observations": 1008,
+        "typed_fields": 116,
+        "typed_values": 10672,
+        "snapshot_literal_checksums": 46,
+        "manifest_literal_checksums": 46,
+        "selected_E4_capture_rows": 46,
+        "native_ray_joins": 92
+      },
+      "state_bytes": 920,
+      "phases": {
+        "animated": 16,
+        "physical": 30
+      },
+      "owner_identity": {
+        "bytes": 8240,
+        "sha256": "478388a2dbb8c4f6f3ef82141164600041ae268e7037aa2daa591f1f67056083"
+      },
+      "original_evidence_identity": {
+        "bytes": 34544676,
+        "sha256": "642350eca2920e23a3be60be534c4c943554352aad6947d2caa3957b13b780b7"
+      },
+      "independent_audit_identity": {
+        "bytes": 433693,
+        "sha256": "3924471ac4b23690b23792aebba13e06fbfdecf48b9e5bf7853904ddfa675d13"
+      },
+      "natural_sequential_CLI_processes": 3,
+      "forced_cleanup": false,
+      "source_and_compiled_images_unchanged": true,
+      "checks": [
+        "Actual requested-control Get/Set and prepared point/oriented IK reads with staged getter visibility.",
+        "Two real planted contacts on translating/rotating native support, independently moving rig and nonuniform support render scale.",
+        "Malformed, duplicate, conflicting and passive writes; immediate/later callback failures with whole-state rollback.",
+        "One-way committed corrected-pose transfer, fixed historical diagnostics and continuing independent grounding/source/layer clocks.",
+        "Early/late support retirement, explicit live EntityId release, retained native historical support and actual body-index/new-generation reuse.",
+        "Complete warm/cold active, passive and retired-support continuation with no excluded fields, normalized paths or coerced types."
+      ]
+    },
+    "Windows": {
+      "backend": "CoreCLR",
+      "runtime": "10.0.14",
+      "passed": true,
+      "counts": {
+        "rpc": 2079,
+        "owners": 3,
+        "archives": 46,
+        "whole_pairs": 27,
+        "observations": 46,
+        "entity_observations": 1008,
+        "typed_fields": 116,
+        "typed_values": 10672,
+        "snapshot_literal_checksums": 46,
+        "manifest_literal_checksums": 46,
+        "selected_E4_capture_rows": 46,
+        "native_ray_joins": 92
+      },
+      "state_bytes": 920,
+      "phases": {
+        "animated": 16,
+        "physical": 30
+      },
+      "owner_identity": {
+        "bytes": 16805,
+        "sha256": "058521234964b00b700623433f28c33f19c87b1e013ba3c53a322fe34ce50d87"
+      },
+      "original_evidence_identity": {
+        "bytes": 34555116,
+        "sha256": "b35cb0dc609514490fadb1d50f73b09230480f935d713a3d0e82d110962e6b87"
+      },
+      "independent_audit_identity": {
+        "bytes": 554468,
+        "sha256": "da120f918cd890919ad224acbf543a6168cdc3b9d282b658331f18c3d3f7a65e"
+      },
+      "natural_sequential_CLI_processes": 3,
+      "forced_cleanup": false,
+      "source_and_compiled_images_unchanged": true,
+      "checks": [
+        "Actual requested-control Get/Set and prepared point/oriented IK reads with staged getter visibility.",
+        "Two real planted contacts on translating/rotating native support, independently moving rig and nonuniform support render scale.",
+        "Malformed, duplicate, conflicting and passive writes; immediate/later callback failures with whole-state rollback.",
+        "One-way committed corrected-pose transfer, fixed historical diagnostics and continuing independent grounding/source/layer clocks.",
+        "Early/late support retirement, explicit live EntityId release, retained native historical support and actual body-index/new-generation reuse.",
+        "Complete warm/cold active, passive and retired-support continuation with no excluded fields, normalized paths or coerced types."
+      ]
+    }
+  },
+  "retained_failed_fixture_runs": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "cause": "Missing required sole axes in authored fixture.",
+      "rpc_count": 3,
+      "original_owner_identity": {
+        "bytes": 8262,
+        "sha256": "35813486525735a8c4a06a14fc63f6cb78ddc7cd7e1871329d890c71a90c2ffb"
+      },
+      "original_evidence_identity": {
+        "bytes": 34614,
+        "sha256": "d0f91141824d00af49c3670946246e7e67c28d200ffaa0f3c73ec9fe808d9451"
+      },
+      "forced_cleanup": false,
+      "final_descendants": 0
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "cause": "Incomplete expected authored inventory omitted two real primitive children.",
+      "rpc_count": 3,
+      "original_owner_identity": {
+        "bytes": 8601,
+        "sha256": "85307bb68e8712d01cb2eb9290859f86028c3d509ceca489b462d780ace0548b"
+      },
+      "original_evidence_identity": {
+        "bytes": 39022,
+        "sha256": "22882a13470fc13d0cc1e8cd231f376ab53e619b11a86fc1e0eb97a10b587ceb"
+      },
+      "forced_cleanup": false,
+      "final_descendants": 0
+    },
+    {
+      "attempt": 3,
+      "passed": false,
+      "cause": "Verifier used top-level ground_velocity instead of the nested locomotion DTO.",
+      "rpc_count": 155,
+      "original_owner_identity": {
+        "bytes": 8703,
+        "sha256": "f468ff8da371403e009a4417dd1da7bad754cbb114c1e80d8d657586a4102501"
+      },
+      "original_evidence_identity": {
+        "bytes": 2293919,
+        "sha256": "2415c9e989da2d217a2b3114cbd9537650b4ea39e1676a73572b7e459673a636"
+      },
+      "forced_cleanup": false,
+      "final_descendants": 0
+    },
+    {
+      "attempt": 4,
+      "passed": false,
+      "cause": "Game retained a live Support EntityId after despawn; fixed by explicitly clearing that field.",
+      "rpc_count": 866,
+      "original_owner_identity": {
+        "bytes": 8727,
+        "sha256": "8a3aba975e1cd213269e391e206d94b385748b8b5a6644014ed60128f07666e0"
+      },
+      "original_evidence_identity": {
+        "bytes": 14045929,
+        "sha256": "b746de6a213bcd48ff7b27f5041c6b6c186231a170094cdb4f441dea05fd0638"
+      },
+      "forced_cleanup": false,
+      "final_descendants": 0
+    }
+  ],
+  "independent_auditor_correction": {
+    "original_auditor_verdict": false,
+    "original_failure": "Supplemental auditor assumed every saved ordinary foot had an explicit grounding control record.",
+    "correction": "Separate successor checks exact documented legacy-version-7 omission/default semantics and version-8 explicit records without normalizing saved input.",
+    "native_workflow_rerun_for_auditor": false
+  },
+  "limits": [
+    "Tiny original analytic seven-node/two-foot fixture, not imported-humanoid quality.",
+    "No new GPU/rendered motion, physical input, Native AOT, standalone export or representative performance qualification.",
+    "Three-process whole-save equality is within each platform; no cross-platform floating-point identity guarantee.",
+    "Historical journal consistency does not reconstruct arbitrary retired broadphase surfaces.",
+    "Linux 0.0.227 selected 50-test evidence is retained separately; Windows59 commands are not that same cohort."
+  ]
+}

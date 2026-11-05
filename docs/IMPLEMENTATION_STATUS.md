@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-11-02 for **0.0.227**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-05 for **0.0.228**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.228 [qualifies grounded handoff on Windows and CoreCLR](evidence/m2-grounded-physical-handoff-windows.json).
+The Windows CPU cohort passes 52 native executables, four owned inertial-save
+lifecycle commands and three CLI protocols. The new C++ callback fixture passes
+ten groups and 7,895 checks, retaining 324 complete files and 119 complete
+roundtrip pairs. Five older Python protocols with source-relative scratch paths
+remain excluded from this Windows cohort; the selected Linux record stays
+separate.
+
+A new [compiled C# fixture](../tests/managed_grounded_handoff_gameplay/README.md)
+passes on both Windows and Linux CoreCLR with all 116 typed fields/920 bytes,
+2,079 RPC calls, 46 complete saves and 27 complete byte/typed-state pairs per
+platform across three sequential engine processes. Actual moving-support
+contacts, planted anchors, staged requests, prepared point/oriented reads,
+callback failure rollback, support retirement and native body-generation reuse
+are joined to retained native diagnostics. Live game-owned support bindings are
+cleared on despawn while native historical contact identities remain intact.
+The original four failed fixture runs remain failed. This checkpoint preserves
+schema 127, gameplay epoch 7 and the 424-byte optional services prefix; the
+production runtime behavior is unchanged from 0.0.227. Imported-character
+composition, new-feature Native AOT, rendering and representative performance
+remain separate qualification work.
 
 Version 0.0.227 adds opt-in [grounded physical handoff](GROUNDED_PHYSICAL_HANDOFF.md).
 Automatic contacts and planted-foot corrections feed the completed pose and
@@ -20,9 +42,9 @@ Complete saves cover moving supports, both support-retirement timings,
 mixed manual/grounded slots, rollback, nonidentity births and seven noncontact
 scenarios. Coherent foreign-body-ID and raw-normal negative tests first exposed
 acceptance bugs, then passed the same frozen assertions after the fixes;
-the original failed records remain failed. The new combined policy's Windows,
-C# CoreCLR/AOT, rendered imported-character quality and representative
-performance qualification remain separate follow-ups.
+the original failed records remain failed. The new combined policy's Native AOT,
+rendered imported-character quality and representative performance qualification
+remain separate follow-ups.
 
 Version 0.0.226 [qualifies procedural handoff on Windows](evidence/m2-procedural-physical-handoff-windows.json)
 and adds a compiled C# consumer on Windows and Linux. The Windows run passes

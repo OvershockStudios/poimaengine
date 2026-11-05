@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.228
+
+- Qualify grounded/planted-foot physical takeover on Windows with actual native
+  callbacks and the surrounding animation, physics and save regressions.
+- Add a compiled C# consumer on Windows and Linux, retaining all 116 typed
+  fields through staged controls, callback rollback and three-process saves.
+- Check both support-retirement timings and native body-generation reuse while
+  keeping transferred contact and planting history unchanged.
+- Document requested grounding controls, historical diagnostics and explicit
+  live entity-binding lifetimes without changing the gameplay services ABI.
+
 ## 0.0.227
 
 - Coordinate automatic grounding and planted-foot poses with linked physical
