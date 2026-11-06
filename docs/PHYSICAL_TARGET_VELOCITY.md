@@ -132,8 +132,65 @@ platforms: 119/147 RPCs, 40/46 complete saves and 21/24 whole-file pairs. Four
 analytic curve checks and one control-branch witness inspect interval motion.
 All three engine processes in each workflow close naturally.
 
-The retained 104-field Windows NativeAOT character game also passes on this
-runtime with its original orientation-only profile. Its module is unchanged;
+In the 0.0.236 record, the retained 104-field Windows NativeAOT character game
+also passes with its original orientation-only profile. Its module is unchanged;
 this does not qualify the sample's optional velocity mode or a new export.
 No new rendered motion, physical input, frame-time or cross-platform bit-equality
 result is claimed by these CPU checks.
+
+## Imported-character workflow
+
+The [0.0.237 record](evidence/m2-character-target-velocity.json) exercises the
+unchanged 104-field NativeAOT character game with velocity tracking enabled on
+runtime 0.0.236. Prepare a fresh project using the sample's `--velocity-tracking`
+option, then use the same flag in its complete gameplay verifier:
+
+```sh
+python tests/physical_character_animation.py \
+  --binary /path/to/poima.exe --world /path/to/new-project/world.json \
+  --source /path/to/Knight.glb --license /path/to/LICENSE.txt \
+  --backend native_aot --descriptor /path/to/native-gameplay.json \
+  --velocity-tracking --output /absolute/fresh/character-velocity-check
+```
+
+Use native Windows Python and an external process-tree owner for this recorded
+Windows workflow. The [sample guide](../examples/physical-character-yard/README.md)
+explains content preparation and native publication. An already compatible
+496-byte game module needs no rebuild to use this authored option. Omit both
+velocity flags to exercise the original profile; the verifier rejects a profile
+that does not match its selected mode.
+
+The check covers all 104 gameplay fields, original character nodes, target
+histories and motion/backend joins. It passes 838 RPCs, 28 verifier archives and
+fifteen complete equality pairs; the ordinary initial game checkpoint is also
+verified. Five focused intervals check requested endpoints against independently
+sampled original Running_A curves. Seven joints per interval supply independently
+legal starts; the others retain the native fitted starts and secant checks.
+Restart uses the new trajectory, zero strength still samples motion, an
+unblended zero-rate clip stops target motion, and release clears automatic
+motion. Complete original state is restored before the earlier workflow continues.
+
+Separate rendered lanes use identical gameplay inputs, camera, art, gains,
+limits and 1280×720 four-sample settings. Their authoring identities and receipt
+IDs remain separate. Every capture preserves its whole saved state.
+
+| Active checkpoint | Orientation-only RMS error | Velocity-tracked RMS error |
+| --- | ---: | ---: |
+| Tick 29, after the transition | 0.463013 rad | 0.383932 rad |
+| Tick 89, sixty ticks later | 0.640003 rad | 0.495302 rad |
+
+These are joint-orientation errors at two selected instants, not a general
+quality score. Both characters fall; velocity tracking does not provide balance.
+
+| Checkpoint | Orientation only | Velocity tracking |
+| --- | --- | --- |
+| Tick 29 | ![Orientation-only character at tick 29](evidence/m2-character-target-velocity-off-29.png) | ![Velocity-tracked character at tick 29](evidence/m2-character-target-velocity-on-29.png) |
+| Tick 89 | ![Orientation-only character after falling](evidence/m2-character-target-velocity-off-89.png) | ![Velocity-tracked character after falling](evidence/m2-character-target-velocity-on-89.png) |
+
+The images are lossless copies of native captures using the original CC0 KayKit
+Knight. All eight full-resolution views, including grounded and released states,
+were inspected. Four stills per lane cannot establish jitter, smoothness or
+continuous motion quality. UI layout readbacks can come from a subsequent
+presentation at the same paused tick and UI revision, rather than the exact BMP
+frame. The original raw captures, frame receipts and failed wrapper record remain
+identified separately in the qualification record.

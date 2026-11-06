@@ -52,8 +52,11 @@ With runtime 0.0.236, add `--velocity-tracking` to preparation to enable
 [fitted target motion](../../docs/PHYSICAL_TARGET_VELOCITY.md) in the joint drives.
 The existing clip, rate, transition and strength controls still apply. This
 changes the project's frozen physics configuration; use a fresh project and
-saves. The default remains orientation-only. Native/CLI velocity checks are
-qualified separately from this imported sample's motion quality.
+saves. The default remains orientation-only. The
+[imported-character check and rendered comparison](../../docs/PHYSICAL_TARGET_VELOCITY.md#imported-character-workflow)
+exercise the enabled profile with the existing NativeAOT game, including all
+104 fields and complete saves. The sampled joint-target errors improve, but
+both characters fall; continuous motion quality and balance remain separate.
 
 On Windows, use **native Windows Python**, the Vulkan `poima.exe`, and matching
 [CoreCLR authoring artifacts](../../docs/AUTHORING_TOOLS.md). For example, in

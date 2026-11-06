@@ -66,6 +66,12 @@ NativeAOT character game passes on the new host. This is a control-system
 foundation; imported-character motion quality, balance, recovery and the wider
 Alpha gates remain open.
 
+The [0.0.237 imported target-velocity workflow](evidence/m2-character-target-velocity.json)
+adds actual enabled NativeAOT gameplay and eight inspected matched Vulkan
+captures. Complete gameplay/save checks pass; the original wrapper's provenance
+file-list failure is retained with a separate artifact audit. This is a bounded
+character composition, not another fresh-agent game or a balance/recovery gate.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

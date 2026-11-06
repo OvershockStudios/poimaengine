@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.237
+
+- Exercise fitted target velocity on the original imported character through
+  compiled NativeAOT gameplay, with independent animation-curve checks.
+- Verify complete gameplay and motion state through restart, zero strength,
+  release, rollback and warm/fresh-process saves.
+- Add a matched Vulkan comparison with velocity tracking off and on, retaining
+  complete capture-purity checks and original character content.
+- Document the observed tracking differences and the remaining balance and
+  motion-quality limits.
+
 ## 0.0.236
 
 - Add opt-in animation target velocity to physical joint drives, including

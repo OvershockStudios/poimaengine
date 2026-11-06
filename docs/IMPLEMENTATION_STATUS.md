@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.236**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.237**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.237 qualifies [target velocity on the imported character](PHYSICAL_TARGET_VELOCITY.md#imported-character-workflow).
+The existing 104-field/656-byte NativeAOT game runs on native runtime 0.0.236
+with a freshly authored enabled profile. Its complete workflow passes 838 RPCs,
+28 verifier archives and fifteen whole-state pairs across two naturally closed
+engine processes. An additional initial game checkpoint is also verified.
+Five focused interval records compare requested targets against the original
+GLB curves and calibration; fitted starts are independently checked where the
+original pose satisfies the joint limits. This does not independently recreate
+the fitting algorithm.
+
+The [qualification record](evidence/m2-character-target-velocity.json) retains
+the original failed wrapper: its file-list check omitted a provenance record.
+A separate file-only audit validates that record through its content address
+in the already pinned world and original authoring receipt. The native game
+passed without a rerun; the wrapper's failure is unchanged.
+
+Eight inspected NVIDIA Vulkan captures compare the same compiled game with
+velocity tracking off/on at four fixed ticks. All sixteen verifier saves form
+eight complete capture-purity pairs. Joint-target RMS error is lower in the
+enabled branch at the two active checkpoints, and the limb poses visibly
+differ. Both characters fall. These paused observations do not qualify smooth
+continuous motion, balance, recovery, physical input or performance; no new
+NativeAOT publication or export is claimed.
 
 Version 0.0.236 adds opt-in [physical animation velocity tracking](PHYSICAL_TARGET_VELOCITY.md).
 Joint drives can follow the motion between fitted animation targets as well as
