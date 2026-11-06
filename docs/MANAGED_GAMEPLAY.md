@@ -608,3 +608,28 @@ execution, rollback and fresh-process saves. The separate
 exercises base playback, rate and source controls in Windows NativeAOT as well
 as Windows/Linux CoreCLR, with all 104 fields and complete saved target state.
 Target-layer NativeAOT coverage remains a separate scope.
+
+## Return from physical simulation
+
+Declare `IPhysicalRecoveryGame` and author a
+[recovery profile](PHYSICAL_RECOVERY.md) on a rig linked to a character controller.
+The marker grants recovery and physical-rig access; drive and target-animation
+permissions remain separate.
+
+```csharp
+var recovery = context.GetPhysicalRecovery(rig);
+if (recovery is { Physical: true, Status: PhysicalRecoveryStatus.Ready })
+    context.RequestPhysicalRecovery(rig);
+```
+
+Use these operations in `Game.Tick`. Readback is the committed assessment, even
+after staging a request. Inspect `LastAttemptResult`, `ReturnedTick` and
+`Generation` on a subsequent tick to distinguish a completed return from a
+refusal. Support or clearance can change after the earlier assessment.
+
+The appended 512-byte epoch-7 prefix requires `physical_recovery_v1` and
+`physical_rig_v1`. Recovery is exclusive with other physical and animation
+writes to that rig in the same tick. It preserves the first returned pose and
+then blends into animation; it does not balance or stand up a fallen character.
+The [compiled fixture](../tests/managed_physical_recovery_gameplay/README.md)
+exercises actual requests, rejection, movement and complete save continuation.

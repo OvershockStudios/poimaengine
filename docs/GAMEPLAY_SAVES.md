@@ -22,6 +22,14 @@ selects extension 6, including in dormant templates. Its independent playback,
 base/layer histories, per-joint sources and samples join the complete drive and
 native state. Non-opted worlds keep their earlier encodings.
 
+Opt-in [target velocity](PHYSICAL_TARGET_VELOCITY.md) selects physical extension 7.
+An authored [recovery profile](PHYSICAL_RECOVERY.md#persistence-and-limits)
+selects extension 8, including in dormant templates. It retains complete source
+animation histories before the first return, physical eligibility and transfer
+records, and the animation-return state. These are separate from the outer
+runtime snapshot version. Other rigs and worlds keep their earlier encodings;
+this extension does not authorize changing a frozen profile during load.
+
 ## Configure storage
 
 In the editor, use **Window > Saves**, or call `save.configure` through the world service. A standalone bundle accepts an existing external directory:

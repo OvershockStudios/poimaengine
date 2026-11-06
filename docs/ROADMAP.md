@@ -136,6 +136,11 @@ The [playable drive example](../examples/physical-character-yard/README.md#joint
 now exposes two authored poses, per-joint strengths, driven hit reactions and
 release, with actual CoreCLR/NativeAOT and rendered observations. It retains
 physics ownership and does not stand up or recover to animation.
+The separate [guarded return](PHYSICAL_RECOVERY.md) API lets eligible upright
+rigs resume their controller with a continuous initial pose and complete saved
+transition. Imported-character calibration, support-derived controller placement,
+balance and get-up still require further work; the existing playable sample
+does not acquire those behaviors automatically.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;

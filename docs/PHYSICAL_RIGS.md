@@ -17,6 +17,11 @@ and layer poses to those drives, with independent playback and explicit joint
 limit fitting. It supplies desired orientations while native physics continues
 to solve the visible body.
 
+Optional [guarded return](PHYSICAL_RECOVERY.md) transfers a sufficiently upright,
+slow and supported rig back to its controller and animation after current
+capsule-clearance checks. It preserves the initial pose and saved ownership;
+balance and fallen-character get-up remain separate work.
+
 The initial 0.0.218 integration has bounded native, CLI, CoreCLR and complete-save
 qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
 checks. The opt-in fixed-scale frame additionally has licensed full-body
@@ -161,12 +166,15 @@ The initial integration rejects:
   rejects skeletal shear and nonuniform scale; the opt-in frame below preserves
   fixed nonuniform local scales.
 
-Static ancestry and unrelated ordinary bodies remain available. These are
-initial ownership limits, not the final FPS feature boundary. The opt-in
-controller handoff below supports one-way takeover; opt-in manual IK uses the
-ownership policies below. Coordinated root motion, attached equipment bodies, active balance,
-physical animation, recovery blending and stand-up behavior remain separate
-work. No public command returns a Passive rig to Animated mode.
+Static ancestry and unrelated ordinary bodies remain available. The opt-in
+controller handoff below supports takeover; opt-in manual IK uses the ownership
+policies below. Optional [joint drives](PHYSICAL_DRIVES.md) and
+[animation targets](PHYSICAL_ANIMATION.md) control the physical joints.
+[Guarded return](PHYSICAL_RECOVERY.md) separately permits near-upright, supported
+rigs to resume animation and controller movement with a continuous initial pose.
+Without that profile, the handoff remains one-way. Coordinated root motion,
+attached equipment bodies, active balance and fallen-character get-up remain
+further work.
 
 ### Skeletal frame selection
 
