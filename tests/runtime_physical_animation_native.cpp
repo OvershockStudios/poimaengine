@@ -303,8 +303,9 @@ void velocity_saves_and_refusals(){
     // A distinct test clip spans exactly pi within one native interval, with
     // both hinge endpoints individually legal. No ambiguous velocity is chosen.
     auto ambiguous=velocity_definition();auto model_copy=std::make_shared<ModelAsset>(*ambiguous.entities[3].animation_rig->model);
-    auto& clip=model_copy->animations[0];clip.duration=1.f/120.f;
-    for(auto& channel:clip.channels)channel.times={0,clip.duration};
+    constexpr float duration=1.f/120.f;
+    auto& clip=model_copy->animations[0];clip.duration=duration;
+    for(auto& channel:clip.channels)channel.times={0.f,duration};
     clip.channels[0].values={key(local_target(0,axis(2,.1))),key(local_target(0,axis(2,.1)))};
     clip.channels[1].values={key(axis(0,-std::acos(-1.)/2)),key(axis(0,std::acos(-1.)/2))};
     ambiguous.entities[3].animation_rig->model=model_copy;ambiguous.entities[3].physical_rig->profile.joints[1].limits=pr::Hinge{-2,2};
