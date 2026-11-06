@@ -1,0 +1,458 @@
+{
+  "format": "poima.physical-character-drive-poses",
+  "version": 1,
+  "joints": [
+    {
+      "name": "spine",
+      "drive": {
+        "stiffness": 120.0,
+        "damping": 12.0,
+        "max_torque": 60.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "neck",
+      "drive": {
+        "stiffness": 35.0,
+        "damping": 4.0,
+        "max_torque": 18.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "shoulder_l",
+      "drive": {
+        "stiffness": 50.0,
+        "damping": 5.0,
+        "max_torque": 25.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "elbow_l",
+      "drive": {
+        "stiffness": 40.0,
+        "damping": 4.0,
+        "max_torque": 18.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "wrist_l",
+      "drive": {
+        "stiffness": 12.0,
+        "damping": 1.5,
+        "max_torque": 6.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "shoulder_r",
+      "drive": {
+        "stiffness": 50.0,
+        "damping": 5.0,
+        "max_torque": 25.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "elbow_r",
+      "drive": {
+        "stiffness": 40.0,
+        "damping": 4.0,
+        "max_torque": 18.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "wrist_r",
+      "drive": {
+        "stiffness": 12.0,
+        "damping": 1.5,
+        "max_torque": 6.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "hip_l",
+      "drive": {
+        "stiffness": 100.0,
+        "damping": 10.0,
+        "max_torque": 60.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "knee_l",
+      "drive": {
+        "stiffness": 80.0,
+        "damping": 8.0,
+        "max_torque": 45.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "ankle_l",
+      "drive": {
+        "stiffness": 45.0,
+        "damping": 4.5,
+        "max_torque": 25.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "hip_r",
+      "drive": {
+        "stiffness": 100.0,
+        "damping": 10.0,
+        "max_torque": 60.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "knee_r",
+      "drive": {
+        "stiffness": 80.0,
+        "damping": 8.0,
+        "max_torque": 45.0
+      },
+      "default_strength": 0.65
+    },
+    {
+      "name": "ankle_r",
+      "drive": {
+        "stiffness": 45.0,
+        "damping": 4.5,
+        "max_torque": 25.0
+      },
+      "default_strength": 0.65
+    }
+  ],
+  "presets": [
+    {
+      "id": 0,
+      "name": "Relaxed",
+      "targets": [
+        {
+          "joint": "spine",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "joint": "neck",
+          "target_rotation": [
+            -0.02999550020249566,
+            0.0,
+            0.0,
+            0.9995500337489875
+          ]
+        },
+        {
+          "joint": "shoulder_l",
+          "target_rotation": [
+            0.2793298192436579,
+            0.16080067394807174,
+            -0.3047319312422322,
+            0.8962457505732069
+          ]
+        },
+        {
+          "joint": "elbow_l",
+          "target_rotation": [
+            0.43496553411123023,
+            0.0,
+            0.0,
+            0.9004471023526769
+          ]
+        },
+        {
+          "joint": "wrist_l",
+          "target_rotation": [
+            -0.07492970727274234,
+            0.0,
+            0.0,
+            0.9971888181122075
+          ]
+        },
+        {
+          "joint": "shoulder_r",
+          "target_rotation": [
+            -0.20856835722953126,
+            -0.1733770535798174,
+            -0.33248757484195585,
+            0.9032672086543776
+          ]
+        },
+        {
+          "joint": "elbow_r",
+          "target_rotation": [
+            0.45733844717895544,
+            0.0,
+            0.0,
+            0.8892927216231682
+          ]
+        },
+        {
+          "joint": "wrist_r",
+          "target_rotation": [
+            0.07492970727274234,
+            0.0,
+            0.0,
+            0.9971888181122075
+          ]
+        },
+        {
+          "joint": "hip_l",
+          "target_rotation": [
+            0.07494708133507871,
+            0.009206835314530976,
+            0.08215474385573462,
+            0.9937548828784909
+          ]
+        },
+        {
+          "joint": "knee_l",
+          "target_rotation": [
+            0.08987854919801104,
+            0.0,
+            0.0,
+            0.9959527330119943
+          ]
+        },
+        {
+          "joint": "ankle_l",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "joint": "hip_r",
+          "target_rotation": [
+            0.031012770338822077,
+            -0.042729821769199164,
+            -0.02853349763418478,
+            0.9981974804217071
+          ]
+        },
+        {
+          "joint": "knee_r",
+          "target_rotation": [
+            0.16918234906699603,
+            0.0,
+            0.0,
+            0.9855847669095608
+          ]
+        },
+        {
+          "joint": "ankle_r",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Guard",
+      "targets": [
+        {
+          "joint": "spine",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "joint": "neck",
+          "target_rotation": [
+            -0.02999550020249566,
+            0.0,
+            0.0,
+            0.9995500337489875
+          ]
+        },
+        {
+          "joint": "shoulder_l",
+          "target_rotation": [
+            -0.45176623617667655,
+            -0.0765235859264746,
+            -0.32588478229752826,
+            0.826952548405654
+          ]
+        },
+        {
+          "joint": "elbow_l",
+          "target_rotation": [
+            0.5646424733950354,
+            0.0,
+            0.0,
+            0.8253356149096783
+          ]
+        },
+        {
+          "joint": "wrist_l",
+          "target_rotation": [
+            -0.07492970727274234,
+            0.0,
+            0.0,
+            0.9971888181122075
+          ]
+        },
+        {
+          "joint": "shoulder_r",
+          "target_rotation": [
+            0.45176622975642106,
+            0.07652392122413802,
+            -0.3258847422856243,
+            0.8269525366534543
+          ]
+        },
+        {
+          "joint": "elbow_r",
+          "target_rotation": [
+            0.5646424733950354,
+            0.0,
+            0.0,
+            0.8253356149096783
+          ]
+        },
+        {
+          "joint": "wrist_r",
+          "target_rotation": [
+            0.07492970727274234,
+            0.0,
+            0.0,
+            0.9971888181122075
+          ]
+        },
+        {
+          "joint": "hip_l",
+          "target_rotation": [
+            0.07494708133507871,
+            0.009206835314530976,
+            0.08215474385573462,
+            0.9937548828784909
+          ]
+        },
+        {
+          "joint": "knee_l",
+          "target_rotation": [
+            0.08987854919801104,
+            0.0,
+            0.0,
+            0.9959527330119943
+          ]
+        },
+        {
+          "joint": "ankle_l",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "joint": "hip_r",
+          "target_rotation": [
+            0.031012770338822077,
+            -0.042729821769199164,
+            -0.02853349763418478,
+            0.9981974804217071
+          ]
+        },
+        {
+          "joint": "knee_r",
+          "target_rotation": [
+            0.16918234906699603,
+            0.0,
+            0.0,
+            0.9855847669095608
+          ]
+        },
+        {
+          "joint": "ankle_r",
+          "target_rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "source_manifest": "source-manifest.json",
+    "physical_profile": "profiles/knight.json",
+    "original_model": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_profile": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "source_reference": {
+      "clip": 36,
+      "name": "Idle",
+      "time_seconds": 0.0,
+      "copied_relaxed_joint_rotations": [
+        "hip_l",
+        "hip_r",
+        "shoulder_l",
+        "shoulder_r"
+      ]
+    },
+    "authored_recipe": {
+      "quaternion": "XYZW, child joint relative to parent joint",
+      "relaxed_x_angles_radians": {
+        "neck": -0.06,
+        "elbow_l": 0.9,
+        "elbow_r": 0.95,
+        "wrist_l": -0.15,
+        "wrist_r": 0.15,
+        "knee_l": 0.18,
+        "knee_r": 0.34
+      },
+      "relaxed_identity_joints": [
+        "spine",
+        "ankle_l",
+        "ankle_r"
+      ],
+      "guard_upper_arm_direction_source_rest": {
+        "left": [
+          0.85,
+          -0.5,
+          0.4
+        ],
+        "right": [
+          -0.85,
+          -0.5,
+          0.4
+        ]
+      },
+      "guard_shoulder_twist_radians": {
+        "left": -1.0,
+        "right": 1.0
+      },
+      "guard_elbow_angle_radians": 1.2,
+      "guard_other_joints": "Retain Relaxed targets."
+    },
+    "scope": "Authored orientation targets and provisional gains for the unchanged original proxies. No source animation clamping, mesh changes, fixed bodies, root support, balance or native quality claim.",
+    "gain_rationale": "Larger authored torso/leg proxies receive larger bounded hold gains and caps; small wrist proxies receive less. Strength scales K, D and the cap. Native response must qualify these sample settings."
+  }
+}

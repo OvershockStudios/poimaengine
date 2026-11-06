@@ -92,6 +92,56 @@ def grounded_chains():
         for i, (slot, root, middle, end) in enumerate(CHAINS)]
 
 
+def drive_profile(base, library):
+    """Admit complete authored controls; never clamp or replace source geometry."""
+    need(type(library) is dict and set(library) == {'format', 'version', 'joints', 'presets', 'provenance'} and
+         library['format'] == 'poima.physical-character-drive-poses' and
+         type(library['version']) is int and library['version'] == 1 and
+         type(library['provenance']) is dict, 'Unsupported complete drive pose library.')
+    names = [joint['name'] for joint in base['joints']]
+    need(type(library['joints']) is list and len(library['joints']) == len(names) == 14,
+         'Drive library must name all fourteen original joints.')
+    def finite(value, low, high):
+        return type(value) in (int, float) and math.isfinite(value) and low <= value <= high
+    result = copy.deepcopy(base)
+    for index, row in enumerate(library['joints']):
+        need(type(row) is dict and set(row) == {'name', 'drive', 'default_strength'} and row['name'] == names[index],
+             'Drive joint order differs from the original physical profile.')
+        gain = row['drive']
+        need(type(gain) is dict and set(gain) == {'stiffness', 'damping', 'max_torque'} and
+             finite(gain['stiffness'], 0, 1e6) and gain['stiffness'] > 0 and
+             finite(gain['damping'], 0, 1e4) and finite(gain['max_torque'], 0, 1e5) and gain['max_torque'] > 0,
+             'Invalid bounded authored joint-drive gains.')
+        need(finite(row['default_strength'], 0, 1) and row['default_strength'] == .65,
+             'Default strength differs from the matching compiled sample.')
+        need('drive' not in result['joints'][index], 'Original profile must remain drive-free.')
+        result['joints'][index]['drive'] = copy.deepcopy(gain)
+    need(type(library['presets']) is list and len(library['presets']) == 2, 'Exactly Relaxed and Guard presets are required.')
+    for preset, name in zip(library['presets'], ('Relaxed', 'Guard')):
+        need(type(preset) is dict and set(preset) == {'id', 'name', 'targets'} and
+             type(preset['id']) is int and preset['id'] == (0 if name == 'Relaxed' else 1) and preset['name'] == name and
+             type(preset['targets']) is list and len(preset['targets']) == 14, 'Complete named pose membership differs.')
+        for index, target in enumerate(preset['targets']):
+            need(type(target) is dict and set(target) == {'joint', 'target_rotation'} and target['joint'] == names[index],
+                 'Every pose must retain complete original joint order.')
+            q = target['target_rotation']
+            need(type(q) is list and len(q) == 4 and all(finite(x, -1.000001, 1.000001) for x in q) and
+                 abs(math.hypot(*q)-1) <= 1e-6 and q[3] >= 0, 'Authored targets must be canonical finite unit XYZW quaternions.')
+            # Independent admission in the authored joint chart. Keep the exact
+            # original doubles: no target normalization, projection or clamping.
+            chart = math.hypot(q[0], q[3]); need(chart > 1e-4, 'Unsupported singular target chart.')
+            twist = 2*math.atan2(q[0], q[3]); limits = base['joints'][index]['limits']
+            if limits['kind'] == 'hinge':
+                need(abs(q[1]) <= 1e-8 and abs(q[2]) <= 1e-8 and
+                     limits['minimum']-1e-10 <= twist <= limits['maximum']+1e-10, 'Authored hinge target exceeds its exact axis/limits.')
+            else:
+                y = (q[3]*q[1]-q[0]*q[2])/chart/math.sin(limits['swing_y']/2)
+                z = (q[3]*q[2]+q[0]*q[1])/chart/math.sin(limits['swing_z']/2)
+                need(y*y+z*z <= 1+1e-10 and limits['twist_min']-1e-10 <= twist <= limits['twist_max']+1e-10,
+                     'Authored target exceeds the original swing/twist limits.')
+    return result
+
+
 def ui_operations():
     dp = lambda value: dict(unit='dp', value=value)
     percent = lambda value: dict(unit='percent', value=value)
@@ -113,7 +163,7 @@ def ui_operations():
             kind=kind, text=text, action=action, visible=visible, enabled=True,
             layout=layout, style=style)))
     add(500, 'panel', '', dict(position='absolute', left=dp(0), bottom=dp(0),
-        width=percent(100), height=dp(176), hit_test='capture'), parent=None)
+        width=percent(100), height=dp(226), hit_test='capture'), parent=None)
     add(501, 'label', 'PHYSICAL CHARACTER / BEGIN', dict(position='absolute',
         left=dp(16), top=dp(10), width=dp(550), height=dp(28)))
     add(502, 'label', 'Original Knight / ready', dict(position='absolute',
@@ -128,10 +178,20 @@ def ui_operations():
         add(number, 'button', text, dict(position='absolute', left=dp(left), top=dp(84),
             width=dp(150 if number == 510 else 92), height=dp(32)),
             action=action, visible=visible)
+    pose_buttons = ((514, 'Hold pose', 'pose-hold', 16, 92),
+        (515, 'Release', 'pose-release', 116, 92),
+        (516, 'Pose: Relaxed', 'pose-preset', 216, 144),
+        (517, 'Joint: shoulder_l', 'pose-joint', 368, 192),
+        (518, 'Request: 65%', 'pose-strength', 568, 138))
+    for number, text, action, left, width in pose_buttons:
+        add(number, 'button', text, dict(position='absolute', left=dp(left), top=dp(120),
+            width=dp(width), height=dp(30)), action=action, visible=False)
+    add(519, 'label', 'Pose controls hold relative joint angles. Gravity still applies.',
+        dict(position='absolute', left=dp(16), top=dp(150), width=dp(1190), height=dp(22)), visible=False)
     add(509, 'label', 'Begin creates the retry checkpoint in this launch\u2019s save folder.',
-        dict(position='absolute', left=dp(16), top=dp(122), width=dp(1000), height=dp(22)))
-    add(513, 'label', 'WASD move / mouse look / click fire / Space jump / Tab cursor. Loaded saves pause; Resume continues.',
-        dict(position='absolute', left=dp(16), top=dp(146), width=dp(1050), height=dp(22)))
+        dict(position='absolute', left=dp(16), top=dp(174), width=dp(1150), height=dp(22)))
+    add(513, 'label', 'WASD / mouse / click fire / Space jump / Tab cursor. Strength: 0/25/50/75/100%. Loaded saves pause; Resume continues.',
+        dict(position='absolute', left=dp(16), top=dp(198), width=dp(1190), height=dp(22)))
     # Native text, no image asset. This marker is screen center, not target aim.
     add(512, 'panel', '', dict(position='absolute', left=dp(0), top=dp(0),
         width=percent(100), height=percent(100), align='center', justify='center',
@@ -202,7 +262,13 @@ def prepare(args):
     base = json.loads((HERE/'profiles/knight.json').read_bytes())
     need(len(base['parts']) == 15 and len(base['joints']) == 14,
          'Expected the original fifteen-part Knight profile.')
-    profile = copy.deepcopy(base)
+    pose_path = HERE/'drive-poses.json'
+    need(pose_path.stat().st_size <= 64*1024, 'Bounded authored drive library required.')
+    pose_pin = identity(pose_path)
+    poses = json.loads(pose_path.read_bytes())
+    profile = drive_profile(base, poses)
+    need(poses['provenance']['original_profile'] == identity(HERE/'profiles/knight.json') and
+         poses['provenance']['original_model'] == source_pin, 'Pose reference identities differ from the original profile/model.')
     profile.update(pose_frame='skeletal_bounded_scale', max_scale_deviation=.00001,
         procedural_pose='grounded_animated_only',
         controller_handoff=dict(actor=uid(ACTOR), follow='translate_keep_heading'))
@@ -216,6 +282,8 @@ def prepare(args):
     original(source, manifest['model']); original(notice, manifest['license_file'])
     write_json(args.output/'content/source-manifest.json', manifest)
     write_json(args.output/'content/physical-profile.json', profile)
+    shutil.copyfile(pose_path, args.output/'content/drive-poses.json')
+    need(identity(args.output/'content/drive-poses.json') == pose_pin, 'Copied authored pose library changed.')
     (args.output/'content/NOTICE.txt').write_text(
         'KayKit Adventurers 1.0 Knight by Kay Lousberg, CC0-1.0.\n'
         +manifest['repository']+'/tree/'+manifest['revision']+'\n'
@@ -227,7 +295,7 @@ def prepare(args):
         calls=[], errors=[], inputs=dict(source=source_pin, license=license_pin,
             binary=identity(args.binary), recipe=identity(Path(__file__)),
             source_manifest=identity(HERE/'source-manifest.json'),
-            profile=identity(HERE/'profiles/knight.json')), profile=profile,
+            profile=identity(HERE/'profiles/knight.json'), drive_poses=pose_pin), profile=profile, drive_pose_library=poses,
         scope='Native authoring only; no simulation, compiled gameplay or rendered qualification.')
     client = None
     deadline = time.monotonic()+180
@@ -332,16 +400,17 @@ def prepare(args):
             node_map=[mapping[index] for index in sorted(mapping)], hit_regions=hit_regions,
             input_profile=dict(path=INPUT_PATH, revision=input_receipt['revision'], profile=inputs),
             expected_game=dict(module=MODULE, type=GAME_TYPE),
-            project=project, source_profile='kaykit-knight-original-grounded-bounded-v1')
+            project=project, source_profile='kaykit-knight-original-grounded-bounded-drives-v1')
         package = Path(str(world)+'.assets')/(asset+'.pmodel')
         need(identity(package)['sha256'] == asset, 'Cooked package content address differs.')
         report['files'] = {path.relative_to(args.output).as_posix(): identity(path) for path in
             (world, package, args.output/'project.json', args.output/INPUT_PATH, source, notice,
              args.output/'content/NOTICE.txt', args.output/'content/source-manifest.json',
-             args.output/'content/physical-profile.json')}
+             args.output/'content/physical-profile.json', args.output/'content/drive-poses.json')}
         original(args.source, manifest['model']); original(args.license, manifest['license_file'])
         need(identity(HERE/'profiles/knight.json') == report['inputs']['profile'],
              'Original physical profile changed while authoring.')
+        need(identity(pose_path) == report['inputs']['drive_poses'], 'Authored pose library changed while preparing.')
         report['passed'] = True
     except BaseException:
         report['errors'].append(traceback.format_exc())

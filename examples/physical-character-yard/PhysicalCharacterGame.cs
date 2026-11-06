@@ -28,12 +28,21 @@ public struct PhysicalCharacterState
     // 3 checkpoint load, 4 retry. Ticket words are opaque signed values.
     public int StartReady, SavePending, SavePurpose, SaveNotice, LastSaveState, LastSaveError;
     public long SaveEpochHigh, SaveEpochLow, SaveSequence, LastSaveGeneration, LastRestoreTick;
+    // Requested controls are distinct from last committed native observations.
+    // Applied* caches prevent repeating unchanged preset writes every Tick.
+    public int HoldRequested, AppliedHold, PosePreset, AppliedPreset, SelectedJoint;
+    public int DrivePending, DriveWrites, DriveChanges, ObservedDriveCount, ObservedJoint;
+    public long LastDriveTick;
+    public double ObservedSelectedStrength;
+    public double StrengthSpine, StrengthNeck, StrengthShoulderL, StrengthElbowL, StrengthWristL;
+    public double StrengthShoulderR, StrengthElbowR, StrengthWristR;
+    public double StrengthHipL, StrengthKneeL, StrengthAnkleL, StrengthHipR, StrengthKneeR, StrengthAnkleR;
 }
 
 [GameModule("poima.example.physical-character")]
 public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
     IInputActionsGame, ICharacterInputGame, IAnimationRateGame,
-    IGroundingControlGame, IHitRegionsGame, IPhysicalRigGame
+    IGroundingControlGame, IHitRegionsGame, IPhysicalRigDriveGame
 {
     public const string CheckpointSlot = "physical-character";
     public const string StartSlot = "physical-character-start";
@@ -49,6 +58,10 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         s.AnimationClip=-1; s.LastHitPart=-1; s.PatrolDirection=1;
         s.Health=100; s.Damage=100; s.ShotImpulse=18; s.Range=50;
         s.PatrolExtent=1.8; s.RunInput=.6; s.AnimationRate=1;
+        s.AppliedPreset=-1; s.SelectedJoint=2; s.ObservedJoint=-1; s.LastDriveTick=-1;
+        s.StrengthSpine=s.StrengthNeck=s.StrengthShoulderL=s.StrengthElbowL=s.StrengthWristL=.65;
+        s.StrengthShoulderR=s.StrengthElbowR=s.StrengthWristR=.65;
+        s.StrengthHipL=s.StrengthKneeL=s.StrengthAnkleL=s.StrengthHipR=s.StrengthKneeR=s.StrengthAnkleR=.65;
     }
 
     static void Require(bool condition,string message)
@@ -73,6 +86,154 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             "Patrol extent must be 0.25..6m and movement input 0.05..1.");
         Require(s.Cooldown is >=0 and <=6 && s.FireQueued is 0 or 1 &&
             s.SavePending is 0 or 1,"Invalid saved shot or save state.");
+        Require(s.HoldRequested is 0 or 1 && s.AppliedHold is 0 or 1 &&
+            s.PosePreset is >=0 and <2 && s.AppliedPreset is >=-1 and <2 &&
+            s.SelectedJoint is >=0 and <14 && s.ObservedJoint is >=-1 and <14 &&
+            s.DrivePending is 0 or 1 && s.DriveWrites>=0 && s.DriveChanges>=0 &&
+            s.ObservedDriveCount is >=0 and <=14 && Within(s.ObservedSelectedStrength,0,1),
+            "Invalid saved joint-drive mode, preset, selection or observation.");
+        for(int joint=0;joint<14;++joint)
+            Require(Within(JointStrength(in s,joint),0,1),"Every requested joint strength must be finite in [0,1].");
+    }
+
+    public static string JointName(int index) => index switch
+    {
+        0=>"spine", 1=>"neck", 2=>"shoulder_l", 3=>"elbow_l", 4=>"wrist_l",
+        5=>"shoulder_r", 6=>"elbow_r", 7=>"wrist_r", 8=>"hip_l", 9=>"knee_l",
+        10=>"ankle_l", 11=>"hip_r", 12=>"knee_r", 13=>"ankle_r",
+        _=>throw new ArgumentOutOfRangeException(nameof(index))
+    };
+
+    public static string PresetName(int preset) => preset switch
+    {
+        0=>"Relaxed", 1=>"Guard",
+        _=>throw new ArgumentOutOfRangeException(nameof(preset))
+    };
+
+    // Exact authored joint-frame targets from drive-poses.json. The protocol
+    // verifier independently joins every requested native target to that data.
+    // These are pose holds, not generated gait, balance or recovery animation.
+    public static Quaterniond PresetTarget(int preset,int joint) => (preset,joint) switch
+    {
+        (0,0)=>new(0.0, 0.0, 0.0, 1.0), // Relaxed: spine
+        (0,1)=>new(-0.02999550020249566, 0.0, 0.0, 0.9995500337489875), // Relaxed: neck
+        (0,2)=>new(0.2793298192436579, 0.16080067394807174, -0.3047319312422322, 0.8962457505732069), // Relaxed: shoulder_l
+        (0,3)=>new(0.43496553411123023, 0.0, 0.0, 0.9004471023526769), // Relaxed: elbow_l
+        (0,4)=>new(-0.07492970727274234, 0.0, 0.0, 0.9971888181122075), // Relaxed: wrist_l
+        (0,5)=>new(-0.20856835722953126, -0.1733770535798174, -0.33248757484195585, 0.9032672086543776), // Relaxed: shoulder_r
+        (0,6)=>new(0.45733844717895544, 0.0, 0.0, 0.8892927216231682), // Relaxed: elbow_r
+        (0,7)=>new(0.07492970727274234, 0.0, 0.0, 0.9971888181122075), // Relaxed: wrist_r
+        (0,8)=>new(0.07494708133507871, 0.009206835314530976, 0.08215474385573462, 0.9937548828784909), // Relaxed: hip_l
+        (0,9)=>new(0.08987854919801104, 0.0, 0.0, 0.9959527330119943), // Relaxed: knee_l
+        (0,10)=>new(0.0, 0.0, 0.0, 1.0), // Relaxed: ankle_l
+        (0,11)=>new(0.031012770338822077, -0.042729821769199164, -0.02853349763418478, 0.9981974804217071), // Relaxed: hip_r
+        (0,12)=>new(0.16918234906699603, 0.0, 0.0, 0.9855847669095608), // Relaxed: knee_r
+        (0,13)=>new(0.0, 0.0, 0.0, 1.0), // Relaxed: ankle_r
+        (1,0)=>new(0.0, 0.0, 0.0, 1.0), // Guard: spine
+        (1,1)=>new(-0.02999550020249566, 0.0, 0.0, 0.9995500337489875), // Guard: neck
+        (1,2)=>new(-0.45176623617667655, -0.0765235859264746, -0.32588478229752826, 0.826952548405654), // Guard: shoulder_l
+        (1,3)=>new(0.5646424733950354, 0.0, 0.0, 0.8253356149096783), // Guard: elbow_l
+        (1,4)=>new(-0.07492970727274234, 0.0, 0.0, 0.9971888181122075), // Guard: wrist_l
+        (1,5)=>new(0.45176622975642106, 0.07652392122413802, -0.3258847422856243, 0.8269525366534543), // Guard: shoulder_r
+        (1,6)=>new(0.5646424733950354, 0.0, 0.0, 0.8253356149096783), // Guard: elbow_r
+        (1,7)=>new(0.07492970727274234, 0.0, 0.0, 0.9971888181122075), // Guard: wrist_r
+        (1,8)=>new(0.07494708133507871, 0.009206835314530976, 0.08215474385573462, 0.9937548828784909), // Guard: hip_l
+        (1,9)=>new(0.08987854919801104, 0.0, 0.0, 0.9959527330119943), // Guard: knee_l
+        (1,10)=>new(0.0, 0.0, 0.0, 1.0), // Guard: ankle_l
+        (1,11)=>new(0.031012770338822077, -0.042729821769199164, -0.02853349763418478, 0.9981974804217071), // Guard: hip_r
+        (1,12)=>new(0.16918234906699603, 0.0, 0.0, 0.9855847669095608), // Guard: knee_r
+        (1,13)=>new(0.0, 0.0, 0.0, 1.0), // Guard: ankle_r
+        _=>throw new ArgumentOutOfRangeException("preset/joint")
+    };
+
+    public static double JointStrength(in PhysicalCharacterState s,int joint) => joint switch
+    {
+        0=>s.StrengthSpine, 1=>s.StrengthNeck, 2=>s.StrengthShoulderL,
+        3=>s.StrengthElbowL, 4=>s.StrengthWristL, 5=>s.StrengthShoulderR,
+        6=>s.StrengthElbowR, 7=>s.StrengthWristR, 8=>s.StrengthHipL,
+        9=>s.StrengthKneeL, 10=>s.StrengthAnkleL, 11=>s.StrengthHipR,
+        12=>s.StrengthKneeR, 13=>s.StrengthAnkleR,
+        _=>throw new ArgumentOutOfRangeException(nameof(joint))
+    };
+
+    static void SetJointStrength(ref PhysicalCharacterState s,int joint,double strength)
+    {
+        Require(Within(strength,0,1),"Requested joint strength must be finite in [0,1].");
+        switch(joint)
+        {
+            case 0:s.StrengthSpine=strength;break;
+            case 1:s.StrengthNeck=strength;break;
+            case 2:s.StrengthShoulderL=strength;break;
+            case 3:s.StrengthElbowL=strength;break;
+            case 4:s.StrengthWristL=strength;break;
+            case 5:s.StrengthShoulderR=strength;break;
+            case 6:s.StrengthElbowR=strength;break;
+            case 7:s.StrengthWristR=strength;break;
+            case 8:s.StrengthHipL=strength;break;
+            case 9:s.StrengthKneeL=strength;break;
+            case 10:s.StrengthAnkleL=strength;break;
+            case 11:s.StrengthHipR=strength;break;
+            case 12:s.StrengthKneeR=strength;break;
+            case 13:s.StrengthAnkleR=strength;break;
+            default:throw new ArgumentOutOfRangeException(nameof(joint));
+        }
+    }
+
+    static void ObserveDrives(ref PhysicalCharacterState s,GameContext c)
+    {
+        s.ObservedDriveCount=0; s.ObservedJoint=s.SelectedJoint;
+        for(int joint=0;joint<14;++joint)
+        {
+            var value=c.GetPhysicalRigDrive(E(100),JointName(joint))
+                ?? throw new InvalidOperationException("Every sample joint requires its authored drive profile.");
+            if(value.Strength>0)++s.ObservedDriveCount;
+            if(joint==s.ObservedJoint)s.ObservedSelectedStrength=value.Strength;
+        }
+    }
+
+    // Fire runs first. Its explicit activation, if any, therefore precedes the
+    // drive commands and is never duplicated. No animation/motor writes follow.
+    static bool ApplyDrives(ref PhysicalCharacterState s,GameContext c,PhysicalRigMode mode,bool physicalWrite)
+    {
+        bool physical=mode!=PhysicalRigMode.Animated || physicalWrite;
+        if(!physical && s.HoldRequested==0)
+        {
+            s.AppliedHold=0; s.DrivePending=0;
+            return false;
+        }
+        if(!physical && c.Tick==0)
+        {
+            // A first completed locomotion/grounding interval is required for
+            // real controller takeover; keep the ordinary request queued.
+            s.DrivePending=1;
+            return false;
+        }
+        if(!physical)
+        {
+            c.ActivatePhysicalRig(E(100));
+            s.Takeovers=checked(s.Takeovers+1); physicalWrite=true;
+        }
+        bool presetChanged=s.HoldRequested!=0 && (s.AppliedHold==0 || s.AppliedPreset!=s.PosePreset);
+        int writes=0;
+        for(int joint=0;joint<14;++joint)
+        {
+            var current=c.GetPhysicalRigDrive(E(100),JointName(joint))
+                ?? throw new InvalidOperationException("Sample drive permission is missing.");
+            double desired=s.HoldRequested!=0 ? JointStrength(in s,joint) : 0;
+            if(!presetChanged && current.Strength==desired)continue;
+            var target=s.HoldRequested!=0 ? PresetTarget(s.PosePreset,joint) : current.TargetRotation;
+            c.SetPhysicalRigDrive(E(100),JointName(joint),target,desired);
+            ++writes;
+        }
+        if(writes!=0)
+        {
+            s.DriveWrites=checked(s.DriveWrites+writes); s.DriveChanges=checked(s.DriveChanges+1);
+            s.LastDriveTick=checked((long)c.Tick); physicalWrite=true;
+        }
+        if(s.HoldRequested!=0)s.AppliedPreset=s.PosePreset;
+        s.AppliedHold=s.HoldRequested; s.DrivePending=0;
+        s.TargetMoving=0; s.TargetMode=2;
+        return physicalWrite;
     }
 
     public static string PartName(int index) => index switch
@@ -202,7 +363,7 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         s.LastHitPart=index; s.Hits=checked(s.Hits+1);
         s.Health=Math.Max(0,s.Health-s.Damage);
         bool activate=mode==PhysicalRigMode.Animated && s.Health<=0;
-        if(!activate && mode!=PhysicalRigMode.Passive)
+        if(!activate && mode==PhysicalRigMode.Animated)
         {
             s.LastShotKind=2;
             return false;
@@ -288,8 +449,18 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         _=>"PHYSICAL CHARACTER YARD / LIVE"
     };
     static string Stats(in PhysicalCharacterState s) =>
-        $"{(s.TargetMode==2 ? "PHYSICAL" : s.TargetMode==1 ? "RUNNING" : "IDLE")}  /  HEALTH {s.Health:0}\n"+
+        $"{(s.PhysicalMode==2 ? "DRIVEN" : s.TargetMode==2 ? "PHYSICAL" : s.TargetMode==1 ? "RUNNING" : "IDLE")}  /  HEALTH {s.Health:0}\n"+
         $"SHOTS {s.Shots}  HITS {s.Hits}  MISSES {s.Misses}  /  LAST PART {PartName(s.LastHitPart)}";
+    static string DriveStatus(in PhysicalCharacterState s)
+    {
+        bool pending=s.DrivePending!=0 || s.HoldRequested!=s.AppliedHold ||
+            (s.HoldRequested!=0 && s.PosePreset!=s.AppliedPreset);
+        string phase=s.PhysicalMode switch {0=>"Animated",1=>"Passive",2=>"Driven",_=>"Unknown"};
+        string observed=s.ObservedJoint==s.SelectedJoint
+            ? $"{s.ObservedSelectedStrength:P0}" : "awaiting Tick";
+        return $"{(pending ? "QUEUED / next playing Tick" : s.HoldRequested!=0 ? "HOLD requested" : "RELEASE requested")}  |  "+
+            $"observed {phase}, {s.ObservedDriveCount}/14 powered  |  selected observed {observed}. Gravity still applies.";
+    }
     static string Notice(in PhysicalCharacterState s) => s.SaveNotice switch
     {
         1=>"Saving checkpoint...", 2=>"Loading checkpoint...",
@@ -314,6 +485,12 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         c.SetUi(U(508),visible:s.Active!=0,enabled:s.StartReady!=0 && s.SavePending==0);
         c.SetUi(U(510),s.TargetMoving!=0 ? "Stop target" : "Move target",visible:s.Active!=0,
             enabled:s.Active==1 && s.TargetMode!=2);
+        c.SetUi(U(514),visible:s.Active!=0,enabled:s.HoldRequested==0);
+        c.SetUi(U(515),visible:s.Active!=0,enabled:s.HoldRequested!=0 || s.AppliedHold!=0 || s.ObservedDriveCount>0);
+        c.SetUi(U(516),"Pose: "+PresetName(s.PosePreset),visible:s.Active!=0);
+        c.SetUi(U(517),"Joint: "+JointName(s.SelectedJoint),visible:s.Active!=0);
+        c.SetUi(U(518),$"Request: {JointStrength(in s,s.SelectedJoint):P0}",visible:s.Active!=0);
+        c.SetUi(U(519),DriveStatus(in s),visible:s.Active!=0);
     }
     static void Publish(in PhysicalCharacterState s,ControlContext c)
     {
@@ -325,6 +502,12 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         c.SetUi(U(508),visible:s.Active!=0,enabled:s.StartReady!=0 && s.SavePending==0);
         c.SetUi(U(510),s.TargetMoving!=0 ? "Stop target" : "Move target",visible:s.Active!=0,
             enabled:s.Active==1 && s.TargetMode!=2);
+        c.SetUi(U(514),visible:s.Active!=0,enabled:s.HoldRequested==0);
+        c.SetUi(U(515),visible:s.Active!=0,enabled:s.HoldRequested!=0 || s.AppliedHold!=0 || s.ObservedDriveCount>0);
+        c.SetUi(U(516),"Pose: "+PresetName(s.PosePreset),visible:s.Active!=0);
+        c.SetUi(U(517),"Joint: "+JointName(s.SelectedJoint),visible:s.Active!=0);
+        c.SetUi(U(518),$"Request: {JointStrength(in s,s.SelectedJoint):P0}",visible:s.Active!=0);
+        c.SetUi(U(519),DriveStatus(in s),visible:s.Active!=0);
     }
 
     public override void Tick(ref PhysicalCharacterState s,GameContext c)
@@ -334,7 +517,8 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             ?? throw new InvalidOperationException("The original character requires its authored physical rig.");
         Require(physical.BodyCount==15 && physical.JointCount==14,"Expected the complete 15-part character profile.");
         s.PhysicalMode=(int)physical.Mode;
-        if(physical.Mode==PhysicalRigMode.Passive){ s.TargetMoving=0; s.TargetMode=2; }
+        ObserveDrives(ref s,c);
+        if(physical.Mode!=PhysicalRigMode.Animated){ s.TargetMoving=0; s.TargetMode=2; }
         if(s.Active!=1)
         {
             // Other hosts can drive a first Tick before presenting the menu.
@@ -357,6 +541,7 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             if(s.Cooldown==0)physicalWrite=Fire(ref s,c,physical.Mode);
             else s.RefusedShots=checked(s.RefusedShots+1);
         }
+        physicalWrite=ApplyDrives(ref s,c,physical.Mode,physicalWrite) || physicalWrite;
         if(physical.Mode==PhysicalRigMode.Animated && !physicalWrite)AnimateAndMove(ref s,c);
         Publish(in s,c);
     }
@@ -383,6 +568,32 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
                 break;
             case "target-motion":
                 if(s.Active==1 && s.TargetMode!=2)s.TargetMoving=1-s.TargetMoving;
+                break;
+            case "pose-hold":
+                if(s.Active!=0 && s.HoldRequested==0){ s.HoldRequested=1; s.DrivePending=1; }
+                break;
+            case "pose-release":
+                if(s.Active!=0){ s.HoldRequested=0; s.DrivePending=1; }
+                break;
+            case "pose-preset":
+                if(s.Active!=0)
+                {
+                    s.PosePreset=(s.PosePreset+1)%2;
+                    if(s.HoldRequested!=0)s.DrivePending=1;
+                }
+                break;
+            case "pose-joint":
+                if(s.Active!=0)s.SelectedJoint=(s.SelectedJoint+1)%14;
+                break;
+            case "pose-strength":
+                if(s.Active!=0)
+                {
+                    // These are deliberate UI steps. Direct typed fields retain
+                    // continuous strength; no runtime clamp or rounding occurs.
+                    double value=JointStrength(in s,s.SelectedJoint);
+                    SetJointStrength(ref s,s.SelectedJoint,value<.25 ? .25 : value<.5 ? .5 : value<.75 ? .75 : value<1 ? 1 : 0);
+                    if(s.HoldRequested!=0)s.DrivePending=1;
+                }
                 break;
             case "save":
                 if(s.SavePending==0)Remember(ref s,c.TryRequestSave(CheckpointSlot),2);
