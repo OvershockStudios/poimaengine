@@ -59,6 +59,13 @@ histories. Five inspected UI captures add bounded presentation evidence.
 Physical input, clean-machine delivery, motion quality and balance remain
 separate; this is not another fresh-agent game qualification.
 
+The [0.0.236 target-motion extension](PHYSICAL_TARGET_VELOCITY.md) adds opt-in
+velocity tracking to the physical drives, complete saved intervals and native
+inspection. Native/CLI checks pass on Windows and Linux, and the retained
+NativeAOT character game passes on the new host. This is a control-system
+foundation; imported-character motion quality, balance, recovery and the wider
+Alpha gates remain open.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

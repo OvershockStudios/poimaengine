@@ -128,6 +128,9 @@ controls. Independent [live clip targets](PHYSICAL_ANIMATION.md) now add
 base/layer playback, transitions and per-joint source selection with complete
 histories and explicit limit fitting. Whole-body balance, protective reactions
 and recovery remain part of this segment.
+Optional [target velocity tracking](PHYSICAL_TARGET_VELOCITY.md) now supplies
+fitted interval motion to the capped drives, with complete persistence and
+native/CLI checks. Contact-aware whole-body control remains further work.
 The [playable drive example](../examples/physical-character-yard/README.md#joint-pose-controls)
 now exposes two authored poses, per-joint strengths, driven hit reactions and
 release, with actual CoreCLR/NativeAOT and rendered observations. It retains

@@ -115,3 +115,25 @@ save archives. Omit `--velocity-tracking` to exercise the unchanged
 orientation-only workflow. The native runtime test accepts
 `POIMA_TEST_ARTIFACTS=/absolute/fresh/native-check` to retain its full snapshots
 and pair manifest. Reusing an existing artifact directory is rejected.
+
+## Qualification
+
+The [0.0.236 record](evidence/m2-physical-target-velocity.json) covers 21 selected
+native tests on Windows and Linux. The physical-animation fixture retains 366
+archives, 153 whole-state pairs and 45 rejected mutations per platform. It
+checks post-command sampling, completed fades, inertial continuation, manual
+ownership, zero strength, fitted limits, dormant templates and atomic failure.
+An isolated moving-hinge math case compares identical curves and gains; it
+passes its thresholds of at least 40% lower RMS error and 50% lower phase-lag
+projection. Those thresholds are not character-motion or performance promises.
+
+The CLI workflows separately exercise default and enabled profiles on both
+platforms: 119/147 RPCs, 40/46 complete saves and 21/24 whole-file pairs. Four
+analytic curve checks and one control-branch witness inspect interval motion.
+All three engine processes in each workflow close naturally.
+
+The retained 104-field Windows NativeAOT character game also passes on this
+runtime with its original orientation-only profile. Its module is unchanged;
+this does not qualify the sample's optional velocity mode or a new export.
+No new rendered motion, physical input, frame-time or cross-platform bit-equality
+result is claimed by these CPU checks.

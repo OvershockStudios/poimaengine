@@ -174,9 +174,11 @@ record validation and actual consumer compatibility remain separate checks.
 
 ## Persistence
 
-Authored target playback selects physical save extension 6, including when the
-only opted-in rig is in a dormant template. Non-opted worlds retain their
-existing extension and field encodings.
+Authored orientation-only target playback selects physical save extension 6,
+including when the only opted-in rig is in a dormant template. Optional
+[velocity tracking](PHYSICAL_TARGET_VELOCITY.md) selects extension 7 and target
+document version 2, retaining the fitted interval start and angular velocity.
+Non-opted worlds retain their existing extension and field encodings.
 
 Saves retain the complete independent player, base/layer current and previous
 histories, per-joint sources and current samples, alongside effective native

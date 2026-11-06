@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.236
+
+- Add opt-in animation target velocity to physical joint drives, including
+  fitted clip, layer and transition motion in the existing capped controller.
+- Preserve complete interval state through rollback and saves; expose target
+  motion through native inspection without changing the C# services interface.
+- Keep orientation-only behavior as the default and reject ambiguous rotation
+  intervals without silently clamping their speed.
+- Verify native and CLI workflows on Windows and Linux, plus the unchanged
+  compiled character game on the new Windows runtime.
+
 ## 0.0.235
 
 - Add live Idle/Running targets, playback speed, explicit restart and transition

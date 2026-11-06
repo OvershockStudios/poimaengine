@@ -48,6 +48,13 @@ input profile and source-provenance receipt. It does not download artwork.
 The game builds against the checkout's gameplay SDK by default; set
 `PoimaGameplayAssembly` to an existing matching SDK DLL to use binary references.
 
+With runtime 0.0.236, add `--velocity-tracking` to preparation to enable
+[fitted target motion](../../docs/PHYSICAL_TARGET_VELOCITY.md) in the joint drives.
+The existing clip, rate, transition and strength controls still apply. This
+changes the project's frozen physics configuration; use a fresh project and
+saves. The default remains orientation-only. Native/CLI velocity checks are
+qualified separately from this imported sample's motion quality.
+
 On Windows, use **native Windows Python**, the Vulkan `poima.exe`, and matching
 [CoreCLR authoring artifacts](../../docs/AUTHORING_TOOLS.md). For example, in
 PowerShell with `$poima`, `$hostfxr` and `$bridge` pointing to those files:
@@ -92,6 +99,12 @@ complete save continuation through two fresh `game stdio` processes, with its
 owned export-project path unavailable. These checks use native runtime 0.0.234
 and the 496-byte gameplay interface. Five inspected CoreCLR/Vulkan captures
 verify the displayed controls separately from native shipping execution.
+
+The [0.0.236 compatibility check](../../docs/evidence/m2-physical-target-velocity.json)
+reuses that exact compiled NativeAOT game on the new runtime and passes the
+same 741 calls, 25 verifier archives and fourteen pairs, with its additional
+initial game checkpoint also verified. It retains the orientation-only profile
+and does not rebuild or re-export the game.
 
 The earlier [drive gameplay check](../../tests/physical_character_drives.py)
 and [0.0.233 results](../../docs/evidence/m2-character-drives.json) pass the

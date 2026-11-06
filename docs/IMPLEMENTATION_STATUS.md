@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.235**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.236**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.236 adds opt-in [physical animation velocity tracking](PHYSICAL_TARGET_VELOCITY.md).
+Joint drives can follow the motion between fitted animation targets as well as
+their orientations. Both interval endpoints use the accepted playback commands,
+so restarting or replacing a clip does not create velocity from an unrelated
+previous pose. Transitions, layers, rate changes and limit fitting participate
+in the sampled trajectory. Existing orientation-only behavior remains the default.
+
+Complete interval state participates in rollback, inspection and physical save
+extension 7, including dormant templates. CLI schema 130 exposes the motion;
+the C# services interface remains epoch 7 with the same 496-byte prefix.
+The [qualification record](evidence/m2-physical-target-velocity.json) covers
+21 selected native tests on each platform, with a focused Linux rerun after
+a test-only compiler portability fix. The physical-animation test checks 4,173
+assertions and 153 complete archive pairs per platform. Separate legacy and
+velocity CLI workflows pass 119 and 147 RPCs respectively on both hosts,
+including 21 and 24 complete save pairs across three engine processes each.
+
+The unchanged 0.0.235 Windows NativeAOT game also passes 741 RPCs, 25 verifier
+archives and fourteen whole-state pairs on the new runtime, retaining all
+104 fields/656 bytes. Its additional initial game checkpoint is also verified.
+That compatibility run uses the orientation-only profile. This checkpoint has
+no new imported-character velocity-mode, GPU or performance qualification.
+The isolated moving-hinge math check reduces tracking error and lag under its
+fixed inputs; it does not establish whole-body stability, balance or recovery.
 
 Version 0.0.235 connects live animation targets to the playable
 [Physical Character Yard](../examples/physical-character-yard/README.md).

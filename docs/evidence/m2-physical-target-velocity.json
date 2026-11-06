@@ -1,0 +1,626 @@
+{
+  "format": "poima.evidence.physical-target-velocity.v1",
+  "date": "2026-11-06",
+  "source_checkpoint": "0.0.236",
+  "native_runtime": "0.0.236",
+  "world_schema": 130,
+  "implementation_commits": [
+    "cb6e96e5e63580b3a15278ff0b8ac13f3b864a66",
+    "ac790ba713aae016c29cc55bbdf51581c5b7dce6"
+  ],
+  "scope": "Opt-in fitted animation interval velocity in physical joint drives, complete rollback/save state, native inspection and retained compiled-consumer compatibility.",
+  "gameplay_services": {
+    "epoch": 7,
+    "minimum_bytes": 496,
+    "changed": false
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 116108,
+      "sha256": "e276dde31ac3d85d3523d5536bb98188a0c3d81338e5ca0853f6ec46c48e7769"
+    },
+    "examples/physical-character-yard/prepare.py": {
+      "bytes": 28178,
+      "sha256": "ae650409ab61cbd724f68c54a8224aff31dc9e64f57f10d9c7450f479528f6cc"
+    },
+    "include/poima/physical_drive.hpp": {
+      "bytes": 3718,
+      "sha256": "bd223352de7d286a12e884b32b8771d514bc1f0117020be440f3fe796f052d62"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 9569,
+      "sha256": "24f55c8fbe659b96309e1469264ed71d6a904228831cef440c65a3d5df885fa9"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 4895,
+      "sha256": "23a1ae9881de3159710d385de61f8f58642dc352cae343790ed674e4863157f6"
+    },
+    "src/physical_drive.cpp": {
+      "bytes": 8696,
+      "sha256": "2ff6a1dfe647ad78949bc3be933ebca679a3f30249819a3b9be02bd2042740c9"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 21127,
+      "sha256": "336a3606ead2edf754258894e95039b33f43c7215cc4918508fa85266504e5c2"
+    },
+    "src/runtime.cpp": {
+      "bytes": 182926,
+      "sha256": "d3505dc50ee8dde1fa27ce2569b3d8ac14026d2abd31adb7b3ad47ba7d686794"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 53767,
+      "sha256": "32f007323956e68daadf479cf93d4f2b9816d7505c91c27108667a11284c69c2"
+    },
+    "src/runtime_physical_animation.cpp": {
+      "bytes": 18269,
+      "sha256": "e0f489b38d168b6bb971726da327175b6952eb77b9caf4a212ca6c353ad07005"
+    },
+    "src/runtime_physical_animation.hpp": {
+      "bytes": 2882,
+      "sha256": "be8baa04313b5aecee5fb8b6fc26fa33ec944ae57b2fc8ac6a21066caecb2466"
+    },
+    "src/runtime_physical_rig.cpp": {
+      "bytes": 44896,
+      "sha256": "3cfd31d3efe5305b4f8f07c5fcbc8a0aedc49b26c68214349a8f9ae942853a95"
+    },
+    "src/runtime_physical_rig.hpp": {
+      "bytes": 8574,
+      "sha256": "f442a668469df4773668ff34caf792339908a537f080fa46afdcad7264c02307"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 29338,
+      "sha256": "0bfa4e96c463032e9bb11d3c8dc632f3ae9af85829e055cbb3aaf25c852d29f3"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 16985,
+      "sha256": "12fc4f4c3c1c4987ed5ee7d9602ad92dd14e606342a423a6c3fc508a2b6670e9"
+    },
+    "src/world_physical.inc": {
+      "bytes": 15434,
+      "sha256": "70f0052b9b59fbab1999ccd0d5403bb995803e98dede3398c4634170e6c166f8"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 149793,
+      "sha256": "e2e57f36b251eb73748d05e159965b250fcddd38f6f8cc333c19b42ec0c335b4"
+    },
+    "tests/physical_animation_json_native.cpp": {
+      "bytes": 10193,
+      "sha256": "4e6db392ccb3bc646213fcc46a42ab4a8512993042b4cdc4e24903aff35ebfd6"
+    },
+    "tests/physical_animation_protocol.py": {
+      "bytes": 36778,
+      "sha256": "83f83264aab478189ba4ab97e5ae09e6d83e44700af5d17106f7295363710957"
+    },
+    "tests/physical_controller_handoff_json_native.cpp": {
+      "bytes": 37333,
+      "sha256": "6f445a57ade05fe2daf2bc7bcc9329af922abfc243511e6c04b7ec6a15596ce2"
+    },
+    "tests/physical_drive_math.cpp": {
+      "bytes": 22171,
+      "sha256": "88b4a268863c161ae503b416140b84753c6482094ec2898553aedb723e62e782"
+    },
+    "tests/physical_state_json_native.cpp": {
+      "bytes": 16122,
+      "sha256": "a7b11fb6fe4d07a104e25026c81b5fbf547b7040e36845b99af1d11bf7b0de56"
+    },
+    "tests/runtime_physical_animation_native.cpp": {
+      "bytes": 48696,
+      "sha256": "332687baebaeee887d62f92d9b68b1730b1df15e22e7ee6be3f9a241fdc247f4"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "1e1100e5b3b38f6f75add87f3414f29900c054dc202a5e0c192bdd2c4a9bc28d"
+    },
+    "tests/physical_character_animation.py": {
+      "bytes": 37287,
+      "sha256": "cc470ff295c6e2678379b24ec7ee2392fd2496c337879c972238b7b1c5fc02dc"
+    },
+    "examples/physical-character-yard/PhysicalCharacterGame.cs": {
+      "bytes": 41605,
+      "sha256": "b6cbc5c57d4897399abc2d55264245b47fa4257304e004d3a363ee04b06d509b"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 63381,
+      "sha256": "5f90cdd0db2a8ed41d0bf43812d2b4b29d7325a781bed7d73cc848a380bc0cbd"
+    }
+  },
+  "contract": {
+    "authored_opt_in": "PhysicalRig.animation_drive.velocity_tracking: true",
+    "default": "Existing orientation-only path; canonical false is omitted.",
+    "velocity": "Principal fitted start-to-end rotation per fixed step in parent-joint coordinates, after accepted playback commands.",
+    "interval": "Both endpoints are on the post-command trajectory; immediate clip replacement/restart is not differenced against an unrelated prior pose.",
+    "controller": "[I+h(d+hk)A]tau = k*e(endpoint,current) - (d+hk)*omega + d*v_target; paired capped internal torques; original zero-velocity arithmetic branch.",
+    "ambiguity_rejection": "abs(delta.w) <= 1e-8; no arbitrary near-pi direction.",
+    "velocity_admission": "Finite, at most 20000 rad/s per component; no silent clamp/filter.",
+    "save": {
+      "physical_extension": 7,
+      "enabled_target_document": 2,
+      "selects_for_live_or_dormant_profile": true,
+      "legacy_extensions_unchanged": true,
+      "interval_reconstruction_absolute_tolerance_rad_s": 1e-10,
+      "backend_motion_join": "Exact saved values; admitted originals retained.",
+      "history_limit": "The saved fitted start is a legal interval witness, not independently reconstructed pre-command history or cryptographic authentication."
+    }
+  },
+  "native_tests": {
+    "linux": {
+      "tests_passed": 21,
+      "initial_success": {
+        "path": "build/physical-velocity-0.0.236/linux-native-2/report.json",
+        "identity": {
+          "bytes": 68877,
+          "sha256": "87115d6ebac16b656701023eafaad0ec89ffed5bf122eb03795904a28692942c"
+        }
+      },
+      "ctest": {
+        "path": "build/physical-velocity-0.0.236/linux-native-2/ctest.xml",
+        "identity": {
+          "bytes": 9554,
+          "sha256": "6a3f9205cfe12ea4a016db78263cd61bea42d121fd51ba6a6604ea4c27f8c73f"
+        }
+      },
+      "fixture_portability_rerun": {
+        "path": "build/physical-velocity-0.0.236/linux-native-3/report.json",
+        "identity": {
+          "bytes": 12855,
+          "sha256": "c77a69565381b9ba0b47ba4286e39f29b1495dea9f575c451d4e96563c2e2840"
+        }
+      },
+      "final_source_qualification": "Twenty unchanged tests retain their original result; the changed test was rebuilt and rerun. All 366 animation archives and the full manifest are byte-identical to the first successful run.",
+      "natural_closure": true,
+      "forced_cleanup": false,
+      "archives": 1157,
+      "whole_pairs": 465,
+      "manifests": [
+        {
+          "path": "build/physical-velocity-0.0.236/linux-native-2/test-artifacts/native-archives-manifest.json",
+          "identity": {
+            "bytes": 97097,
+            "sha256": "7f40c2d4a4e95b9cbe4ac044a46d39a4f93182d192fe53a85756b4d76f91fbc8"
+          },
+          "files": 192,
+          "whole_pairs": 93,
+          "raw_bytes": 3594980,
+          "roles": {
+            "warm": 93,
+            "cold": 93,
+            "recipient": 2,
+            "donor": 2,
+            "grafted": 2
+          }
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/linux-native-2/test-artifacts/physical-animation/manifest.json",
+          "identity": {
+            "bytes": 140002,
+            "sha256": "e2802178b1a31561e6004a5dfbe33e2871168bac540ab95595c7e2e15ffd0c6f"
+          },
+          "files": 366,
+          "whole_pairs": 153,
+          "raw_bytes": 6315574,
+          "roles": {
+            "source": 153,
+            "restored": 153,
+            "accepted-source": 15,
+            "negative": 45
+          }
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/linux-native-2/test-artifacts/physical-drive/manifest.json",
+          "identity": {
+            "bytes": 69438,
+            "sha256": "33a71e2f2c2bafa2a958d80fcb6361cc31503533846cee1b1c48417db00ed485"
+          },
+          "files": 183,
+          "whole_pairs": 85,
+          "raw_bytes": 1889322,
+          "roles": {
+            "source": 85,
+            "restored": 85,
+            "accepted-source": 5,
+            "negative": 8
+          }
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/linux-native-2/test-artifacts/physical-grounded/native-archives-manifest.json",
+          "identity": {
+            "bytes": 171256,
+            "sha256": "cb8d91a972d18967ac253ca71549a022ca1ef1d7d317d1b0099d8e40e3aa1ca6"
+          },
+          "files": 416,
+          "whole_pairs": 134,
+          "raw_bytes": 19017012,
+          "roles": {
+            "source": 77,
+            "warm": 134,
+            "cold": 134,
+            "negative": 68,
+            "synthetic-rounding-witness": 3
+          }
+        }
+      ]
+    },
+    "windows": {
+      "tests_passed": 21,
+      "compiler": {
+        "path": "build/physical-velocity-0.0.236/windows-native-2/report.json",
+        "identity": {
+          "bytes": 94260,
+          "sha256": "de3f0a463df6ff95c0348d27ca069efc84bc1db84ebd75ecfede4e1a2d3fa777"
+        }
+      },
+      "products": {
+        "path": "build/physical-velocity-0.0.236/windows-native-2-products.json",
+        "identity": {
+          "bytes": 7361,
+          "sha256": "4f4c4a22978491aaa4ed7627bc32860ceeca7ed9e3b2edc10bd3ad9327bc70e8"
+        }
+      },
+      "actual_execution": {
+        "path": "build/physical-velocity-0.0.236/windows-cpu-1/report.json",
+        "identity": {
+          "bytes": 141320,
+          "sha256": "bd3d4519a2c50d24c5911b54005f5d51d7c99e4d7373f3d6c18445411c475f0b"
+        }
+      },
+      "worker": {
+        "path": "build/physical-velocity-0.0.236/windows-cpu-1/worker.json",
+        "identity": {
+          "bytes": 28739,
+          "sha256": "fecf773ec6a39dd3ae231257c1a166730225d56e25c1c13c44fd2c1bec0fb57d"
+        }
+      },
+      "artifact_inventory": {
+        "path": "build/physical-velocity-0.0.236/windows-cpu-1/native-artifact-identities.json",
+        "identity": {
+          "bytes": 178844,
+          "sha256": "99b2a9020f65348f5a903eed37c719050f7a67fdde37cb94e28c54c4e9ccb927"
+        }
+      },
+      "ordered_commands": 23,
+      "command_scope": "21 native tests followed by two CLI workflows. Cross-compilation and actual Windows execution are separate.",
+      "job_processes": 30,
+      "final_active_processes": 0,
+      "terminated_processes": 0,
+      "natural_closure": true,
+      "archives": 1157,
+      "whole_pairs": 465,
+      "manifests": [
+        {
+          "path": "build/physical-velocity-0.0.236/windows-cpu-1/test-artifacts/native-archives-manifest.json",
+          "identity": {
+            "bytes": 97097,
+            "sha256": "7f0978d786358620ae472ebd13330959ddac894362376d3c72e287be33721c6f"
+          },
+          "files": 192,
+          "whole_pairs": 93,
+          "raw_bytes": 3595406
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/windows-cpu-1/test-artifacts/physical-animation/manifest.json",
+          "identity": {
+            "bytes": 140002,
+            "sha256": "3c2c99ff73ac8255a22299498d33ea54c868c6cf48c9bc01aeb0fad329c62d38"
+          },
+          "files": 366,
+          "whole_pairs": 153,
+          "raw_bytes": 6297548
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/windows-cpu-1/test-artifacts/physical-drive/manifest.json",
+          "identity": {
+            "bytes": 69438,
+            "sha256": "237ef65e9326fb87610427557236513ed4057175561c1ef717bdf3622d1b7697"
+          },
+          "files": 183,
+          "whole_pairs": 85,
+          "raw_bytes": 1888521
+        },
+        {
+          "path": "build/physical-velocity-0.0.236/windows-cpu-1/test-artifacts/physical-grounded/native-archives-manifest.json",
+          "identity": {
+            "bytes": 171256,
+            "sha256": "91f6596a15bb42af04e7475b07d786e870c7fbdc8bf186020077a9d554868b99"
+          },
+          "files": 416,
+          "whole_pairs": 134,
+          "raw_bytes": 19003050
+        }
+      ]
+    },
+    "shared_counts": {
+      "physical_drive_math": {
+        "groups": 10,
+        "checks": 8401
+      },
+      "physical_animation_authoring_checks": 146,
+      "physical_state_json_checks": 7557,
+      "runtime_physical_animation": {
+        "groups": 8,
+        "checks": 4173,
+        "archives": 366,
+        "whole_pairs": 153,
+        "rejected_mutations": 45,
+        "saved_velocity_rows_joined_exactly_to_backend": 176
+      }
+    },
+    "moving_hinge_comparison": {
+      "scope": "Isolated math fixture with the same 18-second target curve, gains and inertia in both branches.",
+      "minimum_relative_rms_error_reduction": 0.4,
+      "minimum_phase_lag_projection_reduction": 0.5,
+      "thresholds_passed": true,
+      "character_contact_quality_or_performance_claim": false
+    },
+    "complete_comparison": "Each declared archive pair is compared as original complete bytes and exact typed state; no fields are removed. Pairs are within each platform, not cross-platform equality.",
+    "covered_cases": [
+      "Post-command playback/rate/source changes",
+      "Transition completion and retained interval start",
+      "Crossfades, inertial history and layer motion",
+      "Manual ownership clearing motion",
+      "Zero-strength complete native-state equality",
+      "Joint-limit fitting and held endpoints",
+      "Actual native response changes",
+      "Ambiguous-interval whole-batch rollback",
+      "Cold continuation, dormant-template spawn and retirement",
+      "Explicit false and omitted legacy byte parity"
+    ]
+  },
+  "cli_workflows": [
+    {
+      "host": "linux",
+      "mode": "legacy",
+      "evidence": {
+        "path": "build/physical-velocity-0.0.236/linux-protocol-2/legacy-consumer/evidence.json",
+        "identity": {
+          "bytes": 5076910,
+          "sha256": "e934d21d0a00c441b9db10e44bae85bc325403b5720b5a502439325fbb6f4409"
+        }
+      },
+      "calls": 119,
+      "natural_engine_owners": 3,
+      "complete_archives": 40,
+      "whole_pairs": 21,
+      "observations": 10,
+      "analytic_curve_checks": 0,
+      "control_branch_witnesses": 0,
+      "raw_request_response_streams_checked": true,
+      "whole_bytes_and_typed_state_checked": true
+    },
+    {
+      "host": "linux",
+      "mode": "velocity",
+      "evidence": {
+        "path": "build/physical-velocity-0.0.236/linux-protocol-2/velocity-consumer/evidence.json",
+        "identity": {
+          "bytes": 5808032,
+          "sha256": "951d30fa01e401834f27d350fa37c5a7cbc0b3a1f94d59dadac3fc422ca2e021"
+        }
+      },
+      "calls": 147,
+      "natural_engine_owners": 3,
+      "complete_archives": 46,
+      "whole_pairs": 24,
+      "observations": 15,
+      "analytic_curve_checks": 4,
+      "control_branch_witnesses": 1,
+      "raw_request_response_streams_checked": true,
+      "whole_bytes_and_typed_state_checked": true
+    },
+    {
+      "host": "windows",
+      "mode": "legacy",
+      "evidence": {
+        "path": "build/physical-velocity-0.0.236/windows-cpu-1/legacy/evidence.json",
+        "identity": {
+          "bytes": 5212666,
+          "sha256": "d67530e9f334b266411878967022ccaa0162c8e08e518f2a253404d470bbe9b7"
+        }
+      },
+      "calls": 119,
+      "natural_engine_owners": 3,
+      "complete_archives": 40,
+      "whole_pairs": 21,
+      "observations": 10,
+      "analytic_curve_checks": 0,
+      "control_branch_witnesses": 0,
+      "raw_request_response_streams_checked": true,
+      "whole_bytes_and_typed_state_checked": true
+    },
+    {
+      "host": "windows",
+      "mode": "velocity",
+      "evidence": {
+        "path": "build/physical-velocity-0.0.236/windows-cpu-1/velocity/evidence.json",
+        "identity": {
+          "bytes": 5965069,
+          "sha256": "cb8279bf66408aeda4c8f78d666b9b8e9f41f68944ca15ec27c997485501508c"
+        }
+      },
+      "calls": 147,
+      "natural_engine_owners": 3,
+      "complete_archives": 46,
+      "whole_pairs": 24,
+      "observations": 15,
+      "analytic_curve_checks": 4,
+      "control_branch_witnesses": 1,
+      "raw_request_response_streams_checked": true,
+      "whole_bytes_and_typed_state_checked": true
+    }
+  ],
+  "retained_native_aot": {
+    "report": {
+      "path": "build/physical-velocity-0.0.236/windows-native_aot-retained235-1/report.json",
+      "identity": {
+        "bytes": 11169,
+        "sha256": "739dce1ae6fbd39df2ec3695328d72d3d1228faeeaf54a2aefab6799cc7ed1ed"
+      }
+    },
+    "worker": {
+      "path": "build/physical-velocity-0.0.236/windows-native_aot-retained235-1/worker.json",
+      "identity": {
+        "bytes": 2727,
+        "sha256": "8a9c7fcf05c7325dff24368d498ccd8653dd108dab4f48c7885edfcf46cd0438"
+      }
+    },
+    "evidence": {
+      "path": "build/physical-velocity-0.0.236/windows-native_aot-retained235-1/consumer/evidence.json",
+      "identity": {
+        "bytes": 27590170,
+        "sha256": "0a5b281b396aaeac93a5e6f1f0694180c8d917a40bc911e188db0a2091afe770"
+      }
+    },
+    "descriptor": {
+      "path": "build/character-animation-0.0.235/aot-windows-1/artifact/native-gameplay.json",
+      "identity": {
+        "bytes": 15239,
+        "sha256": "edc224e2127aa95ccfc91d1daa3590bb73077ec9dee4b4a2b8adc1c138b8a328"
+      }
+    },
+    "prior_qualification": "docs/evidence/m2-character-animation-controls.json",
+    "runtime": "0.0.236",
+    "consumer_checkpoint": "0.0.235",
+    "calls": 741,
+    "natural_engine_owners": 2,
+    "whole_pairs": 14,
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "consumed_inputs": 43,
+    "original_non_runtime_inputs_retained": 42,
+    "job_processes": 4,
+    "final_active_processes": 0,
+    "terminated_processes": 0,
+    "compiler_execution": false,
+    "gpu_execution": false,
+    "profile": "Original orientation-only target profile, physical extension 6/target document 1.",
+    "scope": "Unchanged existing NativeAOT consumer on new runtime; no republication, re-export or imported-character velocity-mode qualification.",
+    "all_retained_save_files": 26,
+    "additional_initial_game_checkpoint": {
+      "path": "build/physical-velocity-0.0.236/windows-native_aot-retained235-1/consumer/saves/slot-physical-character-start/p-6bdcd3300a300aa9528f69d265bd64a6.bin",
+      "identity": {
+        "bytes": 181693,
+        "sha256": "fe3d8886cd59830f4a36a50a1dcdc9ae6850a92b52cd01f1255cdc03d63c9902"
+      },
+      "tick": 0,
+      "scope": "Additional game-authored initial checkpoint retained; not counted as a verifier archive/pair."
+    },
+    "unchanged_module_identity": {
+      "bytes": 1458176,
+      "sha256": "5a60424e12079029433b4ef41643f005e2f78f099f37f9941b577c01f2d1d43d"
+    },
+    "original_descriptor_engine_version": "0.0.234",
+    "verifier_archives": 25
+  },
+  "attempts_and_recovery": [
+    {
+      "attempt": "Linux compiler 1",
+      "result": "failed",
+      "record": {
+        "path": "build/physical-velocity-0.0.236/linux-native-1/report.json",
+        "identity": {
+          "bytes": 133040,
+          "sha256": "06f24bb3a16db087d2558e8247fe5549785f7a57c8d5d6832adeb7c5d640c32f"
+        }
+      },
+      "cause": "The explicit runner PATH omitted the installed ld.lld directory; compilation reached the link step.",
+      "recovery": "Corrected runner PATH, retained existing objects and unchanged source; Linux compiler 2 passed.",
+      "forced_cleanup": false
+    },
+    {
+      "attempt": "Linux CLI admission 1",
+      "result": "rejected before producer",
+      "cause": "Relative source-plan locator in the admission pin.",
+      "record_scope": "Administrative refusal retained in the working session; no engine execution or owner report was created.",
+      "recovery": "Use the same byte identity with an absolute admission locator."
+    },
+    {
+      "attempt": "Linux CLI owner 1",
+      "result": "failed before native session",
+      "record": {
+        "path": "build/physical-velocity-0.0.236/linux-protocol-1/report.json",
+        "identity": {
+          "bytes": 5634,
+          "sha256": "58ca118d1f5cc1c4b19e6f8b210f2c7228ef4de5ac63b3ae8f43bbffdac0e39d"
+        }
+      },
+      "cause": "Supervisor log directory and consumer output directory collided, causing FileExistsError.",
+      "recovery": "Separate fresh consumer and log directories; original public verifier assertions unchanged."
+    },
+    {
+      "attempt": "Windows compiler 1",
+      "result": "failed",
+      "record": {
+        "path": "build/physical-velocity-0.0.236/windows-native-1/report.json",
+        "identity": {
+          "bytes": 93631,
+          "sha256": "cd504f4cc2db81e534d18ef6fedd6f099a1b97afd80e4660d135f2a5970fe373"
+        }
+      },
+      "cause": "Clang rejects list initialization from the test clip double duration to float channel times.",
+      "recovery": "Explicit float duration and channel times preserve the identical float32 value. Linux focused rerun and Windows compiler 2 pass. Production source unchanged.",
+      "fixture_float32_bits": "0x3c088889",
+      "forced_cleanup": false
+    }
+  ],
+  "independent_file_reviews": [
+    {
+      "identity": {
+        "bytes": 8589,
+        "sha256": "c1749bed8f2954dc4e334da1f94e37139a0035832d7d8a8c8f50a36597f5daa4"
+      },
+      "scope": "Source review before the final documentation-only qualification update; source implementation unchanged except separately reviewed explicit-float fixture repair.",
+      "review": "Source implementation review"
+    },
+    {
+      "identity": {
+        "bytes": 17694,
+        "sha256": "2211f48f9d1754b776b33ef48f1ca37a62c98ac94ce084d08b74b2fd1e1d2b13"
+      },
+      "review": "Linux native artifact review"
+    },
+    {
+      "identity": {
+        "bytes": 4726,
+        "sha256": "6aadcdb82b36108645ec90b1f9bb161f41e986c453863f3eb410df05dd8f9055"
+      },
+      "review": "Linux portable-fixture rerun review"
+    },
+    {
+      "identity": {
+        "bytes": 35778,
+        "sha256": "6743fbcd76d7ac4ba9a911b69ed18d31c834fa5002126d87bd18a39c338fb40f"
+      },
+      "review": "Linux CLI artifact review"
+    },
+    {
+      "identity": {
+        "bytes": 5499,
+        "sha256": "1e3731010e079127e940e49c6e9c80ab9c5a4e149b8191bac6f29cda9df21dc4"
+      },
+      "review": "Windows compiler artifact review"
+    },
+    {
+      "identity": {
+        "bytes": 7025,
+        "sha256": "74bc1c50c7005085479f79c65d01c2eedf0e3f79bea82ef334a2bcca7b9e2a3e"
+      },
+      "review": "Windows native and CLI artifact review"
+    },
+    {
+      "identity": {
+        "bytes": 3447,
+        "sha256": "b71167007f83a7ba7b7db7bf1b78d4a1128d27bc5d03ac0f1a4e6b36dfdc074c"
+      },
+      "review": "Retained NativeAOT artifact review"
+    }
+  ],
+  "limitations": [
+    "Selected native and CLI regression scopes, not the full CTest suite or an Alpha release.",
+    "No new GPU, physical-input, continuous animation-quality or representative frame-time measurement.",
+    "No whole-body balance, recovery, protective stepping, inverse dynamics, acceleration feedforward or root-support force.",
+    "Local capped controller tests do not establish a general articulated-body stability theorem.",
+    "Retained NativeAOT compatibility covers the original orientation-only profile. New velocity mode has native/CLI coverage, not an imported-character rendered or compiled-consumer qualification.",
+    "No changed-source CoreCLR reload benchmark, new NativeAOT publication or relocated export in this checkpoint.",
+    "Complete archive equality is qualified within each tested platform; no cross-platform future bit identity claimed.",
+    "Raw build/consumer outputs are local qualification artifacts, identified below; they are not bundled with the repository."
+  ]
+}
