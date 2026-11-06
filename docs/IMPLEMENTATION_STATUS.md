@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.231**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.232**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.232 adds opt-in [physical joint drives](PHYSICAL_DRIVES.md).
+CLI and C# gameplay can set bounded joint-relative orientation targets and
+strengths after physical takeover. Capped internal torques work alongside
+contacts, joint limits and passive response; disabling all drives retains
+physics ownership. Complete saves and rollback include drive controls.
+The gameplay interface appends three callbacks to its existing prefix
+(epoch 7, 448 bytes); world schema is 128.
+
+The [qualification record](evidence/m2-physical-joint-drives.json) separates
+native math, authoring, physics, managed wire contracts and actual CoreCLR
+execution. On each platform the new native runtime fixture passes 18,245
+checks and 85 complete archive pairs. Windows and Linux CoreCLR each pass
+338 RPC calls, 26 complete saves and thirteen full byte/typed-state comparisons
+across three naturally closed engine processes, retaining all 42 gameplay
+fields. Same-image reload preserves values with explicit revision/checksum
+changes; it is not a changed-code iteration benchmark. Earlier failed build,
+fixture and verification attempts retain their separate verdicts.
+
+The unchanged 0.0.231 NativeAOT character game also passes on the new Windows
+host: 277 RPC calls, ten complete saves and six whole-state pairs retain all
+61 fields across three naturally closed engine processes. This checks the
+older 424-byte consumer on the appended 448-byte interface; it does not
+qualify new drive controls through NativeAOT.
+
+These controls do not yet stream animation targets, balance a character,
+generate protective steps or recover to animation. This checkpoint adds no
+rendered motion-quality or representative performance qualification.
 
 Version 0.0.231 adds a playable [Physical Character Yard](../examples/physical-character-yard/README.md#play-the-sample).
 Compiled C# connects independent first-person movement, original Idle/Running_A

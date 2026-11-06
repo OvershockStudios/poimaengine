@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.232
+
+- Add opt-in physical joint orientation drives with bounded internal torques,
+  explicit targets and strength controls alongside passive joint response.
+- Expose ordered CLI and C# controls, committed reads and live drive diagnostics
+  through an appended gameplay-services interface.
+- Preserve complete drive state through rollback, save/load and cold continuation,
+  including disabled controls and dormant template definitions.
+- Verify native physics and compiled C# workflows on Windows and Linux, with
+  independent math, managed interface and complete saved-state checks.
+
 ## 0.0.231
 
 - Add a playable first-person character yard with original imported animation,

@@ -1,0 +1,660 @@
+{
+  "format": "poima.evidence.physical-joint-drives.v1",
+  "date": "2026-11-06",
+  "source_checkpoint": "0.0.232",
+  "native_runtime": "0.0.232",
+  "world_schema": 128,
+  "scope": "Optional bounded joint-space orientation targets with explicit physics ownership, complete state persistence, CLI and C# controls.",
+  "gameplay_abi": {
+    "epoch": 7,
+    "services_bytes": 448,
+    "prior_prefix_bytes": 424,
+    "prior_physical_command_bytes": 96,
+    "required_features": [
+      "baseline_v7",
+      "physical_rig_v1",
+      "physical_rig_drive_v1"
+    ],
+    "appended_offsets": {
+      "physical_rig_summary_v2": 424,
+      "physical_rig_drive_get": 432,
+      "physical_rig_drive_set": 440
+    }
+  },
+  "save_contract": {
+    "physical_extension_with_authored_drives": 5,
+    "includes_dormant_templates": true,
+    "without_drives": "Existing physical extensions 1–4 remain selected by their original prerequisites."
+  },
+  "controls": {
+    "profile": [
+      "stiffness",
+      "damping",
+      "max_torque"
+    ],
+    "mutable": [
+      "target_rotation",
+      "strength"
+    ],
+    "torque": "Locally implicit equal/opposite capped internal torques; existing passive forces and native friction remain separate.",
+    "native_constraint_motors": "Off",
+    "zero_strength": "No active torque; physics ownership remains.",
+    "diagnostic_scope": "Instantaneously evaluated response from observed state, not a record of previously applied torque."
+  },
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 114363,
+      "sha256": "61b18b20b179ee3e7d4d18dd45a2baff50147ee25747f47d16524bc3945b12d4"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 57646,
+      "sha256": "ef55f59c0d566cdb7592189bd55ec4c73235fa0ac91d11c40fd3216b79738a6d"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 20296,
+      "sha256": "53831b21cd0a83e39c2650240b31ac21e03167d5b2ed3d8c3a10784f6cb82c13"
+    },
+    "include/poima/physical_drive.hpp": {
+      "bytes": 2564,
+      "sha256": "dad11b4a67aec90b1fceb769ba4a697a010399a988db7786a7f17d2ecb784f7c"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 8820,
+      "sha256": "2cb68ed0f6570b096b9da409fe03dfeb01c26e6658274208cf87ba851f0e9363"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 31957,
+      "sha256": "ae29f77fb564e306e6741d9b7abfa1aefd42a3289ef50a734804c35a496cd346"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 3493,
+      "sha256": "d4f90f23cba4949cf0bcb53efb1c65a246c5e21dde2842e60ac77620fa9a4409"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 32555,
+      "sha256": "cf54049d70100800452ec7fe74fcb08815815db3575095fe1bf3a5bcc44cdad5"
+    },
+    "managed/Poima.Gameplay/PhysicalRig.cs": {
+      "bytes": 14973,
+      "sha256": "3b901afaf55fe880671adf20b5bd33c21924c7378372c8826b04dab82f1f0b37"
+    },
+    "managed/Poima.Gameplay/PhysicalRigDrive.cs": {
+      "bytes": 8475,
+      "sha256": "1cad1475a00cc2e7c5547e28586ab27eacf45cfec92efcdc426d79b9633e8581"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 15786,
+      "sha256": "295c5e4ee50d87d32afeba6c242bea268d9e8c89107ff93f680a821035ef5b96"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7698,
+      "sha256": "6d9cadad6d8c400ff341fb512d3388ac86b0509c38d420e1911ae6fbbe334cd5"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 6925,
+      "sha256": "43df22d96f97b3ab431692ecf69faa9ff855fe9deee7aafd741fe2dc69b66afd"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 21364,
+      "sha256": "9d9f72d009d14c027cd45b6d8bfb364be449c2c4a5deeeb0d8f66f8cb8dbeae9"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 102998,
+      "sha256": "b5f88e4d636ecb2028a8935789da97eff0605bc461a3829ac153c3135be6eadd"
+    },
+    "src/physical_drive.cpp": {
+      "bytes": 6924,
+      "sha256": "bb6ac728b0af14cd6ce1789f3cb734ca2e12abf0ae4b8faa208f9017a505710d"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 16583,
+      "sha256": "71aef71cf7b0a779f0cbabe81db5bc66fd7e5da5394c8ef94fbf51c579580b2d"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 18627,
+      "sha256": "03ddfcf3b55bd7aa975e6f1bee66abaa40b3a26c7037747ea32bac5f1d684ffe"
+    },
+    "src/runtime.cpp": {
+      "bytes": 181463,
+      "sha256": "8c2bc236534c448bac19d4f90652970801d1d7d4bfa0c500f64ea2d073968a33"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 10948,
+      "sha256": "07a27b3b4f7399f6c7a11473d335ff04508a5a315c34e81c8462937f86a79a04"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 49741,
+      "sha256": "302eccb68d8db3aa001995e7b678c642603c7a473c8ab3ee2c32259c13703da0"
+    },
+    "src/runtime_physical_rig.cpp": {
+      "bytes": 44559,
+      "sha256": "731434db573f557866648f1036d2367febaeb11d42cd99a47cd666fb21e3b564"
+    },
+    "src/runtime_physical_rig.hpp": {
+      "bytes": 8362,
+      "sha256": "fdf2ace6572d9501ba9279109b166a6bddf51ba321fcc5efc990c36a8478182a"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 24426,
+      "sha256": "a5fe69966498500872d2e3aa672d448000db8e477ad78bdd51844654d52f8b64"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 16337,
+      "sha256": "afb36932dd93b281e56b429ea75c4cc475763a7554fcfa33006e15f53f4670b9"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 58044,
+      "sha256": "64bdd819ce5b9f17af654f9450414e23483183969f1af412028f4b307bcdc847"
+    },
+    "src/runtime_ui.inc": {
+      "bytes": 12192,
+      "sha256": "ea24fecdaadd7d3fed9c78d2b89a7eb840bed4e511b5c6178af25a888b6d179c"
+    },
+    "src/world_physical.inc": {
+      "bytes": 10389,
+      "sha256": "e9ef736c879e5747ded43222c2a0f5cd287ed67bccb4488a2b98da73db25ba0f"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 145901,
+      "sha256": "96c5076656b8cdbaf9f2cfa0128a6af4084d90023b3bced828cf787cd5021229"
+    },
+    "tests/gameplay_compatibility_native.cpp": {
+      "bytes": 43114,
+      "sha256": "2fe2f4dd404b52c8b4f9f8cb9f34b90e3b2eb8eef689e8f353d130c603bbc1b7"
+    },
+    "tests/gameplay_player_preferences_native.cpp": {
+      "bytes": 16030,
+      "sha256": "edf642c0f9ecbb6645dc575aea0e735c73e27ca01e036315c1f8c29e5d1141ef"
+    },
+    "tests/gameplay_service_contract_native.cpp": {
+      "bytes": 15139,
+      "sha256": "f98eb71aca6d37bd59b97dd78795a3363552e48bc9601a62f815b0187cefb723"
+    },
+    "tests/managed_physical_drive_gameplay/Game.cs": {
+      "bytes": 4687,
+      "sha256": "74f1a7f9ceaf0792f0e87668d0143c7e6742c36b8f925cf6b830c93fed337023"
+    },
+    "tests/managed_physical_drive_gameplay/Poima.ManagedPhysicalDriveGame.csproj": {
+      "bytes": 436,
+      "sha256": "b6badfb16bd5f78e73f14bd312b13f1e8fbf592d2db4a7cd8de6f244095145ed"
+    },
+    "tests/managed_physical_drive_gameplay/README.md": {
+      "bytes": 4231,
+      "sha256": "18d8d1609cb81ec1cdb1c2da3874aea41ff4a2ef1ead1ee0ac00d82e958bf0dd"
+    },
+    "tests/managed_service_abi/PhysicalRigDriveExtension.cs": {
+      "bytes": 16346,
+      "sha256": "0d1648a2d3582a35a947938a333df1115932a558a0b5f447c510deeb8a7962ec"
+    },
+    "tests/managed_service_abi/Program.cs": {
+      "bytes": 42525,
+      "sha256": "9de85cb73c080fca50d38ffd9b7abd37ad70625066c03578675188269fdc7c5c"
+    },
+    "tests/physical_controller_handoff_json_native.cpp": {
+      "bytes": 37333,
+      "sha256": "1c873929a68e9ed1d443cc2f29bc259203b1e8964d9abaae16b3f91d033bed12"
+    },
+    "tests/physical_drive_authoring.cpp": {
+      "bytes": 10960,
+      "sha256": "df828460b5a304851542a5df9bf0759f330dda60e2f3e919f75141152246e6c1"
+    },
+    "tests/physical_drive_gameplay.py": {
+      "bytes": 33978,
+      "sha256": "398c9eec72b649e6c79e1e8ef31cfe06317265fcf587ecb06ed3aa2af97a67ab"
+    },
+    "tests/physical_drive_math.cpp": {
+      "bytes": 11668,
+      "sha256": "38de7fd675b66c7af16ce3c956b583b1e966e5722d352ee36eba4de7afba8dd8"
+    },
+    "tests/physical_gameplay_abi_native.cpp": {
+      "bytes": 6592,
+      "sha256": "bf93fa816d5e4e897ba0130e652293d32a868b27b2b331000de211e1047b28a6"
+    },
+    "tests/physical_gameplay_publish_requirements.py": {
+      "bytes": 4166,
+      "sha256": "82144f569d165be910c35691b22a05c0c0a2a4570eed7dbed88eab6dbd586321"
+    },
+    "tests/runtime_descriptor_contract.py": {
+      "bytes": 12359,
+      "sha256": "110071bc79fe7de5e09240a0cc6c4b810c02e1b9383ce08fa6403b716b71207c"
+    },
+    "tests/runtime_physical_drive_tests.cpp": {
+      "bytes": 26566,
+      "sha256": "8b58ecfd60ac8654076e46adb9028b0afb6ddc9b2e2a5b0e206c48b4b707255d"
+    }
+  },
+  "native_builds": {
+    "Linux": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-drives-0.0.232/linux-native-3/report.json",
+        "bytes": 15336,
+        "sha256": "201b56aad7dbdaf799e8b8e4ec192c3eba04e92342ab87a10bbe6c3746873d6f"
+      },
+      "scope": "Final affected compatibility executable rebuild; core and remaining executables built in linux-native-2."
+    },
+    "Windows": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-drives-0.0.232/windows-native-1/report.json",
+        "bytes": 185764,
+        "sha256": "ab271a011279e8c3bb31629d1b51c1b7e62d9aa91f4645a92bd433ffefccdaa0"
+      },
+      "scope": "Native compilation only; selected products are separately executed below."
+    }
+  },
+  "native_regression": {
+    "Linux": {
+      "original_record": {
+        "path": "build/physical-drives-0.0.232/linux-native-2/report.json",
+        "bytes": 259983,
+        "sha256": "a08caf93e3f7a0c5630060a099e438ab87156a9aa09b9ae249758dad2b285965"
+      },
+      "original_suite": {
+        "path": "build/physical-drives-0.0.232/linux-native-2/ctest.xml",
+        "bytes": 26505,
+        "sha256": "22006e72d8140a8c17187386a7e0ee1c43dc07cf348f0675c4456956167c3530"
+      },
+      "original_passed": 58,
+      "original_failed": 1,
+      "corrected_rerun_record": {
+        "path": "build/physical-drives-0.0.232/linux-native-3/report.json",
+        "bytes": 15336,
+        "sha256": "201b56aad7dbdaf799e8b8e4ec192c3eba04e92342ab87a10bbe6c3746873d6f"
+      },
+      "corrected_rerun_passed": 1,
+      "corrected_rerun_failed": 0,
+      "correction": "Retain the original malformed 432-byte host advertising the 448-byte drive feature as a negative; legacy-positive fixture omits the unavailable feature.",
+      "scope": "Reuse the other unchanged 58 successful cases; no claim of one clean 59/59 run.",
+      "new_fixtures": {
+        "drive_math": {
+          "groups": 6,
+          "checks": 5107
+        },
+        "authoring": {
+          "groups": 4,
+          "checks": 107
+        },
+        "runtime": {
+          "groups": 6,
+          "checks": 18245,
+          "complete_archive_files": 183,
+          "whole_archive_pairs": 85,
+          "manifest": {
+            "path": "build/physical-drives-0.0.232/linux-native-2/test-artifacts/physical-drive/manifest.json",
+            "bytes": 69438,
+            "sha256": "33a71e2f2c2bafa2a958d80fcb6361cc31503533846cee1b1c48417db00ed485"
+          }
+        }
+      }
+    },
+    "Windows": {
+      "native_commands_passed": 20,
+      "all_commands_passed": 22,
+      "original_worker": {
+        "path": "build/physical-drives-0.0.232/windows-cpu-1/worker.json",
+        "bytes": 27385,
+        "sha256": "0a240c6b6a7c4ab53911c7a1b530beb9b39fbf32d96c373e26059c5aa1f1ec32"
+      },
+      "original_owner": {
+        "path": "build/physical-drives-0.0.232/windows-cpu-1/report.json",
+        "bytes": 88092,
+        "sha256": "b82857552d2fbce333f410abb8d1177807a2a05f0a4e256accc43c6672b86f5c"
+      },
+      "original_aggregate_passed": false,
+      "forced_cleanup": false,
+      "failure_scope": "Final file-pin audit compares external Windows paths with different slash spellings; all 22 executable commands exit zero, all processes close naturally.",
+      "new_fixtures": {
+        "drive_math": {
+          "groups": 6,
+          "checks": 5107
+        },
+        "authoring": {
+          "groups": 4,
+          "checks": 107
+        },
+        "runtime": {
+          "groups": 6,
+          "checks": 18245,
+          "complete_archive_files": 183,
+          "whole_archive_pairs": 85,
+          "manifest": {
+            "path": "build/physical-drives-0.0.232/windows-cpu-1/test-artifacts/physical-drive/manifest.json",
+            "bytes": 69438,
+            "sha256": "237ef65e9326fb87610427557236513ed4057175561c1ef717bdf3622d1b7697"
+          }
+        }
+      },
+      "accepted_basis": "All 22 original executable commands completed successfully; independent complete-artifact and original-admission audits passed. The original aggregate remains failed."
+    }
+  },
+  "managed_wire": {
+    "Linux": {
+      "passed": true,
+      "checks": 106,
+      "record": {
+        "path": "build/physical-drives-0.0.232/managed-1/managed-service-abi.json",
+        "bytes": 11621,
+        "sha256": "735a20d7c57c94de91ea637b4848e464d13bdbc6d553cfd3fd07541789649ad9"
+      },
+      "scope": "Actual managed bridge execution with independent mock native callbacks; separate from the real native gameplay workflow."
+    },
+    "Windows": {
+      "passed": true,
+      "checks": 106,
+      "record": {
+        "path": "build/physical-drives-0.0.232/windows-cpu-1/managed-wire.json",
+        "bytes": 11740,
+        "sha256": "bda1b1e84c5a1dd330d1c52b70debebf0dc1272df58b7c405e12d676368aeccc"
+      },
+      "scope": "Actual managed bridge execution with independent mock native callbacks; separate from the real native gameplay workflow."
+    }
+  },
+  "managed_build": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-drives-0.0.232/managed-1/report.json",
+      "bytes": 19805,
+      "sha256": "da5101f6da3f3d81502ccb08972928cbe2ef88ee5cb79ffe3b672923a754ae4f"
+    }
+  },
+  "coreclr": {
+    "Linux": {
+      "gameplay_passed": true,
+      "record": {
+        "path": "build/physical-drives-0.0.232/coreclr-linux-1/consumer/evidence.json",
+        "bytes": 4575412,
+        "sha256": "4e53eb1b6190b69438cba8b36c6f65e195aa74b3732ff4bec67333e99aaeb949"
+      },
+      "rpc_calls": 338,
+      "natural_engine_processes": 3,
+      "complete_archives": 26,
+      "whole_byte_and_typed_state_pairs": 13,
+      "excluded_saved_fields": [],
+      "observations": 60,
+      "native_callback_joins": 31,
+      "retained_gameplay_fields": 42,
+      "retained_gameplay_bytes": 304,
+      "compiled_image_sha256": "2baba1c186e2904b8ad1f71f0c6ae9bd9517d29bcf0dece1a9362c38d9141500",
+      "same_image_reload": {
+        "values_preserved": true,
+        "changed_paths": [
+          "/snapshot/payload/gameplay_revision",
+          "/snapshot/sha256"
+        ],
+        "whole_archive_equality": false,
+        "changed_code_latency_measured": false
+      },
+      "owner": {
+        "path": "build/physical-drives-0.0.232/coreclr-linux-1/report.json",
+        "bytes": 6694,
+        "sha256": "f571fd54c8e3e41ce516b44593a0810d0fcc527b544ffed3b9269478029e8bc6"
+      }
+    },
+    "Windows": {
+      "gameplay_passed": true,
+      "record": {
+        "path": "build/physical-drives-0.0.232/windows-cpu-1/consumer/evidence.json",
+        "bytes": 4724433,
+        "sha256": "d0009e29a400ba71d8059d9ead6e9398b8ddbd02c88a50d663a15d4c993c9090"
+      },
+      "rpc_calls": 338,
+      "natural_engine_processes": 3,
+      "complete_archives": 26,
+      "whole_byte_and_typed_state_pairs": 13,
+      "excluded_saved_fields": [],
+      "observations": 60,
+      "native_callback_joins": 31,
+      "retained_gameplay_fields": 42,
+      "retained_gameplay_bytes": 304,
+      "compiled_image_sha256": "2baba1c186e2904b8ad1f71f0c6ae9bd9517d29bcf0dece1a9362c38d9141500",
+      "same_image_reload": {
+        "values_preserved": true,
+        "changed_paths": [
+          "/snapshot/payload/gameplay_revision",
+          "/snapshot/sha256"
+        ],
+        "whole_archive_equality": false,
+        "changed_code_latency_measured": false
+      },
+      "aggregate_owner_passed": false
+    }
+  },
+  "retained_failures": [
+    {
+      "stage": "First Linux build",
+      "record": {
+        "path": "build/physical-drives-0.0.232/linux-native-1/report.json",
+        "bytes": 145704,
+        "sha256": "54a7dc36dac476d5712ceebc3306d2514c4c0393ed9e0c9437d9f5ddfe796fef"
+      },
+      "cause": "Cumulative process count 257 exceeded the supervisor cap of 256; no test ran. Successor used a reviewed cap of 1024.",
+      "forced_cleanup": true
+    },
+    {
+      "stage": "Linux compatibility fixture",
+      "record": {
+        "path": "build/physical-drives-0.0.232/linux-native-2/report.json",
+        "bytes": 259983,
+        "sha256": "a08caf93e3f7a0c5630060a099e438ab87156a9aa09b9ae249758dad2b285965"
+      },
+      "cause": "A positive legacy-host fixture still advertised the newly appended drive feature at an insufficient services extent.",
+      "forced_cleanup": false
+    },
+    {
+      "stage": "Windows CPU preparation",
+      "execution": false,
+      "cause": "File-only preparation compared a recorded relative managed-plan path with an absolute path. A separate helper resolves both from the repository root."
+    },
+    {
+      "stage": "Windows final report",
+      "record": {
+        "path": "build/physical-drives-0.0.232/windows-cpu-1/report.json",
+        "bytes": 88092,
+        "sha256": "b82857552d2fbce333f410abb8d1177807a2a05f0a4e256accc43c6672b86f5c"
+      },
+      "cause": "External hostfxr path used backslashes in consumed evidence and forward slashes in admission. Original aggregate verdict remains failed.",
+      "forced_cleanup": false
+    }
+  ],
+  "independent_review": {
+    "linux_artifacts": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 2044,
+        "sha256": "ddc5e7fc62fb1a295ddc548926a20536ce28bc55b22258e0340da9fb6619afb2"
+      },
+      "scope": "Read-only closed protocol/archive/source review; no native, managed, compiler or graphics execution.",
+      "checks": {
+        "literal_protocol": {
+          "RPCs": 338,
+          "owners": 3,
+          "streams": 9,
+          "complete_wire_to_evidence_equal": true,
+          "all_cli_and_outer_natural": true
+        },
+        "whole_saves": {
+          "archives": 26,
+          "byte_and_complete_typed_pairs": 13,
+          "fields": 42,
+          "state_bytes": 304,
+          "original_payload_checksums": 26,
+          "reload_exact_changed_leaves": [
+            "/snapshot/payload/gameplay_revision",
+            "/snapshot/sha256"
+          ]
+        },
+        "compiled_boundary": {
+          "all_literal_state_inspections": 106,
+          "successful_ticks_independently_derived": 31,
+          "typed_edits": 17,
+          "managed_loads_including_reload": 2,
+          "rollback_failures": 5,
+          "observations_joined": 60,
+          "native_before_after_joins": 31,
+          "caller_activation_then_compiled_drive": true,
+          "active_joint_x": 0.03081294746787191
+        },
+        "input_identity": {
+          "unchanged_source_and_artifact_pins": 21,
+          "source_glb_and_world_and_cooked_verified": true
+        },
+        "native_archive_cohort": {
+          "entries": 183,
+          "whole_byte_and_typed_pairs": 85,
+          "roles": {
+            "source": 85,
+            "restored": 85,
+            "accepted-source": 5,
+            "negative": 8
+          },
+          "complete_manifest_identity": {
+            "bytes": 69438,
+            "sha256": "33a71e2f2c2bafa2a958d80fcb6361cc31503533846cee1b1c48417db00ed485"
+          },
+          "check_count_18245": "Verified separately from the original CTest XML by linux_literal_counts."
+        }
+      }
+    },
+    "linux_literal_counts": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 1011,
+        "sha256": "292627683695be877528e3764bb382f4f75de628f7f771bae6a76cd24fc73362"
+      },
+      "scope": "Read-only supplemental literal CTest count check; original independent audit remains unchanged.",
+      "checks": null,
+      "cases": [
+        {
+          "name": "physical_drive_math",
+          "status": "run",
+          "literal_system_out": "physical_drive_math: 6 groups, 5107 checks\n"
+        },
+        {
+          "name": "physical_drive_authoring",
+          "status": "run",
+          "literal_system_out": "Physical drive authoring: 107 checks in 4 source admission groups passed; no runtime-drive claim.\n"
+        },
+        {
+          "name": "runtime_physical_drive",
+          "status": "run",
+          "literal_system_out": "Runtime physical drives: 6 native groups, 18245 checks, 85 complete archive pairs passed; no balance/recovery claim.\n"
+        }
+      ]
+    },
+    "windows_artifacts": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 4234,
+        "sha256": "56afde84f8553adad70c049e64a1237c9a02a94811466a7fa0efc2c024991559"
+      },
+      "scope": "Read-only original Windows records. No producer; no changed failure label or cross-platform equality claim.",
+      "checks": {
+        "commands_and_closure": {
+          "commands": 22,
+          "native_cpp_commands": 20,
+          "managed_wire_checks": 106,
+          "all_command_exits": 0,
+          "job_processes": 26,
+          "active_at_closure": 0,
+          "terminated": 0,
+          "forced_cleanup": false,
+          "aggregate_failure_preserved": "RuntimeError: Original consumed source/artifact pin joins admission"
+        },
+        "literal_protocol": {
+          "RPCs": 338,
+          "CLI_owners": 3,
+          "streams": 9,
+          "all_original_wire_records_joined": true
+        },
+        "complete_saves": {
+          "archives": 26,
+          "whole_bytes_and_typed_pairs": 13,
+          "fields": 42,
+          "state_bytes": 304,
+          "original_payload_checksums_verified": 26,
+          "reload_exact_changed_leaves": [
+            "/snapshot/payload/gameplay_revision",
+            "/snapshot/sha256"
+          ]
+        },
+        "current_input_identity": {
+          "unchanged_original_consumed_pins": 21,
+          "original_source_world_cooked": true,
+          "pre_admission_pin_join": "Not accepted by original wrapper; Windows owner lane diagnoses separately."
+        },
+        "native_drive": {
+          "archives": 183,
+          "whole_byte_and_typed_pairs": 85,
+          "roles": {
+            "source": 85,
+            "restored": 85,
+            "accepted-source": 5,
+            "negative": 8
+          },
+          "literal_native_groups": 6,
+          "literal_native_checks": 18245,
+          "literal_math_groups": 6,
+          "literal_math_checks": 5107,
+          "literal_authoring_groups": 4,
+          "literal_authoring_checks": 107
+        }
+      }
+    },
+    "windows_admission": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 11750,
+        "sha256": "d1c75d8e119b50b17c6769c51a7c3234305d0e3c607eff4770366e5e02000d34"
+      },
+      "original_aggregate_passed": false,
+      "original_records_modified": false,
+      "original_admitted_files": 1327,
+      "consumed_files": 21,
+      "differing_path_spellings": 1,
+      "scope": "File-only comparison joins every original consumed hash to the original admission using slash-normalized Windows paths, with a separately labeled post-run full input check. No native rerun or original verdict change."
+    }
+  },
+  "limits": [
+    "Small analytical three-part fixtures; no imported-character drive tuning, rendered motion quality or representative throughput claim.",
+    "No animation target streaming, balance controller, stepping, recovery to animation or automatic gait generation.",
+    "Local implicit orientation approximation, not a globally stable coupled articulated solve; chordal error vanishes at exactly pi.",
+    "Per-joint active torque caps do not cap the sum of passive, contact and active responses.",
+    "Same-image reload, not changed-code edit latency. No cross-platform future bitwise equality promise.",
+    "New drive gameplay is qualified through CoreCLR; no new-drive NativeAOT publication or execution is claimed.",
+    "No GPU, physical input or broad Alpha completion claim."
+  ],
+  "retained_native_aot": {
+    "passed": true,
+    "owner": {
+      "path": "build/physical-drives-0.0.232/legacy-native-1/report.json",
+      "bytes": 7770,
+      "sha256": "fee13a95f38eab8603d48790c9b852104cfd423cd9c72dd8dd7d433a9416f4b3"
+    },
+    "record": {
+      "path": "build/physical-drives-0.0.232/legacy-native-1/consumer/evidence.json",
+      "bytes": 1499968,
+      "sha256": "5194ff0e3f87922af56be6ea39f33c546a95eacf0d60b6902ebeb571c76e95af"
+    },
+    "original_sample_checkpoint": "0.0.231",
+    "original_descriptor_engine_version": "0.0.230",
+    "original_minimum_services_bytes": 424,
+    "current_host_services_bytes": 448,
+    "unchanged_native_library": {
+      "bytes": 1411584,
+      "sha256": "44b3b1c48f975ca6d53470feea54f90b735c39ad1ed86b4e4bc178c8f4c434a3"
+    },
+    "rpc_calls": 277,
+    "natural_engine_processes": 3,
+    "complete_archives": 10,
+    "whole_byte_and_typed_state_pairs": 6,
+    "fields": 61,
+    "state_bytes": 392,
+    "scope": "Unchanged previously compiled character game executes on the new host, including camera-hit takeover and complete warm/cold animated/passive continuation. No new drive API, republishing, new export or cross-build save-identity claim."
+  },
+  "reproduce": [
+    "docs/PHYSICAL_DRIVES.md#saves-and-qualification",
+    "tests/managed_physical_drive_gameplay/README.md",
+    "tests/physical_drive_gameplay.py"
+  ]
+}

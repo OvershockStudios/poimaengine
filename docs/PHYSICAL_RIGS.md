@@ -7,6 +7,11 @@ imported `AnimationRig`. Animation owns the skeleton initially; explicit
 activation transfers its committed pose and momentum to native physics. Solved
 physical poses then drive the render hierarchy.
 
+Optional [joint drives](PHYSICAL_DRIVES.md) add strength-controlled orientation
+targets to selected joints. They preserve native contacts, passive responses
+and friction. Driven rigs retain physical ownership; balance and recovery are
+separate systems.
+
 The initial 0.0.218 integration has bounded native, CLI, CoreCLR and complete-save
 qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
 checks. The opt-in fixed-scale frame additionally has licensed full-body

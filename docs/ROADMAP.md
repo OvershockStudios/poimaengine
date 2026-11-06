@@ -122,6 +122,10 @@ now composes original clips, independent player movement, camera-hit impulses,
 passive takeover and complete checkpoints in CoreCLR and a relocated Windows
 NativeAOT game. This is a bounded sample; active recovery and production motion
 quality remain part of the character work.
+Optional [joint drives](PHYSICAL_DRIVES.md) now provide capped orientation
+targets through native physics and compiled gameplay, including complete saved
+controls. This is a foundation for physical animation; live clip targets,
+whole-body balance and recovery remain part of this segment.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;

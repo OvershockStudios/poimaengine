@@ -9,6 +9,14 @@ runtime snapshot version 8, preserving actual capsule/intent and owned eye
 height. This does not grant a save-upgrade plan permission to change its frozen
 profile. No-profile worlds retain earlier format selection.
 
+Opt-in [physical joint drives](PHYSICAL_DRIVES.md#saves-and-qualification) use
+physical extension 5. Each live rig saves its complete ordered targets and
+strengths, including disabled drives. An authored drive profile in a dormant
+template also selects extension 5; mutable controls are created when it spawns.
+Worlds without drive profiles retain their earlier physical extension.
+The frozen profile still supplies
+gains and joint limits; this does not permit changing that profile on load.
+
 ## Configure storage
 
 In the editor, use **Window > Saves**, or call `save.configure` through the world service. A standalone bundle accepts an existing external directory:

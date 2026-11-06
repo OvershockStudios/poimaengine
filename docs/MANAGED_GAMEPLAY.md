@@ -560,3 +560,21 @@ from native contact/plant diagnostics. Do not stage grounding or IK writes for
 a rig in its activation Tick, and clear or repair surviving live game-owned
 entity bindings when despawning their entities; historical native witnesses
 retain their own lifetime.
+
+## Physical joint drives
+
+Declare `IPhysicalRigDriveGame` to add joint orientation targets and strength
+controls. `GetPhysicalRigDrive` reads committed controls and frozen gains;
+`SetPhysicalRigDrive` stages a write against an opted-in authored joint. Use
+explicit takeover first, or stage activation before the drive in the same Tick.
+Drive-aware `GetPhysicalRig` also reports `PhysicalRigMode.Driven`.
+
+The extension appends three callbacks after the unchanged 424-byte physical
+prefix and requires `physical_rig_drive_v1`, `physical_rig_v1` and 448 bytes
+within epoch 7. Older physical consumers retain their bounded view; their
+summary callback rejects a Driven rig instead of reporting an incorrect mode.
+See [joint drives](PHYSICAL_DRIVES.md) for target frames, units, limits, sleep,
+ordered commands and complete saves. The
+[compiled fixture](../tests/managed_physical_drive_gameplay/README.md) and
+[native protocol check](../tests/physical_drive_gameplay.py) exercise the actual
+callback path separately from mock ABI guards.
