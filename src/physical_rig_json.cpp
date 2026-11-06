@@ -76,9 +76,9 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 Configuration parse_configuration(const nlohmann::json& value) {
     need(value.is_object(),"PhysicalRig needs an object.");
     const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation"),has_handoff=value.contains("controller_handoff"),
-        has_procedural=value.contains("procedural_pose");
-    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u)+(has_procedural?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
-        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff/procedural_pose.");
+        has_procedural=value.contains("procedural_pose"),has_animation=value.contains("animation_drive");
+    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u)+(has_procedural?1u:0u)+(has_animation?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff/procedural_pose/animation_drive.");
     Configuration result;
     if(has_policy) {
         const auto policy=text(value.at("pose_frame"));
@@ -103,6 +103,12 @@ Configuration parse_configuration(const nlohmann::json& value) {
         need(policy=="animated_only" || policy=="grounded_animated_only",
             "PhysicalRig procedural_pose must be animated_only or grounded_animated_only.");
         result.procedural_pose=policy=="animated_only" ? ProceduralPosePolicy::AnimatedOnly : ProceduralPosePolicy::GroundedAnimatedOnly;
+    }
+    if(has_animation) {
+        const auto& animation=value.at("animation_drive");fields(animation,{"limit_policy"});
+        const auto policy=text(animation.at("limit_policy"));
+        need(policy=="strict" || policy=="fit","Physical animation drive limit_policy must be strict or fit.");
+        result.animation_drive=AnimationDrive{policy=="strict" ? TargetLimitPolicy::Strict : TargetLimitPolicy::Fit};
     }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
@@ -152,6 +158,7 @@ nlohmann::json configuration_json(const Configuration& value) {
     }
     if(value.controller_handoff)result["controller_handoff"]={{"actor",value.controller_handoff->actor},{"follow","translate_keep_heading"}};
     if(value.procedural_pose)result["procedural_pose"]=*value.procedural_pose==ProceduralPosePolicy::AnimatedOnly ? "animated_only" : "grounded_animated_only";
+    if(value.animation_drive)result["animation_drive"]={{"limit_policy",value.animation_drive->limit_policy==TargetLimitPolicy::Strict ? "strict" : "fit"}};
     return result;
 }
 
@@ -188,12 +195,17 @@ nlohmann::json configuration_schema() {
     result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may configure IK, with grounding allowed only by grounded_animated_only.";
     result["properties"]["procedural_pose"]={{"type","string"},{"enum",{"animated_only","grounded_animated_only"}},
         {"description","Optional final procedural pose ownership while Animated, requiring controller_handoff and initial_mode=animated. animated_only admits manual IK, including zero slots, and rejects every configured grounding profile. grounded_animated_only requires at least one configured grounding slot and also admits manual slots. Only the own AnimationRig may configure IK, with every chain root/middle/end node mapped to physical parts. Both policies reject root motion, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted. AnimationRig slot membership and cross-entity ownership are additionally validated against the complete world or template."}};
+    result["properties"]["animation_drive"]=object({
+        {"limit_policy",{{"type","string"},{"enum",{"strict","fit"}}}}});
+    result["properties"]["animation_drive"]["description"]="Optional independent animation target player using the same frozen model and initial base/layers. Requires at least one joint with an authored drive profile. Strict rejects sampled targets outside hard limits; fit explicitly permits fitting sampled targets to those limits. Manual target admission stays strict. Authoring this field does not select animation as a joint source, activate physics or change pose ownership; runtime source controls are explicit. Omission preserves the existing profile without a target player.";
     Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
     linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";
     Json procedural_mode=Json::object();procedural_mode["if"]["required"]=Json::array({"procedural_pose"});
     procedural_mode["then"]["required"]=Json::array({"controller_handoff"});
     procedural_mode["then"]["properties"]["initial_mode"]["const"]="animated";
-    result["allOf"]=Json::array({std::move(linked_mode),std::move(procedural_mode)});
+    Json animation_mode=Json::object();animation_mode["if"]["required"]=Json::array({"animation_drive"});
+    animation_mode["then"]["properties"]["joints"]["contains"]={{"type","object"},{"required",Json::array({"drive"})}};
+    result["allOf"]=Json::array({std::move(linked_mode),std::move(procedural_mode),std::move(animation_mode)});
     result["oneOf"]=Json::array({
         {{"properties",{{"pose_frame",{{"enum",{"rigid_uniform","skeletal_fixed_scale"}}}}}},
             {"not",{{"required",Json::array({"max_scale_deviation"})}}}},

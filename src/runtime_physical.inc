@@ -5,6 +5,7 @@
         std::unique_ptr<RuntimePhysicalRigBackend> backend;
         std::uint32_t collision_group=0;
         std::optional<RuntimeControllerHandoffState> handoff;
+        std::unique_ptr<RuntimePhysicalAnimation> animation;
     };
     struct PhysicalSavedRig {
         RuntimePhysicalRigMembership membership;
@@ -12,6 +13,7 @@
         std::vector<JPH::BodyID> ids;
         std::uint32_t collision_group=0;
         std::optional<RuntimeControllerHandoffState> handoff;
+        std::optional<RuntimePhysicalAnimation::Checkpoint> animation;
     };
     struct PhysicalCheckpoint {
         bool enabled=false;
@@ -162,6 +164,8 @@
             owner->collision_group=physical_next_collision_group++;
         }
         owner->backend=std::make_unique<RuntimePhysicalRigBackend>(physics,body_ids,d.physical_rig->profile,poses,1,owner->collision_group,0,ids);
+        if(d.physical_rig->animation_drive)
+            owner->animation=std::make_unique<RuntimePhysicalAnimation>(*animations,d,tick);
         // Cold mode/poses arrive later from the fully checked saved extension;
         // do not enroll an authored initial mode in front of that restoration.
         if(d.physical_rig->initially_passive && !restored) {
@@ -242,6 +246,16 @@
         }
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_before_step() try {
+        for(const auto& id:topology->physical_rigs) {
+            auto& owner=*physical_owners.at(id);
+            if(!owner.animation)continue;
+            owner.animation->advance(tick+1);
+            for(const auto& joint:owner.animation->joints())if(joint.sample) {
+                require(owner.backend->mode()!=RuntimePhysicalRigMode::Animated,"Animated target delivery requires physical ownership.");
+                const auto drive=owner.backend->drive(joint.name);require(drive.has_value(),"Animation target joint has no drive.");
+                owner.backend->set_drive({joint.name,joint.sample->target,drive->strength});
+            }
+        }
         for(const auto& id:topology->physical_rigs)physical_owners.at(id)->backend->before_step(Runtime::fixed_dt);
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_ignore(const std::string& id,JPH::IgnoreMultipleBodiesFilter& filter) const {
@@ -253,7 +267,7 @@
     void validate_physical_commands(const std::vector<PhysicalRigCommand>& commands) const {
         require(commands.size()<=64,"At most64 physical rig commands per tick.");std::set<std::string> activations;std::set<std::pair<std::string,std::string>> drives;
         for(const auto& c:commands) {
-            require(!c.entity.empty() && c.entity.size()<=256 && (c.activate || c.impulse.has_value() || c.drive.has_value()),"Physical command needs a rig and activation, localized impulse or joint drive.");
+            require(!c.entity.empty() && c.entity.size()<=256 && (c.activate || c.impulse || c.drive || c.drive_source || c.animation || c.animation_rate),"Physical command needs a rig and an explicit action.");
             if(c.activate)require(activations.insert(c.entity).second,"At most one activation per physical rig in a tick.");
             if(c.drive) {
                 require(physical_part_name(c.drive->joint),"Physical drive needs a portable joint name.");
@@ -261,6 +275,14 @@
                 (void)poima::physical_rig::canonical_quaternion(c.drive->target_rotation);
                 require(std::isfinite(c.drive->strength)&&c.drive->strength>=0&&c.drive->strength<=1,"Drive strength must be in [0,1].");
             }
+            if(c.drive_source) {
+                const auto& source=*c.drive_source;
+                require(physical_part_name(source.joint)&&drives.emplace(c.entity,source.joint).second,"Duplicate or invalid physical target source joint.");
+                require(source.source==PhysicalRigDriveSource::Manual||source.source==PhysicalRigDriveSource::Animation,"Unknown physical target source.");
+                require(std::isfinite(source.strength)&&source.strength>=0&&source.strength<=1,"Drive source strength must be in [0,1].");
+            }
+            if(c.animation)require(c.animation->entity==c.entity,"Target playback entity differs from its physical owner.");
+            if(c.animation_rate)require(c.animation_rate->entity==c.entity,"Target playback rate entity differs from its physical owner.");
             if(c.impulse) {
                 require(!c.impulse->part.empty() && c.impulse->part.size()<=64,"Physical impulse part is invalid.");double magnitude=0;
                 for(std::size_t k=0;k<3;++k) {
@@ -297,8 +319,13 @@
             require(activations.insert(c.entity).second,"Caller and gameplay requested duplicate physical activation.");};
         validate_activations(caller);validate_activations(gameplay);
         std::set<std::pair<std::string,std::string>> drive_writes;
-        for(const auto* batch:{&caller,&gameplay})for(const auto& c:*batch)if(c.drive)
-            require(drive_writes.emplace(c.entity,c.drive->joint).second,"Caller and gameplay requested duplicate joint drives.");
+        std::set<std::pair<std::string,std::uint32_t>> playback_writes;
+        for(const auto* batch:{&caller,&gameplay})for(const auto& c:*batch) {
+            if(c.drive)require(drive_writes.emplace(c.entity,c.drive->joint).second,"Caller and gameplay requested duplicate joint drives.");
+            if(c.drive_source)require(drive_writes.emplace(c.entity,c.drive_source->joint).second,"Caller and gameplay requested duplicate joint source/drive writes.");
+            if(c.animation)require(playback_writes.emplace(c.entity,c.animation->layer.value_or(0)).second,"Duplicate physical target playback channel.");
+            if(c.animation_rate)require(playback_writes.emplace(c.entity,c.animation_rate->layer.value_or(0)).second,"Duplicate physical target playback/rate channel.");
+        }
         const auto apply=[&](const auto& commands) {for(const auto& command:commands) {
             const auto found=physical_owners.find(command.entity);require(found!=physical_owners.end() && topology->identities.contains(command.entity),"Physical command needs a live PhysicalRig owner.");auto& owner=*found->second;
             if(command.activate) {
@@ -321,7 +348,22 @@
                 }
             }
             if(command.impulse)owner.backend->impulse(command.impulse->part,command.impulse->world_point,command.impulse->impulse);
-            if(command.drive)owner.backend->set_drive({command.drive->joint,command.drive->target_rotation,command.drive->strength});
+            if(command.drive) {
+                owner.backend->set_drive({command.drive->joint,command.drive->target_rotation,command.drive->strength});
+                if(owner.animation)owner.animation->select(command.drive->joint,RuntimePhysicalAnimation::Source::Manual);
+            }
+            if(command.drive_source || command.animation || command.animation_rate) {
+                require(owner.animation && owner.backend->mode()!=RuntimePhysicalRigMode::Animated,"Physical animation controls require opted-in physical ownership.");
+                if(command.drive_source) {
+                    const auto& source=*command.drive_source;const auto current=owner.backend->drive(source.joint);
+                    require(current.has_value(),"Physical target source needs a configured drive.");
+                    owner.animation->select(source.joint,source.source==PhysicalRigDriveSource::Manual?
+                        RuntimePhysicalAnimation::Source::Manual:RuntimePhysicalAnimation::Source::Animation);
+                    owner.backend->set_drive({source.joint,current->target_rotation,source.strength});
+                }
+                if(command.animation)owner.animation->apply({*command.animation},{});
+                if(command.animation_rate)owner.animation->apply({},{*command.animation_rate});
+            }
         }};
         apply(caller);apply(gameplay);
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
@@ -333,6 +375,7 @@
         for(const auto& id:topology->physical_rigs) {
             const auto& owner=*physical_owners.at(id);PhysicalSavedRig row;
             row.membership=owner.backend->snapshot_membership();row.pose=owner.binding->snapshot();row.collision_group=owner.collision_group;row.handoff=owner.handoff;
+            if(owner.animation)row.animation=owner.animation->checkpoint();
             for(const auto& part:owner.backend->definition().parts)row.ids.push_back(owner.backend->body_id(part.name));
             saved.rigs.emplace(id,std::move(row));
             if(owner.backend->mode()!=RuntimePhysicalRigMode::Animated)for(const auto& [joint,ref]:owner.backend->constraints())require(names.emplace(ref.GetPtr(),std::pair{id,joint}).second,"Duplicate physical constraint identity.");
@@ -349,6 +392,8 @@
             auto& owner=*physical_owners.at(id);require(owner.collision_group==row.collision_group && row.ids.size()==owner.backend->definition().parts.size(),"Physical rollback allocation/profile differs.");
             for(std::size_t n=0;n<row.ids.size();++n)require(owner.backend->body_id(owner.backend->definition().parts[n].name)==row.ids[n],"Physical rollback must preserve exact body IDs.");
             owner.backend->restore_membership(row.membership);owner.binding->restore(row.pose);owner.handoff=row.handoff;
+            require(bool(owner.animation)==row.animation.has_value(),"Physical animation rollback membership differs.");
+            if(owner.animation)owner.animation->restore(*row.animation);
             if(row.handoff) {
                 auto& motor=*registry.get<Controller>(find(row.handoff->actor)).character;
                 motor.RestoreSuppression(row.handoff->passive ? std::optional{row.handoff->passive->support} : std::nullopt);
@@ -478,7 +523,7 @@
             std::copy_n(source->target_rotation,4,drive.target_rotation.begin());drive.strength=source->strength;
             (void)poima::physical_rig::validate_target(*found,drive.target_rotation);
             command.drive=drive;self.validate_physical_commands({command});
-            require(std::none_of(self.game_physical_commands.begin(),self.game_physical_commands.end(),[&](const auto& c){return c.entity==id&&c.drive&&c.drive->joint==joint;}),"Duplicate gameplay joint drive in one Tick.");
+            require(std::none_of(self.game_physical_commands.begin(),self.game_physical_commands.end(),[&](const auto& c){return c.entity==id&&((c.drive&&c.drive->joint==joint)||(c.drive_source&&c.drive_source->joint==joint));}),"Duplicate gameplay joint drive in one Tick.");
             self.game_physical_commands.push_back(std::move(command));
         });
     }

@@ -11,6 +11,7 @@
 #include "runtime_physics_bootstrap_json.hpp"
 #include "runtime_physics_state.hpp"
 #include "runtime_physical_rig.hpp"
+#include "runtime_physical_animation.hpp"
 #include "runtime_physical_pose.hpp"
 #include "runtime_character_input_plan.hpp"
 #include "runtime_controller_handoff_state.hpp"
@@ -230,6 +231,7 @@ struct Runtime::Impl {
     std::string world_id;
     std::uint64_t revision=0, tick=0, material_revision=0;
     #include "runtime_physical.inc"
+    #include "runtime_physical_animation_services.inc"
     #include "runtime_controller_handoff.inc"
     ~Impl() {
         physical_owners.clear(); // Constraints/bodies die while allocator/physics live.
@@ -1158,27 +1160,31 @@ struct Runtime::Impl {
             static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode));
         });
     }
+    static PoimaGameAnimationLayerStateV1 project_animation_layer(const PoimaEntityId& id,std::uint32_t slot,
+        const std::optional<RuntimeAnimationLayerState>& layer) {
+    PoimaGameAnimationLayerStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);candidate.slot=slot;
+    std::optional<RuntimeAnimationState> playback;
+    if(layer) {
+        playback.emplace();playback->clip=layer->clip;playback->time=layer->time;playback->speed=layer->speed;
+        playback->loop=layer->loop;playback->playing=layer->playing;playback->duration=layer->duration;playback->transition=layer->transition;
+        candidate.layer_mode=static_cast<std::uint32_t>(layer->mode);candidate.mask_nodes=static_cast<std::uint32_t>(layer->mask_nodes);
+        candidate.weight=layer->weight;candidate.target_weight=layer->target_weight;
+        if(layer->transition)candidate.transition_mode=static_cast<std::uint32_t>(layer->transition->mode);
+        if(layer->weight_transition) {
+            const auto& fade=*layer->weight_transition;candidate.weight_transition_present=1;
+            candidate.weight_start_tick=fade.start_tick;candidate.weight_duration_ticks=fade.duration_ticks;candidate.weight_elapsed_ticks=fade.elapsed_ticks;
+            candidate.weight_source=fade.source;candidate.weight_target=fade.target;
+        }
+    }
+    project_animation(id,playback,candidate.state);return candidate;
+    }
     static int32_t POIMA_CALL get_animation_layer(void* context,const PoimaEntityId* id,std::uint32_t slot,PoimaGameAnimationLayerStateV1* output,PoimaGameError* error) {
         return callback(error,[&] {
             require(context && id && output,"Animation layer query is absent.");
             require(output->version==1 && output->bytes>=sizeof(PoimaGameAnimationLayerStateV1),"Animation layer state requires version 1 and at least 200 bytes.");
             require(output->reserved==0 && slot>=1 && slot<=4,"Invalid animation layer query slot/reserved encoding.");
             const auto layer=static_cast<Impl*>(context)->owner->animation_layer(gameplay_id(*id),slot);
-            PoimaGameAnimationLayerStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);candidate.slot=slot;
-            std::optional<RuntimeAnimationState> playback;
-            if(layer) {
-                playback.emplace();playback->clip=layer->clip;playback->time=layer->time;playback->speed=layer->speed;
-                playback->loop=layer->loop;playback->playing=layer->playing;playback->duration=layer->duration;playback->transition=layer->transition;
-                candidate.layer_mode=static_cast<std::uint32_t>(layer->mode);candidate.mask_nodes=static_cast<std::uint32_t>(layer->mask_nodes);
-                candidate.weight=layer->weight;candidate.target_weight=layer->target_weight;
-                if(layer->transition)candidate.transition_mode=static_cast<std::uint32_t>(layer->transition->mode);
-                if(layer->weight_transition) {
-                    const auto& fade=*layer->weight_transition;candidate.weight_transition_present=1;
-                    candidate.weight_start_tick=fade.start_tick;candidate.weight_duration_ticks=fade.duration_ticks;candidate.weight_elapsed_ticks=fade.elapsed_ticks;
-                    candidate.weight_source=fade.source;candidate.weight_target=fade.target;
-                }
-            }
-            project_animation(*id,playback,candidate.state);*output=candidate;
+            *output=project_animation_layer(*id,slot,layer);
         });
     }
     static int32_t POIMA_CALL set_animation_layer(void* context,const PoimaGameAnimationLayerCommandV1* source,PoimaGameError* error) {
@@ -1694,11 +1700,11 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_drive_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_drive_reads=game_physical_animation_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(api.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.drive.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2210,6 +2216,18 @@ std::optional<PhysicalRigDriveObservation> Runtime::physical_drive(const std::st
     return PhysicalRigDriveObservation{joint,state->target_rotation,state->strength,profile.stiffness,profile.damping,profile.max_torque};
 }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
+std::optional<PhysicalRigAnimationObservation> Runtime::physical_animation(const std::string& id) const {
+    (void)impl_->find(id);const auto found=impl_->physical_owners.find(id);
+    if(found==impl_->physical_owners.end()||!found->second->animation)return {};
+    const auto& player=*found->second->animation;
+    require(!player.pending()&&player.tick()==impl_->tick,"Physical animation observation requires a committed boundary.");
+    PhysicalRigAnimationObservation result;result.entity=id;result.sampled_tick=player.tick();
+    result.limit_policy=impl_->topology->definitions.at(id).physical_rig->animation_drive->limit_policy;
+    result.playback=player.state(true);
+    for(const auto& joint:player.joints())result.joints.push_back({joint.name,
+        joint.source==RuntimePhysicalAnimation::Source::Manual?PhysicalRigDriveSource::Manual:PhysicalRigDriveSource::Animation,joint.sample});
+    return result;
+}
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeIkState> Runtime::ik(const std::string& id,std::uint32_t slot) const {
     (void)impl_->find(id);require(slot>=1 && slot<=8,"IK slot must be 1..8.");return impl_->observation_ik(id,slot);

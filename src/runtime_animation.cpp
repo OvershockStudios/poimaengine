@@ -432,7 +432,60 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
 }
 
 
+std::unique_ptr<RuntimeAnimations> RuntimeAnimations::make_target_player(const std::string& entity) const {
+    const auto found=membership_->indices.find(entity);
+    check(found!=membership_->indices.end(),"Animation target source rig is absent.");
+    const auto index=found->second;
+    auto result=std::make_unique<RuntimeAnimations>(RuntimeDefinition{},executor_);
+    auto one=std::make_shared<Membership>();one->rigs.push_back(membership_->rigs.at(index));
+    auto& rig=one->rigs.back();one->indices.emplace(rig.entity,0);
+    // Retain the model's complete hierarchy and authored layer definitions, but
+    // no world-dependent procedures or ownership. In particular clearing just
+    // live IK arrays would leave has_ik()/save validation seeing authored chains.
+    rig.ik.clear();rig.procedural_pose=false;rig.procedural_grounding=false;
+    rig.root_motion.reset();rig.root_rest={};rig.skins.clear();rig.skin_geometry.clear();
+    result->membership_=std::move(one);result->target_player_=true;
+    result->clocks_={clocks_.at(index)};result->layers_={layers_.at(index)};
+    result->ik_.resize(1);result->ik_states_.resize(1);result->grounding_controls_.resize(1);
+    result->roots_.resize(1);
+    // Pending flags and procedural captures remain empty from construction.
+    // Taking a target player must never consume, suspend or rewrite its source.
+    return result;
+}
+ModelPose RuntimeAnimations::target_pose(const std::string& entity,std::uint64_t tick) const {
+    check(target_player_,"Animation target pose requires a detached target player.");
+    check(tick<=animation_state_max_tick,"Animation target tick is out of range.");
+    const auto found=membership_->indices.find(entity);
+    check(found!=membership_->indices.end(),"Animation target rig is absent.");
+    const auto index=found->second;
+    return composed(index,clocks_.at(index),layers_.at(index),tick);
+}
+
+void RuntimeAnimations::validate_target_history(std::uint64_t tick) const {
+    check(target_player_&&membership_->rigs.size()==1,"Target history needs one detached player.");
+    const auto validate=[&](const Clock& clock) {
+        check(clock.current&&clock.current->tick==tick&&clock.current->poses,"Target history is not current.");
+        const auto expected=evaluate(0,clock,tick);const auto& retained=*clock.current->poses;
+        check(retained.size()==expected.local.size(),"Target current history membership differs.");
+        // Componentwise numerical reconstruction bound. Keep original samples
+        // verbatim; do not normalize, replace or regenerate saved histories.
+        const auto same=[](const auto& a,const auto& b) {
+            for(std::size_t i=0;i<a.size();++i)
+                if(!std::isfinite(a[i])||!std::isfinite(b[i])||
+                    std::abs(a[i]-b[i])>1e-12*std::max({1.0,std::abs(a[i]),std::abs(b[i])}))return false;
+            return true;
+        };
+        for(std::size_t node=0;node<retained.size();++node)
+            check(same(retained[node].position,expected.local[node].position)&&
+                same(retained[node].rotation,expected.local[node].rotation)&&
+                same(retained[node].scale,expected.local[node].scale),
+                "Target current history differs from its playback clock.");
+    };
+    validate(clocks_.at(0));for(const auto& layer:layers_.at(0))validate(layer.clock);
+}
+
 void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t tick) {
+    check(!target_player_,"Detached animation targets have fixed single-rig membership.");
     RuntimeAnimations candidate(definition,executor_,tick,membership_.get());
     auto poses_equal=[](const std::vector<NodePose>& a,const std::vector<NodePose>& b) {
         if(a.size()!=b.size())return false;
@@ -1708,6 +1761,66 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     grounding_controls_.swap(candidate_grounding);
     grounding_restore_pending_=grounded;
     grounding_controls_pending_=false;
+}
+std::string RuntimeAnimations::save_target_state(std::uint64_t tick) const {
+    check(target_player_ && membership_->rigs.size()==1,"Complete animation target state requires one detached player.");
+    const auto& rig=membership_->rigs.front();
+    auto histories=[&](const Clock& clock) {
+        history_order(clock);
+        return StateJson{{"current",state_history(clock.current,tick,rig.nodes.size(),*rig.compiled)},
+            {"previous",state_history(clock.previous,tick,rig.nodes.size(),*rig.compiled)}};
+    };
+    auto player=StateJson::parse(save_state(tick));auto layers=StateJson::array();
+    for(std::size_t i=0;i<rig.layers.size();++i) {
+        auto layer=histories(layers_.at(0).at(i).clock);layer["slot"]=rig.layers[i].slot;
+        layers.push_back(std::move(layer));
+    }
+    StateJson document={{"format","poima.animation-target-state"},{"version",std::uint32_t(1)},
+        {"tick",tick},{"entity",rig.entity},{"player",std::move(player)},
+        {"history",histories(clocks_.at(0))},{"layer_history",std::move(layers)}};
+    auto result=document.dump();check(result.size()<=layered_animation_state_bytes,"Complete animation target state exceeds 64 MiB.");return result;
+}
+void RuntimeAnimations::load_target_state(const std::string& text,std::uint64_t tick) {
+    check(target_player_ && membership_->rigs.size()==1,"Complete animation target restore requires one detached player.");
+    check(tick<=animation_state_max_tick && text.size()<=layered_animation_state_bytes,"Complete animation target restore exceeds its bounds.");
+    std::vector<std::set<std::string>> keys;std::size_t events=0;
+    auto callback=[&](int depth,StateJson::parse_event_t event,StateJson& value) {
+        check(depth<=32,"Animation target JSON nesting exceeds 32.");
+        check(++events<=8000000,"Animation target JSON event budget exceeded.");
+        if(event==StateJson::parse_event_t::object_start)keys.emplace_back();
+        else if(event==StateJson::parse_event_t::object_end)keys.pop_back();
+        else if(event==StateJson::parse_event_t::key)check(keys.back().insert(value.get<std::string>()).second,"Duplicate animation target state field.");
+        return true;
+    };
+    const auto document=StateJson::parse(text,callback);state_fields(document,{"format","version","tick","entity","player","history","layer_history"});
+    const auto& rig=membership_->rigs.front();
+    check(document.at("format")=="poima.animation-target-state" && state_uint(document.at("version"),1)==1 &&
+        state_uint(document.at("tick"),animation_state_max_tick)==tick && document.at("entity")==rig.entity,
+        "Animation target state format, membership or boundary differs.");
+    // Validate and reconstruct in a detached candidate. A malformed later
+    // history must not publish an already accepted base/layer control.
+    auto candidate=make_target_player(rig.entity);const auto& player=document.at("player");
+    candidate->load_state(player.dump(),tick);
+    const auto& record=player.at("rigs").at(0);
+    auto restore_history=[&](Clock& clock,const StateJson& history,const StateJson& generic,bool layer) {
+        if(layer)state_fields(history,{"slot","current","previous"});else state_fields(history,{"current","previous"});
+        const StateJson complete={{"current",history.at("current")},{"previous",history.at("previous")}};
+        if(generic.contains("history"))check(complete.dump()==generic.at("history").dump(),
+            "Complete target history differs from its retained animation-state duplicate.");
+        clock.current=read_history(history.at("current"),tick,rig.nodes.size(),*rig.compiled);
+        clock.previous=read_history(history.at("previous"),tick,rig.nodes.size(),*rig.compiled);history_order(clock);
+    };
+    restore_history(candidate->clocks_.at(0),document.at("history"),record,false);
+    const auto& saved_layers=document.at("layer_history");
+    check(saved_layers.is_array() && saved_layers.size()==rig.layers.size(),"Complete target layer-history membership differs.");
+    for(std::size_t i=0;i<rig.layers.size();++i) {
+        check(state_uint(saved_layers[i].at("slot"),4)==rig.layers[i].slot,"Complete target layer-history slot order differs.");
+        restore_history(candidate->layers_.at(0).at(i).clock,saved_layers[i],record.at("layers").at(i),true);
+    }
+    // Canonical serialize-back validates every retained value and duplicate;
+    // no old pose is regenerated from the current clip or an earlier tick.
+    check(candidate->save_target_state(tick)==document.dump(),"Animation target state is not its complete canonical representation.");
+    clocks_.swap(candidate->clocks_);layers_.swap(candidate->layers_);
 }
 #include "runtime_animation_procedural.inc"
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {

@@ -63,7 +63,10 @@ void policy() {
     if(poima::runtime_navigation_available())legacy400.features.push_back(navigation_feature);
     check(compatibility_error(baseline,legacy400).empty(),"Explicit old400 host fixture is invalid.");
 
-    check(capable.services_version==7 && capable.services_bytes==physical_rig_drive_services_bytes && capable.services_bytes==448u &&
+    check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
+    check(capable.services_version==7 && capable.services_bytes==physical_rig_animation_services_bytes && capable.services_bytes==496u &&
+        std::find(capable.features.begin(),capable.features.end(),physical_rig_drive_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),physical_rig_animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),player_preferences_feature)!=capable.features.end() &&
@@ -300,6 +303,8 @@ void policy() {
     auto future_physical=capable;future_physical.services_bytes=432;future_physical.features.push_back("future_available_v1");
     check(!compatibility_error(physical,future_physical).empty(),"432-byte host advertised unallocated drive callbacks.");
     std::erase(future_physical.features,std::string(physical_rig_drive_feature));
+    check(!compatibility_error(physical,future_physical).empty(),"432-byte host advertised unallocated physical animation callbacks.");
+    std::erase(future_physical.features,std::string(physical_rig_animation_feature));
     check(compatibility_error(physical,future_physical).empty(),"Larger432 same-epoch allocation rejected physical424 requirement.");
     auto capsule=baseline;capsule.services_bytes=400;capsule.features.push_back(capsule_cast_feature);
     check(compatibility_error(capsule,capsule).empty() && compatibility_error(capsule,capable).empty(),"Independent capsule requirement rejected.");

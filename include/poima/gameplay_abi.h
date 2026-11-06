@@ -518,6 +518,48 @@ typedef struct PoimaGamePhysicalRigDriveServicesV1 {
     int32_t (POIMA_CALL *physical_rig_drive_set)(void*,const PoimaGamePhysicalRigDriveCommandV1*,PoimaGameError*);
 } PoimaGamePhysicalRigDriveServicesV1;
 
+/* physical_rig_animation_v1 requires both physical_rig_drive_v1 and
+ * physical_rig_v1. Epoch 7 and every previous table/POD remain unchanged.
+ * These six Tick-only callbacks operate on the independent target player,
+ * never the ordinary source/visible animation clock. Base/layer getters reuse
+ * their exact existing output PODs. The new setter accepts layer slot 0 for
+ * base only (weight 1, weight_blend_ticks 0), or authored target slots 1..4.
+ * Reusing animation PODs grants no ordinary animation, IK or input features.
+ * Source reads are committed: known non-opted joints return canonical absence;
+ * unknown joints reject. Present manual source has no sample payload. Present
+ * animation source reports the canonical requested and fitted orientations;
+ * the existing drive getter separately reports effective control and strength.
+ * Source enum Manual=0, Animation=1; limit policy Strict=0, Fit=1.
+ * Flags: sample_present=1, hinge_projected=2, twist_clamped=4, swing_clamped=8.
+ * Manual flags/sample payload are zero; strict has no projection flags.
+ * Names are borrowed portable ASCII spans for the call and copied for writes.
+ * Absent source output echoes entity and zeros all other payload bytes.
+ * All version/size/reserved values are exact. All setters join the existing
+ * ordered tick transaction; source selection does not activate implicitly.
+ * Manual selection retains the committed target and applies strength; zero
+ * does not recover animation ownership. */
+typedef struct PoimaGamePhysicalRigDriveSourceStateV1 {
+    uint32_t version,bytes,present,flags; PoimaEntityId entity;
+    uint32_t joint_bytes,reserved_name; char joint[64];
+    uint32_t source,limit_policy; uint64_t sampled_tick;
+    double requested_rotation[4],target_rotation[4],correction_radians,chart_condition;
+    uint64_t reserved_tail;
+} PoimaGamePhysicalRigDriveSourceStateV1;
+typedef struct PoimaGamePhysicalRigDriveSourceCommandV1 {
+    uint32_t version,bytes; PoimaEntityId entity;
+    const char* joint; uint32_t joint_bytes,reserved;
+    uint32_t source,reserved_source; double strength;
+} PoimaGamePhysicalRigDriveSourceCommandV1;
+typedef struct PoimaGamePhysicalRigAnimationServicesV1 {
+    PoimaGamePhysicalRigDriveServicesV1 drive;
+    int32_t (POIMA_CALL *physical_rig_animation_get)(void*,const PoimaEntityId*,PoimaGameAnimationStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_animation_layer_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameAnimationLayerStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_animation_set)(void*,const PoimaGameAnimationLayerCommandV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_animation_rate_set)(void*,const PoimaGameAnimationRateCommandV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_drive_source_get)(void*,const PoimaGamePhysicalRigDriveRequestV1*,PoimaGamePhysicalRigDriveSourceStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_drive_source_set)(void*,const PoimaGamePhysicalRigDriveSourceCommandV1*,PoimaGameError*);
+} PoimaGamePhysicalRigAnimationServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -525,6 +567,9 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGamePhysicalRigAnimationServicesV1)==496 && alignof(PoimaGamePhysicalRigAnimationServicesV1)==8 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,drive)==0 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_get)==448 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_layer_get)==456 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_set)==464 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_rate_set)==472 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_drive_source_get)==480 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_drive_source_set)==488);
+static_assert(sizeof(PoimaGamePhysicalRigDriveSourceStateV1)==208 && alignof(PoimaGamePhysicalRigDriveSourceStateV1)==8 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,version)==0 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,bytes)==4 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,present)==8 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,flags)==12 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,entity)==16 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,reserved_name)==36 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,joint)==40 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,source)==104 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,limit_policy)==108 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,sampled_tick)==112 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,requested_rotation)==120 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,target_rotation)==152 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,correction_radians)==184 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,chart_condition)==192 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,reserved_tail)==200);
+static_assert(sizeof(PoimaGamePhysicalRigDriveSourceCommandV1)==56 && alignof(PoimaGamePhysicalRigDriveSourceCommandV1)==8 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,version)==0 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,bytes)==4 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,entity)==8 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,joint)==24 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,reserved)==36 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,source)==40 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,reserved_source)==44 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,strength)==48);
 static_assert(sizeof(PoimaGamePhysicalRigDriveServicesV1)==448 && alignof(PoimaGamePhysicalRigDriveServicesV1)==8 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical)==0 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_summary_v2)==424 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_drive_get)==432 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_drive_set)==440);
 static_assert(sizeof(PoimaGamePhysicalRigDriveRequestV1)==40 && offsetof(PoimaGamePhysicalRigDriveRequestV1,entity)==8 && offsetof(PoimaGamePhysicalRigDriveRequestV1,joint)==24 && offsetof(PoimaGamePhysicalRigDriveRequestV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveRequestV1,reserved)==36);
 static_assert(sizeof(PoimaGamePhysicalRigDriveStateV1)==168 && offsetof(PoimaGamePhysicalRigDriveStateV1,entity)==16 && offsetof(PoimaGamePhysicalRigDriveStateV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveStateV1,reserved_name)==36 && offsetof(PoimaGamePhysicalRigDriveStateV1,joint)==40 && offsetof(PoimaGamePhysicalRigDriveStateV1,target_rotation)==104 && offsetof(PoimaGamePhysicalRigDriveStateV1,strength)==136 && offsetof(PoimaGamePhysicalRigDriveStateV1,stiffness)==144 && offsetof(PoimaGamePhysicalRigDriveStateV1,damping)==152 && offsetof(PoimaGamePhysicalRigDriveStateV1,max_torque)==160);

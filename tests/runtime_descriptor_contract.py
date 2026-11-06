@@ -19,7 +19,7 @@ KNOWN_FEATURES = frozenset((
     'animation_inertial_v1', 'animation_layers_v1', 'character_input_v1',
     'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1',
     'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1',
-    'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'navigation_query_v1'))
+    'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'navigation_query_v1'))
 NAVIGATION = 'navigation_query_v1'
 
 
@@ -63,13 +63,13 @@ def canonical(header):
     refs = ['baseline_feature', *re.findall(r'result\.features\.push_back\(([a-z_]+)\);', body)]
     need(len(refs) == len(set(refs)) and all(name in symbols for name in refs), 'Canonical native feature symbols are incomplete or duplicated.')
     features = [symbols[name] for name in refs]
-    need(set(features) == KNOWN_FEATURES and len(features) == 22 and refs.count('navigation_feature') == 1,
+    need(set(features) == KNOWN_FEATURES and len(features) == 23 and refs.count('navigation_feature') == 1,
          'Known native availability feature contract changed.')
     extents = re.findall(r'result\.services_bytes=([a-z_]+);', body)
-    need(extents and extents[-1] == 'physical_rig_drive_services_bytes' and all(name in numbers for name in extents),
+    need(extents and extents[-1] == 'physical_rig_animation_services_bytes' and all(name in numbers for name in extents),
          'Canonical service allocation endpoint changed.')
     need((numbers.get('call_version'), numbers.get('call_bytes'), numbers.get('services_version'),
-          numbers.get(extents[-1])) == (1, 80, 7, 448), 'Known native call/epoch/extent contract changed.')
+          numbers.get(extents[-1])) == (1, 80, 7, 496), 'Known native call/epoch/extent contract changed.')
     return dict(call_version=numbers['call_version'], call_bytes=numbers['call_bytes'],
                 services_version=numbers['services_version'], services_bytes=numbers[extents[-1]], features=features)
 
@@ -124,7 +124,7 @@ def self_test(header, cmake, stale_runtime=None):
         generated = copy.deepcopy(seed);generated['features']['navigation'] = navigation
         generated.update(generated_fields(cmake, navigation))
         result = validate(generated, header)
-        need(result['feature_count'] == (22 if navigation else 21), 'Generated descriptor has the wrong feature count.')
+        need(result['feature_count'] == (23 if navigation else 22), 'Generated descriptor has the wrong feature count.')
         cases += 1
     good = copy.deepcopy(seed);good.update(generated_fields(cmake, False))
     def reject(value):
@@ -139,7 +139,7 @@ def self_test(header, cmake, stale_runtime=None):
     if stale_runtime is None:
         stale['gameplay_services_bytes'] = 256
         stale['gameplay_features'] = [name for name in good['gameplay_features'] if name not in
-            ('input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1')]
+            ('input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1')]
     need(stale['gameplay_services_bytes'] == 256, 'The retained regression witness must be the known stale 256-byte descriptor.')
     reject(stale)
     # The previous 400-byte runtime is a separate stale packaging witness,
@@ -147,7 +147,7 @@ def self_test(header, cmake, stale_runtime=None):
     # consumers remains separate from current installed-runtime metadata.
     old_400 = copy.deepcopy(good)
     old_400['gameplay_services_bytes'] = 400
-    old_400['gameplay_features'] = [name for name in good['gameplay_features'] if name not in ('physical_rig_v1', 'physical_rig_drive_v1')]
+    old_400['gameplay_features'] = [name for name in good['gameplay_features'] if name not in ('physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1')]
     need(len(old_400['gameplay_features']) == 19, 'Retained 400-byte witness lost an earlier feature.')
     reject(old_400)
     # A new feature name cannot make an old allocation large enough.
@@ -157,11 +157,27 @@ def self_test(header, cmake, stale_runtime=None):
     # Preserve the actual previous424 feature set as another stale packaging
     # witness; old consumer compatibility is tested independently.
     old_424 = copy.deepcopy(good);old_424['gameplay_services_bytes'] = 424
-    old_424['gameplay_features'].remove('physical_rig_drive_v1')
+    old_424['gameplay_features'] = [name for name in good['gameplay_features'] if name not in
+        ('physical_rig_drive_v1', 'physical_rig_animation_v1')]
     need(len(old_424['gameplay_features']) == 20, 'Retained424 witness lost an earlier feature.')
     reject(old_424)
     spoofed_424 = copy.deepcopy(old_424);spoofed_424['gameplay_features'].append('physical_rig_drive_v1');reject(spoofed_424)
     unnamed_448 = copy.deepcopy(old_424);unnamed_448['gameplay_services_bytes'] = 448;reject(unnamed_448)
+    # The previous 448-byte installed runtime remains a stale descriptor, even
+    # though unchanged 448-byte gameplay consumers remain supported separately.
+    old_448 = copy.deepcopy(good);old_448['gameplay_services_bytes'] = 448
+    old_448['gameplay_features'].remove('physical_rig_animation_v1')
+    need(len(old_448['gameplay_features']) == 21 and
+         set(old_448['gameplay_features']) == set(old_424['gameplay_features'])|{'physical_rig_drive_v1'},
+         'Retained448 witness changed its frozen feature membership.')
+    reject(old_448)
+    spoofed_448 = copy.deepcopy(old_448);spoofed_448['gameplay_features'].append('physical_rig_animation_v1');reject(spoofed_448)
+    unnamed_496 = copy.deepcopy(old_448);unnamed_496['gameplay_services_bytes'] = 496;reject(unnamed_496)
+    # The larger allocation and animation name cannot replace either required
+    # physical feature. These are current-runtime metadata membership checks,
+    # not claims about negotiated consumer marker permissions.
+    for prerequisite in ('physical_rig_v1', 'physical_rig_drive_v1'):
+        incomplete_496 = copy.deepcopy(good);incomplete_496['gameplay_features'].remove(prerequisite);reject(incomplete_496)
     # Reconstruct generated packaging fields on the actual retained metadata,
     # retaining its platform/capability fields; validate the corrected result.
     corrected = copy.deepcopy(stale);corrected.update(generated_fields(cmake, corrected['features']['navigation']))
@@ -175,9 +191,10 @@ def self_test(header, cmake, stale_runtime=None):
         bad = copy.deepcopy(good);bad['gameplay_features'] = features;reject(bad)
     bad = copy.deepcopy(good);bad['features']['navigation'] = True;reject(bad)
     bad['gameplay_features'].append(NAVIGATION);bad['features']['simulation'] = False;reject(bad)
-    need(policy['services_bytes'] == 448, 'Canonical extent changed during file-only tests.')
+    need(policy['services_bytes'] == 496, 'Canonical extent changed during file-only tests.')
     return dict(passed=True, file_only_checks=cases, retained_stale_descriptor_rejected=True, retained_400_descriptor_rejected=True,
-                retained_424_descriptor_rejected=True, generated_navigation_false_and_true_checked=True)
+                retained_424_descriptor_rejected=True, retained_448_descriptor_rejected=True,
+                unnamed_496_and_missing_physical_dependencies_rejected=True, generated_navigation_false_and_true_checked=True)
 
 
 def main():

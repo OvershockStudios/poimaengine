@@ -5,7 +5,7 @@
         std::vector<PhysicalRigCommand> result;
         std::set<std::string> activations;
         for(const auto& value:raw) {
-            fields(value,{"entity","activate","impulse","drive"},{"entity"});
+            fields(value,{"entity","activate","impulse","drive","drive_source","animation","animation_rate"},{"entity"});
             PhysicalRigCommand command;command.entity=identifier(value.at("entity"));
             if(value.contains("activate")) {
                 require(value.at("activate").is_boolean(),"Physical rig activate must be boolean.");
@@ -48,7 +48,39 @@
                 require(std::isfinite(item.strength)&&item.strength>=0&&item.strength<=1,"Physical drive strength must be in [0,1].");
                 command.drive=std::move(item);
             }
-            require(command.activate || command.impulse.has_value() || command.drive.has_value(),"Physical command needs activation, an impulse or a drive.");
+            if(value.contains("drive_source")) {
+                const auto& source=value.at("drive_source");fields(source,{"joint","source","strength"},{"joint","source","strength"});
+                require(source.at("joint").is_string(),"Physical drive source joint must be a name.");
+                PhysicalRigDriveSourceCommand item;item.joint=source.at("joint").get<std::string>();
+                const auto alphanumeric=[](unsigned char c){return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9');};
+                require(!item.joint.empty()&&item.joint.size()<=64&&alphanumeric(static_cast<unsigned char>(item.joint.front()))&&
+                    std::all_of(item.joint.begin(),item.joint.end(),[&](unsigned char c){return alphanumeric(c)||c=='_'||c=='-'||c=='.';}),
+                    "Physical drive source joint must match an authored portable name.");
+                const auto& selected=source.at("source");require(selected.is_string()&&(selected=="manual"||selected=="animation"),
+                    "Physical drive source must be manual or animation.");
+                item.source=selected=="animation"?PhysicalRigDriveSource::Animation:PhysicalRigDriveSource::Manual;
+                require(source.at("strength").is_number(),"Physical drive source strength must be numeric.");item.strength=source.at("strength").get<double>();
+                require(std::isfinite(item.strength)&&item.strength>=0&&item.strength<=1,"Physical drive source strength must be in [0,1].");
+                command.drive_source=std::move(item);
+            }
+            if(value.contains("animation")) {
+                const auto& playback=value.at("animation");
+                fields(playback,{"clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks"},
+                    {"clip","time","speed","loop","playing"});
+                // Reuse the ordinary parser, including exact layer-dependent
+                // fields and all clip/time/rate/fade limits. The outer entity
+                // alone selects the physical target player.
+                auto complete=playback;complete["entity"]=command.entity;
+                command.animation=parse_animations(Json::array({std::move(complete)})).front();
+            }
+            if(value.contains("animation_rate")) {
+                const auto& rate=value.at("animation_rate");fields(rate,{"speed","layer"},{"speed"});
+                auto complete=rate;complete["entity"]=command.entity;
+                command.animation_rate=parse_animation_rates(Json::array({std::move(complete)})).front();
+            }
+            require(command.activate || command.impulse.has_value() || command.drive.has_value() || command.drive_source.has_value() ||
+                command.animation.has_value() || command.animation_rate.has_value(),
+                "Physical command needs activation, an impulse, a drive/source or target playback.");
             require(!command.activate || activations.insert(command.entity).second,"A physical rig may activate only once per Tick.");
             result.push_back(std::move(command));
         }
@@ -96,6 +128,28 @@
                 }
             }
         }catch(const std::exception& error){throw Error(-32602,error.what());}
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
+    }
+
+    Json physical_animation_runtime_query(const Json& params) {
+        fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+        require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto entity=identifier(params.at("entity"));
+        try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+        Json value=nullptr;
+        try {if(const auto state=runtime_->physical_animation(entity)) {
+            auto joints=Json::array();
+            for(const auto& joint:state->joints) {
+                Json sample=nullptr;
+                if(joint.sample)sample={{"requested_rotation",joint.sample->requested},{"target_rotation",joint.sample->target},
+                    {"correction_radians",joint.sample->correction_radians},{"chart_condition",joint.sample->chart_condition},
+                    {"hinge_projected",joint.sample->hinge_projected},{"twist_clamped",joint.sample->twist_clamped},{"swing_clamped",joint.sample->swing_clamped}};
+                joints.push_back({{"name",joint.name},{"source",joint.source==PhysicalRigDriveSource::Animation?"animation":"manual"},{"sample",std::move(sample)}});
+            }
+            value={{"entity",state->entity},{"sampled_tick",state->sampled_tick},
+                {"limit_policy",state->limit_policy==physical_rig::TargetLimitPolicy::Fit?"fit":"strict"},
+                {"playback",animation_json(state->playback)},{"joints",std::move(joints)}};
+        }}catch(const std::exception& error){throw Error(-32602,error.what());}
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
     }
 

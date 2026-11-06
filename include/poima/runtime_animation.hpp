@@ -159,6 +159,9 @@ public:
 private:
     std::shared_ptr<jobs::Executor> executor_;
     std::shared_ptr<const Membership> membership_;
+    // Construction-only ownership: detached players never acquire procedural
+    // definitions, skin publication or structural membership from a world.
+    bool target_player_=false;
     RuntimeAnimations(const RuntimeDefinition&,std::shared_ptr<jobs::Executor>,
         std::uint64_t tick,const Membership* compiled_cache);
     std::vector<Clock> clocks_;
@@ -195,6 +198,22 @@ private:
 public:
     // No executor retains the independent serial reference path.
     explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
+    // Independent playback for one rig's physical-animation targets. Immutable
+    // compiled/model data and historical pose buffers are shared; controls,
+    // clocks and future histories belong to the returned player. IK, grounding,
+    // root-motion extraction and skins are deliberately absent.
+    std::unique_ptr<RuntimeAnimations> make_target_player(const std::string& entity) const;
+    // Composed clip/layer pose without sampling histories or consulting world
+    // providers. Only a detached target player may expose this source pose.
+    ModelPose target_pose(const std::string& entity,std::uint64_t tick) const;
+    // Recompute current base/layer history at a committed target boundary.
+    // Prior history remains retained evidence, not regenerated from new controls.
+    void validate_target_history(std::uint64_t tick) const;
+    // Target-only complete envelope. Legacy unlayered animation state omits
+    // output history until inertial/rate use; targets retain that history even
+    // before the first inertial command, without changing legacy formats.
+    std::string save_target_state(std::uint64_t tick) const;
+    void load_target_state(const std::string& state,std::uint64_t tick);
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick,bool include_layers=false) const;
     std::optional<RuntimeAnimationLayerState> layer_state(const std::string& entity,std::uint32_t slot,std::uint64_t tick) const;
     // Owner boundary only, after sample has joined its jobs. Surviving rig

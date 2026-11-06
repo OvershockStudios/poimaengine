@@ -125,7 +125,7 @@ void procedural_pose_configuration(){
     check(policy["type"]=="string" && policy["enum"]==Json::array({"animated_only","grounded_animated_only"}) &&
         !policy.contains("const") && !policy.contains("default"),"Procedural-pose schema type/enum/default differs.");
     check(schema["required"]==Json::array({"initial_mode","joints","parts","root"}),"Procedural pose changed required legacy fields.");
-    check(schema["allOf"].size()==2 && schema["allOf"][1]["if"]["required"]==Json::array({"procedural_pose"}) &&
+    check(schema["allOf"].size()==3 && schema["allOf"][1]["if"]["required"]==Json::array({"procedural_pose"}) &&
         schema["allOf"][1]["then"]["required"]==Json::array({"controller_handoff"}) &&
         schema["allOf"][1]["then"]["properties"]["initial_mode"]["const"]=="animated","Procedural-pose schema dependencies differ from parser.");
 }
@@ -205,7 +205,7 @@ void authoring_ownership(){
         refused(Json::array({create(4),component(4,"AnimationRig",external)}),"another root-motion writer");
     }
     check(bytes(package)==cooked,"Authoring validation modified immutable cooked package bytes.");
-    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==128,"Discovery schema revision is stale.");
+    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==129,"Discovery schema revision is stale.");
     if(Runtime::available()) {
         const auto session=id(7000);
         const auto success=[&](const Json& reply) {

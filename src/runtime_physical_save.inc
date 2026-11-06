@@ -29,6 +29,30 @@ bool save_physical_drive_definition(const RuntimeDefinition& definition) {
     for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
     return false;
 }
+bool save_physical_animation_definition(const RuntimeDefinition& definition) {
+    const auto enabled=[](const auto& entity){return entity.physical_rig&&entity.physical_rig->animation_drive.has_value();};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),enabled))return true;
+    for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
+    return false;
+}
+void save_physical_row_fields(const SaveJson& row,unsigned ownership,bool animation) {
+    std::set<std::string> names{"entity","membership","pose"};
+    if(ownership>=2)names.emplace("handoff");
+    if(ownership>=3)names.emplace("procedural_terminal");
+    if(ownership>=4)names.emplace("procedural_capture");
+    if(animation)names.emplace("animation");
+    require(row.is_object()&&row.size()==names.size(),"Physical saved row field count differs.");
+    for(const auto& name:names)require(row.contains(name),"Physical saved row is missing a required field.");
+}
+bool save_physical_animation_target(const physical_rig::Definition& profile,const std::string& name,
+    const physical_rig::Quat& stored,const physical_rig::Quat& requested) {
+    const auto joint=std::find_if(profile.joints.begin(),profile.joints.end(),[&](const auto& row){return row.name==name;});
+    require(joint!=profile.joints.end()&&joint->drive,"Saved animation target names an unavailable drive.");
+    const auto canonical=physical_rig::validate_target(*joint,requested);
+    // The backend preserves an exact committed readback instead of repeatedly
+    // normalizing it. Both cases are exact joins, not a floating-point window.
+    return stored==requested||stored==canonical;
+}
 unsigned save_physical_ownership_version(const RuntimeDefinition& definition) {
     return save_grounded_procedural_definition(definition)?4u:
         (save_procedural_pose_definition(definition)?3u:(save_controller_handoff_definition(definition)?2u:1u));
@@ -129,6 +153,7 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
     const bool handoffs=save_controller_handoff_definition(s.topology->live);
     const bool procedural=save_procedural_pose_definition(s.topology->live);
     const bool grounded=save_grounded_procedural_definition(s.topology->live);SaveJson rigs=SaveJson::array();
+    const bool animation=save_physical_animation_definition(s.topology->live);
     for(const auto& [id,row]:checkpoint.rigs) {
         SaveJson rig={{"entity",id},{"membership",physical_state_json::membership_json(row.membership)},
             {"pose",physical_state_json::pose_state_json(row.pose)}};
@@ -146,16 +171,29 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
             if(captures && row.membership.enrolled)
                 require(rig.at("procedural_capture").dump()==rig.at("procedural_terminal").dump(),"Passive grounded capture differs from its terminal.");
         }
+        if(animation) {
+            const auto& target=s.physical_owners.at(id)->animation;
+            require(bool(target)==row.animation.has_value(),"Physical animation save membership differs.");
+            require(!target||target->tick()==s.tick,"Physical animation save clock differs from the committed tick.");
+            if(target)target->validate_history(row.pose.previous.has_value());
+            rig["animation"]=target?SaveJson::parse(target->save()):SaveJson(nullptr);
+            if(target)for(const auto& joint:target->joints())if(joint.sample) {
+                const auto drive=std::find_if(row.membership.drives.begin(),row.membership.drives.end(),[&](const auto& d){return d.joint==joint.name;});
+                require(row.membership.enrolled&&drive!=row.membership.drives.end()&&
+                    save_physical_animation_target(s.physical_owners.at(id)->backend->definition(),joint.name,drive->target_rotation,joint.sample->target),
+                    "Physical animation target differs from its committed native control.");
+            }
+        }
         rigs.push_back(std::move(rig));
     }
-    return {{"version",std::uint32_t(save_physical_drive_definition(s.topology->live)?5:(grounded?4:(procedural?3:(handoffs?2:1))))},
+    return {{"version",std::uint32_t(animation?6:(save_physical_drive_definition(s.topology->live)?5:(grounded?4:(procedural?3:(handoffs?2:1)))))},
         {"bootstrap",physical_bootstrap_json::bootstrap_json(bootstrap,s.topology->live)},
         {"rigs",std::move(rigs)},{"constraint_order",physical_state_json::constraint_order_json(checkpoint.constraint_order)},
         {"owner",physical_bootstrap_json::owner_json(owner)},{"physics",std::move(physics)}};
 } catch(const std::invalid_argument& error) {throw std::runtime_error(std::string("Physical snapshot: ")+error.what());}
 void save_physical_extension_fields(const SaveJson& extension,const RuntimeDefinition& definition) {
     save_fields(extension,{"version","bootstrap","rigs","constraint_order","owner","physics"});
-    const auto expected=save_physical_drive_definition(definition)?5u:save_physical_ownership_version(definition);
+    const auto expected=save_physical_animation_definition(definition)?6u:(save_physical_drive_definition(definition)?5u:save_physical_ownership_version(definition));
     require(extension.at("version").is_number_unsigned() && extension.at("version")==expected,"Physical snapshot extension version differs from frozen ownership policy.");
     require(extension.at("rigs").is_array() && extension.at("rigs").size()<=RuntimeBodyIds::capacity,"Physical snapshot rig population exceeds its bound.");
 }
@@ -167,9 +205,7 @@ RuntimePhysicsBootstrap save_physical_parse_bootstrap(const SaveJson& extension,
         for(const auto& entity:definition.entities)if(entity.physical_rig)expected.emplace(entity.id,&entity);
         std::string previous;
         for(const auto& row:extension.at("rigs")) {
-            if(ownership==4u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal","procedural_capture"});
-            else if(ownership==3u)save_fields(row,{"entity","membership","pose","handoff","procedural_terminal"});
-            else save_fields(row,{"entity","membership","pose","handoff"});
+            save_physical_row_fields(row,ownership,save_physical_animation_definition(definition));
             const auto rig=save_text(row.at("entity"));
             require(previous.empty() || previous<rig,"Physical handoff bootstrap rows must be sorted and unique.");previous=rig;
             const auto found=expected.find(rig);require(found!=expected.end(),"Physical handoff bootstrap names an unknown rig.");
@@ -218,10 +254,7 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
     const auto& rigs=extension.at("rigs");require(rigs.size()==s.topology->physical_rigs.size(),"Saved physical rig membership differs from the complete restored graph.");
     std::string previous;std::set<std::pair<std::string,std::string>> expected_constraints;
     for(const auto& value:rigs) {
-        if(ownership==4u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal","procedural_capture"});
-        else if(ownership==3u)save_fields(value,{"entity","membership","pose","handoff","procedural_terminal"});
-        else if(ownership==2u)save_fields(value,{"entity","membership","pose","handoff"});
-        else save_fields(value,{"entity","membership","pose"});
+        save_physical_row_fields(value,ownership,save_physical_animation_definition(s.topology->live));
         const auto id=save_text(value.at("entity"));
         require(previous.empty() || previous<id,"Physical save owners must be sorted and unique.");previous=id;
         const auto found=s.physical_owners.find(id);require(found!=s.physical_owners.end(),"Physical save names an absent owner.");const auto& owner=*found->second;
@@ -232,6 +265,20 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
         require(row.membership.poses.size()==profile.parts.size() && row.membership.warm_starts.size()==profile.joints.size(),"Physical save part/joint membership differs from its frozen profile.");
         require((row.membership.mode!=RuntimePhysicalRigMode::Animated)==row.membership.enrolled,"Physical save mode and enrollment differ.");
         const auto& configured=*s.topology->definitions.at(id).physical_rig;
+        if(save_physical_animation_definition(s.topology->live)) {
+            require(value.at("animation").is_null()==!bool(owner.animation),"Physical animation save differs from authored opt-in.");
+            if(owner.animation) {
+                auto target=*owner.animation;target.load(value.at("animation").dump(),tick);
+                target.validate_history(row.pose.previous.has_value());
+                for(const auto& joint:target.joints())if(joint.sample) {
+                    const auto drive=std::find_if(row.membership.drives.begin(),row.membership.drives.end(),[&](const auto& d){return d.joint==joint.name;});
+                    require(row.membership.enrolled&&drive!=row.membership.drives.end()&&
+                        save_physical_animation_target(profile,joint.name,drive->target_rotation,joint.sample->target),
+                        "Saved animation target differs from its physical control.");
+                }
+                row.animation=target.checkpoint();
+            }
+        }
         if(configured.controller_handoff) {
             const auto found=bootstrap.handoffs.find(id);require(found!=bootstrap.handoffs.end(),"Physical handoff saved owner is missing.");
             row.handoff=found->second;

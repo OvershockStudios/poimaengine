@@ -66,6 +66,10 @@ struct ControllerHandoff {
 // Opt-in final procedural pose ownership while Animated. Manual-only and
 // grounded ownership retain separate admission/serialization boundaries.
 enum class ProceduralPosePolicy { AnimatedOnly, GroundedAnimatedOnly };
+// Explicit policy for targets sampled by the independent animation player.
+// Manual joint targets keep their existing strict hard-limit admission.
+enum class TargetLimitPolicy { Strict, Fit };
+struct AnimationDrive { TargetLimitPolicy limit_policy=TargetLimitPolicy::Strict; };
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;
@@ -76,6 +80,10 @@ struct Configuration {
     double max_scale_deviation=0;
     std::optional<ControllerHandoff> controller_handoff;
     std::optional<ProceduralPosePolicy> procedural_pose;
+    // Authorizes a separate target player using the same frozen model and
+    // initial base/layers. It does not select animation as any joint's source
+    // or transfer pose ownership; those are explicit runtime controls.
+    std::optional<AnimationDrive> animation_drive;
 };
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;

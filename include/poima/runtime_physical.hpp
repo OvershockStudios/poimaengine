@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/physical_rig.hpp"
+#include "poima/physical_target.hpp"
+#include "poima/runtime_animation_controls.hpp"
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -8,6 +10,24 @@
 
 namespace poima {
 enum class PhysicalRigMode { Animated, Passive, Driven };
+enum class PhysicalRigDriveSource { Manual, Animation };
+struct PhysicalRigDriveSourceCommand {
+    std::string joint;
+    PhysicalRigDriveSource source=PhysicalRigDriveSource::Manual;
+    double strength=0;
+};
+struct PhysicalRigAnimationJointObservation {
+    std::string name;
+    PhysicalRigDriveSource source=PhysicalRigDriveSource::Manual;
+    std::optional<physical_rig::TargetFit> sample;
+};
+struct PhysicalRigAnimationObservation {
+    std::string entity;
+    std::uint64_t sampled_tick=0;
+    physical_rig::TargetLimitPolicy limit_policy=physical_rig::TargetLimitPolicy::Strict;
+    RuntimeAnimationState playback;
+    std::vector<PhysicalRigAnimationJointObservation> joints;
+};
 struct PhysicalRigDriveCommand {
     std::string joint;
     physical_rig::Quat target_rotation{0,0,0,1};
@@ -30,6 +50,11 @@ struct PhysicalRigCommand {
     bool activate=false;
     std::optional<PhysicalRigImpulse> impulse;
     std::optional<PhysicalRigDriveCommand> drive;
+    std::optional<PhysicalRigDriveSourceCommand> drive_source;
+    // Explicit target-only playback; never changes the visible/source rig's
+    // original animation clock or its captured physical takeover terminal.
+    std::optional<AnimationCommand> animation;
+    std::optional<AnimationRateCommand> animation_rate;
 };
 struct PhysicalRigPartObservation {
     std::string name,node_entity;
