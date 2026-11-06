@@ -521,6 +521,7 @@ static unsafe partial class Program
             PhysicalRigContract(output,state,good,checks);
             PhysicalDriveContract(output,state,good,checks);
             PhysicalAnimationContract(output,state,good,checks);
+            PhysicalRecoveryContract(output,state,good,checks);
             CameraFovTransitionContract(checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),

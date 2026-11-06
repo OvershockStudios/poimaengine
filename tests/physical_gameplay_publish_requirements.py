@@ -48,4 +48,15 @@ class PhysicalRequirements(unittest.TestCase):
             with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(drive,features=features))
         combined=dict(drive,features=drive['features']+['capsule_cast_v1'])
         self.assertEqual(self.read(combined),combined)
+    def test_recovery_independent_permission_and_unions(self):
+        recovery=dict(self.baseline,services_bytes=512,features=['baseline_v7','physical_recovery_v1','physical_rig_v1'])
+        self.assertEqual(self.read(recovery),recovery)
+        for extent in [176,424,448,496,504,511,513,512.0,True]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(recovery,services_bytes=extent))
+        for names in [['baseline_v7','physical_recovery_v1'],['baseline_v7','physical_rig_v1'],recovery['features']+['physical_recovery_v1']]:
+            with self.subTest(names=names),self.assertRaises(ValueError):self.read(dict(recovery,features=names))
+        for added in [['physical_rig_drive_v1'],['physical_rig_drive_v1','physical_rig_animation_v1'],['camera_pose_v1']]:
+            value=dict(recovery,features=recovery['features']+added)
+            self.assertEqual(self.read(value),value)
+        with self.assertRaises(ValueError):self.read(dict(recovery,features=recovery['features']+['physical_rig_animation_v1']))
 if __name__=='__main__':unittest.main()
