@@ -5,6 +5,68 @@ Adventurers 1.0 Knight**, by **Kay Lousberg**, licensed **CC0-1.0**. The example
 contains a metric physics profile and original code; supply the artwork and its
 original license separately.
 
+## Play the sample
+
+The compiled C# sample puts these systems into a first-person test yard. Move
+and aim independently of the Knight, switch its original Idle/Running_A clips,
+and fire a native camera ray. The returned hit region selects the physical body
+that receives the impulse. A lethal hit transfers the current character pose to
+passive physics. Save/Load preserves either state; Retry restores the separate
+checkpoint created by Begin.
+
+Prepare with a simulation-enabled CLI and the original files listed below:
+
+```sh
+python examples/physical-character-yard/prepare.py \
+  --binary /path/to/poima --source /path/to/Knight.glb \
+  --license /path/to/LICENSE.txt --output build/physical-character-project
+dotnet build examples/physical-character-yard/Poima.PhysicalCharacterGame.csproj \
+  -c Release --artifacts-path build/physical-character-managed
+```
+
+Use a fresh project output. Preparation imports the complete library, binds
+fifteen named hit regions to the observed original bones, and writes a project,
+input profile and source-provenance receipt. It does not download artwork.
+The game builds against the checkout's gameplay SDK by default; set
+`PoimaGameplayAssembly` to an existing matching SDK DLL to use binary references.
+
+On Windows, use **native Windows Python**, the Vulkan `poima.exe`, and matching
+[CoreCLR authoring artifacts](../../docs/AUTHORING_TOOLS.md). For example, in
+PowerShell with `$poima`, `$hostfxr` and `$bridge` pointing to those files:
+
+```powershell
+python examples/physical-character-yard/run.py `
+  --binary $poima --project build/physical-character-project/project.json `
+  --assembly build/physical-character-managed/bin/Poima.PhysicalCharacterGame/release/Poima.PhysicalCharacterGame.dll `
+  --hostfxr $hostfxr --bridge $bridge --output build/physical-character-play
+```
+
+The launcher owns one shared service and its interactive player. Begin enters
+play; WASD moves, mouse aims, Space jumps and left click fires. Tab releases the
+cursor for the controls. Menu blocks gameplay pointer input; Resume continues.
+Loading a checkpoint opens paused, so choose Resume afterward. Each launch has
+its own save folder under its fresh output directory. Closing the window closes
+the owned service. `--trace` optionally records bounded diagnostic RPC logs.
+
+`Health`, `Damage`, `ShotImpulse`, `Range`, `PatrolExtent` and `RunInput` are typed,
+inspectable gameplay tuning. All 61 mutable gameplay fields are serialized.
+Native input owns the player's movement; C# owns only the target's patrol.
+Shots run before target motor/animation edits to keep physical ownership
+unambiguous. Named hit regions are authored query proxies, not exact skinned
+mesh collision. Retry restores a checkpoint; it is not a get-up animation or
+active balance system.
+
+The public [gameplay check](../../tests/physical_character_gameplay_contract.py)
+exercises ordinary controls, actual camera hits, zero/positive impulse response,
+rejected-command rollback and complete warm/cold saves on Windows and Linux.
+The separate [Windows player check](../../tests/physical_character_player_contract.py)
+uses elapsed-time background play, native logical input and Vulkan captures.
+Neither substitutes for physical mouse/controller testing or motion-quality
+review. Run these checks under an external process-tree supervisor with fresh
+output directories; both provide their input selectors through `--help`.
+
+## Physical profile
+
 The profile maps fifteen named bodies and fourteen joints to original model
 nodes. Its total authored mass is 72 kg. The complete original library remains
 intact: 57 nodes, 41 skin joints, 76 animation takes, 7,024 source vertices and
