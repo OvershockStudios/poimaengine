@@ -96,6 +96,16 @@ separately. An animated capture must instead match the complete current
 animation context, current native actor wrapper and live support bindings.
 Other live feet keep their ordinary current-tick and current-support checks.
 
+The reader decodes and validates every original state and pose before
+publication. For grounded captures, a small, typed allowance covers only
+specified recomputed pose/diagnostic values; complete input, control, query and
+ownership checks remain exact. Admitted values are retained, including an
+immediate re-save and rollback after a rejected operation. The host's validation
+solve does not replace the original capture. See
+[grounded save compatibility](GAMEPLAY_SAVES.md#grounded-save-compatibility)
+for the numeric limits and restore-tick/source-history rules. Locally recorded
+captures and manual terminal version 1 keep exact replay validation.
+
 Surviving historical supports must retain the same native ID and eligible
 motion kind. Retired supports are checked against original/allocated entity
 identities and the used native body-generation ledger. An ID currently owned
@@ -123,8 +133,8 @@ shipping platform require their own qualification.
 With a configured simulation-enabled build and `POIMA_ENABLE_NATIVE_GAMEPLAY=ON`:
 
 ```sh
-cmake --build build/linux-game --target poima-runtime-physical-grounded-test poima-physical-controller-handoff-json-test --parallel 2
-POIMA_JOB_WORKERS=2 ctest --test-dir build/linux-game -R '^(runtime_physical_grounded|physical_controller_handoff_json_native)$' --output-on-failure --parallel 1
+cmake --build build/linux-game --target poima-runtime-physical-grounded-test poima-runtime-physical-ik-test poima-procedural-replay-numeric-test poima-physical-controller-handoff-json-test poima-physical-grounded-gameplay-fixture poima-physical-ik-gameplay-fixture --parallel 2
+POIMA_JOB_WORKERS=2 ctest --test-dir build/linux-game -R '^(runtime_physical_grounded|runtime_physical_ik|procedural_replay_numeric|physical_controller_handoff_json_native)$' --output-on-failure --parallel 1
 ```
 
 CTest passes the actual compiled C++ fixture library to the runtime test.
@@ -146,6 +156,36 @@ pairs. Seven noncontact scenarios cover disabled and zero-weight requests,
 lifted feet, actual misses, correction and slope rejection, and lost support.
 Original foreign-owner and raw-normal acceptance failures remain retained;
 the corresponding unchanged assertions pass after the fixes.
+
+The [0.0.230 restore checks](evidence/m2-grounded-save-portability.json) add
+complete typed-codec corruption cases and adjacent-double preservation tests.
+The latter deliberately construct three small rounding changes and check full
+state after load, a rejected multi-tick step, a rejected structural edit and
+reopening. These are synthetic regression witnesses, separate from actual
+cross-platform saves. Earlier grounded and manual-IK assertions remain intact.
+
+To check an actual platform-produced character save, retain the successful
+output of [the original-character workflow](#original-knight-workflow).
+Copy its complete consumer directory, including `evidence.json`, `primary/`,
+world assets and save slots, to the destination without editing their bytes.
+Run the [portability test](../tests/physical_grounded_save_portability.py) under
+an external process-tree supervisor with the destination CLI:
+
+```sh
+python3 -B tests/physical_grounded_save_portability.py \
+  --cli path/to/destination/poima \
+  --source-report path/to/copied-consumer/evidence.json \
+  --output build/grounded-save-portability
+```
+
+The output directory must be new. Windows uses its Python executable and
+destination `poima.exe`. The test maps recorded paths within the copied
+consumer directory without rewriting the report. It checks all sixteen source
+archives, immediate whole-snapshot preservation, atomic rejection and repeated
+destination-local continuation, plus five fresh-process states. Passing requires
+six naturally closed engine processes, ninety output archives and seventy-four
+complete byte comparisons. `report.json` retains failures and literal requests
+and responses. It builds nothing and opens no renderer or window.
 
 ## Compiled C# controls and fresh-process saves
 
@@ -209,11 +249,11 @@ This is imported-character integration coverage for the existing policy.
 Paused Idle and a small motor displacement do not establish gait fitting,
 active balance, fall animation quality or representative performance.
 
-The original Linux-to-Windows grounded restore rejects at exact generated-IK
+The original 0.0.229 Linux-to-Windows grounded restore rejected at exact generated-IK
 replay validation. Separately produced checkpoints contain orientation
-components differing by 1–4 floating-point ULP. Both within-platform workflows
-pass. Their results do not establish cross-platform save compatibility; see the
-[save-system boundary](GAMEPLAY_SAVES.md#grounded-save-compatibility).
+components differing by 1–4 floating-point ULP. Those within-platform passes
+remain separate from the [0.0.230 save-portability checks](evidence/m2-grounded-save-portability.json)
+and the [reader contract](GAMEPLAY_SAVES.md#grounded-save-compatibility).
 
 ## Depth reference and hardware capture
 

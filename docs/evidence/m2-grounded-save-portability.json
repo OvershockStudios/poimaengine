@@ -1,0 +1,528 @@
+{
+  "format": "poima.grounded-save-portability-evidence.v1",
+  "date": "2026-11-06",
+  "checkpoint": "0.0.230",
+  "native_runtime_version": "0.0.230",
+  "schema_revision": 127,
+  "gameplay_abi": {
+    "epoch": 7,
+    "services_bytes": 424
+  },
+  "saved_formats": {
+    "runtime_snapshot": 9,
+    "physical_extension": 4,
+    "grounded_terminal": 2,
+    "manual_terminal": 1
+  },
+  "passed": true,
+  "scope": "Preserve original grounded saves between the qualified Linux and Windows builds, with bounded recomputation validation and complete rollback.",
+  "source_identities": {
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 14669,
+      "sha256": "b64b5277a1df5a7d8a238b32354d619c8ff74ce6e121eddd8fbb0391baab058b"
+    },
+    "src/runtime.cpp": {
+      "bytes": 180649,
+      "sha256": "cc32dbe3bc0963339bdd4b5c80fdc90913bc2316f28e787f7fe0dba6ec648142"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 58043,
+      "sha256": "8a55436117c3e11e4cb7c67b44f59195f16efa54bf62a9c6931f9a3d5e863655"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 146338,
+      "sha256": "80ca14207ac8981f3944bf2443f58a11360cff7df93b9a43a4a0900a6206988c"
+    },
+    "src/runtime_animation_procedural.inc": {
+      "bytes": 26975,
+      "sha256": "ac9c2597c3838cbae7d5f0a8ed470ddab92875b5308ad73eccfc7554ac368f14"
+    },
+    "src/runtime_animation_procedural_codec.inc": {
+      "bytes": 9969,
+      "sha256": "eddccad600caf7259d1336bf0b7e8c4e5965a15708a4e69d5b423ed3d1c1ac55"
+    },
+    "src/runtime_animation_procedural_compare.inc": {
+      "bytes": 11425,
+      "sha256": "720eb9e1c843d832e7d00b05e53f44539eaff658c1caf10eb25596593e2079b6"
+    },
+    "tests/procedural_replay_numeric.cpp": {
+      "bytes": 13889,
+      "sha256": "c91cd04c14f9181130a5e25d7c8ed926f0f9502c94102e741f4e1f2a8a00cfb9"
+    },
+    "tests/physical_grounded_pose_tests.cpp": {
+      "bytes": 63154,
+      "sha256": "871a1b20e1dcf53dd9218fc01a6d57d758275797d489f349807e9fdd8e035d42"
+    },
+    "tests/physical_grounded_save_portability.py": {
+      "bytes": 18659,
+      "sha256": "ac3b100cfd55bb7732086d7f5b43905252a4bcb40a509bb0a99cab4db6a6f07f"
+    }
+  },
+  "reader_policy": {
+    "original_saved_values_retained": true,
+    "scope": "Grounded terminal v2 reader and explicit restored passive rig/node/handoff presentation ownership; manual terminal v1 remains exact.",
+    "formula": "min(category_ceiling, 128 * 2^-52 * max(1, abs(stored), abs(replay)))",
+    "linear_ceiling_m": 1e-08,
+    "angular_or_dimensionless_ceiling": 1e-12,
+    "guaranteed_universal_math_error_bound": false,
+    "allowed_recomputed_fields": [
+      "Generated end-orientation quaternion components only in the generated-control comparison.",
+      "Explicit terminal endpoint/orientation/sole/error/metric diagnostic leaves.",
+      "Terminal and restored passive presentation positions/rotations; terminal scale remains exact.",
+      "Resampled passive source-history poses at the restore tick and next tick only."
+    ],
+    "exact_fields": [
+      "JSON scalar/container types, complete field membership, lengths, node order and nullability.",
+      "Original commands, targets, poles, weights, requested grounding controls, statuses, counters and clock configuration.",
+      "Literal query rays/replies, native hits, anchors, body generations, support identities, ownership, physics state and physical history."
+    ],
+    "negative_error": "First mismatched path, category, bound, original/replayed values and absolute error when finite.",
+    "normalization_or_original_archive_rewrite": false
+  },
+  "native_regression": {
+    "linux": {
+      "passed": true,
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-final-2/report.json",
+        "bytes": 185692,
+        "sha256": "9f29e5a6bcccd3a0990573b7b5c12edd5ac7f038d16f0e21228be929a2dfac7b"
+      },
+      "full_ctest_log": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-final-2/ctest-full.log",
+        "bytes": 158489,
+        "sha256": "07bd1b4367537084649acdd9042a3687b9ecb4fc2f082f0ace8617b6cb5f0493"
+      },
+      "ctest_passed": 53,
+      "ctest_failed": 0,
+      "ctest_skipped": 0,
+      "nested_optional_skip": "Existing original Kenney-source animation_rotation_retarget_protocol case: original asset directory not supplied.",
+      "grounded_checks": 8534,
+      "manual_ik_checks": 3861,
+      "grounded": {
+        "manifest": {
+          "path": "build/physical-grounded-pose-0.0.230/linux-final-2/test-artifacts/physical-grounded/native-archives-manifest.json",
+          "bytes": 171256,
+          "sha256": "cb8d91a972d18967ac253ca71549a022ca1ef1d7d317d1b0099d8e40e3aa1ca6"
+        },
+        "files": 416,
+        "whole_pairs": 134,
+        "raw_bytes": 19017012,
+        "roles": {
+          "source": 77,
+          "warm": 134,
+          "cold": 134,
+          "negative": 68,
+          "synthetic-rounding-witness": 3
+        }
+      },
+      "manual_ik": {
+        "manifest": {
+          "path": "build/physical-grounded-pose-0.0.230/linux-final-2/test-artifacts/native-archives-manifest.json",
+          "bytes": 97097,
+          "sha256": "7f40c2d4a4e95b9cbe4ac044a46d39a4f93182d192fe53a85756b4d76f91fbc8"
+        },
+        "files": 192,
+        "whole_pairs": 93,
+        "raw_bytes": 3594980,
+        "roles": {
+          "warm": 93,
+          "cold": 93,
+          "recipient": 2,
+          "donor": 2,
+          "grafted": 2
+        }
+      },
+      "natural_closure": true
+    },
+    "windows": {
+      "passed": true,
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/windows-cpu-1/report.json",
+        "bytes": 90929,
+        "sha256": "ccf634b07ecd3ccbc8ed28849521efdea299b813eacffa79693dfb5a11a68968"
+      },
+      "worker": {
+        "path": "build/physical-grounded-pose-0.0.230/windows-cpu-1/worker.json",
+        "bytes": 18357,
+        "sha256": "3cc824cc176da78ad6af5f677af499aa7c5c42c0dff898bf3ea835c5fb2d70f0"
+      },
+      "native_executables": [
+        {
+          "name": "native-procedural-replay-numeric",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-animation-save",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-grounding",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-grounding-control",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-foot-planting",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-two-bone-ik",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-physical-ik",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-physical-grounded",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-controller-handoff",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-controller-handoff-state",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-controller-handoff-motion",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-physical-follow",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-physics-state",
+          "exit_code": 0
+        },
+        {
+          "name": "native-runtime-save",
+          "exit_code": 0
+        }
+      ],
+      "grounded_checks": 8534,
+      "manual_ik_checks": 3861,
+      "grounded": {
+        "manifest": {
+          "path": "build/physical-grounded-pose-0.0.230/windows-cpu-1/test-artifacts/physical-grounded/native-archives-manifest.json",
+          "bytes": 171256,
+          "sha256": "f8b21c22b0bd430f6740c15ecb96c40e2f8b31186c8a04c0cf4c661b82e57ca3"
+        },
+        "files": 416,
+        "whole_pairs": 134,
+        "raw_bytes": 19003050,
+        "roles": {
+          "source": 77,
+          "warm": 134,
+          "cold": 134,
+          "negative": 68,
+          "synthetic-rounding-witness": 3
+        }
+      },
+      "manual_ik": {
+        "manifest": {
+          "path": "build/physical-grounded-pose-0.0.230/windows-cpu-1/test-artifacts/native-archives-manifest.json",
+          "bytes": 97097,
+          "sha256": "cafe73a291f0355c462477c0c2c19b7d70afe07fbc4e3c060f4f68bfce3fd941"
+        },
+        "files": 192,
+        "whole_pairs": 93,
+        "raw_bytes": 3595406,
+        "roles": {
+          "warm": 93,
+          "cold": 93,
+          "recipient": 2,
+          "donor": 2,
+          "grafted": 2
+        }
+      },
+      "natural_closure": true,
+      "job_total_processes": 22,
+      "job_active_after_closure": 0,
+      "job_terminated_processes": 0
+    }
+  },
+  "added_negative_and_rollback_coverage": {
+    "codec_mutations": 56,
+    "codec_sources": "28 mutations of each active and passive terminal; original twelve corruption tests unchanged.",
+    "synthetic_rounding_inputs": 3,
+    "synthetic_scope": "Adjacent binary64 presentation coordinates on actor, rig wrapper and mapped pelvis; load/save, late batched simulation failure, structural failure and reopen. These are synthetic regression controls, not cross-platform observations.",
+    "unchanged_guards": [
+      "Coherent foreign native-owner graft rejection before and after support retirement.",
+      "Exact raw native hit normal, including a one-ULP non-float32 mutation.",
+      "Unchanged manual-IK source and all prior grounded test assertions."
+    ]
+  },
+  "cross_platform": [
+    {
+      "destination": "Linux",
+      "source": "Original Windows 0.0.229 character cohort; runtime 0.0.228",
+      "passed": true,
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-from-windows-final-2/probe/report.json",
+        "bytes": 478077,
+        "sha256": "824258ae193601a98775313bc18898c9ea92ee7cb1d428ebc16f777a3c1cc314"
+      },
+      "runtime_image": {
+        "bytes": 39194232,
+        "sha256": "f74b08261fb05b50d0744fb497d95094cfe966605a4c1e6dc47347c92715a3c6"
+      },
+      "literal_rpc": 260,
+      "methods": {
+        "save.configure": 6,
+        "save.load": 37,
+        "save.write": 90,
+        "runtime.step": 65,
+        "runtime.inspect": 31,
+        "runtime.gameplay.inspect": 31
+      },
+      "expected_rejected_steps": 16,
+      "original_slots": 16,
+      "distinct_original_ticks": [
+        2,
+        4,
+        5,
+        9,
+        15
+      ],
+      "fresh_continuations": 5,
+      "natural_cli_processes": 6,
+      "output_archives": 90,
+      "complete_byte_and_typed_pairs": 74,
+      "comparison_scope": "Original source vs immediate load/save; rejected-edit atomicity; repeated warm and fresh-process future continuation within the destination platform. No excluded state fields.",
+      "cross_platform_future_bit_identity": false
+    },
+    {
+      "destination": "Windows",
+      "source": "Original Linux 0.0.229 character cohort; runtime 0.0.228",
+      "passed": true,
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/windows-cpu-1/cross-restore/report.json",
+        "bytes": 490431,
+        "sha256": "b1ff216dc7f2d91cbf8fc4a7e87ffaf4ea24d2973119b6b65f6f2387005d1030"
+      },
+      "runtime_image": {
+        "bytes": 28568064,
+        "sha256": "6c44d6127bf6b0ca09c0430a79c2bcde3732d7ddb192ff62ffcf0ac4e03cdd9b"
+      },
+      "literal_rpc": 260,
+      "methods": {
+        "save.configure": 6,
+        "save.load": 37,
+        "save.write": 90,
+        "runtime.step": 65,
+        "runtime.inspect": 31,
+        "runtime.gameplay.inspect": 31
+      },
+      "expected_rejected_steps": 16,
+      "original_slots": 16,
+      "distinct_original_ticks": [
+        2,
+        4,
+        5,
+        9,
+        15
+      ],
+      "fresh_continuations": 5,
+      "natural_cli_processes": 6,
+      "output_archives": 90,
+      "complete_byte_and_typed_pairs": 74,
+      "comparison_scope": "Original source vs immediate load/save; rejected-edit atomicity; repeated warm and fresh-process future continuation within the destination platform. No excluded state fields.",
+      "cross_platform_future_bit_identity": false
+    }
+  ],
+  "original_content": {
+    "evidence": "docs/evidence/m2-character-grounded-handoff.json",
+    "author": "Kay Lousberg",
+    "pack": "KayKit Adventurers 1.0",
+    "license": "CC0-1.0",
+    "model": "Knight.glb",
+    "source_modified": false,
+    "nodes": 57,
+    "physical_bodies": 15,
+    "physical_joints": 14
+  },
+  "retained_failures": [
+    {
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-from-windows-diagnostic-1/probe/report.json",
+        "bytes": 18011,
+        "sha256": "c70aa1eba0eae4b5641abadfb477f3667a81c4b8624b1f67015552252abe4b58"
+      },
+      "passed": false,
+      "finding": "Strict diagnostic reproduction: actual generated quaternion differs by two binary64 ULP; no load accepted."
+    },
+    {
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-from-windows-candidate-1/probe/report.json",
+        "bytes": 304003,
+        "sha256": "2613153147c9272d241ae706dd5396b1bc0118ba948343f0f50ef2e392a5d8dc"
+      },
+      "passed": false,
+      "finding": "First candidate admitted all16 slots, but complete passive archives differed in original presentation locals."
+    },
+    {
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/linux-from-windows-final-1/probe/report.json",
+        "bytes": 348083,
+        "sha256": "b57ac82adb4094d1a9ebeda40ae68d9a5cff3e4df7385c22162b880ff9bdf856"
+      },
+      "passed": false,
+      "finding": "Immediate source archives matched; rejected-step rollback reconstructed presentation locals instead of preserving them."
+    },
+    {
+      "report": {
+        "path": "build/physical-grounded-pose-0.0.230/windows-render-linux229-1/render/evidence.json",
+        "bytes": 174743,
+        "sha256": "c3ed6df13100b45fb1311c953d044ad0e509ffb8a9d7a609eaaef030437a4d42"
+      },
+      "owner_report": {
+        "path": "build/physical-grounded-pose-0.0.230/windows-render-linux229-1/report.json",
+        "bytes": 3671,
+        "sha256": "4c134eed8096c4ebc70b3928c2b45816b84fb4bc4c2ba6f520e65ea098d637aa"
+      },
+      "passed": false,
+      "finding": "Cross-platform render preflight stopped at exact original physical diagnostic equality after all62 original frame/local joins. No capture or save was produced by this attempt.",
+      "literal_rpc": 65,
+      "captures": 0,
+      "output_saves": 0,
+      "derived_float_differences": 86,
+      "diagnostic_difference_groups": {
+        "joints/relative_rotation": {
+          "count": 40,
+          "max_absolute_difference": 2.7755575615628914e-16,
+          "max_ULP": 70368744177666
+        },
+        "joints/swing_z_angle": {
+          "count": 2,
+          "max_absolute_difference": 4.440892098500626e-16,
+          "max_ULP": 70368744177664
+        },
+        "joints/twist_angle": {
+          "count": 1,
+          "max_absolute_difference": 1.1102230246251565e-16,
+          "max_ULP": 70368744177664
+        },
+        "joints/evaluated_passive_child_torque": {
+          "count": 35,
+          "max_absolute_difference": 5.200573305330636e-11,
+          "max_ULP": 22309116
+        },
+        "joints/swing_y_angle": {
+          "count": 1,
+          "max_absolute_difference": 9.71445146547012e-17,
+          "max_ULP": 481036337152
+        },
+        "parts/rotation": {
+          "count": 7,
+          "max_absolute_difference": 1.1102230246251565e-16,
+          "max_ULP": 1
+        }
+      },
+      "cause_scope": "Native part rotations are normalized on read; joint rotations/angles and instantaneous torques are recomputed. Platform math differences are an identified hazard, not instruction-level attribution. PHYSICAL_RIGS.md already distinguishes these diagnostic values from exact checkpoint representation.",
+      "separate_complete_save_evidence": "windows-cpu-1/cross-restore/report.json",
+      "failed_assertions_removed": false,
+      "natural_closure": true
+    }
+  ],
+  "diagnosis": {
+    "observed_path": "/0/end_orientation/rotation/2",
+    "original": -0.1561007519575003,
+    "replayed": -0.15610075195750026,
+    "absolute_error": 5.551115123125783e-17,
+    "binary64_ulps": 2,
+    "toolchain_difference": "Linux GCC/libstdc++ and Windows Clang/libc++ use different three-argument hypot paths. This is an identified numerical hazard, not instruction-level attribution of the complete replay difference.",
+    "prior_failed_render": "docs/evidence/m2-character-grounded-handoff.json"
+  },
+  "limits": [
+    "Qualification covers the retained original Knight cases and analytic native fixtures, not every supported asset or save.",
+    "Complete cross-platform physical diagnostic equality failed before rendering. The successful rendered cohort uses Windows-produced saves and does not close that stricter boundary.",
+    "Future simulation is compared within each destination platform, not between operating systems.",
+    "The selected reader budget is not a universal libm error guarantee; differences above it still reject.",
+    "No new C# CoreCLR/Native AOT workflow, physical input, normal-speed motion, active balance, gait or representative performance qualification.",
+    "Raw records retain original failures, inputs, responses, archives and process identities. Public evidence is a summary; ignored build artifacts are not included in the source repository."
+  ],
+  "windows_rendered_restore": {
+    "passed": true,
+    "scope": "Original Windows229 saves (runtime228 producer) restored and captured by Windows230. This is within-Windows qualification; all original diagnostic/capture assertions retained.",
+    "cross_platform_rendered_qualification": false,
+    "report": {
+      "path": "build/physical-grounded-pose-0.0.230/windows-render-windows229-1/report.json",
+      "bytes": 2363,
+      "sha256": "dbde65a43662e46299d2e7ffba87cda86aa5870c0975e9573531d130cee1c698"
+    },
+    "render_record": {
+      "path": "build/physical-grounded-pose-0.0.230/windows-render-windows229-1/render/evidence.json",
+      "bytes": 4354462,
+      "sha256": "41c34ad93243e3c9648bdc60ab6ca4127fe649bba605efbd26d413a72511103d"
+    },
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "api": "Vulkan",
+    "width": 640,
+    "height": 480,
+    "samples": 1,
+    "literal_rpc": 704,
+    "hardware_captures": 10,
+    "whole_bmp_pairs": 5,
+    "output_saves": 20,
+    "complete_archive_pairs": 20,
+    "archive_scope": "Ten original-source-to-before comparisons and ten complete before/after capture comparisons; no excluded fields.",
+    "depth_samples": 448,
+    "stale_palette_rejections": 128,
+    "maximum_depth_error": 6.29329144463675e-07,
+    "natural_cli_owners": 6,
+    "job_total_processes": 7,
+    "job_active_after_closure": 0,
+    "job_terminated_processes": 0,
+    "physical_input": false,
+    "focus_write": false,
+    "visual_review": {
+      "actual_pngs_inspected": 5,
+      "reviewer": "Assistant image inspection",
+      "image_identities": [
+        {
+          "bytes": 25886,
+          "sha256": "3960471a4d7c77f99ccfefb597c2eaae3e610fd825c3ccba54587508622e843c"
+        },
+        {
+          "bytes": 25947,
+          "sha256": "280203a9a992571b354a96d5a3823197815459197c78fb847fc5be85a9663ea9"
+        },
+        {
+          "bytes": 24668,
+          "sha256": "dd72238bf755141dcf8b41d0d241413970e4ffb332a82af93fb216e86d3803a4"
+        },
+        {
+          "bytes": 23339,
+          "sha256": "2ce70179969756c6fd10f146422a015852530eee115c6d0710fc776853a77118"
+        },
+        {
+          "bytes": 23119,
+          "sha256": "e84a1b9aca1a94731f1dd4786cdcbca3fea8b12427a304f0e779fc21f04b4840"
+        }
+      ],
+      "scope": "Assembled character and selected poses in still images; not normal-speed motion or graphical quality qualification."
+    }
+  },
+  "independent_artifact_review": {
+    "linux_native": {
+      "complete_files": 608,
+      "whole_byte_and_typed_pairs": 227
+    },
+    "windows_native": {
+      "complete_files": 608,
+      "whole_byte_and_typed_pairs": 227
+    },
+    "each_portability_direction": {
+      "original_inputs_unchanged": true,
+      "complete_files": 90,
+      "whole_byte_and_typed_pairs": 74,
+      "literal_rpc": 260
+    },
+    "scope": "Read-only artifact reviews; not additional native executions."
+  }
+}

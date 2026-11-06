@@ -137,11 +137,12 @@ after fresh-process restore. These 640×480 single-sample captures establish
 selected still-frame depth and replay agreement, without qualifying
 antialiasing, normal-speed motion or performance.
 
-Use saves from the capture platform. Linux-to-Windows grounded restore currently
-rejects exact generated-IK replay. Separately produced checkpoints contain
-orientation components differing by 1–4 floating-point ULP. The
-[save compatibility boundary](../../docs/GAMEPLAY_SAVES.md#grounded-save-compatibility)
-remains separate from the passing within-platform checks.
+The original Linux-to-Windows generated-IK restore failure is addressed by the
+0.0.230 [save reader](../../docs/GAMEPLAY_SAVES.md#grounded-save-compatibility).
+[Qualified transfers](../../docs/evidence/m2-grounded-save-portability.json)
+preserve the complete original saves in both directions. Recomputed physical
+diagnostics and future simulation are not guaranteed bit-identical across
+platforms; rendered qualification remains a separate scope.
 
 ## Native acceptance
 

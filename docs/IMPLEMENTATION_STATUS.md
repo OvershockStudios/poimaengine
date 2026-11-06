@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.229**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.230**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.230 fixes the [grounded save compatibility gap](GAMEPLAY_SAVES.md#grounded-save-compatibility).
+Restoration validates recomputed procedural diagnostics within narrowly defined
+numerical bounds and retains the original poses, diagnostics and history.
+Saved controls, native physics, support identities and ownership checks stay
+exact. Failed simulation and structural edits also retain the complete original
+presentation transforms after rollback. Save formats, schema 127 and gameplay
+epoch 7 with its 424-byte services prefix are unchanged.
+
+The [qualification record](evidence/m2-grounded-save-portability.json) passes
+53 selected Linux CTests and fourteen Windows native executables. On each
+platform the grounded fixture passes 8,534 checks, including 56 new malformed
+terminal cases and three explicitly synthetic rounding/rollback controls;
+the unchanged manual-IK fixture passes 3,861 checks. One existing optional
+nested Linux source-asset case was skipped. Original 0.0.229 saves restore in
+both directions between Windows and Linux: each run retains 260 literal RPCs,
+ninety complete output saves and 74 complete byte/typed-state comparisons across
+six naturally closed engine processes. Continuation comparisons run within the
+destination platform; future cross-platform bit identity is not qualified.
+The original failures remain recorded, including the rollback defect found by
+the first complete-state follow-up. These bounded character fixtures do not
+qualify arbitrary saves, motion quality or representative performance.
+
+Ten Windows Vulkan captures also preserve the complete original Windows saves,
+pass 448 independent depth samples and reproduce five complete images after
+fresh-process load. All five stills were visually inspected. A separate
+Linux-origin render preflight failed before capture at exact physical-diagnostic
+equality: 86 recomputed float leaves differ, while all original node/frame joins
+pass. The save-portability tests separately preserve that original archive
+exactly. This diagnostic comparison remains failed; the passing rendered cohort
+qualifies restoration within Windows, not cross-platform diagnostic bit identity.
 
 Version 0.0.229 [qualifies an original grounded character](evidence/m2-character-grounded-handoff.json).
 The unchanged CC0 Knight combines two planted feet, a small resolved controller
@@ -20,12 +51,11 @@ The five poses were visually inspected. These are 640×480 single-sample stills,
 not normal-speed motion, gait, active balance or performance qualification.
 The measured runtime is 0.0.228; schema 127 and the gameplay ABI remain unchanged.
 
-A Linux-produced grounded save was rejected by Windows's exact generated-IK
-replay validation. Independently observed orientation components differ by
-1–4 floating-point ULP. This is an open cross-platform save compatibility gap;
-the successful within-platform results do not resolve it. The first failed
-render run and the later cooked-vertex-count verifier failure remain recorded.
-See the [save compatibility boundary](GAMEPLAY_SAVES.md#grounded-save-compatibility).
+At that checkpoint, a Linux-produced grounded save was rejected by Windows's
+exact generated-IK replay validation. Independently observed orientation
+components differ by 1–4 floating-point ULP. That failure remains recorded,
+alongside the later cooked-vertex-count verifier failure; the 0.0.230 reader fix
+and separate cross-platform qualification are described above.
 
 Version 0.0.228 [qualifies grounded handoff on Windows and CoreCLR](evidence/m2-grounded-physical-handoff-windows.json).
 The Windows CPU cohort passes 52 native executables, four owned inertial-save

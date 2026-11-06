@@ -154,16 +154,60 @@ replaying ticks.
 
 ## Grounded save compatibility
 
-The [grounded character workflow](GROUNDED_PHYSICAL_HANDOFF.md) passes complete
-save continuation separately on Windows and Linux. A Linux-produced capture
-was rejected by Windows's exact replay validation of generated grounding IK.
-Separately produced checkpoints contain orientation components differing by
-1–4 floating-point ULP; the exact rejected replay delta was not logged.
+The 0.0.230 reader validates a saved
+[grounded character capture](GROUNDED_PHYSICAL_HANDOFF.md#complete-saves-and-restore)
+against a fresh solve while retaining its original typed poses, diagnostics and
+animation history. This addresses small differences in host floating-point
+arithmetic without replacing saved values with recomputed ones. Physical
+extension 4 and procedural-terminal version 2 keep their existing formats;
+content, gameplay-module and explicit save-upgrade requirements still apply.
 
-Use saves from the qualified platform and runtime build. This observed
-cross-platform compatibility gap remains open; within-platform results do not
-resolve it. Saved controls must not be edited to bypass validation. See the
-[recorded evidence](evidence/m2-character-grounded-handoff.json).
+Field sets, numeric types, node/slot order, nullability, IDs, ticks, statuses and
+flags remain exact. Stored controls and their duplicates must agree exactly;
+requested weights, query rays and replies, support bindings and planting anchors
+also remain exact.
+Terminal pose scales remain exact. Native bodies, constraints, body-ID lineage
+and physical history retain their existing validation; the reader does not
+adjust them to fit a pose.
+
+Only explicitly listed **recomputed** values receive a numeric allowance:
+generated end-orientation components; solved positions/rotations; derived sole,
+normal and error diagnostics; and source-history pose values at the restore
+boundary. Each finite scalar uses
+`min(ceiling, 128 × 2^-52 × max(1, abs(saved), abs(recomputed)))`:
+
+| Derived quantity | Absolute ceiling |
+| --- | --- |
+| Position and distance | `1e-8` engine units |
+| Quaternion components and angular errors | `1e-12` components or radians, respectively |
+| Normals, metric diagnostics and resampled history scales | `1e-12` |
+
+Existing quaternion, metric and hierarchy bounds apply independently. This is
+a reader-validation resolution, not a guarantee about every math library or
+character configuration. A different query, branch decision, owner or input
+still rejects. Replay mismatch errors identify the first field, stored and
+recomputed values, category and allowed error.
+
+At the loaded tick, synchronization preserves the admitted original values,
+including the passive rig's linked actor, wrapper and mapped-node presentation
+locals. Failed steps and structural edits restore that state through rollback.
+An animated rig records a new local capture on its next successful tick. A
+passive rig retains its historical terminal; its resampled source-history poses
+use bounded comparison only at the restore tick and the following tick, while
+the imported history passes through the two-sample buffer. Later history checks,
+locally recorded captures and manual-terminal version 1 retain exact replay
+comparison.
+
+The [0.0.230 qualification record](evidence/m2-grounded-save-portability.json)
+lists the actual source/destination builds and complete restore/continuation
+checks. Use those recorded combinations when transferring checkpoints. This
+does not promise bit-identical future simulation across operating systems.
+Recomputed [physical diagnostics](PHYSICAL_RIGS.md) also differ between the
+tested platforms: an exact diagnostic comparison stopped a separate render
+preflight before capture. That comparison remains failed, alongside passing
+complete-save comparisons and separately qualified Windows-origin rendering.
+The [original 0.0.229 Linux-to-Windows rejection](evidence/m2-character-grounded-handoff.json)
+remains a historical failure; it is not reclassified by the new reader.
 
 ## Limits
 
