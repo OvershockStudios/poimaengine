@@ -124,8 +124,10 @@ NativeAOT game. This is a bounded sample; active recovery and production motion
 quality remain part of the character work.
 Optional [joint drives](PHYSICAL_DRIVES.md) now provide capped orientation
 targets through native physics and compiled gameplay, including complete saved
-controls. This is a foundation for physical animation; live clip targets,
-whole-body balance and recovery remain part of this segment.
+controls. Independent [live clip targets](PHYSICAL_ANIMATION.md) now add
+base/layer playback, transitions and per-joint source selection with complete
+histories and explicit limit fitting. Whole-body balance, protective reactions
+and recovery remain part of this segment.
 The [playable drive example](../examples/physical-character-yard/README.md#joint-pose-controls)
 now exposes two authored poses, per-joint strengths, driven hit reactions and
 release, with actual CoreCLR/NativeAOT and rendered observations. It retains

@@ -1,0 +1,982 @@
+{
+  "format": "poima.evidence.physical-animation-targets.v1",
+  "date": "2026-11-06",
+  "source_checkpoint": "0.0.234",
+  "native_runtime": "0.0.234",
+  "world_schema": 129,
+  "scope": "Opt-in independent clip/layer players supply bounded joint-relative targets to existing physical drives. Native math, actual Windows/Linux CoreCLR, retained compiled consumers and inspected Windows Vulkan observations remain distinct qualification scopes.",
+  "gameplay_abi": {
+    "epoch": 7,
+    "services_bytes": 496,
+    "prior_prefix_bytes": 448,
+    "required_features": [
+      "baseline_v7",
+      "physical_rig_v1",
+      "physical_rig_drive_v1",
+      "physical_rig_animation_v1"
+    ],
+    "appended_offsets": {
+      "physical_rig_animation_get": 448,
+      "physical_rig_animation_layer_get": 456,
+      "physical_rig_animation_set": 464,
+      "physical_rig_animation_rate_set": 472,
+      "physical_rig_drive_source_get": 480,
+      "physical_rig_drive_source_set": 488
+    },
+    "source_state_bytes": 208,
+    "source_command_bytes": 56
+  },
+  "save_contract": {
+    "physical_extension_with_authored_animation_drive": 6,
+    "includes_dormant_templates": true,
+    "without_animation_drive": "Existing physical save extensions retain their own prerequisites and encodings.",
+    "retained_state": [
+      "independent base and layer clocks",
+      "full current and previous target histories",
+      "per-joint source and fitted sample",
+      "effective native target and strength",
+      "complete physical, source-animation and gameplay state"
+    ],
+    "comparison_scope": "Complete saved bytes and typed JSON; no excluded fields. Compatible reload changes are separately identified."
+  },
+  "controls": {
+    "authoring": {
+      "animation_drive": {
+        "limit_policy": "strict or fit"
+      }
+    },
+    "mutable": [
+      "independent base/layer playback",
+      "base/layer speed",
+      "joint source manual or animation",
+      "joint strength"
+    ],
+    "manual_source": "Retains the effective target until an explicit manual drive write changes it.",
+    "zero_strength": "Active torque is disabled; source selection, independent clock progression and physical ownership remain.",
+    "fitting": "Explicit joint-frame hinge projection, signed-twist clamp and bounded quaternion-chart swing-ellipse projection; no globally nearest-rotation claim. Singular chart and ambiguous twist-cut cases reject.",
+    "not_provided": [
+      "balance",
+      "locomotion forces",
+      "protective stepping",
+      "target-velocity feedforward",
+      "recovery to animation"
+    ]
+  },
+  "source_identities": {
+    "include/poima/gameplay_abi.h": {
+      "bytes": 63381,
+      "sha256": "5f90cdd0db2a8ed41d0bf43812d2b4b29d7325a781bed7d73cc848a380bc0cbd"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 31828,
+      "sha256": "fbb2586ee520962bf282456508c5743e3f85a23d39e3af2d36943f5a519bb232"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 9377,
+      "sha256": "18367231135e161a08b5d6a78f3a37936de6c0a356969a2b5023061a8dbcb07f"
+    },
+    "include/poima/physical_target.hpp": {
+      "bytes": 2316,
+      "sha256": "c73a13d1b851b1475ab78ae4365213c84c7dcb483de728228767eac25196c13a"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 16069,
+      "sha256": "6113dcea7ededded40dfd926a53295f4f147800b933b69fd388ac4f7da401477"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 4586,
+      "sha256": "ad252325cd1c80fe4888bae0982ce5cf7a56f78624ba61da3ab585d1441a6427"
+    },
+    "managed/Poima.Gameplay/PhysicalRigAnimation.cs": {
+      "bytes": 15344,
+      "sha256": "931132072c6cf0acf8223bab99dbdcecd8001c7335beb349ac0b274e213a5744"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 20251,
+      "sha256": "f421628f5a6160a25ab070aa19af142f3302a3de3b34f588f5cb53e47f54f0dc"
+    },
+    "src/physical_target.cpp": {
+      "bytes": 5714,
+      "sha256": "9e89b70bdf37855cac7c146119c43556d04629d0e8f79c832c4855ff80c3d450"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 154483,
+      "sha256": "81af18d374b7e4f1c9f5d7ee95c55ad0450bc80cb07a91c600c4b8dc39aef6b9"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 53590,
+      "sha256": "a79a2bac8f91fe9bfc9e61068ea0d1d725da3b1c54f86cf8db7a3f52e7f1d419"
+    },
+    "src/runtime_physical_animation.cpp": {
+      "bytes": 14189,
+      "sha256": "3be8b533b9d782ff5462af276aa0c5065007d1ed5e26945b9bfe500dae2113b2"
+    },
+    "src/runtime_physical_animation.hpp": {
+      "bytes": 2507,
+      "sha256": "42eb0332e07507b413532d7d39bb99a297e2ea946542469d4eff12e7521a1498"
+    },
+    "src/runtime_physical_animation_services.inc": {
+      "bytes": 13367,
+      "sha256": "412848015850a375f7b3767cdba6239d09a2141d7e633ef1433f562ebb8ca84f"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 27866,
+      "sha256": "2ef66b16ec5e98e3fb64d21ee43027981950e0a33eda0d249ba826dd7c6d72a1"
+    },
+    "src/world_physical.inc": {
+      "bytes": 14997,
+      "sha256": "6ae27704faa33305a477d17cab7b35675ddc04a8f24085de8c6b4642558ee9c7"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 149472,
+      "sha256": "14e6e5f5299e13ff882e95dbea3d976693f34e5bc8dcf65459509fb4bc79e260"
+    },
+    "tests/managed_physical_animation_gameplay/Game.cs": {
+      "bytes": 6804,
+      "sha256": "6e89e62c21b8ac0a4995e1f301580d43059e73727d59c3fe398d51885cccef92"
+    },
+    "tests/managed_service_abi/PhysicalRigAnimationExtension.cs": {
+      "bytes": 27603,
+      "sha256": "8fe0c8714ecfe5b5dc8a8c3aa7bf8e895de724a37fd217b4b975ad3c73c5b5b3"
+    },
+    "tests/physical_animation_gameplay.py": {
+      "bytes": 24168,
+      "sha256": "18aac9947d7ec220af5ba0228fc534b7db6db2ec7e8618b61978614954ad44f9"
+    },
+    "tests/physical_animation_json_native.cpp": {
+      "bytes": 9294,
+      "sha256": "d69abaaccaaed391284b52c402c163abf72468dfbbef81208e79580c1b4f41c6"
+    },
+    "tests/physical_animation_protocol.py": {
+      "bytes": 24280,
+      "sha256": "ac6dbe3561b2792c7ecc9b686e794ea1aa1026a5a06e9353cc02f5d49fc6cd23"
+    },
+    "tests/physical_target_native.cpp": {
+      "bytes": 16041,
+      "sha256": "8f5483f2c86a2d1aa822a9f0177734da5755a61b2332f752bc5f48ec20bec64c"
+    },
+    "tests/runtime_animation_target_native.cpp": {
+      "bytes": 25729,
+      "sha256": "570a01315d54eba0da286ad86883f55f7273c07c46aa27cc7b676901cfca6078"
+    },
+    "tests/runtime_descriptor_contract.py": {
+      "bytes": 13863,
+      "sha256": "6a6d7a7624fcd079dd385a1250d8935b93c6d4ab4a1d8fafb8b83d095c437323"
+    },
+    "tests/runtime_physical_animation_native.cpp": {
+      "bytes": 34538,
+      "sha256": "9517455cbfc2458b33a8fccfb6ec3b9d5b159c2baebba339ad6f89cb60db1357"
+    },
+    "tests/gameplay_player_preferences_native.cpp": {
+      "bytes": 16126,
+      "sha256": "9d2db2d3165aeb191164426294b9bab5bfddcd92de795512c2db0cd245fa280c"
+    }
+  },
+  "native_builds": {
+    "Linux": {
+      "build_subcommands_passed": true,
+      "core_and_selected_tests": {
+        "path": "build/physical-animation-0.0.234/linux-native-4/report.json",
+        "bytes": 198505,
+        "sha256": "6d5ad47b57e6acdd2e576c29f971de47820c0621721d027b846a10bd601398ab"
+      },
+      "policy_successor": {
+        "path": "build/physical-animation-0.0.234/linux-native-5/report.json",
+        "bytes": 12749,
+        "sha256": "33f40c64d0bc29c35e14121d848db61fc56fcc982a17e291e408a31c982fab3e"
+      },
+      "metadata_successor": {
+        "path": "build/physical-animation-0.0.234/linux-native-6/report.json",
+        "bytes": 12607,
+        "sha256": "8d8180180d6e1bdf87536fef97f0e5a225054adcb7f83265cac7c90ec36afd92"
+      },
+      "scope": "Original aggregate native4 remains failed because one compatibility fixture retained the previous availability expectation. Its isolated corrected successor and descriptor checks are separate."
+    },
+    "Windows": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-native-1/report.json",
+        "bytes": 236199,
+        "sha256": "aa67caeed0195a10a96245da669682a8a8b81c59d83bb0a10680d119078c84a0"
+      },
+      "wrapper": {
+        "path": "build/physical-animation-0.0.234/windows-native-1-wrapper.json",
+        "bytes": 2088,
+        "sha256": "8a30e7938e5cb5ede3adbb05ac03f86fff8d303d1b3c6a615e05235d81c058c3"
+      },
+      "products": {
+        "path": "build/physical-animation-0.0.234/windows-native-1-products.json",
+        "bytes": 7277,
+        "sha256": "823cef9864cbf787d3dfe96f090751a626d042ac581317910e4228ea66c03246"
+      },
+      "selected_product_images": 34,
+      "cache_generation": 70,
+      "native_image": {
+        "bytes": 28783104,
+        "sha256": "077fde17b46fa706712e11e15888cd746c0a22b02510ac4dcc87de00a73555e1"
+      },
+      "build_log": {
+        "path": "build/physical-animation-0.0.234/windows-native-1/build/stdout.txt",
+        "bytes": 29552,
+        "sha256": "16414e23cad38abc9dcf198d8d715235ab1656fc92eb1f4079d797837637e9dc"
+      },
+      "build_log_scope": {
+        "declared_ninja_action_total": 111,
+        "observed_numbered_action_lines": 110,
+        "first_observed_action": 1,
+        "last_observed_action": 110,
+        "configure_and_build_exit_codes": [
+          0,
+          0
+        ],
+        "note": "The original log ends at110/111. A missing111th action line is not inferred; successful command closure and retained product identities are separate evidence."
+      },
+      "natural_descendant_closure": true,
+      "forced_cleanup": false,
+      "isolated_preference_fixture": {
+        "passed": true,
+        "record": {
+          "path": "build/physical-animation-0.0.234/windows-preference-fixture-1/report.json",
+          "bytes": 12327,
+          "sha256": "0a49d2d857623c9aac4b3c1463f81b4d3271f22180c209ef072652c63a4e1bad"
+        },
+        "commands": [
+          "compile",
+          "link"
+        ],
+        "natural_descendant_closure": true,
+        "forced_cleanup": false,
+        "image": {
+          "path": "build/physical-animation-0.0.234/windows-preference-fixture-1/link/poima-gameplay-player-preferences-test.exe",
+          "bytes": 15567872,
+          "sha256": "7b1137a0c0ade7740b98e8bb83f52202e40913fbff9e7796c75a1e5436e42996"
+        },
+        "original_image": {
+          "bytes": 15567872,
+          "sha256": "89ba26eeb7d24bad51c39bb23b042085165aba598c07428d367bf977cb68c2f2"
+        },
+        "original_source_identity": {
+          "bytes": 16030,
+          "sha256": "edf642c0f9ecbb6645dc575aea0e735c73e27ca01e036315c1f8c29e5d1141ef"
+        },
+        "corrected_source_identity": {
+          "bytes": 16126,
+          "sha256": "9d2db2d3165aeb191164426294b9bab5bfddcd92de795512c2db0cd245fa280c"
+        },
+        "scope": "Only the stale current-host extent expectation changes to496; a separate frozen448 assertion remains. Exact existing compiler/link flags and19 existing archives are reused. The original failed test image and generation70 runtime remain unchanged."
+      }
+    }
+  },
+  "native_regression": {
+    "Linux": {
+      "original_record": {
+        "path": "build/physical-animation-0.0.234/linux-native-4/report.json",
+        "bytes": 198505,
+        "sha256": "6d5ad47b57e6acdd2e576c29f971de47820c0621721d027b846a10bd601398ab"
+      },
+      "original_suite": {
+        "path": "build/physical-animation-0.0.234/linux-native-4/ctest.xml",
+        "bytes": 9766,
+        "sha256": "ef6eb335e5c85973c1349315045511f410fe03ca0510a044448dd25446c096e7"
+      },
+      "original_passed": 19,
+      "original_failed": 1,
+      "corrected_policy_record": {
+        "path": "build/physical-animation-0.0.234/linux-native-5/report.json",
+        "bytes": 12749,
+        "sha256": "33f40c64d0bc29c35e14121d848db61fc56fcc982a17e291e408a31c982fab3e"
+      },
+      "corrected_policy_suite": {
+        "path": "build/physical-animation-0.0.234/linux-native-5/ctest.xml",
+        "bytes": 433,
+        "sha256": "9d6a0e67e6118ee7537bcb9a20700b670bdb6c925f71f55fb5e3da0682d41e0d"
+      },
+      "corrected_policy_passed": 1,
+      "scope": "Reuse unchanged passing cases; no claim of a single clean20/20 run.",
+      "new_fixtures": {
+        "target_math": {
+          "groups": 6,
+          "checks": 172,
+          "scope": "Pure joint-target arithmetic, no physical motion claim."
+        },
+        "authoring": {
+          "checks": 114,
+          "scope": "Profile admission and complete JSON round trips, no playback claim."
+        },
+        "native_abi": {
+          "groups": 5,
+          "scope": "Header/policy/bounded view checks, distinct from actual gameplay callbacks."
+        },
+        "detached_target_player": {
+          "groups": 6,
+          "checks": 825,
+          "in_memory_archive_operands": 109,
+          "in_memory_whole_pairs": 47,
+          "retained_archive_files": false,
+          "scope": "CTest invocation omitted --output; complete-state comparisons occurred in memory."
+        },
+        "runtime": {
+          "groups": 5,
+          "checks": 3016,
+          "complete_archive_files": 248,
+          "whole_archive_pairs": 103,
+          "manifest": {
+            "path": "build/physical-animation-0.0.234/linux-native-4/test-artifacts/physical-animation/manifest.json",
+            "bytes": 94246,
+            "sha256": "991ff1d555fda318c2b45f874ca0534f6882d206dece1274d071f140e8e0a876"
+          },
+          "roles": {
+            "source": 103,
+            "restored": 103,
+            "accepted-source": 10,
+            "negative": 32
+          }
+        }
+      }
+    },
+    "Windows": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/report.json",
+        "bytes": 126651,
+        "sha256": "5de84f6d294db987b229a65a6dc1fae9e05daba77796dc402fdc306fa28ddd00"
+      },
+      "worker": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/worker.json",
+        "bytes": 41666,
+        "sha256": "d068bb309436a1b90812a96f94d39ffe3a74fdc7bb14a61a72108f62cc868bd3"
+      },
+      "commands_passed": 34,
+      "native_tests_passed": 31,
+      "additional_commands": [
+        "managed synthetic ABI",
+        "CLI protocol",
+        "real CoreCLR gameplay"
+      ],
+      "natural_job_closure": true,
+      "forced_cleanup": false,
+      "job_processes": 41,
+      "native_archive_groups": [
+        {
+          "record": {
+            "path": "build/physical-animation-0.0.234/windows-cpu-2/test-artifacts/native-archives-manifest.json",
+            "bytes": 97097,
+            "sha256": "7f0978d786358620ae472ebd13330959ddac894362376d3c72e287be33721c6f"
+          },
+          "complete_files": 192,
+          "whole_byte_and_typed_state_pairs": 93
+        },
+        {
+          "record": {
+            "path": "build/physical-animation-0.0.234/windows-cpu-2/test-artifacts/physical-animation/manifest.json",
+            "bytes": 94246,
+            "sha256": "e484d95559982c5647a019b8a415dff71c38c0553fb699650c529d0df152aa6c"
+          },
+          "complete_files": 248,
+          "whole_byte_and_typed_state_pairs": 103
+        },
+        {
+          "record": {
+            "path": "build/physical-animation-0.0.234/windows-cpu-2/test-artifacts/physical-drive/manifest.json",
+            "bytes": 69438,
+            "sha256": "237ef65e9326fb87610427557236513ed4057175561c1ef717bdf3622d1b7697"
+          },
+          "complete_files": 183,
+          "whole_byte_and_typed_state_pairs": 85
+        },
+        {
+          "record": {
+            "path": "build/physical-animation-0.0.234/windows-cpu-2/test-artifacts/physical-grounded/native-archives-manifest.json",
+            "bytes": 171256,
+            "sha256": "91f6596a15bb42af04e7475b07d786e870c7fbdc8bf186020077a9d554868b99"
+          },
+          "complete_files": 416,
+          "whole_byte_and_typed_state_pairs": 134
+        }
+      ],
+      "new_fixtures": {
+        "target_math": {
+          "groups": 6,
+          "checks": 172,
+          "scope": "Pure joint-target arithmetic, no physical motion claim."
+        },
+        "authoring": {
+          "checks": 114,
+          "scope": "Profile admission and complete JSON round trips, no playback claim."
+        },
+        "native_abi": {
+          "groups": 5,
+          "scope": "Header/policy/bounded view checks, distinct from actual gameplay callbacks."
+        },
+        "detached_target_player": {
+          "groups": 6,
+          "checks": 825,
+          "in_memory_archive_operands": 109,
+          "in_memory_whole_pairs": 47,
+          "retained_archive_files": false,
+          "scope": "CTest invocation omitted --output; complete-state comparisons occurred in memory."
+        },
+        "runtime": {
+          "groups": 5,
+          "checks": 3016,
+          "complete_archive_files": 248,
+          "whole_archive_pairs": 103,
+          "manifest": {
+            "path": "build/physical-animation-0.0.234/windows-cpu-2/test-artifacts/physical-animation/manifest.json",
+            "bytes": 94246,
+            "sha256": "e484d95559982c5647a019b8a415dff71c38c0553fb699650c529d0df152aa6c"
+          },
+          "roles": {
+            "source": 103,
+            "restored": 103,
+            "accepted-source": 10,
+            "negative": 32
+          }
+        }
+      },
+      "scope": "One complete34-command successor. The original first CPU aggregate remains failed; only its stale preference fixture executable was replaced. Native test counts are separate from managed/protocol/gameplay consumers."
+    }
+  },
+  "runtime_descriptor": {
+    "record": {
+      "path": "build/physical-animation-0.0.234/linux-native-6/report.json",
+      "bytes": 12607,
+      "sha256": "8d8180180d6e1bdf87536fef97f0e5a225054adcb7f83265cac7c90ec36afd92"
+    },
+    "file_only_checks": 26,
+    "actual_services_bytes": 496,
+    "actual_feature_count_with_navigation": 23,
+    "scope": "Installed metadata agrees with canonical native availability; old256/400/424/448 descriptor rejection is distinct from old compiled-consumer compatibility."
+  },
+  "managed_build": {
+    "passed": true,
+    "sdk_bridge_and_wire": {
+      "path": "build/physical-animation-0.0.234/managed-1/report.json",
+      "bytes": 15392,
+      "sha256": "216e256cf11e5329ad32b225e71ed955c5191a8ee7d53faa69a4a97e6e1c59c4"
+    },
+    "consumer_compile": {
+      "path": "build/physical-animation-0.0.234/managed-consumer-1/report.json",
+      "bytes": 5733,
+      "sha256": "320484ff9ee9e592dfd6aa14b9e8f4da7b17dd739a83693a9d5d41203bb635d3"
+    }
+  },
+  "managed_wire": {
+    "Linux": {
+      "passed": true,
+      "checks": 108,
+      "record": {
+        "path": "build/physical-animation-0.0.234/managed-1/managed-service-abi.json",
+        "bytes": 11981,
+        "sha256": "2d672f751339d9f974a110af91999ec0873f0c4fa9916012e391fa704938d7af"
+      },
+      "new_callback_negative_cases": 59,
+      "scope": "Actual managed bridge execution against independent synthetic native callback fixtures; no physical sampling claim."
+    },
+    "Windows": {
+      "passed": true,
+      "checks": 108,
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/managed-wire.json",
+        "bytes": 12102,
+        "sha256": "5ca6ffd02dc7d127f1aaf88ef08933dff991832463b46e3765c8e0885fbc2663"
+      },
+      "new_callback_negative_cases": 59,
+      "scope": "Actual managed bridge execution against independent synthetic native callback fixtures; no physical sampling claim."
+    }
+  },
+  "cli_protocol": {
+    "Linux": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-consumers-1/protocol-consumer/evidence.json",
+        "bytes": 5074781,
+        "sha256": "20e5338c4df900c516b767847cce1310a4eef1a686502151ba2626904696d145"
+      },
+      "owner": {
+        "path": "build/physical-animation-0.0.234/linux-consumers-1/report.json",
+        "bytes": 12750,
+        "sha256": "37e72298d81a460bcd05cd7550150bfd3ddb0077bae5da100f638edf85307858"
+      },
+      "original_owner_aggregate_passed": false,
+      "owner_failure_scope": "Later, separate first CoreCLR verifier attempt read values at the wrong JSON nesting. The preceding protocol command exited zero.",
+      "rpc_calls": 119,
+      "natural_engine_processes": 3,
+      "complete_archives": 40,
+      "whole_byte_and_typed_state_pairs": 21,
+      "observations": 10,
+      "excluded_saved_fields": [],
+      "native_image_sha256": "ee470acc90ae0b88002401a5d2c07c81f9caa988021a58143be8bda8b5c0b577"
+    },
+    "Windows": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/protocol/evidence.json",
+        "bytes": 5210252,
+        "sha256": "ae5c4a2c21702ecfac05fbf20b43f218d79d3a09c417e4f4ec519886e107442b"
+      },
+      "owner": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/report.json",
+        "bytes": 126651,
+        "sha256": "5de84f6d294db987b229a65a6dc1fae9e05daba77796dc402fdc306fa28ddd00"
+      },
+      "rpc_calls": 119,
+      "natural_engine_processes": 3,
+      "complete_archives": 40,
+      "whole_byte_and_typed_state_pairs": 21,
+      "observations": 10,
+      "excluded_saved_fields": [],
+      "native_image_sha256": "077fde17b46fa706712e11e15888cd746c0a22b02510ac4dcc87de00a73555e1"
+    }
+  },
+  "coreclr": {
+    "Linux": {
+      "gameplay_passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-consumers-2/coreclr496-consumer/evidence.json",
+        "bytes": 6312464,
+        "sha256": "c6d5ec0da5b177227d22150b94206c0b3834ae895b645c81f15fe9a3b68a961b"
+      },
+      "owner": {
+        "path": "build/physical-animation-0.0.234/linux-consumers-2/report.json",
+        "bytes": 6960,
+        "sha256": "930a2c8b3c2096e53aa18de88ba4c9cb133f358b8ea55ba9ebd5f3224b493eb4"
+      },
+      "rpc_calls": 378,
+      "natural_engine_processes": 3,
+      "complete_archives": 24,
+      "whole_byte_and_typed_state_pairs": 12,
+      "retained_gameplay_fields": 54,
+      "retained_gameplay_bytes": 352,
+      "game_observations": 89,
+      "native_callback_joins": 36,
+      "compiled_image_sha256": "fdce438b803cc2dd8b06d43f42f845932aa3b6f8232b8647566a7ab50bd62cb0",
+      "excluded_saved_fields": [],
+      "rejected_steps_with_whole_rollback": 6,
+      "same_image_reload": {
+        "values_preserved": true,
+        "changed_paths": [
+          "/snapshot/payload/gameplay_revision",
+          "/snapshot/sha256"
+        ],
+        "whole_archive_equality": false,
+        "changed_code_latency_measured": false
+      }
+    },
+    "Windows": {
+      "gameplay_passed": true,
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/consumer/evidence.json",
+        "bytes": 6505370,
+        "sha256": "ed4653a8ea2196de404c24af7ee71ba4768a55c5627ed71cf1b01b11deaa380e"
+      },
+      "owner": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-2/report.json",
+        "bytes": 126651,
+        "sha256": "5de84f6d294db987b229a65a6dc1fae9e05daba77796dc402fdc306fa28ddd00"
+      },
+      "rpc_calls": 378,
+      "natural_engine_processes": 3,
+      "complete_archives": 24,
+      "whole_byte_and_typed_state_pairs": 12,
+      "retained_gameplay_fields": 54,
+      "retained_gameplay_bytes": 352,
+      "game_observations": 89,
+      "native_callback_joins": 36,
+      "compiled_image_sha256": "fdce438b803cc2dd8b06d43f42f845932aa3b6f8232b8647566a7ab50bd62cb0",
+      "excluded_saved_fields": [],
+      "rejected_steps_with_whole_rollback": 6,
+      "same_image_reload": {
+        "values_preserved": true,
+        "changed_paths": [
+          "/snapshot/payload/gameplay_revision",
+          "/snapshot/sha256"
+        ],
+        "whole_archive_equality": false,
+        "changed_code_latency_measured": false
+      }
+    }
+  },
+  "retained_coreclr": {
+    "original_checkpoint": "0.0.232",
+    "original_minimum_services_bytes": 448,
+    "current_host_services_bytes": 496,
+    "passed": true,
+    "record": {
+      "path": "build/physical-animation-0.0.234/linux-character-1/legacy448/consumer/evidence.json",
+      "bytes": 4581982,
+      "sha256": "88da3f7257c4fda822b24c5be89e1b5d8a60b11c0f669f390b6f272637c3e727"
+    },
+    "owner": {
+      "path": "build/physical-animation-0.0.234/linux-character-1/report.json",
+      "bytes": 13183,
+      "sha256": "9a846a1283c0e842405c3aa820e13c1ef85150d51fb783ce8288829efdd7f8c3"
+    },
+    "original_owner_aggregate_passed": false,
+    "owner_failure_scope": "A later independent imported-character preflight assumed an explicit empty layers array; original legacy command exited zero.",
+    "rpc_calls": 338,
+    "natural_engine_processes": 3,
+    "complete_archives": 26,
+    "whole_byte_and_typed_state_pairs": 13,
+    "retained_gameplay_fields": 42,
+    "retained_gameplay_bytes": 304,
+    "compiled_image_sha256": "2baba1c186e2904b8ad1f71f0c6ae9bd9517d29bcf0dece1a9362c38d9141500",
+    "scope": "Unchanged previously compiled manual-drive consumer on the new host. It does not exercise the new animation API."
+  },
+  "retained_failures": [
+    {
+      "stage": "First native regression",
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-native-2/report.json",
+        "bytes": 183281,
+        "sha256": "42c1df5c39f5ca0eab493c35400ff0288897f290c4d62af888f65628fd574f7f"
+      },
+      "passed": 16,
+      "failed": 2,
+      "cause": "A query fixture still expected schema128, and the detached-player fixture performed a grounding query at decision tick0. Both original failures remain; corrected fixtures passed in native4.",
+      "forced_cleanup": false
+    },
+    {
+      "stage": "Final affected native cohort",
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-native-4/report.json",
+        "bytes": 198505,
+        "sha256": "6d5ad47b57e6acdd2e576c29f971de47820c0621721d027b846a10bd601398ab"
+      },
+      "passed": 19,
+      "failed": 1,
+      "cause": "Compatibility fixture expected the old448-byte availability. The actual header supplies496; the corrected isolated policy successor passed.",
+      "forced_cleanup": false
+    },
+    {
+      "stage": "First real new-feature CoreCLR consumer",
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-consumers-1/coreclr496-consumer/evidence.json",
+        "bytes": 64720,
+        "sha256": "c616d6ae4e989a5b5de5c07b4cc3c2aae55dc86c5d204d669a1bbf4f815af174"
+      },
+      "rpc_calls": 8,
+      "natural_engine_processes": 1,
+      "cause": "Verifier read values/schema from the inspection envelope instead of its module object after successful54-field admission. No callback tick ran. The corrected successor passed without removing assertions."
+    },
+    {
+      "stage": "First imported-character preflight",
+      "record": {
+        "path": "build/physical-animation-0.0.234/linux-character-1/consumer/evidence.json",
+        "bytes": 236904,
+        "sha256": "19f09c96b8b39d26dd83b7ac246724646fcb568a2e1309348d025e4e2165e357"
+      },
+      "rpc_calls": 8,
+      "natural_engine_processes": 1,
+      "complete_archives": 0,
+      "cause": "Verifier expected playback.layers=[]; native unlayered playback omits layers. The original attempt remains failed. The corrected second preflight is recorded separately."
+    },
+    {
+      "stage": "First Windows CPU cohort",
+      "record": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-1/report.json",
+        "bytes": 46090,
+        "sha256": "e2ac68d2df7b116671058f0a0f036c662b0d2e4ae0395d8e57608bd639979923"
+      },
+      "worker": {
+        "path": "build/physical-animation-0.0.234/windows-cpu-1/worker.json",
+        "bytes": 13118,
+        "sha256": "865b4abc644c42d91cc06a0a1f2380ef63a6f5bf5addf2f6dca2b2fce57cf616"
+      },
+      "passed": false,
+      "commands_passed": 10,
+      "commands_failed": 1,
+      "commands_unexecuted": 23,
+      "cause": "The preference fixture expected the previous448-byte current host. Its exact corrected source adds a separate frozen448 check and expects496 for current availability. The isolated successor executable passes; original failed records and executable remain unchanged.",
+      "forced_cleanup": false,
+      "final_active_processes": 0,
+      "final_terminated_processes": 0
+    }
+  ],
+  "independent_review": {
+    "linux": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 9693,
+        "sha256": "2e627ad240a43e45b2cb2fb731e6a54dc61b734099929d4ad9086b6c952b7abd"
+      },
+      "scope": "Read-only literal transcript, complete archive/manifest/receipt/checksum, independently derived scalar schema, source and compiled-image audit. Original failure labels remain unchanged."
+    },
+    "later_protocol": {
+      "scope": "Read-only recheck of all119 literal request/reply joins,40 original archive hashes and21 complete byte/typed pairs on the same native image as the successful CoreCLR consumer."
+    },
+    "Windows": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 24387,
+        "sha256": "ef585f256daf7317c55d8e1128a715aec6f1f4890f3afe1c17fdf5464f706d24"
+      },
+      "scope": "Read-only original command/Job, literal protocol/gameplay transcripts, complete archive hashes and byte/typed pairs. Original first CPU failure remains unchanged."
+    },
+    "retained_native_aot": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 5982,
+        "sha256": "dd0ba6b7429128d241634d7a686a4de9ee5009b7e64d86f4600bf3c5c4b65510"
+      },
+      "scope": "Literal request/reply joins, all complete archives/typed pairs and original compiled library; the gameplay-owned save joins its completed save operation. Earlier file-audit assumptions remain in separate records."
+    },
+    "rendered_character": {
+      "passed": true,
+      "record_identity": {
+        "bytes": 3594,
+        "sha256": "6e6f2eb78a32f3d3c752748327aae97f6b40549171c94147ece6fdf8f8b7039e"
+      },
+      "scope": "All1405 admitted inputs,37 consumed joins,42 original hardware frames,87 archives,44 full byte/typed pairs and literal guards checked. Visual assessment is recorded separately."
+    }
+  },
+  "limits": [
+    "Linux analytical fixtures and the imported-character preflight establish control/state behavior, not motion quality or representative throughput.",
+    "Complete continuation comparisons use the same platform and native image; no cross-platform future bit-identity claim.",
+    "The source and target skeleton pose, fitted intent, effective joint control and solved body pose are distinct.",
+    "Zero-strength controls preserve source progression and physical ownership; there is no balance or recovery controller.",
+    "New496-byte animation-target NativeAOT execution and new standalone export are not qualified by the retained448-byte consumer.",
+    "The42 captured Vulkan frames are paused observations. Physical device input, continuous motion quality, balance, recovery and representative performance remain open."
+  ],
+  "reproduce": [
+    "tests/physical_animation_protocol.py --help",
+    "tests/physical_animation_gameplay.py --help",
+    "tests/managed_physical_animation_gameplay/Poima.ManagedPhysicalAnimationGame.csproj",
+    "docs/PHYSICAL_ANIMATION.md"
+  ],
+  "imported_character_preflight": {
+    "platform": "Linux headless",
+    "passed": true,
+    "record": {
+      "path": "build/physical-animation-0.0.234/linux-character-2/consumer/evidence.json",
+      "bytes": 57071036,
+      "sha256": "a74a6d4415b29fd957ff2571b1e93c99e5352fa60799e4b210d6657438bc1576"
+    },
+    "owner": {
+      "path": "build/physical-animation-0.0.234/linux-character-2/report.json",
+      "bytes": 6443,
+      "sha256": "f8a5cca5347d49bbea12ac6eb5a750195f253a9a4f4987d432ee73773b643e29"
+    },
+    "rpc_calls": 1051,
+    "natural_engine_processes": 2,
+    "complete_archives": 14,
+    "whole_byte_and_typed_state_pairs": 8,
+    "observations": 333,
+    "excluded_saved_fields": [],
+    "content": {
+      "name": "Knight",
+      "author": "Kay Lousberg",
+      "license": "CC0",
+      "source_identity": {
+        "bytes": 3659532,
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+      },
+      "license_identity": {
+        "bytes": 891,
+        "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+      },
+      "source_nodes": 57,
+      "source_clips": 76,
+      "physical_parts": 15,
+      "physical_joints": 14,
+      "source_manifest": {
+        "path": "examples/physical-character-yard/source-manifest.json",
+        "bytes": 815,
+        "sha256": "9bac7bdd307ec44db66786632e8ca82be5fcf14ad5f15412b83d97dffa872f29"
+      }
+    },
+    "clip_cycles": [
+      {
+        "lane": "zero",
+        "index": 36,
+        "name": "Idle",
+        "source_duration_seconds": 1.0666667222976685,
+        "cycle_ticks_at_60hz": 66,
+        "source_channels": 123
+      },
+      {
+        "lane": "zero",
+        "index": 48,
+        "name": "Running_A",
+        "source_duration_seconds": 0.800000011920929,
+        "cycle_ticks_at_60hz": 50,
+        "source_channels": 122
+      },
+      {
+        "lane": "positive",
+        "index": 36,
+        "name": "Idle",
+        "source_duration_seconds": 1.0666667222976685,
+        "cycle_ticks_at_60hz": 66,
+        "source_channels": 123
+      },
+      {
+        "lane": "positive",
+        "index": 48,
+        "name": "Running_A",
+        "source_duration_seconds": 0.800000011920929,
+        "cycle_ticks_at_60hz": 50,
+        "source_channels": 122
+      }
+    ],
+    "target_curve_comparison": {
+      "equal": true,
+      "observations_per_lane": 156,
+      "scope": "Every complete target observation including all14 samples; physical poses intentionally differ and are recorded separately."
+    },
+    "diagnostics_by_lane": {
+      "zero": {
+        "observations": 156,
+        "maximum_observed_rms_joint_error_radians": 0.9921118677332359,
+        "maximum_observed_joint_error_radians": 2.4205131911198934,
+        "maximum_saturated_joints_per_observation": 0,
+        "observations_at_velocity_limit": 0
+      },
+      "positive": {
+        "observations": 156,
+        "maximum_observed_rms_joint_error_radians": 0.7517273896021763,
+        "maximum_observed_joint_error_radians": 1.9509108444779653,
+        "maximum_saturated_joints_per_observation": 1,
+        "observations_at_velocity_limit": 0
+      }
+    },
+    "ordinary_source_clock_unchanged": true,
+    "warm_and_cold_complete_continuation": true,
+    "scope": "The original full imported skeleton, clips, calibration, masses, gains and hard limits are retained; only animation_drive fit opt-in is added. Zero and positive strength branches have identical complete target observations; solved body responses are separate. Diagnostics are observations, not bounds for acceptable appearance. No rendering, managed game, balance, locomotion or recovery qualification."
+  },
+  "retained_native_aot": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-animation-0.0.234/windows-native_aot-legacy448-1/consumer/evidence.json",
+      "bytes": 8056407,
+      "sha256": "61c646dea090fbf88b2c1441afe0bfb7f25fb6219c798c41d6bc953aad2665b7"
+    },
+    "owner": {
+      "path": "build/physical-animation-0.0.234/windows-native_aot-legacy448-1/report.json",
+      "bytes": 13057,
+      "sha256": "eb214b84ff2fc91c1f192d1a49336054516a60a9fdc98b8896a552669627188a"
+    },
+    "rpc_calls": 611,
+    "complete_archives": 31,
+    "whole_byte_and_typed_state_pairs": 16,
+    "natural_engine_processes": 3,
+    "fields": 87,
+    "state_bytes": 560,
+    "consumer_services_bytes": 448,
+    "host_services_bytes": 496,
+    "original_game_image": {
+      "bytes": 1433088,
+      "sha256": "5d0e660b2f23be8e39848ab3c7c7c2a35d2d576dfe1d40f0c50fddaa16b3a8ab"
+    },
+    "new_publication": false,
+    "new_animation_target_native_aot": false,
+    "original_publication": "The earlier publisher completed successfully with controlled cleanup of one owned telemetry helper; this run only reuses its unchanged library.",
+    "gameplay_job": {
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "accounting": {
+        "user_time": 60781250,
+        "kernel_time": 37812500,
+        "period_user_time": 60781250,
+        "period_kernel_time": 37812500,
+        "page_faults": 287720,
+        "total_processes": 5,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    }
+  },
+  "rendered_character": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-animation-0.0.234/windows-character-render-1/consumer/evidence.json",
+      "bytes": 46627444,
+      "sha256": "15b8d76ac5d41caf8f3f8cfbad2f53c96aa9d55fbd960e700caa3a65a7a1cc7a"
+    },
+    "owner": {
+      "path": "build/physical-animation-0.0.234/windows-character-render-1/report.json",
+      "bytes": 31459,
+      "sha256": "abfae5cdc0a6b0fc6d750cff74b31f548b02a193fc8ecaa0cbee813c8dd60a9e"
+    },
+    "rpc_calls": 1091,
+    "hardware_frames": 42,
+    "complete_archives": 87,
+    "whole_byte_and_typed_state_pairs": 44,
+    "observations": 243,
+    "native_owners": 2,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      1280,
+      720
+    ],
+    "samples": 4,
+    "simulation_hz": 60,
+    "observation_hz": 10,
+    "target_curve_comparison": {
+      "equal": true,
+      "observations_per_lane": 121,
+      "excluded_fields": []
+    },
+    "sequences": [
+      {
+        "lane": "zero",
+        "strength_multiplier": 0.0,
+        "start_tick": 26,
+        "end_tick": 146,
+        "simulation_hz": 60,
+        "sample_ticks": 6,
+        "derived_playback_fps": 10,
+        "frames": 21
+      },
+      {
+        "lane": "positive",
+        "strength_multiplier": 1.0,
+        "start_tick": 26,
+        "end_tick": 146,
+        "simulation_hz": 60,
+        "sample_ticks": 6,
+        "derived_playback_fps": 10,
+        "frames": 21
+      }
+    ],
+    "excluded_saved_fields": [],
+    "job": {
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "accounting": {
+        "user_time": 199843750,
+        "kernel_time": 101875000,
+        "period_user_time": 199843750,
+        "period_kernel_time": 101875000,
+        "page_faults": 591003,
+        "total_processes": 4,
+        "active_processes": 0,
+        "terminated_processes": 0
+      }
+    },
+    "visual_review": {
+      "all_42_contact_samples_inspected": true,
+      "full_resolution_frames": [
+        "zero-010",
+        "positive-010",
+        "positive-015"
+      ],
+      "observed": "The branches show different limb/body postures while following identical targets. Both lose upright support and fall; the powered branch tips sideways in these samples. Selected frames show coherent attached skin and accessories.",
+      "limits": "Paused readbacks establish selected rendered observations, not continuous motion quality, anatomical clothing/weapon contact accuracy, balance, recovery, physical input or representative performance."
+    },
+    "media": {
+      "path": "docs/evidence/m2-physical-animation-targets.gif",
+      "bytes": 462032,
+      "sha256": "24d22addd63c5e8f67dadf295837f665dc1c233d8646c7350095315aa3e25629"
+    },
+    "media_derivation": {
+      "pillow": "11.3.0",
+      "frame_count": 21,
+      "frame_duration_ms": 100,
+      "original_frames": 42,
+      "changes": "Two labelled, uniformly resized complete frames side by side; GIF palette conversion. No crop, interpolation or generated art."
+    },
+    "output_bytes": 238993403,
+    "output_limit_bytes": 268435456
+  }
+}

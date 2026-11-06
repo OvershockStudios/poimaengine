@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.234
+
+- Add independent clip/layer animation targets for physical joint drives, with
+  per-joint manual or animation sources and explicit joint-limit fitting.
+- Expose playback, transitions, rates and committed target diagnostics through
+  the CLI and an appended C# gameplay interface.
+- Preserve complete target histories, sources and samples through rollback,
+  saves and fresh-process continuation.
+- Verify Windows/Linux CoreCLR controls, retained compiled consumers and an
+  inspected Vulkan comparison using original imported character clips.
+
 ## 0.0.233
 
 - Add playable Relaxed/Guard pose holds, individual joint strengths and release

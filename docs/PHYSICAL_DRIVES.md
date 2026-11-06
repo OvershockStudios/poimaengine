@@ -7,6 +7,11 @@ hard limits and friction continue to determine the motion; solved body poses
 continue to drive the mapped skeleton. This is an orientation-hold mechanism,
 not a balance controller, gait generator or recovery-to-animation system.
 
+An optional [animation target player](PHYSICAL_ANIMATION.md) can continuously
+retarget these drives from clips, layers and transitions. Each joint can follow
+that player or hold a manual target; the native physics ownership remains the
+same.
+
 ## Authoring
 
 Add this optional object to a joint in the existing PhysicalRig profile:
@@ -185,7 +190,8 @@ friction warm starts.
 
 ## Saves and qualification
 
-Definitions containing a drive profile use physical save extension **5**, even
+Definitions containing a drive profile without an animation target player use
+physical save extension **5**, even
 when every drive is disabled or the profile exists only in an unspawned
 template. Each live rig retains the complete ordered set of its configured
 joint names, saved targets and strengths. Frozen content still supplies the
@@ -200,6 +206,10 @@ membership field. Extension 5 retains the applicable controller, procedural and
 grounding witnesses; its version does not imply that those optional features
 are present. The existing [save prerequisites](GAMEPLAY_SAVES.md) still apply.
 This adds no cross-platform future bit-identity guarantee.
+
+An opted-in [animation target player](PHYSICAL_ANIMATION.md#persistence) selects
+extension **6**, retaining the drive controls together with its independent
+clocks, histories, sources and samples.
 
 The [checkpoint qualification](evidence/m2-physical-joint-drives.json) records
 native Linux and Windows checks, managed ABI checks and actual CoreCLR gameplay.

@@ -12,6 +12,11 @@ targets to selected joints. They preserve native contacts, passive responses
 and friction. Driven rigs retain physical ownership; balance and recovery are
 separate systems.
 
+An opt-in [animation target player](PHYSICAL_ANIMATION.md) streams original clip
+and layer poses to those drives, with independent playback and explicit joint
+limit fitting. It supplies desired orientations while native physics continues
+to solve the visible body.
+
 The initial 0.0.218 integration has bounded native, CLI, CoreCLR and complete-save
 qualification on Linux headless and Windows, plus Windows Vulkan skin-publication
 checks. The opt-in fixed-scale frame additionally has licensed full-body

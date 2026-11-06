@@ -1,8 +1,41 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.233**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.234**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.234 adds independent [animation targets for physical characters](PHYSICAL_ANIMATION.md).
+Original clips, layers, transitions and playback rates can continuously supply
+joint-drive orientations while native physics owns the visible skeleton.
+Each joint can follow animation or hold a manual target. Explicit `strict` or
+`fit` policies preserve authored limits; complete target histories, sources and
+samples participate in rollback and physical save extension 6. The CLI and C#
+interface exposes the controls and committed diagnostics (schema 129,
+services epoch 7 with an appended 496-byte prefix).
+
+The [qualification record](evidence/m2-physical-animation-targets.json) separates
+native math/authoring, actual runtime state, managed interface checks and compiled
+gameplay. Windows and Linux CoreCLR each pass 378 literal RPCs, 24 complete saves
+and twelve whole-state pairs across three naturally closed engine processes,
+retaining all 54 fields/352 bytes. Windows also passes the selected 31 native
+tests. The independent target-player fixture checks complete histories in
+memory; the physical runtime fixture retains 248 files and 103 full archive
+pairs per platform. Earlier failed test and verifier attempts remain recorded.
+
+The unchanged imported Knight follows original Idle/Running clips through all
+fourteen configured drives in the Linux workflow, with complete warm/cold
+continuation. The existing 87-field NativeAOT character game also passes on the
+new Windows host without rebuilding its 448-byte consumer. New-target NativeAOT
+execution, active balance, protective stepping, recovery and representative
+motion/performance qualification remain separate work.
+
+Forty-two inspected Windows Vulkan frames compare identical target curves with
+zero and positive drive strengths. The run retains 87 complete saves and 44
+whole-state pairs; the captured limbs and body postures differ, but both
+characters fall. These are paused 60 Hz simulation samples displayed at 10 fps,
+not a continuous-motion or performance benchmark. A
+[paired recording](PHYSICAL_ANIMATION.md#observed-imported-character-motion)
+shows this bounded result.
 
 Version 0.0.233 adds playable [character pose controls](../examples/physical-character-yard/README.md#joint-pose-controls).
 The unchanged imported Knight can enter Relaxed or Guard poses through fourteen
@@ -49,8 +82,8 @@ host: 277 RPC calls, ten complete saves and six whole-state pairs retain all
 older 424-byte consumer on the appended 448-byte interface; it does not
 qualify new drive controls through NativeAOT.
 
-These controls do not yet stream animation targets, balance a character,
-generate protective steps or recover to animation. This checkpoint adds no
+That checkpoint did not yet stream animation targets, balance a character,
+generate protective steps or recover to animation. Its evidence adds no
 rendered motion-quality or representative performance qualification.
 
 Version 0.0.231 adds a playable [Physical Character Yard](../examples/physical-character-yard/README.md#play-the-sample).

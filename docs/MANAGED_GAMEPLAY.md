@@ -578,3 +578,30 @@ ordered commands and complete saves. The
 [compiled fixture](../tests/managed_physical_drive_gameplay/README.md) and
 [native protocol check](../tests/physical_drive_gameplay.py) exercise the actual
 callback path separately from mock ABI guards.
+
+## Animation targets for physical joints
+
+Declare `IPhysicalRigAnimationGame` and author `PhysicalRig.animation_drive` to
+drive physical joints from independent clip/layer playback. The marker includes
+physical and drive access. It does not grant ordinary animation, IK or
+root-motion control of the physically owned skeleton.
+
+```csharp
+context.ActivatePhysicalRig(rig); // Once, when transferring animation ownership.
+context.SetPhysicalRigAnimation(rig, clip: 0, blendTicks: 12);
+context.SetPhysicalRigDriveSource(rig, "elbow",
+    PhysicalRigDriveSource.Animation, strength: 0.5);
+```
+
+The target player supports base/layer replacement, playback-rate changes and
+manual/animation source selection per joint. `GetPhysicalRigAnimation`,
+`GetPhysicalRigAnimationLayer` and `GetPhysicalRigDriveSource` read the committed
+boundary; writes remain staged until the enclosing tick succeeds. The six
+callbacks require the appended 496-byte prefix and `physical_rig_animation_v1`
+alongside its inherited features.
+
+See [physical animation](PHYSICAL_ANIMATION.md) for all method names, source
+semantics, fitting, command limits and complete persistence. The
+[compiled workflow](../tests/physical_animation_gameplay.py) tests real CoreCLR
+execution, rollback and fresh-process saves. New-target NativeAOT execution is
+a separate qualification scope.

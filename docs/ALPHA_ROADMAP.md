@@ -45,6 +45,12 @@ pose targets, individual joint strengths and driven hit reactions. The same
 captures preserve complete state. This extends character composition without
 closing balance, recovery, general motion-quality or Alpha delivery gates.
 
+The [0.0.234 animation-target extension](PHYSICAL_ANIMATION.md) adds independent
+clip/layer playback for physical drives, CLI/C# controls and complete target
+histories. Windows/Linux CoreCLR, retained compiled consumers and selected
+imported-character Vulkan observations have separate evidence. Balance,
+recovery, continuous motion quality and the broader Alpha gates remain open.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall
