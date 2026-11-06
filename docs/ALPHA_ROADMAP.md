@@ -51,6 +51,14 @@ histories. Windows/Linux CoreCLR, retained compiled consumers and selected
 imported-character Vulkan observations have separate evidence. Balance,
 recovery, continuous motion quality and the broader Alpha gates remain open.
 
+The [0.0.235 playable target controls](evidence/m2-character-animation-controls.json)
+compose live clips, rates, transitions, individual strengths and release in the
+imported-character sample. Windows/Linux CoreCLR, new Windows NativeAOT and a
+relocated standalone game retain complete 104-field checkpoints and target
+histories. Five inspected UI captures add bounded presentation evidence.
+Physical input, clean-machine delivery, motion quality and balance remain
+separate; this is not another fresh-agent game qualification.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

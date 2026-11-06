@@ -12,13 +12,15 @@ and aim independently of the Knight, switch its original Idle/Running_A clips,
 and fire a native camera ray. The returned hit region selects the physical body
 that receives the impulse. A lethal hit transfers the current character pose to
 passive physics by default. Hold pose can also transfer the character into
-physics, with bounded joint torques pulling toward Relaxed or Guard targets.
+physics, with bounded joint torques pulling toward Relaxed or Guard targets,
+or following the original Idle and Running_A clips through an independent
+target player. The visible skeleton stays under physics control.
 Save/Load preserves the complete state; Retry restores the separate checkpoint
 created by Begin.
 
-![Physical Character Yard with joint pose controls in the Windows Vulkan player](../../docs/evidence/m2-character-drives.png)
+![Physical Character Yard following a live Idle target in the Windows Vulkan player](../../docs/evidence/m2-character-animation-controls.png)
 
-Actual Windows Vulkan idle capture. Knight artwork: Kay Lousberg, CC0-1.0.
+Actual Windows Vulkan capture with the live-target controls. Knight artwork: Kay Lousberg, CC0-1.0.
 This still shows the sample's appearance; it does not qualify motion quality.
 
 ![Zero-strength and powered joint response](../../docs/evidence/m2-character-drives-comparison.gif)
@@ -65,30 +67,41 @@ its own save folder under its fresh output directory. Closing the window closes
 the owned service. `--trace` optionally records bounded diagnostic RPC logs.
 
 `Health`, `Damage`, `ShotImpulse`, `Range`, `PatrolExtent` and `RunInput` are typed,
-inspectable gameplay tuning. All 87 mutable gameplay fields are serialized.
+inspectable gameplay tuning. All 104 mutable gameplay fields are serialized.
 Native input owns the player's movement; C# owns only the target's patrol.
 Shots run before target motor/animation edits to keep physical ownership
 unambiguous. Named hit regions are authored query proxies, not exact skinned
 mesh collision. Retry restores a checkpoint; it is not a get-up animation or
 active balance system.
 
-The public [drive gameplay check](../../tests/physical_character_drives.py)
-exercises ordinary menus and patrol, direct pose-hold takeover, actual camera
-hits before and during driven motion, per-joint controls, rejection rollback
-and complete warm/cold saves. Select CoreCLR with `--hostfxr`, `--bridge` and
+The public [animation-target gameplay check](../../tests/physical_character_animation.py)
+exercises live/static target changes, per-joint strengths, playback rates,
+interrupted blends, paused requests, actual camera hits, release, rejection
+rollback and complete warm/cold saves. Select CoreCLR with `--hostfxr`, `--bridge` and
 `--assembly`, or `--backend native_aot --descriptor` for an already published
 native game. Both modes require the world, original source/license, native CLI
 and a fresh output directory. Run it under an external process-tree supervisor;
 `--help` lists the selectors. Neither mode opens a renderer or substitutes for
 physical mouse/controller testing or motion-quality review.
 
-The [0.0.233 results](../../docs/evidence/m2-character-drives.json) pass the
-same workflow on Windows/Linux CoreCLR and Windows NativeAOT: 611 RPC calls,
+The [0.0.235 results](../../docs/evidence/m2-character-animation-controls.json)
+pass this 104-field/656-byte workflow on Windows/Linux CoreCLR and Windows
+NativeAOT: 741 API calls, 25 complete saves and fourteen whole-state pairs per
+run. A relocated 63-file Windows game passes the same gameplay assertions and
+complete save continuation through two fresh `game stdio` processes, with its
+owned export-project path unavailable. These checks use native runtime 0.0.234
+and the 496-byte gameplay interface. Five inspected CoreCLR/Vulkan captures
+verify the displayed controls separately from native shipping execution.
+
+The earlier [drive gameplay check](../../tests/physical_character_drives.py)
+and [0.0.233 results](../../docs/evidence/m2-character-drives.json) pass the
+87-field drive workflow on Windows/Linux CoreCLR and Windows NativeAOT: 611 RPC calls,
 31 complete saves and sixteen whole-state comparisons per run. All 87 fields
 survive warm and fresh-process continuation. These runs use the 0.0.232 native
 runtime and matching 448-byte gameplay interface. A separate Windows Vulkan
-run supplies the captures above; the current drive game has not repeated the
-earlier relocated-export test.
+run supplies the older powered-pose comparison above. That 87-field checkpoint
+did not repeat the earlier relocated-export test; 0.0.235 qualifies the current
+live-target game separately.
 
 The earlier [61-field gameplay check](../../tests/physical_character_gameplay_contract.py)
 and [elapsed Windows player check](../../tests/physical_character_player_contract.py)
@@ -102,15 +115,20 @@ Prepare a fresh project and matching current game for the drive controls.
 | --- | --- |
 | Hold pose | Requests physical takeover if needed, then applies the selected targets and strengths. |
 | Release | Sets all active strengths to zero while retaining physics ownership and joint targets. |
-| Pose | Switches between Relaxed and Guard. |
+| Pose | Cycles Relaxed, Guard, Live Idle and Live Running. |
 | Joint | Selects one of the fourteen named joints. |
 | Request | Cycles that joint through 0%, 25%, 50%, 75% and 100%. Direct typed fields also accept intermediate strengths. |
+| Target speed | Changes the independent target playback rate without seeking or restarting a transition. |
+| Restart target | Requests the selected live clip from its beginning on the next playing tick. |
+| Transition | Selects crossfade or inertial for the next live clip change or restart. |
+| Target blend | Selects the duration of that next transition. |
 
 These controls remain available in the menu. A paused request is queued until
 the next playing tick. The status distinguishes requested settings from the
 last committed native observation; selecting another joint does not relabel an
-older strength reading. Holding a pose does not balance the character, add a
-support force or restart animation. Gravity, contacts and the original joint
+older strength reading. Changing joint strength does not restart target playback.
+Holding a pose does not balance the character or add a support force.
+Gravity, contacts and the original joint
 limits continue to act. A driven character still accepts localized shot
 impulses.
 
@@ -120,9 +138,30 @@ the compiled game; changing the presets requires updating both definitions and
 rebuilding the sample. The original body shapes, masses, joint frames, limits,
 passive coefficients and complete artwork are retained. Selected Idle rotations
 supply references; other targets are explicitly authored because the source
-animation is not uniformly inside the physical joint limits. No source pose is
-silently projected or clamped. See the [joint-drive contract](../../docs/PHYSICAL_DRIVES.md)
-for units, target frames, ordering and save behavior.
+animation is not uniformly inside the physical joint limits. The static presets
+use those explicit targets. Live modes opt into the documented `fit` policy:
+they constrain the sampled orientations to the existing limits and expose the
+selected joint's correction in radians. This leaves the source clips and joint
+limits intact. See the [joint-drive contract](../../docs/PHYSICAL_DRIVES.md)
+and [animation-target contract](../../docs/PHYSICAL_ANIMATION.md) for units,
+target frames, ordering and save behavior.
+
+`TargetSpeed` accepts 0–8; the button cycles 0, 0.5, 1, 1.5 and 2. A zero rate
+freezes clip time, while transition fades still advance by fixed simulation
+ticks. `TargetBlendTicks` accepts 0–120 ticks, with a default of 12 at 60 Hz;
+its button cycles 0, 6, 12 and 24. `TargetTransitionMode` selects crossfade (0)
+or inertial (1). The latter is the sample default. These settings affect the
+independent target player, not the visible physical body's motion directly.
+
+The target clock continues while static/manual targets are selected. Release
+retains the current effective joint targets, selects manual control and sets
+strengths to zero. Choosing a live pose again starts that selected clip using
+the requested transition. Target playback speed is independent of the original
+ordinary animation clock, which freezes when physics takes ownership.
+
+The new state layout requires a matching game image and prepared world. Earlier
+87-field saves belong to the earlier compiled sample; this example does not
+provide a save migration between those game images.
 
 ### Build a standalone Windows game
 

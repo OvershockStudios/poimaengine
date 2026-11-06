@@ -2,6 +2,19 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.235
+
+- Add live Idle/Running targets, playback speed, explicit restart and transition
+  controls to the playable physical-character sample.
+- Preserve individual joint strengths, manual pose holds, localized hits and
+  release; show requested controls separately from committed observations.
+- Verify all 104 gameplay fields and complete target histories in Windows/Linux
+  CoreCLR and new Windows NativeAOT gameplay.
+- Export and relocate the native game, then verify complete gameplay and saves
+  through two fresh standalone processes.
+- Document the controls and add an inspected Vulkan screenshot, backed by five
+  captured UI states and complete capture-purity checks.
+
 ## 0.0.234
 
 - Add independent clip/layer animation targets for physical joint drives, with

@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.234**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.235**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.235 connects live animation targets to the playable
+[Physical Character Yard](../examples/physical-character-yard/README.md).
+Original Idle/Running_A clips can drive its fourteen joints, alongside the
+existing Relaxed/Guard poses, individual strengths, localized hits and release.
+Speed edits preserve the clip clock; restart and crossfade/inertial controls
+are explicit. Menu requests wait for a playing tick, and the UI distinguishes
+requested values from the previous committed observation.
+
+The [qualification record](evidence/m2-character-animation-controls.json)
+retains all 104 fields/656 bytes and complete physical/target histories.
+Windows/Linux CoreCLR and Windows NativeAOT each pass 741 RPC calls, 25 complete
+saves and fourteen whole-state pairs across two naturally closed engine
+processes. New NativeAOT publication and actual 496-byte base-target callback
+execution are separately verified. This sample adds no target-layer NativeAOT
+coverage or save migration from its earlier 87-field image.
+
+The 63-file Windows game exports through the public commands and passes the
+same complete workflow after relocation: 747 RPCs, 25 saves and fourteen pairs
+across two fresh `game stdio` processes. Its owned export-project path was
+unavailable; other development files remained. Five inspected Vulkan UI frames
+retain ten saves and five capture-purity pairs. Labels and controls are legible
+in those 1280×720 views; four label rectangles extend beyond the viewport at
+scale 1.25. These observations do not qualify every layout, physical input,
+continuous motion, clean-machine deployment or representative performance.
+The checks use native runtime 0.0.234; balance and recovery remain further work.
 
 Version 0.0.234 adds independent [animation targets for physical characters](PHYSICAL_ANIMATION.md).
 Original clips, layers, transitions and playback rates can continuously supply
@@ -25,9 +51,10 @@ pairs per platform. Earlier failed test and verifier attempts remain recorded.
 The unchanged imported Knight follows original Idle/Running clips through all
 fourteen configured drives in the Linux workflow, with complete warm/cold
 continuation. The existing 87-field NativeAOT character game also passes on the
-new Windows host without rebuilding its 448-byte consumer. New-target NativeAOT
-execution, active balance, protective stepping, recovery and representative
-motion/performance qualification remain separate work.
+new Windows host without rebuilding its 448-byte consumer. That record covers
+retained-consumer compatibility; 0.0.235 separately qualifies the new native
+base-target consumer. Active balance, protective stepping, recovery and
+representative motion/performance qualification remain separate work.
 
 Forty-two inspected Windows Vulkan frames compare identical target curves with
 zero and positive drive strengths. The run retains 87 complete saves and 44

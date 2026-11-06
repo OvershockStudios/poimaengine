@@ -603,5 +603,8 @@ alongside its inherited features.
 See [physical animation](PHYSICAL_ANIMATION.md) for all method names, source
 semantics, fitting, command limits and complete persistence. The
 [compiled workflow](../tests/physical_animation_gameplay.py) tests real CoreCLR
-execution, rollback and fresh-process saves. New-target NativeAOT execution is
-a separate qualification scope.
+execution, rollback and fresh-process saves. The separate
+[playable imported-character check](../tests/physical_character_animation.py)
+exercises base playback, rate and source controls in Windows NativeAOT as well
+as Windows/Linux CoreCLR, with all 104 fields and complete saved target state.
+Target-layer NativeAOT coverage remains a separate scope.

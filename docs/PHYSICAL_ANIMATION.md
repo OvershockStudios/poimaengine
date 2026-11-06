@@ -223,8 +223,13 @@ rollback, same-image reload and three-process continuation.
 
 Both Python workflows need an external process-tree supervisor with a finite
 deadline. Preserve their literal requests, responses and original failure
-records. The compiled workflow currently exercises CoreCLR; synthetic interface
-checks or publisher support do not establish new-target NativeAOT execution.
+records. That analytic compiled workflow exercises CoreCLR. The separate
+[playable character workflow](../examples/physical-character-yard/README.md)
+uses real imported clips and the same base-playback, rate and per-joint source
+controls in Windows/Linux CoreCLR and Windows NativeAOT. Its
+[public verifier](../tests/physical_character_animation.py) retains all 104
+gameplay fields and complete target/physics histories through warm and cold
+continuation. This unlayered sample does not add NativeAOT target-layer coverage.
 
 ## Observed imported-character motion
 

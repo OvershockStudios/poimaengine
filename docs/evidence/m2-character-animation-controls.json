@@ -1,0 +1,458 @@
+{
+  "format": "poima.evidence.character-animation-controls.v1",
+  "date": "2026-11-06",
+  "source_checkpoint": "0.0.235",
+  "native_runtime": "0.0.234",
+  "world_schema": 129,
+  "gameplay_services": {
+    "epoch": 7,
+    "minimum_bytes": 496,
+    "feature": "physical_rig_animation_v1"
+  },
+  "scope": "Playable imported-character base animation targets, per-joint strengths, complete saves, selected UI captures and Windows NativeAOT standalone continuation.",
+  "source_identities": {
+    "examples/physical-character-yard/PhysicalCharacterGame.cs": {
+      "bytes": 41605,
+      "sha256": "b6cbc5c57d4897399abc2d55264245b47fa4257304e004d3a363ee04b06d509b"
+    },
+    "examples/physical-character-yard/Poima.PhysicalCharacterGame.csproj": {
+      "bytes": 544,
+      "sha256": "c3f67ad6f594c0b0b3c872b15d269f036b4e2b3e9a4c443c52a0474e6f76b9a9"
+    },
+    "examples/physical-character-yard/prepare.py": {
+      "bytes": 27893,
+      "sha256": "17175136bbbb35a9418c80613c4f84b8857bd55c8f1c181037fa540b3202bcc1"
+    },
+    "examples/physical-character-yard/run.py": {
+      "bytes": 15060,
+      "sha256": "72fa64aca8465243b65e1782319e4ec3c34374e984a3e2684e06e70cc0c90e01"
+    },
+    "examples/physical-character-yard/drive-poses.json": {
+      "bytes": 9992,
+      "sha256": "4e695a8ecb4efcf721f3cb53be1c677ad5247be3e00e103bb9eb3e62375c7e6e"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "examples/physical-character-yard/source-manifest.json": {
+      "bytes": 815,
+      "sha256": "9bac7bdd307ec44db66786632e8ca82be5fcf14ad5f15412b83d97dffa872f29"
+    },
+    "tests/physical_character_animation.py": {
+      "bytes": 37287,
+      "sha256": "cc470ff295c6e2678379b24ec7ee2392fd2496c337879c972238b7b1c5fc02dc"
+    },
+    "tests/physical_character_drives.py": {
+      "bytes": 37443,
+      "sha256": "4bd4836535833dd2fd986c3756414489f246a9f0775dede1dc618b7312ebace6"
+    },
+    "tests/physical_character_gameplay_contract.py": {
+      "bytes": 42877,
+      "sha256": "6eb9586f96b84c75b83d36f3c2878606d144eb27db1c6572d724fe5d02881ebf"
+    },
+    "tests/physical_drive_gameplay.py": {
+      "bytes": 33978,
+      "sha256": "398c9eec72b649e6c79e1e8ef31cfe06317265fcf587ecb06ed3aa2af97a67ab"
+    },
+    "managed/Directory.Build.props": {
+      "bytes": 341,
+      "sha256": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d"
+    },
+    "managed/Poima.Gameplay/PhysicalRigAnimation.cs": {
+      "bytes": 15344,
+      "sha256": "931132072c6cf0acf8223bab99dbdcecd8001c7335beb349ac0b274e213a5744"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 6974,
+      "sha256": "982e0a84af117ef9acde63b2fcf2c45f82121c1e67a4dd0bff01c6a9171e57df"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7803,
+      "sha256": "1593fb19633aab0821e46e7d74572bc284e6c78e24355535b5f49d2a46b132f6"
+    },
+    "scripts/package_authoring.py": {
+      "bytes": 11920,
+      "sha256": "cf9c571fb5faec60972cc45c015d4640bcc60b51760fc1c5c23a2a1e230221e2"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 21616,
+      "sha256": "8f547a8fa1563f85dd4275b25fb8f7eda0ca1da139939e021b98b44a2b5aed64"
+    },
+    "scripts/authoring_pack.py": {
+      "bytes": 9960,
+      "sha256": "5423825b75a468abd59f527f8ec02e36b9fdaa109966b145fd1d0201f0b57843"
+    }
+  },
+  "sample": {
+    "original_nodes": 57,
+    "original_clips": 76,
+    "physical_bodies": 15,
+    "joints": 14,
+    "presets": [
+      "Relaxed",
+      "Guard",
+      "LiveIdle",
+      "LiveRunning"
+    ],
+    "previous_gameplay_fields_retained": 87,
+    "added_fields": 17,
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "limit_policy": "fit",
+    "authored_joint_limits_and_original_content_preserved": true,
+    "controls": [
+      "Live base clip replacement and crossfade/inertial transition",
+      "Rate-only edits without seeking",
+      "Individual joint strengths without clip restart",
+      "Explicit restart and future blend settings",
+      "Paused requests consumed on the next playing Tick",
+      "Manual-source release retaining effective joint targets and physics ownership"
+    ]
+  },
+  "authoring": {
+    "owner": {
+      "path": "build/character-animation-0.0.235/authoring-linux-1/report.json",
+      "bytes": 8390,
+      "sha256": "8fb4eda9f5c7f4ab94404b62227cc52d4a980d847929f04049f4e9522ee35e13"
+    },
+    "manifest": {
+      "path": "build/character-animation-0.0.235/authoring-linux-1/pack/authoring.json",
+      "bytes": 3456,
+      "sha256": "7b164a0d3c4c71fd91ce41f5e813cc62668c92479f560fd060851fea8d053d39"
+    },
+    "managed_build": {
+      "path": "build/character-animation-0.0.235/managed-linux-1/report.json",
+      "bytes": 5628,
+      "sha256": "652a128775f5de577ba9e585e172866b8281c5d058fe19c9d86343b6a14d47c3"
+    },
+    "project_preparation": {
+      "path": "build/character-animation-0.0.235/prepare-linux-1/report.json",
+      "bytes": 5700,
+      "sha256": "f4b06f58a59c07e87605a2f12a3763d2be165f224271becd7537570be847a96a"
+    }
+  },
+  "coreclr_linux": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/coreclr-linux-1/report.json",
+      "bytes": 6534,
+      "sha256": "7493e4f6e82b36edc4c36776d17f9a3e612f87e47326101542c5beec747f478b"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/coreclr-linux-1/consumer/evidence.json",
+      "bytes": 27545162,
+      "sha256": "8c171591727af2ffd8353a3aec43b3258fb015627e56ed76be5e78f05877679b"
+    },
+    "rpc_calls": 741,
+    "complete_archives": 25,
+    "whole_state_pairs": 14,
+    "excluded_state_fields": [],
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "physical_save_extension": 6,
+    "target_observations": 78,
+    "target_steps": 34,
+    "actual_camera_hits": 1,
+    "natural_engine_processes": 2,
+    "game_image": {
+      "bytes": 34816,
+      "sha256": "ee171e24e086c412d8542b0bc1343df93fd217ee5ea0edc079ecddc864bc1f16"
+    }
+  },
+  "coreclr_windows": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/windows-coreclr-1/report.json",
+      "bytes": 11228,
+      "sha256": "29130b8b1e085e19b9606e2be45298551bbf5c6d98764346e54aec1cfd108dee"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/windows-coreclr-1/consumer/evidence.json",
+      "bytes": 27547635,
+      "sha256": "9a4088bc785618a2422d878c43eacb85338e38b818f44e869b93aa3acb424072"
+    },
+    "rpc_calls": 741,
+    "complete_archives": 25,
+    "whole_state_pairs": 14,
+    "excluded_state_fields": [],
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "physical_save_extension": 6,
+    "target_observations": 78,
+    "target_steps": 34,
+    "actual_camera_hits": 1,
+    "natural_engine_processes": 2,
+    "game_image": {
+      "bytes": 34816,
+      "sha256": "ee171e24e086c412d8542b0bc1343df93fd217ee5ea0edc079ecddc864bc1f16"
+    }
+  },
+  "native_aot_windows": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/windows-native_aot-1/report.json",
+      "bytes": 11233,
+      "sha256": "fd039bf1a867e56bd1624e88397e87a2194c9e55e59177453333fa211dfe6794"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/windows-native_aot-1/consumer/evidence.json",
+      "bytes": 27581814,
+      "sha256": "9f9b421f4118b3788acf6af8103ebc6ccb2a9718b535ea1e2b59d94af8d68c2f"
+    },
+    "rpc_calls": 741,
+    "complete_archives": 25,
+    "whole_state_pairs": 14,
+    "excluded_state_fields": [],
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "physical_save_extension": 6,
+    "target_observations": 78,
+    "target_steps": 34,
+    "actual_camera_hits": 1,
+    "natural_engine_processes": 2,
+    "game_image": {
+      "bytes": 1458176,
+      "sha256": "5a60424e12079029433b4ef41643f005e2f78f099f37f9941b577c01f2d1d43d"
+    }
+  },
+  "native_publication": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/aot-windows-1/report.json",
+      "bytes": 4882,
+      "sha256": "af61dbc8d65bb560e53d87ee8e6a3eaa3226f089edf0ee003a0fcd3d4cb44f2b"
+    },
+    "worker": {
+      "path": "build/character-animation-0.0.235/aot-windows-1/worker.json",
+      "bytes": 21417,
+      "sha256": "dc887d2dcd5ac56b47f673f09b7d53437a64ed8a967801ff8e42c1cbcd870a57"
+    },
+    "descriptor": {
+      "path": "build/character-animation-0.0.235/aot-windows-1/artifact/native-gameplay.json",
+      "bytes": 15239,
+      "sha256": "edc224e2127aa95ccfc91d1daa3590bb73077ec9dee4b4a2b8adc1c138b8a328"
+    },
+    "native_library": {
+      "path": "build/character-animation-0.0.235/aot-windows-1/artifact/Poima.NativeGame.dll",
+      "bytes": 1458176,
+      "sha256": "5a60424e12079029433b4ef41643f005e2f78f099f37f9941b577c01f2d1d43d"
+    },
+    "requirements": {
+      "call_version": 1,
+      "call_bytes": 80,
+      "services_version": 7,
+      "services_bytes": 496,
+      "features": [
+        "animation_rate_v1",
+        "animation_grounding_control_v1",
+        "animation_ik_end_orientation_v1",
+        "animation_ik_v1",
+        "animation_inertial_v1",
+        "baseline_v7",
+        "character_input_v1",
+        "hit_regions_v1",
+        "input_actions_v1",
+        "physical_rig_animation_v1",
+        "physical_rig_drive_v1",
+        "physical_rig_v1"
+      ]
+    },
+    "publisher_exit_code": 0,
+    "publisher_natural_exit": true,
+    "all_descendants_natural": false,
+    "owned_telemetry_helpers_terminated": 1,
+    "cleanup_scope": "One verified current-Job MSVC telemetry helper was terminated after successful publication and artifact validation; no global process cleanup."
+  },
+  "rendered_ui": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/windows-hud-1/report.json",
+      "bytes": 7285,
+      "sha256": "6fc1c689d3189651b3db9adb754be5755601a01a0a1c434c90091e0b25df19f7"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/windows-hud-1/consumer/evidence.json",
+      "bytes": 9470791,
+      "sha256": "029d0b7218ea28c0faf192fb735eddeceba6314ffcffcfc61d934953b9aabb58"
+    },
+    "backend": "CoreCLR",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "resolution": [
+      1280,
+      720
+    ],
+    "msaa_samples": 4,
+    "rpc_calls": 236,
+    "complete_archives": 10,
+    "whole_capture_purity_pairs": 5,
+    "frames": [
+      {
+        "label": "grounded-ui",
+        "image": {
+          "path": "build/character-animation-0.0.235/windows-hud-1/consumer/frames/grounded-ui.bmp",
+          "bytes": 3686538,
+          "sha256": "a446b48ee19af714ce4c36398c3b9431653f03388b1b92a798bd3079b2abb43e"
+        },
+        "tick": 14,
+        "ui_scale": 1.25,
+        "displayed_owner_matches": true,
+        "layout_rectangles_outside_clip": 4,
+        "hardware": true,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "live-idle-ui",
+        "image": {
+          "path": "build/character-animation-0.0.235/windows-hud-1/consumer/frames/live-idle-ui.bmp",
+          "bytes": 3686538,
+          "sha256": "8be20eca629870b8fbd816d66d61b677758d2c17799037e0b9e3881ae42e95b9"
+        },
+        "tick": 16,
+        "ui_scale": 1.25,
+        "displayed_owner_matches": true,
+        "layout_rectangles_outside_clip": 4,
+        "hardware": true,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "live-running-transition-ui",
+        "image": {
+          "path": "build/character-animation-0.0.235/windows-hud-1/consumer/frames/live-running-transition-ui.bmp",
+          "bytes": 3686538,
+          "sha256": "5c49d34140b8fea43bb6b0009076064b85ea5905cbd7bb728d1184b1c1467693"
+        },
+        "tick": 18,
+        "ui_scale": 1.25,
+        "displayed_owner_matches": true,
+        "layout_rectangles_outside_clip": 4,
+        "hardware": true,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "released-ui",
+        "image": {
+          "path": "build/character-animation-0.0.235/windows-hud-1/consumer/frames/released-ui.bmp",
+          "bytes": 3686538,
+          "sha256": "5f54d223c2057785a668a19ce55ae9d330204b70d77c98585333089a62fb1ae7"
+        },
+        "tick": 20,
+        "ui_scale": 1.25,
+        "displayed_owner_matches": true,
+        "layout_rectangles_outside_clip": 4,
+        "hardware": true,
+        "nvrhi_errors": 0
+      },
+      {
+        "label": "queued-menu-ui",
+        "image": {
+          "path": "build/character-animation-0.0.235/windows-hud-1/consumer/frames/queued-menu-ui.bmp",
+          "bytes": 3686538,
+          "sha256": "61020c6ef1914726fead6c87633e4d61b151cc2a6393cef71556c5895ca2bf8a"
+        },
+        "tick": 22,
+        "ui_scale": 1.25,
+        "displayed_owner_matches": true,
+        "layout_rectangles_outside_clip": 4,
+        "hardware": true,
+        "nvrhi_errors": 0
+      }
+    ],
+    "inspection": "All five full-resolution frames inspected. Full character and controls visible; requested and observed values legible; no observed glyph overlap or clipping in these views.",
+    "layout_boundary": "Four label rectangles extend beyond the viewport at scale1.25. Their displayed glyphs fit in these selected frames; other sizes and scales remain unqualified.",
+    "published_image": {
+      "path": "docs/evidence/m2-character-animation-controls.png",
+      "bytes": 104234,
+      "sha256": "ca84003cd6cb56588e77ab98646bd9db0090ce8f086ee72c87eb64f84608cfa7"
+    },
+    "derivative": "Lossless PNG conversion, independently verified decoded pixels equal the original live-idle BMP."
+  },
+  "runtime_install": {
+    "original_owner": {
+      "path": "build/character-animation-0.0.235/runtime-install-1/report.json",
+      "bytes": 11527,
+      "sha256": "7647c885558f1e19f7f2071085445af075c44e6e6a6a8e09d03eca26ef62a442"
+    },
+    "original_owner_passed": false,
+    "original_failure": "The install completed, but its verifier compared literal manifest paths and rejected a /./ locator.",
+    "successor_owner": {
+      "path": "build/character-animation-0.0.235/runtime-install-verification-1/report.json",
+      "bytes": 4178,
+      "sha256": "7d628731c9564275a4eb8b9b4b75f5745b2384fc235757d41773afd85fa528df"
+    },
+    "successor_record": {
+      "path": "build/character-animation-0.0.235/runtime-install-verification-1/verify/installation.json",
+      "bytes": 18905,
+      "sha256": "e11be6bf7897e745798d0bbd1d89a46197b6135192255b84e75c362fc3fc60dd"
+    },
+    "successor_passed": true,
+    "reinstalled": false,
+    "comparison": "Original raw manifest retained; resolve file locations and compare every original installed byte. Only the newly staged desktop DLL was retired.",
+    "selected_runtime_files": 48
+  },
+  "standalone_export": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/export-windows-1/report.json",
+      "bytes": 22554,
+      "sha256": "db42813e31dc75fd5b8fdbaf0db57d1c05d4fb678d7b05d6eb279b7beb5f5b3c"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/export-windows-1/consumer/evidence.json",
+      "bytes": 26052,
+      "sha256": "40f9dc1c65ee0c4629cb31d710d91fc839b5eb089cb4645d7309c1b2430a8176"
+    },
+    "public_commands": [
+      "inspect",
+      "adopt",
+      "export",
+      "inspect-game"
+    ],
+    "bundle_files": 63,
+    "bundle_bytes": 92629478,
+    "engine_version": "0.0.234",
+    "native_aot": true,
+    "managed_pe_payloads": 0
+  },
+  "relocated_game": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-animation-0.0.235/relocated-windows-1/report.json",
+      "bytes": 11933,
+      "sha256": "2b796dfecffb20d8cfe21063783e33ad702be18e2c632842c4829138eac32dc4"
+    },
+    "record": {
+      "path": "build/character-animation-0.0.235/relocated-windows-1/consumer/evidence.json",
+      "bytes": 4464,
+      "sha256": "952cc0fdfbc7478aaee2e7382a39cfdacf3126c7f7033c5cfe44e0d74bba62dd"
+    },
+    "original_verifier_record": {
+      "path": "build/character-animation-0.0.235/relocated-windows-1/consumer/consumer/evidence.json",
+      "bytes": 29004526,
+      "sha256": "b2bb250f89229edd0bbb3945ef730113defbfd4a0953babd218fa5301a3ce602"
+    },
+    "rpc_calls": 747,
+    "complete_archives": 25,
+    "whole_state_pairs": 14,
+    "excluded_state_fields": [],
+    "gameplay_fields": 104,
+    "gameplay_bytes": 656,
+    "natural_game_processes": 2,
+    "entry": "Bundled poima.exe game stdio with the relocated game.json and native library",
+    "verifier_scope": "Unchanged public gameplay sequence with explicit immutable-game launch, automatic-start and active cold-restore adapters. Literal requests/replies and complete saves retained.",
+    "source_path_scope": "The owned copied export-project path was unavailable. Other development files and original artwork remained available as verifier references; this is not clean-machine isolation."
+  },
+  "limits": [
+    "No active balance, stepping, recovery or target-velocity feedforward.",
+    "The new NativeAOT sample exercises base playback, rates and per-joint sources; it adds no target-layer NativeAOT coverage.",
+    "Rendered captures use CoreCLR and paused fixed-tick observations. They do not establish continuous motion quality, physical device interaction or representative performance.",
+    "Saves bind their compiled game image. No migration from the older87-field sample is supplied.",
+    "Same-host warm/cold full-state equality is not a promise of cross-platform future bit identity.",
+    "The broader Alpha and full engine release gates remain open."
+  ],
+  "reproduction": {
+    "sample": "examples/physical-character-yard/README.md",
+    "public_verifier": "tests/physical_character_animation.py",
+    "contract": "docs/PHYSICAL_ANIMATION.md"
+  }
+}

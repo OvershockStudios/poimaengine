@@ -241,8 +241,11 @@ and subsequent corrections are recorded separately in the qualification record.
 
 The unchanged previously compiled NativeAOT character game also passes on the
 new Windows host, including ten complete saves and six whole-state pairs.
-That is compatibility evidence for its original 424-byte interface. Publishing
-and executing a NativeAOT game that requests the new drives remains separate.
+That original record is compatibility evidence for its 424-byte interface.
+The later [playable drive record](evidence/m2-character-drives.json) separately
+publishes and executes the 448-byte drive consumer; the
+[live-target sample](../examples/physical-character-yard/README.md) exercises
+the 496-byte physical-animation interface.
 
 For a [configured simulation build](BUILD.md), build and run the focused suite:
 

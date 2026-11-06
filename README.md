@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.234.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.235.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -126,7 +126,7 @@ Follow the [Windows editor build and launch guide](docs/DESKTOP_EDITOR.md#build-
 
 [Locomotion Yard](examples/locomotion-yard) connects an original licensed FBX character with separate idle/run clips, or an intact multi-take GLB library, to native capsule movement, compiled navigation and checkpoints. Playback rate follows committed controller movement. Its playbooks distinguish rendered Windows playback from headless standalone save continuation.
 
-[Physical Character Yard](examples/physical-character-yard) combines original imported animation, localized hits and physical takeover with two authored pose holds, per-joint strengths and release. [CoreCLR and NativeAOT checks](docs/evidence/m2-character-drives.json) preserve complete checkpoints; a captured comparison shows powered and zero-strength responses. Independent [animation targets](docs/PHYSICAL_ANIMATION.md) can also drive physical joints from clips and layers through CLI and C# controls. Balance and recovery remain further work.
+[Physical Character Yard](examples/physical-character-yard) combines imported animation, localized hits and physical takeover with authored poses, live clip targets, per-joint strengths and release. Playback speed, restarts and blends have visible controls. [CoreCLR, NativeAOT and relocated-game checks](docs/evidence/m2-character-animation-controls.json) preserve complete checkpoints. The underlying [animation-target API](docs/PHYSICAL_ANIMATION.md) also supports layers. Balance and recovery remain further work.
 
 [Traversal Yard](examples/traversal-yard) brings steps, crouch clearance, a moving lift, three objectives, camera zoom and saves together in one first-person C# game. CoreCLR and Native AOT checks complete the course through movement and interaction inputs. Its relocated Windows export passes rendered playback and fresh-process save continuation using the cooked content.
 
