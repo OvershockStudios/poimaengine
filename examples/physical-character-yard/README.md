@@ -11,13 +11,24 @@ The compiled C# sample puts these systems into a first-person test yard. Move
 and aim independently of the Knight, switch its original Idle/Running_A clips,
 and fire a native camera ray. The returned hit region selects the physical body
 that receives the impulse. A lethal hit transfers the current character pose to
-passive physics. Save/Load preserves either state; Retry restores the separate
-checkpoint created by Begin.
+passive physics by default. Hold pose can also transfer the character into
+physics, with bounded joint torques pulling toward Relaxed or Guard targets.
+Save/Load preserves the complete state; Retry restores the separate checkpoint
+created by Begin.
 
-![Physical Character Yard in the Windows Vulkan player](../../docs/evidence/m2-playable-physical-character.png)
+![Physical Character Yard with joint pose controls in the Windows Vulkan player](../../docs/evidence/m2-character-drives.png)
 
 Actual Windows Vulkan idle capture. Knight artwork: Kay Lousberg, CC0-1.0.
 This still shows the sample's appearance; it does not qualify motion quality.
+
+![Zero-strength and powered joint response](../../docs/evidence/m2-character-drives-comparison.gif)
+
+The same physical starting state with zero strength (left) and 65% strength
+(right), changing from Relaxed to Guard, receiving a shot, then releasing.
+These are actual 60 Hz simulation frames sampled at 10 fps. The powered joints
+retain more of the requested posture, but both characters fall. Shot directions
+follow each branch's actual pose; this is not a comparison with identical
+external impulses or a smoothness benchmark.
 
 Prepare with a simulation-enabled CLI and the original files listed below:
 
@@ -54,21 +65,64 @@ its own save folder under its fresh output directory. Closing the window closes
 the owned service. `--trace` optionally records bounded diagnostic RPC logs.
 
 `Health`, `Damage`, `ShotImpulse`, `Range`, `PatrolExtent` and `RunInput` are typed,
-inspectable gameplay tuning. All 61 mutable gameplay fields are serialized.
+inspectable gameplay tuning. All 87 mutable gameplay fields are serialized.
 Native input owns the player's movement; C# owns only the target's patrol.
 Shots run before target motor/animation edits to keep physical ownership
 unambiguous. Named hit regions are authored query proxies, not exact skinned
 mesh collision. Retry restores a checkpoint; it is not a get-up animation or
 active balance system.
 
-The public [gameplay check](../../tests/physical_character_gameplay_contract.py)
-exercises ordinary controls, actual camera hits, zero/positive impulse response,
-rejected-command rollback and complete warm/cold saves on Windows and Linux.
-The separate [Windows player check](../../tests/physical_character_player_contract.py)
-uses elapsed-time background play, native logical input and Vulkan captures.
-Neither substitutes for physical mouse/controller testing or motion-quality
-review. Run these checks under an external process-tree supervisor with fresh
-output directories; both provide their input selectors through `--help`.
+The public [drive gameplay check](../../tests/physical_character_drives.py)
+exercises ordinary menus and patrol, direct pose-hold takeover, actual camera
+hits before and during driven motion, per-joint controls, rejection rollback
+and complete warm/cold saves. Select CoreCLR with `--hostfxr`, `--bridge` and
+`--assembly`, or `--backend native_aot --descriptor` for an already published
+native game. Both modes require the world, original source/license, native CLI
+and a fresh output directory. Run it under an external process-tree supervisor;
+`--help` lists the selectors. Neither mode opens a renderer or substitutes for
+physical mouse/controller testing or motion-quality review.
+
+The [0.0.233 results](../../docs/evidence/m2-character-drives.json) pass the
+same workflow on Windows/Linux CoreCLR and Windows NativeAOT: 611 RPC calls,
+31 complete saves and sixteen whole-state comparisons per run. All 87 fields
+survive warm and fresh-process continuation. These runs use the 0.0.232 native
+runtime and matching 448-byte gameplay interface. A separate Windows Vulkan
+run supplies the captures above; the current drive game has not repeated the
+earlier relocated-export test.
+
+The earlier [61-field gameplay check](../../tests/physical_character_gameplay_contract.py)
+and [elapsed Windows player check](../../tests/physical_character_player_contract.py)
+apply to the original 0.0.231 sample and its drive-free world. Keep those
+compiled artifacts and inputs together when reproducing that historical record.
+Prepare a fresh project and matching current game for the drive controls.
+
+### Joint pose controls
+
+| Control | Behavior |
+| --- | --- |
+| Hold pose | Requests physical takeover if needed, then applies the selected targets and strengths. |
+| Release | Sets all active strengths to zero while retaining physics ownership and joint targets. |
+| Pose | Switches between Relaxed and Guard. |
+| Joint | Selects one of the fourteen named joints. |
+| Request | Cycles that joint through 0%, 25%, 50%, 75% and 100%. Direct typed fields also accept intermediate strengths. |
+
+These controls remain available in the menu. A paused request is queued until
+the next playing tick. The status distinguishes requested settings from the
+last committed native observation; selecting another joint does not relabel an
+older strength reading. Holding a pose does not balance the character, add a
+support force or restart animation. Gravity, contacts and the original joint
+limits continue to act. A driven character still accepts localized shot
+impulses.
+
+[`drive-poses.json`](drive-poses.json) records the gains, joint-frame targets and
+their provenance. The matching C# constants make the same targets available to
+the compiled game; changing the presets requires updating both definitions and
+rebuilding the sample. The original body shapes, masses, joint frames, limits,
+passive coefficients and complete artwork are retained. Selected Idle rotations
+supply references; other targets are explicitly authored because the source
+animation is not uniformly inside the physical joint limits. No source pose is
+silently projected or clamped. See the [joint-drive contract](../../docs/PHYSICAL_DRIVES.md)
+for units, target frames, ordering and save behavior.
 
 ### Build a standalone Windows game
 
@@ -119,8 +173,8 @@ added files outside its verified inventory. The Windows launcher stores saves
 outside the bundle, under the current user's per-project Poima save directory;
 see [standalone player options](../../docs/PROJECTS.md#run-or-replay).
 
-The [checkpoint evidence](../../docs/evidence/m2-playable-physical-character.json)
-records this sample's native library, 63-file Windows export and separate
+The [0.0.231 checkpoint evidence](../../docs/evidence/m2-playable-physical-character.json)
+records that earlier sample's native library, 63-file Windows export and separate
 277-RPC native / 287-RPC relocated gameplay checks. Both verify complete
 animated/passive saves and fresh-process continuation. The relocated test used
 the bundled engine with its owned export-source path unavailable; other

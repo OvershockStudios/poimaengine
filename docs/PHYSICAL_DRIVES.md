@@ -203,6 +203,13 @@ This adds no cross-platform future bit-identity guarantee.
 
 The [checkpoint qualification](evidence/m2-physical-joint-drives.json) records
 native Linux and Windows checks, managed ABI checks and actual CoreCLR gameplay.
+
+The [playable character example](../examples/physical-character-yard/README.md#joint-pose-controls)
+composes fourteen drives, two authored poses, per-joint strengths and camera-hit
+impulses on an unchanged imported character. Its [follow-up qualification](evidence/m2-character-drives.json)
+adds actual Windows NativeAOT drive gameplay, complete saves and Windows Vulkan
+observations. Both zero-strength and powered characters fall: posture targets
+do not supply balance or recovery.
 The source tests are
 [authoring admission](../tests/physical_drive_authoring.cpp),
 [independent drive math](../tests/physical_drive_math.cpp) and

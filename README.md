@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.232.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.233.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -126,7 +126,7 @@ Follow the [Windows editor build and launch guide](docs/DESKTOP_EDITOR.md#build-
 
 [Locomotion Yard](examples/locomotion-yard) connects an original licensed FBX character with separate idle/run clips, or an intact multi-take GLB library, to native capsule movement, compiled navigation and checkpoints. Playback rate follows committed controller movement. Its playbooks distinguish rendered Windows playback from headless standalone save continuation.
 
-[Physical Character Yard](examples/physical-character-yard) transfers an unchanged licensed humanoid from animation to passive physics, then verifies falls, localized hits and complete warm/cold save continuation in Windows and Linux headless workflows. Selected [Windows Vulkan checks](docs/evidence/m2-skeletal-physical-rigs-rendering.json) add source-derived arm diagnostics, complete character views and matching restored frames.
+[Physical Character Yard](examples/physical-character-yard) combines original imported animation, localized hits and physical takeover with two authored pose holds, per-joint strengths and release. [CoreCLR and NativeAOT checks](docs/evidence/m2-character-drives.json) preserve complete checkpoints; a captured comparison shows powered and zero-strength responses. Balance and recovery remain further work.
 
 [Traversal Yard](examples/traversal-yard) brings steps, crouch clearance, a moving lift, three objectives, camera zoom and saves together in one first-person C# game. CoreCLR and Native AOT checks complete the course through movement and interaction inputs. Its relocated Windows export passes rendered playback and fresh-process save continuation using the cooked content.
 

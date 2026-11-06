@@ -1,0 +1,740 @@
+{
+  "format": "poima.evidence.character-drives.v1",
+  "date": "2026-11-06",
+  "source_checkpoint": "0.0.233",
+  "native_runtime": "0.0.232",
+  "world_schema": 128,
+  "gameplay_services": {
+    "epoch": 7,
+    "minimum_bytes": 448
+  },
+  "scope": "Playable original-character joint pose controls, localized driven hits, complete saves and selected rendered responses.",
+  "source_identities": {
+    "examples/physical-character-yard/PhysicalCharacterGame.cs": {
+      "bytes": 32293,
+      "sha256": "1b8d7ede63997ce79ff1f446279a3018979f50997d6933224fb4fbeb249b2280"
+    },
+    "examples/physical-character-yard/Poima.PhysicalCharacterGame.csproj": {
+      "bytes": 544,
+      "sha256": "c3f67ad6f594c0b0b3c872b15d269f036b4e2b3e9a4c443c52a0474e6f76b9a9"
+    },
+    "examples/physical-character-yard/prepare.py": {
+      "bytes": 27061,
+      "sha256": "3e1d7dcac99296ee279694085e2e8691bfd1c69f457ddebb0e886ee04d9a3832"
+    },
+    "examples/physical-character-yard/drive-poses.json": {
+      "bytes": 9992,
+      "sha256": "4e695a8ecb4efcf721f3cb53be1c677ad5247be3e00e103bb9eb3e62375c7e6e"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "examples/physical-character-yard/source-manifest.json": {
+      "bytes": 815,
+      "sha256": "9bac7bdd307ec44db66786632e8ca82be5fcf14ad5f15412b83d97dffa872f29"
+    },
+    "tests/physical_character_drives.py": {
+      "bytes": 37443,
+      "sha256": "4bd4836535833dd2fd986c3756414489f246a9f0775dede1dc618b7312ebace6"
+    }
+  },
+  "sample": {
+    "joints": 14,
+    "physical_bodies": 15,
+    "presets": [
+      "Relaxed",
+      "Guard"
+    ],
+    "default_requested_strength": 0.65,
+    "initial_active_strength": 0,
+    "original_geometry_and_joint_limits_unchanged": true,
+    "mutable_gameplay_fields": 87,
+    "gameplay_bytes": 560,
+    "controls": [
+      "pose-hold",
+      "pose-release",
+      "pose-preset",
+      "pose-joint",
+      "pose-strength"
+    ],
+    "paused_controls": "Requests queue until the next playing tick; UI distinguishes requested controls from committed native reads.",
+    "ownership": "Explicit animated-to-physical takeover; release keeps targets and physical ownership."
+  },
+  "original_content": {
+    "author": "Kay Lousberg",
+    "license": "CC0-1.0",
+    "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47",
+    "manifest": "examples/physical-character-yard/source-manifest.json",
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76
+  },
+  "builds": {
+    "authoring-linux-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/authoring-linux-1/report.json",
+        "bytes": 8454,
+        "sha256": "43ad3bbdd611e6234f66617f035ec6cbbef202f2d332db3e900426e0f1a19a5b"
+      }
+    },
+    "managed-linux-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/managed-linux-1/report.json",
+        "bytes": 5657,
+        "sha256": "25018afaaeb0f5a9261b6df2d3450871e8f587102d856e2067c62918769cd6fa"
+      }
+    },
+    "prepare-linux-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/prepare-linux-1/report.json",
+        "bytes": 5732,
+        "sha256": "c992e31c0719fe3cec95a7c19cb7f9c8c70c1a4307e132b14a4c92df0dea910b"
+      }
+    }
+  },
+  "gameplay": {
+    "coreclr-linux-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/coreclr-linux-1/report.json",
+        "bytes": 7045,
+        "sha256": "473041c7dca0a726704ded71a530f9471009f1acb97b114744249b4a3cb835a2"
+      },
+      "evidence": {
+        "path": "build/character-drives-0.0.233/coreclr-linux-1/consumer/evidence.json",
+        "bytes": 8024149,
+        "sha256": "e2f562a5519e37d940a6d506703695d6e30e4bcd42412ef4f1409b293d36c339"
+      },
+      "backend": "coreclr",
+      "game_image": {
+        "bytes": 28672,
+        "sha256": "3eb568669d924e51e3b647fe6b79068514bb36b8fab4ceda04d3af632afeee2c"
+      },
+      "rpc": 611,
+      "rpc_recording": "Original request/reply line files independently joined to the complete recorded calls.",
+      "natural_engine_processes": 3,
+      "complete_archives": 31,
+      "complete_byte_and_typed_pairs": 16,
+      "excluded_state_fields": [],
+      "gameplay_fields": 87,
+      "gameplay_bytes": 560,
+      "actual_camera_shots": 2,
+      "drive_observations": 5,
+      "consumed_inputs": 40,
+      "copied_inputs": 3,
+      "admission_scope": "All 40 consumed inputs checked before/after. 39 are in the outer gameplay admission; the sample csproj is pinned separately by the actual preceding managed compilation. Initial audit incorrectly required all 40 in the outer plan and remains failed; the corrected audit records both original authorities."
+    },
+    "windows-coreclr-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/windows-coreclr-1/report.json",
+        "bytes": 13096,
+        "sha256": "91b844c8346583e93ce428b5e28c8d4589a486f040b2243beb3e78558cfb8775"
+      },
+      "evidence": {
+        "path": "build/character-drives-0.0.233/windows-coreclr-1/consumer/evidence.json",
+        "bytes": 8026843,
+        "sha256": "1d368571abd5c5dfa91ed7cd75c5e5d7691b929be00acf3f29dcac9133b84d4d"
+      },
+      "backend": "coreclr",
+      "game_image": {
+        "bytes": 28672,
+        "sha256": "3eb568669d924e51e3b647fe6b79068514bb36b8fab4ceda04d3af632afeee2c"
+      },
+      "rpc": 611,
+      "rpc_recording": "Original request/reply line files independently joined to the complete recorded calls.",
+      "natural_engine_processes": 3,
+      "complete_archives": 31,
+      "complete_byte_and_typed_pairs": 16,
+      "excluded_state_fields": [],
+      "gameplay_fields": 87,
+      "gameplay_bytes": 560,
+      "actual_camera_shots": 2,
+      "drive_observations": 5,
+      "consumed_inputs": 40,
+      "copied_inputs": 3,
+      "admission_scope": "All 40 consumed inputs exactly match the original Windows admission."
+    },
+    "windows-native_aot-1": {
+      "passed": true,
+      "owner": {
+        "path": "build/character-drives-0.0.233/windows-native_aot-1/report.json",
+        "bytes": 13099,
+        "sha256": "ca09bd5de85f3fa8333d67db9abbf43e4613ec90fc7a26e73dff9eb4c7a1589b"
+      },
+      "evidence": {
+        "path": "build/character-drives-0.0.233/windows-native_aot-1/consumer/evidence.json",
+        "bytes": 8047570,
+        "sha256": "31665829c7052f78e43fb6ea0b3037dc81ba1e7d2f2bb68b5c7c675902cb68f0"
+      },
+      "backend": "native_aot",
+      "game_image": {
+        "bytes": 1433088,
+        "sha256": "5d0e660b2f23be8e39848ab3c7c7c2a35d2d576dfe1d40f0c50fddaa16b3a8ab"
+      },
+      "rpc": 611,
+      "rpc_recording": "Original request/reply line files independently joined to the complete recorded calls.",
+      "natural_engine_processes": 3,
+      "complete_archives": 31,
+      "complete_byte_and_typed_pairs": 16,
+      "excluded_state_fields": [],
+      "gameplay_fields": 87,
+      "gameplay_bytes": 560,
+      "actual_camera_shots": 2,
+      "drive_observations": 5,
+      "consumed_inputs": 41,
+      "copied_inputs": 3,
+      "admission_scope": "All 41 consumed inputs match original admission, with separate original publisher, source copy, compiled SDK and complete generated schema provenance."
+    }
+  },
+  "native_aot_publication": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-drives-0.0.233/aot-windows-1/report.json",
+      "bytes": 4864,
+      "sha256": "64586ad895b799e85836da50067b709651e59c4ec16936ab50832746a494279c"
+    },
+    "descriptor": {
+      "path": "build/character-drives-0.0.233/aot-windows-1/artifact/native-gameplay.json",
+      "bytes": 12995,
+      "sha256": "d9f7c0b7a94e8535188e9252af67344a7f3de78522544f0af0b8387c9eb3fa66"
+    },
+    "library": {
+      "path": "build/character-drives-0.0.233/aot-windows-1/artifact/Poima.NativeGame.dll",
+      "bytes": 1433088,
+      "sha256": "5d0e660b2f23be8e39848ab3c7c7c2a35d2d576dfe1d40f0c50fddaa16b3a8ab"
+    },
+    "required_features": [
+      "baseline_v7",
+      "animation_rate_v1",
+      "animation_grounding_control_v1",
+      "animation_ik_end_orientation_v1",
+      "animation_ik_v1",
+      "animation_inertial_v1",
+      "character_input_v1",
+      "hit_regions_v1",
+      "input_actions_v1",
+      "physical_rig_drive_v1",
+      "physical_rig_v1"
+    ],
+    "publisher_natural_exit": true,
+    "all_descendants_natural": false,
+    "controlled_helper_cleanup_count": 1,
+    "cleanup": "One owned MSVC telemetry helper remained after successful publication and artifact verification; its held verified process was terminated. This is distinct from the naturally successful publisher and empty outer Job.",
+    "runtime_execution": "The separately recorded Windows NativeAOT gameplay cohort actually loads and runs this artifact; publication alone is not its execution evidence.",
+    "relocated_export": false
+  },
+  "verified_behavior": [
+    "Begin/menu/patrol/stopped grounding and idempotent Menu request replay",
+    "Explicit Hold directly from animated ownership",
+    "Real camera-hit passive takeover, then powered hold",
+    "Real localized impulse while already Driven",
+    "Zero versus positive strength from the same complete physical origin; changed strengths and required gameplay revision/checksum are explicit",
+    "Invalid control and duplicate caller/gameplay joint-write rollback retains complete archive",
+    "Selected joint strength and both preset replacements",
+    "Release retains targets and physical ownership",
+    "Complete warm and fresh-process Driven and Released save continuation",
+    "Ordinary Save/Load/Resume controls"
+  ],
+  "rendered_observations": {
+    "passed": true,
+    "owner": {
+      "path": "build/character-drives-0.0.233/windows-render-1/report.json",
+      "bytes": 31639,
+      "sha256": "7edaa7caf4c037f55b58c68daa3155ebf47219e5c489ffd0dc669d669361f5d6"
+    },
+    "evidence": {
+      "path": "build/character-drives-0.0.233/windows-render-1/consumer/evidence.json",
+      "bytes": 20877452,
+      "sha256": "82b1f89b9480d3d14e1fe21c2829ad2c573c2204bb17fb0ba159108b38dde8ef"
+    },
+    "backend": "coreclr",
+    "gpu": [
+      "NVIDIA GeForce RTX 4070 Laptop GPU"
+    ],
+    "resolution": [
+      1280,
+      720
+    ],
+    "samples": 4,
+    "captures": 43,
+    "rpc": 952,
+    "rpc_recording": "Complete decoded ordered request/response objects joined to downstream artifacts; no separate raw wire-line equality claim.",
+    "complete_archives": 89,
+    "complete_byte_and_typed_pairs": 45,
+    "excluded_state_fields": [],
+    "native_processes": 2,
+    "job_processes": 4,
+    "forced_cleanup": false,
+    "consumed_inputs": 44,
+    "preadmitted_inputs": 44,
+    "explicit_ui_visibility_edits": 84,
+    "simulation_hz": 60,
+    "sample_hz": 10,
+    "frames_per_sequence": 21,
+    "ticks_per_sequence": 120,
+    "phase_indices": {
+      "relaxed": [
+        0,
+        7
+      ],
+      "guard": [
+        8,
+        11
+      ],
+      "hit": [
+        12,
+        15
+      ],
+      "released": [
+        16,
+        20
+      ]
+    },
+    "maximum_reported_gpu_errors": 0,
+    "at_velocity_limit_samples": 0,
+    "curves": [
+      {
+        "lane": "zero",
+        "strength": 0.0,
+        "observations": [
+          {
+            "index": 0,
+            "tick": 17,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.3138133628695092,
+            "max_radians": 0.5136254782494405,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 1,
+            "tick": 23,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.5159031401762325,
+            "max_radians": 1.1611507179288167,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 2,
+            "tick": 29,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.7115894600228085,
+            "max_radians": 1.6517890416516703,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 3,
+            "tick": 35,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.8038274382259887,
+            "max_radians": 1.7808360084867711,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 4,
+            "tick": 41,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.8055070575127281,
+            "max_radians": 1.8401741471532294,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 5,
+            "tick": 47,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.8016525369317996,
+            "max_radians": 1.72059725375915,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 6,
+            "tick": 53,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.837172896999048,
+            "max_radians": 1.6707018128753839,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 7,
+            "tick": 59,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.8315240448651408,
+            "max_radians": 1.6248063351468047,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 8,
+            "tick": 65,
+            "phase": "Guard hold",
+            "rms_radians": 1.0457224151999764,
+            "max_radians": 1.989072152778306,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 9,
+            "tick": 71,
+            "phase": "Guard hold",
+            "rms_radians": 1.0058054562187986,
+            "max_radians": 1.7675033478122342,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 10,
+            "tick": 77,
+            "phase": "Guard hold",
+            "rms_radians": 0.9985381907833506,
+            "max_radians": 2.0307550791614046,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 11,
+            "tick": 83,
+            "phase": "Guard hold",
+            "rms_radians": 0.9580790933857884,
+            "max_radians": 2.104238194690888,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 12,
+            "tick": 89,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.8888689377970542,
+            "max_radians": 1.9765398693627143,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 13,
+            "tick": 95,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.8115777074238343,
+            "max_radians": 1.989314171131655,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 14,
+            "tick": 101,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.7997320438713615,
+            "max_radians": 2.125101282056017,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 15,
+            "tick": 107,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.7903687522051008,
+            "max_radians": 2.1425072433933194,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 16,
+            "tick": 113,
+            "phase": "Released",
+            "rms_radians": 0.778386222733937,
+            "max_radians": 2.136831270026823,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 17,
+            "tick": 119,
+            "phase": "Released",
+            "rms_radians": 0.7761092811290375,
+            "max_radians": 2.135979238154537,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 18,
+            "tick": 125,
+            "phase": "Released",
+            "rms_radians": 0.7754624366944918,
+            "max_radians": 2.1357468123842454,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 19,
+            "tick": 131,
+            "phase": "Released",
+            "rms_radians": 0.7750149913051252,
+            "max_radians": 2.1356505221329374,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 20,
+            "tick": 137,
+            "phase": "Released",
+            "rms_radians": 0.7746901165032402,
+            "max_radians": 2.1356212852641945,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          }
+        ]
+      },
+      {
+        "lane": "positive",
+        "strength": 0.65,
+        "observations": [
+          {
+            "index": 0,
+            "tick": 17,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.3179092457702695,
+            "max_radians": 0.5504798811022623,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 1,
+            "tick": 23,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.4578235153169122,
+            "max_radians": 0.9948047687357016,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 2,
+            "tick": 29,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.5784515137124648,
+            "max_radians": 1.4060826724475304,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 3,
+            "tick": 35,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.6403006561673698,
+            "max_radians": 1.60408935995642,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 4,
+            "tick": 41,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.6631630025931494,
+            "max_radians": 1.6978780972719199,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 5,
+            "tick": 47,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.6638666881783774,
+            "max_radians": 1.6907739168082379,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 6,
+            "tick": 53,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.6547855115753624,
+            "max_radians": 1.6407602924806133,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 7,
+            "tick": 59,
+            "phase": "Relaxed hold",
+            "rms_radians": 0.6326098094795009,
+            "max_radians": 1.5949769555878264,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 8,
+            "tick": 65,
+            "phase": "Guard hold",
+            "rms_radians": 0.8262959462450904,
+            "max_radians": 1.6003499284803717,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 9,
+            "tick": 71,
+            "phase": "Guard hold",
+            "rms_radians": 0.8107389139523855,
+            "max_radians": 1.6195691300525428,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 10,
+            "tick": 77,
+            "phase": "Guard hold",
+            "rms_radians": 0.81659817871685,
+            "max_radians": 1.6545892070799764,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 11,
+            "tick": 83,
+            "phase": "Guard hold",
+            "rms_radians": 0.808367399272743,
+            "max_radians": 1.6056211035945769,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 12,
+            "tick": 89,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.7553497078515903,
+            "max_radians": 1.4696383284317918,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 13,
+            "tick": 95,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.7316527148266295,
+            "max_radians": 1.3557462795759943,
+            "powered_joints": 14,
+            "saturated_joints": 1
+          },
+          {
+            "index": 14,
+            "tick": 101,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.7087318927177831,
+            "max_radians": 1.2716042393611577,
+            "powered_joints": 14,
+            "saturated_joints": 1
+          },
+          {
+            "index": 15,
+            "tick": 107,
+            "phase": "Guard hit reaction",
+            "rms_radians": 0.6509628346922463,
+            "max_radians": 1.2277229674016095,
+            "powered_joints": 14,
+            "saturated_joints": 0
+          },
+          {
+            "index": 16,
+            "tick": 113,
+            "phase": "Released",
+            "rms_radians": 0.6540151176491352,
+            "max_radians": 1.2086401600824015,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 17,
+            "tick": 119,
+            "phase": "Released",
+            "rms_radians": 0.6734393320657817,
+            "max_radians": 1.196334835217707,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 18,
+            "tick": 125,
+            "phase": "Released",
+            "rms_radians": 0.674352309948055,
+            "max_radians": 1.1910397773977002,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 19,
+            "tick": 131,
+            "phase": "Released",
+            "rms_radians": 0.6753919221771333,
+            "max_radians": 1.1892776086200418,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          },
+          {
+            "index": 20,
+            "tick": 137,
+            "phase": "Released",
+            "rms_radians": 0.6766275545990913,
+            "max_radians": 1.1885825584388492,
+            "powered_joints": 0,
+            "saturated_joints": 0
+          }
+        ]
+      }
+    ],
+    "visual_review": {
+      "inspected": "Original full-resolution HUD, both complete contact sheets and a full-resolution powered Guard frame; derived side-by-side media also reviewed.",
+      "observed": "Powered joints retain more of the selected posture, with a visibly different arm/weapon response. Both characters fall under gravity and contacts. No separated geometry or gross deformation was seen in these sampled frames.",
+      "hud": "Controls and captured text are readable at 1280x720. Some authored label rectangles extend beyond the viewport and are clipped; this is not a responsive-layout qualification.",
+      "comparison_limits": "Branches share an exact complete origin. Later camera-hit directions follow their actual different poses, so post-hit impulses are not identical. Internal torque diagnostics are evaluations at observed state, not recordings of preceding applied torque."
+    }
+  },
+  "public_media": {
+    "m2-character-drives.png": {
+      "bytes": 79732,
+      "sha256": "26760b5752cd9848c686ee7b101d987725a97320fcfe8215c0895e1b1ab01b51"
+    },
+    "m2-character-drives-comparison.gif": {
+      "bytes": 464916,
+      "sha256": "77b03be65cb8c4b4047817b6c5d9ca00c3ca4dda37b11fef1f1cd3ae6aef0db6"
+    }
+  },
+  "media_provenance": "PNG is a lossless conversion of the native HUD BMP. GIF uses all 21 samples per branch, whole frames downscaled to 640x360 side by side with labels and palette quantization; no synthesized intermediate frames. 100 ms per sample, looping. Original BMPs and identities retained.",
+  "reproduction": {
+    "sample": "examples/physical-character-yard/README.md",
+    "public_verifier": "tests/physical_character_drives.py",
+    "prerequisites": "Actual simulation-enabled Windows/Linux CLI, original Knight and license, freshly prepared current world, matching SDK/game and CoreCLR bridge or Windows NativeAOT descriptor. Use an external process-tree supervisor and fresh output.",
+    "selectors": [
+      "--binary",
+      "--world",
+      "--source",
+      "--license",
+      "--output"
+    ],
+    "coreclr": [
+      "--hostfxr",
+      "--bridge",
+      "--assembly"
+    ],
+    "native_aot": [
+      "--backend native_aot",
+      "--descriptor"
+    ],
+    "render_scope": "Selected owned Windows background-player observation; scripted runtime.step and player.capture with full saves before/after each capture."
+  },
+  "limits": [
+    "No active balance, protective stepping or recovery to animation.",
+    "Two authored static joint-space poses, not streaming live animation targets.",
+    "No general pose convergence, anatomical fidelity or motion-quality guarantee.",
+    "Sampled capture sequences do not qualify real-time smoothness, physical-device input or representative performance.",
+    "No new relocated export or clean-machine deployment check for the drive sample.",
+    "No claimed future cross-platform bitwise simulation equality or new Alpha gate closure."
+  ]
+}

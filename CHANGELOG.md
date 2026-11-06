@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.233
+
+- Add playable Relaxed/Guard pose holds, individual joint strengths and release
+  controls to the imported-character yard.
+- Preserve localized hits during driven motion and distinguish requested
+  settings from committed native observations in the game UI.
+- Verify all 87 gameplay fields through rollback and complete warm/cold saves
+  on Windows/Linux CoreCLR and Windows NativeAOT.
+- Add an inspected Vulkan HUD capture and a sampled comparison of powered and
+  zero-strength physical responses.
+
 ## 0.0.232
 
 - Add opt-in physical joint orientation drives with bounded internal torques,

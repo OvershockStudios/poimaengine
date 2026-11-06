@@ -1,8 +1,29 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.232**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.233**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.233 adds playable [character pose controls](../examples/physical-character-yard/README.md#joint-pose-controls).
+The unchanged imported Knight can enter Relaxed or Guard poses through fourteen
+joint drives, adjust individual strengths, receive localized camera-hit impulses
+while driven, and release the active torques. Paused UI requests apply on the
+next playing tick; requested and observed controls are shown separately.
+
+The [qualification record](evidence/m2-character-drives.json) uses the existing
+0.0.232 native runtime with matching managed tools. Windows/Linux CoreCLR and
+Windows NativeAOT each pass 611 literal RPC calls, 31 complete saves and sixteen
+whole byte/typed-state comparisons across three naturally closed engine
+processes. All 87 gameplay fields/560 bytes remain present. Native publication
+and execution pass separately; publication records controlled cleanup of one
+owned MSVC telemetry helper after the publisher exited successfully.
+
+Forty-three Windows Vulkan captures retain 89 complete saves and 45 whole-state
+pairs. The HUD and both sampled sequences were visually inspected. Powered
+joints retain more of the target posture, but both characters fall. The
+comparison samples 60 Hz simulation at 10 fps; it does not measure real-time
+smoothness or performance. This follow-up adds no balance, live animation-target
+streaming, recovery, relocated-export or physical-device input qualification.
 
 Version 0.0.232 adds opt-in [physical joint drives](PHYSICAL_DRIVES.md).
 CLI and C# gameplay can set bounded joint-relative orientation targets and

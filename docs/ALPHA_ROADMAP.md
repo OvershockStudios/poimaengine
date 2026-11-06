@@ -39,6 +39,12 @@ add bounded rendered evidence. Physical input, motion quality, representative
 performance and clean-machine installation remain separate gates; this
 sample is not an additional fresh-agent qualification.
 
+The [0.0.233 drive follow-up](evidence/m2-character-drives.json) adds playable
+pose targets, individual joint strengths and driven hit reactions. The same
+87-field workflow passes Windows/Linux CoreCLR and Windows NativeAOT; 43 Vulkan
+captures preserve complete state. This extends character composition without
+closing balance, recovery, general motion-quality or Alpha delivery gates.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

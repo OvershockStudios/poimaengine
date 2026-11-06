@@ -126,6 +126,10 @@ Optional [joint drives](PHYSICAL_DRIVES.md) now provide capped orientation
 targets through native physics and compiled gameplay, including complete saved
 controls. This is a foundation for physical animation; live clip targets,
 whole-body balance and recovery remain part of this segment.
+The [playable drive example](../examples/physical-character-yard/README.md#joint-pose-controls)
+now exposes two authored poses, per-joint strengths, driven hit reactions and
+release, with actual CoreCLR/NativeAOT and rendered observations. It retains
+physics ownership and does not stand up or recover to animation.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;
