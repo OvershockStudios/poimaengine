@@ -37,12 +37,21 @@ public struct PhysicalCharacterState
     public double StrengthSpine, StrengthNeck, StrengthShoulderL, StrengthElbowL, StrengthWristL;
     public double StrengthShoulderR, StrengthElbowR, StrengthWristR;
     public double StrengthHipL, StrengthKneeL, StrengthAnkleL, StrengthHipR, StrengthKneeR, StrengthAnkleR;
+    // Live target requests. Transition mode: 0 crossfade, 1 inertial. Restart
+    // counters survive pause/save/reload; a live hold consumes the request.
+    public int TargetTransitionMode, TargetBlendTicks, TargetRestart, AppliedTargetRestart;
+    public int TargetPlaybackWrites, TargetRateWrites;
+    public int ObservedTargetAvailable, ObservedTargetClip, ObservedTargetTransition;
+    public int ObservedAnimationSources, ObservedSelectedSource;
+    public double TargetSpeed, ObservedTargetTime, ObservedTargetSpeed;
+    public double ObservedTargetProgress, ObservedSelectedCorrection;
+    public long ObservedTargetTick;
 }
 
 [GameModule("poima.example.physical-character")]
 public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
     IInputActionsGame, ICharacterInputGame, IAnimationRateGame,
-    IGroundingControlGame, IHitRegionsGame, IPhysicalRigDriveGame
+    IGroundingControlGame, IHitRegionsGame, IPhysicalRigAnimationGame
 {
     public const string CheckpointSlot = "physical-character";
     public const string StartSlot = "physical-character-start";
@@ -62,6 +71,9 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         s.StrengthSpine=s.StrengthNeck=s.StrengthShoulderL=s.StrengthElbowL=s.StrengthWristL=.65;
         s.StrengthShoulderR=s.StrengthElbowR=s.StrengthWristR=.65;
         s.StrengthHipL=s.StrengthKneeL=s.StrengthAnkleL=s.StrengthHipR=s.StrengthKneeR=s.StrengthAnkleR=.65;
+        s.TargetTransitionMode=1; s.TargetBlendTicks=12; s.TargetSpeed=1;
+        s.ObservedTargetClip=-1; s.ObservedTargetTransition=-1;
+        s.ObservedSelectedSource=-1; s.ObservedTargetTick=-1;
     }
 
     static void Require(bool condition,string message)
@@ -87,13 +99,23 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         Require(s.Cooldown is >=0 and <=6 && s.FireQueued is 0 or 1 &&
             s.SavePending is 0 or 1,"Invalid saved shot or save state.");
         Require(s.HoldRequested is 0 or 1 && s.AppliedHold is 0 or 1 &&
-            s.PosePreset is >=0 and <2 && s.AppliedPreset is >=-1 and <2 &&
+            s.PosePreset is >=0 and <4 && s.AppliedPreset is >=-1 and <4 &&
             s.SelectedJoint is >=0 and <14 && s.ObservedJoint is >=-1 and <14 &&
             s.DrivePending is 0 or 1 && s.DriveWrites>=0 && s.DriveChanges>=0 &&
             s.ObservedDriveCount is >=0 and <=14 && Within(s.ObservedSelectedStrength,0,1),
             "Invalid saved joint-drive mode, preset, selection or observation.");
         for(int joint=0;joint<14;++joint)
             Require(Within(JointStrength(in s,joint),0,1),"Every requested joint strength must be finite in [0,1].");
+        Require(s.TargetTransitionMode is 0 or 1 && s.TargetBlendTicks is >=0 and <=120 &&
+            s.TargetRestart>=0 && s.AppliedTargetRestart>=0 && s.AppliedTargetRestart<=s.TargetRestart &&
+            s.TargetPlaybackWrites>=0 && s.TargetRateWrites>=0 && Within(s.TargetSpeed,0,8),
+            "Invalid saved target playback request, transition or restart sequence.");
+        Require(s.ObservedTargetAvailable is 0 or 1 && s.ObservedTargetClip is >=-1 and <76 &&
+            s.ObservedTargetTransition is >=-1 and <=1 && s.ObservedAnimationSources is >=0 and <=14 &&
+            s.ObservedSelectedSource is >=-1 and <=1 && s.ObservedTargetTick is >=-1 and <=9007199254740991 &&
+            Within(s.ObservedTargetTime,0,1e9) && Within(s.ObservedTargetSpeed,0,8) &&
+            Within(s.ObservedTargetProgress,0,1) && Within(s.ObservedSelectedCorrection,0,Math.PI),
+            "Invalid saved committed target-player observation.");
     }
 
     public static string JointName(int index) => index switch
@@ -106,8 +128,12 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
 
     public static string PresetName(int preset) => preset switch
     {
-        0=>"Relaxed", 1=>"Guard",
+        0=>"Relaxed", 1=>"Guard", 2=>"LiveIdle", 3=>"LiveRunning",
         _=>throw new ArgumentOutOfRangeException(nameof(preset))
+    };
+    static string PresetLabel(int preset) => preset switch
+    {
+        2=>"Live Idle", 3=>"Live Run", _=>PresetName(preset)
     };
 
     // Exact authored joint-frame targets from drive-poses.json. The protocol
@@ -191,8 +217,36 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         }
     }
 
-    // Fire runs first. Its explicit activation, if any, therefore precedes the
-    // drive commands and is never duplicated. No animation/motor writes follow.
+    static void ObserveTargets(ref PhysicalCharacterState s,GameContext c,PhysicalRigMode mode)
+    {
+        s.ObservedTargetAvailable=0; s.ObservedTargetClip=-1; s.ObservedTargetTransition=-1;
+        s.ObservedAnimationSources=0; s.ObservedSelectedSource=-1; s.ObservedTargetTick=-1;
+        s.ObservedTargetTime=s.ObservedTargetSpeed=s.ObservedTargetProgress=s.ObservedSelectedCorrection=0;
+        // Read callbacks describe the committed owner, never the activation
+        // about to be staged later in this Tick.
+        if(mode==PhysicalRigMode.Animated)return;
+        var playback=c.GetPhysicalRigAnimation(E(100))
+            ?? throw new InvalidOperationException("The sample requires its independent target player.");
+        s.ObservedTargetAvailable=1; s.ObservedTargetClip=playback.State.Clip??-1;
+        s.ObservedTargetTime=playback.State.Time; s.ObservedTargetSpeed=playback.State.Speed;
+        s.ObservedTargetTransition=playback.Mode is {} transition ? (int)transition : -1;
+        s.ObservedTargetProgress=playback.Progress??0; s.ObservedTargetTick=checked((long)c.Tick);
+        for(int joint=0;joint<14;++joint)
+        {
+            var source=c.GetPhysicalRigDriveSource(E(100),JointName(joint))
+                ?? throw new InvalidOperationException("Every configured drive requires an explicit target source.");
+            if(source.Source==PhysicalRigDriveSource.Animation)++s.ObservedAnimationSources;
+            if(joint==s.SelectedJoint)
+            {
+                s.ObservedSelectedSource=(int)source.Source;
+                s.ObservedSelectedCorrection=source.Sample?.CorrectionRadians??0;
+            }
+        }
+    }
+
+    // Fire runs first. Its activation, if any, precedes these physical target
+    // commands and is never duplicated. Ordinary animation/grounding/motor
+    // writes remain excluded once physical takeover is staged.
     static bool ApplyDrives(ref PhysicalCharacterState s,GameContext c,PhysicalRigMode mode,bool physicalWrite)
     {
         bool physical=mode!=PhysicalRigMode.Animated || physicalWrite;
@@ -214,15 +268,57 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             s.Takeovers=checked(s.Takeovers+1); physicalWrite=true;
         }
         bool presetChanged=s.HoldRequested!=0 && (s.AppliedHold==0 || s.AppliedPreset!=s.PosePreset);
+        bool live=s.HoldRequested!=0 && s.PosePreset>=2;
+        if(live)
+        {
+            // Only read a committed physical owner. On first takeover, the
+            // activation has already been staged and playback is explicitly set.
+            AnimationStateExtended? current=mode==PhysicalRigMode.Animated ? null : c.GetPhysicalRigAnimation(E(100));
+            Require(mode==PhysicalRigMode.Animated || current is not null,"Independent target playback is unavailable.");
+            int clip=s.PosePreset==2 ? s.IdleClip : s.RunClip;
+            bool replacement=presetChanged || s.TargetRestart!=s.AppliedTargetRestart ||
+                current is null || current.Value.State.Clip!=clip || !current.Value.State.Loop || !current.Value.State.Playing;
+            if(replacement)
+            {
+                c.SetPhysicalRigAnimation(E(100),clip,(AnimationTransitionMode)s.TargetTransitionMode,
+                    time:0,speed:s.TargetSpeed,loop:true,playing:true,blendTicks:(uint)s.TargetBlendTicks);
+                s.TargetPlaybackWrites=checked(s.TargetPlaybackWrites+1);
+                s.AppliedTargetRestart=s.TargetRestart; physicalWrite=true;
+            }
+            else if(current!.Value.State.Speed!=s.TargetSpeed)
+            {
+                // A strength edit never reaches either playback branch. A
+                // speed edit uses the committed rate and never seeks the clip.
+                c.SetPhysicalRigAnimationSpeed(E(100),s.TargetSpeed);
+                s.TargetRateWrites=checked(s.TargetRateWrites+1); physicalWrite=true;
+            }
+        }
         int writes=0;
         for(int joint=0;joint<14;++joint)
         {
             var current=c.GetPhysicalRigDrive(E(100),JointName(joint))
                 ?? throw new InvalidOperationException("Sample drive permission is missing.");
+            var source=mode==PhysicalRigMode.Animated ? PhysicalRigDriveSource.Manual :
+                (c.GetPhysicalRigDriveSource(E(100),JointName(joint))
+                    ?? throw new InvalidOperationException("Sample target source is missing.")).Source;
             double desired=s.HoldRequested!=0 ? JointStrength(in s,joint) : 0;
-            if(!presetChanged && current.Strength==desired)continue;
-            var target=s.HoldRequested!=0 ? PresetTarget(s.PosePreset,joint) : current.TargetRotation;
-            c.SetPhysicalRigDrive(E(100),JointName(joint),target,desired);
+            if(live)
+            {
+                if(source==PhysicalRigDriveSource.Animation && current.Strength==desired)continue;
+                c.SetPhysicalRigDriveSource(E(100),JointName(joint),PhysicalRigDriveSource.Animation,desired);
+            }
+            else if(s.HoldRequested!=0)
+            {
+                if(!presetChanged && source==PhysicalRigDriveSource.Manual && current.Strength==desired)continue;
+                c.SetPhysicalRigDrive(E(100),JointName(joint),PresetTarget(s.PosePreset,joint),desired);
+            }
+            else
+            {
+                if(source==PhysicalRigDriveSource.Manual && current.Strength==0)continue;
+                // Stop following animation and retain the last effective target;
+                // releasing never reenrolls the controller or restores animation.
+                c.SetPhysicalRigDriveSource(E(100),JointName(joint),PhysicalRigDriveSource.Manual,0);
+            }
             ++writes;
         }
         if(writes!=0)
@@ -461,6 +557,19 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         return $"{(pending ? "QUEUED / next playing Tick" : s.HoldRequested!=0 ? "HOLD requested" : "RELEASE requested")}  |  "+
             $"observed {phase}, {s.ObservedDriveCount}/14 powered  |  selected observed {observed}. Gravity still applies.";
     }
+    static string TransitionName(int mode) => mode==0 ? "Crossfade" : "Inertial";
+    static string TargetStatus(in PhysicalCharacterState s)
+    {
+        string requested=$"REQUEST {PresetName(s.PosePreset)} x{s.TargetSpeed:0.##}; restart {s.TargetRestart}/{s.AppliedTargetRestart}";
+        if(s.ObservedTargetAvailable==0)
+            return requested+"\nOBS none: physical takeover has not committed. Settings apply on a playing Tick.";
+        string selected=s.ObservedJoint!=s.SelectedJoint ? "await Tick" :
+            s.ObservedSelectedSource==1 ? $"animation, fit {s.ObservedSelectedCorrection:0.###}rad" : "manual";
+        string transition=s.ObservedTargetTransition<0 ? "steady" :
+            $"{TransitionName(s.ObservedTargetTransition)} {s.ObservedTargetProgress:P0}";
+        return requested+$"\nOBS tick {s.ObservedTargetTick}: clip {s.ObservedTargetClip} @ {s.ObservedTargetTime:0.00}s "+
+            $"x{s.ObservedTargetSpeed:0.##}, {transition}, {s.ObservedAnimationSources}/14 animation; selected {selected}";
+    }
     static string Notice(in PhysicalCharacterState s) => s.SaveNotice switch
     {
         1=>"Saving checkpoint...", 2=>"Loading checkpoint...",
@@ -487,10 +596,15 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             enabled:s.Active==1 && s.TargetMode!=2);
         c.SetUi(U(514),visible:s.Active!=0,enabled:s.HoldRequested==0);
         c.SetUi(U(515),visible:s.Active!=0,enabled:s.HoldRequested!=0 || s.AppliedHold!=0 || s.ObservedDriveCount>0);
-        c.SetUi(U(516),"Pose: "+PresetName(s.PosePreset),visible:s.Active!=0);
+        c.SetUi(U(516),"Pose: "+PresetLabel(s.PosePreset),visible:s.Active!=0);
         c.SetUi(U(517),"Joint: "+JointName(s.SelectedJoint),visible:s.Active!=0);
         c.SetUi(U(518),$"Request: {JointStrength(in s,s.SelectedJoint):P0}",visible:s.Active!=0);
         c.SetUi(U(519),DriveStatus(in s),visible:s.Active!=0);
+        c.SetUi(U(520),$"Speed: {s.TargetSpeed:0.##}x",visible:s.Active!=0,enabled:s.PosePreset>=2);
+        c.SetUi(U(521),"Restart clip",visible:s.Active!=0,enabled:s.PosePreset>=2 && s.HoldRequested!=0);
+        c.SetUi(U(522),"Next: "+TransitionName(s.TargetTransitionMode),visible:s.Active!=0);
+        c.SetUi(U(523),$"Next blend: {s.TargetBlendTicks} ticks",visible:s.Active!=0);
+        c.SetUi(U(524),TargetStatus(in s),visible:s.Active!=0);
     }
     static void Publish(in PhysicalCharacterState s,ControlContext c)
     {
@@ -504,10 +618,15 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             enabled:s.Active==1 && s.TargetMode!=2);
         c.SetUi(U(514),visible:s.Active!=0,enabled:s.HoldRequested==0);
         c.SetUi(U(515),visible:s.Active!=0,enabled:s.HoldRequested!=0 || s.AppliedHold!=0 || s.ObservedDriveCount>0);
-        c.SetUi(U(516),"Pose: "+PresetName(s.PosePreset),visible:s.Active!=0);
+        c.SetUi(U(516),"Pose: "+PresetLabel(s.PosePreset),visible:s.Active!=0);
         c.SetUi(U(517),"Joint: "+JointName(s.SelectedJoint),visible:s.Active!=0);
         c.SetUi(U(518),$"Request: {JointStrength(in s,s.SelectedJoint):P0}",visible:s.Active!=0);
         c.SetUi(U(519),DriveStatus(in s),visible:s.Active!=0);
+        c.SetUi(U(520),$"Speed: {s.TargetSpeed:0.##}x",visible:s.Active!=0,enabled:s.PosePreset>=2);
+        c.SetUi(U(521),"Restart clip",visible:s.Active!=0,enabled:s.PosePreset>=2 && s.HoldRequested!=0);
+        c.SetUi(U(522),"Next: "+TransitionName(s.TargetTransitionMode),visible:s.Active!=0);
+        c.SetUi(U(523),$"Next blend: {s.TargetBlendTicks} ticks",visible:s.Active!=0);
+        c.SetUi(U(524),TargetStatus(in s),visible:s.Active!=0);
     }
 
     public override void Tick(ref PhysicalCharacterState s,GameContext c)
@@ -518,6 +637,7 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
         Require(physical.BodyCount==15 && physical.JointCount==14,"Expected the complete 15-part character profile.");
         s.PhysicalMode=(int)physical.Mode;
         ObserveDrives(ref s,c);
+        ObserveTargets(ref s,c,physical.Mode);
         if(physical.Mode!=PhysicalRigMode.Animated){ s.TargetMoving=0; s.TargetMode=2; }
         if(s.Active!=1)
         {
@@ -578,7 +698,7 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
             case "pose-preset":
                 if(s.Active!=0)
                 {
-                    s.PosePreset=(s.PosePreset+1)%2;
+                    s.PosePreset=(s.PosePreset+1)%4;
                     if(s.HoldRequested!=0)s.DrivePending=1;
                 }
                 break;
@@ -594,6 +714,28 @@ public sealed class PhysicalCharacterGame : Game<PhysicalCharacterState>,
                     SetJointStrength(ref s,s.SelectedJoint,value<.25 ? .25 : value<.5 ? .5 : value<.75 ? .75 : value<1 ? 1 : 0);
                     if(s.HoldRequested!=0)s.DrivePending=1;
                 }
+                break;
+            case "target-speed":
+                if(s.Active!=0)
+                {
+                    // Zero freezes clip time. Native transition fades still
+                    // advance on fixed ticks; a rate change does not restart them.
+                    s.TargetSpeed=s.TargetSpeed<.5 ? .5 : s.TargetSpeed<1 ? 1 : s.TargetSpeed<1.5 ? 1.5 : s.TargetSpeed<2 ? 2 : 0;
+                    if(s.HoldRequested!=0 && s.PosePreset>=2)s.DrivePending=1;
+                }
+                break;
+            case "target-restart":
+                if(s.Active!=0 && s.PosePreset>=2)
+                {
+                    s.TargetRestart=checked(s.TargetRestart+1);
+                    if(s.HoldRequested!=0)s.DrivePending=1;
+                }
+                break;
+            case "target-transition":
+                if(s.Active!=0)s.TargetTransitionMode=1-s.TargetTransitionMode;
+                break;
+            case "target-blend":
+                if(s.Active!=0)s.TargetBlendTicks=s.TargetBlendTicks<6 ? 6 : s.TargetBlendTicks<12 ? 12 : s.TargetBlendTicks<24 ? 24 : 0;
                 break;
             case "save":
                 if(s.SavePending==0)Remember(ref s,c.TryRequestSave(CheckpointSlot),2);

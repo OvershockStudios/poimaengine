@@ -139,6 +139,8 @@ def drive_profile(base, library):
                 z = (q[3]*q[2]+q[0]*q[1])/chart/math.sin(limits['swing_z']/2)
                 need(y*y+z*z <= 1+1e-10 and limits['twist_min']-1e-10 <= twist <= limits['twist_max']+1e-10,
                      'Authored target exceeds the original swing/twist limits.')
+    need('animation_drive' not in result, 'Original profile must remain target-player-free.')
+    result['animation_drive'] = dict(limit_policy='fit')
     return result
 
 
@@ -163,7 +165,7 @@ def ui_operations():
             kind=kind, text=text, action=action, visible=visible, enabled=True,
             layout=layout, style=style)))
     add(500, 'panel', '', dict(position='absolute', left=dp(0), bottom=dp(0),
-        width=percent(100), height=dp(226), hit_test='capture'), parent=None)
+        width=percent(100), height=dp(308), hit_test='capture'), parent=None)
     add(501, 'label', 'PHYSICAL CHARACTER / BEGIN', dict(position='absolute',
         left=dp(16), top=dp(10), width=dp(550), height=dp(28)))
     add(502, 'label', 'Original Knight / ready', dict(position='absolute',
@@ -186,12 +188,21 @@ def ui_operations():
     for number, text, action, left, width in pose_buttons:
         add(number, 'button', text, dict(position='absolute', left=dp(left), top=dp(120),
             width=dp(width), height=dp(30)), action=action, visible=False)
+    target_buttons = ((520, 'Speed: 1x', 'target-speed', 16, 160),
+        (521, 'Restart clip', 'target-restart', 184, 140),
+        (522, 'Next: Inertial', 'target-transition', 332, 205),
+        (523, 'Next blend: 12 ticks', 'target-blend', 545, 180))
+    for number, text, action, left, width in target_buttons:
+        add(number, 'button', text, dict(position='absolute', left=dp(left), top=dp(154),
+            width=dp(width), height=dp(30)), action=action, visible=False)
     add(519, 'label', 'Pose controls hold relative joint angles. Gravity still applies.',
-        dict(position='absolute', left=dp(16), top=dp(150), width=dp(1190), height=dp(22)), visible=False)
+        dict(position='absolute', left=dp(16), top=dp(188), width=dp(1190), height=dp(22)), visible=False)
+    add(524, 'label', 'Live clips supply joint targets; they do not balance the character.',
+        dict(position='absolute', left=dp(16), top=dp(210), width=dp(1190), height=dp(42)), visible=False)
     add(509, 'label', 'Begin creates the retry checkpoint in this launch\u2019s save folder.',
-        dict(position='absolute', left=dp(16), top=dp(174), width=dp(1150), height=dp(22)))
+        dict(position='absolute', left=dp(16), top=dp(254), width=dp(1150), height=dp(22)))
     add(513, 'label', 'WASD / mouse / click fire / Space jump / Tab cursor. Strength: 0/25/50/75/100%. Loaded saves pause; Resume continues.',
-        dict(position='absolute', left=dp(16), top=dp(198), width=dp(1190), height=dp(22)))
+        dict(position='absolute', left=dp(16), top=dp(278), width=dp(1190), height=dp(22)))
     # Native text, no image asset. This marker is screen center, not target aim.
     add(512, 'panel', '', dict(position='absolute', left=dp(0), top=dp(0),
         width=percent(100), height=percent(100), align='center', justify='center',
