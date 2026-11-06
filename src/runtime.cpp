@@ -1694,11 +1694,11 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_drive_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(api.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2199,6 +2199,15 @@ std::optional<ProceduralPoseObservation> Runtime::procedural_pose(const std::str
 }
 std::optional<PhysicalRigPartObservation> Runtime::physical_part(const std::string& id,const std::string& part) const {
     (void)impl_->find(id);require(Impl::physical_part_name(part),"Physical part must be portable ASCII1..64 bytes.");return impl_->observe_physical_part(id,part);
+}
+std::optional<PhysicalRigDriveObservation> Runtime::physical_drive(const std::string& id,const std::string& joint) const {
+    (void)impl_->find(id);require(Impl::physical_part_name(joint),"Physical joint must be portable ASCII1..64 bytes.");
+    const auto owner=impl_->physical_owners.find(id);if(owner==impl_->physical_owners.end())return {};
+    const auto state=owner->second->backend->drive(joint);if(!state)return {};
+    const auto& joints=owner->second->backend->definition().joints;
+    const auto found=std::find_if(joints.begin(),joints.end(),[&](const auto& j){return j.name==joint;});
+    const auto& profile=*found->drive;
+    return PhysicalRigDriveObservation{joint,state->target_rotation,state->strength,profile.stiffness,profile.damping,profile.max_torque};
 }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }

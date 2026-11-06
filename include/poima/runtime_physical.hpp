@@ -7,7 +7,17 @@
 #include <vector>
 
 namespace poima {
-enum class PhysicalRigMode { Animated, Passive };
+enum class PhysicalRigMode { Animated, Passive, Driven };
+struct PhysicalRigDriveCommand {
+    std::string joint;
+    physical_rig::Quat target_rotation{0,0,0,1};
+    double strength=0;
+};
+struct PhysicalRigDriveObservation {
+    std::string name;
+    physical_rig::Quat target_rotation{0,0,0,1};
+    double strength=0,stiffness=0,damping=0,max_torque=0;
+};
 struct PhysicalRigImpulse {
     std::string part;
     physical_rig::Vec3 world_point{},impulse{};
@@ -19,6 +29,7 @@ struct PhysicalRigCommand {
     std::string entity;
     bool activate=false;
     std::optional<PhysicalRigImpulse> impulse;
+    std::optional<PhysicalRigDriveCommand> drive;
 };
 struct PhysicalRigPartObservation {
     std::string name,node_entity;
@@ -41,6 +52,11 @@ struct PhysicalRigJointObservation {
     double twist_angle=0,swing_y_angle=0,swing_z_angle=0;
     double twist_min=0,twist_max=0,swing_y_limit=0,swing_z_limit=0;
     double friction_torque=0;
+    std::optional<PhysicalRigDriveObservation> drive;
+    // Instantaneous evaluated active response at the committed native state.
+    // This is not the historical torque applied during the preceding solve.
+    physical_rig::Vec3 evaluated_drive_child_torque{};
+    double drive_angular_error=0,drive_saturation_scale=1;
 };
 struct PhysicalRigObservation {
     std::string entity;

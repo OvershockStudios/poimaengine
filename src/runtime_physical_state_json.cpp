@@ -46,12 +46,13 @@ void lambda_valid(float value){finite(value,runtime_physical_rig_warm_start_limi
 template<std::size_t N> std::array<float,N> lambdas(const Json& value){count(value,N,N);std::array<float,N> result;for(std::size_t n=0;n<N;++n)result[n]=lambda(value[n]);return result;}
 template<std::size_t N> Json lambdas_json(const std::array<float,N>& value){for(float x:value)lambda_valid(x);return value;}
 const char* mode(RuntimePhysicalRigMode value) {
-    switch(value){case RuntimePhysicalRigMode::Animated:return "animated";case RuntimePhysicalRigMode::Passive:return "passive";}
+    switch(value){case RuntimePhysicalRigMode::Animated:return "animated";case RuntimePhysicalRigMode::Passive:return "passive";case RuntimePhysicalRigMode::Driven:return "driven";}
     throw std::invalid_argument("Unknown physical state mode.");
 }
 RuntimePhysicalRigMode mode(const Json& value) {
     need(value.is_string(),"Physical state mode must be a string.");if(value=="animated")return RuntimePhysicalRigMode::Animated;
-    need(value=="passive","Physical state mode must be animated or passive.");return RuntimePhysicalRigMode::Passive;
+    if(value=="driven")return RuntimePhysicalRigMode::Driven;
+    need(value=="passive","Physical state mode must be animated, passive or driven.");return RuntimePhysicalRigMode::Passive;
 }
 Json pose_json(const RuntimePhysicalRigPose& p,bool wrapper=false) {
     text_valid(p.part,wrapper);unit(p.rotation);
@@ -95,10 +96,31 @@ physical_rig::Pose root(const Json& value){fields(value,{"position","rotation"})
 
 nlohmann::json membership_json(const RuntimePhysicalRigMembership& value) {
     need(value.warm_starts.size()<=physical_rig::max_joints,"Physical warm-start population exceeds63 joints.");Json warm_starts=Json::array();for(const auto& state:value.warm_starts)warm_starts.push_back(warm_json(state));
-    return {{"mode",mode(value.mode)},{"enrolled",value.enrolled},{"poses",poses_json(value.poses)},{"warm_starts",std::move(warm_starts)}};
+    Json result={{"mode",mode(value.mode)},{"enrolled",value.enrolled},{"poses",poses_json(value.poses)},{"warm_starts",std::move(warm_starts)}};
+    if(!value.drives.empty()) {
+        need(value.drives.size()<=physical_rig::max_joints,"Physical drive population exceeds63 joints.");
+        Json drives=Json::array();
+        for(const auto& drive:value.drives) {
+            text_valid(drive.joint,false);unit(drive.target_rotation);finite(drive.strength,1);
+            need(drive.strength>=0,"Physical drive strength must be nonnegative.");
+            drives.push_back({{"joint",drive.joint},{"target_rotation",drive.target_rotation},{"strength",drive.strength}});
+        }
+        result["drives"]=std::move(drives);
+    }
+    return result;
 }
 RuntimePhysicalRigMembership parse_membership(const nlohmann::json& value) {
-    fields(value,{"mode","enrolled","poses","warm_starts"});RuntimePhysicalRigMembership result;result.mode=mode(value.at("mode"));result.enrolled=boolean(value.at("enrolled"));result.poses=poses(value.at("poses"));
+    if(value.contains("drives"))fields(value,{"mode","enrolled","poses","warm_starts","drives"});
+    else fields(value,{"mode","enrolled","poses","warm_starts"});
+    RuntimePhysicalRigMembership result;result.mode=mode(value.at("mode"));result.enrolled=boolean(value.at("enrolled"));result.poses=poses(value.at("poses"));
+    if(value.contains("drives")) {
+        const auto& drives=value.at("drives");count(drives,1,physical_rig::max_joints);
+        for(const auto& drive:drives) {
+            fields(drive,{"joint","target_rotation","strength"});const auto strength=number(drive.at("strength"),1);
+            need(strength>=0,"Physical drive strength must be nonnegative.");
+            result.drives.push_back({text(drive.at("joint")),rotation(drive.at("target_rotation")),strength});
+        }
+    }
     const auto& states=value.at("warm_starts");count(states,0,physical_rig::max_joints);result.warm_starts.reserve(states.size());for(const auto& state:states)result.warm_starts.push_back(warm(state));return result;
 }
 nlohmann::json pose_state_json(const RuntimePhysicalRigPoseState& value) {

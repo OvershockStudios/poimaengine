@@ -4,7 +4,7 @@ namespace Poima;
 
 /// <summary>Opts into committed physical-rig reads and staged writes during Tick.</summary>
 public interface IPhysicalRigGame { }
-public enum PhysicalRigMode : uint { Animated=0,Passive=1 }
+public enum PhysicalRigMode : uint { Animated=0,Passive=1,Driven=2 }
 public readonly record struct PhysicalRigState(EntityId Entity,PhysicalRigMode Mode,uint BodyCount,uint JointCount);
 /// <summary>Symmetric body-space inertia tensor in kg*m², stored without normalization.</summary>
 public readonly record struct PhysicalRigInertia(double XX,double XY,double XZ,double YX,double YY,double YZ,double ZX,double ZY,double ZZ);
@@ -75,8 +75,10 @@ internal static unsafe class PhysicalRigServiceAbi
     }
     private static void Zero(byte* p,int n){for(int i=0;i<n;++i)if(p[i]!=0)throw new InvalidOperationException("Absent native physical state is not canonical.");}
     internal static PhysicalRigState? Decode(NativePhysicalRigSummaryV1* p,EntityId entity)
+        =>DecodeSummary(p,entity,1,1);
+    internal static PhysicalRigState? DecodeSummary(NativePhysicalRigSummaryV1* p,EntityId entity,uint version,uint maximumMode)
     {
-        if(p->Version!=1 || p->Bytes!=48 || p->Present>1 || p->Mode>1 || p->Entity!=entity || p->Reserved!=0)throw new InvalidOperationException("Invalid native physical summary header.");
+        if(p->Version!=version || p->Bytes!=48 || p->Present>1 || p->Mode>maximumMode || p->Entity!=entity || p->Reserved!=0)throw new InvalidOperationException("Invalid native physical summary header.");
         if(p->Present==0){if(p->Mode!=0 || p->BodyCount!=0 || p->JointCount!=0)throw new InvalidOperationException("Absent native physical summary has payload.");return null;}
         if(entity==default || p->BodyCount is <1 or >64 || p->JointCount>63 || p->JointCount!=p->BodyCount-1)throw new InvalidOperationException("Invalid native physical summary membership.");
         return new(entity,(PhysicalRigMode)p->Mode,p->BodyCount,p->JointCount);
@@ -109,6 +111,13 @@ public readonly unsafe ref partial struct GameContext
     /// <summary>Reads committed membership; at most256 attempts per Tick. Staged writes stay invisible.</summary>
     public PhysicalRigState? GetPhysicalRig(EntityId entity)
     {
+        if((requiredFeatures & GameplayRequiredFeatures.PhysicalRigDrive)!=0)
+        {
+            var drive=PhysicalRigDriveServiceAbi.Validate(services);if(entity==default)throw new ArgumentException("Physical rig entity is absent.",nameof(entity));
+            NativePhysicalRigSummaryV1 extended=new(){Version=2,Bytes=48};NativeError extendedError=default;
+            Check(drive->SummaryV2(services->Context,&entity,&extended,&extendedError),&extendedError);
+            return PhysicalRigServiceAbi.DecodeSummary(&extended,entity,2,2);
+        }
         RequireFeature(GameplayRequiredFeatures.PhysicalRig,nameof(IPhysicalRigGame));var api=PhysicalRigServiceAbi.Validate(services);if(entity==default)throw new ArgumentException("Physical rig entity is absent.",nameof(entity));
         NativePhysicalRigSummaryV1 result=new(){Version=1,Bytes=48};NativeError error=default;Check(api->Summary(services->Context,&entity,&result,&error),&error);return PhysicalRigServiceAbi.Decode(&result,entity);
     }

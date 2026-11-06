@@ -84,3 +84,5 @@ SceneSnapshot Runtime::snapshot() const { throw std::runtime_error("Simulation i
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&,const RuntimeCameraPose&,const std::optional<RuntimeCameraPose>&) const { throw std::runtime_error("Simulation is not built."); }
 }
+
+namespace poima { std::optional<PhysicalRigDriveObservation> Runtime::physical_drive(const std::string&,const std::string&) const { throw std::runtime_error("Simulation support is not built."); } }

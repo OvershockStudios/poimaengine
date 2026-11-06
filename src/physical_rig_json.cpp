@@ -12,8 +12,10 @@ namespace poima::physical_rig {
 namespace {
 using Json=nlohmann::json;
 void need(bool ok,const char* why) { if(!ok)throw std::invalid_argument(why); }
-void fields(const Json& value,std::initializer_list<const char*> names) {
-    need(value.is_object() && value.size()==names.size(),"PhysicalRig needs its complete exact object fields.");
+void fields(const Json& value,std::initializer_list<const char*> names,
+    std::initializer_list<const char*> optional={}) {
+    std::size_t supplied=0;for(const auto* key:optional)if(value.contains(key))++supplied;
+    need(value.is_object() && value.size()==names.size()+supplied,"PhysicalRig needs its complete exact object fields.");
     for(const auto* key:names)need(value.contains(key),"PhysicalRig required field is missing.");
 }
 double number(const Json& value) {
@@ -116,11 +118,16 @@ Configuration parse_configuration(const nlohmann::json& value) {
         part.linear_damping=number(entry.at("linear_damping"));part.angular_damping=number(entry.at("angular_damping"));result.profile.parts.push_back(std::move(part));
     }
     for(const auto& entry:joints) {
-        fields(entry,{"name","parent","child","parent_frame","child_frame","limits","neutral_rotation","rest_stiffness","rest_damping","soft_limit_stiffness","soft_limit_zone","max_torque","friction_torque"});
+        fields(entry,{"name","parent","child","parent_frame","child_frame","limits","neutral_rotation","rest_stiffness","rest_damping","soft_limit_stiffness","soft_limit_zone","max_torque","friction_torque"},{"drive"});
         Joint joint;joint.name=text(entry.at("name"));joint.parent=text(entry.at("parent"));joint.child=text(entry.at("child"));
         joint.parent_frame=pose(entry.at("parent_frame"));joint.child_frame=pose(entry.at("child_frame"));joint.limits=limits(entry.at("limits"));joint.neutral_rotation=vector<4>(entry.at("neutral_rotation"));
         joint.rest_stiffness=number(entry.at("rest_stiffness"));joint.rest_damping=number(entry.at("rest_damping"));joint.soft_limit_stiffness=number(entry.at("soft_limit_stiffness"));
-        joint.soft_limit_zone=number(entry.at("soft_limit_zone"));joint.max_torque=number(entry.at("max_torque"));joint.friction_torque=number(entry.at("friction_torque"));result.profile.joints.push_back(std::move(joint));
+        joint.soft_limit_zone=number(entry.at("soft_limit_zone"));joint.max_torque=number(entry.at("max_torque"));joint.friction_torque=number(entry.at("friction_torque"));
+        if(entry.contains("drive")) {
+            const auto& drive=entry.at("drive");fields(drive,{"stiffness","damping","max_torque"});
+            joint.drive=DriveProfile{number(drive.at("stiffness")),number(drive.at("damping")),number(drive.at("max_torque"))};
+        }
+        result.profile.joints.push_back(std::move(joint));
     }
     validate(result);return result;
 }
@@ -130,9 +137,13 @@ nlohmann::json configuration_json(const Configuration& value) {
     Json parts=Json::array(),joints=Json::array();
     for(const auto& p:value.profile.parts)parts.push_back({{"name",p.name},{"node",p.node},{"body_in_bone",pose_json(p.body_in_bone)},{"shape",shape_json(p.shape)},
         {"mass",p.mass},{"friction",p.friction},{"restitution",p.restitution},{"linear_damping",p.linear_damping},{"angular_damping",p.angular_damping}});
-    for(const auto& j:value.profile.joints)joints.push_back({{"name",j.name},{"parent",j.parent},{"child",j.child},{"parent_frame",pose_json(j.parent_frame)},{"child_frame",pose_json(j.child_frame)},
+    for(const auto& j:value.profile.joints) {
+        Json joint={{"name",j.name},{"parent",j.parent},{"child",j.child},{"parent_frame",pose_json(j.parent_frame)},{"child_frame",pose_json(j.child_frame)},
         {"limits",limits_json(j.limits)},{"neutral_rotation",j.neutral_rotation},{"rest_stiffness",j.rest_stiffness},{"rest_damping",j.rest_damping},{"soft_limit_stiffness",j.soft_limit_stiffness},
-        {"soft_limit_zone",j.soft_limit_zone},{"max_torque",j.max_torque},{"friction_torque",j.friction_torque}});
+        {"soft_limit_zone",j.soft_limit_zone},{"max_torque",j.max_torque},{"friction_torque",j.friction_torque}};
+        if(j.drive)joint["drive"]={{"stiffness",j.drive->stiffness},{"damping",j.drive->damping},{"max_torque",j.drive->max_torque}};
+        joints.push_back(std::move(joint));
+    }
     Json result={{"root",value.profile.root},{"initial_mode",value.initially_passive?"passive":"animated"},{"parts",std::move(parts)},{"joints",std::move(joints)}};
     // Omit the default policy to preserve legacy canonical content bytes.
     if(value.pose_frame==PoseFramePolicy::SkeletalFixedScale)result["pose_frame"]="skeletal_fixed_scale";
@@ -156,9 +167,14 @@ nlohmann::json configuration_schema() {
             {"twist_min",range(-max_joint_angle,0)},{"twist_max",range(0,max_joint_angle)}})})}};
     const auto part=object({{"name",name},{"node",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"body_in_bone",frame},{"shape",shapes},
         {"mass",range(min_mass,max_mass)},{"friction",range(0,2)},{"restitution",range(0,1)},{"linear_damping",range(0,10)},{"angular_damping",range(0,10)}});
-    const auto joint=object({{"name",name},{"parent",name},{"child",name},{"parent_frame",frame},{"child_frame",frame},{"limits",joint_limits},{"neutral_rotation",rotation},
+    auto joint=object({{"name",name},{"parent",name},{"child",name},{"parent_frame",frame},{"child_frame",frame},{"limits",joint_limits},{"neutral_rotation",rotation},
         {"rest_stiffness",range(0,max_stiffness)},{"rest_damping",range(0,max_damping)},{"soft_limit_stiffness",range(0,max_stiffness)},
         {"soft_limit_zone",range(.001,.5)},{"max_torque",range(0,physical_rig::max_torque)},{"friction_torque",range(0,physical_rig::max_torque)}});
+    auto drive_stiffness=range(0,max_stiffness),drive_torque=range(0,physical_rig::max_torque);
+    drive_stiffness.erase("minimum");drive_stiffness["exclusiveMinimum"]=0;
+    drive_torque.erase("minimum");drive_torque["exclusiveMinimum"]=0;
+    joint["properties"]["drive"]=object({{"stiffness",drive_stiffness},{"damping",range(0,max_damping)},{"max_torque",drive_torque}});
+    joint["properties"]["drive"]["description"]="Optional immutable joint-space pose-drive permission: stiffness in Nm/rad, damping in Nms/rad, and drive torque norm cap in Nm. Positive stiffness/torque and nonnegative damping; no omitted defaults. Runtime target starts at neutral_rotation with strength zero. Passive coefficients and hard limits remain separate. Omission preserves the earlier passive profile.";
     auto result=object({{"root",name},{"initial_mode",{{"enum",{"animated","passive"}}}},
         {"parts",{{"type","array"},{"minItems",1},{"maxItems",max_parts},{"items",part}}},
         {"joints",{{"type","array"},{"maxItems",max_joints},{"items",joint}}}});

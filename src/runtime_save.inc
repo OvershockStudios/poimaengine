@@ -639,7 +639,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     std::map<std::string,std::string> restored_procedural_owners;
     if(physical_checkpoint)for(const auto& [rig_id,row]:physical_checkpoint->rigs) {
         const auto& rig=s.topology->definitions.at(rig_id);
-        if(row.membership.mode!=RuntimePhysicalRigMode::Passive ||
+        if(row.membership.mode==RuntimePhysicalRigMode::Animated ||
             rig.physical_rig->procedural_pose!=poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly)continue;
         auto enroll=[&](const std::string& id) {
             require(restored_procedural_owners.emplace(id,rig_id).second,

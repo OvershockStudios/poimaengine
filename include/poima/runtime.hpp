@@ -594,6 +594,7 @@ public:
     std::optional<ControllerHandoffObservation> controller_handoff(const std::string& id) const;
     std::optional<ProceduralPoseObservation> procedural_pose(const std::string& id) const;
     std::optional<PhysicalRigPartObservation> physical_part(const std::string& id,const std::string& part) const;
+    std::optional<PhysicalRigDriveObservation> physical_drive(const std::string& id,const std::string& joint) const;
     std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeIkState> ik(const std::string& id,std::uint32_t slot) const;
     std::optional<RuntimeGroundingCommand> grounding(const std::string& id,std::uint32_t slot) const;

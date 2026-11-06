@@ -29,6 +29,11 @@ struct SwingTwist { double swing_y=.7,swing_z=.7,twist_min=-.5,twist_max=.5; };
 // Hinge axis is constraint X; frames' Y axes define its zero angle.
 struct Hinge { double minimum=0,maximum=2; };
 using Limits=std::variant<SwingTwist,Hinge>;
+// Explicit permission and immutable gains for an active joint-space pose drive.
+// These are separate from the joint's passive rest/soft-limit response.
+struct DriveProfile {
+    double stiffness=0,damping=0,max_torque=0;
+};
 struct Joint {
     std::string name,parent,child;
     Pose parent_frame,child_frame; // Local to each part's centered COM frame.
@@ -36,6 +41,8 @@ struct Joint {
     Quat neutral_rotation{0,0,0,1}; // Child joint frame relative to parent at rest.
     double rest_stiffness=0,rest_damping=0,soft_limit_stiffness=0;
     double soft_limit_zone=.1,max_torque=1000,friction_torque=0;
+    // Omitted by default; no drive state or force is implied by a legacy joint.
+    std::optional<DriveProfile> drive;
 };
 struct Definition { std::string root;std::vector<Part> parts;std::vector<Joint> joints; };
 inline constexpr std::size_t max_parts=64,max_joints=63;
@@ -90,6 +97,9 @@ inline constexpr double max_relative_angular_velocity=2*max_angular_velocity,gra
 // either swing half-cone. This avoids overlapping/clipped approach bands.
 // Definition is one connected parent->child tree.
 void validate(const Part& part);
+// Drive stiffness (Nm/rad) and norm torque cap (Nm) are strictly positive;
+// damping (Nms/rad) is nonnegative. The existing coefficient ceilings apply.
+void validate(const DriveProfile& drive);
 void validate(const Joint& joint);
 void validate(const Definition& definition);
 void validate(const Configuration& configuration);
@@ -104,6 +114,11 @@ MassProperties mass_properties(const Shape& shape,double mass);
 // Canonical sign: w positive; at w==0 first nonzero x/y/z positive. q and -q
 // denote the same rotation and yield identical canonical values.
 Quat canonical_quaternion(Quat value);
+// Admit a child-joint-relative-to-parent-joint orientation against the same
+// hinge-X and hard-limit bounds as neutral_rotation. Returns canonical XYZW;
+// never projects a hinge rotation or clamps a target to a limit. Does not
+// require drive permission: the runtime separately owns that admission.
+Quat validate_target(const Joint& joint,Quat target);
 Pose canonical_pose(Pose value);
 Quat conjugate(Quat value);
 Quat multiply(Quat left,Quat right);

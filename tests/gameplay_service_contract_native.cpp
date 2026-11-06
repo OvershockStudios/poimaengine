@@ -96,6 +96,12 @@ int main(){try{
     check(parsed_lens.services_bytes==320 && parsed_lens.features.size()==2,"Independent camera lens contract rejected.");
     for(unsigned bytes:{176u,304u,312u,319u,321u}) {auto wrong=lens;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_lens=lens;duplicate_lens["features"].push_back("camera_lens_v1");rejected(duplicate_lens.dump());
+    auto drive=baseline;drive["services_bytes"]=448;drive["features"].push_back("physical_rig_v1");drive["features"].push_back("physical_rig_drive_v1");
+    auto parsed_drive=poima::parse_gameplay_service_contract(drive.dump());
+    check(parsed_drive.services_bytes==448 && parsed_drive.features.size()==3,"Named drive dependency rejected.");
+    for(unsigned bytes:{176u,424u,432u,440u,447u,449u}){auto bad=drive;bad["services_bytes"]=bytes;rejected(bad.dump());}
+    auto missing_physical=drive;missing_physical["features"]=Json::array({"baseline_v7","physical_rig_drive_v1"});rejected(missing_physical.dump());
+    auto duplicate_drive=drive;duplicate_drive["features"].push_back("physical_rig_drive_v1");rejected(duplicate_drive.dump());
     auto capsule=baseline;capsule["services_bytes"]=400;capsule["features"].push_back("capsule_cast_v1");
     const auto parsed_capsule=poima::parse_gameplay_service_contract(capsule.dump());
     check(parsed_capsule.services_bytes==400 && parsed_capsule.features==std::vector<std::string>({"baseline_v7","capsule_cast_v1"}),"Independent capsule contract rejected.");

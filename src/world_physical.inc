@@ -5,7 +5,7 @@
         std::vector<PhysicalRigCommand> result;
         std::set<std::string> activations;
         for(const auto& value:raw) {
-            fields(value,{"entity","activate","impulse"},{"entity"});
+            fields(value,{"entity","activate","impulse","drive"},{"entity"});
             PhysicalRigCommand command;command.entity=identifier(value.at("entity"));
             if(value.contains("activate")) {
                 require(value.at("activate").is_boolean(),"Physical rig activate must be boolean.");
@@ -36,7 +36,19 @@
                 item.impulse=vector(impulse.at("impulse"),1e5);
                 command.impulse=std::move(item);
             }
-            require(command.activate || command.impulse.has_value(),"Physical command needs activation or an impulse.");
+            if(value.contains("drive")) {
+                const auto& drive=value.at("drive");fields(drive,{"joint","target_rotation","strength"},{"joint","target_rotation","strength"});
+                require(drive.at("joint").is_string(),"Physical drive joint must be a name.");
+                PhysicalRigDriveCommand item;item.joint=drive.at("joint").get<std::string>();
+                require(!item.joint.empty()&&item.joint.size()<=64,"Physical drive joint name must contain1..64 bytes.");
+                const auto& q=drive.at("target_rotation");require(q.is_array()&&q.size()==4,"Physical drive target_rotation needs four numbers.");
+                for(std::size_t k=0;k<4;++k){require(q[k].is_number(),"Physical drive rotation must be numeric.");item.target_rotation[k]=q[k].get<double>();}
+                (void)physical_rig::canonical_quaternion(item.target_rotation);
+                require(drive.at("strength").is_number(),"Physical drive strength must be numeric.");item.strength=drive.at("strength").get<double>();
+                require(std::isfinite(item.strength)&&item.strength>=0&&item.strength<=1,"Physical drive strength must be in [0,1].");
+                command.drive=std::move(item);
+            }
+            require(command.activate || command.impulse.has_value() || command.drive.has_value(),"Physical command needs activation, an impulse or a drive.");
             require(!command.activate || activations.insert(command.entity).second,"A physical rig may activate only once per Tick.");
             result.push_back(std::move(command));
         }
@@ -54,7 +66,7 @@
         try {
             const bool parts=params.value("include_parts",false),joints=params.value("include_joints",false);
             if(const auto state=runtime_->physical_rig(entity,parts,joints)) {
-                value={{"entity",state->entity},{"mode",state->mode==PhysicalRigMode::Passive ? "passive" : "animated"},
+                value={{"entity",state->entity},{"mode",state->mode==PhysicalRigMode::Animated ? "animated" : (state->mode==PhysicalRigMode::Driven ? "driven" : "passive")},
                     {"body_count",state->body_count},{"joint_count",state->joint_count}};
                 if(parts) {
                     auto rows=Json::array();
@@ -69,12 +81,17 @@
                 }
                 if(joints) {
                     auto rows=Json::array();
-                    for(const auto& j:state->joints)rows.push_back({{"name",j.name},{"parent",j.parent},{"child",j.child},{"hinge",j.hinge},
+                    for(const auto& j:state->joints){rows.push_back({{"name",j.name},{"parent",j.parent},{"child",j.child},{"hinge",j.hinge},
                         {"relative_rotation",j.relative_rotation},{"relative_angular_velocity",j.relative_angular_velocity},
                         {"evaluated_passive_child_torque",j.passive_child_torque},
                         {"twist_angle",j.twist_angle},{"swing_y_angle",j.swing_y_angle},{"swing_z_angle",j.swing_z_angle},
                         {"twist_min",j.twist_min},{"twist_max",j.twist_max},{"swing_y_limit",j.swing_y_limit},{"swing_z_limit",j.swing_z_limit},
                         {"friction_torque",j.friction_torque}});
+                        if(j.drive)rows.back()["drive"]={{"target_rotation",j.drive->target_rotation},{"strength",j.drive->strength},
+                            {"stiffness",j.drive->stiffness},{"damping",j.drive->damping},{"max_torque",j.drive->max_torque},
+                            {"evaluated_child_torque",j.evaluated_drive_child_torque},{"angular_error",j.drive_angular_error},
+                            {"saturation_scale",j.drive_saturation_scale}};
+                    }
                     value["joints"]=std::move(rows);
                 }
             }

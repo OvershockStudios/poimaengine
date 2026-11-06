@@ -205,7 +205,7 @@ void authoring_ownership(){
         refused(Json::array({create(4),component(4,"AnimationRig",external)}),"another root-motion writer");
     }
     check(bytes(package)==cooked,"Authoring validation modified immutable cooked package bytes.");
-    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==127,"Discovery schema revision is stale.");
+    const auto described=rpc("world.describe",Json::object());check(described["result"]["schema_revision"]==128,"Discovery schema revision is stale.");
     if(Runtime::available()) {
         const auto session=id(7000);
         const auto success=[&](const Json& reply) {

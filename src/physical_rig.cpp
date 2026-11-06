@@ -153,6 +153,23 @@ void validate(const Part& p) {
     (void)mass_properties(p.shape,p.mass);
     require(range(p.friction,0,2)&&range(p.restitution,0,1)&&range(p.linear_damping,0,10)&&range(p.angular_damping,0,10),"Invalid physical part friction, restitution or damping.");
 }
+void validate(const DriveProfile& drive) {
+    require(range(drive.stiffness,0,max_stiffness)&&drive.stiffness>0&&
+        range(drive.damping,0,max_damping)&&range(drive.max_torque,0,max_torque)&&drive.max_torque>0,
+        "Physical drive needs positive stiffness/torque and nonnegative damping within finite bounds.");
+}
+Quat validate_target(const Joint& joint,Quat target) {
+    limits(joint.limits);target=canonical_quaternion(target);const auto c=coordinates(target,true);
+    std::visit([&](const auto& l) {
+        using T=std::decay_t<decltype(l)>;
+        if constexpr(std::is_same_v<T,Hinge>)require(std::abs(target[1])<=1e-8&&std::abs(target[2])<=1e-8&&c.twist>=l.minimum-1e-10&&c.twist<=l.maximum+1e-10,"Hinge drive target must be an in-range X rotation.");
+        else {
+            const double y=c.swing_y/std::sin(l.swing_y/2),z=c.swing_z/std::sin(l.swing_z/2);
+            require(y*y+z*z<=1+1e-10&&c.twist>=l.twist_min-1e-10&&c.twist<=l.twist_max+1e-10,"Drive target is outside the hard swing/twist limits.");
+        }
+    },joint.limits);
+    return target;
+}
 void validate(const Joint& j) {
     require(name(j.name)&&name(j.parent)&&name(j.child)&&j.parent!=j.child,"Physical joint names/part references are invalid.");
     local_pose(j.parent_frame);local_pose(j.child_frame);limits(j.limits);const auto neutral=canonical_quaternion(j.neutral_rotation);
@@ -173,6 +190,7 @@ void validate(const Joint& j) {
             require(y*y+z*z<=1+1e-10&&c.twist>=l.twist_min-1e-10&&c.twist<=l.twist_max+1e-10,"Neutral rotation is outside the hard swing/twist limits.");
         }
     },j.limits);
+    if(j.drive)validate(*j.drive);
 }
 void validate(const Definition& d) {
     require(name(d.root)&&!d.parts.empty()&&d.parts.size()<=max_parts&&d.joints.size()<=max_joints&&d.joints.size()+1==d.parts.size(),"Physical rig must have 1..64 parts and exactly parts-1 joints.");

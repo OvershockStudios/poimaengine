@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -36,7 +37,13 @@ struct RuntimePhysicalRigPose {
     bool operator==(const RuntimePhysicalRigPose&) const = default;
 };
 
-enum class RuntimePhysicalRigMode { Animated, Passive };
+enum class RuntimePhysicalRigMode { Animated, Passive, Driven };
+struct RuntimePhysicalRigDriveState {
+    std::string joint;
+    std::array<double,4> target_rotation{0,0,0,1};
+    double strength=0;
+    bool operator==(const RuntimePhysicalRigDriveState&) const = default;
+};
 struct RuntimePhysicalRigPartState {
     RuntimePhysicalRigPose pose;
     JPH::BodyID body;
@@ -60,6 +67,9 @@ struct RuntimePhysicalRigJointState {
     double twist_angle=0,swing_y_angle=0,swing_z_angle=0;
     double twist_min=0,twist_max=0,swing_y_limit=0,swing_z_limit=0;
     double friction_torque=0;
+    std::optional<RuntimePhysicalRigDriveState> drive;
+    std::array<double,3> drive_child_torque{};
+    double drive_angular_error=0,drive_saturation_scale=1;
 };
 struct RuntimePhysicalRigObservation {
     RuntimePhysicalRigMode mode=RuntimePhysicalRigMode::Animated;
@@ -84,6 +94,7 @@ struct RuntimePhysicalRigMembership {
     bool enrolled=false;
     std::vector<RuntimePhysicalRigPose> poses;
     std::vector<RuntimePhysicalRigJointWarmStart> warm_starts;
+    std::vector<RuntimePhysicalRigDriveState> drives;
     bool operator==(const RuntimePhysicalRigMembership&) const = default;
 };
 
@@ -121,12 +132,18 @@ public:
     void enter_passive(std::span<const RuntimePhysicalRigPose>);
     // Removes constraints/broadphase membership; retains stable allocations.
     void enter_animated();
-    // Pure passive internal rest/soft-zone/damping pairs; no balance policy.
+    // Passive rest/soft-zone/damping pairs plus opted-in bounded active drives;
+    // no balance policy. All responses are prepared before adding any torque.
     // Does not wake an island solely to apply internal passive forces.
     void before_step(double dt);
-    // Rejected outside Passive; never changes mode implicitly.
+    // Rejected while Animated; never changes ownership implicitly.
     void impulse(std::string_view part,const std::array<double,3>& world_point,
                  const std::array<double,3>& impulse);
+    // Explicit physical ownership only. Never enrolls or teleports a body.
+    // A changed powered control wakes its enrolled rig once. Identical writes,
+    // and target-only edits with both strengths zero, preserve sleeping bodies.
+    void set_drive(const RuntimePhysicalRigDriveState&);
+    std::optional<RuntimePhysicalRigDriveState> drive(std::string_view joint) const;
     RuntimePhysicalRigObservation observe() const;
     // Selective, read-only projections. Summary mode (false,false) reads mode
     // only; omitted parts/joints are neither materialized nor evaluated.

@@ -39,4 +39,13 @@ class PhysicalRequirements(unittest.TestCase):
             with self.subTest(feature=feature),self.assertRaises(ValueError):self.read(dict(physical,features=physical['features']+[feature]))
         features=['baseline_v7','physical_rig_v1','animation_inertial_v1','animation_layers_v1','animation_rate_v1','animation_ik_v1','animation_ik_end_orientation_v1','animation_grounding_control_v1']
         value=dict(physical,features=features);self.assertEqual(self.read(value),value)
+    def test_drive_named_dependency_and_exact_prefix(self):
+        drive=dict(self.baseline,services_bytes=448,features=['baseline_v7','physical_rig_drive_v1','physical_rig_v1'])
+        self.assertEqual(self.read(drive),drive)
+        for extent in [176,400,424,432,440,447,449,480,448.0,True]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(drive,services_bytes=extent))
+        for features in [['baseline_v7'],['baseline_v7','physical_rig_v1'],['baseline_v7','physical_rig_drive_v1'],drive['features']+['physical_rig_drive_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):self.read(dict(drive,features=features))
+        combined=dict(drive,features=drive['features']+['capsule_cast_v1'])
+        self.assertEqual(self.read(combined),combined)
 if __name__=='__main__':unittest.main()

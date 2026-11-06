@@ -487,6 +487,37 @@ typedef struct PoimaGamePhysicalRigServicesV1 {
     int32_t (POIMA_CALL *physical_rig_command)(void*,const PoimaGamePhysicalRigCommandV1*,PoimaGameError*);
 } PoimaGamePhysicalRigServicesV1;
 
+/* physical_rig_drive_v1 requires physical_rig_v1. Existing layouts and V1
+ * command semantics are frozen. The new summary callback uses the same 48-byte
+ * view with version=2 and modes Animated=0, Passive=1, Driven=2; the V1 callback
+ * rejects Driven. Drive reads are committed and selective. A known joint without
+ * authored drive configuration returns absent; an unknown joint is an error.
+ * Absent output echoes entity and zeros every other payload byte. Setter inputs
+ * are copied and join the ordered fixed-tick transaction; native admission owns
+ * the shared unit-quaternion validation/canonicalization policy.
+ * Only physical ownership admits drive writes; zero strength returns Passive
+ * when no other joint is driven. No recovery to animation is implied. */
+typedef struct PoimaGamePhysicalRigDriveRequestV1 {
+    uint32_t version,bytes; PoimaEntityId entity;
+    const char* joint; uint32_t joint_bytes,reserved;
+} PoimaGamePhysicalRigDriveRequestV1;
+typedef struct PoimaGamePhysicalRigDriveStateV1 {
+    uint32_t version,bytes,present,reserved; PoimaEntityId entity;
+    uint32_t joint_bytes,reserved_name; char joint[64];
+    double target_rotation[4],strength,stiffness,damping,max_torque;
+} PoimaGamePhysicalRigDriveStateV1;
+typedef struct PoimaGamePhysicalRigDriveCommandV1 {
+    uint32_t version,bytes; PoimaEntityId entity;
+    const char* joint; uint32_t joint_bytes,reserved;
+    double target_rotation[4],strength;
+} PoimaGamePhysicalRigDriveCommandV1;
+typedef struct PoimaGamePhysicalRigDriveServicesV1 {
+    PoimaGamePhysicalRigServicesV1 physical;
+    int32_t (POIMA_CALL *physical_rig_summary_v2)(void*,const PoimaEntityId*,PoimaGamePhysicalRigSummaryV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_drive_get)(void*,const PoimaGamePhysicalRigDriveRequestV1*,PoimaGamePhysicalRigDriveStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_rig_drive_set)(void*,const PoimaGamePhysicalRigDriveCommandV1*,PoimaGameError*);
+} PoimaGamePhysicalRigDriveServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -494,6 +525,10 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGamePhysicalRigDriveServicesV1)==448 && alignof(PoimaGamePhysicalRigDriveServicesV1)==8 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical)==0 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_summary_v2)==424 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_drive_get)==432 && offsetof(PoimaGamePhysicalRigDriveServicesV1,physical_rig_drive_set)==440);
+static_assert(sizeof(PoimaGamePhysicalRigDriveRequestV1)==40 && offsetof(PoimaGamePhysicalRigDriveRequestV1,entity)==8 && offsetof(PoimaGamePhysicalRigDriveRequestV1,joint)==24 && offsetof(PoimaGamePhysicalRigDriveRequestV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveRequestV1,reserved)==36);
+static_assert(sizeof(PoimaGamePhysicalRigDriveStateV1)==168 && offsetof(PoimaGamePhysicalRigDriveStateV1,entity)==16 && offsetof(PoimaGamePhysicalRigDriveStateV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveStateV1,reserved_name)==36 && offsetof(PoimaGamePhysicalRigDriveStateV1,joint)==40 && offsetof(PoimaGamePhysicalRigDriveStateV1,target_rotation)==104 && offsetof(PoimaGamePhysicalRigDriveStateV1,strength)==136 && offsetof(PoimaGamePhysicalRigDriveStateV1,stiffness)==144 && offsetof(PoimaGamePhysicalRigDriveStateV1,damping)==152 && offsetof(PoimaGamePhysicalRigDriveStateV1,max_torque)==160);
+static_assert(sizeof(PoimaGamePhysicalRigDriveCommandV1)==80 && offsetof(PoimaGamePhysicalRigDriveCommandV1,entity)==8 && offsetof(PoimaGamePhysicalRigDriveCommandV1,joint)==24 && offsetof(PoimaGamePhysicalRigDriveCommandV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveCommandV1,reserved)==36 && offsetof(PoimaGamePhysicalRigDriveCommandV1,target_rotation)==40 && offsetof(PoimaGamePhysicalRigDriveCommandV1,strength)==72);
 static_assert(sizeof(PoimaGamePhysicalRigServicesV1)==424 && alignof(PoimaGamePhysicalRigServicesV1)==8 && offsetof(PoimaGamePhysicalRigServicesV1,capsule)==0 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_summary)==400 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_part)==408 && offsetof(PoimaGamePhysicalRigServicesV1,physical_rig_command)==416);
 static_assert(sizeof(PoimaGamePhysicalRigSummaryV1)==48 && offsetof(PoimaGamePhysicalRigSummaryV1,entity)==16 && offsetof(PoimaGamePhysicalRigSummaryV1,body_count)==32 && offsetof(PoimaGamePhysicalRigSummaryV1,reserved)==40);
 static_assert(sizeof(PoimaGamePhysicalRigPartRequestV1)==40 && offsetof(PoimaGamePhysicalRigPartRequestV1,entity)==8 && offsetof(PoimaGamePhysicalRigPartRequestV1,part)==24 && offsetof(PoimaGamePhysicalRigPartRequestV1,part_bytes)==32 && offsetof(PoimaGamePhysicalRigPartRequestV1,reserved)==36);

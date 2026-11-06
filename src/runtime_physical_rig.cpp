@@ -2,6 +2,7 @@
 #include "runtime_physical_rig.hpp"
 #include "runtime_body_ids.hpp"
 #include "poima/physical_rig.hpp"
+#include "poima/physical_drive.hpp"
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
@@ -117,6 +118,7 @@ struct RuntimePhysicalRigBackend::Impl {
     JPH::Ref<JPH::GroupFilterTable> filter;
     std::vector<Part> parts;
     std::vector<Joint> joints;
+    std::vector<RuntimePhysicalRigDriveState> drives;
     RuntimePhysicalRigMode mode=RuntimePhysicalRigMode::Animated;
     std::size_t bodies_added=0,constraints_added=0;
 
@@ -205,6 +207,47 @@ struct RuntimePhysicalRigBackend::Impl {
             joint_pose(j.child,d.child_frame),subtract(vector(parts[j.child].body->GetAngularVelocity()),
                 vector(parts[j.parent].body->GetAngularVelocity())));
     }
+    std::size_t joint_index(std::string_view name) const {
+        for(std::size_t n=0;n<definition.joints.size();++n)
+            if(definition.joints[n].name==name)return n;
+        throw std::invalid_argument("Unknown physical rig joint.");
+    }
+    physical_drive::InverseInertia inverse_inertia(std::size_t n) const {
+        const auto* body=parts[n].body;const auto* motion=body->GetMotionProperties();
+        const auto axes=JPH::Mat44::sRotation(body->GetRotation())*
+            JPH::Mat44::sRotation(motion->GetInertiaRotation());
+        const auto diagonal=motion->GetInverseInertiaDiagonal();
+        physical_drive::InverseInertia result{};
+        // Reconstruct the native principal tensor as a sum of outer products.
+        // No symmetry averaging, mass conditioning or eigenvalue clamping.
+        for(JPH::uint r=0;r<3;++r)for(JPH::uint c=0;c<3;++c)
+            for(JPH::uint k=0;k<3;++k)
+                result[r*3+c]+=static_cast<double>(axes.GetColumn3(k)[r])*
+                    static_cast<double>(axes.GetColumn3(k)[c])*static_cast<double>(diagonal[k]);
+        return result;
+    }
+    physical_drive::Response drive_response(const RuntimePhysicalRigDriveState& state,double dt) const {
+        const auto n=joint_index(state.joint);const auto& j=joints[n];const auto& d=definition.joints[n];
+        if(!d.drive)throw std::invalid_argument("Physical joint has no authored drive.");
+        return physical_drive::evaluate(*d.drive,{state.target_rotation,state.strength},
+            joint_pose(j.parent,d.parent_frame),joint_pose(j.child,d.child_frame),
+            subtract(vector(parts[j.child].body->GetAngularVelocity()),vector(parts[j.parent].body->GetAngularVelocity())),
+            inverse_inertia(j.parent),inverse_inertia(j.child),std::holds_alternative<physical_rig::Hinge>(d.limits),dt);
+    }
+    std::vector<RuntimePhysicalRigDriveState> validate_drives(std::span<const RuntimePhysicalRigDriveState> input) const {
+        std::vector<RuntimePhysicalRigDriveState> result;std::size_t next=0;
+        for(const auto& joint:definition.joints)if(joint.drive) {
+            if(next>=input.size() || input[next].joint!=joint.name)
+                throw std::invalid_argument("Physical drive state differs from the complete ordered authored joint set.");
+            const auto& value=input[next++];
+            (void)physical_rig::validate_target(joint,value.target_rotation);
+            if(!std::isfinite(value.strength)||value.strength<0||value.strength>1)
+                throw std::invalid_argument("Physical drive strength must be in [0,1].");
+            result.push_back(value); // Preserve admitted saved bytes, including the quaternion.
+        }
+        if(next!=input.size())throw std::invalid_argument("Unexpected physical drive state.");
+        return result;
+    }
     RuntimePhysicalRigPartState part_state(std::size_t n) const {
         const auto& part=parts[n];const auto* motion=part.body->GetMotionProperties();
         RuntimePhysicalRigPartState state;state.pose=body_pose(n);state.body=part.id;
@@ -233,6 +276,13 @@ struct RuntimePhysicalRigBackend::Impl {
         state.relative_angular_velocity=subtract(vector(parts[j.child].body->GetAngularVelocity()),
             vector(parts[j.parent].body->GetAngularVelocity()));
         state.passive_child_torque=response(n).child_torque_world;state.friction_torque=d.friction_torque;
+        if(d.drive) {
+            const auto found=std::find_if(drives.begin(),drives.end(),[&](const auto& value){return value.joint==d.name;});
+            if(found==drives.end())throw std::logic_error("Authored drive has no owned state.");
+            state.drive=*found;const auto evaluated=drive_response(*found,1.0/60.0);
+            state.drive_child_torque=evaluated.child_torque_world;state.drive_angular_error=evaluated.angular_error;
+            state.drive_saturation_scale=evaluated.saturation_scale;
+        }
         if(const auto* limits=std::get_if<physical_rig::Hinge>(&d.limits)) {
             (void)limits;const auto* constraint=static_cast<const JPH::HingeConstraint*>(j.constraint.GetPtr());
             state.hinge=true;state.twist_min=constraint->GetLimitsMin();state.twist_max=constraint->GetLimitsMax();
@@ -357,6 +407,7 @@ RuntimePhysicalRigBackend::RuntimePhysicalRigBackend(JPH::PhysicsSystem& physics
             }
             if(!joint.constraint)throw std::runtime_error("Physical rig constraint allocation failed.");
             owner->joints.push_back(std::move(joint));
+            if(d.drive)owner->drives.push_back({d.name,physical_rig::validate_target(d,d.neutral_rotation),0});
         }
     } catch(...) {owner.reset();ids=original_ids;throw;}
     impl_=std::move(owner);
@@ -421,16 +472,25 @@ void RuntimePhysicalRigBackend::enter_passive(std::span<const RuntimePhysicalRig
 void RuntimePhysicalRigBackend::enter_animated() {
     impl_->remove_membership();
     for(auto& j:impl_->joints)j.constraint->ResetWarmStart();
+    for(auto& drive:impl_->drives)drive.strength=0;
     impl_->mode=RuntimePhysicalRigMode::Animated;
 }
 void RuntimePhysicalRigBackend::before_step(double dt) {
     if(!std::isfinite(dt)||dt<=0||dt>1)throw std::invalid_argument("Physical rig step must be in (0,1] seconds.");
-    if(impl_->mode!=RuntimePhysicalRigMode::Passive)return;
+    if(impl_->mode==RuntimePhysicalRigMode::Animated)return;
     // Prepare every result before mutating forces. A singular/invalid response
     // cannot leave half of the rig with applied torque.
     std::vector<Vec3> torques(impl_->parts.size());
     for(std::size_t n=0;n<impl_->joints.size();++n) {
         const auto response=impl_->response(n);const auto& joint=impl_->joints[n];
+        for(std::size_t k=0;k<3;++k) {
+            torques[joint.child][k]+=response.child_torque_world[k];
+            torques[joint.parent][k]+=response.parent_torque_world[k];
+        }
+    }
+    if(impl_->mode==RuntimePhysicalRigMode::Driven)for(const auto& drive:impl_->drives)if(drive.strength>0) {
+        const auto response=impl_->drive_response(drive,dt);
+        const auto& joint=impl_->joints[impl_->joint_index(drive.joint)];
         for(std::size_t k=0;k<3;++k) {
             torques[joint.child][k]+=response.child_torque_world[k];
             torques[joint.parent][k]+=response.parent_torque_world[k];
@@ -449,8 +509,8 @@ void RuntimePhysicalRigBackend::before_step(double dt) {
 }
 void RuntimePhysicalRigBackend::impulse(std::string_view name,const Vec3& at,const Vec3& impulse_value) {
     const auto n=impl_->index(name);
-    if(impl_->mode!=RuntimePhysicalRigMode::Passive)
-        throw std::invalid_argument("Physical rig impulse requires Passive ownership.");
+    if(impl_->mode==RuntimePhysicalRigMode::Animated)
+        throw std::invalid_argument("Physical rig impulse requires physical ownership.");
     vector_bound(at,max_world_position,"Physical rig impulse point is outside finite bounds.");
     vector_bound(impulse_value,max_impulse,"Physical rig impulse is outside finite bounds.");
     const auto lever=subtract(at,position(impl_->parts[n].body->GetCenterOfMassPosition()));
@@ -459,6 +519,32 @@ void RuntimePhysicalRigBackend::impulse(std::string_view name,const Vec3& at,con
     if(lever_squared>max_impulse_lever*max_impulse_lever||impulse_squared>max_impulse*max_impulse)
         throw std::invalid_argument("Physical rig impulse magnitude or lever arm exceeds bounds.");
     impl_->physics.GetBodyInterface().AddImpulse(impl_->parts[n].id,vec(impulse_value),point(at));
+}
+
+std::optional<RuntimePhysicalRigDriveState> RuntimePhysicalRigBackend::drive(std::string_view name) const {
+    (void)impl_->joint_index(name);
+    const auto found=std::find_if(impl_->drives.begin(),impl_->drives.end(),[&](const auto& value){return value.joint==name;});
+    if(found==impl_->drives.end())return {};return *found;
+}
+void RuntimePhysicalRigBackend::set_drive(const RuntimePhysicalRigDriveState& source) {
+    if(impl_->mode==RuntimePhysicalRigMode::Animated)
+        throw std::invalid_argument("Physical drive requires explicit physical takeover first.");
+    const auto n=impl_->joint_index(source.joint);const auto& joint=impl_->definition.joints[n];
+    if(!joint.drive)throw std::invalid_argument("Physical joint has no authored drive.");
+    RuntimePhysicalRigDriveState value=source;value.target_rotation=physical_rig::validate_target(joint,source.target_rotation);
+    if(!std::isfinite(value.strength)||value.strength<0||value.strength>1)
+        throw std::invalid_argument("Physical drive strength must be in [0,1].");
+    auto found=std::find_if(impl_->drives.begin(),impl_->drives.end(),[&](const auto& state){return state.joint==value.joint;});
+    if(found==impl_->drives.end())throw std::logic_error("Authored physical drive has no state.");
+    // An exact committed readback is already admitted. Re-normalizing it may
+    // move a component by an ULP; that must not become a new control or wake.
+    if(*found==source || *found==value)return;
+    const bool wake=found->strength>0||value.strength>0;
+    *found=value;
+    impl_->mode=std::any_of(impl_->drives.begin(),impl_->drives.end(),[](const auto& d){return d.strength>0;})?
+        RuntimePhysicalRigMode::Driven:RuntimePhysicalRigMode::Passive;
+    auto& bodies=impl_->physics.GetBodyInterface();
+    if(wake)for(const auto& part:impl_->parts)if(!part.body->IsActive())bodies.ActivateBody(part.id);
 }
 
 RuntimePhysicalRigObservation RuntimePhysicalRigBackend::observe() const {
@@ -482,6 +568,7 @@ RuntimePhysicalRigPartState RuntimePhysicalRigBackend::observe_part(std::string_
 
 RuntimePhysicalRigMembership RuntimePhysicalRigBackend::snapshot_membership() const {
     RuntimePhysicalRigMembership result;result.mode=impl_->mode;result.enrolled=impl_->bodies_added!=0;
+    result.drives=impl_->drives;
     result.poses.reserve(impl_->parts.size());result.warm_starts=warm_start();
     for(std::size_t n=0;n<impl_->parts.size();++n) {
         // Preserve exact native float components, rather than normalize an
@@ -491,10 +578,14 @@ RuntimePhysicalRigMembership RuntimePhysicalRigBackend::snapshot_membership() co
     return result;
 }
 void RuntimePhysicalRigBackend::restore_membership(const RuntimePhysicalRigMembership& snapshot) {
-    if(snapshot.mode!=RuntimePhysicalRigMode::Animated&&snapshot.mode!=RuntimePhysicalRigMode::Passive)
+    if(snapshot.mode!=RuntimePhysicalRigMode::Animated&&snapshot.mode!=RuntimePhysicalRigMode::Passive&&snapshot.mode!=RuntimePhysicalRigMode::Driven)
         throw std::invalid_argument("Unknown physical rig checkpoint mode.");
-    if((snapshot.mode==RuntimePhysicalRigMode::Passive)!=snapshot.enrolled)
+    if((snapshot.mode!=RuntimePhysicalRigMode::Animated)!=snapshot.enrolled)
         throw std::invalid_argument("Inconsistent physical rig checkpoint membership.");
+    const auto drives=impl_->validate_drives(snapshot.drives);
+    const bool driven=std::any_of(drives.begin(),drives.end(),[](const auto& d){return d.strength>0;});
+    if(driven!=(snapshot.mode==RuntimePhysicalRigMode::Driven))
+        throw std::invalid_argument("Physical drive strength and ownership mode differ.");
     // Validate/allocate the ENTIRE typed metadata before changing any body or
     // membership. This includes off-broadphase poses absent from Jolt SaveState.
     const auto poses=impl_->inputs(snapshot.poses,false);
@@ -513,6 +604,7 @@ void RuntimePhysicalRigBackend::restore_membership(const RuntimePhysicalRigMembe
     for(std::size_t n=0;n<records.size();++n)
         apply_warm_start(*impl_->joints[n].constraint,records[n]);
     impl_->mode=snapshot.mode;
+    impl_->drives=drives;
 }
 
 std::vector<RuntimePhysicalRigJointWarmStart> RuntimePhysicalRigBackend::warm_start() const {

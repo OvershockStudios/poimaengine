@@ -40,10 +40,28 @@ void prefix_bytes(){
     auto expected=*prefix;expected.bytes=176;check(std::memcmp(&legacy,&expected,176)==0,"Baseline view copied or changed wrong bytes.");
     prefix->bytes=175;bool rejected=false;try{(void)poima::gameplay_abi::baseline_view(*prefix);}catch(const std::runtime_error&){rejected=true;}check(rejected,"Short baseline accepted.");
 }
+void drive_compatibility(){
+    const auto drive=contract(448,{"baseline_v7","physical_rig_v1","physical_rig_drive_v1"});
+    const auto legacy=contract(424,{"baseline_v7","physical_rig_v1"});
+    check(compatibility_error(drive,drive).empty(),"Independent drive extension rejected.");
+    check(compatibility_error(legacy,drive).empty(),"Frozen424 consumer rejected by448 host.");
+    check(!compatibility_error(drive,legacy).empty(),"Frozen424 host granted drive capability.");
+    for(auto bytes:{176u,400u,424u,432u,440u,447u}){auto short_host=drive;short_host.services_bytes=bytes;check(!compatibility_error(drive,short_host).empty(),"Short drive host accepted.");}
+    auto missing=drive;missing.features={"baseline_v7","physical_rig_drive_v1"};
+    check(!compatibility_error(missing,drive).empty()&&!compatibility_error(Contract{},missing).empty(),"Drive dependency missing from requirement or host.");
+    auto unmarked=legacy;unmarked.services_bytes=448;
+    check(!compatibility_error(drive,unmarked).empty()&&!compatibility_error(unmarked,drive).empty(),"448 extent granted unnamed drive rights.");
+    auto future=drive;future.services_bytes=480;future.features.push_back("future_unknown_v1");
+    check(compatibility_error(drive,future).empty(),"Future same-epoch tail rejected448 consumer.");
+    auto wrong=drive;wrong.services_bytes=456;check(!compatibility_error(wrong,future).empty(),"Noncanonical drive requirement accepted.");
+    wrong=drive;wrong.features.push_back("physical_rig_drive_v1");check(!compatibility_error(wrong,drive).empty(),"Duplicate drive requirement accepted.");
+}
 }
 static_assert(sizeof(PoimaGameServices)==176&&sizeof(PoimaGameCapsuleQueryServicesV1)==400&&sizeof(PoimaGamePhysicalRigServicesV1)==424);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigSummaryV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigSummaryV1>);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigPartRequestV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigPartRequestV1>);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigPartStateV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigPartStateV1>);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigCommandV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigCommandV1>);
-int main(){try{prefix_compatibility();prefix_bytes();std::cout<<"physical gameplay ABI:2 header/policy groups passed; no native gameplay claim\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+static_assert(sizeof(PoimaGamePhysicalRigDriveServicesV1)==448&&sizeof(PoimaGamePhysicalRigDriveRequestV1)==40&&sizeof(PoimaGamePhysicalRigDriveCommandV1)==80&&sizeof(PoimaGamePhysicalRigDriveStateV1)==168);
+static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigDriveServicesV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigDriveServicesV1>);
+int main(){try{prefix_compatibility();prefix_bytes();drive_compatibility();std::cout<<"physical gameplay ABI:3 header/policy groups passed; no native gameplay claim\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
