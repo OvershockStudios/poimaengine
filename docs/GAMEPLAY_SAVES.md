@@ -152,6 +152,19 @@ a storage fence; `null` does not mean a save succeeded. Query
 Exact playback retries retain the original observation rather than waiting or
 replaying ticks.
 
+## Grounded save compatibility
+
+The [grounded character workflow](GROUNDED_PHYSICAL_HANDOFF.md) passes complete
+save continuation separately on Windows and Linux. A Linux-produced capture
+was rejected by Windows's exact replay validation of generated grounding IK.
+Separately produced checkpoints contain orientation components differing by
+1–4 floating-point ULP; the exact rejected replay delta was not logged.
+
+Use saves from the qualified platform and runtime build. This observed
+cross-platform compatibility gap remains open; within-platform results do not
+resolve it. Saved controls must not be edited to bypass validation. See the
+[recorded evidence](evidence/m2-character-grounded-handoff.json).
+
 ## Limits
 
 Snapshot capture and serialization remain on the owner and may hitch even with

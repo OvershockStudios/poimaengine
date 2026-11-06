@@ -184,3 +184,68 @@ managed run retains all 116 typed fields, 46 complete saves and 27 complete
 byte/typed-state pairs across three sequential engine processes. This extends
 fresh-process evidence beyond the same-process C++ fixture; it does not qualify
 Native AOT, imported-character motion, rendering or representative performance.
+
+## Original Knight workflow
+
+[Physical Character Yard](../examples/physical-character-yard/README.md#planted-feet-into-passive-physics)
+applies this policy to the unchanged CC0 KayKit Knight: all 57 original nodes,
+fifteen physical bodies and fourteen joints remain present. Its bounded-scale
+profile keeps the original animation scales and adds the explicit controller
+and grounded-pose ownership links.
+
+The workflow pauses Idle, obtains two planted contacts on a real flat collider,
+and advances the controller about 5.33 mm while preserving both anchors. It
+checks the corrected two-sample pose history, transfers ownership to passive
+physics, and restores animated and physical checkpoints in fresh processes.
+Complete archive equality covers rejected conflicting writes, restoration and
+continued simulation. Cached foot diagnostics remain tied to the last animated
+decision after takeover.
+
+The [original-character evidence](evidence/m2-character-grounded-handoff.json)
+records separate Linux and Windows CPU passes using the unchanged 0.0.228 native
+runtime, schema 127. Each retains sixteen complete archives and eleven whole
+byte/typed-state comparisons across three naturally closed engine processes.
+This is imported-character integration coverage for the existing policy.
+Paused Idle and a small motor displacement do not establish gait fitting,
+active balance, fall animation quality or representative performance.
+
+The original Linux-to-Windows grounded restore rejects at exact generated-IK
+replay validation. Separately produced checkpoints contain orientation
+components differing by 1–4 floating-point ULP. Both within-platform workflows
+pass. Their results do not establish cross-platform save compatibility; see the
+[save-system boundary](GAMEPLAY_SAVES.md#grounded-save-compatibility).
+
+## Depth reference and hardware capture
+
+After the CPU workflow succeeds, a pure source-geometry reference can be made
+from its retained `evidence.json`:
+
+```sh
+python3 -B tests/character_grounded_depth_oracle.py \
+  --source /path/to/Knight.glb \
+  --cpu-report build/physical-character-grounded/evidence.json \
+  --output build/physical-character-grounded-depth.json \
+  --require-stale passive-next
+```
+
+The output must be new. For Windows hardware captures, use the Windows CPU
+run's saved poses. The reference joins the original model to the cooked
+asset and saved node poses, then evaluates skinning, rigid attachments and
+nearest-depth occlusion in software. It selects stationary planted, moving
+planted, first-physical and later passive poses. The required stale case must
+provide separated depth witnesses; insufficient separation fails that
+requirement rather than lowering its threshold.
+
+This file reports `native_render_verified: false`: it is an expected-depth
+reference, not a Vulkan capture. Hardware verification separately needs actual
+depth samples and submitted/presented-frame receipts from the identified GPU,
+unchanged complete saves around capture, and retained images. Still-image or
+depth agreement alone does not establish believable motion.
+
+The separate [Windows Vulkan result](evidence/m2-character-grounded-handoff.json)
+passes those checks on an RTX 4070 Laptop GPU for five Windows-saved poses.
+Each pose's complete image matches after a fresh-process restore, and complete
+saves remain equal to the original Windows checkpoints before and after
+capture. The 640×480 single-sample images qualify selected still-frame depth
+and replay agreement. Normal-speed motion, gait, active balance, antialiasing
+quality and performance require separate evaluation.

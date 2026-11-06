@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.229
+
+- Exercise original imported characters through automatic grounded feet,
+  corrected-pose physical takeover and complete warm/cold save continuation.
+- Verify Windows Vulkan poses against independent original-geometry depth
+  references, including cooked vertex splits and fresh-process image equality.
+- Document the observed Linux-to-Windows grounded-save compatibility limit
+  while preserving successful within-platform continuation on both systems.
+
 ## 0.0.228
 
 - Qualify grounded/planted-foot physical takeover on Windows with actual native

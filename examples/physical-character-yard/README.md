@@ -71,7 +71,8 @@ Out-of-bound samples reject the complete batch. The
 describes initialization, errors, exact saved-scale witnesses and ownership.
 An explicit root-controller link is exercised by the
 [movement-to-physics workflow](../../docs/CHARACTER_CONTROLLER_HANDOFF.md).
-Active balance, root-motion/IK coordination and recovery remain separate work.
+The grounded-foot ownership policy is exercised below. Active balance,
+root-motion transfer and recovery remain separate work.
 
 With simulation enabled in a matching 0.0.220 build, run the shared-world
 workflow under an external process-tree supervisor:
@@ -94,6 +95,53 @@ this is distinct from the authored relative envelope. The
 [Windows result](../../docs/evidence/m2-bounded-skeletal-scales-windows.json)
 qualify this selected sequence, not all animation combinations or visual motion
 quality.
+
+## Planted feet into passive physics
+
+The [grounded handoff workflow](../../docs/GROUNDED_PHYSICAL_HANDOFF.md#original-knight-workflow)
+combines the bounded-scale profile, a linked controller and
+`procedural_pose: "grounded_animated_only"` on this unchanged character.
+It pauses the original Idle clip, establishes two real planted-foot anchors on
+a flat floor, and moves the actor about **5.33 mm** while those anchors stay
+fixed. The corrected pose and its preceding completed sample then supply the
+physical takeover, including each body's finite-difference velocity.
+
+With a simulation-enabled build supporting that policy, run under an external
+process-tree supervisor:
+
+```sh
+python3 -B tests/physical_character_grounded_handoff.py \
+  --binary /path/to/poima \
+  --source /path/to/Knight.glb --license /path/to/LICENSE.txt \
+  --output build/physical-character-grounded
+```
+
+Use native Python and `poima.exe` on Windows, and a fresh output directory on
+either platform. The test imports the complete original library, rejects an
+activation/grounding-write conflict without changing the complete save, and
+checks warm and fresh-process restore both before and after takeover. Continued
+simulation must reproduce the complete saved bytes, including the historical
+foot decisions; no state fields are excluded.
+
+Separate [Linux and Windows CPU runs](../../docs/evidence/m2-character-grounded-handoff.json)
+pass this workflow on the unchanged 0.0.228 native runtime, schema 127. Each
+uses three naturally closed engine processes. The short paused-Idle movement
+tests planted ownership and transfer; it does not qualify a walking gait,
+active balance or natural-looking motion.
+
+The [depth-reference procedure](../../docs/GROUNDED_PHYSICAL_HANDOFF.md#depth-reference-and-hardware-capture)
+uses original geometry and these actual saved poses. Producing that reference
+does not execute a renderer. Separate Windows Vulkan checks on an RTX 4070
+Laptop GPU verify five Windows-saved poses and reproduce each complete image
+after fresh-process restore. These 640×480 single-sample captures establish
+selected still-frame depth and replay agreement, without qualifying
+antialiasing, normal-speed motion or performance.
+
+Use saves from the capture platform. Linux-to-Windows grounded restore currently
+rejects exact generated-IK replay. Separately produced checkpoints contain
+orientation components differing by 1–4 floating-point ULP. The
+[save compatibility boundary](../../docs/GAMEPLAY_SAVES.md#grounded-save-compatibility)
+remains separate from the passing within-platform checks.
 
 ## Native acceptance
 
@@ -156,3 +204,13 @@ recovery, Native AOT and representative performance remain open. The linked
 actor's root-only graph and root-motion/IK restrictions follow the
 [ownership contract](../../docs/PHYSICAL_RIGS.md#controller-handoff). The analytic
 ribbon continues to provide a separate clean skin/projection oracle.
+
+## Grounded capture examples
+
+These actual Vulkan stills show the original CC0 Knight at the planted boundary
+and an early passive pose. They use the single-sample geometry-verification
+settings described above; they are not a motion-quality demonstration.
+
+| Planted boundary | After physical takeover |
+| --- | --- |
+| ![Original Knight with planted feet](../../docs/evidence/grounded-character-planted-stationary.png) | ![Original Knight after physical takeover](../../docs/evidence/grounded-character-passive-next.png) |

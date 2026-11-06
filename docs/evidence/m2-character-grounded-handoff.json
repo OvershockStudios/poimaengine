@@ -1,0 +1,375 @@
+{
+  "format": "poima.character-grounded-handoff-evidence.v1",
+  "date": "2026-11-06",
+  "checkpoint": "0.0.229",
+  "native_runtime_version": "0.0.228",
+  "schema_revision": 127,
+  "passed": true,
+  "scope": "Original imported Knight combines automatic planted-foot grounding, corrected-pose physical takeover, within-platform whole saves and selected Windows Vulkan stills.",
+  "source_identities": {
+    "tests/physical_character_grounded_handoff.py": {
+      "bytes": 32032,
+      "sha256": "f3c021969acc344f3c51444ab25bbfeaa402e6f4fef2d1c932334228dfe3b661"
+    },
+    "tests/character_grounded_depth_oracle.py": {
+      "bytes": 22914,
+      "sha256": "9d48aee2e4fad227fa45ee151f9530902be3b82199b816746539485b6fbce089"
+    },
+    "tests/character_depth_oracle.py": {
+      "bytes": 18361,
+      "sha256": "109dd9e81c7a2b3c6a49970f2e6b6a086f18e1285d3b80593cbda3911b407576"
+    },
+    "examples/physical-character-yard/knight_profile.py": {
+      "bytes": 18739,
+      "sha256": "4207b9a4953d6a81ae7c45287f485fb6bbde9db803b93463197945a3fc2242bb"
+    },
+    "examples/physical-character-yard/profiles/knight.json": {
+      "bytes": 24726,
+      "sha256": "534e8cbf4ab92d7bbe4f4ffccfce035df2cbb09cc0ea88493d2590ba98cd9219"
+    },
+    "examples/physical-character-yard/source-manifest.json": {
+      "bytes": 815,
+      "sha256": "9bac7bdd307ec44db66786632e8ca82be5fcf14ad5f15412b83d97dffa872f29"
+    }
+  },
+  "original_source": {
+    "creator": "Kay Lousberg",
+    "pack": "KayKit Adventurers 1.0",
+    "license": "CC0-1.0",
+    "repository": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+    "revision": "672074b73ba276876a19e8816ecdc5241817ab47",
+    "model": {
+      "relative_source": "addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "original_notice": {
+      "relative_source": "LICENSE.txt",
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "nodes": 57,
+    "skin_joints": 41,
+    "takes": 76,
+    "meshes": 15,
+    "skinned_meshes": 6,
+    "rigid_meshes": 9,
+    "source_vertices": 7024,
+    "source_triangles": 6952,
+    "physical_bodies": 15,
+    "physical_joints": 14,
+    "total_mass_kg": 72,
+    "artwork_and_library_modified": false
+  },
+  "recipe": {
+    "pose_frame": "skeletal_bounded_scale",
+    "procedural_pose": "grounded_animated_only",
+    "initial_clip": "Idle",
+    "initial_clip_index": 36,
+    "initial_clip_paused": true,
+    "grounded_feet": 2,
+    "plant_lock": true,
+    "resolved_motor_displacement_m": 0.005333333327931312,
+    "observed_nodes": 57,
+    "physical_parts": 15,
+    "physical_joints": 14,
+    "selected_capture_ticks": [
+      2,
+      4,
+      5,
+      9,
+      15
+    ]
+  },
+  "cpu": {
+    "Linux": {
+      "passed": true,
+      "consumer": {
+        "bytes": 9083658,
+        "sha256": "c6ed8e06b3dcf7137a6b49a0db9c89ebca5ed4ba06c61a9e98ca604a2bd9cafb"
+      },
+      "owner": {
+        "bytes": 6459,
+        "sha256": "a385b431cf0b9b781a5681342b977c17a2a0a64bdbbadd793bcd24943fa5a62f"
+      },
+      "native_image": {
+        "bytes": 39127712,
+        "sha256": "294d4de356fdcd1097877324fe78ce2281c9599cdb8599ff7f5996fa02593c30"
+      },
+      "rpc_calls": 1355,
+      "natural_cli_owners": 3,
+      "complete_observations": 19,
+      "whole_archives": 16,
+      "whole_byte_pairs": 11,
+      "independently_checked_node_rows": 1083,
+      "independently_checked_part_rows": 285,
+      "independently_checked_joint_memberships": 266,
+      "corrected_history_rows": 30,
+      "complete_native_receipt_join": true,
+      "actual_anchor_and_source_geometry_checks": true,
+      "forced_cleanup": false,
+      "independent_audit": {
+        "bytes": 19754,
+        "sha256": "9a1e43c2f28c92863c042f983079622d982da749fbef34e0fec525b5a1b0f15c"
+      },
+      "input_fence": {
+        "consumer_start_end": 33,
+        "outer_pre_admitted": 26,
+        "overlap": 23,
+        "consumer_only": 10,
+        "scope": "Original complete consumer fence and separate outer admission; no retrospective outer-admission claim."
+      }
+    },
+    "Windows": {
+      "passed": true,
+      "consumer": {
+        "bytes": 9089595,
+        "sha256": "0179f62b0c38e4455359250245cd7a757bb9dd80931b11038c7d3d68f911bf63"
+      },
+      "owner": {
+        "bytes": 9040,
+        "sha256": "cb00794d3fd77402a5a7d025d63061322f85baa3126d2caee5022c8c28d806a5"
+      },
+      "native_image": {
+        "bytes": 28525056,
+        "sha256": "33ee8e4cd0daa51f73c4ecf45d8c76c538b4c49b89436e0078569d0daa769cbf"
+      },
+      "rpc_calls": 1355,
+      "natural_cli_owners": 3,
+      "complete_observations": 19,
+      "whole_archives": 16,
+      "whole_byte_pairs": 11,
+      "independently_checked_node_rows": 1083,
+      "independently_checked_part_rows": 285,
+      "independently_checked_joint_memberships": 266,
+      "corrected_history_rows": 30,
+      "complete_native_receipt_join": true,
+      "actual_anchor_and_source_geometry_checks": true,
+      "forced_cleanup": false,
+      "independent_audit": {
+        "bytes": 22668,
+        "sha256": "67b10dc3c98db32245b5190c3af9b6ece2abe923d435075ebfc7d028c0bfb7cd"
+      },
+      "input_fence": {
+        "consumer_start_end": 33,
+        "consumed_inputs_pre_admitted": 33
+      }
+    }
+  },
+  "render": {
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "api": "Vulkan",
+    "width": 640,
+    "height": 480,
+    "samples": 1,
+    "reconstruction": "none",
+    "lighting_path": "forward",
+    "reference": {
+      "bytes": 100025,
+      "sha256": "de5bedf36365d2f58b02531c3688ffc4912645ad0615842fa1be439581d2277e"
+    },
+    "consumer": {
+      "bytes": 4344458,
+      "sha256": "d45aebd7195887a56cfbcea3705c81d86370a8019d7ab6cddbe12d562aae55fe"
+    },
+    "owner": {
+      "bytes": 2352,
+      "sha256": "22068d7f09138df29bb699bcc7860b642475f8cb8dcb4c34ee929762d44f6e53"
+    },
+    "independent_audit": {
+      "bytes": 25475,
+      "sha256": "347fa172410b2f2a01f7e8ec42c1783817241ffc621646c039523507800bb1f2"
+    },
+    "rpc_calls": 704,
+    "captures": 10,
+    "natural_cli_owners": 6,
+    "windows_job_processes": 7,
+    "forced_cleanup": false,
+    "whole_archives": 20,
+    "complete_before_after_pairs": 10,
+    "complete_source_to_before_pairs": 10,
+    "whole_bmp_pairs": 5,
+    "excluded_pixels": 0,
+    "depth_probes": 448,
+    "stale_palette_rejections": 128,
+    "maximum_device_depth_error": 6.29329144463675e-07,
+    "original_skinned_vertices": 3716,
+    "cooked_skinned_vertices": 4269,
+    "cooked_vertices": 7962,
+    "source_triangles": 6952,
+    "camera_triangles_including_floor": 6964,
+    "camera_draws": 16,
+    "cases": [
+      {
+        "slot": "planted-stationary",
+        "tick": 2,
+        "stale_control_rejectable": false,
+        "stale_control": "Uncorrected original Idle palettes"
+      },
+      {
+        "slot": "planted-active",
+        "tick": 4,
+        "stale_control_rejectable": false,
+        "stale_control": "Uncorrected original Idle palettes"
+      },
+      {
+        "slot": "takeover-first",
+        "tick": 5,
+        "stale_control_rejectable": false,
+        "stale_control": "Frozen corrected planted-active mesh-local palettes"
+      },
+      {
+        "slot": "takeover-future",
+        "tick": 9,
+        "stale_control_rejectable": true,
+        "stale_control": "Frozen corrected planted-active mesh-local palettes"
+      },
+      {
+        "slot": "passive-next",
+        "tick": 15,
+        "stale_control_rejectable": true,
+        "stale_control": "Frozen corrected planted-active mesh-local palettes"
+      }
+    ],
+    "image_pairs": [
+      {
+        "slot": "planted-stationary",
+        "bmp": {
+          "bytes": 1228938,
+          "sha256": "8bab0f892b1ed9f897af36165c3d2092dc1e6a889d2b72fc189b08453ccc3d62"
+        },
+        "cold_bmp": {
+          "bytes": 1228938,
+          "sha256": "8bab0f892b1ed9f897af36165c3d2092dc1e6a889d2b72fc189b08453ccc3d62"
+        }
+      },
+      {
+        "slot": "planted-active",
+        "bmp": {
+          "bytes": 1228938,
+          "sha256": "5ad2e52c0071d8326bb90959c4f87b0ab32c57b9b6d461e932e94a3fd10f4115"
+        },
+        "cold_bmp": {
+          "bytes": 1228938,
+          "sha256": "5ad2e52c0071d8326bb90959c4f87b0ab32c57b9b6d461e932e94a3fd10f4115"
+        }
+      },
+      {
+        "slot": "takeover-first",
+        "bmp": {
+          "bytes": 1228938,
+          "sha256": "1dc7bfb3fb95d4ee056208313f9cc6c55c950d1eb1cce1e20d811e31dbbeb6f2"
+        },
+        "cold_bmp": {
+          "bytes": 1228938,
+          "sha256": "1dc7bfb3fb95d4ee056208313f9cc6c55c950d1eb1cce1e20d811e31dbbeb6f2"
+        }
+      },
+      {
+        "slot": "takeover-future",
+        "bmp": {
+          "bytes": 1228938,
+          "sha256": "480c789e4ae017263b931271d8b308ea60efd33089e14dc99c7723870b6ed272"
+        },
+        "cold_bmp": {
+          "bytes": 1228938,
+          "sha256": "480c789e4ae017263b931271d8b308ea60efd33089e14dc99c7723870b6ed272"
+        }
+      },
+      {
+        "slot": "passive-next",
+        "bmp": {
+          "bytes": 1228938,
+          "sha256": "343fd7d56f9ed81624a00fd0dd55f1785363489e2269c3b54f90446339bbd0a4"
+        },
+        "cold_bmp": {
+          "bytes": 1228938,
+          "sha256": "343fd7d56f9ed81624a00fd0dd55f1785363489e2269c3b54f90446339bbd0a4"
+        }
+      }
+    ],
+    "visual_review": {
+      "images_inspected": 5,
+      "complete_character_and_floor_visible": true,
+      "changing_passive_pose_visible": true,
+      "os_screenshot": false,
+      "normal_speed_motion_qualified": false
+    },
+    "images": [
+      {
+        "pose": "planted-stationary",
+        "path": "docs/evidence/grounded-character-planted-stationary.png",
+        "identity": {
+          "bytes": 25886,
+          "sha256": "3960471a4d7c77f99ccfefb597c2eaae3e610fd825c3ccba54587508622e843c"
+        },
+        "source": "Lossless RGB conversion of actual Vulkan BMP; unchanged CC0 Knight."
+      },
+      {
+        "pose": "passive-next",
+        "path": "docs/evidence/grounded-character-passive-next.png",
+        "identity": {
+          "bytes": 23119,
+          "sha256": "e84a1b9aca1a94731f1dd4786cdcbca3fea8b12427a304f0e779fc21f04b4840"
+        },
+        "source": "Lossless RGB conversion of actual Vulkan BMP; unchanged CC0 Knight."
+      }
+    ]
+  },
+  "failed_attempts": [
+    {
+      "kind": "Linux native fixture 1",
+      "passed": false,
+      "cause": "Expected authored mass instead of the public reciprocal of native float32 inverse mass; exact oracle corrected."
+    },
+    {
+      "kind": "Linux native fixture 2",
+      "passed": false,
+      "cause": "Fixture metric-loop variable shadowed the complete archive; renamed without changing state checks."
+    },
+    {
+      "kind": "Windows file-only preparation",
+      "passed": false,
+      "cause": "Incorrectly required all 33 consumed inputs in the original 26-pin Linux outer admission. Original fences now reported separately."
+    },
+    {
+      "kind": "Windows render attempt 1",
+      "passed": false,
+      "native_rpc_calls": 2,
+      "captures": 0,
+      "cause": "Exact Linux grounded capture rejected by Windows generated-IK replay validation; remains a compatibility limitation."
+    },
+    {
+      "kind": "Windows render attempt 2",
+      "passed": false,
+      "captures": 1,
+      "cause": "Verifier compared raw source vertices with cooked-buffer vertices. Independent source/cooked decoding establishes the corrected census; original failed verdict retained."
+    }
+  ],
+  "cross_platform_restore": {
+    "qualified": false,
+    "observed_direction": "Linux to Windows",
+    "native_error_code": -32070,
+    "validation": "Exact generated grounding IK equality against pure recorded-journal replay.",
+    "observed_original_orientation_components_different": 5,
+    "observed_ulp_range": [
+      1,
+      4
+    ],
+    "maximum_observed_orientation_difference": 1.1102230246251565e-16,
+    "underlying_libm_or_instruction_cause_proven": false,
+    "saved_data_edited": false,
+    "validation_relaxed": false,
+    "diagnosis": {
+      "bytes": 9594,
+      "sha256": "3e04b5e9a841165150d02130c6c246400a1fdad719c3d8c934519ccc9caee8ca"
+    }
+  },
+  "limits": [
+    "Paused Idle and small motor displacement do not qualify walking or running gait, active balance, full falls, recovery or production character quality.",
+    "Single-sample 640x480 stills do not qualify antialiasing, normal-speed motion or representative performance.",
+    "The observed Linux-to-Windows grounded restore fails; within-platform continuation is a separate result.",
+    "No new Native AOT or full Alpha release qualification."
+  ]
+}

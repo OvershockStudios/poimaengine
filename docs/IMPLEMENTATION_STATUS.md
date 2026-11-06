@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-11-05 for **0.0.228**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.229**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.229 [qualifies an original grounded character](evidence/m2-character-grounded-handoff.json).
+The unchanged CC0 Knight combines two planted feet, a small resolved controller
+movement and transfer of its corrected pose into fifteen physical bodies.
+Separate Linux and Windows runs each pass 1,355 RPC calls, nineteen complete
+observations, sixteen saves and eleven complete archive pairs across three
+naturally closed processes. Independent checks cover the original geometry,
+all 57 nodes, contact anchors and thirty corrected momentum-history rows.
+
+Ten Windows Vulkan captures on the RTX 4070 Laptop GPU match independent source
+geometry at 448 depth samples and reject 128 stale-palette samples. Five complete
+images match after fresh-process reload. Twenty complete saves bracket capture;
+ten before/after and ten source-to-before comparisons have no excluded state.
+The five poses were visually inspected. These are 640×480 single-sample stills,
+not normal-speed motion, gait, active balance or performance qualification.
+The measured runtime is 0.0.228; schema 127 and the gameplay ABI remain unchanged.
+
+A Linux-produced grounded save was rejected by Windows's exact generated-IK
+replay validation. Independently observed orientation components differ by
+1–4 floating-point ULP. This is an open cross-platform save compatibility gap;
+the successful within-platform results do not resolve it. The first failed
+render run and the later cooked-vertex-count verifier failure remain recorded.
+See the [save compatibility boundary](GAMEPLAY_SAVES.md#grounded-save-compatibility).
 
 Version 0.0.228 [qualifies grounded handoff on Windows and CoreCLR](evidence/m2-grounded-physical-handoff-windows.json).
 The Windows CPU cohort passes 52 native executables, four owned inertial-save
