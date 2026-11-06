@@ -51,8 +51,9 @@ provide durable project context, not authority to override them.
 - Serialize expensive native builds and GPU runs to fit the development laptop.
   Respect current power and workload constraints. Reuse verified artifacts when
   their inputs are unchanged rather than repeating costly qualification.
-- Run checks appropriate to the change. Retain original requests, responses,
-  artifacts and identities; keep real failures and their causes. Never coerce
+- Run checks appropriate to the change. For active qualification and retained
+  compatibility baselines, retain original requests, responses, artifacts and
+  identities; keep real failures and their causes. Never coerce
   types, remove state fields, rewrite receipts or weaken requirements to get a
   passing result. Synthetic tests are not native execution evidence.
 - Distinguish accepted commands, completed jobs, rendered observations and
@@ -85,5 +86,9 @@ provide durable project context, not authority to override them.
   change of direction. Deterministic procedural content and AI-assisted code
   are permitted; users choose the content in their own games.
 - Inspect storage ownership before cleanup. Preserve source, personal projects,
-  toolchains, current consumers and original qualification records. A folder's
-  version-shaped name or age does not prove its contents are retired.
+  unique licensed content, installed toolchains, current consumers and relevant
+  compatibility baselines. Retire superseded generated builds, exports and
+  caches once they have no current use; historical qualification alone does not
+  require keeping their payloads forever. Keep compact results and provenance
+  where useful, and record retired paths so they are not mistaken for available
+  artifacts. A folder's version-shaped name or age does not prove retirement.
