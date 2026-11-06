@@ -56,7 +56,14 @@ def typed(values,schema):
 
 def source_contract(args,report):
     document,profile,regions,data=prior.source_contract(args,report)
-    need(profile['animation_drive']==dict(limit_policy='fit'),'Explicit authored original-joint target fitting permission')
+    if getattr(args,'velocity_tracking',False):
+        need(exact(profile['animation_drive'],dict(limit_policy='fit',velocity_tracking=True)),
+             'Explicit exact authored fitting and velocity permission')
+        # Import before input collection, retaining this validator's complete
+        # public-module closure as actual consumed input.
+        import physical_animation_protocol
+    else:
+        need(profile['animation_drive']==dict(limit_policy='fit'),'Explicit authored original-joint target fitting permission')
     for action,value in ACTIONS.items():
         ui=document['ui'][f'{value:032x}']
         need(ui['action']==action,'Actual original/new authored action binding: '+action)
@@ -75,7 +82,56 @@ def admitted_target(q,limits):
              limits['twist_min']-1e-10<=angle<=limits['twist_max']+1e-10,'Fitted target satisfies original ellipse/twist admission')
 
 
+def motion_contract(motion,endpoint,limits):
+    from physical_animation_protocol import motion_contract as interval_contract
+    interval_contract(motion,endpoint)
+    admitted_target(motion['start_rotation'],limits)
+    need(all(abs(x)<=20000 for x in motion['angular_velocity']),
+         'Every uncoerced interval velocity component fits native admission')
+    delta=prior.product(endpoint,[-x for x in motion['start_rotation'][:3]]+[motion['start_rotation'][3]])
+    need(abs(delta[3])>1e-8,'No admitted ambiguous near-pi interval')
+
+
 class Driver(prior.Driver):
+    def __init__(self,*args,velocity_tracking=False,**kwargs):
+        super().__init__(*args,**kwargs)
+        need(type(velocity_tracking)is bool,'Explicit Boolean verifier mode')
+        self.velocity_tracking=velocity_tracking
+        expected=dict(limit_policy='fit')
+        if velocity_tracking:expected['velocity_tracking']=True
+        need(exact(self.profile['animation_drive'],expected),'Driver mode equals the immutable authored permission')
+
+    def physical(self,target=None):
+        if not self.velocity_tracking:return super().physical()
+        # Reuse the complete base body/identity validator, then retain every
+        # original drive assertion while admitting only the declared extension.
+        state=base.Driver.physical(self)
+        need(state['mode']in('animated','passive','driven'),'Explicit native physical mode')
+        target=self.target()if target is None else target
+        strengths=[]
+        for joint,authored,selected in zip(state['joints'],self.profile['joints'],target['joints']):
+            need(set(joint)==f.JOINT_FIELDS|{'drive'}and joint['parent']==authored['parent']and joint['child']==authored['child']and
+                 type(joint['hinge'])is bool and joint['hinge']==(authored['limits']['kind']=='hinge'),'Whole mapped native joint and opted-in drive')
+            drive=joint['drive'];automatic=selected['source']=='animation'
+            keys={'target_rotation','strength','stiffness','damping','max_torque','evaluated_child_torque','angular_error','saturation_scale'}
+            if automatic:keys.add('target_angular_velocity')
+            need(set(drive)==keys,'Complete native drive observation with exact source-owned velocity membership')
+            for name,n in [('target_rotation',4),('evaluated_child_torque',3)]:base.vector(drive[name],n)
+            for name in ('strength','stiffness','damping','max_torque','angular_error','saturation_scale'):
+                need(type(drive[name])is float and math.isfinite(drive[name]),'Uncoerced native drive scalar: '+name)
+            need(all(drive[k]==authored['drive'][k]for k in ('stiffness','damping','max_torque'))and
+                 0<=drive['strength']<=1 and 0<=drive['saturation_scale']<=1 and
+                 math.hypot(*drive['evaluated_child_torque'])<=drive['strength']*drive['max_torque']+1e-8,
+                 'Immutable authored gains and bounded actual drive torque')
+            if drive['strength']==0:need(exact(drive['evaluated_child_torque'],[0.,0.,0.]),'Disabled joint drive contributes zero active torque')
+            if automatic:
+                base.vector(drive['target_angular_velocity'],3)
+                need(exact(drive['target_angular_velocity'],selected['motion']['angular_velocity']),
+                     'Exact committed target interval and native backend velocity join')
+            strengths.append(drive['strength'])
+        if state['mode']!='animated':need((state['mode']=='driven')==any(x>0 for x in strengths),'Driven iff a physical drive strength is positive')
+        return state
+
     def game(self):
         value=self.io.rpc('runtime.gameplay.inspect',dict(session_id=self.session,tick=self.tick,include_schema=True));module=value['module']
         need(value['session_id']==self.session and value['tick']==self.tick and module['backend']==self.backend and
@@ -103,14 +159,20 @@ class Driver(prior.Driver):
 
     def target(self):
         state=self.query('runtime.physical_animation',entity=RIG)
-        need(set(state)=={'entity','sampled_tick','limit_policy','playback','joints'} and state['entity']==RIG and
+        keys={'entity','sampled_tick','limit_policy','playback','joints'}|({'velocity_tracking'}if self.velocity_tracking else set())
+        need(set(state)==keys and state['entity']==RIG and
              type(state['sampled_tick'])is int and state['sampled_tick']==self.tick and state['limit_policy']=='fit','Complete committed target owner')
+        if self.velocity_tracking:need(state['velocity_tracking']is True,'Explicit committed velocity permission')
         need(set(state['playback'])=={'clip','time','speed','loop','playing','duration','transition'} and
              [j['name']for j in state['joints']]==JOINTS,'Original unlayered playback and complete14-joint membership')
         for joint,authored in zip(state['joints'],self.profile['joints']):
-            need(set(joint)=={'name','source','sample'} and joint['source']in('manual','animation'),'Closed source attribution')
+            need(set(joint)=={'name','source','sample'}|({'motion'}if self.velocity_tracking else set())and
+                 joint['source']in('manual','animation'),'Closed source attribution')
             sample=joint['sample']
-            if joint['source']=='manual':need(sample is None,'No misleading manual-source sample');continue
+            if joint['source']=='manual':
+                need(sample is None,'No misleading manual-source sample')
+                if self.velocity_tracking:need(joint['motion']is None,'Manual source has no automatic interval')
+                continue
             need(type(sample)is dict and set(sample)=={'requested_rotation','target_rotation','correction_radians','chart_condition','hinge_projected','twist_clamped','swing_clamped'},'Complete explicit fitting diagnostics')
             for field in ('requested_rotation','target_rotation'):
                 q=sample[field];base.vector(q,4);need(abs(sum(x*x for x in q)-1)<=2e-12,'Finite unit sampled target')
@@ -118,10 +180,13 @@ class Driver(prior.Driver):
             need(0<=sample['correction_radians']<=math.pi and 4e-5<=sample['chart_condition']<=1.000001 and
                  all(type(sample[n])is bool for n in ('hinge_projected','twist_clamped','swing_clamped')),'Declared finite fitting domain and flags')
             admitted_target(sample['target_rotation'],authored['limits'])
+            if self.velocity_tracking:motion_contract(joint['motion'],sample['target_rotation'],authored['limits'])
         return state
 
     def target_observe(self,label):
-        target,native,game=self.target(),self.physical(),self.game()
+        if self.velocity_tracking:
+            target=self.target();native,game=self.physical(target=target),self.game()
+        else:target,native,game=self.target(),self.physical(),self.game()
         for row,body in zip(target['joints'],native['joints']):
             if row['source']=='animation':
                 dot=abs(sum(a*b for a,b in zip(row['sample']['target_rotation'],body['drive']['target_rotation'])))
@@ -142,20 +207,55 @@ class Driver(prior.Driver):
         if current_game is not None:need(payload['tick']==self.tick and exact(game['values'],current_game['module']['values']),'Every saved gameplay field equals current typed state')
         original=drive_contract.original_member(drive_contract.original_member(raw,'snapshot'),'payload')
         need(hashlib.sha256(original.encode()).hexdigest()==doc['snapshot']['sha256'],'Original unreformatted inner payload checksum')
-        physical=payload['physical'];need(set(physical)=={'version','bootstrap','rigs','constraint_order','owner','physics'} and physical['version']==6 and
-            len(physical['rigs'])==1 and physical['rigs'][0]['entity']==RIG,'Complete target-enabled physical extension6')
+        physical=payload['physical'];need(set(physical)=={'version','bootstrap','rigs','constraint_order','owner','physics'} and
+            physical['version']==(7 if self.velocity_tracking else 6) and
+            len(physical['rigs'])==1 and physical['rigs'][0]['entity']==RIG,'Complete target-enabled physical extension')
         rig=physical['rigs'][0];controls=rig['membership']['drives'];need([x['joint']for x in controls]==JOINTS,'All14 saved effective controls')
         target=rig['animation'];player=target['player']
-        need(set(target)=={'version','entity','tick','player','joints'} and target['version']==1 and target['entity']==RIG and target['tick']==payload['tick'] and
+        need(set(target)=={'version','entity','tick','player','joints'} and target['version']==(2 if self.velocity_tracking else 1) and target['entity']==RIG and target['tick']==payload['tick'] and
              set(player)=={'format','version','tick','entity','player','history','layer_history'} and player['format']=='poima.animation-target-state' and
              player['version']==1 and player['tick']==payload['tick'] and player['entity']==RIG and player['layer_history']==[],
              'Complete original independent target player envelope')
         history=player['history'];need(set(history)=={'current','previous'} and history['current']['tick']==payload['tick'],'Complete target current/previous histories')
         if history['previous']is not None:need(history['previous']['tick']==payload['tick']-1,'Target previous history is the preceding native tick')
         need([x['joint']for x in target['joints']]==JOINTS,'Complete saved source and sampled target membership')
+        if self.velocity_tracking:
+            need(type(physical['version'])is int and type(target['version'])is int,'Exact opted save version kinds')
+            for row,drive,authored in zip(target['joints'],controls,self.profile['joints']):
+                need(set(row)=={'joint','source','sample','motion'}and row['source']in('manual','animation'),
+                     'Complete saved source, fitting and interval fields')
+                automatic=row['source']=='animation'
+                need(set(drive)=={'joint','target_rotation','strength'}|({'target_angular_velocity'}if automatic else set()),
+                     'Exact saved control fields by source ownership')
+                base.vector(drive['target_rotation'],4)
+                need(abs(sum(x*x for x in drive['target_rotation'])-1)<=2e-12 and
+                     type(drive['strength'])is float and 0<=drive['strength']<=1,'Typed admitted saved controls')
+                admitted_target(drive['target_rotation'],authored['limits'])
+                if not automatic:
+                    need(row['sample']is None and row['motion']is None,'Manual saved source clears all motion attribution')
+                    continue
+                sample=row['sample']
+                need(type(sample)is dict and set(sample)=={'requested','target','correction_radians','chart_condition','hinge_projected','twist_clamped','swing_clamped'},
+                     'Complete original saved fit representation')
+                for key in ('requested','target'):
+                    base.vector(sample[key],4);need(abs(sum(x*x for x in sample[key])-1)<=2e-12,'Saved finite unit fit rotation')
+                need(all(type(sample[n])is bool for n in ('hinge_projected','twist_clamped','swing_clamped'))and
+                     all(type(sample[n])is float and math.isfinite(sample[n])for n in ('correction_radians','chart_condition'))and
+                     0<=sample['correction_radians']<=math.pi and 4e-5<=sample['chart_condition']<=1.000001,
+                     'Typed bounded saved fitting metrics and flags')
+                admitted_target(sample['target'],authored['limits']);motion_contract(row['motion'],sample['target'],authored['limits'])
+                need(exact(row['motion']['angular_velocity'],drive['target_angular_velocity']),
+                     'Exact saved interval and backend velocity including zero strength')
+                need(abs(abs(sum(a*b for a,b in zip(sample['target'],drive['target_rotation'])))-1)<=2e-12,
+                     'Saved fitted endpoint joins complete effective native control')
         if payload['tick']==self.tick:
             native,current=self.physical(),self.target()
-            need(exact(controls,[dict(joint=j['name'],target_rotation=j['drive']['target_rotation'],strength=j['drive']['strength'])for j in native['joints']]),'All saved effective targets/strengths equal committed native controls')
+            effective=[]
+            for j in native['joints']:
+                control=dict(joint=j['name'],target_rotation=j['drive']['target_rotation'],strength=j['drive']['strength'])
+                if self.velocity_tracking and 'target_angular_velocity'in j['drive']:control['target_angular_velocity']=j['drive']['target_angular_velocity']
+                effective.append(control)
+            need(exact(controls,effective),'All saved effective targets/strengths equal committed native controls')
             expected=[]
             for j in current['joints']:
                 sample=j['sample']
@@ -164,6 +264,7 @@ class Driver(prior.Driver):
                 saved_sample=None if sample is None else dict(requested=sample['requested_rotation'],target=sample['target_rotation'],
                     **{n:sample[n]for n in ('correction_radians','chart_condition','hinge_projected','twist_clamped','swing_clamped')})
                 expected.append(dict(joint=j['name'],source=j['source'],sample=saved_sample))
+                if self.velocity_tracking:expected[-1]['motion']=j['motion']
             need(exact(target['joints'],expected),'All saved sources and fit samples equal the committed codec representation')
         saved=dict(label=label,slot=slot,generation=member['generation'],tick=payload['tick'],path=str(path),identity=pin,
             manifest_path=str(manifest_path),manifest_identity=identity(manifest_path),receipt=receipt)
@@ -231,10 +332,110 @@ def future(d,label):
     return d.snapshot(label+' complete')
 
 
+def source_joint_targets(oracle,profile,time):
+    """Original GLB rotations and calibration only; no native fitting algorithm."""
+    local=oracle.pose(48,time)[0];world={}
+    def unit(q):
+        length=math.hypot(*q);need(length>0 and math.isfinite(length),'Resolved original rotation')
+        value=[x/length for x in q]
+        return [-x for x in value]if value[3]<0 else value
+    def rotation(node):
+        if node not in world:
+            value=unit(local[node]['rotation'])
+            world[node]=unit(prior.product(rotation(oracle.parents[node]),value))if node in oracle.parents else value
+        return world[node]
+    parts={p['name']:p for p in profile['parts']};result=[]
+    for joint in profile['joints']:
+        parent,child=parts[joint['parent']],parts[joint['child']]
+        a=unit(prior.product(prior.product(rotation(parent['node']),parent['body_in_bone']['rotation']),joint['parent_frame']['rotation']))
+        b=unit(prior.product(prior.product(rotation(child['node']),child['body_in_bone']['rotation']),joint['child_frame']['rotation']))
+        result.append(unit(prior.product([-x for x in a[:3]]+[a[3]],b)))
+    return result
+
+
+def rotation_difference(a,b):
+    # Sign-invariant component error avoids acos cancellation near agreement.
+    return min(max(abs(x-y)for x,y in zip(a,b)),max(abs(x+y)for x,y in zip(a,b)))
+
+
+def source_interval(d,oracle,label,row,start_time,previous=None,outgoing=None,zero=False):
+    target=row['target'];playback=target['playback'];end_time=playback['time']
+    need(playback['clip']==48 and playback['transition']is None and playback['playing']is True and playback['loop']is True and
+         0<=start_time<oracle.clips[48]['duration']and 0<=end_time<oracle.clips[48]['duration'],
+         'Unblended original Running_A interval with explicit source times')
+    starts=source_joint_targets(oracle,d.profile,start_time);ends=source_joint_targets(oracle,d.profile,end_time)
+    witnesses=[];legal_starts=[];nonzero=[];restart_distances=[]
+    for index,(joint,authored,a,b)in enumerate(zip(target['joints'],d.profile['joints'],starts,ends)):
+        need(joint['source']=='animation','Focused original curve retains every animation source')
+        motion,sample=joint['motion'],joint['sample'];error=rotation_difference(sample['requested_rotation'],b)
+        need(error<=2e-6,'Requested endpoint follows independent original GLB channels and source calibration')
+        # Native exposes the fitted start, not requested-start diagnostics. Only
+        # an independently legal source start can bypass fitting in this check.
+        try:prior.target_limits(a,authored['limits']);legal=True
+        except AssertionError:legal=False
+        if legal:
+            need(rotation_difference(motion['start_rotation'],a)<=2e-6,'Legal original start equals retained fitted interval start')
+            legal_starts.append(joint['name'])
+        if previous is not None:
+            old=previous['target']['joints'][index]
+            need(previous['target']['playback']['clip']==48 and previous['target']['playback']['transition']is None and
+                 abs(previous['target']['playback']['time']-start_time)<=2e-12 and
+                 rotation_difference(old['sample']['requested_rotation'],a)<=2e-6 and
+                 exact(old['sample']['target_rotation'],motion['start_rotation']),
+                 'Steady interval starts at the complete prior fitted endpoint and independent raw source pose')
+        if outgoing is not None:restart_distances.append(rotation_difference(outgoing['target']['joints'][index]['sample']['target_rotation'],motion['start_rotation']))
+        if math.hypot(*motion['angular_velocity'])>1e-5:nonzero.append(joint['name'])
+        if zero:need(exact(motion['angular_velocity'],[0.,0.,0.]),'Zero-rate unblended original clip has exactly zero target velocity')
+        witnesses.append(dict(joint=joint['name'],source_start_requested=a,source_end_requested=b,
+            source_start_independently_legal=legal,requested_endpoint_component_error=error,
+            actual_fitted_start=motion['start_rotation'],actual_fitted_end=sample['target_rotation'],angular_velocity=motion['angular_velocity']))
+    need(legal_starts,'Original interval provides independently legal start witnesses')
+    if not zero:need(nonzero,'Actual original Running_A supplies nonzero joint-motion witnesses')
+    if outgoing is not None:need(max(restart_distances)>1e-4,'Restart witness differs from the unrelated outgoing fitted pose')
+    for part in row['physical']['parts']:
+        for name,n in [('position',3),('rotation',4),('linear_velocity',3),('angular_velocity',3)]:base.vector(part[name],n)
+        need(part['at_linear_velocity_limit']is False and part['at_angular_velocity_limit']is False,'Focused native response stays below authored body speed caps')
+    d.report['velocity_checks'].append(dict(label=label,tick=row['tick'],start_time=start_time,end_time=end_time,
+        legal_start_joints=legal_starts,nonzero_joints=nonzero,joints=witnesses,
+        outgoing_fitted_component_differences=restart_distances,
+        scope='Independent original unblended GLB/calibrated requested endpoints; fitted start only where original start independently satisfies limits. Native fitting is not independently reimplemented.'))
+
+
+def velocity_segment(d,oracle,origin):
+    """Bounded ordinary gameplay branch, restored completely before the old path."""
+    d.edit(TargetBlendTicks=0,TargetSpeed=1.)
+    d.control('pose-preset');d.step();running=d.target_observe('velocity original Running_A immediate')
+    need(running['game']['module']['values']['PosePreset']==3 and abs(running['target']['playback']['time']-1/60)<=2e-12,
+         'Ordinary live preset begins its new unblended original curve')
+    source_interval(d,oracle,'post-command original Running_A',running,0.)
+    d.step();steady=d.target_observe('velocity original Running_A steady')
+    source_interval(d,oracle,'steady original Running_A',steady,running['target']['playback']['time'],previous=running)
+    d.edit_strengths(0.);d.step();zero_strength=d.target_observe('velocity original Running_A zero strength')
+    source_interval(d,oracle,'zero strength still samples original motion',zero_strength,steady['target']['playback']['time'],previous=steady)
+    need(zero_strength['physical']['mode']=='passive'and all(j['drive']['strength']==0 and exact(j['drive']['evaluated_child_torque'],[0.,0.,0.])for j in zero_strength['physical']['joints']),
+         'Every zero-strength joint retains sampled motion while applying exactly zero drive torque')
+    d.control('target-restart');d.step();restarted=d.target_observe('velocity original Running_A restarted')
+    need(abs(restarted['target']['playback']['time']-1/60)<=2e-12,'Explicit restart uses new trajectory time zero')
+    source_interval(d,oracle,'restart uses new trajectory rather than old pose',restarted,0.,outgoing=zero_strength)
+    d.edit(TargetSpeed=0.);d.step();stopped=d.target_observe('velocity unblended Running_A rate zero')
+    need(stopped['target']['playback']['speed']==0 and stopped['target']['playback']['time']==restarted['target']['playback']['time'],
+         'Unblended zero rate does not seek the source clip')
+    source_interval(d,oracle,'unblended zero-rate interval',stopped,restarted['target']['playback']['time'],previous=restarted,zero=True)
+    sampled=d.snapshot('velocity-focused-sampled-complete')
+    d.control('pose-release');d.step();released=d.target_observe('velocity focused manual release')
+    need(all(j['source']=='manual'and j['sample']is None and j['motion']is None for j in released['target']['joints'])and
+         all('target_angular_velocity'not in j['drive']and j['drive']['strength']==0 for j in released['physical']['joints']),
+         'Manual release removes every automatic interval and backend velocity')
+    released_archive=d.snapshot('velocity-focused-released-complete')
+    d.report['velocity_checks'].append(dict(label='complete sampled and manually released snapshots',sampled=sampled,released=released_archive))
+    d.restore(origin);base.whole(d.report,'focused velocity branch restores every original field',origin,d.snapshot('velocity-focused-original-restored'))
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('binary','world','source','license','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--backend',choices=('coreclr','native_aot'),default='coreclr')
+    parser.add_argument('--velocity-tracking',action='store_true',help='Require an explicitly enabled project; validate full target-motion state and original Running_A intervals.')
     for name in ('hostfxr','bridge','assembly','descriptor'):parser.add_argument('--'+name,type=Path)
     args=parser.parse_args();need(not sys.flags.optimize,'Nonoptimized verifier required')
     for name,value in vars(args).items():
@@ -249,6 +450,9 @@ def main():
         output=str(args.output),backend=args.backend,limits=dict(seconds=SECONDS,rpc=CALLS,output_bytes=base.MAX_OUTPUT,owners=2),
         scope='Original imported character, supplied compiled104-field game, live/static target controls and complete same-host save continuation. No balance, recovery, rendering, hardware input, publication, export or performance claim.')
     f.REPORT=report;io=None
+    if args.velocity_tracking:
+        report.update(velocity_tracking=True,velocity_checks=[])
+        report['limits']['evidence_bytes']=48*MIB
     try:
         document,profile,regions,data=source_contract(args,report)
         files={SELF,prior.DATA,args.binary,args.source,args.license,ROOT/'examples/physical-character-yard/source-manifest.json',
@@ -283,7 +487,7 @@ def main():
             nonlocal io
             need(io is None and len(report['owners'])<2,'One bounded native owner at a time');io=f.Session(args.output/name,args.output/'world.json')
             need(io.rpc('save.configure',dict(request_id=base.uid(),expected_generation=0,root=str(saves)))['generation']==1,'Actual independent save routing')
-            return Driver(io,report,config,document['revision'],saves,profile,regions,data=data,backend=args.backend)
+            return Driver(io,report,config,document['revision'],saves,profile,regions,data=data,backend=args.backend,velocity_tracking=args.velocity_tracking)
         def close_owner():
             nonlocal io
             io.close();need(io.process.poll()is not None,'Actual closure before next owner');io=None
@@ -307,6 +511,7 @@ def main():
         need(terminal['captured_tick']==before['tick']and exact(terminal['poses'],[dict(entity=row['id'],**row['local_transform'])for row in before['all_nodes']]),
              'Live takeover keeps all57 original committed source-node locals')
         initial_live=d.snapshot('initial-live-checkpoint')
+        if args.velocity_tracking:velocity_segment(d,base.LibraryOracle(args.source.read_bytes()),initial_live)
         d.control('pose-strength');v=d.values();chosen=v['SelectedJoint'];need(chosen==2 and v[STRENGTHS[chosen]]==.75,'Ordinary selected strength step')
         a,b=step_observed(d,'strength-only-live');continued_clock(a['target'],b['target'],1.)
         va,vb=a['game']['module']['values'],b['game']['module']['values'];need(vb['DriveWrites']==va['DriveWrites']+1 and vb['TargetPlaybackWrites']==va['TargetPlaybackWrites']and vb['TargetRateWrites']==va['TargetRateWrites'],
@@ -376,6 +581,10 @@ def main():
             'Duplicate target command rolls back the entire original saved state',
             'Actual localized camera hit and explicit release retain physical ownership',
             'Whole warm/cold target-player/history continuation and ordinary game save/load']
+        if args.velocity_tracking:
+            need(len(report['velocity_checks'])==6,'Complete bounded original-curve velocity branch')
+            report['checks']+=['Exact enabled motion/backend membership and extension7/target2 without removing fields',
+                'Independent original Running_A endpoints, nonzero motion at zero strength, restart, stopped clip and manual clearing']
         report['passed']=True
     except BaseException:report['errors'].append(traceback.format_exc())
     finally:
@@ -385,7 +594,7 @@ def main():
         report['passed']=report['passed']and not report['errors'];report['rpc_count']=len(report['calls'])
         report['natural_cli_owners']=sum(o.get('natural_exit')is True and o.get('forced_cleanup')is False and o.get('exit_code')==0 for o in report['owners'])
         report['output_census_before_report']=base.census(args.output);raw=(json.dumps(report,indent=2,allow_nan=False)+'\n').encode()
-        need(len(raw)<=32*MIB and report['output_census_before_report']['bytes']+len(raw)<=base.MAX_OUTPUT,'Complete untruncated bounded evidence')
+        need(len(raw)<=(48 if args.velocity_tracking else 32)*MIB and report['output_census_before_report']['bytes']+len(raw)<=base.MAX_OUTPUT,'Complete untruncated bounded evidence')
         with(args.output/'evidence.json').open('xb')as stream:stream.write(raw)
         print(json.dumps(dict(passed=report['passed'],evidence=str(args.output/'evidence.json'))))
     return 0 if report['passed']else 1
