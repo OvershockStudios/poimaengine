@@ -53,7 +53,7 @@ internal static unsafe class PhysicalRigDriveServiceAbi
         if(s->SummaryV2==null || s->Get==null || s->Set==null)throw new ArgumentException("Physical joint drive callbacks are absent.");return s;
     }
     private static bool Range(double x,double minimum,double maximum)=>double.IsFinite(x) && x>=minimum && x<=maximum;
-    private static bool Rotation(Quaterniond q)
+    internal static bool Rotation(Quaterniond q)
     {
         if(!Range(q.X,-1.000001,1.000001) || !Range(q.Y,-1.000001,1.000001) || !Range(q.Z,-1.000001,1.000001) || !Range(q.W,-1.000001,1.000001))return false;
         return Math.Abs(Math.Sqrt(q.X*q.X+q.Y*q.Y+q.Z*q.Z+q.W*q.W)-1)<=1e-6;

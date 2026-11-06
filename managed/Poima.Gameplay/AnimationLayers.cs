@@ -64,6 +64,10 @@ public readonly unsafe ref partial struct GameContext
         var extended=AnimationLayerServiceAbi.Validate(services);
         NativeAnimationLayerStateV1 result=new(){Version=1,Bytes=200};NativeError error=default;
         Check(extended->AnimationLayerGet(services->Context,&entity,slot,&result,&error),&error);
+        return DecodeAnimationLayer(entity,slot,result);
+    }
+    private static AnimationLayerState? DecodeAnimationLayer(EntityId entity,uint slot,in NativeAnimationLayerStateV1 result)
+    {
         if(result.Version!=1 || result.Bytes<200 || result.Reserved!=0 || result.Slot!=slot || result.LayerMode>1 || result.MaskNodes>10000 ||
             result.WeightTransitionPresent>1 || !UnitWeight(result.Weight) || !UnitWeight(result.TargetWeight) || !UnitWeight(result.WeightSource) || !UnitWeight(result.WeightTarget))
             throw new InvalidOperationException("Invalid versioned native animation layer state.");
