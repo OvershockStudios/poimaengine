@@ -828,8 +828,8 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
         outputs[index].reserve(membership_->rigs[index].nodes.size());total_nodes+=membership_->rigs[index].nodes.size();
     }
     std::vector<RuntimeAnimationPose> result;result.reserve(total_nodes);
-    auto remember=[tick](Clock& clock,const std::vector<NodePose>& poses) {
-        if(!clock.current || tick>=clock.current->tick) {
+    auto remember=[tick](Clock& clock,const std::vector<NodePose>& poses,bool retain_current) {
+        if(!clock.current || tick>clock.current->tick || (tick==clock.current->tick && !retain_current)) {
             if(clock.current && tick>clock.current->tick)clock.previous=clock.current;
             clock.current=History{tick,std::make_shared<const std::vector<NodePose>>(poses)};
         }
@@ -837,10 +837,23 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
     };
     auto sample_rig=[&](std::size_t index) {
         const auto& rig=membership_->rigs[index];auto& base=candidate[index];auto& layers=candidate_layers[index];
-        auto pose=evaluate(index,base,tick);remember(base,pose.local);
+        const bool restored_grounded=grounding_restore_pending_ && rig.procedural_grounding;
+        if(restored_grounded && !procedural_suspended(rig.entity)) {
+            const auto capture=procedural_finals_.find(rig.entity);
+            check(capture!=procedural_finals_.end() && capture->second->tick==tick &&
+                !capture->second->terminal.empty() && capture->second->wrapper==wrappers[index],
+                "Restored grounded sampling requires its validated current-boundary capture.");
+            // Installation already independently validated every original local
+            // and diagnostic. A same-tick sync must not replace that saved state
+            // with this host's slightly different floating-point reconstruction.
+            outputs[index]=capture->second->poses;
+            candidate_ik_states[index]=capture->second->states;
+            return;
+        }
+        auto pose=evaluate(index,base,tick);remember(base,pose.local,restored_grounded);
         for(std::size_t i=0;i<layers.size();++i) {
             auto& layer=layers[i];const auto sampled=evaluate(index,layer.clock,tick);
-            remember(layer.clock,sampled.local);
+            remember(layer.clock,sampled.local,restored_grounded);
             const auto& frozen=rig.layers[i];
             blend_animation_layer(pose.local,sampled.local,frozen.reference,frozen.mask,layer_weight(layer,tick),frozen.mode);
             if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();

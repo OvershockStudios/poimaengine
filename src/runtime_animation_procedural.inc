@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included inside namespace poima, after the retained animation-state codec.
 namespace {
+#include "runtime_animation_procedural_compare.inc"
 void procedural_finite_json(const StateJson& value) {
     if(value.is_number_float())check(std::isfinite(value.get<double>()),"Procedural witness contains a nonfinite value.");
     if(value.is_array() || value.is_object())for(const auto& child:value)procedural_finite_json(child);
@@ -37,6 +38,7 @@ StateJson procedural_poses_json(const std::vector<RuntimeAnimationPose>& poses) 
         {"rotation",pose.local.rotation},{"scale",pose.local.scale}});
     procedural_finite_json(result);return result;
 }
+#include "runtime_animation_procedural_codec.inc"
 void validate_procedural_wrapper(const Matrix4& wrapper) {
     for(double value:wrapper)check(std::isfinite(value)&&std::abs(value)<=1e12,"Procedural wrapper exceeds finite supported bounds.");
     check(wrapper[3]==0 && wrapper[7]==0 && wrapper[11]==0 && wrapper[15]==1,"Procedural wrapper must be affine.");
@@ -74,7 +76,7 @@ std::vector<RuntimeAnimations::ProceduralSupportBinding> RuntimeAnimations::term
     return result;
 }
 RuntimeAnimations::ProceduralPreview RuntimeAnimations::replay_procedural_grounding(std::size_t index,
-    std::uint64_t tick,const Matrix4& wrapper,const ProceduralGroundingInput& input) const {
+    std::uint64_t tick,const Matrix4& wrapper,const ProceduralGroundingInput& input,bool portable_restore) const {
     check(tick<=animation_state_max_tick && input.tick==tick && input.wrapper==wrapper,
         "Grounded procedural replay boundary/frame differs.");
     validate_procedural_wrapper(wrapper);const auto& rig=membership_->rigs.at(index);
@@ -117,7 +119,8 @@ RuntimeAnimations::ProceduralPreview RuntimeAnimations::replay_procedural_ground
         const auto chain=effective_grounding_chain(rig.ik[i],input.requested[i]);
         auto decision=grounding::prepare(rig.model_parents,pose,chain,wrapper,rig.entity,tick,*decisions[i],query,support);
         validate_ik_command(decision.control);
-        check(procedural_controls_json({decision.control}).dump()==procedural_controls_json({controls[i]}).dump(),
+        require_procedural_replay_equal(procedural_controls_json({controls[i]}),procedural_controls_json({decision.control}),
+            portable_restore?ProceduralReplayScope::GeneratedControls:ProceduralReplayScope::Exact,
             "Captured generated grounding IK differs from pure prepare with the recorded input/request/query journal.");
         decisions[i]=std::move(decision.state);
     }
@@ -201,7 +204,10 @@ void RuntimeAnimations::verify_procedural_progression(std::size_t index,std::uin
     }
     // The bypass is private and only prevents recursive witness validation.
     // Ordinary serializer field/ownership checks still run on both contexts.
-    check(actual.save_state_impl(tick,false)==expected.save_state_impl(tick,false),
+    require_procedural_replay_equal(StateJson::parse(actual.save_state_impl(tick,false)),
+        StateJson::parse(expected.save_state_impl(tick,false)),
+        captured.grounding && captured.restored_at_tick && tick>=*captured.restored_at_tick &&
+            tick-*captured.restored_at_tick<=1?ProceduralReplayScope::PassiveSourceHistory:ProceduralReplayScope::Exact,
         "Current passive animation context differs from the bounded continuation of its captured terminal.");
 }
 void RuntimeAnimations::record_procedural_final(const std::string& entity,std::uint64_t tick,const Matrix4& wrapper) {
@@ -230,19 +236,24 @@ void RuntimeAnimations::record_procedural_final(const std::string& entity,std::u
         "Actual final IK diagnostics differ from their captured source/control/wrapper context.");
     auto captured=std::make_shared<ProceduralFinal>();captured->tick=tick;captured->wrapper=wrapper;
     captured->base=base;captured->layers=layers_.at(index);captured->controls=ik_.at(index);
-    captured->states=ik_states_.at(index);captured->grounding=std::move(input);procedural_finals_.insert_or_assign(entity,std::move(captured));
+    captured->states=ik_states_.at(index);captured->poses=replay.poses;captured->grounding=std::move(input);procedural_finals_.insert_or_assign(entity,std::move(captured));
 }
 std::string RuntimeAnimations::encode_procedural_final(std::size_t index,const ProceduralFinal& captured) const {
+    // An imported witness was validated before publication. Its immutable bytes
+    // remain authoritative; serializing again must not substitute host results.
+    if(!captured.terminal.empty())return captured.terminal;
     auto witness=isolate_procedural(index);witness.clocks_[0]=captured.base;witness.layers_[0]=captured.layers;
     witness.ik_[0]=captured.controls;witness.ik_states_[0]=captured.states;
     if(captured.grounding)witness.grounding_controls_[0]=captured.grounding->requested;
     const auto replay=captured.grounding?witness.replay_procedural_grounding(0,captured.tick,captured.wrapper,*captured.grounding):witness.evaluate_procedural(0,captured.tick,captured.wrapper);
     const auto states=procedural_states_json(captured.states);
     check(states.dump()==procedural_states_json(replay.states).dump(),"Captured terminal diagnostics differ from the historical solve.");
+    require_procedural_replay_equal(procedural_poses_json(captured.poses),procedural_poses_json(replay.poses),
+        ProceduralReplayScope::Exact,"Captured terminal poses differ from the historical solve.");
     const auto context=StateJson::parse(witness.save_state(captured.tick));
     StateJson document={{"format","poima.procedural-terminal"},{"version",std::uint32_t(captured.grounding?2:1)},
         {"entity",membership_->rigs.at(index).entity},{"captured_tick",captured.tick},{"wrapper",captured.wrapper},
-        {"context",context},{"states",states},{"poses",procedural_poses_json(replay.poses)}};
+        {"context",context},{"states",states},{"poses",procedural_poses_json(captured.poses)}};
     if(captured.grounding)document["grounding"]=procedural_grounding_input_json(*captured.grounding,membership_->rigs.at(index).ik);
     procedural_finite_json(document);auto result=document.dump();
     check(result.size()<=layered_animation_state_bytes,"Procedural terminal exceeds the64MiB bounded state envelope.");return result;
@@ -274,6 +285,16 @@ std::optional<std::string> RuntimeAnimations::procedural_witness(const std::stri
     const auto capture=procedural_finals_.find(entity);
     check(capture!=procedural_finals_.end(),"Grounded animated ownership requires its committed procedural capture.");
     return encode_procedural_final(found->second,*capture->second);
+}
+bool RuntimeAnimations::validate_restored_procedural_local(const std::string& entity,std::uint64_t tick,
+    const RuntimeAnimationPose& original,const RuntimeAnimationPose& reconstructed) const {
+    const auto terminal=procedural_terminals_.find(entity);
+    if(terminal==procedural_terminals_.end() || !terminal->second->grounding ||
+        terminal->second->restored_at_tick!=tick)return false;
+    require_procedural_replay_equal(procedural_poses_json({original}),procedural_poses_json({reconstructed}),
+        ProceduralReplayScope::TerminalPoses,
+        "Restored passive presentation local differs from its independently reconstructed owner state.");
+    return true;
 }
 void RuntimeAnimations::install_procedural_terminal(const std::string& entity,const std::string& terminal,
     std::uint64_t current_tick,bool suspended) {
@@ -307,20 +328,27 @@ void RuntimeAnimations::install_procedural_terminal(const std::string& entity,co
         check(input->requested==witness.grounding_controls_[0],"Captured requested grounding controls differ from the historical context.");
         check(!suspended || input->prepared,"Suspended grounded ownership requires a completed captured grounding decision.");
     }
-    const auto replay=input?witness.replay_procedural_grounding(0,captured_tick,wrapper,*input):witness.evaluate_procedural(0,captured_tick,wrapper);
-    check(document.at("states").dump()==procedural_states_json(replay.states).dump() &&
-        document.at("poses").dump()==procedural_poses_json(replay.poses).dump(),
-        "Stored complete terminal diagnostics/pose differ from their historical context.");
+    const auto replay=input?witness.replay_procedural_grounding(0,captured_tick,wrapper,*input,true):witness.evaluate_procedural(0,captured_tick,wrapper);
+    const auto& rig=membership_->rigs.at(index);
+    auto states=read_procedural_states(document.at("states"),entity,rig.ik,witness.ik_[0],witness.ik_states_[0],captured_tick);
+    auto poses=read_procedural_poses(document.at("poses"),rig.nodes,*rig.compiled);
+    require_procedural_replay_equal(document.at("states"),procedural_states_json(replay.states),
+        grounded?ProceduralReplayScope::TerminalStates:ProceduralReplayScope::Exact,
+        "Stored complete terminal diagnostics differ from their historical context.");
+    require_procedural_replay_equal(document.at("poses"),procedural_poses_json(replay.poses),
+        grounded?ProceduralReplayScope::TerminalPoses:ProceduralReplayScope::Exact,
+        "Stored complete terminal poses differ from their historical context.");
     auto captured=std::make_shared<ProceduralFinal>();captured->tick=captured_tick;captured->wrapper=wrapper;
     captured->base=witness.clocks_[0];captured->layers=witness.layers_[0];captured->controls=witness.ik_[0];
-    captured->states=replay.states;captured->grounding=input;captured->terminal=document.dump();
+    captured->states=std::move(states);captured->poses=std::move(poses);
+    captured->grounding=input;captured->terminal=document.dump();captured->restored_at_tick=current_tick;
     if(!suspended) {
         auto current=isolate_procedural(index);
         check(current.save_state_impl(current_tick,false)==context,
             "Animated grounding capture differs from the actual complete restored current animation context.");
     }
-    // Equality above validates every stored diagnostic. Assigning the replay
-    // retains those exact values without deriving anything from future clocks.
+    // Preserve the original typed diagnostics and poses after validating their
+    // recomputed meaning; never replace them with another host's arithmetic.
     if(suspended)procedural_terminals_.emplace(entity,captured);
     procedural_finals_.insert_or_assign(entity,captured);
     if(input)procedural_grounding_inputs_.insert_or_assign(entity,input);

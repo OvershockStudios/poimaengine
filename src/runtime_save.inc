@@ -632,19 +632,50 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
                 s.animations->record_procedural_final(id,tick,s.registry.template get<Node>(s.find(id)).world);
         save_physical_verify_restored(s,*physical_checkpoint,rows);
     }
+    // Native bodies and saved physical history were joined and validated above.
+    // Their presentation transforms are derived through host matrix/quaternion
+    // arithmetic. Preserve the original locals of these explicit owners after
+    // a much narrower comparison than the general legacy save_near check.
+    std::map<std::string,std::string> restored_procedural_owners;
+    if(physical_checkpoint)for(const auto& [rig_id,row]:physical_checkpoint->rigs) {
+        const auto& rig=s.topology->definitions.at(rig_id);
+        if(row.membership.mode!=RuntimePhysicalRigMode::Passive ||
+            rig.physical_rig->procedural_pose!=poima::physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly)continue;
+        auto enroll=[&](const std::string& id) {
+            require(restored_procedural_owners.emplace(id,rig_id).second,
+                "Restored procedural presentation transform has overlapping owners.");
+        };
+        enroll(rig_id);
+        if(row.handoff)enroll(row.handoff->actor);
+        for(const auto& [id,node]:s.topology->definitions)
+            if(node.rig_node && node.rig_node->rig==rig_id)enroll(id);
+    }
+    bool retained_procedural_locals=false;
     for(const auto& [id,saved]:locals) {
-        const auto& actual=s.registry.get<Node>(s.find(id)).local;
+        auto& actual=s.registry.get<Node>(s.find(id)).local;
         bool exact_physical_scale=false;
         if(physical_content) {
             const auto& node_definition=s.topology->definitions.at(id);
             if(node_definition.rig_node) {
                 const auto& rig=s.topology->definitions.at(node_definition.rig_node->rig);
                 exact_physical_scale=rig.physical_rig && rig.physical_rig->pose_frame==poima::physical_rig::PoseFramePolicy::SkeletalBoundedScale;
+
             }
+        }
+        if(const auto owner=restored_procedural_owners.find(id);owner!=restored_procedural_owners.end()) {
+            require(s.animations->validate_restored_procedural_local(owner->second,tick,{id,saved},{id,actual}),
+                "Restored procedural presentation owner lacks its current restore boundary.");
+            actual=saved;retained_procedural_locals=true;
         }
         require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) &&
             (exact_physical_scale ? saved.scale==actual.scale : save_near(saved.scale,actual.scale)),
             "Saved local transform does not match reconstructed state/content.");
+    }
+    if(retained_procedural_locals) {
+        s.world_matrices();
+        // Recheck the final graph against the untouched native bodies and
+        // calibrated physical history, without re-solving presentation locals.
+        if(physical_checkpoint)save_physical_final_history(s,*physical_checkpoint);
     }
     std::map<std::string,AudioEmitter> emitters;
     for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);

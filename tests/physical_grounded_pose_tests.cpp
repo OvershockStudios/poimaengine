@@ -312,6 +312,127 @@ void historical_capture_corruption(){
         rejects([&]{(void)Runtime::from_snapshot(d,content,bytes);});need(r.save_snapshot(content)==pristine,"Detached corruption probe mutated original native state.");
     }
 }
+void strict_terminal_codec_corruption(){
+    const auto d=definition();Runtime source(d);const auto support=add_support(source);settle(source,support);
+    const std::array<const char*,28> labels{
+        "missing-state-field","extra-state-field","numeric-boolean","floating-slot","reordered-states","extra-state",
+        "target-duplicate-one-ulp","weight-duplicate-one-ulp","orientation-goal-duplicate-one-ulp","zero-goal-weight",
+        "noncanonical-actual-rotation","metric-residual-membership","numeric-metric-boolean","metric-bound",
+        "ground-cache-duplicate-one-ulp","plant-anchor-duplicate-one-ulp","missing-ground-cache-field",
+        "reordered-poses","extra-pose-field","zero-pose-quaternion","nonpositive-pose-scale","text-pose-coordinate",
+        "integer-pose-scale","foreign-pose-node","nonobject-state","extra-metric-field","short-end-position",
+        "short-orientation-diagnostic"};
+    for(unsigned phase=0;phase<2;++phase){
+        if(phase)step(source,1,{{rig,true,{}}});
+        const auto pristine=source.save_snapshot(content);const auto original=J::parse(pristine);
+        const std::string prefix=phase?"codec-passive":"codec-active";
+        (void)gt::artifacts().retain(prefix+"-original","source",pristine);
+        auto valid=Runtime::from_snapshot(d,content,pristine);same(source,*valid,prefix+"-original-valid");
+        const auto& actual_capture=physical_row(original).at("procedural_capture");
+        need(actual_capture.at("states").size()==2&&actual_capture.at("poses").size()==7,
+            "Codec negative source lacks its complete real two-foot capture.");
+        const auto& first=actual_capture.at("states")[0];
+        need(!first.at("end_orientation").is_null()&&!first.at("metric").is_null()&&
+            !first.at("metric").at("unweighted_position_error").is_null()&&
+            !first.at("grounding").at("planting").at("anchor").is_null(),
+            "Codec negative source lacks actual orientation, metric or locked-plant diagnostics.");
+        for(unsigned kind=0;kind<labels.size();++kind){
+            auto document=original;auto changed=actual_capture;auto& state=changed["states"][0];
+            auto& pose=changed["poses"][0];
+            if(kind==0)state.erase("target_error");
+            if(kind==1)state["unknown"]=true;
+            if(kind==2)state["enabled"]=1;
+            if(kind==3)state["slot"]=double(state["slot"].get<std::uint32_t>());
+            if(kind==4)std::swap(changed["states"][0],changed["states"][1]);
+            if(kind==5)changed["states"].push_back(state);
+            if(kind==6)state["target"][0]=std::nextafter(state["target"][0].get<double>(),std::numeric_limits<double>::infinity());
+            if(kind==7)state["weight"]=std::nextafter(state["weight"].get<double>(),0.);
+            if(kind==8)state["end_orientation"]["goal"]["rotation"][0]=std::nextafter(
+                state["end_orientation"]["goal"]["rotation"][0].get<double>(),std::numeric_limits<double>::infinity());
+            if(kind==9)state["end_orientation"]["goal"]["weight"]=0.;
+            if(kind==10)for(auto& component:state["end_orientation"]["actual_rotation"])component=-component.get<double>();
+            if(kind==11)state["metric"]["unweighted_position_limit"]=nullptr;
+            if(kind==12)state["metric"]["evaluated"]=1;
+            if(kind==13)state["metric"]["frame_error"]=std::nextafter(1e-4,1.);
+            if(kind==14)state["grounding"]["state"]["actual_sole"][0]=std::nextafter(
+                state["grounding"]["state"]["actual_sole"][0].get<double>(),std::numeric_limits<double>::infinity());
+            if(kind==15)state["grounding"]["planting"]["anchor"]["local_point"][0]=std::nextafter(
+                state["grounding"]["planting"]["anchor"]["local_point"][0].get<double>(),std::numeric_limits<double>::infinity());
+            if(kind==16)state["grounding"]["state"].erase("casts");
+            if(kind==17)std::swap(changed["poses"][0],changed["poses"][1]);
+            if(kind==18)pose["unknown"]=false;
+            if(kind==19)pose["rotation"]=J::array({0.,0.,0.,0.});
+            if(kind==20)pose["scale"][0]=0.;
+            if(kind==21)pose["position"][0]="0.0";
+            if(kind==22)pose["scale"][0]=1;
+            if(kind==23)pose["entity"]=other;
+            if(kind==24)changed["states"][0]=nullptr;
+            if(kind==25)state["metric"]["unknown"]=0.;
+            if(kind==26)state["end_position"]=J::array({0.,0.});
+            if(kind==27)state["end_orientation"]["actual_rotation"]=J::array({0.,0.,1.});
+            need(changed.dump()!=actual_capture.dump(),"Codec negative did not modify the real captured witness.");
+            auto& row=document["payload"]["physical"]["rigs"][0];
+            need(row.at("entity")==rig,"Codec negative selected the wrong physical owner.");
+            row["procedural_capture"]=changed;if(phase)row["procedural_terminal"]=changed;
+            const auto bytes=reseal(document);
+            (void)gt::artifacts().retain(prefix+"-"+labels[kind],"negative",bytes);
+            rejects([&]{(void)Runtime::from_snapshot(d,content,bytes);});
+            need(source.save_snapshot(content)==pristine,"Detached codec corruption probe changed its source runtime.");
+        }
+    }
+}
+void synthetic_rounding_rollback_preserves_original_locals(){
+    auto d=definition();def(d,rig).transform.position[0]=.125;
+    Runtime source(d);const auto support=add_support(source);settle(source,support);
+    step(source,1,{{rig,true,{}}});const auto pristine=source.save_snapshot(content);const auto original=J::parse(pristine);
+    (void)gt::artifacts().retain("synthetic-rounding-original-native-source","source",pristine);
+    auto control=Runtime::from_snapshot(d,content,pristine);same(source,*control,"synthetic-rounding-original-valid");
+    const std::array<std::string,3> selected{actor,rig,id(102)};
+    const std::array<const char*,3> labels{"linked-actor","rig-wrapper","mapped-pelvis"};
+    for(std::size_t kind=0;kind<selected.size();++kind){
+        auto document=original;J* changed=nullptr;
+        for(auto& row:document["payload"]["entities"])if(row.at("id")==selected[kind]){changed=&row;break;}
+        need(changed!=nullptr,"Synthetic rounding witness selected an absent owner node.");
+        const auto position=(*changed).at("local").at("position").get<V>();std::size_t axis=0;
+        for(std::size_t i=1;i<position.size();++i)if(std::abs(position[i])>std::abs(position[axis]))axis=i;
+        auto& component=(*changed)["local"]["position"][axis];const auto before=component.get<double>();
+        const auto adjacent=std::nextafter(before,std::numeric_limits<double>::infinity());
+        need(std::isnormal(before)&&std::abs(before)>=1e-4&&std::isfinite(adjacent)&&adjacent!=before&&
+            std::abs(adjacent-before)<=128*std::numeric_limits<double>::epsilon()*std::max(1.,std::abs(before)),
+            "Synthetic adjacent-double witness exceeds the reader's small-value rounding resolution.");
+        component=adjacent;
+        // This is a deliberately constructed rounding regression, not a
+        // platform-produced save and not cross-platform qualification evidence.
+        const auto synthetic=reseal(document);need(synthetic!=pristine,"Synthetic rounding witness is unchanged.");
+        const std::string prefix=std::string("synthetic-rounding-")+labels[kind];
+        (void)gt::artifacts().retain(prefix+"-input","synthetic-rounding-witness",synthetic);
+        auto restored=Runtime::from_snapshot(d,content,synthetic);
+        const auto immediate=restored->save_snapshot(content);gt::artifacts().pair(prefix+"-load",synthetic,immediate);
+        need(immediate==synthetic&&restored->entity(selected[kind]).local.position[axis]==adjacent,
+            "Admitted synthetic rounding local was regenerated during restore.");
+        const auto tick=restored->inspect().tick;const auto revision=restored->structure_revision();
+        bool late_step_rejected=false;
+        try{step(*restored,4,{}, {},{{2,revision+1,{}, {support}}});}
+        catch(const std::exception& error){late_step_rejected=std::string(error.what()).find("Stale runtime structure revision")!=std::string::npos;}
+        need(late_step_rejected,"Synthetic rounding step did not reach its intended late structural rejection.");
+        const auto after_step=restored->save_snapshot(content);gt::artifacts().pair(prefix+"-late-step-rollback",synthetic,after_step);
+        need(after_step==synthetic&&restored->inspect().tick==tick&&restored->structure_revision()==revision,
+            "Rejected step regenerated an admitted original local or changed complete saved state.");
+        // A valid outer revision enters change_structure's checkpoint/try/catch;
+        // the absent spawned root rejects inside publish_structure. Even this
+        // no-op failure must not let rollback synchronization change any local.
+        bool structure_rejected=false;
+        try{(void)restored->change_structure(revision,{}, {id(777)});}
+        catch(const std::exception& error){structure_rejected=std::string(error.what()).find("Removal needs a unique live spawned instance root")!=std::string::npos;}
+        need(structure_rejected,"Synthetic rounding structural probe did not enter its intended rejection path.");
+        const auto after_structure=restored->save_snapshot(content);gt::artifacts().pair(prefix+"-structure-rollback",synthetic,after_structure);
+        need(after_structure==synthetic&&restored->inspect().tick==tick&&restored->structure_revision()==revision,
+            "Rejected structure edit regenerated an admitted original local or changed complete saved state.");
+        auto reopened=Runtime::from_snapshot(d,content,after_structure);
+        same(*restored,*reopened,prefix+"-reopened-after-rejections");
+        need(source.save_snapshot(content)==pristine,"Synthetic rounding probe mutated the original native source.");
+    }
+}
 void noncontact_decision_case(unsigned kind){
     static const std::array<const char*,7> labels{"requested-disabled","requested-zero-weight","authored-lifted","actual-ray-miss","correction-limit","tilted-support-slope","actual-plant-support-lost"};
     static const std::array<const char*,7> statuses{"disabled","disabled","lifted","miss","correction-limit","slope","plant-support-lost"};
@@ -430,6 +551,8 @@ int main(int argc,char** argv){
     run("requested multipliers/mixed slots/full rollback",requested_multipliers_mixed_slots_and_rollback);
     run("born nonidentity yaw/last spawned owner retirement",born_yaw_and_last_spawned_retirement);
     run("historical complete capture corruption",historical_capture_corruption);
+    run("strict complete terminal codec corruption",strict_terminal_codec_corruption);
+    run("synthetic rounding/full-state rollback",synthetic_rounding_rollback_preserves_original_locals);
     run("actual noncontact decision handoffs",noncontact_decision_handoffs);
     run("actual native journal replay/queryless preview",actual_journal_replay_and_queryless_preview);
     if(argc==2)run("actual compiled C++ callback",[&]{actual_compiled_callback(argv[1]);});

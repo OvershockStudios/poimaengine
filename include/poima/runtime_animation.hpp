@@ -134,6 +134,10 @@ public:
         std::vector<LayerPlayback> layers;
         std::vector<RuntimeIkCommand> controls;
         std::vector<RuntimeIkState> states;
+        // Original final locals belong to the captured boundary, including
+        // when another platform validates the terminal numerically on load.
+        std::vector<RuntimeAnimationPose> poses;
+        std::optional<std::uint64_t> restored_at_tick;
         std::shared_ptr<const ProceduralGroundingInput> grounding;
         std::string terminal;
     };
@@ -171,7 +175,7 @@ private:
     ProceduralPreview evaluate_procedural(std::size_t index,std::uint64_t tick,
         const Matrix4& wrapper) const;
     ProceduralPreview replay_procedural_grounding(std::size_t index,std::uint64_t tick,
-        const Matrix4& wrapper,const ProceduralGroundingInput& input) const;
+        const Matrix4& wrapper,const ProceduralGroundingInput& input,bool portable_restore=false) const;
     std::string encode_procedural_final(std::size_t index,const ProceduralFinal& captured) const;
     void verify_procedural_progression(std::size_t index,std::uint64_t tick,const Clock& base,
         const std::vector<LayerPlayback>& layers,const std::vector<RuntimeIkCommand>& controls,
@@ -235,6 +239,10 @@ public:
     std::optional<std::string> procedural_terminal(const std::string& entity) const;
     // New grounded policy only: complete final witness in either phase.
     std::optional<std::string> procedural_witness(const std::string& entity) const;
+    // Validate saved presentation locals on a just-restored passive grounded
+    // owner. The runtime supplies only the frozen rig/node/handoff ownership set.
+    bool validate_restored_procedural_local(const std::string& rig,std::uint64_t tick,
+        const RuntimeAnimationPose& original,const RuntimeAnimationPose& reconstructed) const;
     // Active installation joins the already-restored complete current context
     // before publishing the verified cached diagnostics; it never suspends.
     void install_procedural_terminal(const std::string& entity,const std::string& terminal,

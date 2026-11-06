@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.230
+
+- Preserve original grounded character poses, diagnostics and animation history
+  when loading saves across native platforms.
+- Separate exact saved-state and ownership checks from bounded validation of
+  recomputed procedural diagnostics, with precise mismatch errors.
+- Add numerical-boundary and malformed-terminal regression checks.
+
 ## 0.0.229
 
 - Exercise original imported characters through automatic grounded feet,

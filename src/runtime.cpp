@@ -1599,6 +1599,11 @@ struct Runtime::Impl {
             for(auto e:topology->characters)registry.get<Controller>(e).character->RestoreState(checkpoint);
             restore_physical_after_jolt(physical_checkpoint);
             require(!checkpoint.IsFailed(),"Structural character rollback failed.");sync();
+            // The checkpoint owns these exact presentation locals. Physics
+            // synchronization may reconstruct numerically equivalent values,
+            // especially after importing a save from a different platform.
+            for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
+            world_matrices();
             throw;
         }
     }
@@ -1915,6 +1920,8 @@ struct Runtime::Impl {
             for(auto& [e,motion]:previous_motions)registry.get<Body>(e).target=std::move(motion);
             restore_physical_after_jolt(physical_checkpoint);
             require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync();
+            for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
+            world_matrices();
             }
             throw;
         }
