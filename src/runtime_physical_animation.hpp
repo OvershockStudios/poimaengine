@@ -10,17 +10,25 @@
 
 namespace poima {
 // Target playback is independent of the skeleton published by physics and of
-// the original animation/procedural takeover terminal. It supplies orientations
-// only: no root translation, support force, IK or balance controller.
+// the original animation/procedural takeover terminal. It supplies relative
+// orientations and optional fitted-interval angular velocity, with no root
+// translation, support force, IK or balance controller.
 class RuntimePhysicalAnimation {
 public:
     enum class Source { Manual, Animation };
+    struct Motion {
+        // Retain the fitted interval start: completed fades may be removed
+        // when the endpoint is sampled.
+        physical_rig::Quat start_rotation{0,0,0,1};
+        physical_rig::Vec3 angular_velocity{}; // Parent-joint coordinates, rad/s.
+    };
     struct Joint {
         std::string name;
         Source source=Source::Manual;
         // Current committed animation sample only. Manual ownership has no
         // animation attribution; its effective target remains in the backend.
         std::optional<physical_rig::TargetFit> sample;
+        std::optional<Motion> motion;
     };
     struct Checkpoint {
         RuntimeAnimations::Checkpoint player;

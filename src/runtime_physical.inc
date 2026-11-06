@@ -253,7 +253,8 @@
             for(const auto& joint:owner.animation->joints())if(joint.sample) {
                 require(owner.backend->mode()!=RuntimePhysicalRigMode::Animated,"Animated target delivery requires physical ownership.");
                 const auto drive=owner.backend->drive(joint.name);require(drive.has_value(),"Animation target joint has no drive.");
-                owner.backend->set_drive({joint.name,joint.sample->target,drive->strength});
+                owner.backend->set_drive({joint.name,joint.sample->target,drive->strength,
+                    joint.motion?std::optional{joint.motion->angular_velocity}:std::nullopt});
             }
         }
         for(const auto& id:topology->physical_rigs)physical_owners.at(id)->backend->before_step(Runtime::fixed_dt);
@@ -442,6 +443,7 @@
                 const auto& profile=*joint->drive;
                 row.drive=PhysicalRigDriveObservation{d.name,d.drive->target_rotation,d.drive->strength,profile.stiffness,profile.damping,profile.max_torque};
                 row.evaluated_drive_child_torque=d.drive_child_torque;row.drive_angular_error=d.drive_angular_error;row.drive_saturation_scale=d.drive_saturation_scale;
+                row.drive_target_angular_velocity=d.drive->target_angular_velocity;
             }
             result.joints.push_back(std::move(row));
         }

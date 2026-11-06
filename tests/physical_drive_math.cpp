@@ -127,6 +127,111 @@ int main(){
         rejected([]{(void)run({}, {},identity,identity,false,.02,{0,1,1});},"Invalid authored profile rejected.");
         rejected([]{(void)run({}, {},identity,identity,false,.02,profile,{{0,0,std::numeric_limits<double>::quiet_NaN()},{0,0,0,1}});},"Nonfinite joint frame rejected even at zero strength.");
         rejected([]{(void)run({}, {},identity,identity,false,.02,profile,{},{{},{0,0,0,2}});},"Nonunit current joint frame rejected.");
+
+        ++groups;
+        // Independent endpoint equation: target advancement already belongs to
+        // theta. Only d*v is new, not (d+h*k)*v or a second predicted position.
+        const Vec3 desired_velocity{1.3,-.8,.6};
+        const auto moving_hinge=run({xrot(theta),1,desired_velocity},{omega,100,-80},
+            {2,0,0,0,4,0,0,0,6},{3,0,0,0,5,0,0,0,7},true,dt);
+        const double moving_expected=(k*std::sin(theta)-rate*omega+d*desired_velocity[0])/(1+alpha*inv);
+        vector_close(moving_hinge.raw_torque_world,{moving_expected,0,0},"Moving hinge endpoint uses d times the reference velocity exactly once.");
+        const auto moving_half=run({xrot(theta),.5,desired_velocity},{omega,0,0},
+            {2,0,0,0,4,0,0,0,6},{3,0,0,0,5,0,0,0,7},true,dt);
+        need(close(moving_half.raw_torque_world[0],(.5*k*std::sin(theta)-.5*rate*omega+.5*d*desired_velocity[0])/(1+.5*alpha*inv)),"Strength scales velocity damping inside the implicit solve.");
+        const auto moving_coupled=run({target,1,desired_velocity},{.3,-.2,.5},coupled,zero,false,dt);
+        const double moving_b0=b0+d*desired_velocity[0],moving_b1=b1+d*desired_velocity[1];
+        vector_close(moving_coupled.raw_torque_world,{(h11*moving_b0-h01*moving_b1)/det,
+            (h00*moving_b1-h01*moving_b0)/det,(-rate*.5+d*desired_velocity[2])/(1+4*alpha)},"Moving anisotropic target matches independent two-by-two inverse.");
+        for(unsigned i=0;i<3;++i) {
+            double lhs=moving_coupled.raw_torque_world[i];
+            for(unsigned j=0;j<3;++j)lhs+=alpha*coupled[i*3+j]*moving_coupled.raw_torque_world[j];
+            need(close(lhs,k*moving_coupled.error_world[i]-rate*Vec3{.3,-.2,.5}[i]+d*desired_velocity[i]),"Complete moving-target implicit residual.");
+        }
+        const auto moving_rotated=run({target,1,desired_velocity},independent_rotate(world_rotation,{.3,-.2,.5}),
+            rotate_tensor(world_rotation,coupled),zero,false,dt,profile,{{},world_rotation},{{},world_rotation});
+        vector_close(moving_rotated.raw_torque_world,independent_rotate(world_rotation,moving_coupled.raw_torque_world),"Parent-local desired velocity follows the actual parent joint frame.");
+        const auto moving_hinge_rotated=run({xrot(theta),1,desired_velocity},independent_rotate(world_rotation,{omega,100,-80}),
+            rotate_tensor(world_rotation,{2,0,0,0,4,0,0,0,6}),rotate_tensor(world_rotation,{3,0,0,0,5,0,0,0,7}),
+            true,dt,profile,{{},world_rotation},{{},world_rotation});
+        vector_close(moving_hinge_rotated.raw_torque_world,independent_rotate(world_rotation,{moving_expected,0,0}),"Rotated hinge ignores transverse reference velocity.");
+        const auto no_damping=run({xrot(theta),1,desired_velocity},{omega,0,0},identity,identity,false,dt,{12,0,100});
+        const auto no_damping_hold=run({xrot(theta),1},{omega,0,0},identity,identity,false,dt,{12,0,100});
+        need(no_damping.raw_torque_world==no_damping_hold.raw_torque_world,"Zero damping adds no target-velocity torque; endpoint is not predicted twice.");
+        const auto explicit_zero=run({target,1,{0.,-0.,0.}},{.3,-.2,.5},coupled,zero,false,dt);
+        need(explicit_zero.raw_torque_world==coupled_result.raw_torque_world&&
+            explicit_zero.child_torque_world==coupled_result.child_torque_world&&explicit_zero.parent_torque_world==coupled_result.parent_torque_world&&
+            explicit_zero.relative_rotation==coupled_result.relative_rotation&&explicit_zero.error_rotation==coupled_result.error_rotation&&explicit_zero.error_world==coupled_result.error_world&&
+            explicit_zero.angular_error==coupled_result.angular_error&&explicit_zero.saturation_scale==coupled_result.saturation_scale&&
+            explicit_zero.raw_torque_norm==coupled_result.raw_torque_norm&&explicit_zero.applied_torque_norm==coupled_result.applied_torque_norm&&
+            explicit_zero.saturated==coupled_result.saturated,
+            "Explicit signed-zero target velocity preserves every legacy response field exactly.");
+
+        ++groups;
+        vector_close(drive::interval_velocity(xrot(.3),xrot(.7),.2),{2,0,0},"Interval log has physical rad/s units and correct direction.");
+        vector_close(drive::interval_velocity(xrot(.7),xrot(.3),.2),{-2,0,0},"Reversing a commuting interval reverses its velocity.");
+        const Quat interval_start=xrot(.45),interval_delta{0,std::sin(.2)/root2,std::sin(.2)/root2,std::cos(.2)};
+        const auto interval_end=independent_product(interval_delta,interval_start);
+        const Vec3 interval_expected{0,2/root2,2/root2};
+        vector_close(drive::interval_velocity(interval_start,interval_end,.2),interval_expected,"Noncommuting left log is expressed in the parent frame, not child axes.");
+        auto negative_start=interval_start,negative_end=interval_end;
+        for(auto& x:negative_start)x=-x;for(auto& x:negative_end)x=-x;
+        need(drive::interval_velocity(negative_start,interval_end,.2)==drive::interval_velocity(interval_start,negative_end,.2)&&
+            drive::interval_velocity(negative_start,negative_end,.2)==drive::interval_velocity(interval_start,interval_end,.2),"Interval velocity ignores quaternion representative signs.");
+        const auto still=drive::interval_velocity(interval_start,negative_start,.2);
+        need(still==Vec3{},"Identical orientations produce exact zero interval velocity.");
+        for(double value:still)need(!std::signbit(value),"Stationary interval has canonical positive zeros.");
+        const auto tiny=drive::interval_velocity({0,0,0,1},xrot(1e-12),.02);
+        need(close(tiny[0]/5e-11,1)&&tiny[1]==0&&tiny[2]==0,"Tiny nonzero intervals are retained without a hidden deadband.");
+        const double pi=std::acos(-1.);
+        vector_close(drive::interval_velocity(xrot(pi-.1),xrot(-pi+.1),.1),{2,0,0},"Quaternion hemisphere crossing uses the short interval, not a full turn.");
+        const auto before_cut=drive::interval_velocity({0,0,0,1},{std::sqrt(1-4e-16),0,0,2e-8},1);
+        need(close(before_cut[0],2*std::atan2(std::sqrt(1-4e-16),2e-8)),"Resolved side of the explicit pi ambiguity band is admitted.");
+
+        ++groups;
+        const auto moving_cap=run({target,.4,{100,-50,80}},{},identity,identity,false,dt,{120,20,.3});
+        need(moving_cap.saturated&&close(norm(moving_cap.child_torque_world),.12),"Reference velocity shares the existing vector torque cap.");
+        for(unsigned i=0;i<3;++i)need(moving_cap.parent_torque_world[i]==-moving_cap.child_torque_world[i],"Moving-target torque remains an equal/opposite internal pair.");
+        const auto moving_off=run({target,0,desired_velocity},{20,-10,5},coupled,zero);
+        need(moving_off.child_torque_world==Vec3{}&&moving_off.parent_torque_world==Vec3{}&&moving_off.raw_torque_world==Vec3{}&&
+            moving_off.raw_torque_norm==0&&moving_off.applied_torque_norm==0&&!moving_off.saturated&&moving_off.saturation_scale==1,
+            "A moving zero-strength target adds no active response.");
+        rejected([]{(void)run({{0,0,0,1},0,{std::numeric_limits<double>::quiet_NaN(),0,0}});},"Nonfinite desired velocity rejects even at zero strength.");
+        rejected([]{(void)run({{0,0,0,1},0,{0,20001,0}});},"Out-of-bound desired velocity rejects even at zero strength.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{1,0,0,0},.02);},"Exactly pi has no unambiguous interval axis.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{1,0,0,5e-9},.02);},"Near-pi interval is explicitly rejected instead of choosing a sign.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,2},{0,0,0,1},.02);},"Malformed interval source is rejected.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{0,std::numeric_limits<double>::infinity(),0,1},.02);},"Nonfinite interval endpoint is rejected.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},xrot(.1),.1/20001);},"Unresolved fast interval exceeds the declared angular-speed bound.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{0,0,0,1},0);},"Even a stationary interval needs a positive timestep.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{0,0,0,1},1.01);},"Interval timestep upper bound is enforced.");
+        rejected([]{(void)drive::interval_velocity({0,0,0,1},{0,0,0,1},std::numeric_limits<double>::quiet_NaN());},"Nonfinite interval timestep is rejected.");
+
+        ++groups;
+        // Bounded isolated moving hinge: same endpoint trajectory, gain,
+        // inertia and semi-implicit update in both branches. This compares
+        // tracking error and phase lag, not coupled character/contact quality.
+        const double moving_dt=1./60,frequency=2*pi/3,amplitude=.15;
+        std::array<double,2> positions{},velocities{},squared_error{},lag_projection{};
+        for(unsigned tick=0;tick<1080;++tick) {
+            const double phase=frequency*(tick+1)*moving_dt;
+            const double start_angle=amplitude*std::sin(frequency*tick*moving_dt),end_angle=amplitude*std::sin(phase);
+            const auto reference=drive::interval_velocity(xrot(start_angle),xrot(end_angle),moving_dt);
+            need(close(reference[0],(end_angle-start_angle)/moving_dt),"Sampled hinge reference agrees with independent scalar trajectory secant.");
+            for(unsigned branch=0;branch<2;++branch) {
+                const auto response=run({xrot(end_angle),1,branch?reference:Vec3{}},{velocities[branch],0,0},
+                    {2,0,0,0,0,0,0,0,0},zero,true,moving_dt,{40,10,100},{},{{},xrot(positions[branch])});
+                velocities[branch]+=moving_dt*2*response.child_torque_world[0];positions[branch]+=moving_dt*velocities[branch];
+                need(std::isfinite(positions[branch])&&std::isfinite(velocities[branch])&&std::abs(response.child_torque_world[0])<=100,
+                    "Both moving-target counterfactuals remain finite and torque-bounded.");
+                if(tick>=360) {
+                    const double error=positions[branch]-end_angle;squared_error[branch]+=error*error;
+                    lag_projection[branch]-=positions[branch]*std::cos(phase);
+                }
+            }
+        }
+        need(squared_error[1]<.36*squared_error[0],"Velocity tracking reduces this isolated steady RMS error by at least40 percent.");
+        need(lag_projection[0]>0&&std::abs(lag_projection[1])<.5*lag_projection[0],"Velocity tracking reduces this isolated steady phase-lag projection by at least50 percent.");
         std::cout<<"physical_drive_math: "<<groups<<" groups, "<<checks<<" checks\n";
         return 0;
     }catch(const std::exception& e){std::cerr<<"physical_drive_math failed: "<<e.what()<<'\n';return 1;}

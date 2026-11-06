@@ -123,6 +123,7 @@
                             {"stiffness",j.drive->stiffness},{"damping",j.drive->damping},{"max_torque",j.drive->max_torque},
                             {"evaluated_child_torque",j.evaluated_drive_child_torque},{"angular_error",j.drive_angular_error},
                             {"saturation_scale",j.drive_saturation_scale}};
+                        if(j.drive_target_angular_velocity)rows.back()["drive"]["target_angular_velocity"]=*j.drive_target_angular_velocity;
                     }
                     value["joints"]=std::move(rows);
                 }
@@ -145,10 +146,13 @@
                     {"correction_radians",joint.sample->correction_radians},{"chart_condition",joint.sample->chart_condition},
                     {"hinge_projected",joint.sample->hinge_projected},{"twist_clamped",joint.sample->twist_clamped},{"swing_clamped",joint.sample->swing_clamped}};
                 joints.push_back({{"name",joint.name},{"source",joint.source==PhysicalRigDriveSource::Animation?"animation":"manual"},{"sample",std::move(sample)}});
+                if(state->velocity_tracking)joints.back()["motion"]=joint.motion?
+                    Json{{"start_rotation",joint.motion->start_rotation},{"angular_velocity",joint.motion->angular_velocity}}:Json(nullptr);
             }
             value={{"entity",state->entity},{"sampled_tick",state->sampled_tick},
                 {"limit_policy",state->limit_policy==physical_rig::TargetLimitPolicy::Fit?"fit":"strict"},
                 {"playback",animation_json(state->playback)},{"joints",std::move(joints)}};
+            if(state->velocity_tracking)value["velocity_tracking"]=true;
         }}catch(const std::exception& error){throw Error(-32602,error.what());}
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
     }

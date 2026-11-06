@@ -109,6 +109,23 @@ void malformed_history_and_keys() {
     reject_order(Json::array({{{"rig","rig"},{"joint","bad joint"}}}));reject_order(Json::array({{{"rig","rig"},{"joint",std::string(65,'j')}}}));
     Json too_many=Json::array();for(std::size_t n=0;n<=state::max_constraint_keys;++n)too_many.push_back({{"rig","rig"},{"joint","joint"}});reject_order(std::move(too_many));
 }
+void drive_motion_roundtrip() {
+    auto legacy=membership();legacy.drives.push_back({"joint",{0,0,0,1},.75});
+    const auto old=state::membership_json(legacy);
+    need(!old.at("drives")[0].contains("target_angular_velocity"),"Legacy control gained a motion field.");
+    auto moving=legacy;moving.drives[0].target_angular_velocity=physical_rig::Vec3{.125,-.75,-0.0};
+    const auto encoded=state::membership_json(moving);
+    auto parsed=state::parse_membership(Json::parse(encoded.dump()));
+    need(parsed==moving,"Complete moving membership differs after JSON roundtrip.");
+    for(unsigned n=0;n<3;++n)equal_double((*parsed.drives[0].target_angular_velocity)[n],(*moving.drives[0].target_angular_velocity)[n]);
+    need(state::membership_json(parsed).dump()==encoded.dump(),"Moving membership bytes differ after roundtrip.");
+    for(const auto& invalid:Json::array({nullptr,false,"1",Json::array(),Json::array({0,0}),Json::array({0,0,0,0}),Json::array({0,0,20001}),Json::array({true,0,0})})) {
+        auto bad=encoded;bad["drives"][0]["target_angular_velocity"]=invalid;const auto before=bad.dump();
+        rejects([&]{parsed=state::parse_membership(bad);});need(parsed==moving&&bad.dump()==before,"Refused velocity modified input or destination.");
+    }
+    moving.drives[0].target_angular_velocity->at(1)=std::numeric_limits<double>::infinity();
+    rejects([&]{(void)state::membership_json(moving);});
+}
 void writers_and_boundaries() {
     auto value=membership();value.poses.clear();rejects([&]{(void)state::membership_json(value);});value=membership();value.mode=static_cast<RuntimePhysicalRigMode>(91);rejects([&]{(void)state::membership_json(value);});
     value=membership();value.poses.back().position[2]=std::numeric_limits<double>::quiet_NaN();rejects([&]{(void)state::membership_json(value);});value=membership();value.warm_starts.back().motor_lambda[0]=std::numeric_limits<float>::infinity();rejects([&]{(void)state::membership_json(value);});
@@ -122,6 +139,6 @@ void writers_and_boundaries() {
 }
 }
 int main() {
-    try{exact_roundtrips_and_roles();malformed_membership();malformed_history_and_keys();writers_and_boundaries();std::cout<<"Physical typed state JSON: "<<checks<<" exact-bit/complete-field/strict-parse/atomicity checks passed. No native continuation claim.\n";return 0;}
+    try{drive_motion_roundtrip();exact_roundtrips_and_roles();malformed_membership();malformed_history_and_keys();writers_and_boundaries();std::cout<<"Physical typed state JSON: "<<checks<<" exact-bit/complete-field/strict-parse/atomicity checks passed. No native continuation claim.\n";return 0;}
     catch(const std::exception& error){std::cerr<<"Physical typed state JSON: "<<error.what()<<'\n';return 1;}
 }

@@ -104,6 +104,10 @@ nlohmann::json membership_json(const RuntimePhysicalRigMembership& value) {
             text_valid(drive.joint,false);unit(drive.target_rotation);finite(drive.strength,1);
             need(drive.strength>=0,"Physical drive strength must be nonnegative.");
             drives.push_back({{"joint",drive.joint},{"target_rotation",drive.target_rotation},{"strength",drive.strength}});
+            if(drive.target_angular_velocity) {
+                for(double component:*drive.target_angular_velocity)finite(component,physical_rig::max_relative_angular_velocity);
+                drives.back()["target_angular_velocity"]=*drive.target_angular_velocity;
+            }
         }
         result["drives"]=std::move(drives);
     }
@@ -116,9 +120,13 @@ RuntimePhysicalRigMembership parse_membership(const nlohmann::json& value) {
     if(value.contains("drives")) {
         const auto& drives=value.at("drives");count(drives,1,physical_rig::max_joints);
         for(const auto& drive:drives) {
-            fields(drive,{"joint","target_rotation","strength"});const auto strength=number(drive.at("strength"),1);
+            if(drive.contains("target_angular_velocity"))fields(drive,{"joint","target_rotation","strength","target_angular_velocity"});
+            else fields(drive,{"joint","target_rotation","strength"});
+            const auto strength=number(drive.at("strength"),1);
             need(strength>=0,"Physical drive strength must be nonnegative.");
             result.drives.push_back({text(drive.at("joint")),rotation(drive.at("target_rotation")),strength});
+            if(drive.contains("target_angular_velocity"))
+                result.drives.back().target_angular_velocity=vector<3>(drive.at("target_angular_velocity"),physical_rig::max_relative_angular_velocity);
         }
     }
     const auto& states=value.at("warm_starts");count(states,0,physical_rig::max_joints);result.warm_starts.reserve(states.size());for(const auto& state:states)result.warm_starts.push_back(warm(state));return result;

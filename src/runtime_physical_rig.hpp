@@ -42,6 +42,9 @@ struct RuntimePhysicalRigDriveState {
     std::string joint;
     std::array<double,4> target_rotation{0,0,0,1};
     double strength=0;
+    // Present only for an explicitly enabled animation motion interval;
+    // parent-joint coordinates, rad/s. Manual and legacy drives omit it.
+    std::optional<std::array<double,3>> target_angular_velocity;
     bool operator==(const RuntimePhysicalRigDriveState&) const = default;
 };
 struct RuntimePhysicalRigPartState {

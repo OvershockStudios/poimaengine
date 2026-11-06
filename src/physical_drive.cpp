@@ -69,6 +69,27 @@ void validate(const Target& target) {
     (void)physical_rig::canonical_quaternion(target.rotation);
     require(std::isfinite(target.strength)&&target.strength>=0&&target.strength<=1,
             "Physical drive strength must be finite in [0,1].");
+    for(double x:target.angular_velocity)
+        require(std::isfinite(x)&&std::abs(x)<=physical_rig::max_relative_angular_velocity,
+                "Physical drive target angular velocity exceeds finite admitted bounds.");
+}
+Vec3 interval_velocity(Quat start,Quat end,double dt) {
+    require(std::isfinite(dt)&&dt>0&&dt<=1,"Physical target interval must be in (0,1] seconds.");
+    start=physical_rig::canonical_quaternion(start);end=physical_rig::canonical_quaternion(end);
+    if(start==end)return {};
+    const auto delta=physical_rig::multiply(end,physical_rig::conjugate(start));
+    require(std::abs(delta[3])>1e-8,"Physical target interval is ambiguous near a pi rotation.");
+    const double sine=std::hypot(delta[0],delta[1],delta[2]);
+    if(sine==0)return {};
+    const Wide angle=2*std::atan2(static_cast<Wide>(sine),static_cast<Wide>(delta[3]));
+    const Wide factor=(angle/static_cast<Wide>(sine))/static_cast<Wide>(dt);
+    Vec3 result{};
+    for(unsigned i=0;i<3;++i) {
+        result[i]=narrow(static_cast<Wide>(delta[i])*factor);
+        require(std::abs(result[i])<=physical_rig::max_relative_angular_velocity,
+                "Physical target interval angular velocity exceeds admitted bounds.");
+    }
+    return result;
 }
 Response evaluate(const Profile& profile,const Target& target,Pose parent,Pose child,Vec3 omega,
     const InverseInertia& parent_inertia,const InverseInertia& child_inertia,bool hinge,double dt) {
@@ -85,9 +106,12 @@ Response evaluate(const Profile& profile,const Target& target,Pose parent,Pose c
     result.angular_error=2*std::atan2(std::hypot(q[0],q[1],q[2]),q[3]);
     result.error_world=physical_rig::rotate(parent.rotation,{2*q[3]*q[0],2*q[3]*q[1],2*q[3]*q[2]});
     const auto axis=physical_rig::rotate(parent.rotation,{1,0,0});
-    Wide projected_error=0,projected_omega=0;
+    const bool moving=std::any_of(target.angular_velocity.begin(),target.angular_velocity.end(),[](double x){return x!=0;});
+    const auto target_omega=moving?physical_rig::rotate(parent.rotation,target.angular_velocity):Vec3{};
+    Wide projected_error=0,projected_omega=0,projected_target_omega=0;
     if(hinge) {
         for(unsigned i=0;i<3;++i){projected_error+=static_cast<Wide>(axis[i])*result.error_world[i];projected_omega+=static_cast<Wide>(axis[i])*omega[i];}
+        if(moving)for(unsigned i=0;i<3;++i)projected_target_omega+=static_cast<Wide>(axis[i])*target_omega[i];
         for(unsigned i=0;i<3;++i)result.error_world[i]=narrow(projected_error*axis[i]);
     }
     if(target.strength==0)return result;
@@ -102,12 +126,15 @@ Response evaluate(const Profile& profile,const Target& target,Pose parent,Pose c
             inverse_mass+=static_cast<Wide>(axis[i])*sum[i*3+j]*axis[j];
         require(std::isfinite(inverse_mass)&&inverse_mass>=0,"Physical hinge drive effective inverse inertia is invalid.");
         const Wide denominator=1+alpha*inverse_mass;finite(denominator);
-        const Wide torque=(k*projected_error-rate*projected_omega)/denominator;
+        const Wide torque=moving?(k*projected_error-rate*projected_omega+d*projected_target_omega)/denominator:
+            (k*projected_error-rate*projected_omega)/denominator;
         for(unsigned i=0;i<3;++i)result.raw_torque_world[i]=narrow(torque*axis[i]);
     } else {
         Matrix h{};Vector rhs{};
         for(unsigned i=0;i<3;++i) {
-            rhs[i]=k*result.error_world[i]-rate*omega[i];finite(rhs[i]);
+            rhs[i]=k*result.error_world[i]-rate*omega[i];
+            if(moving)rhs[i]+=d*target_omega[i];
+            finite(rhs[i]);
             for(unsigned j=0;j<3;++j){h[i*3+j]=(i==j ? 1.L : 0.L)+alpha*sum[i*3+j];finite(h[i*3+j]);}
         }
         const auto torque=solve(h,rhs);

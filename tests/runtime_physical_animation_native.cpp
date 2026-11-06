@@ -202,5 +202,120 @@ void save_contract_and_templates(){
     const auto legacy=definition(false);Runtime old(legacy);step(old,{},2);need(!old.physical_animation(rig),"Unconfigured old drive acquired a target bank.");const auto old_before=saved(old);rejects([&]{step(old,{activate(),source("shoulder",PhysicalRigDriveSource::Animation,.5)});},"Legacy profile acquired animation permission.");equal("legacy source refusal",old_before,saved(old));step(old,{activate(),manual("shoulder",axis(2,.2),.4)});const auto old_bytes=saved(old);const auto old_document=J::parse(old_bytes);need(old_document.at("payload").at("physical").at("version")==5&&!old_document.at("payload").at("physical").at("rigs")[0].contains("animation"),"Unconfigured legacy save acquired extension-six fields.");continuation(legacy,old,"legacy manual-drive record",3);
     const auto empty_definition=definition(true,pr::TargetLimitPolicy::Strict,true);Runtime empty(empty_definition);const auto dormant=saved(empty);const auto dormant_physical=J::parse(dormant).at("payload").at("physical");need(dormant_physical.at("version")==6&&dormant_physical.at("rigs").empty(),"Dormant target template lost its extension-six contract.");auto cold=Runtime::from_snapshot(empty_definition,content,dormant);equal("dormant target template",dormant,saved(*cold));RuntimeTransform at;at.position={5,200,0};const auto born=empty.change_structure(0,{{id(900),at}},{}).spawned.at(0);const auto mirrored=cold->change_structure(0,{{id(900),at}},{}).spawned.at(0);need(born==mirrored,"Target template restore changed allocation frontier.");step(empty,{},2);step(*cold,{},2);const std::vector requests{activate(born),source("shoulder",PhysicalRigDriveSource::Animation,.5,born),source("elbow",PhysicalRigDriveSource::Animation,.3,born)};step(empty,requests);step(*cold,requests);equal("born target streams",saved(empty),saved(*cold));need(stream(empty,born).joints.size()==2,"Born rig lost target membership.");for(unsigned n=0;n<3;++n){step(empty);step(*cold);equal("born target future "+std::to_string(n),saved(empty),saved(*cold));}empty.change_structure(empty.structure_revision(),{}, {born});cold->change_structure(cold->structure_revision(),{}, {born});equal("retired target streams",saved(empty),saved(*cold));rejects([&]{(void)empty.physical_animation(born);},"Retired target stream remained queryable.");const auto retired=saved(empty);auto revived=Runtime::from_snapshot(empty_definition,content,retired);equal("retired target checkpoint",retired,saved(*revived));const auto next=empty.change_structure(empty.structure_revision(),{{id(900),at}},{}).spawned.at(0);const auto next_cold=revived->change_structure(revived->structure_revision(),{{id(900),at}},{}).spawned.at(0);need(next==next_cold&&next!=born,"Retired target stream changed the next incarnation identity.");equal("next target incarnation",saved(empty),saved(*revived));
 }
+RuntimeDefinition velocity_definition(pr::TargetLimitPolicy policy=pr::TargetLimitPolicy::Strict,bool dormant=false){
+    auto d=definition(true,policy,dormant);
+    const auto enable=[](auto& entities){for(auto& e:entities)if(e.physical_rig&&e.physical_rig->animation_drive)e.physical_rig->animation_drive->velocity_tracking=true;};
+    enable(d.entities);for(auto& t:d.templates)enable(t.entities);return d;
 }
-int main(){try{need(Runtime::available(),"Actual native simulation is required.");clocks_targets_and_native_response();manual_hold_and_independent_playback();layers_rates_and_atomic_failures();fitting_and_batch_equivalence();save_contract_and_templates();std::cout<<"Runtime physical animation: 5 groups, "<<checks<<" checks, "<<pairs<<" complete archive pairs passed; no balance or recovery claim.\n";return 0;}catch(const std::exception& e){std::cerr<<"Runtime physical animation group "<<group<<": "<<e.what()<<'\n';return 1;}}
+V independent_interval(Q start,Q end){
+    auto delta=product(end,inverse(start));if(delta[3]<0)for(double& v:delta)v=-v;
+    const double n=std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
+    if(n==0)return {};
+    const double scale=2*std::atan2(n,delta[3])/(n*Runtime::fixed_dt);
+    return {delta[0]*scale,delta[1]*scale,delta[2]*scale};
+}
+void vector_near(V a,V b,double bound=2e-7){for(unsigned n=0;n<3;++n)near(a[n],b[n],bound);}
+void interval_oracle(const Runtime& r,const ModelAsset& model,unsigned clip,double start,double end){
+    const auto current=stream(r);need(current.velocity_tracking,"Authored target velocity permission missing from observation.");
+    const auto native=r.physical_rig(rig,true,true);need(native&&native->joints.size()==2,"Velocity oracle requires complete native joints.");
+    for(unsigned n=0;n<2;++n){const auto& row=current.joints[n];need(row.sample&&row.motion,"Animation velocity sample/interval absent.");
+        const auto a=independent_target(model,clip,start,n),b=independent_target(model,clip,end,n);
+        rotation_near(row.motion->start_rotation,a);rotation_near(row.sample->target,b);
+        vector_near(row.motion->angular_velocity,independent_interval(a,b));
+        need(native->joints[n].drive_target_angular_velocity==std::optional<V>{row.motion->angular_velocity},"Backend target velocity differs from exact committed interval.");
+    }
+}
+void velocity_intervals_and_switches(){
+    group="velocity-intervals-and-switches";const auto d=velocity_definition();const auto model=d.entities[3].animation_rig->model;Runtime r(d);
+    const auto initial=stream(r);need(initial.velocity_tracking,"New immutable permission absent.");for(const auto& row:initial.joints)need(!row.sample&&!row.motion,"Unselected source acquired a motion interval.");
+    step(r,{},2);step(r,{activate(),source("shoulder",PhysicalRigDriveSource::Animation,.7),source("elbow",PhysicalRigDriveSource::Animation,.4)});
+    interval_oracle(r,*model,0,2*Runtime::fixed_dt,3*Runtime::fixed_dt);
+    const auto old=joint(stream(r),"shoulder").sample->target;
+    step(r,{playback(1,.1)});interval_oracle(r,*model,1,.1,.1+Runtime::fixed_dt);
+    need(difference(old,joint(stream(r),"shoulder").motion->start_rotation)>.2,"Immediate-restart fixture did not replace a distinct old pose.");
+    auto time=stream(r).playback.time;step(r,{rate(2)});interval_oracle(r,*model,1,time,time+2*Runtime::fixed_dt);
+    time=stream(r).playback.time;step(r,{source("shoulder",PhysicalRigDriveSource::Animation,.2)});interval_oracle(r,*model,1,time,time+2*Runtime::fixed_dt);
+    need(drive(r,"shoulder").strength==.2,"Strength-only control failed to preserve requested strength.");
+    time=stream(r).playback.time;step(r,{rate(0)});interval_oracle(r,*model,1,time,time);
+    for(const auto& row:stream(r).joints)need(row.motion->angular_velocity==V{},"Frozen plain clip acquired nonzero target velocity.");
+    step(r,{manual("shoulder",axis(2,.7),.2)});const auto held=stream(r);need(!joint(held,"shoulder").motion&&!joint(held,"shoulder").sample,"Manual source retained an interval.");
+    need(!r.physical_rig(rig,true,true)->joints[0].drive_target_angular_velocity,"Manual source retained backend feed-forward.");
+    time=stream(r).playback.time;step(r,{source("shoulder",PhysicalRigDriveSource::Animation,.2),rate(1)});interval_oracle(r,*model,1,time,time+Runtime::fixed_dt);
+    need(difference(axis(2,.7),joint(stream(r),"shoulder").motion->start_rotation)>.2,"Manual-to-stream fixture did not distinguish unrelated manual orientation.");
+    continuation(d,r,"velocity after source/rate changes",4);
+    const auto before=saved(r);rejects([&]{step(r,{playback(0,.2)},4,{{2,1,{{id(900),RuntimeTransform{}}},{}}});},"Late structural conflict accepted in velocity mode.");equal("velocity full late-transaction rollback",before,saved(r));
+    const auto base=saved(r);auto single=Runtime::from_snapshot(d,content,base);step(r,{},6);for(unsigned n=0;n<6;++n)step(*single);equal("velocity six-tick batch equals singles",saved(r),saved(*single));
+}
+void velocity_fades_and_native_response(){
+    group="velocity-fades-and-native-response";const auto d=velocity_definition();Runtime r(d);step(r,{},2);step(r,{activate(),source("shoulder",PhysicalRigDriveSource::Animation,.6),source("elbow",PhysicalRigDriveSource::Animation,.6)});
+    auto layer=playback(3,0,false,1,1);layer.animation->weight_blend_ticks=2;step(r,{layer});
+    const auto prior=joint(stream(r),"elbow").sample->target;need(stream(r).playback.layers[0].weight_transition.has_value(),"Layer retirement fixture has no live weight transition.");
+    step(r);const auto end=stream(r);need(!end.playback.layers[0].weight_transition&&end.playback.layers[0].weight==1,"Final layer fade was not retired.");
+    rotation_near(joint(end,"elbow").motion->start_rotation,prior);
+    vector_near(joint(end,"elbow").motion->angular_velocity,independent_interval(prior,joint(end,"elbow").sample->target));
+    need(std::abs(joint(end,"elbow").motion->angular_velocity[0])>1,"Final fade interval was flattened by post-sample weight cleanup.");
+    continuation(d,r,"retired layer interval",4);
+    auto fade=playback(1,.2,true,{},1,4);fade.animation->transition_mode=AnimationTransitionMode::Inertial;step(r,{fade});
+    const auto start=saved(r);auto cold=Runtime::from_snapshot(d,content,start);for(unsigned n=0;n<4;++n){step(r);step(*cold);equal("velocity inertial cold interval "+std::to_string(n),saved(r),saved(*cold));}
+    const auto fit_definition=velocity_definition(pr::TargetLimitPolicy::Fit);Runtime fitted(fit_definition);step(fitted,{},2);step(fitted,{activate(),playback(4,0,false),source("shoulder",PhysicalRigDriveSource::Animation,.5),source("elbow",PhysicalRigDriveSource::Animation,.5)});
+    for(const auto& row:stream(fitted).joints){need(row.sample->correction_radians>.1,"Constant fitted fixture did not encounter original constraints.");need(row.motion->angular_velocity==V{},"Two identical fitted endpoints acquired a hidden velocity.");}
+    continuation(fit_definition,fitted,"constant fitted interval",2);
+    // The legacy and velocity-enabled fixtures have identical authored mechanics
+    // and receive identical source controls; only feed-forward is opted in.
+    Runtime passive_new(d),passive_old(definition());step(passive_new,{},2);step(passive_old,{},2);
+    const std::vector zero{activate(),source("shoulder",PhysicalRigDriveSource::Animation,0),source("elbow",PhysicalRigDriveSource::Animation,0)};
+    step(passive_new,zero);step(passive_old,zero);
+    for(unsigned n=0;n<8;++n){step(passive_new);step(passive_old);const auto x=J::parse(saved(passive_new)),y=J::parse(saved(passive_old));
+        need(typed(x.at("payload").at("physical").at("physics"),y.at("payload").at("physical").at("physics")),"Zero-strength opt-in changed complete serialized native physics.");need(palette(passive_new)==palette(passive_old),"Zero-strength target velocity changed skin output.");}
+    Runtime tracking(d),holding(definition());step(tracking,{},2);step(holding,{},2);
+    const std::vector positive{activate(),source("shoulder",PhysicalRigDriveSource::Animation,.6),source("elbow",PhysicalRigDriveSource::Animation,.6)};
+    step(tracking,positive);step(holding,positive);double response=0;
+    for(unsigned n=0;n<12;++n){step(tracking);step(holding);const auto a=tracking.physical_part(rig,"arm"),b=holding.physical_part(rig,"arm");need(a&&b,"Native velocity comparison lost body.");response=std::max(response,difference(a->pose.rotation,b->pose.rotation));
+        for(double v:a->angular_velocity)need(std::isfinite(v),"Tracking response is nonfinite.");need(!a->at_angular_velocity_limit&&!a->at_linear_velocity_limit,"Tracking fixture hit native speed caps.");}
+    need(response>1e-4,"Opted-in interval velocity made no measurable native orientation difference.");
+}
+void velocity_saves_and_refusals(){
+    group="velocity-saves-and-refusals";const auto d=velocity_definition();Runtime r(d);step(r,{},2);step(r,{activate(),source("shoulder",PhysicalRigDriveSource::Animation,.7),source("elbow",PhysicalRigDriveSource::Animation,.4)});step(r,{},3);
+    const auto original=saved(r);const auto document=J::parse(original);const auto& physical=document.at("payload").at("physical");need(physical.at("version")==7&&physical.at("rigs")[0].at("animation").at("version")==2,"Velocity owner did not select extension7/target2.");
+    for(unsigned mutation=0;mutation<13;++mutation){auto bad=document;auto& row=bad["payload"]["physical"]["rigs"][0];auto& a=row["animation"];auto& first=a["joints"][0];
+        switch(mutation){
+        case 0:a["version"]=1;break;
+        case 1:first.erase("motion");break;
+        case 2:first["motion"]=nullptr;break;
+        case 3:first["motion"]["extra"]=true;break;
+        case 4:first["motion"]["angular_velocity"]={0.,0.};break;
+        case 5:first["motion"]["angular_velocity"][0]=.125;break;
+        case 6:first["motion"]["angular_velocity"][0]=pr::max_relative_angular_velocity+1;break;
+        case 7:first["motion"]["start_rotation"]={0.,0.,0.,2.};break;
+        case 8:first["motion"]["start_rotation"]=axis(2,2.);break;
+        case 9:first["source"]="manual";first["sample"]=nullptr;break;
+        case 10:row["membership"]["drives"][0].erase("target_angular_velocity");break;
+        case 11:row["membership"]["drives"][0]["target_angular_velocity"]={.125,0.,0.};break;
+        case 12:bad["payload"]["physical"]["version"]=6;break;
+        }
+        const auto text=reseal(std::move(bad));records().retain("velocity resealed mutation "+std::to_string(mutation),"negative",text);
+        rejects([&]{Runtime::validate_snapshot(d,content,text);},"Invalid motion archive validated.");rejects([&]{(void)Runtime::from_snapshot(d,content,text);},"Invalid motion archive restored.");equal("velocity refusal purity "+std::to_string(mutation),original,saved(r));
+    }
+    continuation(d,r,"complete target velocity",4);
+    step(r,{source("shoulder",PhysicalRigDriveSource::Manual,0),source("elbow",PhysicalRigDriveSource::Manual,0)});
+    const auto released=J::parse(saved(r)).at("payload").at("physical").at("rigs")[0];for(const auto& row:released.at("animation").at("joints"))need(row.at("motion").is_null()&&row.at("sample").is_null(),"Released source retained motion attribution.");
+    for(const auto& row:released.at("membership").at("drives"))need(!row.contains("target_angular_velocity"),"Released backend retained target velocity.");continuation(d,r,"released velocity owner",2);
+    // A distinct test clip spans exactly pi within one native interval, with
+    // both hinge endpoints individually legal. No ambiguous velocity is chosen.
+    auto ambiguous=velocity_definition();auto model_copy=std::make_shared<ModelAsset>(*ambiguous.entities[3].animation_rig->model);
+    auto& clip=model_copy->animations[0];clip.duration=1.f/120.f;
+    for(auto& channel:clip.channels)channel.times={0,clip.duration};
+    clip.channels[0].values={key(local_target(0,axis(2,.1))),key(local_target(0,axis(2,.1)))};
+    clip.channels[1].values={key(axis(0,-std::acos(-1.)/2)),key(axis(0,std::acos(-1.)/2))};
+    ambiguous.entities[3].animation_rig->model=model_copy;ambiguous.entities[3].physical_rig->profile.joints[1].limits=pr::Hinge{-2,2};
+    Runtime pi(ambiguous);step(pi,{},2);const auto old=saved(pi);bool pi_refused=false;
+    try{step(pi,{activate(),playback(0),source("elbow",PhysicalRigDriveSource::Animation,.5)});}catch(const std::exception& error){pi_refused=std::string(error.what()).find("ambiguous near a pi rotation")!=std::string::npos;}
+    need(pi_refused,"The actual ambiguous pi interval did not produce its specific refusal.");equal("ambiguous interval restores activation and entire state",old,saved(pi));
+    const auto dormant_definition=velocity_definition(pr::TargetLimitPolicy::Strict,true);Runtime empty(dormant_definition);const auto dormant=saved(empty);need(J::parse(dormant).at("payload").at("physical").at("version")==7,"Dormant velocity template lost extension7.");auto restored=Runtime::from_snapshot(dormant_definition,content,dormant);equal("dormant velocity template cold",dormant,saved(*restored));
+    RuntimeTransform at;at.position={5,200,0};const auto born=empty.change_structure(0,{{id(900),at}},{}).spawned.at(0);const auto mirror=restored->change_structure(0,{{id(900),at}},{}).spawned.at(0);need(born==mirror,"Velocity template allocator changed.");step(empty,{},2);step(*restored,{},2);const std::vector controls{activate(born),source("shoulder",PhysicalRigDriveSource::Animation,.5,born),source("elbow",PhysicalRigDriveSource::Animation,.3,born)};step(empty,controls);step(*restored,controls);equal("born velocity targets",saved(empty),saved(*restored));empty.change_structure(empty.structure_revision(),{}, {born});restored->change_structure(restored->structure_revision(),{}, {born});equal("retired velocity targets",saved(empty),saved(*restored));
+    auto explicit_false=definition();explicit_false.entities[3].physical_rig->animation_drive->velocity_tracking=false;Runtime omitted(definition()),disabled(explicit_false);step(omitted,{},2);step(disabled,{},2);equal("explicit false retains complete legacy archive",saved(omitted),saved(disabled));
+    const auto legacy=J::parse(saved(disabled)).at("payload").at("physical");need(legacy.at("version")==6&&legacy.at("rigs")[0].at("animation").at("version")==1,"Legacy target record changed version.");for(const auto& row:legacy.at("rigs")[0].at("animation").at("joints"))need(!row.contains("motion"),"Legacy v1 target acquired motion field.");
+}
+
+}
+int main(){try{need(Runtime::available(),"Actual native simulation is required.");clocks_targets_and_native_response();manual_hold_and_independent_playback();layers_rates_and_atomic_failures();fitting_and_batch_equivalence();save_contract_and_templates();velocity_intervals_and_switches();velocity_fades_and_native_response();velocity_saves_and_refusals();std::cout<<"Runtime physical animation: 8 groups, "<<checks<<" checks, "<<pairs<<" complete archive pairs passed; no balance or recovery claim.\n";return 0;}catch(const std::exception& e){std::cerr<<"Runtime physical animation group "<<group<<": "<<e.what()<<'\n';return 1;}}

@@ -69,7 +69,12 @@ enum class ProceduralPosePolicy { AnimatedOnly, GroundedAnimatedOnly };
 // Explicit policy for targets sampled by the independent animation player.
 // Manual joint targets keep their existing strict hard-limit admission.
 enum class TargetLimitPolicy { Strict, Fit };
-struct AnimationDrive { TargetLimitPolicy limit_policy=TargetLimitPolicy::Strict; };
+struct AnimationDrive {
+    TargetLimitPolicy limit_policy=TargetLimitPolicy::Strict;
+    // Optional fitted-interval angular velocity for the endpoint drive.
+    // False preserves the orientation-only controller and saved representation.
+    bool velocity_tracking=false;
+};
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;

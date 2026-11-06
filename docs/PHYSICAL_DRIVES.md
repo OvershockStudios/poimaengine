@@ -161,6 +161,12 @@ e         = rotate(q_parent_joint, 2*q_error.w*q_error.xyz)
 [I + h*(d + h*k)*A] * torque = k*e - (d + h*k)*omega
 ```
 
+This is the orientation-only path. Opted-in
+[animation velocity tracking](PHYSICAL_TARGET_VELOCITY.md) adds `d*v` to the
+right-hand side, with the fitted interval velocity transformed into world
+space by the current physical parent joint frame. Manual targets retain the
+orientation-only path.
+
 Hinges use the calibrated parent-joint X projection and its scalar effective
 inverse inertia. A common nonnegative scale caps each joint's active torque
 norm to `s*max_torque`; the child receives that world torque and the parent its

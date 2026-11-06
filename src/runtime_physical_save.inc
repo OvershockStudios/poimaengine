@@ -35,6 +35,21 @@ bool save_physical_animation_definition(const RuntimeDefinition& definition) {
     for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
     return false;
 }
+bool save_physical_velocity_definition(const RuntimeDefinition& definition) {
+    const auto enabled=[](const auto& entity){return entity.physical_rig&&entity.physical_rig->animation_drive&&
+        entity.physical_rig->animation_drive->velocity_tracking;};
+    if(std::any_of(definition.entities.begin(),definition.entities.end(),enabled))return true;
+    for(const auto& recipe:definition.templates)if(std::any_of(recipe.entities.begin(),recipe.entities.end(),enabled))return true;
+    return false;
+}
+void save_physical_velocity_controls(const RuntimePhysicalRigMembership& membership,const RuntimePhysicalAnimation* animation) {
+    for(const auto& drive:membership.drives) {
+        std::optional<physical_rig::Vec3> expected;
+        if(animation)for(const auto& joint:animation->joints())if(joint.name==drive.joint&&joint.motion)
+            expected=joint.motion->angular_velocity;
+        require(drive.target_angular_velocity==expected,"Physical target velocity differs from its complete animation interval or manual ownership.");
+    }
+}
 void save_physical_row_fields(const SaveJson& row,unsigned ownership,bool animation) {
     std::set<std::string> names{"entity","membership","pose"};
     if(ownership>=2)names.emplace("handoff");
@@ -184,16 +199,17 @@ template<class State>SaveJson save_physical_extension(const State& s) try {
                     "Physical animation target differs from its committed native control.");
             }
         }
+        save_physical_velocity_controls(row.membership,s.physical_owners.at(id)->animation.get());
         rigs.push_back(std::move(rig));
     }
-    return {{"version",std::uint32_t(animation?6:(save_physical_drive_definition(s.topology->live)?5:(grounded?4:(procedural?3:(handoffs?2:1)))))},
+    return {{"version",std::uint32_t(save_physical_velocity_definition(s.topology->live)?7:(animation?6:(save_physical_drive_definition(s.topology->live)?5:(grounded?4:(procedural?3:(handoffs?2:1))))))},
         {"bootstrap",physical_bootstrap_json::bootstrap_json(bootstrap,s.topology->live)},
         {"rigs",std::move(rigs)},{"constraint_order",physical_state_json::constraint_order_json(checkpoint.constraint_order)},
         {"owner",physical_bootstrap_json::owner_json(owner)},{"physics",std::move(physics)}};
 } catch(const std::invalid_argument& error) {throw std::runtime_error(std::string("Physical snapshot: ")+error.what());}
 void save_physical_extension_fields(const SaveJson& extension,const RuntimeDefinition& definition) {
     save_fields(extension,{"version","bootstrap","rigs","constraint_order","owner","physics"});
-    const auto expected=save_physical_animation_definition(definition)?6u:(save_physical_drive_definition(definition)?5u:save_physical_ownership_version(definition));
+    const auto expected=save_physical_velocity_definition(definition)?7u:(save_physical_animation_definition(definition)?6u:(save_physical_drive_definition(definition)?5u:save_physical_ownership_version(definition)));
     require(extension.at("version").is_number_unsigned() && extension.at("version")==expected,"Physical snapshot extension version differs from frozen ownership policy.");
     require(extension.at("rigs").is_array() && extension.at("rigs").size()<=RuntimeBodyIds::capacity,"Physical snapshot rig population exceeds its bound.");
 }
@@ -276,9 +292,12 @@ template<class State>auto save_physical_checkpoint(const State& s,const SaveJson
                         save_physical_animation_target(profile,joint.name,drive->target_rotation,joint.sample->target),
                         "Saved animation target differs from its physical control.");
                 }
+                save_physical_velocity_controls(row.membership,&target);
                 row.animation=target.checkpoint();
             }
+            else save_physical_velocity_controls(row.membership,nullptr);
         }
+        else save_physical_velocity_controls(row.membership,nullptr);
         if(configured.controller_handoff) {
             const auto found=bootstrap.handoffs.find(id);require(found!=bootstrap.handoffs.end(),"Physical handoff saved owner is missing.");
             row.handoff=found->second;

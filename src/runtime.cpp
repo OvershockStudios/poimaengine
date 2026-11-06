@@ -2223,9 +2223,13 @@ std::optional<PhysicalRigAnimationObservation> Runtime::physical_animation(const
     require(!player.pending()&&player.tick()==impl_->tick,"Physical animation observation requires a committed boundary.");
     PhysicalRigAnimationObservation result;result.entity=id;result.sampled_tick=player.tick();
     result.limit_policy=impl_->topology->definitions.at(id).physical_rig->animation_drive->limit_policy;
+    result.velocity_tracking=impl_->topology->definitions.at(id).physical_rig->animation_drive->velocity_tracking;
     result.playback=player.state(true);
-    for(const auto& joint:player.joints())result.joints.push_back({joint.name,
-        joint.source==RuntimePhysicalAnimation::Source::Manual?PhysicalRigDriveSource::Manual:PhysicalRigDriveSource::Animation,joint.sample});
+    for(const auto& joint:player.joints()) {
+        result.joints.push_back({joint.name,
+            joint.source==RuntimePhysicalAnimation::Source::Manual?PhysicalRigDriveSource::Manual:PhysicalRigDriveSource::Animation,joint.sample});
+        if(joint.motion)result.joints.back().motion=PhysicalRigAnimationMotionObservation{joint.motion->start_rotation,joint.motion->angular_velocity};
+    }
     return result;
 }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }

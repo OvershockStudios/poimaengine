@@ -7,9 +7,10 @@ contacts and skeleton. Animation supplies desired joint orientations; the drive
 strength, gains, torque caps and external forces determine how closely each
 joint follows them.
 
-This supplies physical animation targets. Balance, protective steps, locomotion
-forces, target-velocity feedforward and recovery to animation remain separate
-work. A driven character can still fall or fail to reach its target.
+Optional [target velocity tracking](PHYSICAL_TARGET_VELOCITY.md) lets damping
+follow motion between fitted poses. Balance, protective steps, locomotion
+forces and recovery to animation remain separate work. A driven character can
+still fall or fail to reach its target.
 
 ## Authoring and ownership
 

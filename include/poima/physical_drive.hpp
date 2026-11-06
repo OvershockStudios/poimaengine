@@ -13,6 +13,9 @@ using InverseInertia=std::array<double,9>; // Row-major symmetric world tensor, 
 struct Target {
     Quat rotation{0,0,0,1}; // Child joint relative to parent joint; XYZW.
     double strength=0;
+    // Desired child-minus-parent angular velocity in the parent joint's axes,
+    // rad/s. The rotation is the desired ENDPOINT of the upcoming step.
+    Vec3 angular_velocity{};
 };
 struct Response {
     Quat relative_rotation{0,0,0,1},error_rotation{0,0,0,1};
@@ -25,17 +28,31 @@ struct Response {
 void validate(const Profile&);
 void validate(const Target&);
 
-// A pure orientation-hold drive. Both joint frames and relative angular
+// Principal interval angular velocity, in the coordinates of the supplied
+// relative rotations: log(end*inverse(start))/dt. This is an interval secant,
+// not an analytic endpoint derivative or a reconstruction of hidden turns.
+// Both inputs must be finite unit quaternions; dt is seconds in (0,1]. Reject
+// abs(delta.w)<=1e-8, where the shortest rotation is ambiguous near pi, and
+// finite per-axis speeds beyond physical_rig::max_relative_angular_velocity.
+// No clamping, temporal filtering, limit projection or history mutation.
+Vec3 interval_velocity(Quat start,Quat end,double dt);
+
+// A locally implicit endpoint-tracking drive. Both joint frames and relative angular
 // velocity (child minus parent, rad/s) are world-space. Profiles use Nm/rad,
 // Nm*s/rad and Nm; dt is seconds in (0,1]. Target hard-limit admission belongs
 // to physical_rig::validate_target, before submitting a command.
 //
 // With k=strength*K, d=strength*D and A=I_parent^-1+I_child^-1, solves
-// [1+dt*(d+dt*k)*A] tau = k*error-(d+dt*k)*omega. Hinge evaluation uses the
+// [1+dt*(d+dt*k)*A] tau = k*error-(d+dt*k)*omega+d*target_omega,
+// where target_omega is rotated by the CURRENT physical parent joint frame.
+// The endpoint already includes target advancement; adding dt*k*target_omega
+// would predict that displacement twice. Zero target velocity preserves the
+// original orientation-hold arithmetic. Hinge evaluation uses the
 // calibrated parent-joint X scalar projection. This freezes inertia and
 // linearizes orientation for one step; it is not a coupled articulated solver
 // or a guarantee of nonlinear/contact stability or global convergence. The
 // smooth, sign-invariant chordal error is zero at exactly pi.
+// This adds no target acceleration, inverse dynamics, root force or balance.
 //
 // Matrices must be finite, exactly symmetric and positive semidefinite. No
 // averaging, eigenvalue clipping, inertia conditioning or target projection.

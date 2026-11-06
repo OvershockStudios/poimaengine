@@ -229,7 +229,7 @@ struct RuntimePhysicalRigBackend::Impl {
     physical_drive::Response drive_response(const RuntimePhysicalRigDriveState& state,double dt) const {
         const auto n=joint_index(state.joint);const auto& j=joints[n];const auto& d=definition.joints[n];
         if(!d.drive)throw std::invalid_argument("Physical joint has no authored drive.");
-        return physical_drive::evaluate(*d.drive,{state.target_rotation,state.strength},
+        return physical_drive::evaluate(*d.drive,{state.target_rotation,state.strength,state.target_angular_velocity.value_or(physical_rig::Vec3{})},
             joint_pose(j.parent,d.parent_frame),joint_pose(j.child,d.child_frame),
             subtract(vector(parts[j.child].body->GetAngularVelocity()),vector(parts[j.parent].body->GetAngularVelocity())),
             inverse_inertia(j.parent),inverse_inertia(j.child),std::holds_alternative<physical_rig::Hinge>(d.limits),dt);
@@ -243,6 +243,7 @@ struct RuntimePhysicalRigBackend::Impl {
             (void)physical_rig::validate_target(joint,value.target_rotation);
             if(!std::isfinite(value.strength)||value.strength<0||value.strength>1)
                 throw std::invalid_argument("Physical drive strength must be in [0,1].");
+            if(value.target_angular_velocity)physical_drive::validate({value.target_rotation,value.strength,*value.target_angular_velocity});
             result.push_back(value); // Preserve admitted saved bytes, including the quaternion.
         }
         if(next!=input.size())throw std::invalid_argument("Unexpected physical drive state.");
@@ -534,6 +535,7 @@ void RuntimePhysicalRigBackend::set_drive(const RuntimePhysicalRigDriveState& so
     RuntimePhysicalRigDriveState value=source;value.target_rotation=physical_rig::validate_target(joint,source.target_rotation);
     if(!std::isfinite(value.strength)||value.strength<0||value.strength>1)
         throw std::invalid_argument("Physical drive strength must be in [0,1].");
+    if(value.target_angular_velocity)physical_drive::validate({value.target_rotation,value.strength,*value.target_angular_velocity});
     auto found=std::find_if(impl_->drives.begin(),impl_->drives.end(),[&](const auto& state){return state.joint==value.joint;});
     if(found==impl_->drives.end())throw std::logic_error("Authored physical drive has no state.");
     // An exact committed readback is already admitted. Re-normalizing it may

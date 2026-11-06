@@ -16,10 +16,15 @@ struct PhysicalRigDriveSourceCommand {
     PhysicalRigDriveSource source=PhysicalRigDriveSource::Manual;
     double strength=0;
 };
+struct PhysicalRigAnimationMotionObservation {
+    physical_rig::Quat start_rotation{0,0,0,1};
+    physical_rig::Vec3 angular_velocity{};
+};
 struct PhysicalRigAnimationJointObservation {
     std::string name;
     PhysicalRigDriveSource source=PhysicalRigDriveSource::Manual;
     std::optional<physical_rig::TargetFit> sample;
+    std::optional<PhysicalRigAnimationMotionObservation> motion;
 };
 struct PhysicalRigAnimationObservation {
     std::string entity;
@@ -27,6 +32,7 @@ struct PhysicalRigAnimationObservation {
     physical_rig::TargetLimitPolicy limit_policy=physical_rig::TargetLimitPolicy::Strict;
     RuntimeAnimationState playback;
     std::vector<PhysicalRigAnimationJointObservation> joints;
+    bool velocity_tracking=false;
 };
 struct PhysicalRigDriveCommand {
     std::string joint;
@@ -82,6 +88,7 @@ struct PhysicalRigJointObservation {
     // This is not the historical torque applied during the preceding solve.
     physical_rig::Vec3 evaluated_drive_child_torque{};
     double drive_angular_error=0,drive_saturation_scale=1;
+    std::optional<physical_rig::Vec3> drive_target_angular_velocity;
 };
 struct PhysicalRigObservation {
     std::string entity;

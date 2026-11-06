@@ -67,12 +67,13 @@ def model():
     return glb(document, bytes(binary))
 
 
-def prepare(io):
+def prepare(io, velocity_tracking=False):
     source = io.directory/'original-analytic-targets.glb'; source.write_bytes(model())
     imported = io.rpc('asset.import', dict(source=f.native(source)))
     need((imported['nodes'], imported['animations'], imported['skins'], imported['primitives']) == (4, 3, 1, 1), 'Complete analytic target import membership')
     asset = imported['asset']; need(type(asset) is str and len(asset) == 64, 'Cooked target content address')
     profile = d.profile(); profile['animation_drive'] = dict(limit_policy='fit')
+    if velocity_tracking: profile['animation_drive']['velocity_tracking'] = True
     layer = dict(slot=1, mode='override', clip=0, time=0., speed=1., loop=False, playing=False,
                  weight=0., mask=[dict(node=2, weight=1.)])
     operations = [dict(op='asset.instantiate', id=RIG, name='Physical animation protocol', asset=asset),
@@ -90,10 +91,10 @@ def prepare(io):
 
 def discovery(io):
     full = io.rpc('world.describe', dict(view='full'))
-    need(full['schema_revision'] == 129, 'Physical animation schema revision')
+    need(full['schema_revision'] == 130, 'Physical animation schema revision')
     for method in ('runtime.physical_animation', 'runtime.step'):
         focused = io.rpc('world.describe', dict(view='method', name=method))
-        need(focused['partial'] is True and focused['view'] == 'method' and focused['schema_revision'] == 129 and
+        need(focused['partial'] is True and focused['view'] == 'method' and focused['schema_revision'] == 130 and
              exact(focused['methods'], {method: full['methods'][method]}), 'Focused method differs from complete discovery')
     query = full['methods']['runtime.physical_animation']
     need(query['additionalProperties'] is False and set(query['properties']) == {'session_id', 'tick', 'entity'} and
@@ -113,6 +114,10 @@ def discovery(io):
     component = io.rpc('world.describe', dict(view='component', name='PhysicalRig'))
     need(exact(component['components'], {'PhysicalRig': full['components']['PhysicalRig']}) and
          'animation_drive' in component['components']['PhysicalRig']['properties'], 'Focused opt-in component discovery')
+    authoring = component['components']['PhysicalRig']['properties']['animation_drive']
+    need(authoring['additionalProperties'] is False and set(authoring['required']) == {'limit_policy'} and
+         set(authoring['properties']) == {'limit_policy', 'velocity_tracking'} and
+         authoring['properties']['velocity_tracking']['type'] == 'boolean', 'Explicit optional Boolean velocity permission')
 
 
 def playback(clip=1, **changes):
@@ -123,9 +128,88 @@ def source(joint, selected='animation', strength=.6):
     return dict(entity=RIG, drive_source=dict(joint=joint, source=selected, strength=strength))
 
 
+def velocity_projection(state):
+    need(set(state) == {'entity','mode','body_count','joint_count','parts','joints'} and state['entity'] == RIG and
+         state['mode'] in ('animated','passive','driven') and type(state['body_count']) is int and state['body_count'] == 3 and
+         type(state['joint_count']) is int and state['joint_count'] == 2 and len(state['parts']) == 3 and len(state['joints']) == 2,
+         'Complete physical projection mode/membership')
+    for index,(p,name,mass) in enumerate(zip(state['parts'],('pelvis','arm','hand'),(4.,2.,1.))):
+        need(set(p) == f.PART_FIELDS and p['name'] == name and type(p['node']) is int and p['node'] == index and
+             p['node_entity'] == d.node(index) and type(p['body_id']) is int and 0 <= p['body_id'] <= 0x7fffffff,
+             'Actual part/source-node/native-body join')
+        for field,count in [('position',3),('rotation',4),('linear_velocity',3),('angular_velocity',3),('inertia',9)]:
+            need(type(p[field]) is list and len(p[field]) == count and all(type(x) is float and math.isfinite(x) for x in p[field]), 'Part typed vector: '+field)
+        for field in ('mass','max_linear_velocity','max_angular_velocity','linear_damping','angular_damping','friction','restitution'):
+            need(type(p[field]) is float and math.isfinite(p[field]), 'Part typed number: '+field)
+        need(p['mass'] == mass, 'Exact analytic powers-of-two mass')
+        for field in ('enrolled','active','sleeping','at_linear_velocity_limit','at_angular_velocity_limit'):
+            need(type(p[field]) is bool, 'Part flag coerced: '+field)
+        need(p['enrolled'] == (state['mode'] != 'animated') and p['sleeping'] == (p['enrolled'] and not p['active']), 'Physical enrollment/sleep semantics')
+    need(len({p['body_id'] for p in state['parts']}) == 3,'Physical parts alias native identities')
+    for index,j in enumerate(state['joints']):
+        need(set(j) == f.JOINT_FIELDS|{'drive'} and (j['name'],j['parent'],j['child'],j['hinge']) ==
+             (('shoulder','pelvis','arm',False) if index == 0 else ('elbow','arm','hand',True)), 'Complete authored joint membership')
+        need(type(j['hinge']) is bool,'Joint hinge flag coerced')
+        vectors={'relative_rotation':4,'relative_angular_velocity':3,'evaluated_passive_child_torque':3}
+        for key,count in vectors.items():
+            need(type(j[key]) is list and len(j[key])==count and all(type(x) is float and math.isfinite(x) for x in j[key]),'Complete joint typed vector: '+key)
+        for key in f.JOINT_FIELDS-{'name','parent','child','hinge'}-set(vectors):
+            need(type(j[key]) is float and math.isfinite(j[key]),'Complete joint typed number: '+key)
+        drive = j['drive']
+        expected = {'target_rotation','strength','stiffness','damping','max_torque','evaluated_child_torque','angular_error','saturation_scale'}
+        if 'target_angular_velocity' in drive:
+            expected.add('target_angular_velocity')
+            need(type(drive['target_angular_velocity']) is list and len(drive['target_angular_velocity']) == 3 and
+                 all(type(x) is float and math.isfinite(x) for x in drive['target_angular_velocity']), 'Complete typed native target velocity')
+        need(set(drive) == expected, 'Complete drive diagnostics with the sole optional velocity extension')
+        for key,count in [('target_rotation',4),('evaluated_child_torque',3)]:
+            need(type(drive[key]) is list and len(drive[key]) == count and all(type(x) is float and math.isfinite(x) for x in drive[key]), 'Drive typed vector')
+        for key in ('strength','stiffness','damping','max_torque','angular_error','saturation_scale'):
+            need(type(drive[key]) is float and math.isfinite(drive[key]), 'Drive typed number')
+        need((drive['stiffness'],drive['damping'],drive['max_torque']) == (60.,6.,10.) and 0 <= drive['strength'] <= 1 and
+             0 <= drive['saturation_scale'] <= 1 and math.hypot(*drive['evaluated_child_torque']) <= drive['strength']*10+1e-10, 'Authored gain/strength/torque bounds')
+        if drive['strength'] == 0: need(exact(drive['evaluated_child_torque'],[0.0]*3), 'Zero drive produced active torque')
+    return state
+
+
+def motion_contract(motion, endpoint):
+    """Independent principal-rotation secant, without changing retained values."""
+    need(type(motion) is dict and set(motion) == {'start_rotation', 'angular_velocity'}, 'Closed fitted-interval motion observation')
+    start, velocity = motion['start_rotation'], motion['angular_velocity']
+    need(type(start) is list and len(start) == 4 and all(type(x) is float and math.isfinite(x) for x in start) and
+         abs(sum(x*x for x in start)-1) <= 2e-12, 'Typed unit interval start')
+    need(type(velocity) is list and len(velocity) == 3 and all(type(x) is float and math.isfinite(x) for x in velocity), 'Typed finite interval velocity')
+    # end * inverse(start), in the parent joint frame; one simulation tick.
+    x,y,z,w = endpoint; a,b,c,s = (-start[0], -start[1], -start[2], start[3])
+    delta = [w*a+x*s+y*c-z*b, w*b-x*c+y*s+z*a, w*c+x*b-y*a+z*s, w*s-x*a-y*b-z*c]
+    if delta[3] < 0: delta = [-v for v in delta]
+    sine = math.hypot(*delta[:3]); angle = 2*math.atan2(sine, delta[3])
+    expected = [v*angle*60/sine for v in delta[:3]] if sine else [0.0]*3
+    need(max(abs(a-b) for a,b in zip(expected, velocity)) <= 1e-9, 'Reported angular velocity differs from fitted interval endpoints')
+
+
+def analytic_shoulder(c, state, speed):
+    """The fixture's first segment rotates around X by0.4 radians per second."""
+    p = state['playback']; joint = state['joints'][0]; end = p['time']; start = end-speed/60
+    # The sole authored layer masks node2 only; shoulder node1 is unaffected.
+    need(p['clip'] == 1 and p['speed'] == speed and p['transition'] is None and
+         0 < start < end < 1, 'Independent constant-rate curve interval')
+    for observed, t in ((joint['motion']['start_rotation'], start), (joint['sample']['target_rotation'], end)):
+        expected = [math.sin(.4*t/2), 0.0, 0.0, math.cos(.4*t/2)]
+        # Source keys are explicitly float32, so compare to the authored
+        # analytic curve with its quantization error rather than rewriting them.
+        need(max(abs(a-b) for a,b in zip(observed, expected)) <= 1e-7, 'Fitted target does not follow the independently authored X curve')
+    expected = [.4*speed, 0.0, 0.0]
+    need(max(abs(a-b) for a,b in zip(joint['motion']['angular_velocity'], expected)) <= 2e-6,
+         'Actual interval velocity does not match independent curve/tick/rate')
+    c.report['velocity_checks'].append(dict(tick=c.tick, label='analytic shoulder curve', start_time=start, end_time=end,
+        expected_radians_per_second=expected, actual=copy.deepcopy(joint['motion'])))
+
+
 class Consumer:
     def __init__(self, io, report, saves):
         self.io, self.report, self.saves, self.session, self.tick = io, report, saves, uid(), 0
+        self.velocity_tracking = report.get('velocity_tracking', False)
 
     def query(self, method='runtime.physical_animation', entity=RIG, **flags):
         value = self.io.rpc(method, dict(session_id=self.session, tick=self.tick, entity=entity, **flags))
@@ -134,21 +218,27 @@ class Consumer:
         return value['state']
 
     def physical(self):
-        return d.projection(self.query('runtime.physical_rig', include_parts=True, include_joints=True))
+        state = self.query('runtime.physical_rig', include_parts=True, include_joints=True)
+        return velocity_projection(state) if self.velocity_tracking else d.projection(state)
 
     def observe(self, label):
         state = self.query(); physical = self.physical()
-        need(set(state) == {'entity', 'sampled_tick', 'limit_policy', 'playback', 'joints'} and state['entity'] == RIG and
+        fields = {'entity', 'sampled_tick', 'limit_policy', 'playback', 'joints'} | ({'velocity_tracking'} if self.velocity_tracking else set())
+        need(set(state) == fields and state['entity'] == RIG and
              type(state['sampled_tick']) is int and state['sampled_tick'] == self.tick and state['limit_policy'] == 'fit', 'Complete physical-animation observation')
+        if self.velocity_tracking: need(state['velocity_tracking'] is True, 'Explicit observed velocity permission')
         p = state['playback']
         need(set(p) == {'clip', 'time', 'speed', 'loop', 'playing', 'duration', 'transition', 'layers'} and
              len(p['layers']) == 1 and p['layers'][0]['slot'] == 1, 'Complete base/layer observation shape')
         need([j['name'] for j in state['joints']] == ['shoulder', 'elbow'], 'Complete configured drive order')
         for joint, native in zip(state['joints'], physical['joints']):
-            need(set(joint) == {'name', 'source', 'sample'} and joint['source'] in ('manual', 'animation'), 'Exact source observation fields')
+            need(set(joint) == {'name', 'source', 'sample'} | ({'motion'} if self.velocity_tracking else set()) and
+                 joint['source'] in ('manual', 'animation'), 'Exact source observation fields')
             sample = joint['sample']
             if joint['source'] == 'manual':
-                need(sample is None, 'Manual source retained misleading current animation attribution'); continue
+                need(sample is None, 'Manual source retained misleading current animation attribution')
+                if self.velocity_tracking: need(joint['motion'] is None and 'target_angular_velocity' not in native['drive'], 'Manual hold retained automatic velocity ownership')
+                continue
             need(type(sample) is dict and set(sample) == {'requested_rotation', 'target_rotation', 'correction_radians', 'chart_condition',
                  'hinge_projected', 'twist_clamped', 'swing_clamped'}, 'Complete fit diagnostics')
             for key in ('requested_rotation', 'target_rotation'):
@@ -161,6 +251,9 @@ class Consumer:
             # compare orientations using its documented unit-input tolerance.
             dot = abs(sum(x*y for x, y in zip(sample['target_rotation'], native['drive']['target_rotation'])))
             need(abs(dot-1) <= 2e-12, 'Committed fitted target differs from effective native orientation')
+            if self.velocity_tracking:
+                motion_contract(joint['motion'], sample['target_rotation'])
+                need(exact(joint['motion']['angular_velocity'], native['drive']['target_angular_velocity']), 'Every committed target velocity joins the actual backend exactly')
         self.report['observations'].append(dict(label=label, tick=self.tick, target=copy.deepcopy(state), physical=copy.deepcopy(physical)))
         return state
 
@@ -178,11 +271,22 @@ class Consumer:
         payload = d.original_member(d.original_member(raw, 'snapshot'), 'payload')
         need(hashlib.sha256(payload.encode()).hexdigest() == value['snapshot']['sha256'], 'Original unreformatted snapshot checksum')
         physical = value['snapshot']['payload']['physical']
-        need(physical['version'] == 6 and len(physical['rigs']) == 1 and physical['rigs'][0]['entity'] == RIG, 'Complete target physical extension6')
+        need(physical['version'] == (7 if self.velocity_tracking else 6) and len(physical['rigs']) == 1 and physical['rigs'][0]['entity'] == RIG, 'Complete authored physical extension version')
         target = physical['rigs'][0]['animation']; player = target['player']
+        need(target['version'] == (2 if self.velocity_tracking else 1), 'Exact authored target save version')
         need(target['tick'] == self.tick and player['format'] == 'poima.animation-target-state' and player['version'] == 1 and
              player['tick'] == self.tick and player['entity'] == RIG and player['history']['current']['tick'] == self.tick and
              len(player['layer_history']) == 1 and player['layer_history'][0]['current']['tick'] == self.tick, 'Complete independently sampled target histories')
+        controls = physical['rigs'][0]['membership']['drives']
+        need([j['joint'] for j in target['joints']] == [j['joint'] for j in controls] == ['shoulder', 'elbow'], 'Complete saved target and backend membership')
+        for joint, control in zip(target['joints'], controls):
+            need(set(joint) == {'joint', 'source', 'sample'} | ({'motion'} if self.velocity_tracking else set()), 'Exact saved target fields')
+            selected = self.velocity_tracking and joint['source'] == 'animation'
+            need(set(control) == {'joint', 'target_rotation', 'strength'} | ({'target_angular_velocity'} if selected else set()), 'Exact saved native velocity ownership')
+            if selected:
+                motion_contract(joint['motion'], joint['sample']['target'])
+                need(exact(joint['motion']['angular_velocity'], control['target_angular_velocity']), 'Complete saved backend and interval vector join')
+            elif self.velocity_tracking: need(joint['motion'] is None, 'Saved manual joint retained a motion interval')
         row.update(label=label, archive=value, manifest=str(self.saves/('slot-'+slot)/'current.json'))
         return copy.deepcopy(row)
 
@@ -219,6 +323,35 @@ def released_future(c, label):
     c.observe(label); return c.archive(label+' complete')
 
 
+def velocity_cases(c):
+    origin = c.archive('velocity cases complete origin')
+    c.step([source('shoulder', strength=0.), source('elbow', 'manual', 0.),
+            dict(entity=RIG, animation=playback(0, time=0., playing=False))])
+    still = c.observe('instant clip replacement has no inherited velocity spike')
+    need(exact(still['joints'][0]['motion']['angular_velocity'], [0.0]*3) and
+         exact(still['joints'][0]['motion']['start_rotation'], still['joints'][0]['sample']['target_rotation']),
+         'Stationary replacement differentiated the unrelated previously committed clip')
+    c.step([dict(entity=RIG, animation=playback(time=.25, speed=.5))])
+    zero = c.observe('zero strength still samples moving target velocity'); analytic_shoulder(c, zero, .5)
+    native = c.physical()
+    need(native['mode'] == 'passive' and all(j['drive']['strength'] == 0. and exact(j['drive']['evaluated_child_torque'], [0.0]*3)
+         for j in native['joints']), 'Zero-strength moving targets produced active drive torque')
+    saved = c.archive('zero-strength automatic velocity checkpoint')
+    c.step(ticks=2); expected = c.archive('zero-strength automatic future')
+    c.load(saved); pair(c.report, 'whole zero-strength automatic restore', saved, c.archive('zero-strength restored'))
+    c.step(ticks=2); pair(c.report, 'whole zero-strength automatic continuation', expected, c.archive('zero-strength repeated future'))
+    c.step([dict(entity=RIG, animation_rate=dict(speed=0.))]); stopped = c.observe('zero rate keeps automatic ownership with zero velocity')
+    need(exact(stopped['joints'][0]['motion']['angular_velocity'], [0.0]*3), 'Stopped playback retained target angular velocity')
+    held = c.physical()['joints'][0]['drive']['target_rotation']
+    c.step([source('shoulder', 'manual', 0.)]); c.observe('manual source clears only automatic velocity ownership')
+    need(exact(c.physical()['joints'][0]['drive']['target_rotation'], held), 'Manual source changed held orientation')
+    c.step([source('shoulder', strength=.6), dict(entity=RIG, animation=playback(time=.25, speed=2.))])
+    resumed = c.observe('explicit source and rate restart use post-command interval'); analytic_shoulder(c, resumed, 2.)
+    c.load(origin); pair(c.report, 'velocity branch restores complete original continuation state', origin, c.archive('velocity cases origin restored'))
+    c.report['velocity_checks'].append(dict(label='replacement, zero strength, zero rate and manual source', tick=c.tick,
+        zero_strength_and_zero_rate_verified=True, original_complete_state_restored_after_branch=True))
+
+
 def exercise(c):
     started = c.io.rpc('runtime.start', dict(session_id=c.session, revision=2))
     need(started['started'] is True and started['tick'] == 0, 'Initial native target session')
@@ -232,11 +365,14 @@ def exercise(c):
     rejection(c, 'target control before physical ownership', [dict(entity=RIG, animation=playback())], -32040)
     commands = [dict(source('shoulder'), activate=True, animation=playback(time=.25)), source('elbow')]
     request, old_tick = uid(), c.tick; accepted = c.step(commands, request=request)
-    c.observe('activated and streamed legal targets'); before = c.archive('before retry')
+    state = c.observe('activated and streamed legal targets')
+    if c.velocity_tracking: analytic_shoulder(c, state, 1.)
+    before = c.archive('before retry')
     need(exact(c.step(commands, request=request, expected_tick=old_tick), dict(accepted, replayed=True)), 'Exact physical target retry receipt')
     c.step([dict(source('shoulder'), activate=True)], request=request, expected_tick=old_tick, error=-32010)
     pair(c.report, 'target retry and mismatched retry preserve whole state', before, c.archive('after retry'))
     c.step(ticks=5); state = c.observe('advancing shoulder target')
+    if c.velocity_tracking: analytic_shoulder(c, state, 1.)
     need(state['playback']['clip'] == 1 and state['joints'][0]['sample']['requested_rotation'][0] > .01, 'Target rotation did not follow original curve')
     need(any(math.hypot(*part['angular_velocity']) > 1e-5 for part in c.physical()['parts']), 'Target controls produced no native angular response')
     ordinary = c.io.rpc('runtime.entity', dict(session_id=c.session, tick=c.tick, id=RIG))
@@ -268,6 +404,7 @@ def exercise(c):
     reference = future(c, 'driven future reference'); c.load(driven)
     pair(c.report, 'warm driven complete restore', driven, c.archive('warm driven restored'))
     pair(c.report, 'warm driven complete future', reference, future(c, 'warm driven future'))
+    if c.velocity_tracking: velocity_cases(c)
     return driven, reference
 
 
@@ -275,8 +412,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('binary', type=Path); parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--velocity-tracking', action='store_true', help='Opt into fitted-interval velocity; retain the complete legacy sequence and add independent velocity checks.')
     args = parser.parse_args(); output = args.output.resolve(); output.mkdir(parents=True, exist_ok=False)
     report = dict(format='poima.physical-animation-protocol.v1', passed=False, calls=[], owners=[], archives=[], whole_pairs=[], observations=[],
+        velocity_tracking=args.velocity_tracking, velocity_checks=[],
         limits=dict(seconds=SECONDS, rpc=CALLS, recorded_bytes=32*MIB, evidence_bytes=64*MIB),
         limitations=['Tiny deterministic analytic fixture; no original-character, rendering, motion-quality, performance, managed gameplay or NativeAOT claim.',
                     'Full save and continuation comparisons are same-platform/image, with no excluded fields. External owner must establish process-tree closure.'])
@@ -287,7 +426,7 @@ def main():
                  ROOT/'tests/managed_physical_gameplay_contract.py', ROOT/'tests/animation_fixture.py', ROOT/'tests/gltf_fixture.py', args.binary.resolve()]
         for path in files: need(path.is_file(), 'Required protocol input absent: '+str(path)); pins[str(path)] = sha(path)
         report['input_pins'] = copy.deepcopy(pins)
-        io = f.Session(output/'original-owner'); discovery(io); report['authoring'] = prepare(io)
+        io = f.Session(output/'original-owner'); discovery(io); report['authoring'] = prepare(io, args.velocity_tracking)
         for name in ('source', 'package'):
             path = Path(report['authoring'][name]); pins[str(path)] = sha(path)
         report['input_pins'] = copy.deepcopy(pins)

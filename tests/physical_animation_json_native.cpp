@@ -56,6 +56,17 @@ void roundtrips() {
             need(pr::configuration_json(parsed).dump()==legacy.dump(),"Removing only the opt-in changed unrelated fields.");
         }
     }
+    for(const char* policy:{"strict","fit"}) {
+        auto tracking=configured(policy);tracking["animation_drive"]["velocity_tracking"]=true;
+        const auto native=pr::parse_configuration(tracking);
+        need(native.animation_drive->velocity_tracking&&pr::configuration_json(native).dump()==tracking.dump(),"Velocity policy complete roundtrip differs.");
+        tracking["animation_drive"]["velocity_tracking"]=false;
+        const auto legacy=pr::parse_configuration(tracking);
+        need(!legacy.animation_drive->velocity_tracking&&pr::configuration_json(legacy).dump()==configured(policy).dump(),"Explicit false must canonicalize to omitted legacy policy.");
+        for(const auto& bad:Json::array({0,1,0.0,"true",nullptr,Json::array(),Json::object()})) {
+            tracking["animation_drive"]["velocity_tracking"]=bad;reject_json(tracking);
+        }
+    }
     auto passive_profile=original();passive_profile["joints"][0].erase("drive");
     need(pr::configuration_json(pr::parse_configuration(passive_profile)).dump()==passive_profile.dump(),
         "Original profile without any drive changed.");
@@ -107,8 +118,8 @@ void schema_contract() {
     need(schema.at("required")==Json::array({"initial_mode","joints","parts","root"}) && schema.at("additionalProperties")==false,
         "Animation opt-in changed the required legacy fields or admitted unknown root fields.");
     need(animation.at("type")=="object" && animation.at("additionalProperties")==false &&
-        animation.at("required")==Json::array({"limit_policy"}) && animation.at("properties").size()==1,
-        "Animation drive schema does not require its exact one-field object.");
+        animation.at("required")==Json::array({"limit_policy"}) && animation.at("properties").size()==2,
+        "Animation drive schema must require limit_policy and admit only optional velocity_tracking.");
     const auto& policy=animation.at("properties").at("limit_policy");
     need(policy.at("type")=="string" && policy.at("enum")==Json::array({"strict","fit"}) && !policy.contains("default"),
         "Policy schema silently defaults or coerces the explicit authored choice.");

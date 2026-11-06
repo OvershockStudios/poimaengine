@@ -105,10 +105,14 @@ Configuration parse_configuration(const nlohmann::json& value) {
         result.procedural_pose=policy=="animated_only" ? ProceduralPosePolicy::AnimatedOnly : ProceduralPosePolicy::GroundedAnimatedOnly;
     }
     if(has_animation) {
-        const auto& animation=value.at("animation_drive");fields(animation,{"limit_policy"});
+        const auto& animation=value.at("animation_drive");fields(animation,{"limit_policy"},{"velocity_tracking"});
         const auto policy=text(animation.at("limit_policy"));
         need(policy=="strict" || policy=="fit","Physical animation drive limit_policy must be strict or fit.");
         result.animation_drive=AnimationDrive{policy=="strict" ? TargetLimitPolicy::Strict : TargetLimitPolicy::Fit};
+        if(animation.contains("velocity_tracking")) {
+            need(animation.at("velocity_tracking").is_boolean(),"Physical animation velocity_tracking must be a Boolean.");
+            result.animation_drive->velocity_tracking=animation.at("velocity_tracking").get<bool>();
+        }
     }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
@@ -159,6 +163,7 @@ nlohmann::json configuration_json(const Configuration& value) {
     if(value.controller_handoff)result["controller_handoff"]={{"actor",value.controller_handoff->actor},{"follow","translate_keep_heading"}};
     if(value.procedural_pose)result["procedural_pose"]=*value.procedural_pose==ProceduralPosePolicy::AnimatedOnly ? "animated_only" : "grounded_animated_only";
     if(value.animation_drive)result["animation_drive"]={{"limit_policy",value.animation_drive->limit_policy==TargetLimitPolicy::Strict ? "strict" : "fit"}};
+    if(value.animation_drive&&value.animation_drive->velocity_tracking)result["animation_drive"]["velocity_tracking"]=true;
     return result;
 }
 
@@ -197,6 +202,8 @@ nlohmann::json configuration_schema() {
         {"description","Optional final procedural pose ownership while Animated, requiring controller_handoff and initial_mode=animated. animated_only admits manual IK, including zero slots, and rejects every configured grounding profile. grounded_animated_only requires at least one configured grounding slot and also admits manual slots. Only the own AnimationRig may configure IK, with every chain root/middle/end node mapped to physical parts. Both policies reject root motion, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted. AnimationRig slot membership and cross-entity ownership are additionally validated against the complete world or template."}};
     result["properties"]["animation_drive"]=object({
         {"limit_policy",{{"type","string"},{"enum",{"strict","fit"}}}}});
+    result["properties"]["animation_drive"]["properties"]["velocity_tracking"]={{"type","boolean"},
+        {"description","Optional fitted-interval angular velocity tracking. Omitted/false preserves orientation-only drives. Uses post-command fitted start/end poses for one fixed tick; discontinuous clip replacement does not differentiate unrelated old poses. Ambiguous near-pi intervals reject. No balance or acceleration feedforward."}};
     result["properties"]["animation_drive"]["description"]="Optional independent animation target player using the same frozen model and initial base/layers. Requires at least one joint with an authored drive profile. Strict rejects sampled targets outside hard limits; fit explicitly permits fitting sampled targets to those limits. Manual target admission stays strict. Authoring this field does not select animation as a joint source, activate physics or change pose ownership; runtime source controls are explicit. Omission preserves the existing profile without a target player.";
     Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
     linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";

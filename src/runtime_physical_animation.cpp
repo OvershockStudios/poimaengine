@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "runtime_physical_animation.hpp"
+#include "poima/physical_drive.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -59,6 +60,33 @@ bool same_fit(const physical_rig::TargetFit& original,const physical_rig::Target
         original.hinge_projected==recomputed.hinge_projected&&
         original.twist_clamped==recomputed.twist_clamped&&original.swing_clamped==recomputed.swing_clamped;
 }
+Json motion_json(const RuntimePhysicalAnimation::Motion& value) {
+    return {{"start_rotation",value.start_rotation},{"angular_velocity",value.angular_velocity}};
+}
+RuntimePhysicalAnimation::Motion read_motion(const Json& value) {
+    fields(value,{"start_rotation","angular_velocity"});
+    RuntimePhysicalAnimation::Motion result;result.start_rotation=quaternion(value.at("start_rotation"));
+    const auto& velocity=value.at("angular_velocity");
+    require(velocity.is_array()&&velocity.size()==3,"Physical target angular velocity requires three numbers.");
+    for(std::size_t i=0;i<3;++i) {
+        result.angular_velocity[i]=number(velocity[i]);
+        require(std::abs(result.angular_velocity[i])<=physical_rig::max_relative_angular_velocity,
+            "Physical target angular velocity exceeds its admitted bound.");
+    }
+    return result;
+}
+void validate_motion(const physical_rig::Joint& joint,const physical_rig::TargetFit& sample,
+    const RuntimePhysicalAnimation::Motion& motion) {
+    (void)physical_rig::validate_target(joint,motion.start_rotation);
+    const auto expected=physical_drive::interval_velocity(motion.start_rotation,sample.target,Runtime::fixed_dt);
+    // Reader reconstruction resolution in rad/s, not a trajectory tolerance or
+    // cross-platform future-equality guarantee. Retain admitted saved values.
+    for(std::size_t i=0;i<3;++i)
+        require(std::isfinite(motion.angular_velocity[i])&&
+            std::abs(motion.angular_velocity[i])<=physical_rig::max_relative_angular_velocity&&
+            std::abs(motion.angular_velocity[i]-expected[i])<=1e-10,
+            "Saved physical target angular velocity differs from its retained fitted interval.");
+}
 }
 
 RuntimePhysicalAnimation::RuntimePhysicalAnimation(const RuntimeAnimations& source,
@@ -79,7 +107,7 @@ RuntimePhysicalAnimation::RuntimePhysicalAnimation(const RuntimeAnimations& sour
     };
     for(std::size_t index=0;index<nodes.size();++index)visit(index);
     for(const auto& part:configuration_.profile.parts)require(part.node<nodes.size(),"Physical animation part node is absent.");
-    for(const auto& joint:configuration_.profile.joints)if(joint.drive)joints_.push_back({joint.name,Source::Manual,{}});
+    for(const auto& joint:configuration_.profile.joints)if(joint.drive)joints_.push_back({joint.name,Source::Manual,{},{}});
     player_=source.make_target_player(rig_);
     (void)player_->sample(tick_);
 }
@@ -98,7 +126,7 @@ void RuntimePhysicalAnimation::select(const std::string& name,Source source) {
     require(source==Source::Manual||source==Source::Animation,"Unknown physical target source.");
     const auto found=std::find_if(joints_.begin(),joints_.end(),[&](const auto& joint){return joint.name==name;});
     require(found!=joints_.end(),"Physical target source needs a configured drive joint.");
-    if(found->source!=source) { found->source=source;found->sample.reset();pending_=true; }
+    if(found->source!=source) { found->source=source;found->sample.reset();found->motion.reset();pending_=true; }
 }
 RuntimePhysicalAnimation::Source RuntimePhysicalAnimation::source(const std::string& name) const {
     const auto found=std::find_if(joints_.begin(),joints_.end(),[&](const auto& joint){return joint.name==name;});
@@ -115,7 +143,7 @@ std::vector<RuntimePhysicalAnimation::Joint> RuntimePhysicalAnimation::evaluate(
     }
     std::vector<Joint> result(controls.begin(),controls.end());
     for(auto& row:result) {
-        row.sample.reset();if(row.source==Source::Manual)continue;
+        row.sample.reset();row.motion.reset();if(row.source==Source::Manual)continue;
         require(row.source==Source::Animation,"Unknown physical target source.");
         const auto& profile=configuration_.profile;
         const auto joint=std::find_if(profile.joints.begin(),profile.joints.end(),[&](const auto& x){return x.name==row.name;});
@@ -132,8 +160,20 @@ void RuntimePhysicalAnimation::advance(std::uint64_t tick) {
     require(tick_!=std::numeric_limits<std::uint64_t>::max()&&tick==tick_+1,"Physical animation must advance exactly one fixed tick.");
     auto before=player_->checkpoint();
     try {
+        // Accepted playback/rate/source commands define both endpoints. Sample
+        // the start before sample(next) discards completed fades; never infer
+        // velocity from an unrelated previously committed clip or manual pose.
+        const auto start=configuration_.animation_drive->velocity_tracking?
+            evaluate(*player_,joints_,tick_):std::vector<Joint>{};
         (void)player_->sample(tick);
         auto candidate=evaluate(*player_,joints_,tick);
+        if(configuration_.animation_drive->velocity_tracking)
+            for(std::size_t index=0;index<candidate.size();++index)if(candidate[index].sample) {
+                require(start[index].sample.has_value(),"Physical target interval start has no selected animation sample.");
+                const auto rotation=start[index].sample->target;
+                candidate[index].motion=Motion{rotation,
+                    physical_drive::interval_velocity(rotation,candidate[index].sample->target,Runtime::fixed_dt)};
+            }
         joints_.swap(candidate);tick_=tick;pending_=false;
     } catch(...) { player_->restore(before);throw; }
 }
@@ -160,26 +200,39 @@ void RuntimePhysicalAnimation::restore(Checkpoint checkpoint) {
 }
 std::string RuntimePhysicalAnimation::save() const {
     require(!pending_,"Physical animation cannot save uncommitted controls.");
+    const bool velocity=configuration_.animation_drive->velocity_tracking;
     const auto expected=evaluate(*player_,joints_,tick_);Json rows=Json::array();
     for(std::size_t index=0;index<joints_.size();++index) {
         const auto& row=joints_[index];const auto& check=expected[index];
         require(row.sample.has_value()==check.sample.has_value()&&(!row.sample||same_fit(*row.sample,*check.sample)),
             "Physical animation sample differs from its committed clock.");
-        rows.push_back({{"joint",row.name},{"source",row.source==Source::Manual?"manual":"animation"},
-            {"sample",row.sample?fit_json(*row.sample):Json(nullptr)}});
+        require(row.motion.has_value()==(velocity&&row.sample.has_value()),
+            "Physical target motion membership differs from authored source ownership.");
+        if(row.motion) {
+            const auto& profile=configuration_.profile;
+            const auto joint=std::find_if(profile.joints.begin(),profile.joints.end(),[&](const auto& p){return p.name==row.name;});
+            require(joint!=profile.joints.end(),"Physical target motion has no configured joint.");
+            validate_motion(*joint,*row.sample,*row.motion);
+        }
+        Json serialized={{"joint",row.name},{"source",row.source==Source::Manual?"manual":"animation"},
+            {"sample",row.sample?fit_json(*row.sample):Json(nullptr)}};
+        if(velocity)serialized["motion"]=row.motion?motion_json(*row.motion):Json(nullptr);
+        rows.push_back(std::move(serialized));
     }
-    Json value={{"version",1},{"entity",rig_},{"tick",tick_},{"player",Json::parse(player_->save_target_state(tick_))},{"joints",std::move(rows)}};
+    Json value={{"version",velocity?2:1},{"entity",rig_},{"tick",tick_},{"player",Json::parse(player_->save_target_state(tick_))},{"joints",std::move(rows)}};
     auto result=value.dump();require(result.size()<=maximum_bytes,"Physical animation save exceeds its byte bound.");return result;
 }
 void RuntimePhysicalAnimation::load(const std::string& source,std::uint64_t tick) {
     require(source.size()<=maximum_bytes,"Physical animation save exceeds its byte bound.");
     const auto document=Json::parse(source);fields(document,{"version","entity","tick","player","joints"});
-    require(integer(document.at("version"))==1&&integer(document.at("tick"))==tick&&
+    const bool velocity=configuration_.animation_drive->velocity_tracking;
+    require(integer(document.at("version"))==(velocity?2u:1u)&&integer(document.at("tick"))==tick&&
         document.at("entity").is_string()&&document.at("entity").get<std::string>()==rig_,"Physical animation save identity/version/tick differs.");
     const auto& rows=document.at("joints");require(rows.is_array()&&rows.size()==joints_.size(),"Physical animation joint population differs.");
     auto joints=joints_;
     for(std::size_t index=0;index<rows.size();++index) {
-        const auto& row=rows[index];fields(row,{"joint","source","sample"});
+        const auto& row=rows[index];
+        if(velocity)fields(row,{"joint","source","sample","motion"});else fields(row,{"joint","source","sample"});
         require(row.at("joint").is_string()&&row.at("joint").get<std::string>()==joints[index].name,
             "Physical animation joint order/name differs.");
         require(row.at("source").is_string(),"Physical animation source must be a string.");
@@ -187,6 +240,12 @@ void RuntimePhysicalAnimation::load(const std::string& source,std::uint64_t tick
         joints[index].source=name=="manual"?Source::Manual:Source::Animation;
         require(row.at("sample").is_null()==(joints[index].source==Source::Manual),"Physical animation sample membership differs from ownership.");
         joints[index].sample=row.at("sample").is_null()?std::nullopt:std::optional{read_fit(row.at("sample"))};
+        joints[index].motion.reset();
+        if(velocity) {
+            require(row.at("motion").is_null()==(joints[index].source==Source::Manual),
+                "Physical animation motion membership differs from ownership.");
+            if(!row.at("motion").is_null())joints[index].motion=read_motion(row.at("motion"));
+        }
     }
     auto candidate=player_->make_target_player(rig_);candidate->load_target_state(document.at("player").dump(),tick);
     const auto expected=evaluate(*candidate,joints,tick);
@@ -196,6 +255,7 @@ void RuntimePhysicalAnimation::load(const std::string& source,std::uint64_t tick
         const auto& profile=configuration_.profile;
         const auto joint=std::find_if(profile.joints.begin(),profile.joints.end(),[&](const auto& p){return p.name==joints[index].name;});
         (void)physical_rig::validate_target(*joint,joints[index].sample->target);
+        if(joints[index].motion)validate_motion(*joint,*joints[index].sample,*joints[index].motion);
     }
     player_.swap(candidate);joints_.swap(joints);tick_=tick;pending_=false;
 }

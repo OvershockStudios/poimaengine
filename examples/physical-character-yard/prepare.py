@@ -278,6 +278,8 @@ def prepare(args):
     pose_pin = identity(pose_path)
     poses = json.loads(pose_path.read_bytes())
     profile = drive_profile(base, poses)
+    if getattr(args, 'velocity_tracking', False):
+        profile['animation_drive']['velocity_tracking'] = True
     need(poses['provenance']['original_profile'] == identity(HERE/'profiles/knight.json') and
          poses['provenance']['original_model'] == source_pin, 'Pose reference identities differ from the original profile/model.')
     profile.update(pose_frame='skeletal_bounded_scale', max_scale_deviation=.00001,
@@ -445,6 +447,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('binary', 'source', 'license', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--velocity-tracking', action='store_true',
+        help='Track fitted animation target velocity as well as orientation during physical playback.')
     args = parser.parse_args()
     try:
         report = prepare(args)
