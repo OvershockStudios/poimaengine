@@ -1,0 +1,516 @@
+{
+  "format": "poima.evidence.playable-physical-character.v1",
+  "source_checkpoint": "0.0.231",
+  "date": "2026-11-06",
+  "scope": "A compiled original-character sample integrating independent player movement, native camera hit regions, localized physical impulse/takeover, original animation/grounding, menus and checkpoint controls.",
+  "actual_native_runtime": {
+    "version": "0.0.230",
+    "world_schema": 127,
+    "gameplay_abi_epoch": 7,
+    "gameplay_services_bytes": 424,
+    "windows_cli": {
+      "bytes": 28568064,
+      "sha256": "6c44d6127bf6b0ca09c0430a79c2bcde3732d7ddb192ff62ffcf0ac4e03cdd9b"
+    },
+    "linux_cli": {
+      "bytes": 39194232,
+      "sha256": "f74b08261fb05b50d0744fb497d95094cfe966605a4c1e6dc47347c92715a3c6"
+    }
+  },
+  "gameplay": {
+    "type": "Poima.Examples.PhysicalCharacterGame",
+    "identity": "poima.example.physical-character",
+    "fields": 61,
+    "state_bytes": 392,
+    "source": {
+      "bytes": 19910,
+      "sha256": "b1023f02d62eca575e07f834c069bc7375a209039bfc69004f06d843dbc03061"
+    },
+    "managed_assembly": {
+      "bytes": 20992,
+      "sha256": "e8485bff18e24d43773473c29fcbdac9bd6a047e3eb83c311ab328909a0a06ac"
+    },
+    "compiler_record": {
+      "path": "build/physical-character-game-0.0.231/managed-2/report.json",
+      "bytes": 5737,
+      "sha256": "a7e6ee3f7880c837c78507c08be444f648390e85e28208572757a7ceab9fce6c"
+    }
+  },
+  "content": {
+    "name": "KayKit Adventurers 1.0 Knight",
+    "author": "Kay Lousberg",
+    "license": "CC0-1.0",
+    "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "original_nodes": 57,
+    "skin_joints": 41,
+    "animation_clips": 76,
+    "physical_bodies": 15,
+    "physical_joints": 14,
+    "named_hit_regions": 15,
+    "artwork_modified": false,
+    "preparation": {
+      "path": "build/physical-character-game-0.0.231/prepare-linux-1/project/preparation.json",
+      "bytes": 437648,
+      "sha256": "bb758eab51ec878f1072968ea6b8cd1cb76f5d294648f1611eebf2e7faefbb3a"
+    }
+  },
+  "coreclr": {
+    "Linux": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-character-game-0.0.231/linux-gameplay-2/consumer/evidence.json",
+        "bytes": 4313354,
+        "sha256": "6227431d3ffbcc8ce52646fec8f8fb01e8ab5ee3ce270fafb8ddace5c6f6f615"
+      },
+      "rpc_calls": 722,
+      "natural_engine_processes": 3,
+      "complete_archives": 25,
+      "complete_byte_and_typed_state_pairs": 13,
+      "excluded_saved_fields": [],
+      "observations": 9,
+      "actual_shots": 2,
+      "checks": [
+        "Begin/menu/resume, retry receipts, real player/target movement, original Idle/Running_A and live foot grounding",
+        "Real camera HitTest maps source region to physical part, full source pose takeover, zero/positive actual solver response and complete failed-shot rollback",
+        "Complete warm/cold animated and passive save continuation, ordinary game Save/Load/Retry and idempotent Load receipt"
+      ]
+    },
+    "Windows": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-character-game-0.0.231/windows-gameplay-1/consumer/evidence.json",
+        "bytes": 4316458,
+        "sha256": "bab6c595b14f6c02143a5c011f5a3ac34e14187ffba2c8c68a7a20e33ef652b7"
+      },
+      "rpc_calls": 722,
+      "natural_engine_processes": 3,
+      "complete_archives": 25,
+      "complete_byte_and_typed_state_pairs": 13,
+      "excluded_saved_fields": [],
+      "observations": 9,
+      "actual_shots": 2,
+      "checks": [
+        "Begin/menu/resume, retry receipts, real player/target movement, original Idle/Running_A and live foot grounding",
+        "Real camera HitTest maps source region to physical part, full source pose takeover, zero/positive actual solver response and complete failed-shot rollback",
+        "Complete warm/cold animated and passive save continuation, ordinary game Save/Load/Retry and idempotent Load receipt"
+      ]
+    }
+  },
+  "native_aot": {
+    "passed": true,
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "publication": {
+      "record": {
+        "path": "build/physical-character-game-0.0.231/aot-windows-5/report.json",
+        "bytes": 4886,
+        "sha256": "d70d0e56f64e2916fdab92cf4496d36653a4630437f822a07d8ceec6b90f6f9a"
+      },
+      "worker_record": {
+        "path": "build/physical-character-game-0.0.231/aot-windows-5/worker.json",
+        "bytes": 22122,
+        "sha256": "b8975d97e401af00780f3f96c4499a15b58b8f1231bbb29307022139616399e6"
+      },
+      "publisher_exit_code": 0,
+      "publisher_natural_exit": true,
+      "all_descendants_natural": false,
+      "controlled_helper_cleanup": {
+        "count": 1,
+        "image": "vctip.exe",
+        "reason": "MSVC telemetry helper remained after successful publication and artifact/input validation.",
+        "method": "TerminateProcess on its held, verified current-Job process handle",
+        "helper_exit_code": 1
+      },
+      "outer_job_fallback": false,
+      "total_owned_processes": 22,
+      "active_processes_after_cleanup": 0,
+      "earlier_attempts": [
+        {
+          "attempt": 1,
+          "passed": false,
+          "record": {
+            "path": "build/physical-character-game-0.0.231/aot-windows-1/report.json",
+            "bytes": 3289,
+            "sha256": "c224ea2777fea3b424b154bfb8a4184bfd21439c823bae1d1f1d75fb312d002b"
+          },
+          "outcome": "Public publisher exited with code 1."
+        },
+        {
+          "attempt": 2,
+          "passed": false,
+          "record": {
+            "path": "build/physical-character-game-0.0.231/aot-windows-2/report.json",
+            "bytes": 3466,
+            "sha256": "8de1a3d48b178e35b6443a8af5e96f07589ce4b290e28963920fffbd0b04a4e9"
+          },
+          "outcome": "Output-link inventory admission failed before publication completed."
+        },
+        {
+          "attempt": 3,
+          "passed": false,
+          "record": {
+            "path": "build/physical-character-game-0.0.231/aot-windows-3/report.json",
+            "bytes": 3466,
+            "sha256": "fe56b6510d05c232d89953c6fabcb386ef23196a872f00beff7337df3f48b1dd"
+          },
+          "outcome": "Publisher succeeded, but owned descendant closure failed."
+        },
+        {
+          "attempt": 4,
+          "passed": false,
+          "record": {
+            "path": "build/physical-character-game-0.0.231/aot-windows-4/report.json",
+            "bytes": 3562,
+            "sha256": "86cdfd908eef48ab19a487d608dc887004fe78c36ec8eca9ac31c8b056e253ae"
+          },
+          "outcome": "Publisher succeeded, but bounded retirement did not close its surviving compiler helper."
+        }
+      ],
+      "failure_records_reclassified": false
+    },
+    "artifact": {
+      "descriptor": {
+        "path": "build/physical-character-game-0.0.231/aot-windows-5/artifact/native-gameplay.json",
+        "bytes": 9719,
+        "sha256": "e81a36589ba87a2eba908ad2191fb6f6adc272d99a362eed72f0f6827086b9dd"
+      },
+      "library": {
+        "name": "Poima.NativeGame.dll",
+        "bytes": 1411584,
+        "sha256": "44b3b1c48f975ca6d53470feea54f90b735c39ad1ed86b4e4bc178c8f4c434a3"
+      },
+      "payload_files": 7,
+      "payload_bytes": 1603645,
+      "call_version": 1,
+      "call_bytes": 80,
+      "services_version": 7,
+      "minimum_services_bytes": 424,
+      "required_features": [
+        "baseline_v7",
+        "animation_rate_v1",
+        "animation_grounding_control_v1",
+        "animation_ik_end_orientation_v1",
+        "animation_ik_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "hit_regions_v1",
+        "input_actions_v1",
+        "physical_rig_v1"
+      ],
+      "fields": 61,
+      "state_bytes": 392,
+      "complete_schema_matches_coreclr_and_both_native_runs": true,
+      "dynamic_code_supported": false,
+      "dynamic_code_compiled": false
+    },
+    "native_gameplay": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-character-game-0.0.231/native-gameplay-1/consumer/evidence.json",
+        "bytes": 1503252,
+        "sha256": "ac0aea6244a67b5389486ae3af25f318d18ffb13229644b79abae66ad3ab1eaa"
+      },
+      "process_record": {
+        "path": "build/physical-character-game-0.0.231/native-gameplay-1/report.json",
+        "bytes": 2183,
+        "sha256": "b433f4ba6a74b0d3f3d3539ef4f63b1432752affaa95954edeb3505a160a34a4"
+      },
+      "rpc_calls": 277,
+      "natural_engine_processes": 3,
+      "complete_archives": 10,
+      "complete_byte_and_typed_state_pairs": 6,
+      "excluded_saved_fields": [],
+      "observations": 3,
+      "actual_shots": 1,
+      "checks": [
+        "Begin and real grounded original Idle pose",
+        "Actual camera hit, named part impulse and passive takeover",
+        "warm complete animated restore",
+        "warm complete passive restore",
+        "cold-animated complete restore",
+        "cold-animated complete continuation",
+        "cold-passive complete restore",
+        "cold-passive complete continuation"
+      ],
+      "external_coreclr_selectors": [],
+      "scope": "Selected native logical gameplay and complete same-platform saves; not the full CoreCLR control cohort, a rendered player run, physical input or performance qualification."
+    },
+    "relocated_gameplay": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-character-game-0.0.231/relocated-gameplay-1/consumer/evidence.json",
+        "bytes": 3341081,
+        "sha256": "a83f799525545d0fbbf70e9025502386c2c283c77e08f203defe8390e6aba61d"
+      },
+      "process_record": {
+        "path": "build/physical-character-game-0.0.231/relocated-gameplay-1/report.json",
+        "bytes": 2351,
+        "sha256": "6aeeb6ac18ed7adea8ec993ffcd0d3fc1fa466bc94d82678e48a185afb83ca8f"
+      },
+      "rpc_calls": 287,
+      "natural_engine_processes": 3,
+      "complete_archives": 10,
+      "complete_byte_and_typed_state_pairs": 6,
+      "excluded_saved_fields": [],
+      "observations": 3,
+      "actual_shots": 1,
+      "checks": [
+        "Begin and real grounded original Idle pose",
+        "Actual camera hit, named part impulse and passive takeover",
+        "warm complete animated restore",
+        "warm complete passive restore",
+        "cold-animated complete restore",
+        "cold-animated complete continuation",
+        "cold-passive complete restore",
+        "cold-passive complete continuation"
+      ],
+      "external_coreclr_selectors": [],
+      "scope": "Selected native logical gameplay and complete same-platform saves; not the full CoreCLR control cohort, a rendered player run, physical input or performance qualification."
+    },
+    "export": {
+      "passed": true,
+      "record": {
+        "path": "build/physical-character-game-0.0.231/export-windows-1/consumer/evidence.json",
+        "bytes": 25839,
+        "sha256": "999be1c434b46feb0923c9791b2b11db098ce8795675c1d06bf67c0c9922718f"
+      },
+      "process_record": {
+        "path": "build/physical-character-game-0.0.231/export-windows-1/report.json",
+        "bytes": 1742,
+        "sha256": "37f2cbad5e7d247c33c23f1f880cb1d4d8d2f462be0d7cb563d7845906f1d3ae"
+      },
+      "public_commands": [
+        "project inspect",
+        "project adopt-gameplay",
+        "project build",
+        "game inspect"
+      ],
+      "command_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "bundle_files": 63,
+      "bundle_bytes": 92349440,
+      "pe_files": 3,
+      "pe_clr_headers": 0,
+      "coreclr_hostfxr_or_mscoree_imports": false,
+      "original_owned_export_project_path_absent": true,
+      "other_development_inputs_retained": true,
+      "scope": "The complete bundle was relocated and used its own engine and native gameplay. Only the owned export-source project path was unavailable; no machine-wide filesystem isolation or clean-machine deployment claim."
+    }
+  },
+  "rendered_player": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-character-game-0.0.231/windows-player-1/consumer/evidence.json",
+      "bytes": 2808812,
+      "sha256": "a9d044e99bc8e61ae19e29a190718321f45e5aeb82fbc383c3b700a89aec1f39"
+    },
+    "mode": "background elapsed-time; synthetic logical input",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "width": 1280,
+    "height": 720,
+    "samples": 4,
+    "images": [
+      {
+        "label": "welcome",
+        "tick": 0,
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "79f3440d13978af788464576f231db3846026b7abffad9c4203b054c579c8c28"
+        },
+        "capture_written": true,
+        "nvrhi_errors": 0,
+        "shadow_filter": "pcf3_fractional"
+      },
+      {
+        "label": "idle",
+        "tick": 60,
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "83250281e06d826d3ea9d0d00f9ef7d42becd19540aec1aa65e34acf7ad36ba6"
+        },
+        "capture_written": true,
+        "nvrhi_errors": 0,
+        "shadow_filter": "pcf3_fractional"
+      },
+      {
+        "label": "running",
+        "tick": 119,
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "dc1ffdde7b745130201b7a87e141f27b381fb5439f49e649ec87c51d37208baa"
+        },
+        "capture_written": true,
+        "nvrhi_errors": 0,
+        "shadow_filter": "pcf3_fractional"
+      },
+      {
+        "label": "impact",
+        "tick": 180,
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "6bf4ad77a76a97d9964c2ef7ca5f2c0d4b514eac0317891ddbf0687c146f6957"
+        },
+        "capture_written": true,
+        "nvrhi_errors": 0,
+        "shadow_filter": "pcf3_fractional"
+      },
+      {
+        "label": "fallen",
+        "tick": 269,
+        "bmp": {
+          "bytes": 3686538,
+          "sha256": "f57cc911e793fbfa7703fd6a68bcbd54e231028139a25bde183a58043d078f3d"
+        },
+        "capture_written": true,
+        "nvrhi_errors": 0,
+        "shadow_filter": "pcf3_fractional"
+      }
+    ],
+    "elapsed_intervals": [
+      {
+        "label": "begin-and-idle",
+        "tick_before": 0,
+        "tick_after": 60,
+        "elapsed_seconds": 1.0105621999828145
+      },
+      {
+        "label": "original-run",
+        "tick_before": 60,
+        "tick_after": 119,
+        "elapsed_seconds": 1.0050799999735318
+      },
+      {
+        "label": "stop-and-ground",
+        "tick_before": 119,
+        "tick_after": 178,
+        "elapsed_seconds": 1.0139929999713786
+      },
+      {
+        "label": "passive-fall",
+        "tick_before": 180,
+        "tick_after": 269,
+        "elapsed_seconds": 1.511790300020948
+      }
+    ],
+    "complete_capture_purity_pairs": 5,
+    "excluded_saved_fields": [],
+    "all_five_stills_visually_inspected": true,
+    "physical_input_qualified": false,
+    "motion_quality_qualified": false,
+    "performance_qualified": false,
+    "published_idle_image": {
+      "png": {
+        "path": "docs/evidence/m2-playable-physical-character.png",
+        "bytes": 67591,
+        "sha256": "b2190e176f44e073aec501f0824e9bc13ee09ae873841ed7dbab399b3363c25a"
+      },
+      "source_viewing_png": {
+        "path": "build/physical-character-game-0.0.231/windows-player-1/viewing/idle.png",
+        "bytes": 67591,
+        "sha256": "b2190e176f44e073aec501f0824e9bc13ee09ae873841ed7dbab399b3363c25a"
+      },
+      "source_capture_label": "idle",
+      "source_tick": 60,
+      "source_bmp": {
+        "bytes": 3686538,
+        "sha256": "83250281e06d826d3ea9d0d00f9ef7d42becd19540aec1aa65e34acf7ad36ba6"
+      },
+      "caption": "Actual Windows Vulkan idle capture; Knight artwork by Kay Lousberg, CC0-1.0. Still-image review only."
+    }
+  },
+  "standalone_rendered_welcome": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/evidence.json",
+      "bytes": 2819,
+      "sha256": "7a050e27aa8232e6a3852485d10368b595a16a3706ba675ad1f46660ab34bddc"
+    },
+    "process_record": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/report.json",
+      "bytes": 1583,
+      "sha256": "718062f23dcc0400b38d036820791f8575bfd32362887c3515e5e6c3ffe49ba7"
+    },
+    "native_game_report": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/game-report.json",
+      "bytes": 33116,
+      "sha256": "3b066528bf12bbfb3e890cf50d8f97244ec40f0fa750ed3983740fc3bacd7072"
+    },
+    "backend": "native_aot",
+    "mode": "replay; three idle ticks at the welcome screen",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "hardware": true,
+    "width": 1280,
+    "height": 720,
+    "samples": 4,
+    "final_tick": 3,
+    "frames_presented": 4,
+    "nvrhi_errors": 0,
+    "capture_written": true,
+    "natural_cli_exit": true,
+    "forced_cleanup": false,
+    "active_processes_after_cleanup": 0,
+    "capture_bmp": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/welcome.bmp",
+      "bytes": 3686538,
+      "sha256": "d996a1b2f1d9f95ad18e1bea8ff134122c81cb47f7722df9bacc19fb607ba244"
+    },
+    "viewing_png": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/welcome.png",
+      "bytes": 63637,
+      "sha256": "a2d0a0a8867035f11c83aa42eb1aa48507bb44872b46dad431f2946ac679b8ee"
+    },
+    "viewing_conversion": {
+      "path": "build/physical-character-game-0.0.231/relocated-render-1/viewing-conversion.json",
+      "bytes": 374,
+      "sha256": "d83e413749c7c7d0f44d7eadebb7136b1e5a5f04725c1e8d12e3993ffc2483db"
+    },
+    "original_worker_visual_review_pending": true,
+    "subsequent_visual_review": {
+      "completed": true,
+      "reviewer": "integrating agent",
+      "finding": "Original Knight and wine-colored Begin interface are visible and legible in the lossless welcome PNG.",
+      "original_worker_record_modified": false
+    },
+    "bundled_engine_and_native_gameplay": true,
+    "original_owned_export_project_path_absent": true,
+    "scope": "One welcome-screen capture from the relocated 63-file bundle, with the original owned export-source path unavailable. Other development inputs remain; no physical-device input, gameplay-completeness, motion-quality, clean-machine or performance claim."
+  },
+  "public_launcher": {
+    "passed": true,
+    "record": {
+      "path": "build/physical-character-game-0.0.231/windows-launcher-1/worker.json",
+      "bytes": 1037721,
+      "sha256": "baa2813acf936b781affa7fb329d9f8fdf47a0728f6117089b7ab8bc90b67ef9"
+    },
+    "source": {
+      "bytes": 15060,
+      "sha256": "72fa64aca8465243b65e1782319e4ec3c34374e984a3e2684e06e70cc0c90e01"
+    },
+    "checks": [
+      "Exact public launcher creates and owns a shared interactive player",
+      "Initial modal500, Begin clears it, Menu restores it, saved menu reloads and Resume clears it",
+      "Only ordinary native UI controls and bounded paused ticks; no focus or physical device input"
+    ],
+    "default_transport_trace": false,
+    "physical_input_or_focus_injection": false
+  },
+  "limitations": [
+    "Passive takeover; no active balance or get-up recovery.",
+    "Hit regions are authored proxies, not exact skinned geometry.",
+    "Selected original library; no broad exporter/rig compatibility claim.",
+    "Stills and short elapsed play do not qualify motion quality, latency or representative performance.",
+    "The sample launcher gives each invocation its own save folder.",
+    "No new fresh-agent or general Alpha-gate completion claim."
+  ],
+  "reproduce": {
+    "sample": "examples/physical-character-yard/README.md#play-the-sample",
+    "headless": "tests/physical_character_gameplay_contract.py --help",
+    "player": "tests/physical_character_player_contract.py --help",
+    "constraints": "Use original pinned licensed inputs, matching compiled gameplay/bridge, a suitable native runtime and fresh output. Bound the process tree for qualification.",
+    "standalone": "examples/physical-character-yard/README.md#build-a-standalone-windows-game"
+  }
+}

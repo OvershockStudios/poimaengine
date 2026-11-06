@@ -30,6 +30,15 @@ The [implementation status](IMPLEMENTATION_STATUS.md) remains authoritative for
 individual capabilities. A checklist row is not a claim that every feature
 listed there is complete or production-ready.
 
+The [0.0.231 playable character sample](evidence/m2-playable-physical-character.json)
+combines independent player movement, imported animation, grounded feet,
+camera-hit impulses and passive physical takeover with complete checkpoints.
+CoreCLR passes on Windows and Linux; Windows NativeAOT also passes native
+gameplay and relocated bundle continuation. Five inspected player captures
+add bounded rendered evidence. Physical input, motion quality, representative
+performance and clean-machine installation remain separate gates; this
+sample is not an additional fresh-agent qualification.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

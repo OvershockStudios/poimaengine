@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.230**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-06 for **0.0.231**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.231 adds a playable [Physical Character Yard](../examples/physical-character-yard/README.md#play-the-sample).
+Compiled C# connects independent first-person movement, original Idle/Running_A
+animation, stopped-foot grounding, camera hit regions, localized impulses and
+passive physical takeover. Menu, Save/Load and Retry retain explicit state.
+
+The [qualification record](evidence/m2-playable-physical-character.json) uses
+the existing 0.0.230 native runtime. Windows and Linux CoreCLR each pass 722
+literal RPC calls, 25 complete saves and thirteen complete byte/typed-state
+comparisons across three naturally closed engine processes. A Windows player
+run adds five inspected Vulkan captures at 1280×720 with 4× MSAA and four short
+elapsed-play intervals. The public launcher also passes its native menu and
+checkpoint controls. These observations do not qualify physical-device input,
+motion quality or representative performance.
+
+Windows NativeAOT publication and actual native gameplay pass separately.
+The published module is adopted and exported through the public CLI; the
+relocated bundle's own executable and gameplay pass complete warm/cold
+animated and passive continuation while the owned export-source path is
+unavailable. Publication required controlled cleanup of one owned MSVC
+telemetry helper after the compiler exited successfully; that forced cleanup
+and four earlier failed attempts remain explicit in the record. A separate
+three-tick standalone replay presents four Vulkan frames and an inspected
+welcome capture from the relocated native bundle. The sample
+does not provide active balance, get-up recovery or a new fresh-agent run.
 
 Version 0.0.230 fixes the [grounded save compatibility gap](GAMEPLAY_SAVES.md#grounded-save-compatibility).
 Restoration validates recomputed procedural diagnostics within narrowly defined

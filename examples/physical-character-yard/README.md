@@ -14,6 +14,11 @@ that receives the impulse. A lethal hit transfers the current character pose to
 passive physics. Save/Load preserves either state; Retry restores the separate
 checkpoint created by Begin.
 
+![Physical Character Yard in the Windows Vulkan player](../../docs/evidence/m2-playable-physical-character.png)
+
+Actual Windows Vulkan idle capture. Knight artwork: Kay Lousberg, CC0-1.0.
+This still shows the sample's appearance; it does not qualify motion quality.
+
 Prepare with a simulation-enabled CLI and the original files listed below:
 
 ```sh
@@ -64,6 +69,66 @@ uses elapsed-time background play, native logical input and Vulkan captures.
 Neither substitutes for physical mouse/controller testing or motion-quality
 review. Run these checks under an external process-tree supervisor with fresh
 output directories; both provide their input selectors through `--help`.
+
+### Build a standalone Windows game
+
+Use native Windows Python, a .NET 10 SDK and an x64 Visual Studio C++ developer
+shell with the Windows SDK installed. `$dotnet` selects the installed .NET SDK's
+`dotnet.exe`; `$poima` is the simulation-enabled Windows CLI. `$runtime` is a
+matching installed Windows runtime directory containing `runtime.json`.
+The exporting CLI and runtime must have the same exact engine version.
+
+From this checkout, publish the same C# game using the public
+[Native AOT publisher](../../docs/NATIVE_GAMEPLAY.md#publish):
+
+```powershell
+python scripts/publish_native_gameplay.py `
+  --project examples/physical-character-yard/Poima.PhysicalCharacterGame.csproj `
+  --type Poima.Examples.PhysicalCharacterGame --dotnet $dotnet --rid win-x64 `
+  --output build/physical-character-aot --work build/physical-character-aot-work
+```
+
+Keep both output directories new. Publication requires the native compiler;
+playing the resulting game does not require a .NET SDK or CoreCLR bridge.
+An [installed authoring pack](../../docs/AUTHORING_TOOLS.md#create-a-game-project)
+provides the alternative binary-SDK publication route.
+
+Adopt the artifact into the prepared project with current file identities, then
+export it to a fresh directory. Check each command succeeds before continuing:
+
+```powershell
+$project = 'build/physical-character-project/project.json'
+$artifact = 'build/physical-character-aot/native-gameplay.json'
+$request = 'build/physical-character-adopt.json'
+& $poima project inspect $project
+$adoption = @{
+  request_id = [Guid]::NewGuid().ToString('N')
+  expected_project_sha256 = (Get-FileHash $project -Algorithm SHA256).Hash.ToLowerInvariant()
+  expected_artifact_sha256 = (Get-FileHash $artifact -Algorithm SHA256).Hash.ToLowerInvariant()
+  values = @{}
+} | ConvertTo-Json -Depth 4
+[IO.File]::WriteAllText($request, $adoption, [Text.UTF8Encoding]::new($false))
+& $poima project adopt-gameplay $project --artifact $artifact --request $request
+& $poima project build $project --output build/physical-character-player --runtime $runtime
+& $poima game inspect build/physical-character-player/game.json
+& .\build\physical-character-player\launch.cmd
+```
+
+Move the complete exported directory to relocate the game. Keep reports and
+added files outside its verified inventory. The Windows launcher stores saves
+outside the bundle, under the current user's per-project Poima save directory;
+see [standalone player options](../../docs/PROJECTS.md#run-or-replay).
+
+The [checkpoint evidence](../../docs/evidence/m2-playable-physical-character.json)
+records this sample's native library, 63-file Windows export and separate
+277-RPC native / 287-RPC relocated gameplay checks. Both verify complete
+animated/passive saves and fresh-process continuation. The relocated test used
+the bundled engine with its owned export-source path unavailable; other
+development files remained on the machine. These checks do not establish
+clean-machine deployment or physical input quality. The player captures above
+use CoreCLR and are a separate evidence scope. A separate relocated Native AOT
+welcome capture also passed: three idle ticks, four presented Vulkan frames and
+no reported GPU errors; it does not qualify normal-speed gameplay motion.
 
 ## Physical profile
 
@@ -263,7 +328,8 @@ the Knight falling onto the steps and settling; still images and source
 geometry/math do not establish motion quality. Shared-world crossfades and
 root-controller handoff now have the separate selected evidence linked above.
 Production contact/motion, hands/feet/accessories, active balance, stand-up
-recovery, Native AOT and representative performance remain open. The linked
+recovery and representative performance remain open. The playable sample's
+selected Native AOT workflow is qualified separately above. The linked
 actor's root-only graph and root-motion/IK restrictions follow the
 [ownership contract](../../docs/PHYSICAL_RIGS.md#controller-handoff). The analytic
 ribbon continues to provide a separate clean skin/projection oracle.

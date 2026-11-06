@@ -117,6 +117,11 @@ ground-contact and planted-foot ownership now have a separate
 [grounded handoff](GROUNDED_PHYSICAL_HANDOFF.md) path with recorded decisions,
 support frames and historical save validation. Active balance, recovery,
 broader gait fitting and coordinated root motion remain part of this segment.
+The [playable character yard](../examples/physical-character-yard/README.md#play-the-sample)
+now composes original clips, independent player movement, camera-hit impulses,
+passive takeover and complete checkpoints in CoreCLR and a relocated Windows
+NativeAOT game. This is a bounded sample; active recovery and production motion
+quality remain part of the character work.
 Build on [obstruction-safe crouch/stand](CHARACTER_STANCE.md) and optional
 [virtual locomotion](CHARACTER_LOCOMOTION.md) for slopes, steps and supported
 platform movement. Harden broader traversal and add swimming;

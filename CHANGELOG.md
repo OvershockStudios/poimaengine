@@ -2,6 +2,17 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.231
+
+- Add a playable first-person character yard with original imported animation,
+  grounded stops, named hit regions and localized ragdoll impulses.
+- Connect menu, save/load and retry controls through compiled C# gameplay and
+  a shared-service player launcher.
+- Qualify complete character checkpoints on Windows and Linux CoreCLR, plus
+  Windows NativeAOT gameplay and relocated standalone export.
+- Add rendered player checks, a current sample capture and reproducible launch
+  and export instructions.
+
 ## 0.0.230
 
 - Preserve original grounded character poses, diagnostics and animation history
