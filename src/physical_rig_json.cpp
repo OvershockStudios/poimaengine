@@ -76,9 +76,9 @@ Json array(Json item,std::size_t count) {return {{"type","array"},{"items",std::
 Configuration parse_configuration(const nlohmann::json& value) {
     need(value.is_object(),"PhysicalRig needs an object.");
     const bool has_policy=value.contains("pose_frame"),has_bound=value.contains("max_scale_deviation"),has_handoff=value.contains("controller_handoff"),
-        has_procedural=value.contains("procedural_pose"),has_animation=value.contains("animation_drive");
-    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u)+(has_procedural?1u:0u)+(has_animation?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
-        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff/procedural_pose/animation_drive.");
+        has_procedural=value.contains("procedural_pose"),has_animation=value.contains("animation_drive"),has_recovery=value.contains("recovery");
+    need(value.size()==4u+(has_policy?1u:0u)+(has_bound?1u:0u)+(has_handoff?1u:0u)+(has_procedural?1u:0u)+(has_animation?1u:0u)+(has_recovery?1u:0u) && value.contains("root") && value.contains("initial_mode") &&
+        value.contains("parts") && value.contains("joints"),"PhysicalRig needs complete required fields and only optional pose_frame/max_scale_deviation/controller_handoff/procedural_pose/animation_drive/recovery.");
     Configuration result;
     if(has_policy) {
         const auto policy=text(value.at("pose_frame"));
@@ -113,6 +113,32 @@ Configuration parse_configuration(const nlohmann::json& value) {
             need(animation.at("velocity_tracking").is_boolean(),"Physical animation velocity_tracking must be a Boolean.");
             result.animation_drive->velocity_tracking=animation.at("velocity_tracking").get<bool>();
         }
+    }
+    if(has_recovery) {
+        const auto& input=value.at("recovery");
+        fields(input,{"supports","uprights","max_tilt_degrees","max_linear_speed","max_angular_speed","stability_ticks","blend_ticks"});
+        const auto& supports=input.at("supports");const auto& uprights=input.at("uprights");
+        need(supports.is_array() && supports.size()==2,"Physical recovery needs exactly two supports.");
+        need(uprights.is_array() && !uprights.empty() && uprights.size()<=4,"Physical recovery needs one to four uprights.");
+        Recovery recovery;
+        for(const auto& entry:supports) {
+            fields(entry,{"part","point"});recovery.supports.push_back({text(entry.at("part")),vector<3>(entry.at("point"))});
+        }
+        for(const auto& entry:uprights) {
+            fields(entry,{"part","up_axis"});recovery.uprights.push_back({text(entry.at("part")),vector<3>(entry.at("up_axis"))});
+        }
+        recovery.max_tilt_degrees=number(input.at("max_tilt_degrees"));
+        recovery.max_linear_speed=number(input.at("max_linear_speed"));
+        recovery.max_angular_speed=number(input.at("max_angular_speed"));
+        const auto ticks=[](const Json& input,std::uint32_t maximum) {
+            need(input.is_number_integer() && (input.is_number_unsigned() || input.get<std::int64_t>()>=2) &&
+                input.get<std::uint64_t>()>=2 && input.get<std::uint64_t>()<=maximum,
+                "Physical recovery tick counts must be integers within their explicit bounds.");
+            return input.get<std::uint32_t>();
+        };
+        recovery.stability_ticks=ticks(input.at("stability_ticks"),60);
+        recovery.blend_ticks=ticks(input.at("blend_ticks"),120);
+        result.recovery=std::move(recovery);
     }
     const auto& parts=value.at("parts");const auto& joints=value.at("joints");
     need(parts.is_array() && !parts.empty() && parts.size()<=max_parts,"PhysicalRig needs 1..64 parts.");
@@ -164,6 +190,14 @@ nlohmann::json configuration_json(const Configuration& value) {
     if(value.procedural_pose)result["procedural_pose"]=*value.procedural_pose==ProceduralPosePolicy::AnimatedOnly ? "animated_only" : "grounded_animated_only";
     if(value.animation_drive)result["animation_drive"]={{"limit_policy",value.animation_drive->limit_policy==TargetLimitPolicy::Strict ? "strict" : "fit"}};
     if(value.animation_drive&&value.animation_drive->velocity_tracking)result["animation_drive"]["velocity_tracking"]=true;
+    if(value.recovery) {
+        const auto& recovery=*value.recovery;Json supports=Json::array(),uprights=Json::array();
+        for(const auto& support:recovery.supports)supports.push_back({{"part",support.part},{"point",support.point}});
+        for(const auto& upright:recovery.uprights)uprights.push_back({{"part",upright.part},{"up_axis",upright.up_axis}});
+        result["recovery"]={{"supports",std::move(supports)},{"uprights",std::move(uprights)},
+            {"max_tilt_degrees",recovery.max_tilt_degrees},{"max_linear_speed",recovery.max_linear_speed},
+            {"max_angular_speed",recovery.max_angular_speed},{"stability_ticks",recovery.stability_ticks},{"blend_ticks",recovery.blend_ticks}};
+    }
     return result;
 }
 
@@ -197,7 +231,7 @@ nlohmann::json configuration_schema() {
     result["properties"]["controller_handoff"]=object({
         {"actor",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},
         {"follow",{{"const","translate_keep_heading"}}}});
-    result["properties"]["controller_handoff"]["description"]="Optional explicit one-way ownership link to a unique root virtual-locomotion CharacterController. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may configure IK, with grounding allowed only by grounded_animated_only.";
+    result["properties"]["controller_handoff"]["description"]="Optional explicit ownership link to a unique root virtual-locomotion CharacterController. Takeover is one-way unless recovery is explicitly configured. The rig must be its direct child and start Animated. The linked actor subtree cannot contain independent physics bodies/controllers, another physical rig or root motion. Only the linked rig's own explicitly opted-in procedural_pose may configure IK, with grounding allowed only by grounded_animated_only.";
     result["properties"]["procedural_pose"]={{"type","string"},{"enum",{"animated_only","grounded_animated_only"}},
         {"description","Optional final procedural pose ownership while Animated, requiring controller_handoff and initial_mode=animated. animated_only admits manual IK, including zero slots, and rejects every configured grounding profile. grounded_animated_only requires at least one configured grounding slot and also admits manual slots. Only the own AnimationRig may configure IK, with every chain root/middle/end node mapped to physical parts. Both policies reject root motion, including disabled profiles. Camera cannot share the linked actor, rig wrapper or any own model RigNode; place Camera on a separate child entity to keep camera effects outside the owned pose hierarchy. Omitted policies retain earlier ownership rules and no default is inserted. AnimationRig slot membership and cross-entity ownership are additionally validated against the complete world or template."}};
     result["properties"]["animation_drive"]=object({
@@ -205,6 +239,16 @@ nlohmann::json configuration_schema() {
     result["properties"]["animation_drive"]["properties"]["velocity_tracking"]={{"type","boolean"},
         {"description","Optional fitted-interval angular velocity tracking. Omitted/false preserves orientation-only drives. Uses post-command fitted start/end poses for one fixed tick; discontinuous clip replacement does not differentiate unrelated old poses. Ambiguous near-pi intervals reject. No balance or acceleration feedforward."}};
     result["properties"]["animation_drive"]["description"]="Optional independent animation target player using the same frozen model and initial base/layers. Requires at least one joint with an authored drive profile. Strict rejects sampled targets outside hard limits; fit explicitly permits fitting sampled targets to those limits. Manual target admission stays strict. Authoring this field does not select animation as a joint source, activate physics or change pose ownership; runtime source controls are explicit. Omission preserves the existing profile without a target player.";
+    const auto support=object({{"part",name},{"point",array(range(-10,10),3)}});
+    const auto upright=object({{"part",name},{"up_axis",array(range(-1-unit_tolerance,1+unit_tolerance),3)}});
+    result["properties"]["recovery"]=object({
+        {"supports",array(support,2)},
+        {"uprights",{{"type","array"},{"minItems",1},{"maxItems",4},{"items",upright}}},
+        {"max_tilt_degrees",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
+        {"max_linear_speed",range(0,2)},{"max_angular_speed",range(0,4)},
+        {"stability_ticks",{{"type","integer"},{"minimum",2},{"maximum",60}}},
+        {"blend_ticks",{{"type","integer"},{"minimum",2},{"maximum",120}}}});
+    result["properties"]["recovery"]["description"]="Optional guarded upright handback permission, requiring controller_handoff and initial_mode=animated. Every field is required. Exactly two distinct existing support parts provide metric COM-local sole points; one to four distinct existing upright parts provide COM-local axes of unit length within 1e-6, retained without normalization. Tilt is measured in degrees against world up; linear (m/s) and angular (rad/s) speed limits apply to every physical part. Support membership, unit lengths and cross-reference uniqueness are additionally checked by semantic validation. Runtime admission also requires current static support, standing capsule clearance and a bounded wrapper offset/orientation at the unchanged actor transform. This profile does not enable balance, a get-up animation or automatic recovery.";
     Json linked_mode=Json::object();linked_mode["if"]["required"]=Json::array({"controller_handoff"});
     linked_mode["then"]["properties"]["initial_mode"]["const"]="animated";
     Json procedural_mode=Json::object();procedural_mode["if"]["required"]=Json::array({"procedural_pose"});
@@ -212,7 +256,10 @@ nlohmann::json configuration_schema() {
     procedural_mode["then"]["properties"]["initial_mode"]["const"]="animated";
     Json animation_mode=Json::object();animation_mode["if"]["required"]=Json::array({"animation_drive"});
     animation_mode["then"]["properties"]["joints"]["contains"]={{"type","object"},{"required",Json::array({"drive"})}};
-    result["allOf"]=Json::array({std::move(linked_mode),std::move(procedural_mode),std::move(animation_mode)});
+    Json recovery_mode=Json::object();recovery_mode["if"]["required"]=Json::array({"recovery"});
+    recovery_mode["then"]["required"]=Json::array({"controller_handoff"});
+    recovery_mode["then"]["properties"]["initial_mode"]["const"]="animated";
+    result["allOf"]=Json::array({std::move(linked_mode),std::move(procedural_mode),std::move(animation_mode),std::move(recovery_mode)});
     result["oneOf"]=Json::array({
         {{"properties",{{"pose_frame",{{"enum",{"rigid_uniform","skeletal_fixed_scale"}}}}}},
             {"not",{{"required",Json::array({"max_scale_deviation"})}}}},

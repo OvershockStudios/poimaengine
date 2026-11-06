@@ -124,7 +124,7 @@ void schema_contract() {
     need(policy.at("type")=="string" && policy.at("enum")==Json::array({"strict","fit"}) && !policy.contains("default"),
         "Policy schema silently defaults or coerces the explicit authored choice.");
     const auto& all=schema.at("allOf");
-    need(all.size()==3 && all[0].at("if").at("required")==Json::array({"controller_handoff"}) &&
+    need(all.size()==4 && all[0].at("if").at("required")==Json::array({"controller_handoff"}) &&
         all[1].at("if").at("required")==Json::array({"procedural_pose"}),"Existing ownership schema conditions changed.");
     need(all[2].at("if").at("required")==Json::array({"animation_drive"}) &&
         all[2].at("then").at("properties").at("joints").at("contains")==

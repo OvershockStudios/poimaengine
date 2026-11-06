@@ -560,6 +560,36 @@ typedef struct PoimaGamePhysicalRigAnimationServicesV1 {
     int32_t (POIMA_CALL *physical_rig_drive_source_set)(void*,const PoimaGamePhysicalRigDriveSourceCommandV1*,PoimaGameError*);
 } PoimaGamePhysicalRigAnimationServicesV1;
 
+/* physical_recovery_v1 requires only physical_rig_v1. The 512-byte epoch 7
+ * view grants no implicit drive, target-player or ordinary animation rights.
+ * Tick-only reads expose committed assessment, never a newly run query.
+ * assessment_revision identifies the structural revision of those diagnostics.
+ * Status: Locomotion0, HistoryUnavailable1, NotStanding2, NotUpright3,
+ * Moving4, WrapperDisplaced5, MissingSupport6, MovingSupport7,
+ * InvalidSupport8, ProxyBlocked9, MotorBlocked10, QueryBudget11,
+ * InvalidNativeResult12, Stabilizing13, Ready14, Returned15, SoleOutOfRange16.
+ * Flags: physical1, transition_active2, last_attempt_present4, returned_present8.
+ * Support mask bits0/1 select exact raw native body IDs (not entity IDs).
+ * Absent output echoes entity; all other payload is zero. Missing optional
+ * ticks/IDs are zero. Exact versions/sizes, reserved and unknown bits reject.
+ * Request stages an ordered guarded attempt, not guaranteed recovery. */
+typedef struct PoimaGamePhysicalRecoveryStateV1 {
+    uint32_t version,bytes,present,status; PoimaEntityId entity;
+    uint64_t sampled_tick,generation,assessment_revision;
+    uint32_t flags,stable_ticks,required_stable_ticks,last_attempt_result;
+    uint64_t last_attempt_tick,returned_tick;
+    double maximum_linear_speed,maximum_angular_speed,minimum_upright_dot,wrapper_distance,wrapper_angle;
+    uint32_t support_bodies[2],support_mask,reserved;
+} PoimaGamePhysicalRecoveryStateV1;
+typedef struct PoimaGamePhysicalRecoveryCommandV1 {
+    uint32_t version,bytes; PoimaEntityId entity; uint64_t reserved;
+} PoimaGamePhysicalRecoveryCommandV1;
+typedef struct PoimaGamePhysicalRecoveryServicesV1 {
+    PoimaGamePhysicalRigAnimationServicesV1 animation;
+    int32_t (POIMA_CALL *physical_recovery_get)(void*,const PoimaEntityId*,PoimaGamePhysicalRecoveryStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *physical_recovery_request)(void*,const PoimaGamePhysicalRecoveryCommandV1*,PoimaGameError*);
+} PoimaGamePhysicalRecoveryServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -567,6 +597,9 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGamePhysicalRecoveryServicesV1)==512 && alignof(PoimaGamePhysicalRecoveryServicesV1)==8 && offsetof(PoimaGamePhysicalRecoveryServicesV1,animation)==0 && offsetof(PoimaGamePhysicalRecoveryServicesV1,physical_recovery_get)==496 && offsetof(PoimaGamePhysicalRecoveryServicesV1,physical_recovery_request)==504);
+static_assert(sizeof(PoimaGamePhysicalRecoveryStateV1)==144 && alignof(PoimaGamePhysicalRecoveryStateV1)==8 && offsetof(PoimaGamePhysicalRecoveryStateV1,entity)==16 && offsetof(PoimaGamePhysicalRecoveryStateV1,sampled_tick)==32 && offsetof(PoimaGamePhysicalRecoveryStateV1,generation)==40 && offsetof(PoimaGamePhysicalRecoveryStateV1,assessment_revision)==48 && offsetof(PoimaGamePhysicalRecoveryStateV1,flags)==56 && offsetof(PoimaGamePhysicalRecoveryStateV1,stable_ticks)==60 && offsetof(PoimaGamePhysicalRecoveryStateV1,required_stable_ticks)==64 && offsetof(PoimaGamePhysicalRecoveryStateV1,last_attempt_result)==68 && offsetof(PoimaGamePhysicalRecoveryStateV1,last_attempt_tick)==72 && offsetof(PoimaGamePhysicalRecoveryStateV1,returned_tick)==80 && offsetof(PoimaGamePhysicalRecoveryStateV1,maximum_linear_speed)==88 && offsetof(PoimaGamePhysicalRecoveryStateV1,maximum_angular_speed)==96 && offsetof(PoimaGamePhysicalRecoveryStateV1,minimum_upright_dot)==104 && offsetof(PoimaGamePhysicalRecoveryStateV1,wrapper_distance)==112 && offsetof(PoimaGamePhysicalRecoveryStateV1,wrapper_angle)==120 && offsetof(PoimaGamePhysicalRecoveryStateV1,support_bodies)==128 && offsetof(PoimaGamePhysicalRecoveryStateV1,support_mask)==136 && offsetof(PoimaGamePhysicalRecoveryStateV1,reserved)==140);
+static_assert(sizeof(PoimaGamePhysicalRecoveryCommandV1)==32 && alignof(PoimaGamePhysicalRecoveryCommandV1)==8 && offsetof(PoimaGamePhysicalRecoveryCommandV1,entity)==8 && offsetof(PoimaGamePhysicalRecoveryCommandV1,reserved)==24);
 static_assert(sizeof(PoimaGamePhysicalRigAnimationServicesV1)==496 && alignof(PoimaGamePhysicalRigAnimationServicesV1)==8 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,drive)==0 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_get)==448 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_layer_get)==456 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_set)==464 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_animation_rate_set)==472 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_drive_source_get)==480 && offsetof(PoimaGamePhysicalRigAnimationServicesV1,physical_rig_drive_source_set)==488);
 static_assert(sizeof(PoimaGamePhysicalRigDriveSourceStateV1)==208 && alignof(PoimaGamePhysicalRigDriveSourceStateV1)==8 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,version)==0 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,bytes)==4 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,present)==8 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,flags)==12 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,entity)==16 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,reserved_name)==36 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,joint)==40 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,source)==104 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,limit_policy)==108 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,sampled_tick)==112 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,requested_rotation)==120 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,target_rotation)==152 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,correction_radians)==184 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,chart_condition)==192 && offsetof(PoimaGamePhysicalRigDriveSourceStateV1,reserved_tail)==200);
 static_assert(sizeof(PoimaGamePhysicalRigDriveSourceCommandV1)==56 && alignof(PoimaGamePhysicalRigDriveSourceCommandV1)==8 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,version)==0 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,bytes)==4 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,entity)==8 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,joint)==24 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,joint_bytes)==32 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,reserved)==36 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,source)==40 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,reserved_source)==44 && offsetof(PoimaGamePhysicalRigDriveSourceCommandV1,strength)==48);

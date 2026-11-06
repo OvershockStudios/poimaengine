@@ -44,6 +44,10 @@ struct RuntimeControllerSuppression {
     RuntimePhysicalActorFollowReference follow;
     RuntimeControllerSupportState support;
     RuntimeControllerProxyState proxy;
+    // Recovery-enabled rigs may be reactivated during a return blend, when
+    // their wrapper differs from its authored identity. Retain that actual
+    // local calibration for the historical terminal/motor join.
+    std::optional<RuntimeTransform> wrapper_local;
 };
 struct RuntimeControllerHandoffState {
     std::string actor;

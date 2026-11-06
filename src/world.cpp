@@ -3769,6 +3769,7 @@ public:
         if(method=="runtime.physical_rig")return physical_runtime_query(params);
         if(method=="runtime.physical_animation")return physical_animation_runtime_query(params);
         if(method=="runtime.controller_handoff")return controller_handoff_runtime_query(params);
+        if(method=="runtime.physical_recovery")return physical_recovery_runtime_query(params);
         if(method=="runtime.procedural_pose")return procedural_pose_runtime_query(params);
         if(method=="runtime.root_motion") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);

@@ -128,7 +128,7 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -136,6 +136,10 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
     if(!invalid.empty())throw std::runtime_error("Offered gameplay availability is invalid: "+invalid);
 }
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::physical_recovery_feature)!=required.features.end()) {
+        auto extended=gameplay_abi::physical_recovery_view(required,provided);
+        callback(&gameplay_abi::physical_rig_drive_baseline(extended.animation.drive));return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::physical_rig_animation_feature)!=required.features.end()) {
         auto extended=gameplay_abi::physical_rig_animation_view(required,provided);
         callback(&gameplay_abi::physical_rig_drive_baseline(extended.drive));return;

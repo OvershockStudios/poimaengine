@@ -61,6 +61,27 @@ struct PhysicalRigCommand {
     // original animation clock or its captured physical takeover terminal.
     std::optional<AnimationCommand> animation;
     std::optional<AnimationRateCommand> animation_rate;
+    // Guarded return using an authored recovery profile. This is a request:
+    // unsafe geometry/posture remains physical with an inspectable refusal.
+    bool recover=false;
+};
+enum class PhysicalRecoveryStatus : std::uint32_t {
+    Locomotion, HistoryUnavailable, NotStanding, NotUpright, Moving,
+    WrapperDisplaced, MissingSupport, MovingSupport, InvalidSupport,
+    ProxyBlocked, MotorBlocked, QueryBudget, InvalidNativeResult,
+    Stabilizing, Ready, Returned, SoleOutOfRange
+};
+struct PhysicalRecoveryObservation {
+    std::string entity;
+    std::uint64_t tick=0,generation=0,assessment_revision=0;
+    PhysicalRecoveryStatus status=PhysicalRecoveryStatus::HistoryUnavailable;
+    bool physical=false,transition_active=false;
+    std::uint32_t stable_ticks=0,required_stable_ticks=0;
+    std::optional<std::uint64_t> last_attempt_tick,returned_tick;
+    PhysicalRecoveryStatus last_attempt_result=PhysicalRecoveryStatus::HistoryUnavailable;
+    double maximum_linear_speed=0,maximum_angular_speed=0,minimum_upright_dot=1;
+    double wrapper_distance=0,wrapper_angle=0;
+    std::array<std::optional<std::uint32_t>,2> support_bodies;
 };
 struct PhysicalRigPartObservation {
     std::string name,node_entity;

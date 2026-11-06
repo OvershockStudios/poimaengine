@@ -238,6 +238,38 @@ void validate(const Configuration& c) {
             [](const auto& joint){return joint.drive.has_value();}),
             "Physical animation drive requires at least one joint with an authored drive profile.");
     }
+    if(c.recovery) {
+        require(c.controller_handoff.has_value() && !c.initially_passive,
+            "Physical recovery requires controller_handoff and an Animated initial mode.");
+        const auto& recovery=*c.recovery;
+        require(recovery.supports.size()==2,"Physical recovery requires exactly two support points on distinct parts.");
+        require(!recovery.uprights.empty() && recovery.uprights.size()<=4,
+            "Physical recovery requires one to four upright axes on distinct parts.");
+        std::set<std::string> parts,supports,uprights;
+        for(const auto& part:c.profile.parts)parts.insert(part.name);
+        for(const auto& support:recovery.supports) {
+            require(parts.contains(support.part) && supports.insert(support.part).second,
+                "Physical recovery support parts must exist and be distinct.");
+            vector(support.point,10,"Physical recovery COM-local support points must be finite and within +/-10m per axis.");
+        }
+        for(const auto& upright:recovery.uprights) {
+            require(parts.contains(upright.part) && uprights.insert(upright.part).second,
+                "Physical recovery upright parts must exist and be distinct.");
+            vector(upright.up_axis,1+unit_tolerance,"Physical recovery COM-local upright axes must be finite unit vectors.");
+            require(std::abs(norm(upright.up_axis)-1)<=unit_tolerance,
+                "Physical recovery COM-local upright axes must be unit vectors within 1e-6.");
+        }
+        require(range(recovery.max_tilt_degrees,0,30) && recovery.max_tilt_degrees>0,
+            "Physical recovery max_tilt_degrees must be finite, positive and no greater than 30 degrees.");
+        require(range(recovery.max_linear_speed,0,2),
+            "Physical recovery max_linear_speed must be finite and in 0..2m/s for every part.");
+        require(range(recovery.max_angular_speed,0,4),
+            "Physical recovery max_angular_speed must be finite and in 0..4rad/s for every part.");
+        require(recovery.stability_ticks>=2 && recovery.stability_ticks<=60,
+            "Physical recovery stability_ticks must be in 2..60.");
+        require(recovery.blend_ticks>=2 && recovery.blend_ticks<=120,
+            "Physical recovery blend_ticks must be in 2..120.");
+    }
 }
 PassiveResponse evaluate_passive(const Joint& j,Pose parent,Pose child,Vec3 relative_omega) {
     validate(j);parent=canonical_pose(parent);child=canonical_pose(child);vector(relative_omega,max_relative_angular_velocity,"Relative angular velocity exceeds finite +/-2e4 rad/s per axis.");

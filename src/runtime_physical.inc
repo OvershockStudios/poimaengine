@@ -6,6 +6,7 @@
         std::uint32_t collision_group=0;
         std::optional<RuntimeControllerHandoffState> handoff;
         std::unique_ptr<RuntimePhysicalAnimation> animation;
+        std::optional<RuntimePhysicalRecoveryState> recovery;
     };
     struct PhysicalSavedRig {
         RuntimePhysicalRigMembership membership;
@@ -14,6 +15,7 @@
         std::uint32_t collision_group=0;
         std::optional<RuntimeControllerHandoffState> handoff;
         std::optional<RuntimePhysicalAnimation::Checkpoint> animation;
+        std::optional<RuntimePhysicalRecoveryState> recovery;
     };
     struct PhysicalCheckpoint {
         bool enabled=false;
@@ -93,6 +95,8 @@
                 require(actor.parent.empty() && actor.character && actor.character->locomotion && !actor.animation_rig && !actor.rig_node && !actor.physical_rig && !actor.collider && !actor.mesh_collider,
                     "Physical handoff requires an otherwise unowned root virtual controller.");
                 require(linked.emplace(link.actor,e.id).second,"A controller can link to only one physical rig.");
+                if(e.physical_rig->recovery)require(actor.character->radius>=.05f && actor.character->radius<=2 && actor.character->height<=4,
+                    "Recovery requires a standing capsule radius .05..2m and total height at most4m.");
             }
             std::size_t depth=0;
             for(auto parent=e.parent;!parent.empty();) {
@@ -154,6 +158,7 @@
                 owner->handoff=found->second;
             }
         }
+        if(d.physical_rig->recovery)owner->recovery.emplace();
         owner->binding=std::make_unique<RuntimePhysicalRigPoseBinding>(candidate.live,d.id,d.physical_rig->profile,physical_world(),physical_local(),d.physical_rig->pose_frame,d.physical_rig->max_scale_deviation);
         const auto poses=owner->binding->record_final(tick,physical_world(),physical_local());
         std::span<const JPH::BodyID> ids;
@@ -243,6 +248,7 @@
             physical_owners.at(id)->binding->record_final(tick,physical_world(),physical_local());
             if(animations->procedural_enabled(id) && !animations->procedural_suspended(id))
                 animations->record_procedural_final(id,tick,registry.get<Node>(find(id)).world);
+            record_recovery_final(id,*physical_owners.at(id));
         }
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
     void physical_before_step() try {
@@ -268,7 +274,9 @@
     void validate_physical_commands(const std::vector<PhysicalRigCommand>& commands) const {
         require(commands.size()<=64,"At most64 physical rig commands per tick.");std::set<std::string> activations;std::set<std::pair<std::string,std::string>> drives;
         for(const auto& c:commands) {
-            require(!c.entity.empty() && c.entity.size()<=256 && (c.activate || c.impulse || c.drive || c.drive_source || c.animation || c.animation_rate),"Physical command needs a rig and an explicit action.");
+            require(!c.entity.empty() && c.entity.size()<=256 && (c.activate || c.impulse || c.drive || c.drive_source || c.animation || c.animation_rate || c.recover),"Physical command needs a rig and an explicit action.");
+            require(!c.recover || (!c.activate && !c.impulse && !c.drive && !c.drive_source && !c.animation && !c.animation_rate),
+                "Recovery is an exclusive physical ownership request.");
             if(c.activate)require(activations.insert(c.entity).second,"At most one activation per physical rig in a tick.");
             if(c.drive) {
                 require(physical_part_name(c.drive->joint),"Physical drive needs a portable joint name.");
@@ -303,7 +311,7 @@
         const std::vector<RuntimeGroundingCommand>& grounding) const {
         for(const auto& c:commands) {
             const auto found=physical_owners.find(c.entity);
-            if(c.activate || (found!=physical_owners.end() && found->second->backend->mode()!=RuntimePhysicalRigMode::Animated))
+            if(c.activate || c.recover || (found!=physical_owners.end() && found->second->backend->mode()!=RuntimePhysicalRigMode::Animated))
                 require(!physical_targets(bases,c.entity) && !physical_targets(rates,c.entity) && !physical_targets(ik,c.entity) && !physical_targets(roots,c.entity) && !physical_targets(grounding,c.entity),
                     "Physical ownership conflicts with a same-tick animation/rate/IK/grounding/root-motion edit.");
         }
@@ -319,6 +327,11 @@
         const auto validate_activations=[&](const auto& commands){for(const auto& c:commands)if(c.activate)
             require(activations.insert(c.entity).second,"Caller and gameplay requested duplicate physical activation.");};
         validate_activations(caller);validate_activations(gameplay);
+        std::set<std::string> recovery_requests;
+        for(const auto* batch:{&caller,&gameplay})for(const auto& c:*batch)if(c.recover)
+            require(recovery_requests.insert(c.entity).second,"Duplicate recovery request in one tick.");
+        for(const auto* batch:{&caller,&gameplay})for(const auto& c:*batch)
+            require(c.recover || !recovery_requests.contains(c.entity),"Recovery cannot share a rig with another same-tick physical action.");
         std::set<std::pair<std::string,std::string>> drive_writes;
         std::set<std::pair<std::string,std::uint32_t>> playback_writes;
         for(const auto* batch:{&caller,&gameplay})for(const auto& c:*batch) {
@@ -329,6 +342,7 @@
         }
         const auto apply=[&](const auto& commands) {for(const auto& command:commands) {
             const auto found=physical_owners.find(command.entity);require(found!=physical_owners.end() && topology->identities.contains(command.entity),"Physical command needs a live PhysicalRig owner.");auto& owner=*found->second;
+            if(command.recover){request_physical_recovery(command.entity,owner);continue;}
             if(command.activate) {
                 require(owner.backend->mode()==RuntimePhysicalRigMode::Animated && owner.binding->state().current && owner.binding->state().current->tick==tick,"Physical activation requires the current committed animated pose.");
                 if(owner.handoff) {
@@ -338,9 +352,11 @@
                     RuntimeControllerSuppression passive;passive.takeover_tick=tick;
                     passive.follow=capture_actor_follow(registry.get<Node>(find(owner.handoff->actor)).world,registry.get<Node>(find(command.entity)).world);
                     passive.support=c.character->CaptureSupport();
+                    if(owner.recovery)passive.wrapper_local=registry.get<Node>(find(command.entity)).local;
                     // History already includes resolved actor/platform motion.
                     // Never add motor velocity a second time.
                     if(animations->procedural_enabled(command.entity))animations->suspend_procedural(command.entity,tick);
+                    animations->cancel_physical_return(command.entity,tick);
                     owner.binding->capture_passive_reference(physical_world(),physical_local());
                     c.character->Suppress(passive.support);passive.proxy=c.character->CaptureProxy();owner.handoff->passive=passive;
                     owner.backend->enter_passive(owner.binding->state().current->bodies);
@@ -376,6 +392,7 @@
         for(const auto& id:topology->physical_rigs) {
             const auto& owner=*physical_owners.at(id);PhysicalSavedRig row;
             row.membership=owner.backend->snapshot_membership();row.pose=owner.binding->snapshot();row.collision_group=owner.collision_group;row.handoff=owner.handoff;
+            row.recovery=owner.recovery;
             if(owner.animation)row.animation=owner.animation->checkpoint();
             for(const auto& part:owner.backend->definition().parts)row.ids.push_back(owner.backend->body_id(part.name));
             saved.rigs.emplace(id,std::move(row));
@@ -393,19 +410,31 @@
             auto& owner=*physical_owners.at(id);require(owner.collision_group==row.collision_group && row.ids.size()==owner.backend->definition().parts.size(),"Physical rollback allocation/profile differs.");
             for(std::size_t n=0;n<row.ids.size();++n)require(owner.backend->body_id(owner.backend->definition().parts[n].name)==row.ids[n],"Physical rollback must preserve exact body IDs.");
             owner.backend->restore_membership(row.membership);owner.binding->restore(row.pose);owner.handoff=row.handoff;
+            owner.recovery=row.recovery;
             require(bool(owner.animation)==row.animation.has_value(),"Physical animation rollback membership differs.");
             if(owner.animation)owner.animation->restore(*row.animation);
             if(row.handoff) {
                 auto& motor=*registry.get<Controller>(find(row.handoff->actor)).character;
                 motor.RestoreSuppression(row.handoff->passive ? std::optional{row.handoff->passive->support} : std::nullopt);
-                if(row.handoff->passive)motor.RestoreProxy(row.handoff->passive->proxy);
             }
         }
         std::vector<JPH::Ref<JPH::Constraint>> constraints;constraints.reserve(saved.constraint_order.size());
         for(const auto& [rig,joint]:saved.constraint_order)constraints.push_back(physical_owners.at(rig)->backend->constraint(joint));
         runtime_physical_rig_restore_constraint_order(physics,constraints);physical_next_collision_group=saved.next_collision_group;
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
+    void restore_suppressed_controller_proxies(const PhysicalCheckpoint& saved) {
+        if(!saved.enabled)return;
+        // A failed return may have moved the logical motor away from its old
+        // suppressed position. Restore that logical state first, then publish
+        // and certify its off-world proxy; Jolt does not serialize that body.
+        for(const auto& [id,row]:saved.rigs) {
+            (void)id;
+            if(row.handoff && row.handoff->passive)
+                registry.get<Controller>(find(row.handoff->actor)).character->RestoreProxy(row.handoff->passive->proxy);
+        }
+    }
     void restore_physical_after_jolt(const PhysicalCheckpoint& saved) {
+        restore_suppressed_controller_proxies(saved);
         if(saved.enabled)require(physics.RestorePoimaOwnerState(saved.owner),"Cannot restore exact physics owner active/invalidation state.");
     }
     RuntimePhysicsBootstrap physical_bootstrap() const {

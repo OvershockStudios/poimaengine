@@ -158,6 +158,7 @@ nlohmann::json handoff_state_json(const RuntimeControllerHandoffState& value) {
                 {"normal",p.support.normal},{"velocity",p.support.velocity}}},
             {"proxy",{{"body_id",p.proxy.body_id},{"position",p.proxy.position},{"rotation",p.proxy.rotation},
                 {"linear_velocity",p.proxy.linear_velocity},{"angular_velocity",p.proxy.angular_velocity},{"active",p.proxy.active}}}};
+        if(p.wrapper_local)passive["wrapper_local"]={{"position",p.wrapper_local->position},{"rotation",p.wrapper_local->rotation},{"scale",p.wrapper_local->scale}};
     }
     Json result={{"actor",value.actor},{"passive",std::move(passive)}};
     (void)parse_handoff_state(result);return result;
@@ -181,7 +182,16 @@ RuntimeControllerHandoffState parse_handoff_state(const nlohmann::json& value) {
             "Controller support values must retain exact native float32 values.");
         return values;
     };
-    const auto& p=value.at("passive");fields(p,{"takeover_tick","follow","support","proxy"});RuntimeControllerSuppression saved;
+    const auto& p=value.at("passive");
+    if(p.contains("wrapper_local"))fields(p,{"takeover_tick","follow","support","proxy","wrapper_local"});
+    else fields(p,{"takeover_tick","follow","support","proxy"});
+    RuntimeControllerSuppression saved;
+    if(p.contains("wrapper_local")) {
+        const auto& local=p.at("wrapper_local");fields(local,{"position","rotation","scale"});
+        RuntimeTransform frame;frame.position=vector<3>(local.at("position"),runtime_physical_rig_world_limit);
+        frame.rotation=rotation(local.at("rotation"));frame.scale=vector<3>(local.at("scale"),1e8);
+        for(double v:frame.scale)need(v>=1e-8,"Historical return wrapper requires positive retained scale.");saved.wrapper_local=frame;
+    }
     saved.takeover_tick=integer(p.at("takeover_tick"),max_tick);
     const auto& follow=p.at("follow");fields(follow,{"actor_minus_wrapper_world","actor_world_rotation"});
     saved.follow.actor_minus_wrapper_world=vector<3>(follow.at("actor_minus_wrapper_world"),2*runtime_physical_rig_world_limit);

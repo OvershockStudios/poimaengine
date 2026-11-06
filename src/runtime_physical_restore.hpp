@@ -4,6 +4,7 @@
 #include "runtime_controller_handoff_state.hpp"
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 namespace poima {
 struct RuntimePhysicalRigIdentity {
@@ -27,6 +28,12 @@ struct RuntimePhysicsBootstrap {
     // Extension-4 live grounded captures are joined after current animation,
     // motor and body restoration. They do not suspend the animated owner.
     std::map<std::string,std::string> procedural_captures;
+    // Extension8 return sidecars, staged independently of the original birth
+    // calibration and installed before the current animation state is loaded.
+    std::map<std::string,std::string> physical_returns;
+    // Recovery may be requested before the first return sidecar exists. Keep
+    // the actual complete source player history even in that initial phase.
+    std::map<std::string,std::pair<std::string,bool>> recovery_sources;
     std::uint64_t snapshot_tick=0;
 };
 }

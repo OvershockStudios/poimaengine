@@ -75,9 +75,9 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGamePhysicalRigAnimationServicesV1 services() {
-        PoimaGamePhysicalRigAnimationServicesV1 full{};auto& drive=full.drive;auto& physical=drive.physical;auto& capsule=physical.capsule;auto& camera_pose=capsule.camera_pose;auto& rate=camera_pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
-        result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(PoimaGamePhysicalRigAnimationServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
+    PoimaGamePhysicalRecoveryServicesV1 services() {
+        PoimaGamePhysicalRecoveryServicesV1 recovery{};auto& full=recovery.animation;auto& drive=full.drive;auto& physical=drive.physical;auto& capsule=physical.capsule;auto& camera_pose=capsule.camera_pose;auto& rate=camera_pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
+        result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(PoimaGamePhysicalRecoveryServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
             &get_animation_extended,&set_animation_extended},&get_animation_layer,&set_animation_layer},&set_character_input},&query_navigation};
@@ -90,7 +90,8 @@
         full.physical_rig_animation_set=&set_physical_animation;
         full.physical_rig_animation_rate_set=&set_physical_animation_rate;
         full.physical_rig_drive_source_get=&get_physical_drive_source;
-        full.physical_rig_drive_source_set=&set_physical_drive_source;return full;
+        full.physical_rig_drive_source_set=&set_physical_drive_source;
+        recovery.physical_recovery_get=&get_physical_recovery;recovery.physical_recovery_request=&request_physical_recovery;return recovery;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
         if(ui_commands.empty() && !ui_modal)return {};
@@ -111,7 +112,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;const auto api=services();game->control(api.drive.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;const auto api=services();game->control(api.animation.drive.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             validate_player_preferences_boundary();

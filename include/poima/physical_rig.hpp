@@ -56,8 +56,9 @@ inline constexpr std::uint32_t max_node=9999;
 // mass, inertia and metric offsets remain fixed; this does not resize physics.
 enum class PoseFramePolicy { RigidUniform, SkeletalFixedScale, SkeletalBoundedScale };
 inline constexpr double max_skeletal_scale_deviation=.01;
-// Immutable one-way ownership link. The runtime additionally validates the
-// actor, direct parent/child graph and virtual-controller ownership boundary.
+// Immutable ownership link. Takeover is one-way unless recovery is explicitly
+// configured. The runtime additionally validates the actor, direct parent/child
+// graph and virtual-controller ownership boundary.
 enum class ControllerFollowPolicy { TranslateKeepHeading };
 struct ControllerHandoff {
     std::string actor;
@@ -75,6 +76,17 @@ struct AnimationDrive {
     // False preserves the orientation-only controller and saved representation.
     bool velocity_tracking=false;
 };
+// Explicit permission for guarded upright physical-to-animation handback.
+// Support points are metric coordinates in each centered physical COM frame,
+// not model/bone-local coordinates. Upright axes are also COM-local.
+struct RecoverySupport { std::string part;Vec3 point{}; };
+struct RecoveryUpright { std::string part;Vec3 up_axis{}; };
+struct Recovery {
+    std::vector<RecoverySupport> supports;
+    std::vector<RecoveryUpright> uprights;
+    double max_tilt_degrees=0,max_linear_speed=0,max_angular_speed=0;
+    std::uint32_t stability_ticks=0,blend_ticks=0;
+};
 // Frozen authoring profile; live mode/solver state belong to the runtime.
 struct Configuration {
     Definition profile;
@@ -89,6 +101,10 @@ struct Configuration {
     // initial base/layers. It does not select animation as any joint's source
     // or transfer pose ownership; those are explicit runtime controls.
     std::optional<AnimationDrive> animation_drive;
+    // No implicit recovery permission. All profile fields must be authored;
+    // current static support, capsule clearance and wrapper proximity are
+    // additionally checked by the runtime. This is not balance or get-up AI.
+    std::optional<Recovery> recovery;
 };
 inline constexpr double unit_tolerance=1e-6,min_dimension=.005,max_dimension=10;
 inline constexpr double min_mass=.0001,max_mass=10000,max_frame_position=10000;

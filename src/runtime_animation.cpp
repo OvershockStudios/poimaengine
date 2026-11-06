@@ -201,6 +201,50 @@ std::vector<NodeMotion> history_motion(const RuntimeAnimations::Clock& clock,std
     }
     return result;
 }
+NodePose return_node(const RuntimeTransform& value) { return {value.position,value.scale,value.rotation}; }
+RuntimeTransform return_transform(const NodePose& value) { return {value.position,value.rotation,value.scale}; }
+double return_progress(const RuntimeAnimations::PhysicalReturn& value,std::uint64_t tick) {
+    if(tick<=value.start_tick)return 0;
+    if(tick-value.start_tick>=value.duration_ticks)return 1;
+    return double(tick-value.start_tick)/value.duration_ticks;
+}
+double return_weight(const RuntimeAnimations::PhysicalReturn& value,std::uint64_t tick) {
+    const double t=return_progress(value,tick);return t*t*t*(10+t*(-15+6*t));
+}
+RuntimeAnimations::InertialNode return_offset(const NodePose& previous,const NodePose& source,
+    const NodePose& destination,const NodePose& next,double duration) {
+    RuntimeAnimations::InertialNode value;value.source_pose=source;
+    const auto source_rotation=rotation_log(product(source.rotation,inverse(previous.rotation)));
+    const auto target_rotation=rotation_log(product(next.rotation,inverse(destination.rotation)));
+    for(std::size_t k=0;k<3;++k) {
+        value.position_offset[k]=source.position[k]-destination.position[k];
+        value.translation_velocity[k]=((source.position[k]-previous.position[k])-(next.position[k]-destination.position[k]))/Runtime::fixed_dt;
+        value.log_scale_offset[k]=std::log(source.scale[k])-std::log(destination.scale[k]);
+        value.log_scale_velocity[k]=((std::log(source.scale[k])-std::log(previous.scale[k]))-
+            (std::log(next.scale[k])-std::log(destination.scale[k])))/Runtime::fixed_dt;
+    }
+    const auto offset=unit(product(source.rotation,inverse(destination.rotation)));
+    value.rotation_offset=rotation_log(offset);auto target_velocity=rotate(offset,target_rotation);Vec3 difference;
+    for(std::size_t k=0;k<3;++k)difference[k]=(source_rotation[k]-target_velocity[k])/Runtime::fixed_dt;
+    value.rotation_velocity=inverse_left_jacobian(value.rotation_offset,difference);
+    for(const auto* vector:{&value.position_offset,&value.translation_velocity,&value.log_scale_offset,
+        &value.log_scale_velocity,&value.rotation_offset,&value.rotation_velocity}) {
+        finite(*vector);for(double x:*vector)check(std::isfinite(x*duration),"Physical return correction exceeds duration bounds.");
+    }
+    return value;
+}
+NodePose returned_node(NodePose destination,const RuntimeAnimations::InertialNode& offset,
+    const RuntimeAnimations::PhysicalReturn& value,std::uint64_t tick) {
+    const double progress=return_progress(value,tick);
+    if(progress==0)return offset.source_pose;
+    if(progress==1)return destination;
+    const double seconds=double(value.duration_ticks)*Runtime::fixed_dt;
+    const auto p=decay(offset.position_offset,offset.translation_velocity,seconds,progress);
+    const auto s=decay(offset.log_scale_offset,offset.log_scale_velocity,seconds,progress);
+    const auto q=decay(offset.rotation_offset,offset.rotation_velocity,seconds,progress);
+    for(std::size_t k=0;k<3;++k) { destination.position[k]+=p[k];destination.scale[k]=std::exp(std::log(destination.scale[k])+s[k]); }
+    destination.rotation=unit(product(rotation_exp(q),destination.rotation));return destination;
+}
 }
 
 void validate_runtime_animation(const RuntimeDefinition& definition) {
@@ -358,6 +402,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto& source=*entity.animation_rig;Rig rig;rig.entity=entity.id;rig.model=source.model;
         rig.ik=source.ik;for(auto& chain:rig.ik)chain.end_orientation=canonical_ik_end_orientation(chain.end_orientation);
+        rig.physical_owner=entity.physical_rig.has_value();
         rig.procedural_pose=entity.physical_rig && entity.physical_rig->procedural_pose.has_value();
         if(rig.procedural_pose) {
             rig.procedural_grounding=*entity.physical_rig->procedural_pose==physical_rig::ProceduralPosePolicy::GroundedAnimatedOnly;
@@ -372,7 +417,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::sh
         }
         rig.root_motion=source.root_motion;for(const auto& node:source.model->nodes)rig.model_parents.push_back(node.parent);
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
-        rig.compiled=compiled.at(rig.model.get());
+        rig.compiled=compiled.at(rig.model.get());rig.wrapper=entity.transform;
         rig.parents.emplace_back(entity.id,entity.parent);
         rig.clip_durations.reserve(rig.model->animations.size());
         for(const auto& clip:rig.model->animations)rig.clip_durations.push_back(clip.duration);
@@ -442,7 +487,7 @@ std::unique_ptr<RuntimeAnimations> RuntimeAnimations::make_target_player(const s
     // Retain the model's complete hierarchy and authored layer definitions, but
     // no world-dependent procedures or ownership. In particular clearing just
     // live IK arrays would leave has_ik()/save validation seeing authored chains.
-    rig.ik.clear();rig.procedural_pose=false;rig.procedural_grounding=false;
+    rig.ik.clear();rig.procedural_pose=false;rig.procedural_grounding=false;rig.physical_owner=false;
     rig.root_motion.reset();rig.root_rest={};rig.skins.clear();rig.skin_geometry.clear();
     result->membership_=std::move(one);result->target_player_=true;
     result->clocks_={clocks_.at(index)};result->layers_={layers_.at(index)};
@@ -516,6 +561,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
             previous.skins==next.skins && previous.skin_geometry==next.skin_geometry && previous.clip_durations==next.clip_durations &&
             previous.model_parents==next.model_parents && poses_equal(previous.baseline,next.baseline) && layers_equal(previous.layers,next.layers) && ik_equal(previous.ik,next.ik) &&
             previous.procedural_pose==next.procedural_pose && previous.procedural_grounding==next.procedural_grounding &&
+            previous.physical_owner==next.physical_owner &&
             previous.root_motion.has_value()==next.root_motion.has_value() && (!previous.root_motion ||
                 (previous.root_motion->node==next.root_motion->node&&previous.root_motion->mode==next.root_motion->mode&&previous.root_motion->actor==next.root_motion->actor&&previous.root_motion->enabled==next.root_motion->enabled&&previous.root_motion->yaw==next.root_motion->yaw)),
             "Surviving animation rig bindings cannot change during membership replacement.");
@@ -526,6 +572,9 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
         if(const auto saved=procedural_finals_.find(entity);saved!=procedural_finals_.end())candidate.procedural_finals_.emplace(entity,saved->second);
         if(const auto saved=procedural_terminals_.find(entity);saved!=procedural_terminals_.end())candidate.procedural_terminals_.emplace(entity,saved->second);
         if(const auto saved=procedural_grounding_inputs_.find(entity);saved!=procedural_grounding_inputs_.end())candidate.procedural_grounding_inputs_.emplace(entity,saved->second);
+        if(const auto saved=physical_returns_.find(entity);saved!=physical_returns_.end())candidate.physical_returns_.emplace(entity,saved->second);
+        if(physical_returns_.contains(entity))check(previous.wrapper.position==next.wrapper.position&&previous.wrapper.rotation==next.wrapper.rotation&&
+            previous.wrapper.scale==next.wrapper.scale,"Physical return authored wrapper cannot change during membership replacement.");
         auto history_at_boundary=[tick](const Clock& clock) {
             check(!clock.current || clock.current->tick<=tick,"Animation membership boundary predates retained output history.");
         };
@@ -542,6 +591,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     grounding_controls_.swap(candidate.grounding_controls_);
     procedural_finals_.swap(candidate.procedural_finals_);procedural_terminals_.swap(candidate.procedural_terminals_);
     procedural_grounding_inputs_.swap(candidate.procedural_grounding_inputs_);
+    physical_returns_.swap(candidate.physical_returns_);
     std::swap(grounding_restore_pending_,candidate.grounding_restore_pending_);
     std::swap(grounding_controls_pending_,candidate.grounding_controls_pending_);
 }
@@ -653,8 +703,107 @@ ModelPose RuntimeAnimations::composed(std::size_t index,const Clock& base,const 
         const auto layer=evaluate(index,layers[i].clock,tick);const auto& frozen=rig.layers[i];
         blend_animation_layer(pose.local,layer.local,frozen.reference,frozen.mask,layer_weight(layers[i],tick),frozen.mode);
     }
-    if(!layers.empty())return rig.compiled->sample({},0,false,pose.local);
+    if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
+    apply_return_pose(index,pose,tick);
     return pose;
+}
+bool RuntimeAnimations::physical_return_active(const std::string& entity,std::uint64_t tick) const {
+    const auto found=physical_returns_.find(entity);if(found==physical_returns_.end())return false;
+    const auto& value=*found->second;
+    return !value.canceled_tick&&tick>=value.source_tick&&tick<value.start_tick+value.duration_ticks;
+}
+std::uint64_t RuntimeAnimations::physical_return_generation(const std::string& entity) const {
+    const auto found=physical_returns_.find(entity);return found==physical_returns_.end()?0:found->second->generation;
+}
+void RuntimeAnimations::cancel_physical_return(const std::string& entity,std::uint64_t tick) {
+    const auto found=physical_returns_.find(entity);if(found==physical_returns_.end())return;
+    const auto& value=*found->second;
+    check(tick>=value.start_tick&&tick<=animation_state_max_tick,"Physical return cancellation predates its committed pose.");
+    if(value.canceled_tick) {check(*value.canceled_tick==tick,"Physical return was canceled at another boundary.");return;}
+    auto canceled=std::make_shared<PhysicalReturn>(value);canceled->canceled_tick=tick;
+    physical_returns_.insert_or_assign(entity,std::move(canceled));
+}
+bool RuntimeAnimations::return_owns_controls(const std::string& entity) const {
+    const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return false;
+    const auto& clock=clocks_[found->second];
+    return physical_return_active(entity,clock.current?clock.current->tick:0);
+}
+std::optional<RuntimeTransform> RuntimeAnimations::physical_return_wrapper(const std::string& entity,std::uint64_t tick) const {
+    const auto found=physical_returns_.find(entity);if(found==physical_returns_.end()||found->second->canceled_tick)return {};
+    const auto& value=*found->second;check(tick>=value.source_tick&&tick<=animation_state_max_tick,"Physical return wrapper tick is invalid.");
+    return return_transform(returned_node(return_node(membership_->rigs.at(membership_->indices.at(entity)).wrapper),value.wrapper_offset,value,tick));
+}
+void RuntimeAnimations::apply_return_pose(std::size_t index,ModelPose& pose,std::uint64_t tick) const {
+    const auto& rig=membership_->rigs[index];const auto found=physical_returns_.find(rig.entity);
+    if(found==physical_returns_.end()||found->second->canceled_tick)return;
+    const auto& value=*found->second;check(tick>=value.source_tick,"Physical return sample predates its source.");
+    if(return_progress(value,tick)==1)return;
+    check(pose.local.size()==value.offsets.size(),"Physical return node membership differs.");
+    for(std::size_t i=0;i<pose.local.size();++i)pose.local[i]=returned_node(pose.local[i],value.offsets[i],value,tick);
+    pose=rig.compiled->sample({},0,false,pose.local);
+}
+void RuntimeAnimations::prepare_return_controls(std::uint64_t tick) {
+    for(const auto& [entity,pointer]:physical_returns_) {
+        const auto& value=*pointer;
+        if(value.canceled_tick||tick>value.start_tick+value.duration_ticks)continue;
+        check(tick>=value.source_tick,"Physical return controls predate the source.");
+        const auto index=membership_->indices.at(entity);const auto weight=return_weight(value,tick);
+        for(std::size_t i=0;i<value.requested_ik.size();++i) {
+            if(membership_->rigs[index].ik[i].grounding) {
+                auto control=value.requested_grounding[i];control.weight*=weight;grounding_controls_[index][i]=control;
+            }else {
+                auto control=value.requested_ik[i];control.weight*=weight;
+                if(control.end_orientation)control.end_orientation->weight*=weight;
+                ik_[index][i]=std::move(control);
+            }
+        }
+    }
+}
+void RuntimeAnimations::restore_return_playback(std::size_t index,std::uint64_t tick,
+    Clock& base,std::vector<LayerPlayback>& layers) const {
+    const auto& entity=membership_->rigs[index].entity;const auto found=physical_returns_.find(entity);
+    if(found==physical_returns_.end()||!found->second->restored_player||found->second->restored_player->first!=tick)return;
+    auto actual=make_target_player(entity);actual->clocks_[0]=base;actual->layers_[0]=layers;
+    auto stored=make_target_player(entity);stored->load_target_state(found->second->restored_player->second,tick);
+    check(actual->save_state(tick)==stored->save_state(tick),
+        "Return current playback differs from its complete saved history envelope.");
+    base.current=stored->clocks_[0].current;base.previous=stored->clocks_[0].previous;
+    for(std::size_t i=0;i<layers.size();++i) {
+        layers[i].clock.current=stored->layers_[0][i].clock.current;
+        layers[i].clock.previous=stored->layers_[0][i].clock.previous;
+    }
+}
+void RuntimeAnimations::validate_return_playback(std::size_t index,std::uint64_t tick,
+    const Clock& base,const std::vector<LayerPlayback>& layers) const {
+    const auto& entity=membership_->rigs[index].entity;const auto found=physical_returns_.find(entity);
+    if(found==physical_returns_.end()||found->second->canceled_tick||tick>found->second->start_tick+found->second->duration_ticks)return;
+    const auto& value=*found->second;
+    auto actual=make_target_player(entity);actual->clocks_[0]=base;actual->layers_[0]=layers;
+    auto expected=make_target_player(entity);expected->load_target_state(value.destination_player,value.source_tick);
+    if(tick>value.source_tick) {
+        if(tick-1>value.source_tick)(void)expected->sample(tick-1);
+        (void)expected->sample(tick);
+    }
+    check(actual->save_target_state(tick)==expected->save_target_state(tick),
+        "Physical return ordinary playback differs from its captured destination continuation.");
+}
+void RuntimeAnimations::validate_return_controls(std::size_t index,std::uint64_t tick,
+    const std::vector<RuntimeIkCommand>& controls,const std::vector<RuntimeGroundingControl>& grounding) const {
+    const auto& rig=membership_->rigs[index];const auto found=physical_returns_.find(rig.entity);
+    if(found==physical_returns_.end()||found->second->canceled_tick||tick>found->second->start_tick+found->second->duration_ticks)return;
+    const auto& value=*found->second;
+    check(tick>=value.start_tick,"Physical return cannot save before its first committed final sample.");
+    const double weight=return_weight(value,tick);
+    for(std::size_t i=0;i<rig.ik.size();++i) {
+        if(rig.ik[i].grounding) {
+            auto expected=value.requested_grounding[i];expected.weight*=weight;
+            check(grounding[i]==expected,"Physical return grounding request differs from its phase.");
+        }else {
+            auto expected=value.requested_ik[i];expected.weight*=weight;
+            if(expected.end_orientation)expected.end_orientation->weight*=weight;
+            check(procedural_controls_equal({controls[i]},{expected}),"Physical return manual IK request differs from its phase.");
+        }
+    }
 }
 RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const {
         Clock next=previous;next.control=playback_control(command,membership_->rigs[index].clip_durations.size());next.anchor_tick=tick;next.transition.reset();next.rate.reset();
@@ -703,6 +852,7 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
     if(!rates.empty())check(tick<=animation_state_max_tick,"Animation rate tick is out of range.");
     auto candidate=clocks_;auto candidate_layers=layers_;auto candidate_roots=roots_;std::set<std::pair<std::string,std::optional<std::uint32_t>>> seen;std::set<std::size_t> changed;
     for(const auto& command:commands) {
+        check(!return_owns_controls(command.entity),"Physical return owns ordinary animation controls during its finite blend.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Animation command requires an AnimationRig entity.");
         check(seen.emplace(command.entity,command.layer).second,"Duplicate animation command target.");
         const auto index=found->second;changed.insert(index);
@@ -734,6 +884,7 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
         }
     }
     for(const auto& command:rates) {
+        check(!return_owns_controls(command.entity),"Physical return owns ordinary animation rates during its finite blend.");
         check(std::isfinite(command.speed)&&command.speed>=0&&command.speed<=8,"Animation rate must be within 0..8.");
         check(!command.layer||(*command.layer>=1&&*command.layer<=4),"Animation layer slot must be 1..4.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"Animation rate requires an AnimationRig entity.");
@@ -833,6 +984,7 @@ void RuntimeAnimations::apply_grounding(const std::vector<RuntimeGroundingComman
     check(commands.size()<=64,"Grounding command budget is64 per tick.");if(commands.empty())return;
     auto candidate=grounding_controls_;std::set<std::pair<std::string,std::uint32_t>> seen;
     for(const auto& command:commands) {
+        check(!return_owns_controls(command.entity),"Physical return owns grounding requests during its finite blend.");
         check(command.slot>=1&&command.slot<=8,"Grounding slot must be1..8.");
         const RuntimeGroundingControl control{command.enabled,command.weight};validate_grounding_control(control);
         check(seen.emplace(command.entity,command.slot).second,"Duplicate grounding command entity/slot.");
@@ -851,6 +1003,7 @@ std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& ent
     const auto& states=ik_states_[found->second];for(const auto& state:states)if(state.slot==slot)return state;return {};
 }
 void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
+    for(const auto& command:commands)check(!return_owns_controls(command.entity),"Physical return owns IK requests during its finite blend.");
     check(commands.size()<=64,"IK command budget is 64 per tick.");if(commands.empty())return;auto candidate=ik_;std::set<std::pair<std::string,std::uint32_t>> seen;
     for(const auto& command:commands) {
         validate_ik_command(command);check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
@@ -863,6 +1016,16 @@ void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) 
     ik_.swap(candidate);
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
+    const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
+    const grounding::SupportQuery& support_query,const ProceduralSupportQuery& procedural_support_query) {
+    if(physical_returns_.empty())return sample_impl(tick,wrapper_world,contact_query,support_query,procedural_support_query);
+    auto saved=checkpoint();
+    try {
+        prepare_return_controls(tick);
+        return sample_impl(tick,wrapper_world,contact_query,support_query,procedural_support_query);
+    }catch(...) {restore(saved);throw;}
+}
+std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_impl(std::uint64_t tick,
     const std::function<const Matrix4&(const std::string&)>& wrapper_world,const grounding::Query& contact_query,
     const grounding::SupportQuery& support_query,const ProceduralSupportQuery& procedural_support_query) {
     if(contact_query && has_grounding())return sample_grounded(tick,wrapper_world,contact_query,support_query,procedural_support_query);
@@ -913,6 +1076,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick,
         }
         if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
         strip_root(index,pose);
+        apply_return_pose(index,pose,tick);
         for(std::size_t i=0;!procedural_suspended(rig.entity) && i<rig.ik.size();++i) {
             if(!rig.ik[i].grounding) {
                 candidate_ik_states[index][i]=ik::solve(rig.model_parents,pose,rig.ik[i],ik_[index][i],wrappers[index]);continue;
@@ -993,7 +1157,7 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample_grounded(std::uint64
             if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();
         }
         if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
-        strip_root(index,pose);poses[index]=std::move(pose);
+        strip_root(index,pose);apply_return_pose(index,pose,tick);poses[index]=std::move(pose);
     },"animation.sample.rig");
     // No task runs here. Do not solve an earlier foot before preparing a later
     // foot: every decision must observe the same uncorrected animation frame.
@@ -1469,6 +1633,8 @@ std::string RuntimeAnimations::save_state_impl(std::uint64_t tick,bool verify_pr
     };
     StateJson records=StateJson::array();
     for(const auto& [entity,index]:membership_->indices) {
+        validate_return_controls(index,tick,ik_[index],grounding_controls_[index]);
+        validate_return_playback(index,tick,clocks_[index],layers_[index]);
         if(const auto terminal=procedural_terminals_.find(entity);terminal!=procedural_terminals_.end()) {
             check(procedural_controls_equal(ik_[index],terminal->second->controls),"Live suspended IK controls differ from their terminal witness.");
             check(procedural_states_json(ik_states_[index]).dump()==procedural_states_json(terminal->second->states).dump(),
@@ -1749,6 +1915,9 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
         }
         if(configured_root||oriented){const auto& rig=membership_->rigs[index];const auto& root=rig.root_motion;const auto& saved=record.at("root_motion");check(saved.is_null()==!root,"Saved root motion membership differs.");if(root){candidate_roots[index]=read_root(saved,entity,*root,rig.clip_durations.size(),tick,candidate[index],retimed,rig.clip_durations);
             if(candidate_roots[index].fade)any_rate=any_rate||candidate_roots[index].fade->source_rate.has_value();}}
+        restore_return_playback(index,tick,candidate[index],candidate_layers[index]);
+        validate_return_controls(index,tick,candidate_ik[index],candidate_grounding[index]);
+        validate_return_playback(index,tick,candidate[index],candidate_layers[index]);
         if(procedural_suspended(entity))verify_procedural_progression(index,tick,candidate[index],candidate_layers[index],candidate_ik[index],candidate_grounding[index]);
     }
     check(!retimed||any_rate,planted?"Retimed version 10 animation state requires a retained rate segment.":"Version 9 animation state requires a retained rate segment.");

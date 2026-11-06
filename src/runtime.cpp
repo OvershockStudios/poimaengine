@@ -13,6 +13,7 @@
 #include "runtime_physical_rig.hpp"
 #include "runtime_physical_animation.hpp"
 #include "runtime_physical_pose.hpp"
+#include "runtime_physical_recovery_state.hpp"
 #include "runtime_character_input_plan.hpp"
 #include "runtime_controller_handoff_state.hpp"
 #include "runtime_entity_ids.hpp"
@@ -231,7 +232,9 @@ struct Runtime::Impl {
     std::string world_id;
     std::uint64_t revision=0, tick=0, material_revision=0;
     #include "runtime_physical.inc"
+    #include "runtime_physical_recovery.inc"
     #include "runtime_physical_animation_services.inc"
+    #include "runtime_physical_recovery_services.inc"
     #include "runtime_controller_handoff.inc"
     ~Impl() {
         physical_owners.clear(); // Constraints/bodies die while allocator/physics live.
@@ -387,6 +390,11 @@ struct Runtime::Impl {
     }
     void animation_locals(bool refresh_grounding=false) {
         profiling::Scope profile("runtime.animation.sample",static_cast<std::int64_t>(tick));
+        bool returned_wrapper=false;
+        for(const auto& id:topology->physical_rigs)if(const auto local=animations->physical_return_wrapper(id,tick)) {
+            registry.get<Node>(find(id)).local=*local;returned_wrapper=true;
+        }
+        if(returned_wrapper)world_matrices();
         if(animations->has_ik()) {
             // Copy current physical wrapper transforms before sampling jobs.
             // Jobs never read the registry or the preceding frame's matrices.
@@ -812,6 +820,7 @@ struct Runtime::Impl {
         for(const auto& id:candidate->physical_rigs)
             if(animations->procedural_enabled(id) && !animations->procedural_suspended(id))
                 animations->record_procedural_final(id,tick,registry.get<Node>(find(id)).world);
+        for(const auto& id:candidate->physical_rigs)record_recovery_final(id,*physical_owners.at(id));
     }
     std::map<entt::entity,Motion> prepare_motions(const std::vector<KinematicTarget>& motions) {
         require(motions.size()<=128,"At most 128 kinematic targets per batch.");
@@ -1306,12 +1315,12 @@ struct Runtime::Impl {
     void apply_stance_requests(const std::vector<RuntimeCharacterStanceCommand>& commands) {
         validate_stance_commands(commands);
         for(const auto& command:commands) {
-            auto& c=registry.get<Controller>(find(command.entity));if(!c.character->IsSuppressed())c.requested_crouch=command.crouch;
+            auto& c=registry.get<Controller>(find(command.entity));if(!c.character->IsSuppressed() && !c.character->IsRecoveryHeld())c.requested_crouch=command.crouch;
         }
     }
     void update_character_stances() {
         for(const auto e:topology->characters) {
-            auto& c=registry.get<Controller>(e);if(!c.settings.stance || c.character->IsSuppressed())continue;
+            auto& c=registry.get<Controller>(e);if(!c.settings.stance || c.character->IsSuppressed() || c.character->IsRecoveryHeld())continue;
             c.stand_blocked=false;
             if(c.requested_crouch==c.crouched)continue;
             const auto* shape=c.requested_crouch ? c.crouched_shape.GetPtr() : c.standing_shape.GetPtr();
@@ -1341,7 +1350,7 @@ struct Runtime::Impl {
     }
     void apply_character_input(entt::entity entity,const RuntimeInput& input,bool edges) {
         auto& controller=registry.get<Controller>(entity);
-        if(controller.character->IsSuppressed())return;
+        if(controller.character->IsSuppressed() || controller.character->IsRecoveryHeld())return;
         const auto speed=controller.crouched ? controller.settings.stance->crouched_speed : controller.settings.speed;
         const auto plan=detail::prepare_character_input(controller.yaw,controller.pitch,
             controller.character->GetRotation(),controller.character->GetIntegrationVelocity().GetY(),
@@ -1700,11 +1709,11 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_drive_reads=game_physical_animation_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
+                    clear_ui_commands();game_input_source=&inputs;game_input_edges=frame==0;game_input_action_calls=0;game_hit_region_calls=0;game_capsule_query_attempts=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_root_motion_reads=game_root_motion_writes=0;game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();game_physical_summary_reads=game_physical_part_reads=game_physical_drive_reads=game_physical_animation_reads=game_physical_recovery_reads=game_physical_write_attempts=0;game_physical_caller_writes=frame==0?physical_commands.size():0;game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(api.drive.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.animation.drive.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1892,6 +1901,7 @@ struct Runtime::Impl {
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
                 ++tick;animation_locals(true);sync();physical_record_final();
+                for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
             }
             sync();
             validate_player_preferences_boundary();
@@ -2193,6 +2203,27 @@ std::optional<ControllerHandoffObservation> Runtime::controller_handoff(const st
         result.cached_support=ControllerHandoffObservation::CachedSupport{ground_name(static_cast<JPH::CharacterBase::EGroundState>(support.ground_state)),
             support.ground_body_id,support.normal,support.velocity};
     }
+    return result;
+}
+std::optional<PhysicalRecoveryObservation> Runtime::physical_recovery(const std::string& id) const {
+    (void)impl_->find(id);const auto found=impl_->physical_owners.find(id);
+    if(found==impl_->physical_owners.end() || !found->second->recovery)return {};
+    const auto& owner=*found->second;const auto& state=*owner.recovery;
+    require(state.current && state.current->tick==impl_->tick && state.assessment && state.assessment->tick==impl_->tick,
+        "Recovery observation requires a complete committed assessment.");
+    PhysicalRecoveryObservation result;result.entity=id;result.tick=impl_->tick;result.generation=state.generation;
+    result.physical=owner.backend->mode()!=RuntimePhysicalRigMode::Animated;
+    result.transition_active=impl_->animations->physical_return_active(id,impl_->tick);
+    result.assessment_revision=state.assessment->structure_revision;
+    result.status=result.assessment_revision==impl_->structure_revision?state.assessment->status:PhysicalRecoveryStatus::HistoryUnavailable;
+    result.stable_ticks=state.stable_ticks;
+    result.required_stable_ticks=impl_->topology->definitions.at(id).physical_rig->recovery->stability_ticks;
+    result.last_attempt_tick=state.last_attempt_tick;result.last_attempt_result=state.last_attempt_result;
+    if(state.transfer)result.returned_tick=state.transfer->tick;
+    const auto& a=*state.assessment;
+    result.maximum_linear_speed=a.maximum_linear_speed;result.maximum_angular_speed=a.maximum_angular_speed;
+    result.minimum_upright_dot=a.minimum_upright_dot;result.wrapper_distance=a.wrapper_distance;result.wrapper_angle=a.wrapper_angle;
+    if(a.clearance)for(std::size_t i=0;i<2;++i)if(a.clearance->supports[i])result.support_bodies[i]=a.clearance->supports[i]->body.GetIndexAndSequenceNumber();
     return result;
 }
 std::optional<ProceduralPoseObservation> Runtime::procedural_pose(const std::string& id) const {

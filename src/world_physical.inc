@@ -5,11 +5,15 @@
         std::vector<PhysicalRigCommand> result;
         std::set<std::string> activations;
         for(const auto& value:raw) {
-            fields(value,{"entity","activate","impulse","drive","drive_source","animation","animation_rate"},{"entity"});
+            fields(value,{"entity","activate","impulse","drive","drive_source","animation","animation_rate","recover"},{"entity"});
             PhysicalRigCommand command;command.entity=identifier(value.at("entity"));
             if(value.contains("activate")) {
                 require(value.at("activate").is_boolean(),"Physical rig activate must be boolean.");
                 command.activate=value.at("activate").get<bool>();
+            }
+            if(value.contains("recover")) {
+                require(value.at("recover").is_boolean(),"Physical rig recover must be boolean.");command.recover=value.at("recover").get<bool>();
+                if(command.recover)require(value.size()==2,"Recovery must be the only explicit action on its rig.");
             }
             if(value.contains("impulse")) {
                 const auto& impulse=value.at("impulse");
@@ -79,7 +83,7 @@
                 command.animation_rate=parse_animation_rates(Json::array({std::move(complete)})).front();
             }
             require(command.activate || command.impulse.has_value() || command.drive.has_value() || command.drive_source.has_value() ||
-                command.animation.has_value() || command.animation_rate.has_value(),
+                command.animation.has_value() || command.animation_rate.has_value() || command.recover,
                 "Physical command needs activation, an impulse, a drive/source or target playback.");
             require(!command.activate || activations.insert(command.entity).second,"A physical rig may activate only once per Tick.");
             result.push_back(std::move(command));
@@ -185,5 +189,29 @@
                 {"diagnostics",state->suspended?"last_animated_pose":"current"},
                 {"sampled_tick",state->sampled_tick},{"slots",state->slots}};
         }catch(const std::exception& error){throw Error(-32602,error.what());}
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
+    }
+
+    Json physical_recovery_runtime_query(const Json& params) {
+        fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+        require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto entity=identifier(params.at("entity"));
+        try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+        Json value=nullptr;
+        try {if(const auto state=runtime_->physical_recovery(entity)) {
+            static constexpr const char* names[]={"locomotion","history_unavailable","not_standing","not_upright","moving","wrapper_displaced",
+                "missing_support","moving_support","invalid_support","proxy_blocked","motor_blocked","query_budget","invalid_native_result","stabilizing","ready","returned","sole_out_of_range"};
+            const auto name=[&](PhysicalRecoveryStatus status){const auto i=static_cast<std::uint32_t>(status);require(i<std::size(names),"Unknown recovery status.");return names[i];};
+            Json supports=Json::array();for(const auto& body:state->support_bodies)supports.push_back(body?Json(*body):Json(nullptr));
+            value={{"entity",state->entity},{"sampled_tick",state->tick},{"generation",state->generation},
+                {"assessment_revision",state->assessment_revision},
+                {"phase",state->physical?"physical":state->transition_active?"returning":"locomotion"},{"status",name(state->status)},
+                {"stable_ticks",state->stable_ticks},{"required_stable_ticks",state->required_stable_ticks},
+                {"last_attempt_tick",state->last_attempt_tick?Json(*state->last_attempt_tick):Json(nullptr)},
+                {"last_attempt_result",name(state->last_attempt_result)},{"returned_tick",state->returned_tick?Json(*state->returned_tick):Json(nullptr)},
+                {"maximum_linear_speed",state->maximum_linear_speed},{"maximum_angular_speed",state->maximum_angular_speed},
+                {"minimum_upright_dot",state->minimum_upright_dot},{"wrapper_distance",state->wrapper_distance},{"wrapper_angle",state->wrapper_angle},
+                {"support_body_ids",std::move(supports)}};
+        }}catch(const std::exception& error){throw Error(-32602,error.what());}
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",std::move(value)}};
     }

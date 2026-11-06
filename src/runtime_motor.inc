@@ -13,6 +13,10 @@ class CharacterMotor {
     JPH::Vec3 reported_velocity_=JPH::Vec3::sZero();
     JPH::RVec3 tick_origin_=JPH::RVec3::sZero();
     float pending_seconds_=0;
+    // Transaction-local hold, cleared by the next BeginTick. No query or save
+    // depends on this flag; the transferred pose/contact state is ordinary
+    // committed motor state. Rollback also clears the transient hold.
+    bool recovery_hold_=false;
     std::optional<RuntimeControllerSupportState> suppressed_support_;
     JPH::CharacterBase& base() const {return virtual_ ? static_cast<JPH::CharacterBase&>(*virtual_) : static_cast<JPH::CharacterBase&>(*physical_);}
     JPH::Vec3 bounded_velocity(JPH::Vec3Arg velocity) const {
@@ -76,6 +80,7 @@ public:
         return body.GetCenterOfMassPosition()==com && body.GetRotation()==q && body.GetPosition()==com-offset;
     }
     bool IsSuppressed() const {return suppressed_support_.has_value();}
+    bool IsRecoveryHeld() const {return recovery_hold_;}
     RuntimeControllerSupportState CaptureSupport() const {
         if(suppressed_support_)return *suppressed_support_;
         const auto normal=base().GetGroundNormal(),velocity=base().GetGroundVelocity();
@@ -101,6 +106,25 @@ public:
     void Suppress(const RuntimeControllerSupportState& support) {
         require(IsVirtual() && !IsSuppressed(),"Physical takeover requires a live locomotion motor.");
         RestoreSuppression(support);
+    }
+    void ResumeAfterPhysical(JPH::RVec3Arg position,JPH::Vec3Arg velocity,
+        const std::array<JPH::BodyID,2>& supports) {
+        require(IsVirtual() && IsSuppressed() && !physics_.GetBodyInterface().IsAdded(proxy_),
+            "Physical return needs the allocated off-world virtual motor.");
+        require(!velocity.IsNaN() && std::isfinite(velocity.LengthSq()) && velocity.LengthSq()<=4,
+            "Physical return velocity exceeds its reduced-order bound.");
+        // Heading never changed during physical follow. Retain the original
+        // native quaternion, rather than normalize a matrix decomposition back
+        // into it. The caller already checked clearance at this exact heading.
+        virtual_->SetPosition(position);virtual_->SetLinearVelocity(velocity);
+        reported_velocity_=velocity;jump_pending_=false;jump_speed_=0;pending_seconds_=0;
+        JPH::IgnoreSingleBodyFilter ignore(proxy_);
+        virtual_->RefreshContacts(physics_.GetDefaultBroadPhaseLayerFilter(1),physics_.GetDefaultLayerFilter(1),ignore,{},allocator_);
+        require(!virtual_->GetMaxHitsExceeded() && virtual_->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround &&
+            (virtual_->GetGroundBodyID()==supports[0] || virtual_->GetGroundBodyID()==supports[1]),
+            "Physical return could not acquire the admitted current static support.");
+        publish_proxy_pose();
+        suppressed_support_.reset();AddToPhysicsSystem();recovery_hold_=true;
     }
     void RestoreProxy(const RuntimeControllerProxyState& state) {
         require(IsSuppressed() && state.body_id==GetBodyID().GetIndexAndSequenceNumber() && !state.active,
@@ -142,7 +166,11 @@ public:
     JPH::BodyID GetGroundBodyID() const {return suppressed_support_ ? JPH::BodyID(suppressed_support_->ground_body_id) : base().GetGroundBodyID();}
     JPH::Vec3 GetGroundNormal() const {return suppressed_support_ ? JPH::Vec3(static_cast<float>(suppressed_support_->normal[0]),static_cast<float>(suppressed_support_->normal[1]),static_cast<float>(suppressed_support_->normal[2])) : base().GetGroundNormal();}
     JPH::Vec3 GetGroundVelocity() const {return suppressed_support_ ? JPH::Vec3(static_cast<float>(suppressed_support_->velocity[0]),static_cast<float>(suppressed_support_->velocity[1]),static_cast<float>(suppressed_support_->velocity[2])) : base().GetGroundVelocity();}
-    void BeginTick() {if(IsSuppressed())return;jump_pending_=false;jump_speed_=0;}
+    void BeginTick() {recovery_hold_=false;if(IsSuppressed())return;jump_pending_=false;jump_speed_=0;}
+    // The held transfer is only an in-flight tick phase. Once its exact final
+    // pose/history is published, same-boundary structural edits must refresh
+    // contacts equally in original, restored and rolled-back worlds.
+    void EndTick() {recovery_hold_=false;}
     void RequestJump(float speed) {jump_pending_=true;jump_speed_=speed;}
     void CheckCollision(JPH::RVec3Arg position,JPH::QuatArg rotation,JPH::Vec3Arg movement,float separation,
         const JPH::Shape* shape,JPH::RVec3Arg offset,JPH::CollideShapeCollector& collector) const {
@@ -160,7 +188,7 @@ public:
         publish_proxy_pose();return true;
     }
     void UpdateVirtual(float seconds) {
-        if(!virtual_ || IsSuppressed())return;
+        if(!virtual_ || IsSuppressed() || recovery_hold_)return;
         require(seconds>0 && std::isfinite(seconds),"Invalid virtual character integration interval.");
         const auto previous=virtual_->GetPosition();
         tick_origin_=previous;pending_seconds_=seconds;
@@ -196,7 +224,7 @@ public:
         publish_proxy_pose();
     }
     void PostSimulation(float separation) {
-        if(IsSuppressed())return;
+        if(IsSuppressed() || recovery_hold_)return;
         if(!virtual_) {physical_->PostSimulation(separation);return;}
         const bool supported=virtual_->IsSupported();
         const bool descending=reported_velocity_.GetY()<=1.0e-6f &&
@@ -227,6 +255,7 @@ public:
         virtual_->SaveState(recorder);recorder.Write(jump_pending_);recorder.Write(jump_speed_);recorder.Write(reported_velocity_);
     }
     void RestoreState(JPH::StateRecorder& recorder) {
+        recovery_hold_=false;
         if(!virtual_) {physical_->RestoreState(recorder);return;}
         virtual_->RestoreState(recorder);recorder.Read(jump_pending_);recorder.Read(jump_speed_);recorder.Read(reported_velocity_);
         pending_seconds_=0;

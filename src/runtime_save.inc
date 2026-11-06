@@ -510,7 +510,11 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     for(const auto& saved:stances)
         s.restore_character_stance(s.registry.get<Controller>(saved.entity),saved.requested,saved.crouched,saved.blocked);
+    if(physical_bootstrap)for(const auto& [rig,sidecar]:physical_bootstrap->physical_returns)
+        s.animations->load_physical_return_state(rig,sidecar,tick);
     s.animations->load_state(data.at("animation").dump(),tick);
+    if(physical_bootstrap)for(const auto& [rig,source]:physical_bootstrap->recovery_sources)
+        s.animations->load_recovery_source_state(rig,source.first,tick,source.second);
     if(!s.animations->has_ik() && !s.animations->has_root_motion())s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
     std::string previous;
@@ -602,7 +606,10 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     for(const auto& motor:motors)s.registry.get<Controller>(motor.entity).character->RestoreMotorPose(motor.position,motor.rotation,motor.integration,motor.reported);
     // Enroll exact articulated identities before support reconstruction. These
     // detached candidate mutations are superseded by the joined native state.
-    if(physical_checkpoint)s.restore_physical_before_jolt(*physical_checkpoint);
+    if(physical_checkpoint) {
+        s.restore_physical_before_jolt(*physical_checkpoint);
+        s.restore_suppressed_controller_proxies(*physical_checkpoint);
+    }
     // Rebuild support from current geometry only after every body is restored.
     s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters) {
         auto& motor=*s.registry.get<Controller>(e).character;
@@ -680,6 +687,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     std::map<std::string,AudioEmitter> emitters;
     for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);
     s.sounds.load_state(data.at("sound").dump(),tick,emitters);
+    for(const auto& [rig,owner]:s.physical_owners)if(owner->recovery)s.validate_recovery_history(rig,*owner->recovery);
     saved_gameplay=data.at("gameplay").dump();saved_gameplay_revision=game_revision;
     return candidate;
 }

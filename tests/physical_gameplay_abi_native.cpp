@@ -137,6 +137,47 @@ void target_views(){
     struct Future {PoimaGamePhysicalRigAnimationServicesV1 value;std::uint64_t opaque[3];};Future future{provided,{11,22,33}};abi::physical_rig_drive_baseline(future.value.drive).bytes=sizeof(future);const auto future_before=future;
     auto bounded=abi::physical_rig_animation_view(target,abi::physical_rig_drive_baseline(future.value.drive));check(abi::physical_rig_drive_baseline(bounded.drive).bytes==496,"Opaque host tail escaped bounded target view.");check(std::memcmp(&future,&future_before,sizeof(future))==0&&std::memcmp(&provided,&original,496)==0,"View construction changed an original provider.");
 }
+void recovery_views(){
+    namespace abi=poima::gameplay_abi;
+    const auto recovery=contract(512,{"baseline_v7","physical_rig_v1","physical_recovery_v1"});
+    check(compatibility_error(recovery,recovery).empty(),"Recovery incorrectly requires drives or animation rights.");
+    auto union_contract=target_contract();union_contract.services_bytes=512;union_contract.features.push_back("physical_recovery_v1");
+    check(compatibility_error(recovery,union_contract).empty()&&compatibility_error(target_contract(),union_contract).empty(),"Recovery host rejected known independent/legacy consumers.");
+    for(auto bytes:{176u,424u,448u,496u,504u,511u}){auto short_host=recovery;short_host.services_bytes=bytes;check(!compatibility_error(recovery,short_host).empty(),"Short recovery allocation accepted.");}
+    auto invalid=recovery;invalid.features={"baseline_v7","physical_recovery_v1"};check(!compatibility_error(invalid,recovery).empty()&&!compatibility_error(Contract{},invalid).empty(),"Missing recovery dependency accepted.");
+    invalid=recovery;invalid.services_bytes=520;check(!compatibility_error(invalid,invalid).empty(),"Noncanonical recovery requirement accepted.");
+    PoimaGamePhysicalRecoveryServicesV1 provided{};provided.animation=populated_target();
+    auto& prefix=abi::physical_rig_drive_baseline(provided.animation.drive);prefix.bytes=512;
+    provided.physical_recovery_get=&Present<decltype(provided.physical_recovery_get)>::call;
+    provided.physical_recovery_request=&Present<decltype(provided.physical_recovery_request)>::call;
+    const auto original=provided;const PoimaGamePhysicalRecoveryServicesV1 zeros{};
+    auto minimal=abi::physical_recovery_view(recovery,prefix);
+    check(abi::physical_rig_drive_baseline(minimal.animation.drive).bytes==512,"Recovery view has wrong extent.");
+    check(std::memcmp(&minimal,&provided,176)==0,"Recovery changed the baseline.");
+    for(const auto [offset,bytes]:{std::pair{176,224},std::pair{424,72}})
+        check(std::memcmp(reinterpret_cast<const char*>(&minimal)+offset,reinterpret_cast<const char*>(&zeros)+offset,bytes)==0,"Recovery granted unrequested callbacks.");
+    check(std::memcmp(reinterpret_cast<const char*>(&minimal)+400,reinterpret_cast<const char*>(&provided)+400,24)==0&&
+        std::memcmp(reinterpret_cast<const char*>(&minimal)+496,reinterpret_cast<const char*>(&provided)+496,16)==0,"Recovery lost required callbacks.");
+    auto full=abi::physical_recovery_view(union_contract,prefix);check(full.animation.physical_rig_animation_get&&full.animation.drive.physical_rig_drive_get,"Explicit union lost requested target/drive rights.");
+    auto old=abi::physical_rig_animation_view(target_contract(),prefix);auto old_provider=populated_target();auto expected=abi::physical_rig_animation_view(target_contract(),abi::physical_rig_drive_baseline(old_provider.drive));
+    check(std::memcmp(&old,&expected,496)==0&&abi::physical_rig_drive_baseline(old.drive).bytes==496,"Frozen496 view changed.");
+    auto short_table=provided.animation;abi::physical_rig_drive_baseline(short_table.drive).bytes=496;
+    rejected([&]{(void)abi::physical_recovery_view(recovery,abi::physical_rig_drive_baseline(short_table.drive));},"Actual496 allocation granted recovery.");
+    for(unsigned n=0;n<5;++n){auto missing=provided;switch(n){
+        case 0:missing.physical_recovery_get=nullptr;break;case 1:missing.physical_recovery_request=nullptr;break;
+        case 2:missing.animation.drive.physical.physical_rig_summary=nullptr;break;
+        case 3:missing.animation.drive.physical.physical_rig_part=nullptr;break;
+        case 4:missing.animation.drive.physical.physical_rig_command=nullptr;break;
+    }rejected([&]{(void)abi::physical_recovery_view(recovery,abi::physical_rig_drive_baseline(missing.animation.drive));},"Missing recovery/physical callback accepted.");}
+    auto no_optional=provided;std::memset(reinterpret_cast<char*>(&no_optional)+424,0,72);
+    (void)abi::physical_recovery_view(recovery,abi::physical_rig_drive_baseline(no_optional.animation.drive));
+    rejected([&]{(void)abi::physical_recovery_view(union_contract,abi::physical_rig_drive_baseline(no_optional.animation.drive));},"Requested target callbacks were not validated.");
+    struct Future {PoimaGamePhysicalRecoveryServicesV1 value;std::uint64_t opaque;};Future future{provided,0xaabbccdd};
+    abi::physical_rig_drive_baseline(future.value.animation.drive).bytes=sizeof(future);const auto before=future;
+    auto bounded=abi::physical_recovery_view(recovery,abi::physical_rig_drive_baseline(future.value.animation.drive));
+    check(abi::physical_rig_drive_baseline(bounded.animation.drive).bytes==512&&std::memcmp(&future,&before,sizeof(future))==0&&std::memcmp(&provided,&original,512)==0,"Recovery view changed provider or leaked opaque tail.");
+}
+
 }
 static_assert(sizeof(PoimaGameServices)==176&&sizeof(PoimaGameCapsuleQueryServicesV1)==400&&sizeof(PoimaGamePhysicalRigServicesV1)==424);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigSummaryV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigSummaryV1>);
@@ -149,4 +190,5 @@ static_assert(sizeof(PoimaGamePhysicalRigAnimationServicesV1)==496&&sizeof(Poima
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigAnimationServicesV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigAnimationServicesV1>);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigDriveSourceStateV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigDriveSourceStateV1>);
 static_assert(std::is_standard_layout_v<PoimaGamePhysicalRigDriveSourceCommandV1>&&std::is_trivially_copyable_v<PoimaGamePhysicalRigDriveSourceCommandV1>);
-int main(){try{prefix_compatibility();prefix_bytes();drive_compatibility();target_compatibility();target_views();std::cout<<"physical gameplay ABI:5 header/policy/view groups passed; no native gameplay claim\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+static_assert(sizeof(PoimaGamePhysicalRecoveryStateV1)==144&&sizeof(PoimaGamePhysicalRecoveryCommandV1)==32&&sizeof(PoimaGamePhysicalRecoveryServicesV1)==512);
+int main(){try{prefix_compatibility();prefix_bytes();drive_compatibility();target_compatibility();target_views();recovery_views();std::cout<<"physical gameplay ABI:6 header/policy/view groups passed; no native gameplay claim\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

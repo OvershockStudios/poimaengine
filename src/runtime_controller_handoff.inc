@@ -95,7 +95,7 @@
         bool changed=false;
         for(const auto& [id,plan]:deferred_controller_inputs) {
             if(!topology->identities.contains(id))continue;
-            auto& c=registry.get<Controller>(find(id));if(c.character->IsSuppressed())continue;
+            auto& c=registry.get<Controller>(find(id));if(c.character->IsSuppressed() || c.character->IsRecoveryHeld())continue;
             c.yaw=plan.yaw;c.pitch=plan.pitch;
             if(plan.write_rotation)c.character->SetRotation(plan.rotation);
             if(plan.request_jump)c.character->RequestJump(c.settings.jump_speed);

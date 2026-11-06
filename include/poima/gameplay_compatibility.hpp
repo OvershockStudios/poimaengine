@@ -57,6 +57,8 @@ inline constexpr const char* physical_rig_drive_feature="physical_rig_drive_v1";
 inline constexpr std::uint32_t physical_rig_drive_services_bytes=448;
 inline constexpr const char* physical_rig_animation_feature="physical_rig_animation_v1";
 inline constexpr std::uint32_t physical_rig_animation_services_bytes=496;
+inline constexpr const char* physical_recovery_feature="physical_recovery_v1";
+inline constexpr std::uint32_t physical_recovery_services_bytes=512;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -89,6 +91,7 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=physical_rig_services_bytes;result.features.push_back(physical_rig_feature);
     result.services_bytes=physical_rig_drive_services_bytes;result.features.push_back(physical_rig_drive_feature);
     result.services_bytes=physical_rig_animation_services_bytes;result.features.push_back(physical_rig_animation_feature);
+    result.services_bytes=physical_recovery_services_bytes;result.features.push_back(physical_recovery_feature);
     return result;
 }
 
@@ -137,20 +140,22 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     const bool ik_required=std::find(required.features.begin(),required.features.end(),two_bone_ik_feature)!=required.features.end();
     const bool ik_orientation_required=std::find(required.features.begin(),required.features.end(),two_bone_ik_orientation_feature)!=required.features.end();
     const bool grounding_required=std::find(required.features.begin(),required.features.end(),grounding_control_feature)!=required.features.end();
+    const bool recovery_required=std::find(required.features.begin(),required.features.end(),physical_recovery_feature)!=required.features.end();
     const bool target_required=std::find(required.features.begin(),required.features.end(),physical_rig_animation_feature)!=required.features.end();
     const bool drive_required=std::find(required.features.begin(),required.features.end(),physical_rig_drive_feature)!=required.features.end();
     const bool physical_required=std::find(required.features.begin(),required.features.end(),physical_rig_feature)!=required.features.end();
     const bool capsule_required=std::find(required.features.begin(),required.features.end(),capsule_cast_feature)!=required.features.end();
     const bool pose_required=std::find(required.features.begin(),required.features.end(),camera_pose_feature)!=required.features.end();
     const bool rate_required=std::find(required.features.begin(),required.features.end(),animation_rate_feature)!=required.features.end();
+    if(recovery_required && !physical_required)return "Gameplay physical_recovery_v1 also requires physical_rig_v1.";
     if(target_required && (!drive_required || !physical_required))return "Gameplay physical_rig_animation_v1 also requires physical_rig_drive_v1 and physical_rig_v1.";
     if(drive_required && !physical_required)return "Gameplay physical_rig_drive_v1 also requires physical_rig_v1.";
     if(rate_required && !animation_required)return "Gameplay animation_rate_v1 also requires animation_inertial_v1.";
     if(grounding_required && !ik_orientation_required)return "Gameplay animation_grounding_control_v1 also requires animation_ik_end_orientation_v1.";
     if(ik_orientation_required && !ik_required)return "Gameplay animation_ik_end_orientation_v1 also requires animation_ik_v1.";
     if(layers_required && !animation_required)return "Gameplay animation_layers_v1 also requires animation_inertial_v1.";
-    if(required.services_bytes!=(target_required ? physical_rig_animation_services_bytes : drive_required ? physical_rig_drive_services_bytes : physical_required ? physical_rig_services_bytes : capsule_required ? capsule_cast_services_bytes : pose_required ? camera_pose_services_bytes : rate_required ? animation_rate_services_bytes : grounding_required ? grounding_control_services_bytes : ik_orientation_required ? two_bone_ik_orientation_services_bytes : stance_required ? character_stance_services_bytes : lens_required ? camera_lens_services_bytes : root_required ? root_motion_services_bytes : ik_required ? two_bone_ik_services_bytes : regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
-        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272/288/304/320/336/352/368/376/392/400/424/448/496-byte extensions.";
+    if(required.services_bytes!=(recovery_required ? physical_recovery_services_bytes : target_required ? physical_rig_animation_services_bytes : drive_required ? physical_rig_drive_services_bytes : physical_required ? physical_rig_services_bytes : capsule_required ? capsule_cast_services_bytes : pose_required ? camera_pose_services_bytes : rate_required ? animation_rate_services_bytes : grounding_required ? grounding_control_services_bytes : ik_orientation_required ? two_bone_ik_orientation_services_bytes : stance_required ? character_stance_services_bytes : lens_required ? camera_lens_services_bytes : root_required ? root_motion_services_bytes : ik_required ? two_bone_ik_services_bytes : regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
+        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272/288/304/320/336/352/368/376/392/400/424/448/496/512-byte extensions.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -207,9 +212,13 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
             std::find(available.features.begin(),available.features.end(),physical_rig_feature)==available.features.end())
             return "Runtime physical_rig_animation_v1 also requires physical_rig_drive_v1 and physical_rig_v1.";
     }
+    if(std::find(available.features.begin(),available.features.end(),physical_recovery_feature)!=available.features.end()) {
+        if(available.services_bytes<physical_recovery_services_bytes)return "Runtime physical_recovery_v1 requires a 512-byte service allocation.";
+        if(std::find(available.features.begin(),available.features.end(),physical_rig_feature)==available.features.end())return "Runtime physical_recovery_v1 also requires physical_rig_v1.";
+    }
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;
@@ -221,7 +230,7 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
 // Prepare an already negotiated 448-byte view. Valid legacy behavior is
 // unchanged: feature checks require only requested callbacks and retain the
 // original pointers in the frozen prefix. No short allocation is reinterpreted.
-inline PoimaGamePhysicalRigDriveServicesV1 physical_rig_drive_view(const Contract& required,const PoimaGameServices& provided) {
+inline PoimaGamePhysicalRigDriveServicesV1 physical_rig_drive_view(const Contract& required,const PoimaGameServices& provided,bool require_drive=true) {
     const auto check=[](bool value,const char* message){if(!value)throw std::runtime_error(message);};
     check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGamePhysicalRigDriveServicesV1),
         "Gameplay requires services epoch 7 and the 448-byte physical rig drive extension.");
@@ -232,7 +241,7 @@ inline PoimaGamePhysicalRigDriveServicesV1 physical_rig_drive_view(const Contrac
     auto& layers=character.animation;auto& animation=layers.animation;
     animation.baseline.bytes=sizeof(extended);
     check(physical.physical_rig_summary && physical.physical_rig_part && physical.physical_rig_command,"Gameplay physical rig callback is absent.");
-    check(extended.physical_rig_summary_v2 && extended.physical_rig_drive_get && extended.physical_rig_drive_set,"Gameplay physical rig drive callback is absent.");
+    if(require_drive)check(extended.physical_rig_summary_v2 && extended.physical_rig_drive_get && extended.physical_rig_drive_set,"Gameplay physical rig drive callback is absent.");
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::capsule_cast_feature)!=required.features.end())
         check(capsule.capsule_cast,"Gameplay capsule cast callback is absent.");
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::camera_pose_feature)!=required.features.end())
@@ -273,26 +282,9 @@ inline PoimaGameServices& physical_rig_drive_baseline(PoimaGamePhysicalRigDriveS
     return value.physical.capsule.camera_pose.animation_rate.grounding.orientation.character_stance.camera_lens.root_motion.ik.regions.actions.preferences.instances.navigation.character.animation.animation.baseline;
 }
 
-// A real 496-byte negotiated view. New target-player rights do not grant any
-// intermediate ordinary-animation, character, navigation, IK or other feature.
-// Only this new view clears unrequested extension callbacks; old views retain
-// their frozen prefix behavior.
-inline PoimaGamePhysicalRigAnimationServicesV1 physical_rig_animation_view(const Contract& required,const PoimaGameServices& provided) {
-    const auto check=[](bool value,const char* message){if(!value)throw std::runtime_error(message);};
+inline void restrict_physical_rig_drive_callbacks(const Contract& required,PoimaGamePhysicalRigDriveServicesV1& extended) {
     const auto has=[&](const char* feature){return std::find(required.features.begin(),required.features.end(),feature)!=required.features.end();};
-    check(required.services_bytes==physical_rig_animation_services_bytes && has(physical_rig_animation_feature) &&
-        has(physical_rig_drive_feature) && has(physical_rig_feature),"Physical animation view requires its explicit negotiated features and 496-byte prefix.");
-    const auto invalid=compatibility_error(required,required);if(!invalid.empty())throw std::runtime_error(invalid);
-    check(provided.version==services_version && provided.bytes>=sizeof(PoimaGamePhysicalRigAnimationServicesV1),
-        "Gameplay requires services epoch 7 and the 496-byte physical animation extension.");
-    PoimaGamePhysicalRigAnimationServicesV1 extended{};
-    std::memcpy(&extended,&provided,sizeof(extended));
-    check(extended.physical_rig_animation_get && extended.physical_rig_animation_layer_get &&
-        extended.physical_rig_animation_set && extended.physical_rig_animation_rate_set &&
-        extended.physical_rig_drive_source_get && extended.physical_rig_drive_source_set,
-        "Gameplay physical animation callback is absent.");
-    extended.drive=physical_rig_drive_view(required,provided);
-    auto& physical=extended.drive.physical;auto& capsule=physical.capsule;auto& pose=capsule.camera_pose;
+    auto& physical=extended.physical;auto& capsule=physical.capsule;auto& pose=capsule.camera_pose;
     auto& rate=pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;
     auto& stance=orientation.character_stance;auto& lens=stance.camera_lens;auto& root=lens.root_motion;
     auto& ik=root.ik;auto& regions=ik.regions;auto& preferences=regions.actions.preferences;
@@ -315,6 +307,55 @@ inline PoimaGamePhysicalRigAnimationServicesV1 physical_rig_animation_view(const
     if(!has(character_input_feature))character.character_input=nullptr;
     if(!has(animation_feature)){animation.animation_get_extended=nullptr;animation.animation_set_extended=nullptr;}
     if(!has(animation_layers_feature)){layers.animation_layer_get=nullptr;layers.animation_layer_set=nullptr;}
-    animation.baseline.bytes=sizeof(extended);return extended;
 }
+
+// A real 496-byte negotiated view. New target-player rights do not grant any
+// intermediate ordinary-animation, character, navigation, IK or other feature.
+// This and later views clear unrequested extension callbacks; older views retain
+// their frozen prefix behavior.
+inline PoimaGamePhysicalRigAnimationServicesV1 physical_rig_animation_view(const Contract& required,const PoimaGameServices& provided) {
+    const auto check=[](bool value,const char* message){if(!value)throw std::runtime_error(message);};
+    const auto has=[&](const char* feature){return std::find(required.features.begin(),required.features.end(),feature)!=required.features.end();};
+    check(required.services_bytes==physical_rig_animation_services_bytes && has(physical_rig_animation_feature) &&
+        has(physical_rig_drive_feature) && has(physical_rig_feature),"Physical animation view requires its explicit negotiated features and 496-byte prefix.");
+    const auto invalid=compatibility_error(required,required);if(!invalid.empty())throw std::runtime_error(invalid);
+    check(provided.version==services_version && provided.bytes>=sizeof(PoimaGamePhysicalRigAnimationServicesV1),
+        "Gameplay requires services epoch 7 and the 496-byte physical animation extension.");
+    PoimaGamePhysicalRigAnimationServicesV1 extended{};
+    std::memcpy(&extended,&provided,sizeof(extended));
+    check(extended.physical_rig_animation_get && extended.physical_rig_animation_layer_get &&
+        extended.physical_rig_animation_set && extended.physical_rig_animation_rate_set &&
+        extended.physical_rig_drive_source_get && extended.physical_rig_drive_source_set,
+        "Gameplay physical animation callback is absent.");
+    extended.drive=physical_rig_drive_view(required,provided);
+    restrict_physical_rig_drive_callbacks(required,extended.drive);
+    physical_rig_drive_baseline(extended.drive).bytes=sizeof(extended);return extended;
+}
+// Recovery permission is independent of drives and the detached target player.
+inline PoimaGamePhysicalRecoveryServicesV1 physical_recovery_view(const Contract& required,const PoimaGameServices& provided) {
+    const auto check=[](bool value,const char* message){if(!value)throw std::runtime_error(message);};
+    const auto has=[&](const char* feature){return std::find(required.features.begin(),required.features.end(),feature)!=required.features.end();};
+    check(required.services_bytes==physical_recovery_services_bytes && has(physical_recovery_feature) && has(physical_rig_feature),
+        "Physical recovery view requires its explicit features and 512-byte prefix.");
+    const auto invalid=compatibility_error(required,required);if(!invalid.empty())throw std::runtime_error(invalid);
+    check(provided.version==services_version && provided.bytes>=sizeof(PoimaGamePhysicalRecoveryServicesV1),
+        "Gameplay requires services epoch 7 and the 512-byte physical recovery extension.");
+    PoimaGamePhysicalRecoveryServicesV1 value{};std::memcpy(&value,&provided,sizeof(value));
+    check(value.physical_recovery_get && value.physical_recovery_request,"Gameplay physical recovery callback is absent.");
+    auto& animation=value.animation;auto& drive=animation.drive;
+    drive=physical_rig_drive_view(required,provided,has(physical_rig_drive_feature));
+    restrict_physical_rig_drive_callbacks(required,drive);
+    if(has(physical_rig_animation_feature)) {
+        check(animation.physical_rig_animation_get && animation.physical_rig_animation_layer_get &&
+            animation.physical_rig_animation_set && animation.physical_rig_animation_rate_set &&
+            animation.physical_rig_drive_source_get && animation.physical_rig_drive_source_set,"Gameplay physical animation callback is absent.");
+    } else {
+        animation.physical_rig_animation_get=nullptr;animation.physical_rig_animation_layer_get=nullptr;
+        animation.physical_rig_animation_set=nullptr;animation.physical_rig_animation_rate_set=nullptr;
+        animation.physical_rig_drive_source_get=nullptr;animation.physical_rig_drive_source_set=nullptr;
+    }
+    if(!has(physical_rig_drive_feature)) {drive.physical_rig_summary_v2=nullptr;drive.physical_rig_drive_get=nullptr;drive.physical_rig_drive_set=nullptr;}
+    physical_rig_drive_baseline(drive).bytes=sizeof(value);return value;
+}
+
 }
