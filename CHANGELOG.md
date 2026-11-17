@@ -2,6 +2,16 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.238
+
+- Add opt-in return from physical simulation to animation and movement for
+  upright characters with stable foot support and a clear standing capsule.
+- Expose eligibility and refusal reasons through the CLI and compiled C#.
+  Preserve pose history across the return, rollback and saved games.
+- Verify recovery on Windows and Linux, including a fresh process resuming
+  mid-transition, and run the existing Windows NativeAOT character game on
+  the extended runtime.
+
 ## 0.0.237
 
 - Exercise fitted target velocity on the original imported character through

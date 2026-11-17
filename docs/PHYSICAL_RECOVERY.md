@@ -8,11 +8,8 @@ when the current body is sufficiently upright, slow, supported and clear of
 obstacles. It does not lift a fallen character, balance a ragdoll or choose a
 get-up animation.
 
-The contract below describes the implemented path. Selected native checks pass
-on Windows and Linux; the compiled recovery consumer passes on Linux CoreCLR.
-Windows compiled-consumer checks and publication of the checkpoint's complete
-qualification record remain pending. Imported-character recovery and rendered
-motion quality are not qualified.
+Native and compiled C# recovery checks pass on Windows and Linux. The imported
+Knight still needs calibration before it can recover. [Qualification record](evidence/m2-physical-recovery.json).
 
 ## Configure the rig
 
@@ -265,7 +262,7 @@ CTest selection is:
 ctest --test-dir <build> --output-on-failure -R '^(physical_recovery_profile|physical_recovery_query|physical_recovery_state|runtime_physical_recovery|runtime_animation_return_native)$'
 ```
 
-The Linux CoreCLR fixture passes 566 RPC calls, 34 complete saves and 19 whole
+On each platform the CoreCLR fixture passes 566 RPC calls, 34 complete saves and 19 whole
 byte/state comparisons across two naturally closed engine processes. It checks
 actual recovery, subsequent movement, permission denial, fresh obstruction,
 rollback and cold continuation. Its 28 gameplay fields occupy 176 bytes.
@@ -275,5 +272,6 @@ different scopes. Their results do not establish imported-character motion
 quality, rendered continuity, physical device input or production-scale
 performance. A separate imported Knight experiment did not reach a safe return
 window; character calibration and controller placement remain further work.
-Windows compiled recovery and retained-consumer compatibility checks are the
-next qualification work. No new recovery NativeAOT publication is claimed.
+On Windows the existing NativeAOT character game also completed its original
+741-call workflow on the extended engine. It exercises the earlier 496-byte
+interface. Shipping a new recovery-enabled NativeAOT game remains unverified.

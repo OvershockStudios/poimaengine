@@ -72,6 +72,11 @@ captures. Complete gameplay/save checks pass; the original wrapper's provenance
 file-list failure is retained with a separate artifact audit. This is a bounded
 character composition, not another fresh-agent game or a balance/recovery gate.
 
+The [0.0.238 guarded return](PHYSICAL_RECOVERY.md) restores controller movement
+for eligible physical rigs. Native and C# recovery pass on Windows and Linux.
+The imported Knight did not reach an eligible pose during its 60-tick trial.
+Imported-character motion and the wider Alpha gates remain open.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

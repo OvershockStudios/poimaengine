@@ -1,0 +1,516 @@
+{
+  "format": "poima.evidence.physical-recovery.v1",
+  "date": "2026-11-17",
+  "source_checkpoint": "0.0.238",
+  "world_schema": 131,
+  "scope": "Opt-in guarded upright return from physics to controller/animation with complete pose history, native/C# access and saves.",
+  "services": {
+    "epoch": 7,
+    "bytes": 512,
+    "previous_prefix_bytes": 496,
+    "appended_offsets": [
+      496,
+      504
+    ],
+    "state_bytes": 144,
+    "request_bytes": 32,
+    "required_features": [
+      "physical_recovery_v1",
+      "physical_rig_v1"
+    ]
+  },
+  "native_linux": {
+    "passed": true,
+    "owner": {
+      "path": "build/physical-recovery-0.0.238/linux-native-4/report.json",
+      "bytes": 87260,
+      "sha256": "82d96dd815f3562835359c95ed2fb9b554e7f2a80445161db986a7e045fb84ce"
+    },
+    "selected_tests": 26,
+    "physical_recovery": {
+      "groups": 8,
+      "checks": 2511,
+      "archives": 280,
+      "whole_pairs": 109
+    },
+    "animation_return": {
+      "groups": 5,
+      "checks": 1075,
+      "manifest_checks": 1073,
+      "archives": 147,
+      "whole_pairs": 66
+    },
+    "independent_audit": {
+      "bytes": 6359,
+      "sha256": "dc45ee475b37f1b28d2f24e5d709013720d4734571a5c53c7c28e35c3d579e04"
+    },
+    "cli": {
+      "path": "build/linux-game/poima",
+      "bytes": 40442552,
+      "sha256": "8cfb287f8dab8ca4cf1e1a336be89a654ec6f308219986991dd34c9527e1309f"
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "selected_tests": 26,
+    "owner": {
+      "path": "build/physical-recovery-0.0.238/windows-cpu-1/report.json",
+      "sha256": "310c529bf6e438072d17424a8b6d4d415312ddecf3d59f0840f3dae6620bf508",
+      "bytes": 155575
+    },
+    "worker": {
+      "path": "build/physical-recovery-0.0.238/windows-cpu-1/worker.json",
+      "sha256": "cda2ab5839271a7649d312fd611e11371fb9027c3741e6133140ff5a187a0a64",
+      "bytes": 32019
+    },
+    "compiler": {
+      "path": "build/physical-recovery-0.0.238/windows-native-1-wrapper.json",
+      "sha256": "15b3ef8ccfe391bd0f5d99055e716dbf629bdb6cb8d06ddfbf425f77a464217d",
+      "bytes": 2102
+    },
+    "cli": {
+      "path": "build/windows-runtime/bin/poima.exe",
+      "sha256": "7c5fe60b05787a6f91d1cba4d781c4807041941b90d3ebd83158414153392af8",
+      "bytes": 29066752
+    },
+    "complete_comparisons": {
+      "animation-return": {
+        "archives": 147,
+        "whole_pairs": 66,
+        "bytes": 1168422
+      },
+      "physical-recovery": {
+        "archives": 280,
+        "whole_pairs": 109,
+        "bytes": 6117747
+      }
+    }
+  },
+  "coreclr": {
+    "linux": {
+      "passed": true,
+      "report": {
+        "path": "build/physical-recovery-0.0.238/coreclr-linux-4/consumer/evidence.json",
+        "bytes": 5851955,
+        "sha256": "a0239f471d366489a551d74f20ab5fdc2c57c2743ec29d8a717feca862f0afa0"
+      },
+      "owner": {
+        "path": "build/physical-recovery-0.0.238/coreclr-linux-4/report.json",
+        "bytes": 6154,
+        "sha256": "09179407ea789f2329ce9827bc25c6840c1e7a6fbf48c634408d9baf71a0e9a6"
+      },
+      "rpc": 566,
+      "archives": 34,
+      "whole_pairs": 19,
+      "state_fields": 28,
+      "state_bytes": 176,
+      "owners": [
+        {
+          "pid": 72207,
+          "natural_exit": true,
+          "forced_cleanup": false,
+          "exit_code": 0
+        },
+        {
+          "pid": 72214,
+          "natural_exit": true,
+          "forced_cleanup": false,
+          "exit_code": 0
+        }
+      ],
+      "assembly_sha256": "02f6291763b624bdf4bad43a76025b4b33f8bf96d41f7d1234c0cff16f0167d5",
+      "excluded_fields": []
+    },
+    "windows": {
+      "passed": true,
+      "runtime_patch": "10.0.15",
+      "owner": {
+        "path": "build/physical-recovery-0.0.238/windows-consumers-1/report.json",
+        "sha256": "9281077f860a4d3469829cdbc01430bb33730cb3f09cee25c4c0cb5eed96df55",
+        "bytes": 23355
+      },
+      "worker": {
+        "path": "build/physical-recovery-0.0.238/windows-consumers-1/worker.json",
+        "sha256": "c7972ad9be7e692089e005b6c17edab3dec40a92ab3a0affde6e8d15b07a122f",
+        "bytes": 6476
+      },
+      "report": {
+        "path": "build/physical-recovery-0.0.238/windows-consumers-1/recovery/evidence.json",
+        "sha256": "33366c6a605fa2f0336999cc28e40ee9bdb82be032a07fdd1e8cabd5571c11f9",
+        "bytes": 6035809
+      },
+      "rpc": 566,
+      "archives": 34,
+      "whole_pairs": 19,
+      "state_fields": 28,
+      "state_bytes": 176,
+      "assembly_sha256": "02f6291763b624bdf4bad43a76025b4b33f8bf96d41f7d1234c0cff16f0167d5",
+      "natural_engine_exits": 2
+    }
+  },
+  "managed": {
+    "owner": {
+      "path": "build/physical-recovery-0.0.238/managed-linux-1/report.json",
+      "bytes": 20066,
+      "sha256": "c4b1ffa4825a35315081d5d6a6a367edd34cf031551b606221f59321f7e3b516"
+    },
+    "wire_report": {
+      "path": "build/physical-recovery-0.0.238/managed-linux-1/managed-service-abi.json",
+      "bytes": 12372,
+      "sha256": "e340fef9e9991450c1b814472099f1c5f1f404bc5a1d987c97503b087c1739a9"
+    },
+    "generator_owner": {
+      "path": "build/physical-recovery-0.0.238/generator-linux-1/report.json",
+      "bytes": 9723,
+      "sha256": "0cf442e2023a1ee47166e8c9e473044f7061e04136ca14bc21063196244ed93e"
+    },
+    "generator_requirements": {
+      "path": "build/physical-recovery-0.0.238/generator-linux-1/generated/requirements.json",
+      "bytes": 144,
+      "sha256": "1fbb9f0a7c03d480ae09d38506683543d5708c77a6663b18a7b137913c45cb33"
+    },
+    "generator_audit": {
+      "bytes": 12098,
+      "sha256": "7e36430fd2991cd95f5236511bb6ebc8c5aeaefdabe48e05a3d3bcd722b17cd0"
+    },
+    "scope": "SDK/bridge/consumer compilation, managed ABI fixtures and actual build-time generated bindings. New recovery NativeAOT publication is not qualified."
+  },
+  "retained_native_aot": {
+    "passed": true,
+    "report": {
+      "path": "build/physical-recovery-0.0.238/windows-consumers-1/retained/consumer/evidence.json",
+      "sha256": "cf9c6971a363788ffedb114e60b06457faa8d5c8a24cbced38cac3dad591c07a",
+      "bytes": 27587657
+    },
+    "rpc": 741,
+    "archives": 25,
+    "whole_pairs": 14,
+    "state_fields": 104,
+    "state_bytes": 656,
+    "library": {
+      "bytes": 1458176,
+      "sha256": "5a60424e12079029433b4ef41643f005e2f78f099f37f9941b577c01f2d1d43d"
+    },
+    "compiled_against_services_bytes": 496,
+    "runtime_services_bytes": 512,
+    "natural_engine_exits": 2
+  },
+  "independent_coreclr_audit": {
+    "bytes": 19082,
+    "sha256": "4c47d3e305388ad9b98e88bb83e3c7a8d5b27786ca172d878189bad9410bee6a"
+  },
+  "imported_attempt": {
+    "passed": false,
+    "report": {
+      "path": "build/physical-recovery-0.0.238/knight-linux-1/experiment/evidence.json",
+      "bytes": 11974698,
+      "sha256": "57e9c55618c1f94e93e4b6004cbd4d9a8bd8f51785d0c65940e7a79b212e7396"
+    },
+    "owner": {
+      "path": "build/physical-recovery-0.0.238/knight-linux-1/report.json",
+      "bytes": 8277,
+      "sha256": "154f4a44f8e084e59f9f84ec23fa1615f84e21790f647ce0fb1fa4eb76fa5910"
+    },
+    "scope": "Pre-final native image: same guarded return implementation before completed-tick hold fix. No recovery was requested, so it did not exercise the changed completion path.",
+    "rpc": 755,
+    "archives": 2,
+    "physical_ticks": 60,
+    "ready_ticks": 0,
+    "return_requests": 0,
+    "status_counts": {
+      "moving": 35,
+      "proxy_blocked": 4,
+      "not_upright": 21
+    },
+    "finding": "The actual unchanged actor root left the standing proxy intersecting the floor during the low-speed upright window. The rig subsequently tipped over. This attempt remains failed.",
+    "independent_analysis": {
+      "bytes": 20557,
+      "sha256": "29fd9ccb3403df7fd05147eabf91e8567f586d0139cda03654f5d9b72446b6d6"
+    }
+  },
+  "limitations": [
+    "Near-upright, slow bodies on static support only; no balance, prone get-up or root relocation.",
+    "Complete same-platform save/continuation equality does not promise cross-platform future bit identity.",
+    "Analytic fixtures and compiled consumers do not establish representative motion quality or performance.",
+    "Imported-character recovery did not qualify; profile/pose compatibility and controller placement remain open.",
+    "No new rendering, physical-input, NativeAOT publication or standalone export qualification."
+  ],
+  "source_identities": {
+    "CMakeLists.txt": {
+      "bytes": 117576,
+      "sha256": "aeeff990359226da052630e5d6339c47a85ca3c2dd55c40541316059eb8c8b7b"
+    },
+    "include/poima/gameplay_abi.h": {
+      "bytes": 67256,
+      "sha256": "49f30838bdfc6f57f1a051e2ebd44ce6f1f12681e4b880638ea013155ec195da"
+    },
+    "include/poima/gameplay_compatibility.hpp": {
+      "bytes": 35705,
+      "sha256": "95882b010a4970c793faf8a77051c5dad10c0e951ad8ab25ad8dc5de3d011559"
+    },
+    "include/poima/physical_rig.hpp": {
+      "bytes": 10465,
+      "sha256": "79fa7e72e108d16d0953ab9cb09aa3951c4a2c9f59979e4b079fee7edf793fd1"
+    },
+    "include/poima/runtime.hpp": {
+      "bytes": 30137,
+      "sha256": "7943825e69b86f11b048effff71feaea131cdb23c3c2fa372ddc93000aa64a1c"
+    },
+    "include/poima/runtime_animation.hpp": {
+      "bytes": 19949,
+      "sha256": "617d56da1145b712493d5fbbf1aaeff4c95b4e74326acbe2235e794584550365"
+    },
+    "include/poima/runtime_physical.hpp": {
+      "bytes": 6039,
+      "sha256": "c9610e263aa5e9d139773718c1876eadda0de1b569355cb539ba40389545c053"
+    },
+    "managed/Poima.Gameplay/GameplayRequirements.cs": {
+      "bytes": 36223,
+      "sha256": "853c78286361b4c8b18ffdfda63478ed336d5f5869b8e66a14fe2f5c40c92e6d"
+    },
+    "managed/Poima.Gameplay/PhysicalRecovery.cs": {
+      "bytes": 9538,
+      "sha256": "16373d5c03d4b72f968dd2c9d48a96c186db7a64622d21194aa0342d4a893479"
+    },
+    "managed/Poima.ManagedBridge/Entry.cs": {
+      "bytes": 16102,
+      "sha256": "df31d6644c766a0789d98203a11e832e09bc8a84f156cab2c7a68b96a669be14"
+    },
+    "managed/Poima.NativeGame.Generator/Program.cs": {
+      "bytes": 7896,
+      "sha256": "d00ee9a95ff1cc9ceb3a096adbf917210f67a24244e459c99aa9b2a709a30b69"
+    },
+    "managed/Poima.NativeGame/Entry.cs": {
+      "bytes": 7019,
+      "sha256": "01f23e29861f85653f493fe007598d5fbf1ad830a86137aef05272167932a422"
+    },
+    "scripts/publish_native_gameplay.py": {
+      "bytes": 21840,
+      "sha256": "a0896204c0d9f6e18cad2ced43036b8aaa8681d4ef825107a570932682fa57e9"
+    },
+    "src/gameplay.cpp": {
+      "bytes": 98301,
+      "sha256": "dbe6cba5cb574ed1c183710e3bae70d005a4a48581ec8a61c2c69794656c5893"
+    },
+    "src/physical_rig.cpp": {
+      "bytes": 19395,
+      "sha256": "a40023e5cfa17bc3380575293111ed27aa998cac76f40077a617ce8d6a5ad926"
+    },
+    "src/physical_rig_json.cpp": {
+      "bytes": 25540,
+      "sha256": "8c4380d7ba3c8d7eaf43f458dfe31755c1cd0d64d5ea3b4e41fb24dd5b2901e2"
+    },
+    "src/runtime.cpp": {
+      "bytes": 185522,
+      "sha256": "f2b8818c020a0bb6929b466b510f7d43e359b2af4e3d5c12328628b300265287"
+    },
+    "src/runtime_animation.cpp": {
+      "bytes": 167029,
+      "sha256": "1708a4db11c4261d176651d63282140d5dd1020921113c1fe396a124d274cbe1"
+    },
+    "src/runtime_animation_procedural.inc": {
+      "bytes": 50847,
+      "sha256": "0a9fad31e34fb46319e44fd3fb6664dd9cda9e0231c050a29de8c95841ab6d87"
+    },
+    "src/runtime_controller_handoff.inc": {
+      "bytes": 7479,
+      "sha256": "a3aee095ea4bd89b24978dbaa1090ab486297421cef926dcddb83aa0f6f67698"
+    },
+    "src/runtime_controller_handoff_state.hpp": {
+      "bytes": 2760,
+      "sha256": "8f0b86a983f95ac38c37d826c29e0152919e700fe3af237297419dbb23bb19fb"
+    },
+    "src/runtime_disabled.cpp": {
+      "bytes": 11297,
+      "sha256": "49b354109c515d744adfb4beeca719a8d907361e97c231ef7335a12cf04d1083"
+    },
+    "src/runtime_motor.inc": {
+      "bytes": 19008,
+      "sha256": "9671ba800cf68dbbd7d5ceb32560fc4ff3d3c0be5939414f1be84b0a189018a8"
+    },
+    "src/runtime_physical.inc": {
+      "bytes": 55890,
+      "sha256": "5387c43b5dc2d3b3c51f02f6cf24e714b2d461af81840e65cc1da4a87ae5f64f"
+    },
+    "src/runtime_physical_recovery.inc": {
+      "bytes": 20846,
+      "sha256": "7eb2ee9df2981bb39807ca9a1e0ead821dd42176e87bf2eaf75a28bf5b16ec99"
+    },
+    "src/runtime_physical_recovery_query.cpp": {
+      "bytes": 11519,
+      "sha256": "7bd5e8cdb3e5160db7474186f231a9f2c3f3fd9ffe916020ab8086584714b189"
+    },
+    "src/runtime_physical_recovery_query.hpp": {
+      "bytes": 3127,
+      "sha256": "9fe0c191df6aa72f1b2759eb7a9601784802bcc3d5be9a01b95cf51551fdb0fc"
+    },
+    "src/runtime_physical_recovery_services.inc": {
+      "bytes": 4238,
+      "sha256": "c2538230af2b579f3ddef0cd1d3ac9006b5adc56577e2a4a6dbd0af296ff2f85"
+    },
+    "src/runtime_physical_recovery_state.cpp": {
+      "bytes": 19349,
+      "sha256": "f8f4863320c1efcc3f1c850f17de5500ab7fa2deae45cafe3c7121ce6865b47c"
+    },
+    "src/runtime_physical_recovery_state.hpp": {
+      "bytes": 2221,
+      "sha256": "b1d693149a81d2c697a99c09a4ef22cda6aa04a19956f6286c5aa342bb5a20c6"
+    },
+    "src/runtime_physical_restore.hpp": {
+      "bytes": 1904,
+      "sha256": "09bcd7b4ed03a32ae87aab3e275394bfa0a87c653c895c58fb4438344c908119"
+    },
+    "src/runtime_physical_save.inc": {
+      "bytes": 33038,
+      "sha256": "d54e16af22c674b278f7314acd820f17d9997de23b6841b55706e278ec11a4bc"
+    },
+    "src/runtime_physical_state_json.cpp": {
+      "bytes": 17760,
+      "sha256": "dc9430d2e5c42f9430cc75d59ed1b1334f0dd18f2b7ad268439e2ac80e4db5ff"
+    },
+    "src/runtime_save.inc": {
+      "bytes": 58594,
+      "sha256": "0e0ebdea4d8b5e2304071c01a9ad0b41c987164a88c7189bede20a9e2bd52c23"
+    },
+    "src/runtime_ui.inc": {
+      "bytes": 12822,
+      "sha256": "29319670411e0d1ba44c0fd3509fa564ba8c227e8fe6fbf26c4cc8e93ab9d009"
+    },
+    "src/world.cpp": {
+      "bytes": 373361,
+      "sha256": "145f83ad8f26448f7bb4774a3a94f8429a4f2182f9efca68e1a1991218e75708"
+    },
+    "src/world_physical.inc": {
+      "bytes": 18230,
+      "sha256": "767bcb371adf06d676125b55f48b8b43f041d1ca1f80a1dfb9b8e74d2643c670"
+    },
+    "src/world_player_service.inc": {
+      "bytes": 65993,
+      "sha256": "b7ed5e53ebf79057463749f1a3b329e5580b17ebf35675f639f08440d34ea7a4"
+    },
+    "src/world_schema.cpp": {
+      "bytes": 151421,
+      "sha256": "d67b7684678ce18fb6e1503d03665ddf0d855d89fd03300f30200e6719c0ea08"
+    },
+    "tests/gameplay_compatibility_native.cpp": {
+      "bytes": 44109,
+      "sha256": "7a05af8693e89f98064b410d141c937af01847a7befbc7fedc24e8a53911f999"
+    },
+    "tests/gameplay_player_preferences_native.cpp": {
+      "bytes": 16347,
+      "sha256": "36e11cf2d4d1b9b757ff69b2b5d9a2092f5f92a919f68f6a593b94a18fa27d0b"
+    },
+    "tests/managed_physical_recovery_gameplay/Game.cs": {
+      "bytes": 3245,
+      "sha256": "20aeea08a57fb723e79859678f97195a1f2bc32921ee763bfdbdbc6338546d45"
+    },
+    "tests/managed_physical_recovery_gameplay/Poima.ManagedPhysicalRecoveryGame.csproj": {
+      "bytes": 646,
+      "sha256": "78de0ba6568a67ab8b1b175c6b88caedefdd41f083c5eb50d34c017d73652969"
+    },
+    "tests/managed_service_abi/PhysicalRecoveryExtension.cs": {
+      "bytes": 15083,
+      "sha256": "5b1fc498f43eabc72fb42c587fe8d3a8f178f6b2d42ead2fbfd689841611777a"
+    },
+    "tests/managed_service_abi/Program.cs": {
+      "bytes": 42654,
+      "sha256": "95f9b36a1f67717aba2ff54acfef0ae6643dcc3a1faeaf059322a75d8ae960cf"
+    },
+    "tests/physical_animation_json_native.cpp": {
+      "bytes": 10193,
+      "sha256": "1c7081da7b86e5d14043ab49b3a8f400378811aacd191dd220d1d17695d7cfd2"
+    },
+    "tests/physical_gameplay_abi_native.cpp": {
+      "bytes": 22668,
+      "sha256": "45c2193a6baa72ce597277423852349a9eb555cd23c95dccd58b567cbedd5204"
+    },
+    "tests/physical_gameplay_publish_requirements.py": {
+      "bytes": 5224,
+      "sha256": "6a0680d422edb248eebd649713a7facb2326f4eb9d1aa0d0ebcfafa80a20d7cd"
+    },
+    "tests/physical_recovery_gameplay.py": {
+      "bytes": 32051,
+      "sha256": "24ea5a6643df36838b43d2f9fde69f7b15572641c56933a8f1baf0051de6b84a"
+    },
+    "tests/physical_recovery_profile_tests.cpp": {
+      "bytes": 15952,
+      "sha256": "5bb168cb608b0630274a619c59ee07adef3165d70be163da9b3ed435b1344939"
+    },
+    "tests/physical_recovery_query_tests.cpp": {
+      "bytes": 13465,
+      "sha256": "b7c6aac702d4dcb0da2b6cbc41ffe9b4939fc56d244058c26fb737c142f2c170"
+    },
+    "tests/physical_recovery_state_tests.cpp": {
+      "bytes": 14915,
+      "sha256": "a706e63848e4e58e96a7eb2a8d2c21a86198d04822427637815e97fd12882a70"
+    },
+    "tests/runtime_animation_return_native.cpp": {
+      "bytes": 26910,
+      "sha256": "2f2121e6b0a47eba930fc55caabd7a5fa0be115f388a4605a345a0307e60eb82"
+    },
+    "tests/runtime_physical_recovery_tests.cpp": {
+      "bytes": 29560,
+      "sha256": "1203bfb442f6ad6409bfe59761c822d88f03a8b19c2153b52d356ef7e40d92cf"
+    },
+    "tools/python/pyproject.toml": {
+      "bytes": 581,
+      "sha256": "0554b98a3902da5a28ceca3e94b6c945388e3c00541be54b005bce96b7a865a9"
+    }
+  },
+  "original_attempts": [
+    {
+      "name": "linux-native-1",
+      "report": {
+        "path": "build/physical-recovery-0.0.238/linux-native-1/report.json",
+        "bytes": 87522,
+        "sha256": "e2c5aa952c9a10698735c2f8304e968088e4464ad0576d48e8ca2ea8d9a5267d"
+      },
+      "finding": "Compilation rejected missing json_fwd.hpp; corrected to vendored json.hpp."
+    },
+    {
+      "name": "linux-native-2",
+      "report": {
+        "path": "build/physical-recovery-0.0.238/linux-native-2/report.json",
+        "bytes": 181320,
+        "sha256": "2cf97df237bf154e0906cbf598b51f5334f7fb644920c52aecad3a772ba39ebc"
+      },
+      "finding": "Native25/26: cold-ready source history missing and late rollback restored proxy before logical motor state; both repaired with full-state regression checks."
+    },
+    {
+      "name": "rollback-debug-1",
+      "report": {
+        "path": "build/physical-recovery-0.0.238/rollback-debug-1/report.json",
+        "bytes": 6824,
+        "sha256": "2b427facb997345bbfe676df8ba19a9791c4106d235ac9a3b913112080c44bd2"
+      },
+      "finding": "Owned bounded diagnostic timeout with forced cleanup, not a successful qualification."
+    },
+    {
+      "name": "coreclr-linux-1",
+      "report": {
+        "path": "build/physical-recovery-0.0.238/coreclr-linux-1/report.json",
+        "bytes": 6735,
+        "sha256": "2fbe463782e70bbf5df3d9b1c9a7a3d6326c93a81d1902e18e9d8b94241fbc1c"
+      },
+      "finding": "Wrapper output directory collided with its log label before native start."
+    },
+    {
+      "name": "coreclr-linux-2",
+      "report": {
+        "path": "build/physical-recovery-0.0.238/coreclr-linux-2/report.json",
+        "bytes": 7363,
+        "sha256": "71feb84ab9a1ca2e3185dedd9d02196e668add68db7c450642e3cb4e3aa23249"
+      },
+      "finding": "Native save.load succeeded; verifier requested nonexistent payload.structure_revision. Corrected using the actual response checked against full saved structure."
+    },
+    {
+      "stage": "Windows consumer preparation",
+      "finding": "The retained plan expected runtime 10.0.14. Admission stopped before launching a game. The successful run used the installed 10.0.15 resolver and runtime under the bridge’s LatestPatch policy."
+    }
+  ],
+  "implementation_commits": [
+    "545a3241e05e72b808f7f9f5df58e01c012b295a",
+    "b4a98c682485ab2007d976ed2248dab05fca5fab",
+    "76e63447cf491d8de32b55471138a6b4f88d586a"
+  ]
+}

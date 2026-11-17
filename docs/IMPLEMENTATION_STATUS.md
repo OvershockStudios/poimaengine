@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-11-06 for **0.0.237**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-17 for **0.0.238**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.238 lets a supported upright character return from physical
+simulation to animation and controller movement. The first returned tick retains
+the complete pose. The engine checks both feet and capsule clearance again
+before transferring ownership. Gameplay can inspect a refusal through the CLI
+or C#. [Recovery guide](PHYSICAL_RECOVERY.md).
+
+The 26 selected native tests pass on both Windows and Linux. The C# fixture on
+each platform passed 566 calls and 19 complete state comparisons, including
+rollback, fresh-process continuation, walking and jumping. The existing Windows
+NativeAOT character game also passed its original 741-call workflow on the new
+engine. The imported Knight stayed in physics throughout a separate 60-tick
+experiment. Its standing capsule intersected the floor during the low-speed
+upright window. Imported recovery, balance and fallen-character get-up remain
+open. [Qualification record](evidence/m2-physical-recovery.json).
 
 Version 0.0.237 qualifies [target velocity on the imported character](PHYSICAL_TARGET_VELOCITY.md#imported-character-workflow).
 The existing 104-field/656-byte NativeAOT game runs on native runtime 0.0.236
