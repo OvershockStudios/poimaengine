@@ -217,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 131}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 132}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -759,6 +759,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});
     methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
     methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});
+    methods["asset.animation.physical_limits"]=object_schema({{"entity",id},{"revision",rev},
+        {"clip",{{"type",Json::array({"integer","null"})},{"minimum",0},{"maximum",max_model_clips-1}}},
+        {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}}},
+        {"entity","revision","clip","time"});
+    auto& pose_limits=methods["asset.animation.physical_limits"];
+    pose_limits["if"]={{"properties",{{"clip",{{"type","null"}}}}}};
+    pose_limits["then"]={{"properties",{{"time",{{"const",0}}},{"loop",{{"const",false}}}}}};
+    pose_limits["description"]="Read authored joint-limit diagnostics for one cooked source pose. Select a rig entity and its world revision, plus an explicit clip index and time in seconds or null and time zero for model rest. All authored joints report calibrated XYZW relative orientations, limits in radians and the engine's fit or an indeterminate reason. The query does not change the world, pose or physics.";
     methods["asset.animation.bounds"]=object_schema({{"asset",asset_id},
         {"clip",{{"type","integer"},{"minimum",0},{"maximum",max_model_clips-1}}},
         {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},

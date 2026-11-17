@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-17 for **0.0.238**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-17 for **0.0.239**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.239 adds a [read-only joint-limit query](PHYSICAL_POSE_DIAGNOSTICS.md)
+for an authored physical rig. Agents can select a cooked rest pose or a clip
+time and see the requested orientation, any native fit and the correction for
+each joint. The [Linux headless qualification](evidence/m2-physical-pose-diagnostics.json)
+includes all 84 joint observations across six original Knight poses. The
+diagnostic covers source poses. Live obstruction, support and recovery still
+require simulation.
 
 Version 0.0.238 lets a supported upright character return from physical
 simulation to animation and controller movement. The first returned tick retains

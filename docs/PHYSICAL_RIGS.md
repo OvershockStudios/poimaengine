@@ -17,6 +17,11 @@ and layer poses to those drives, with independent playback and explicit joint
 limit fitting. It supplies desired orientations while native physics continues
 to solve the visible body.
 
+Use [source pose diagnostics](PHYSICAL_POSE_DIAGNOSTICS.md) to identify which
+joints need correction at a particular imported clip time or in the rest pose.
+The CLI reports each calibrated joint orientation and its fitted target before
+you start physics.
+
 Optional [guarded return](PHYSICAL_RECOVERY.md) transfers a sufficiently upright,
 slow and supported rig back to its controller and animation after current
 capsule-clearance checks. It preserves the initial pose and saved ownership;

@@ -8,6 +8,7 @@
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
 #include "physical_rig_json.hpp"
+#include "physical_pose_diagnostics.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
@@ -2109,6 +2110,35 @@ public:
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
     Json animation_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.animation.physical_limits") {
+            fields(params,{"entity","revision","clip","time","loop"},{"entity","revision","clip","time"});
+            current_revision(params);
+            const auto id=identifier(params.at("entity"));
+            require(doc_.at("entities").contains(id),"Entity does not exist.",-32004);
+            const auto& components=doc_.at("entities").at(id).at("components");
+            require(components.contains("PhysicalRig") && components.contains("AnimationRig"),
+                "Select an authored AnimationRig with a PhysicalRig.");
+            require(params.at("time").is_number(),"Sample time must be a number.");
+            const double time=params.at("time");
+            require(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be within 0..1e9 seconds.");
+            require(!params.contains("loop") || params.at("loop").is_boolean(),"Loop must be boolean.");
+            const bool loop=params.value("loop",false);
+            std::optional<std::uint32_t> clip;
+            if(!params.at("clip").is_null()) {
+                const auto index=revision(params.at("clip"));
+                require(index<max_model_clips,"Clip index is out of range.");
+                clip=static_cast<std::uint32_t>(index);
+            } else require(time==0 && !loop,"A rest pose requires time zero and loop false.");
+            try {
+                const auto loaded=read_model_asset(asset_directory(),components.at("AnimationRig").at("asset"));
+                if(clip)require(*clip<loaded.model->animations.size(),"Clip index is out of range.");
+                auto report=physical_pose_diagnostics(*loaded.model,components.at("PhysicalRig"),clip,time,loop);
+                report["asset"]=loaded.id;
+                report["entity"]=id;
+                report["revision"]=doc_.at("revision");
+                return report;
+            }catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+        }
         if(method=="asset.animation.bounds") {
             fields(params,{"asset","clip","time","loop"},{"asset","time"});
             require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");

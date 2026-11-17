@@ -77,6 +77,11 @@ for eligible physical rigs. Native and C# recovery pass on Windows and Linux.
 The imported Knight did not reach an eligible pose during its 60-tick trial.
 Imported-character motion and the wider Alpha gates remain open.
 
+The [0.0.239 source pose diagnostic](PHYSICAL_POSE_DIAGNOSTICS.md) exposes
+calibrated joint-limit conflicts to agents before simulation. Linux headless
+checks compare six poses of the original Knight with the source curves.
+The joint report provides a calibration signal for the recovery work above.
+
 The [0.0.200 hierarchy comparison](evidence/m2-runtime-hierarchy.json) preserves
 complete state on the fixed 2,397-entity compiled workload across six Linux
 headless owners. Two profiled pairs reduce mean inclusive native batch wall

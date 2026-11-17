@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.239
+
+- Inspect authored physical joint limits at a chosen imported pose through the
+  native CLI. Report the calibrated target, its fitted rotation and correction
+  angle, or the reason the fit could not be resolved.
+- Verify the headless query on Linux with a calibrated fixture and six poses of
+  the original Knight, preserving the authored world and cooked assets.
+
 ## 0.0.238
 
 - Add opt-in return from physical simulation to animation and movement for

@@ -1,0 +1,303 @@
+{
+  "format": "poima.evidence.physical-pose-diagnostics.v1",
+  "date": "2026-11-17",
+  "source_checkpoint": "0.0.239",
+  "world_schema": 132,
+  "method": "asset.animation.physical_limits",
+  "scope": "Linux x86-64 native headless inspection of authored joint limits at an explicit cooked source pose.",
+  "executable": {
+    "path": "build/linux-game/poima",
+    "bytes": 40544256,
+    "sha256": "c473416062eb8e073049824fcccb61326af64fd66a0451a6c751e865e9805ca9"
+  },
+  "contract": {
+    "calls": 21,
+    "natural_exit": true,
+    "runner": {
+      "path": "tests/physical_pose_diagnostics_contract.py",
+      "bytes": 8223,
+      "sha256": "1ada4042730f788712480ead4babd0ac4c67894749d284c9b46eab537de2328e"
+    },
+    "report": {
+      "path": "build/physical-pose-0.0.239/linux-contract-1/report.json",
+      "bytes": 63742,
+      "sha256": "dc4b5c118f73067ea74b9597952e9af7fe7a29040575a92e71f831a01037141c"
+    },
+    "streams": {
+      "requests": {
+        "path": "build/physical-pose-0.0.239/linux-contract-1/session/requests.jsonl",
+        "bytes": 6880,
+        "sha256": "bb8c57e6c2027bd755eb220f477c13a93b25344ea07f04a82d4c88cb92c3dbad"
+      },
+      "responses": {
+        "path": "build/physical-pose-0.0.239/linux-contract-1/session/responses.jsonl",
+        "bytes": 20297,
+        "sha256": "57511d912946ea5066e28d4dd6030bdaa26388be56b8de73db761554febbb417"
+      }
+    }
+  },
+  "imported_knight": {
+    "calls": 8,
+    "natural_exit": true,
+    "node_count": 57,
+    "clip_count": 76,
+    "joint_count": 14,
+    "original_glb": {
+      "bytes": 3659532,
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    "checked_joint_poses": 84,
+    "observations": [
+      {
+        "clip": null,
+        "name": "rest",
+        "time": 0,
+        "maximum_component_error": 1.1102230246251563e-16,
+        "outside": []
+      },
+      {
+        "clip": 36,
+        "name": "Idle",
+        "time": 0,
+        "maximum_component_error": 2.7755575615628914e-16,
+        "outside": [
+          {
+            "joint": "elbow_l",
+            "correction_radians": 4.410322586374301e-06
+          },
+          {
+            "joint": "wrist_l",
+            "correction_radians": 0.16777723211447546
+          },
+          {
+            "joint": "elbow_r",
+            "correction_radians": 4.681597901411669e-06
+          },
+          {
+            "joint": "wrist_r",
+            "correction_radians": 0.23691793947371767
+          },
+          {
+            "joint": "ankle_l",
+            "correction_radians": 0.16796175289107795
+          },
+          {
+            "joint": "knee_r",
+            "correction_radians": 2.8341844752497522e-08
+          }
+        ]
+      },
+      {
+        "clip": 36,
+        "name": "Idle",
+        "time": 0.1,
+        "maximum_component_error": 2.220446049250313e-16,
+        "outside": [
+          {
+            "joint": "elbow_l",
+            "correction_radians": 4.474385861229979e-06
+          },
+          {
+            "joint": "wrist_l",
+            "correction_radians": 0.17036795025528895
+          },
+          {
+            "joint": "elbow_r",
+            "correction_radians": 4.6773189900720424e-06
+          },
+          {
+            "joint": "wrist_r",
+            "correction_radians": 0.23909967165722246
+          },
+          {
+            "joint": "ankle_l",
+            "correction_radians": 0.17098890569194677
+          },
+          {
+            "joint": "knee_r",
+            "correction_radians": 3.007263260784492e-08
+          }
+        ]
+      },
+      {
+        "clip": 48,
+        "name": "Running_A",
+        "time": 0,
+        "maximum_component_error": 1.5959455978986625e-16,
+        "outside": [
+          {
+            "joint": "elbow_l",
+            "correction_radians": 5.313871007941166e-06
+          },
+          {
+            "joint": "wrist_l",
+            "correction_radians": 0.004136899737876513
+          },
+          {
+            "joint": "elbow_r",
+            "correction_radians": 4.435039061708038e-06
+          },
+          {
+            "joint": "wrist_r",
+            "correction_radians": 0.2879860528635525
+          },
+          {
+            "joint": "knee_l",
+            "correction_radians": 0.10891366339112579
+          },
+          {
+            "joint": "knee_r",
+            "correction_radians": 7.421204773608182e-08
+          },
+          {
+            "joint": "ankle_r",
+            "correction_radians": 0.2726037398567078
+          }
+        ]
+      },
+      {
+        "clip": 48,
+        "name": "Running_A",
+        "time": 0.1,
+        "maximum_component_error": 3.885780586188048e-16,
+        "outside": [
+          {
+            "joint": "elbow_l",
+            "correction_radians": 4.9601203106745046e-06
+          },
+          {
+            "joint": "wrist_l",
+            "correction_radians": 0.06409725133829151
+          },
+          {
+            "joint": "elbow_r",
+            "correction_radians": 4.550068951375526e-06
+          },
+          {
+            "joint": "wrist_r",
+            "correction_radians": 0.24535378259296672
+          },
+          {
+            "joint": "knee_r",
+            "correction_radians": 9.43966073944563e-08
+          }
+        ]
+      },
+      {
+        "clip": 48,
+        "name": "Running_A",
+        "time": 0.25,
+        "maximum_component_error": 6.122604860603342e-09,
+        "outside": [
+          {
+            "joint": "elbow_l",
+            "correction_radians": 4.585397689763467e-06
+          },
+          {
+            "joint": "wrist_l",
+            "correction_radians": 0.239971684221824
+          },
+          {
+            "joint": "elbow_r",
+            "correction_radians": 4.7032447666524315e-06
+          },
+          {
+            "joint": "wrist_r",
+            "correction_radians": 0.1356346614720959
+          },
+          {
+            "joint": "knee_l",
+            "correction_radians": 9.275351665106664e-08
+          },
+          {
+            "joint": "hip_r",
+            "correction_radians": 0.154558151326934
+          },
+          {
+            "joint": "knee_r",
+            "correction_radians": 7.305648822630494e-08
+          }
+        ]
+      }
+    ],
+    "unchanged_world_and_packages": {
+      "world.json": {
+        "bytes": 250132,
+        "sha256": "9580e5bb61d11f53e63ac03cc758fc871667b37bb8920bcc2d9f2c990959ec26"
+      },
+      "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7.pmodel": {
+        "bytes": 8464853,
+        "sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7"
+      },
+      "cd671ddfce82049607083cd4457396755435fdc24b0bb24f3dc88f38edeab613.pprov": {
+        "bytes": 767,
+        "sha256": "cd671ddfce82049607083cd4457396755435fdc24b0bb24f3dc88f38edeab613"
+      }
+    },
+    "runner": {
+      "path": "tests/physical_pose_diagnostics_knight.py",
+      "bytes": 5813,
+      "sha256": "0f65fac9efdf1e8be2b79151866db75db481c4324e19611d36413dd8a4666c5f"
+    },
+    "report": {
+      "path": "build/physical-pose-0.0.239/linux-knight-public-2/report.json",
+      "bytes": 5321,
+      "sha256": "56d2fe70d13865033887643f4bf151a3a6cdcd26985cd78af62f2e1992af535c"
+    },
+    "streams": {
+      "requests": {
+        "path": "build/physical-pose-0.0.239/linux-knight-public-2/session/requests.jsonl",
+        "bytes": 1161,
+        "sha256": "aa3f9649f2510a8957abacec457313b8ddeba5ea1aa9e996dd44ecb6029c75b1"
+      },
+      "responses": {
+        "path": "build/physical-pose-0.0.239/linux-knight-public-2/session/responses.jsonl",
+        "bytes": 94762,
+        "sha256": "e67058b7eaa72adb62451e6a859555b6fe30a1eec8919a1d389b8b7da3f03139"
+      }
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "calls": 3,
+    "schema": 132,
+    "joined_native_result": true,
+    "natural_exit": true,
+    "exit_code": 0,
+    "report": {
+      "path": "build/physical-pose-0.0.239/linux-mcp-1/report.json",
+      "bytes": 126,
+      "sha256": "b59537c3fe250bb15a1308a95c4875ad3b8c0e1ce817b6a32a29aae5c63236f0"
+    },
+    "streams": {
+      "requests": {
+        "path": "build/physical-pose-0.0.239/linux-mcp-1/requests.jsonl",
+        "bytes": 648,
+        "sha256": "ce6f5dd775ae6e5deed644ccbc170c415bbbb0d384987034ee62942a08aee186"
+      },
+      "responses": {
+        "path": "build/physical-pose-0.0.239/linux-mcp-1/responses.jsonl",
+        "bytes": 39099,
+        "sha256": "a488f7d43981ee61dbf1ab582b43517d280b9ee70d7829608d53f4b3a1fbd4d1"
+      }
+    }
+  },
+  "regression": {
+    "passed": [
+      "authoring_api_compatibility",
+      "authoring_response_compatibility",
+      "mcp_native",
+      "model_bounds_contract",
+      "physical_animation_json_native",
+      "physical_pose_diagnostics_contract",
+      "physical_target_native",
+      "world_physical_contract",
+      "world_schema_native"
+    ],
+    "junit": {
+      "path": "build/physical-pose-0.0.239/linux-regression-1.xml",
+      "bytes": 5706,
+      "sha256": "a5a5eabffe38597fb80d364c7b70b6717953bfecb8c06656ade4583bf92304cf"
+    }
+  }
+}
