@@ -21,14 +21,14 @@ public struct ReachPickupState
 public sealed class ReachPickupGame : Game<ReachPickupState>,
     IItemAttachmentPickupGame, ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
 {
-    private const int Idle=0, Reaching=1, Returning=2, Held=3;
-    private const double AimDistance=2;
+    internal const int Idle=0, Reaching=1, Returning=2, Held=3;
+    internal const double AimDistance=2;
 
     public override void Initialize(ref ReachPickupState state) { }
 
     public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
 
-    internal static void Update(ref ReachPickupState state, GameContext context, bool aim)
+    internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default)
     {
         if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
             outcome.SampledTick==(ulong)state.PendingTick)
@@ -44,7 +44,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         if(state.Phase==Held)return;
 
         bool cancel=context.GetInputAction(state.Actor,"cancel_pickup").Pressed;
-        if(state.Phase==Reaching && (cancel || (aim && !TargetVisible(state,context))))
+        if(state.Phase==Reaching && (cancel || (aim && !TargetVisible(state,context,aimCamera))))
         {
             ++state.Cancellations;
             BeginReturn(ref state);
@@ -54,9 +54,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             if(cancel || !context.GetInputAction(state.Actor,"pickup").Pressed)return;
             if(aim)
             {
-                var eye=context.Get(state.Rig).Transform;
-                var aimed=context.AimReleasedItem(eye.Position,eye.Forward,AimDistance,[state.Actor]);
-                if(aimed.Item is not { } selected)return;
+                if(AimedItem(state,context,aimCamera) is not { } selected)return;
                 state.Item=selected;
             }
             ValidateSettings(state);
@@ -101,6 +99,12 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         }
     }
 
+    internal static EntityId? AimedItem(in ReachPickupState state,GameContext context,EntityId aimCamera)
+    {
+        var eye=context.Get(aimCamera==default ? state.Rig : aimCamera).Transform;
+        return context.AimReleasedItem(eye.Position,eye.Forward,AimDistance,[state.Actor]).Item;
+    }
+
     private static void BeginReturn(ref ReachPickupState state)
     {
         state.Phase=Returning;
@@ -127,10 +131,10 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     private static ItemSurfaceProbe Probe(ReachPickupState s,int vertex) =>
         new(new(s.FingerMesh,(uint)vertex),s.Item,s.SurfaceLimit);
 
-    private static bool TargetVisible(ReachPickupState state,GameContext context)
+    private static bool TargetVisible(ReachPickupState state,GameContext context,EntityId aimCamera)
     {
         if(context.GetItemAttachment(state.Item)?.Anchor is not { } proxy)return false;
-        var eye=context.Get(state.Rig).Transform;
+        var eye=context.Get(aimCamera==default ? state.Rig : aimCamera).Transform;
         var origin=eye.Position;
         var target=context.Get(proxy).Transform.Position;
         Vector3d direction=new(target.X-origin.X,target.Y-origin.Y,target.Z-origin.Z);

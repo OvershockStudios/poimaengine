@@ -22,12 +22,13 @@ def sha(path):
 
 
 class Run:
-    def __init__(self, owner, revision, saves, config, native_aot=False):
+    def __init__(self, owner, revision, saves, config, native_aot=False, *, configure_saves=True):
         self.owner, self.revision, self.saves, self.config = owner, revision, saves, config
         self.native_aot = native_aot
         self.id = id_request()
         self.tick = self.structure = self.game_revision = 0
-        owner.rpc('save.configure', dict(request_id=id_request(), expected_generation=0, root=native.native(saves)))
+        if configure_saves:
+            owner.rpc('save.configure', dict(request_id=id_request(), expected_generation=0, root=native.native(saves)))
 
     def start(self, unmarked=False):
         self.owner.rpc('runtime.start', dict(session_id=self.id, revision=self.revision))

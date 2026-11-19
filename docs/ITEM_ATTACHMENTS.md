@@ -411,6 +411,9 @@ continuation after cold load.
 The compiled [reach and pickup example](../examples/reach-pickup/README.md)
 uses a released item's grip as an oriented IK target. It supports cancellation
 and retries contact as the controller moves into range.
+The [Carry Props example](../examples/carry-props/README.md) combines that
+reach with a timed grip opening, blocked-release recovery and repeated use
+in a standalone game.
 
 ## Observe and restore
 

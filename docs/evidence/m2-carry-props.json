@@ -1,0 +1,287 @@
+{
+  "engine_version": "0.0.266",
+  "fixture": "tests/carry_props.py",
+  "game_type": "Poima.Examples.CarryPropsGame",
+  "scope": [
+    "One calibrated rig and a fitted dynamic prop, with a moving kinematic blocker.",
+    "The compiled game places the starting prop, accepts semantic input, and updates the authored HUD without setup RPCs.",
+    "The Windows Vulkan images show selected committed states of an analytic fixture.",
+    "Physical input, mocap-quality animation, general gripping and arm obstacle routing remain separate."
+  ],
+  "linux_coreclr": {
+    "passed": true,
+    "source_calls": 296,
+    "exact_archive_pairs": 2,
+    "first_pickup": 155,
+    "initial_proxy": "00000000000000000000000000000001",
+    "blocked": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.05574406683444977,
+      "status": "release_blocked"
+    },
+    "release_tick": 193,
+    "second_pickup": 347,
+    "proxy": "00000000000000000000000000000002",
+    "captures": {
+      "blocked": null,
+      "released": null,
+      "ready": null,
+      "carried": null
+    },
+    "archive_pairs": [
+      {
+        "witnesses": [
+          "source/blocked",
+          "source/cold-blocked"
+        ],
+        "bytes": 25678,
+        "sha256": "235f56058c613bee50319e047feb37a9235715f5ed829df0f618a4ce4f0e0104"
+      },
+      {
+        "witnesses": [
+          "source/final",
+          "source/cold-final"
+        ],
+        "bytes": 25378,
+        "sha256": "51d97ac45d607570da3a84263f39f7d70c612a9bfb020c9e990d55ae1ec94096"
+      }
+    ],
+    "binaries": {
+      "runtime_sha256": "4cafd0ec9b8d45b70bc94132b3fc108a0f61e5cd869207f42c91d30a1f6b12e5",
+      "gameplay_sha256": "79e2ad4c9741e1cedc3a0452b822eb781e65196defa103ff5344da231e1f9998"
+    }
+  },
+  "windows_native_aot": {
+    "passed": true,
+    "source_calls": 304,
+    "exact_archive_pairs": 2,
+    "first_pickup": 155,
+    "initial_proxy": "00000000000000000000000000000001",
+    "blocked": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.05574406683444977,
+      "status": "release_blocked"
+    },
+    "release_tick": 193,
+    "second_pickup": 347,
+    "proxy": "00000000000000000000000000000002",
+    "captures": {
+      "blocked": {
+        "tick": 177,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "6db5b7ea27719632d4acd64a47ec2039f491a0fc89f79a2021da578834af4b3a"
+      },
+      "released": {
+        "tick": 193,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "4c706696081e3c429af066ac304747c7447a65a6b08c695e1c832d3fd1641913"
+      },
+      "ready": {
+        "tick": 140,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "338320160981b794221f478817f417a238e8fdd72e5704fc947a70e5c7d2dcbe"
+      },
+      "carried": {
+        "tick": 163,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "b312a11d6c77d0f56c0f20c1bc3c16e0403647f3e9849b9ca5a2c90c5e1fd207"
+      }
+    },
+    "archive_pairs": [
+      {
+        "witnesses": [
+          "source/blocked",
+          "source/cold-blocked"
+        ],
+        "bytes": 25716,
+        "sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba"
+      },
+      {
+        "witnesses": [
+          "source/final",
+          "source/cold-final"
+        ],
+        "bytes": 25380,
+        "sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f"
+      }
+    ],
+    "binaries": {
+      "runtime_sha256": "0cb0f57ffc7fd28889357fafff2b378a58f045f9b028d653fd368c40fbd53909",
+      "gameplay_sha256": "de7172b979147055b0d7c084ca56b84cb1b2d930d8feaa35a36aa48d664f2d37"
+    }
+  },
+  "relocated_windows_native_aot": {
+    "calls": 291,
+    "files": 64,
+    "exact_archive_pairs": 4,
+    "engine_sha256": "84125182a480fd65359dea2fb1484da9ce73aa220893a2914012a9aa68b4dc0b",
+    "manifest_sha256": "5c5e7c0d7b4298e7ab3c5291880109ff225d5342b9c538a9ca793977eb37eaa2",
+    "input_profile": {
+      "format": "poima.input.v3",
+      "sha256": "62a3a50088d1fcf1cc89e4889097e4404a8545ed10b98aa9ba824953baf9c188",
+      "shipped_controls": {
+        "cancel_pickup": [
+          "key.q"
+        ],
+        "drop": [
+          "key.g"
+        ],
+        "pickup": [
+          "key.e"
+        ]
+      }
+    },
+    "archive_pairs": [
+      {
+        "witnesses": [
+          "source/blocked",
+          "relocated/blocked"
+        ],
+        "bytes": 25716,
+        "sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba"
+      },
+      {
+        "witnesses": [
+          "source/blocked",
+          "relocated/cold-blocked"
+        ],
+        "bytes": 25716,
+        "sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba"
+      },
+      {
+        "witnesses": [
+          "source/final",
+          "relocated/final"
+        ],
+        "bytes": 25380,
+        "sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f"
+      },
+      {
+        "witnesses": [
+          "source/final",
+          "relocated/cold-final"
+        ],
+        "bytes": 25380,
+        "sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f"
+      }
+    ],
+    "player_replay": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "frames_presented": 356,
+      "stop_reason": "replay_complete",
+      "capture_sha256": "ae2b8a1c641001fb084259f06b2d5a3b7c3fe45361b3815e785ba7463b917d87",
+      "replay_sha256": "5ef204a2844021b4732d01f85cfa6ec3234584b6ca4a80531cea04dfd4678005",
+      "semantic_replay_segments": 56,
+      "replay_ticks": 355,
+      "final_gameplay_values_match_headless": true
+    }
+  },
+  "linux_regressions": [
+    {
+      "name": "components_native",
+      "passed": true
+    },
+    {
+      "name": "component_collections_native",
+      "passed": true
+    },
+    {
+      "name": "world_ui_contract",
+      "passed": true
+    },
+    {
+      "name": "item_attachment_release_contract",
+      "passed": true
+    },
+    {
+      "name": "item_attachment_pickup_contract",
+      "passed": true
+    },
+    {
+      "name": "animation_layers_math",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_save_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_save_reset",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_save_write",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_save_read",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_save_cleanup",
+      "passed": true
+    },
+    {
+      "name": "gameplay_compatibility_policy",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_jobs",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_rate_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_membership_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_target_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_return_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_layers_native",
+      "passed": true
+    },
+    {
+      "name": "input_profile_contract",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_contract",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_blend_contract",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_layers_contract",
+      "passed": true
+    },
+    {
+      "name": "runtime_animation_inertial_contract",
+      "passed": true
+    }
+  ],
+  "retained_aimed_coreclr_passed": true,
+  "fixture_sha256": {
+    "tests/carry_props.py": "dcf35e6aa7afe9820d2b98dc8ccaa11bfceacc64d90a0cc5fc072f4bd2bdc2e4",
+    "examples/carry-props/CarryPropsGame.cs": "c227df45d328675d7d95e4ac2ddf9fb10b5af64668e86e31fdeebf2ba908b1b1",
+    "examples/reach-pickup/ReachPickupGame.cs": "ede39f16f13ab81863d73bea2b65ffe5032ea608c3b473d4d28966692639fe79"
+  }
+}

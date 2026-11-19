@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.266
+
+- Add a compiled first-person sample that repeatedly picks up and drops a prop, with an animated grip, blocked-release recovery and live interaction prompts.
+
 ## 0.0.265
 
 - Let gameplay and agents identify released items through the nearest physical hit, with obstruction-aware reach and pickup.

@@ -82,5 +82,7 @@ __pycache__/
 /examples/projectile-range/obj/
 /examples/reach-pickup/bin/
 /examples/reach-pickup/obj/
+/examples/carry-props/bin/
+/examples/carry-props/obj/
 /tests/Projectiles/bin/
 /tests/Projectiles/obj/
