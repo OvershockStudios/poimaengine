@@ -155,6 +155,7 @@ void save_stance_flags(bool requested,bool crouched,bool blocked) {
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto& s=*impl_;
+    const bool joined_physics=s.physical_content || Impl::has_released_attachment(s.attachment_graph.get());
     const bool stance_state=save_stance_definition(s.topology->live);
     const bool motor_state=save_locomotion_definition(s.topology->live);
     (void)save_text(s.world_id);(void)save_integer(s.revision);(void)save_integer(s.tick);(void)save_integer(s.game_revision);
@@ -226,7 +227,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     SaveJson payload={{"content_sha256",content_sha256},{"world_id",s.world_id},{"authored_revision",s.revision},{"tick",s.tick},
         {"gameplay_revision",s.game_revision},{"entities",entities},{"animation",SaveJson::parse(s.animations->save_state(s.tick))},
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
-    if(!s.physical_content && !s.topology->kinematics.empty()) {
+    if(!joined_physics && !s.topology->kinematics.empty()) {
         SaveJson trackers=SaveJson::array();
         for(const auto e:s.topology->kinematics) {
             const auto& node=s.registry.get<Node>(e);
@@ -237,9 +238,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     }
     if(s.attachment_graph) {
         SaveJson bindings=SaveJson::array();
-        for(const auto& [id,binding]:s.attachment_graph->bindings)
-            bindings.push_back({{"entity",id},{"anchor",binding.anchor.empty() ? SaveJson(nullptr) : SaveJson(binding.anchor)},
-                {"offset_matrix",binding.offset}});
+        for(const auto& [id,binding]:s.attachment_graph->bindings) {
+            SaveJson row={{"entity",id},{"anchor",binding.anchor.empty() ? SaveJson(nullptr) : SaveJson(binding.anchor)},
+                {"offset_matrix",binding.offset}};
+            if(binding.released)row["released"]=true;
+            bindings.push_back(std::move(row));
+        }
         payload["attachments"]={{"version",1},{"bindings",std::move(bindings)}};
     }
     if(s.attachment_outcomes)
@@ -291,7 +295,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         if(!payload.contains("ui"))payload["ui"]=nullptr;
         payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
     }
-    if(s.physical_content)payload["physical"]=save_physical_extension(s);
+    if(joined_physics)payload["physical"]=save_physical_extension(s);
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
@@ -313,11 +317,6 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Authenticate the original complete payload before validating a separately
     // named optional extension; every legacy field and unknown-key rejection stays exact.
     const bool physical_content=Impl::definition_has_physical(definition);
-    SaveJson physical_extension=nullptr;
-    require(data.contains("physical")==physical_content,"Physical content requires its complete versioned physics extension; legacy worlds cannot add one.");
-    if(physical_content) {
-        physical_extension=data.at("physical");data.erase("physical");save_physical_extension_fields(physical_extension,definition);
-    }
     SaveJson pose_extension=nullptr;
     if(data.contains("camera_poses")) {
         require(version>=7,"Camera pose extension requires Camera snapshot membership.");
@@ -330,7 +329,6 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     SaveJson kinematic_sleep=nullptr;
     if(data.contains("kinematic_sleep")) {
-        require(!physical_content,"Joined physical snapshots already own kinematic sleep tracking.");
         kinematic_sleep=std::move(data.at("kinematic_sleep"));data.erase("kinematic_sleep");
         save_fields(kinematic_sleep,{"version","trackers"});
         require(save_integer(kinematic_sleep.at("version"))==1,"Unsupported kinematic sleep extension version.");
@@ -349,14 +347,27 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             "Saved attachment extension requires 1..64 bindings.");
         std::string previous;
         for(const auto& row:rows) {
-            save_fields(row,{"entity","anchor","offset_matrix"});
+            const bool released=row.contains("released");
+            if(released) {
+                save_fields(row,{"entity","anchor","offset_matrix","released"});
+                require(row.at("released")==true,"Saved release flag must be true.");
+            } else save_fields(row,{"entity","anchor","offset_matrix"});
             const auto id=save_text(row.at("entity"));
             require(previous.empty() || previous<id,"Saved attachment items must be unique and sorted.");
             previous=id;
             const auto anchor=row.at("anchor").is_null() ? std::string{} : save_text(row.at("anchor"));
-            attachment_graph->bindings.emplace(id,RuntimeAttachmentBinding{anchor,save_vector<16>(row.at("offset_matrix"),1e12)});
+            attachment_graph->bindings.emplace(id,RuntimeAttachmentBinding{anchor,save_vector<16>(row.at("offset_matrix"),1e12),released});
         }
         data.erase("attachments");
+    }
+    const bool joined_physics=physical_content || Impl::has_released_attachment(attachment_graph.get());
+    require(data.contains("physical")==joined_physics,
+        "Physical rigs and released items require their complete versioned physics extension.");
+    require(!joined_physics || kinematic_sleep.is_null(),"Joined physical snapshots already own kinematic sleep tracking.");
+    SaveJson physical_extension=nullptr;
+    if(joined_physics) {
+        physical_extension=std::move(data.at("physical"));data.erase("physical");
+        save_physical_extension_fields(physical_extension,definition);
     }
     std::shared_ptr<const Impl::AttachmentOutcomes> attachment_outcomes;
     if(data.contains("attachment_outcomes")) {
@@ -479,12 +490,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
     std::optional<RuntimePhysicsBootstrap> physical_bootstrap;
-    if(physical_content)physical_bootstrap=save_physical_parse_bootstrap(physical_extension,restored_definition,tick);
+    if(joined_physics)physical_bootstrap=save_physical_parse_bootstrap(physical_extension,restored_definition,tick);
     // Exact IDs/generations are installed at first allocation, never remapped.
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
     std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
-    if(physical_content)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
+    if(joined_physics)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
     if(structural) {
         // Bootstrap may see generated objects as definitions, but exclusions
         // must come exclusively from the complete original authored inventory.

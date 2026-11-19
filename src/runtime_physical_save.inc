@@ -167,7 +167,7 @@ void save_physical_lineage(const SaveJson& physics,const RuntimeBodyIds& ledger)
     for(const auto& value:physics.at("ccd"))key(value);
 }
 template<class State>SaveJson save_physical_extension(const State& s) try {
-    auto checkpoint=s.checkpoint_physical();require(checkpoint.enabled,"Physical save extension requires frozen physical content.");
+    auto checkpoint=s.checkpoint_physical();require(checkpoint.enabled,"Physical save extension requires an active physical save owner.");
     save_physical_final_history(s,checkpoint);
     const auto bootstrap=s.physical_bootstrap();
     JPH::PoimaBodyOwnerState owner;auto physics=capture_runtime_physics_state_joined(s.physics,owner);

@@ -3,6 +3,7 @@
     struct AttachmentGraph {
         std::map<std::string,RuntimeAttachmentBinding> bindings;
         std::vector<entt::entity> order;
+        std::set<std::string> world_draws;
     };
     std::shared_ptr<const AttachmentGraph> attachment_graph;
     using AttachmentOutcomes=std::map<std::string,RuntimeAttachmentOutcome>;
@@ -12,6 +13,10 @@
         if(!graph)return nullptr;
         const auto found=graph->bindings.find(id);
         return found==graph->bindings.end() ? nullptr : &found->second;
+    }
+    static bool has_released_attachment(const AttachmentGraph* graph) {
+        return graph && std::any_of(graph->bindings.begin(),graph->bindings.end(),
+            [](const auto& row){return row.second.released;});
     }
     const std::vector<entt::entity>& transform_hierarchy() const {
         return attachment_graph && !attachment_graph->bindings.empty() ? attachment_graph->order : topology->hierarchy;
@@ -32,12 +37,20 @@
     }
     void validate_attachment_graph(AttachmentGraph& graph,const Topology& scene) {
         require(graph.bindings.size()<=max_runtime_attachments,"At most 64 items can own attachment bindings.");
+        graph.world_draws.clear();
         if(graph.bindings.empty()) {graph.order.clear();return;}
+        std::set<std::string> release_bodies;
         for(const auto& [id,binding]:graph.bindings) {
             require(scene.identities.contains(id),"Attachment item must remain live. Reset it before removing its instance.");
             require(binding.anchor.empty() || scene.identities.contains(binding.anchor),
                 "Attachment anchor must remain live. Transfer or reset its items before removal.");
             validate_attachment_offset(binding.offset);
+            if(binding.released) {
+                const auto spawned=scene.spawned.find(binding.anchor);
+                require(spawned!=scene.spawned.end() && release_bodies.insert(binding.anchor).second &&
+                    is_release_template(spawn_template(spawned->second.template_id)),
+                    "A released item requires its own live dynamic collision proxy.");
+            }
         }
         // Check the authored subtree even if a nested item currently follows a
         // different anchor. Returning it to its authored parent stays safe.
@@ -52,6 +65,16 @@
                 !d.acoustics && !d.emitter,"Attachment items need an ordinary transform/rigid-mesh subtree without independent native owners.");
         }
         graph.order=sorted_hierarchy(scene,&graph);
+        if(!release_bodies.empty())for(const auto e:graph.order) {
+            const auto& node=registry.get<Node>(e);
+            const auto* binding=attachment(&graph,node.id);
+            if(binding ? binding->released : graph.world_draws.contains(node.parent))
+                graph.world_draws.insert(node.id);
+        }
+    }
+    static bool is_release_template(const RuntimeSpawnTemplate& recipe) {
+        return recipe.entities.empty() && !recipe.mesh && recipe.components.empty() &&
+            recipe.collider && recipe.collider->motion==BodyMotion::Dynamic;
     }
     using AttachmentContacts=std::map<std::string,const RuntimeAttachmentContact*>;
 

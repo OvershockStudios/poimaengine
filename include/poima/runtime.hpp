@@ -71,6 +71,7 @@ struct RuntimeAttachmentCommand {
 struct RuntimeAttachmentBinding {
     std::string anchor;
     Matrix4 offset;
+    bool released=false;
 };
 struct RuntimeAttachmentFrameMiss {
     double position_error_m,position_limit_m,rotation_limit_deg;
@@ -86,6 +87,11 @@ struct RuntimeAttachmentOutcome {
     std::variant<std::monostate,RuntimeAttachmentFrameMiss,RuntimeAttachmentSurfaceMiss> detail;
 };
 inline constexpr std::size_t max_runtime_attachments=64;
+struct RuntimeAttachmentRelease {
+    std::string item,body_template;
+    RuntimeAttachmentFrame body_in_item;
+    std::array<double,3> linear_velocity_m_s{},angular_velocity_rad_s{};
+};
 enum class BodyMotion { Static, Dynamic, Kinematic };
 struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
@@ -563,6 +569,7 @@ public:
     std::map<std::string,RuntimeAttachmentBinding> attachments() const;
     std::map<std::string,RuntimeAttachmentOutcome> attachment_outcomes() const;
     void change_attachments(std::uint64_t expected_revision,const std::vector<RuntimeAttachmentCommand>& commands);
+    std::string release_attachment(std::uint64_t expected_revision,const RuntimeAttachmentRelease&);
     RuntimeSpawnInstance instance(const std::string& root) const;
     std::string instance_node(const std::string& root,const std::string& local) const;
     bool is_player_controller(const std::string& id) const;

@@ -1,0 +1,463 @@
+{
+  "format": "poima.evidence.item-attachment-release.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.258",
+  "schema_revision": 149,
+  "fixture": "tests/item_attachment_release.py",
+  "scope": "An authored visual prop becomes a world-rendered object following a spawned dynamic box at the same committed tick. The checks cover native service release, contact and same-build cold continuation.",
+  "checks": [
+    "Invalid template, excessive velocity, stale tick, initially overlapping box and removal of an owned proxy reject the request. A repaired request mints the expected ID and exact retry reuses it.",
+    "Same-tick item matrix continuity, translated collision frame, requested velocities, independent falling and rotation, live floor contact and asleep rest.",
+    "The restored release, active floor contact and settled state match whole archive bytes. Reattach with keep-world and retire the collision proxy.",
+    "The observer gains two prop draws, the player loses the corresponding foreground draws, and the selected restored launch and in-flight Vulkan frames exactly match the continuous run."
+  ],
+  "linux": {
+    "executable_sha256": "e80a9c2fd8b29c42e642737cb0fea8b060e4fc4de17466386ec7e217bddab28e",
+    "calls": 69,
+    "clean_processes": 3,
+    "report": {
+      "path": "build/attachment-release-0.0.258/linux-joined-1/report.json",
+      "bytes": 2471,
+      "sha256": "4337f43048eaef306506b27de66c5bc9789e9d9865a083dfd2ad9ebc7e21c5b7"
+    },
+    "traces": {
+      "runtime": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/runtime/requests.jsonl",
+          "bytes": 16236,
+          "sha256": "c35fbb8230693b0a44af1cdbb14852ee7356cf8cd88a5ba2afa36f4b30285a4e"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/runtime/responses.jsonl",
+          "bytes": 15268,
+          "sha256": "23a4f804c7cb5fa7eaff994bdc9ad46efb57f5bf0bba4af2be4cdea9ecb57d9a"
+        }
+      },
+      "cold": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/cold/requests.jsonl",
+          "bytes": 3628,
+          "sha256": "fb986c0541fc24610ba911ac2c0c5679d8fb11ea6f9bb10944728a4ca517f9e7"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/cold/responses.jsonl",
+          "bytes": 5588,
+          "sha256": "3ed1a87c48a04ec50359e719cd9e1a3787ee78dda642a9bad1339f44fd3c7273"
+        }
+      },
+      "contact": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/contact/requests.jsonl",
+          "bytes": 3358,
+          "sha256": "05c998ed15d89411c4832d0058ac6a797216e3ffb6e3f7a2696cd2bfd7a76f96"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/linux-joined-1/contact/responses.jsonl",
+          "bytes": 4610,
+          "sha256": "4e23910bc87de930c0db852593c5f7cae6049b66b530968f56f64211ea41109c"
+        }
+      }
+    },
+    "complete_checkpoint_pairs": 8,
+    "contact_pairs_at_tick_48": 1,
+    "checkpoint_hashes": {
+      "release": {
+        "sha256": "648ff10aab812b6efaf9012f02cd6e447d30c5c43bb4e215f6ebf1d21fae5ab7",
+        "matching_archives": 2
+      },
+      "in_flight": {
+        "sha256": "a948e58173ec5527cceb850af2e197c3e361afc9e1dc70ea3523835c96767a5e",
+        "matching_archives": 2
+      },
+      "contact": {
+        "sha256": "46da868129430cd4d48f1b784dc3ef33330aa551ba415d040dd8e9fd4208ba78",
+        "matching_archives": 3
+      },
+      "settled": {
+        "sha256": "41d7bba96873fe54f5610f25b0dede471e76372e8a29a2507733dde30bd161cc",
+        "matching_archives": 3
+      }
+    },
+    "at_release": {
+      "position": [
+        -0.68,
+        -0.4,
+        0.0
+      ],
+      "linear_velocity": [
+        2.5,
+        0.75,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        3.0
+      ],
+      "active": true
+    },
+    "in_flight": {
+      "position": [
+        -0.18270006433129315,
+        -0.46253534450661393,
+        0.0
+      ],
+      "linear_velocity": [
+        2.475114107131958,
+        -1.2088706493377686,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        2.970137119293213
+      ],
+      "active": true
+    },
+    "landed": {
+      "position": [
+        0.020066432699436976,
+        -1.0007829065397447,
+        0.0024737920034710245
+      ],
+      "linear_velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "active": false
+    }
+  },
+  "windows": {
+    "executable_sha256": "997f6935c4dd8acebb01424bea52098e6844600107b4a514e8bc1417eab4b66c",
+    "calls": 76,
+    "clean_processes": 3,
+    "report": {
+      "path": "build/attachment-release-0.0.258/windows-joined-1/report.json",
+      "bytes": 2993,
+      "sha256": "1e84a6608913717a89bf0253a5cb8f2199bacea973fa301d0db0d1efc7ffe243"
+    },
+    "traces": {
+      "runtime": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/runtime/requests.jsonl",
+          "bytes": 18010,
+          "sha256": "19a90177af682f0b2d8b294d442dc369942591703306a19b3d79929ce1519311"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/runtime/responses.jsonl",
+          "bytes": 53552,
+          "sha256": "a9068fcf501270ba63a73376147123ab954d2a343b8b63c61e7d5434d0758339"
+        }
+      },
+      "cold": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/cold/requests.jsonl",
+          "bytes": 4339,
+          "sha256": "6c6bd66919930dc5e0b40323924cdb6f3c195f826f85c1a2f0d5fe26f2896212"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/cold/responses.jsonl",
+          "bytes": 19796,
+          "sha256": "f7b57d2e5b89f0310d066042e302a3f07a6b281af3a45953e67e8f05e00c6bf0"
+        }
+      },
+      "contact": {
+        "requests": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/contact/requests.jsonl",
+          "bytes": 3361,
+          "sha256": "aed9c6ebe39f6caa79f027bddef44ddc9e4ea502bad3844ceace901d0e72dea2"
+        },
+        "responses": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/contact/responses.jsonl",
+          "bytes": 4613,
+          "sha256": "0c49d9ab8f5450f4a30f17b260fd89391cc3d9714483a24b128b8d140274b00a"
+        }
+      }
+    },
+    "complete_checkpoint_pairs": 8,
+    "contact_pairs_at_tick_48": 1,
+    "checkpoint_hashes": {
+      "release": {
+        "sha256": "99f0e036202e5929734d6f49e607c981b3a1546f53998da14a3da3a7f7bdb5ae",
+        "matching_archives": 2
+      },
+      "in_flight": {
+        "sha256": "6afe5e4d0af05ee280e098cb07a36d3258aacd0ff700c7dd4a961133ca36dd8b",
+        "matching_archives": 2
+      },
+      "contact": {
+        "sha256": "eef08ef63ebf44436e14e51f6131c4d248f861b7dda6744cf9fe97c4e082984e",
+        "matching_archives": 3
+      },
+      "settled": {
+        "sha256": "563a2bf1fb31377f21e6a31cb22809b5f72bd75b2daa750fde08e147cf897148",
+        "matching_archives": 3
+      }
+    },
+    "vulkan": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "width": 720,
+      "height": 405,
+      "samples": 4,
+      "draw_observations": {
+        "holder": {
+          "sha256": "a4d826ac6bd495c3c703c58bb9450f9d26fe3e9e43a5a2e3df7d9433d7132f3b",
+          "objects": 2,
+          "foreground": 3
+        },
+        "world-before": {
+          "sha256": "0df339293e336791c7742161fbce4958209f835547ca5072b064c6c3b6e2b30c",
+          "objects": 2,
+          "foreground": 0
+        },
+        "world-release": {
+          "sha256": "782754738015a7cdb750b6f3e115315714f3bd8836ce1a97543a29c76af702a5",
+          "objects": 4,
+          "foreground": 0
+        },
+        "player-release": {
+          "sha256": "5d077a21c26b373660a7c3634661e2c4ac57d1521e95711cb9b1dc6a6a370c1e",
+          "objects": 4,
+          "foreground": 1
+        }
+      },
+      "images": {
+        "cold-falling": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/cold-falling.bmp",
+          "bytes": 1166538,
+          "sha256": "cc8fd0a540dee6d43698fff1456740a0751379e654dddff15a4e95d54ff0c618"
+        },
+        "cold-release": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/cold-release.bmp",
+          "bytes": 1166538,
+          "sha256": "782754738015a7cdb750b6f3e115315714f3bd8836ce1a97543a29c76af702a5"
+        },
+        "holder": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/holder.bmp",
+          "bytes": 1166538,
+          "sha256": "a4d826ac6bd495c3c703c58bb9450f9d26fe3e9e43a5a2e3df7d9433d7132f3b"
+        },
+        "player-release": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/player-release.bmp",
+          "bytes": 1166538,
+          "sha256": "5d077a21c26b373660a7c3634661e2c4ac57d1521e95711cb9b1dc6a6a370c1e"
+        },
+        "warm-falling": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/warm-falling.bmp",
+          "bytes": 1166538,
+          "sha256": "cc8fd0a540dee6d43698fff1456740a0751379e654dddff15a4e95d54ff0c618"
+        },
+        "world-before": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/world-before.bmp",
+          "bytes": 1166538,
+          "sha256": "0df339293e336791c7742161fbce4958209f835547ca5072b064c6c3b6e2b30c"
+        },
+        "world-release": {
+          "path": "build/attachment-release-0.0.258/windows-joined-1/world-release.bmp",
+          "bytes": 1166538,
+          "sha256": "782754738015a7cdb750b6f3e115315714f3bd8836ce1a97543a29c76af702a5"
+        }
+      }
+    },
+    "at_release": {
+      "position": [
+        -0.68,
+        -0.4,
+        0.0
+      ],
+      "linear_velocity": [
+        2.5,
+        0.75,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        3.0
+      ],
+      "active": true
+    },
+    "in_flight": {
+      "position": [
+        -0.18270006433129315,
+        -0.46253534450661393,
+        0.0
+      ],
+      "linear_velocity": [
+        2.475114107131958,
+        -1.2088706493377686,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        2.970137119293213
+      ],
+      "active": true
+    },
+    "landed": {
+      "position": [
+        0.020066432699436976,
+        -1.0007829065397447,
+        0.0024737920034710245
+      ],
+      "linear_velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angular_velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "active": false
+    }
+  },
+  "linux_regressions": {
+    "junit": {
+      "path": "build/attachment-release-0.0.258/linux-regressions.xml",
+      "bytes": 5026,
+      "sha256": "f4e482ba20c7a4f0701a975a91b46546d1e057916c7eaf2c105dd81232a8e306"
+    },
+    "passed": [
+      "authoring_core_conformance",
+      "mcp_contract",
+      "world_ui_contract",
+      "world_physical_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "rigid_mesh_extraction_contract",
+      "asset_references_contract"
+    ]
+  },
+  "mcp": {
+    "passed": true,
+    "requests": 11,
+    "replies": 10,
+    "independent_pair_sha256": "a948e58173ec5527cceb850af2e197c3e361afc9e1dc70ea3523835c96767a5e",
+    "engine_sha256": "e80a9c2fd8b29c42e642737cb0fea8b060e4fc4de17466386ec7e217bddab28e",
+    "retained_wire": [
+      {
+        "path": "build/attachment-release-0.0.258/mcp/report.json",
+        "bytes": 240,
+        "sha256": "29bf34d8421ac052c506b819ed6ea5362629c8d563ad9f4b0e72aae32bb15a48"
+      },
+      {
+        "path": "build/attachment-release-0.0.258/mcp/requests.jsonl",
+        "bytes": 3396,
+        "sha256": "f6be5faa2cef4788395ca6deecc7dbcd3e12d6ef252f6629258a37f7cef58520"
+      },
+      {
+        "path": "build/attachment-release-0.0.258/mcp/responses.jsonl",
+        "bytes": 12545,
+        "sha256": "fd7925b7087b1656634663586968f76401eab501a4ffe434995e89287cb80aa3"
+      }
+    ]
+  },
+  "retained_compiled_grip": {
+    "coreclr": {
+      "executable_sha256": "e80a9c2fd8b29c42e642737cb0fea8b060e4fc4de17466386ec7e217bddab28e",
+      "calls": 88,
+      "clean_processes": 3,
+      "report": {
+        "path": "build/attachment-release-0.0.258/retained-recovery-linux/report.json",
+        "bytes": 1243,
+        "sha256": "92d12c46462939516a66f7258c76f144f3d88e3d71fec20d5b7c16ff96b4072b"
+      },
+      "traces": {
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-linux/runtime/requests.jsonl",
+            "bytes": 14887,
+            "sha256": "4294a13b33baefdd89869a797799dbcfcb3c688a2c73c2c5778838178a86734b"
+          },
+          "responses": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-linux/runtime/responses.jsonl",
+            "bytes": 466214,
+            "sha256": "939560752d0ee9c7f1ecdadf2a0482f2ee6b49f956f30ec8af4a7241d0558de9"
+          }
+        },
+        "cold": {
+          "requests": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-linux/cold/requests.jsonl",
+            "bytes": 6303,
+            "sha256": "114f0fd11576841ebbc63e138804651f8d01998182302550a508e10457cb1518"
+          },
+          "responses": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-linux/cold/responses.jsonl",
+            "bytes": 24706,
+            "sha256": "64734958ca0d6919f91f0468760a640ecc048d776cd4f7f921b044834c98c340"
+          }
+        }
+      }
+    },
+    "native_aot": {
+      "executable_sha256": "997f6935c4dd8acebb01424bea52098e6844600107b4a514e8bc1417eab4b66c",
+      "calls": 88,
+      "clean_processes": 3,
+      "report": {
+        "path": "build/attachment-release-0.0.258/retained-recovery-windows/report.json",
+        "bytes": 1252,
+        "sha256": "35d7adcb0bbc63cab7f18ef99fac8a009c992658aa6def6b6b0df8cfdf39449e"
+      },
+      "traces": {
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-windows/runtime/requests.jsonl",
+            "bytes": 14760,
+            "sha256": "1ef77df25e86fa904aae8c0e9fb2589a860059ea0e9d644e203ed0bbd6187888"
+          },
+          "responses": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-windows/runtime/responses.jsonl",
+            "bytes": 466567,
+            "sha256": "476c8654a60ff17509edf1736708a213bf983a42d3dab7f6c9216be5a94cf40d"
+          }
+        },
+        "cold": {
+          "requests": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-windows/cold/requests.jsonl",
+            "bytes": 6157,
+            "sha256": "ac121dc7b2ff901d25285687be16d424e62f2dd8cdd618922eb61714c1b7dfc4"
+          },
+          "responses": {
+            "path": "build/attachment-release-0.0.258/retained-recovery-windows/cold/responses.jsonl",
+            "bytes": 24959,
+            "sha256": "799aacd09cfd75f7b7bd93dd5e1cd6921276e7ba14a81cdac5b382612f60da22"
+          }
+        }
+      }
+    }
+  },
+  "earlier_attempts": [
+    {
+      "report": {
+        "path": "build/attachment-release-0.0.258/linux-first/report.json",
+        "bytes": 538,
+        "sha256": "5e6197704b23188a8fefc5c084436b332e366418b7adb74b4913ab2f3454ec11"
+      },
+      "reason": "The initial test incorrectly assumed the item would cross world X=0 during its first flight sample. The check now measures displacement from its actual launch pose."
+    },
+    {
+      "report": {
+        "path": "build/attachment-release-0.0.258/linux-second/report.json",
+        "bytes": 775,
+        "sha256": "be2e98f9fcf66d894712e24c711d50ab14a065ed3e5dbece03f411d6060c3737"
+      },
+      "reason": "Recreating only the public body state preserved midair flight but diverged when the dynamic body settled after floor contact. The final implementation captures the native physics state and complete body identity ledger.",
+      "settled_position_delta_m": 0.0002303905807822521
+    }
+  ],
+  "limits": [
+    "Collision is a fitted box. The service accepts the caller’s explicit linear and angular velocities.",
+    "Foreground and world lens projections may differ at the same pose. Whole-item drawing requires an independently authored complete visual subtree.",
+    "Exact verification covers the declared same-build fixtures. It does not establish cross-platform determinism or arbitrary gameplay save migrations.",
+    "C# release staging and atomic reclaim remain outside this checkpoint."
+  ]
+}

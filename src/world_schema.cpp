@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 148}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 149}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -503,6 +503,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             {"maxItems",max_runtime_attachments},{"items",attachment_command}}}},
         {"session_id","request_id","expected_tick","expected_structure_revision","commands"});
     methods["runtime.attachment.apply"]["description"]="Atomically transfer ordinary visual items to live anchors, hold their current world matrices, or restore authored hierarchy. Keep-world preserves the item at handoff and may use null to hold it in world space. Optional frame and surface contact limits with a live anchor reject a missed grip before publication. Snap uses the supplied local transform. Increments the structure revision without advancing time. Outside runtime-game-session v1.";
+    methods["runtime.attachment.release"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
+        {"expected_structure_revision",rev},{"item",id},{"body_template",id},{"body_in_item",frame_offset},
+        {"linear_velocity_m_s",pose_vector(3,100)},{"angular_velocity_rad_s",pose_vector(3,20)}},
+        {"session_id","request_id","expected_tick","expected_structure_revision","item","body_template","linear_velocity_m_s","angular_velocity_rad_s"});
+    methods["runtime.attachment.release"]["description"]="At the exact committed tick, release a held visual item onto a newly spawned world physics proxy. Supply a collider-only dynamic BoxCollider template, optional box frame in item space, and explicit world-space body velocities. Magnitudes are limited to 100 m/s and 20 rad/s. Reject initial penetration greater than 1 mm. The item keeps its pose and moves to world drawing. One structure revision. Outside runtime-game-session v1.";
     methods["runtime.surface.measure"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
         {"pairs",{{"type","array"},{"minItems",1},{"maxItems",max_surface_pairs},{"items",surface_pair}}}},
         {"session_id","tick","pairs"});

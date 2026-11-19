@@ -384,8 +384,9 @@
         }};
         apply(caller);apply(gameplay);
     } catch(const std::invalid_argument& error) { throw std::runtime_error(std::string("PhysicalRig: ")+error.what()); }
-    PhysicalCheckpoint checkpoint_physical() const try {
-        PhysicalCheckpoint saved;saved.enabled=physical_content;saved.next_collision_group=physical_next_collision_group;
+    PhysicalCheckpoint checkpoint_physical(bool release_pending=false) const try {
+        PhysicalCheckpoint saved;saved.enabled=physical_content || release_pending || has_released_attachment(attachment_graph.get());
+        saved.next_collision_group=physical_next_collision_group;
         if(!saved.enabled)return saved;
         require(physics.CapturePoimaOwnerState(saved.owner),"Cannot capture exact physics owner state.");
         std::map<const JPH::Constraint*,std::pair<std::string,std::string>> names;

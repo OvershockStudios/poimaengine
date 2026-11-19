@@ -30,6 +30,7 @@ std::uint64_t Runtime::structure_revision() const { throw std::runtime_error("Si
 std::map<std::string,RuntimeAttachmentBinding> Runtime::attachments() const { throw std::runtime_error("Simulation is not built."); }
 std::map<std::string,RuntimeAttachmentOutcome> Runtime::attachment_outcomes() const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::change_attachments(std::uint64_t,const std::vector<RuntimeAttachmentCommand>&) { throw std::runtime_error("Simulation is not built."); }
+std::string Runtime::release_attachment(std::uint64_t,const RuntimeAttachmentRelease&) { throw std::runtime_error("Simulation is not built."); }
 RuntimeSpawnInstance Runtime::instance(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::instance_node(const std::string&,const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 bool Runtime::is_player_controller(const std::string&) const { throw std::runtime_error("Simulation is not built."); }

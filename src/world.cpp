@@ -3828,6 +3828,7 @@ public:
         if(method=="runtime.attachment.inspect")return inspect_runtime_attachments(params);
         if(method=="runtime.attachment.outcomes")return inspect_attachment_outcomes(params);
         if(method=="runtime.attachment.apply")return apply_runtime_attachments(params);
+        if(method=="runtime.attachment.release")return release_runtime_attachment(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));

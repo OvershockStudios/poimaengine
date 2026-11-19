@@ -1613,11 +1613,11 @@ struct Runtime::Impl {
                 animations->record_procedural_final(entity.id,tick,registry.get<Node>(find(entity.id)).world);
         structure_revision=result.revision;return result;
     }
-    RuntimeStructureResult change_structure(std::uint64_t expected_revision,
-        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
+    template<class Publish>
+    RuntimeStructureResult change_structure_transaction(std::uint64_t expected_revision,Publish&& publish,bool release_pending=false) {
         require(expected_revision==structure_revision,"Stale runtime structure revision.");
         require(!save_queue.pending(),"Resolve pending gameplay save intent before structural edits.");
-        const auto saved=checkpoint_structure();auto physical_checkpoint=checkpoint_physical();auto animation_checkpoint=animations->checkpoint();
+        const auto saved=checkpoint_structure();auto physical_checkpoint=checkpoint_physical(release_pending);auto animation_checkpoint=animations->checkpoint();
         auto sound_checkpoint=sounds;
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
@@ -1626,7 +1626,7 @@ struct Runtime::Impl {
         require(!checkpoint.IsFailed(),"Cannot checkpoint physics for structural edit.");
         components->begin_batch();
         try {
-            auto result=publish_structure(expected_revision,requests,removals);
+            auto result=publish();
             components->commit_batch();commit_structure(saved);return result;
         } catch(...) {
             components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
@@ -1644,6 +1644,68 @@ struct Runtime::Impl {
             world_matrices();
             throw;
         }
+    }
+    RuntimeStructureResult change_structure(std::uint64_t expected_revision,
+        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
+        return change_structure_transaction(expected_revision,[&] {
+            return publish_structure(expected_revision,requests,removals);
+        });
+    }
+    std::string release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
+        const auto& node=registry.get<Node>(find(request.item));
+        const auto* held=attachment(attachment_graph.get(),node.id);
+        require(held && !held->anchor.empty() && !held->released,"Release requires a currently attached item with a live holder.");
+        const auto item_world=node.world;
+        const auto& recipe=spawn_template(request.body_template);
+        require(is_release_template(recipe),"Release needs a single-root dynamic BoxCollider template with no drawable or custom components.");
+        const auto body_frame=attachment_contact_frame(item_world,request.body_in_item);
+        require(pose_frames::axes(body_frame).basis==pose_frames::Basis::regular,
+            "Release requires a proper, unsheared collision frame.");
+        const auto center=pose(body_frame);
+        const RuntimeTransform body_pose{{center.position.GetX(),center.position.GetY(),center.position.GetZ()},
+            {center.rotation.GetX(),center.rotation.GetY(),center.rotation.GetZ(),center.rotation.GetW()},center.scale};
+        const auto to_velocity=[](const auto& value,double maximum) {
+            require(std::hypot(value[0],value[1],value[2])<=maximum,"Release velocity exceeds its magnitude limit.");
+            return JPH::Vec3(static_cast<float>(value[0]),static_cast<float>(value[1]),static_cast<float>(value[2]));
+        };
+        const auto linear=to_velocity(request.linear_velocity_m_s,100.);
+        const auto angular=to_velocity(request.angular_velocity_rad_s,20.);
+        auto result=change_structure_transaction(expected,[&] {
+            auto spawn=publish_structure(expected,{{recipe.id,body_pose}},{});
+            const auto& body_id=spawn.spawned.front();
+            const auto e=find(body_id);
+            const auto body=registry.get<Body>(e).id;
+            auto& bodies=physics.GetBodyInterface();
+            class ReleaseClearance final : public JPH::CollideShapeCollector {
+            public:
+                bool blocked=false;
+                void AddHit(const JPH::CollideShapeResult& hit) override {
+                    require(std::isfinite(hit.mPenetrationDepth),"Release overlap depth is nonfinite.");
+                    if(hit.mPenetrationDepth>.001f) {blocked=true;ForceEarlyOut();}
+                }
+            } clearance;
+            JPH::CollideShapeSettings settings;
+            settings.mBackFaceMode=JPH::EBackFaceMode::CollideWithBackFaces;
+            const JPH::IgnoreSingleBodyFilter ignore(body);
+            const auto shape=bodies.GetShape(body);
+            const auto body_world=bodies.GetCenterOfMassTransform(body);
+            physics.GetNarrowPhaseQuery().CollideShape(shape.GetPtr(),JPH::Vec3::sReplicate(1),body_world,
+                settings,body_world.GetTranslation(),clearance,{}, {},ignore);
+            require(!clearance.blocked,"Release collision proxy penetrates the current world by more than 1 mm.");
+            bodies.SetLinearAndAngularVelocity(body,linear,angular);
+            require(bodies.GetLinearVelocity(body)==linear && bodies.GetAngularVelocity(body)==angular,
+                "Physics did not accept the release velocity.");
+            auto graph=std::make_shared<AttachmentGraph>(*attachment_graph);
+            const auto offset=multiply(inverse_affine(registry.get<Node>(e).world),item_world);
+            graph->bindings.at(request.item)={body_id,offset,true};
+            publish_attachment_transforms(std::move(graph));
+            const auto& released=registry.get<Node>(find(request.item)).world;
+            for(std::size_t i=0;i<released.size();++i)
+                require(std::abs(released[i]-item_world[i])<=1e-8*std::max(1.,std::abs(item_world[i])),
+                    "The release proxy could not preserve the current item pose.");
+            return spawn;
+        },true);
+        return std::move(result.spawned.front());
     }
     std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
@@ -1978,6 +2040,8 @@ struct Runtime::Impl {
         SceneObject result{node.id,proposed ? proposed->at(node.id) : node.world,mesh.albedo,mesh.mesh,mesh.material,mesh.textures,
             animations->skin(node.id,world),
             1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
+        if(attachment_graph && !attachment_graph->world_draws.empty() && attachment_graph->world_draws.contains(node.id))
+            result.camera_draw.reset();
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
         return result;
     }
@@ -2240,6 +2304,9 @@ std::map<std::string,RuntimeAttachmentOutcome> Runtime::attachment_outcomes() co
 void Runtime::change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save intent before transferring attachments.");
     impl_->change_attachments(expected,commands);
+}
+std::string Runtime::release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
+    return impl_->release_attachment(expected,request);
 }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands); }
 std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string& id,bool include_parts,bool include_joints) const {

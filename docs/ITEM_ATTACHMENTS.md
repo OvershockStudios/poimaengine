@@ -216,6 +216,79 @@ The feature negotiates `item_attachment_recovery_v1` in the existing
 528-byte service table. A version 4 command uses the sampled command layout.
 Outcome reads use the version 2, 120-byte response.
 
+## Release to world physics
+
+Use `runtime.attachment.release` on a simulation-enabled host to drop or
+throw a rigid prop at the current committed pose. The prop must have an
+active binding to a live holder. Author a single-root template with a
+Transform and a dynamic BoxCollider. Use the template to set the box
+dimensions, mass, friction and restitution. The template has no drawable
+or custom gameplay components. The engine uses the released item for the
+visual and the temporary spawned body for collision.
+
+```json
+{
+  "session_id": "10000000000000000000000000000001",
+  "request_id": "20000000000000000000000000000001",
+  "expected_tick": 64,
+  "expected_structure_revision": 2,
+  "item": "30000000000000000000000000000001",
+  "body_template": "40000000000000000000000000000001",
+  "body_in_item": {"position": [0.12, 0, 0], "rotation": [0, 0, 0, 1]},
+  "linear_velocity_m_s": [2.5, 0.75, 0],
+  "angular_velocity_rad_s": [0, 0, 3]
+}
+```
+
+`body_in_item` defaults to the item's origin and axes. Move or rotate this
+frame to fit the box around the prop. Its position is in metres and its
+rotation is a normalized XYZW quaternion. The resulting collision frame
+must have positive scale and an unsheared, proper rotation. Both velocities
+are required in world coordinates. Linear velocity applies at the box's
+centre of mass. Their magnitudes are bounded by 100 m/s and 20 rad/s.
+Sample the intended body frame on successive committed ticks if the prop
+should inherit motion from the holder. The engine applies the supplied
+velocities at release.
+
+Successful release returns the generated `body` ID and advances the
+structure revision once at the same tick. The prop retains its effective
+world pose and follows the body. The prop and its ordinary attached
+descendants enter world rendering, where the world's camera lens applies.
+Independently bound child items retain their own draw ownership. A different
+foreground lens can produce a visible projection change on release even
+when the world pose stays continuous.
+
+At admission, the box must clear the current world within 1 mm of
+penetration. Invalid bounds, an obstruction or a stale guard leave the
+binding, physics and allocator unchanged. Read the current item and
+collision geometry before repairing the request. An exact retry of an
+accepted request returns the original body within the runtime receipt
+window.
+
+`runtime.attachment.inspect` shows `released: true` and the body anchor.
+Save and load keep the active release, body identities, contacts and
+sleep state together. To reclaim the item, transfer it to the holder
+with `keep_world` or `snap`, then despawn the former proxy with
+`runtime.structure.transact`. The engine rejects despawning the proxy
+while it still anchors the released prop. The existing C# attachment
+callbacks support transfers. Release is currently a committed-tick
+service operation. Gameplay save upgrades currently reject the joined
+physical snapshot format.
+
+Run the [release fixture](../tests/item_attachment_release.py) with a new
+output directory:
+
+```sh
+python3 tests/item_attachment_release.py --binary build/linux-game/poima \
+  --output build/item-release-check
+```
+
+Use `--windows-interop --gpu 1` with the matching Windows Vulkan binary
+from WSL and the appropriate adapter number. Compare visible geometry
+before and after release, in flight, and after restoring the same launch.
+The fixture also restores a separate save with live floor contact and
+checks exact continuation to a settled body.
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally
@@ -243,10 +316,10 @@ a spawned kinematic anchor separately. [Kinematic save behavior](GAMEPLAY_SAVES.
 This path moves ordinary transform and rigid-mesh subtrees. Collision,
 hit regions, skinned meshes, emitters, cameras, lights and other independent
 native pose owners use their own systems. A world-held item stays fixed until
-another command. Transfer preserves the drawable's authored viewmodel
-membership. A physical release or visibility change requires an explicit
-gameplay operation. Use animation or IK to bring the receiving hand to the
-anchor before transferring the item.
+another command. Ordinary transfer uses the drawable's authored viewmodel
+membership. Use explicit [release](#release-to-world-physics) to hand it
+off to a dynamic body and world rendering. Use animation or IK to bring the
+receiving hand to the anchor before transferring the item.
 
 Stale tick and structure guards return `-32009`. Absent or mismatched sessions
 return `-32030`. Invalid payloads or graph changes return `-32602`. Retained

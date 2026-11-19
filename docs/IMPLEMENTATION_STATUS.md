@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.257**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.258**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.258 adds [held-item release](ITEM_ATTACHMENTS.md#release-to-world-physics)
+to the native service. An accepted release retains the item pose, spawns a
+dynamic box with caller-supplied velocity, and moves the item to world drawing.
+[Native checks](evidence/m2-item-attachment-release.json) cover rejection and
+retry, flight, exact cold continuation through live floor contact, and
+Windows Vulkan foreground and world observations.
 
 Version 0.0.257 supports [recoverable grip attempts](ITEM_ATTACHMENTS.md#continue-gameplay-after-a-missed-grip).
 An opted-in contact miss leaves the item with its current holder while the
