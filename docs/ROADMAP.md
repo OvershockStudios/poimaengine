@@ -301,6 +301,14 @@ active/offscreen promotion checks under a declared population budget.
 
 ### 8. Complete authoring, player UX and creative packages
 
+The primary creator experience is for someone making their first game. From
+one workspace, they describe an idea, answer short rounds of questions, play
+verified builds, request changes in everyday language and export a standalone
+game. The workspace uses Poima's native authoring, verification and recovery
+operations and opens the same project in the editor for direct control.
+A first-time creator should be able to finish this workflow without writing
+code, using a terminal or learning the editor.
+
 Finish agent access to hierarchy, components, animation, VFX, UI and world
 systems, with focused queries, diagnostics, observations and low-volume results.
 Give different agent clients one engine-owned workflow for a game brief,
