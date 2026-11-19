@@ -154,6 +154,35 @@
         return result;
     }
 
+    void aim_game_released_item(const PoimaEntityId* entity,PoimaGameItemAttachmentStateV1* output) const {
+        require(game && game->requires_item_attachment_aim() && !entity &&
+            output->bytes==sizeof(PoimaGameReleasedItemAimV4),"Gameplay must declare item_attachment_aim_v1 and pass a 208-byte ray query.");
+        PoimaGameReleasedItemAimV4 payload;
+        std::memcpy(&payload,output,sizeof(payload));
+        const auto& ray=payload.ray;
+        require(payload.triangle_present==0 && payload.triangle==0 && ray.reserved==0 &&
+            ray.ignore_count<=128 && (!ray.ignore_count || ray.ignore),"Invalid item aim ray header or ignore list.");
+        RuntimeRay query;
+        std::copy_n(ray.origin,3,query.origin.begin());std::copy_n(ray.direction,3,query.direction.begin());
+        query.distance=ray.distance;
+        for(std::uint32_t i=0;i<ray.ignore_count;++i)query.ignore.push_back(gameplay_id(ray.ignore[i]));
+        const auto aimed=owner->aim_released_item(query);
+        PoimaGameReleasedItemAimV4 response{};
+        response.version=4;response.bytes=sizeof(response);response.sampled_tick=tick;response.structure_revision=structure_revision;
+        if(aimed.item)response.item=gameplay_id(*aimed.item);
+        if(aimed.hit) {
+            const auto& hit=*aimed.hit;
+            response.hit.hit=1;response.hit.entity=gameplay_id(hit.entity);
+            response.hit.fraction=hit.fraction;response.hit.distance=hit.distance;
+            std::copy(hit.position.begin(),hit.position.end(),response.hit.position);
+            if(hit.normal) {
+                response.hit.normal_valid=1;
+                std::copy(hit.normal->begin(),hit.normal->end(),response.hit.normal);
+            }
+            if(hit.triangle) {response.triangle_present=1;response.triangle=*hit.triangle;}
+        }
+        std::memcpy(output,&response,sizeof(response));
+    }
     static int32_t POIMA_CALL get_game_attachment(void* context,const PoimaEntityId* entity,
         PoimaGameItemAttachmentStateV1* output,PoimaGameError* error) {
         return callback(error,[&] {
@@ -161,6 +190,10 @@
             auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_attachment_reads<1024,"Gameplay exceeded 1024 item attachment reads.");
             ++self.game_attachment_reads;
+            if(output && output->version==4) {
+                self.aim_game_released_item(entity,output);
+                return;
+            }
             if(entity && output && output->version==2) {
                 self.get_game_attachment_outcome(*entity,output);
                 return;

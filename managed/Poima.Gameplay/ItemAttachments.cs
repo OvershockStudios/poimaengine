@@ -21,6 +21,13 @@ public interface IItemAttachmentReleaseGame : IItemAttachmentGame { }
 /// <summary>Opts into checked pickups that retire a released item's collision body.</summary>
 public interface IItemAttachmentPickupGame : IItemAttachmentRecoveryGame { }
 
+/// <summary>Opts into identifying a released item through its nearest physical hit.</summary>
+public interface IItemAttachmentAimGame : IItemAttachmentGame { }
+
+/// <summary>The first collider and the released item it represents, when applicable.</summary>
+public readonly record struct ReleasedItemAim(EntityId? Item, RayHit? Hit, double? Fraction, uint? Triangle,
+    ulong SampledTick, ulong StructureRevision);
+
 /// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
 public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
 {
@@ -130,6 +137,15 @@ public readonly record struct ItemSocketOffset(Vector3d Position, Quaterniond Ro
     public double PenetrationM;
 }
 
+[StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeReleasedItemAimV4
+{
+    public uint Version, Bytes, TrianglePresent, Triangle;
+    public NativeRay Ray;
+    public NativeHit Hit;
+    public EntityId Item;
+    public ulong SampledTick, StructureRevision;
+}
+
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentServicesV1
 {
     public NativePhysicalRecoveryServicesV1 Recovery;
@@ -152,7 +168,11 @@ internal static unsafe class ItemAttachmentServiceAbi
         NativeItemAttachmentOutcomeV2 outcome=default;
         NativeItemReleaseCommandV5 release=default;
         NativeItemReleaseOutcomeV3 releaseOutcome=default;
+        NativeReleasedItemAimV4 aim=default;
         return PhysicalRecoveryServiceAbi.LayoutValid() && sizeof(NativeItemAttachmentServicesV1)==528 &&
+            sizeof(NativeReleasedItemAimV4)==208 && (byte*)&aim.Ray-(byte*)&aim==16 && (byte*)&aim.Hit-(byte*)&aim==88 &&
+            (byte*)&aim.Item-(byte*)&aim==176 && (byte*)&aim.SampledTick-(byte*)&aim==192 &&
+            (byte*)&aim.StructureRevision-(byte*)&aim==200 &&
             (byte*)&api.Recovery-(byte*)&api==0 && (byte*)&api.Get-(byte*)&api==512 && (byte*)&api.Set-(byte*)&api==520 &&
             sizeof(NativeItemAttachmentStateV1)==64 && (byte*)&state.Item-(byte*)&state==16 && (byte*)&state.Anchor-(byte*)&state==32 &&
             (byte*)&state.SampledTick-(byte*)&state==48 && (byte*)&state.StructureRevision-(byte*)&state==56 &&
@@ -246,6 +266,33 @@ public readonly unsafe ref partial struct GameContext
             throw new InvalidOperationException("Invalid committed item attachment observation.");
         if(state.Present==0)return null;
         return new(item,state.Anchor==default ? null : state.Anchor,state.SampledTick,state.StructureRevision);
+    }
+
+    /// <summary>Trace from a caller-selected world-space pose at Tick entry.</summary>
+    public ReleasedItemAim AimReleasedItem(Vector3d origin,Vector3d direction,double distance,
+        ReadOnlySpan<EntityId> ignore=default)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentAim,nameof(IItemAttachmentAimGame));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        NativeReleasedItemAimV4 result=new(){Version=4,Bytes=208};
+        NativeError error=default;
+        fixed(EntityId* ids=ignore)
+        {
+            result.Ray=new(){Origin=origin,Direction=direction,Distance=distance,Ignore=ids,IgnoreCount=(uint)ignore.Length};
+            Check(api->Get(services->Context,null,(NativeItemAttachmentStateV1*)&result,&error),&error);
+        }
+        var hit=result.Hit;
+        if(result.Version!=4 || result.Bytes!=208 || result.SampledTick!=Tick ||
+            result.StructureRevision>9007199254740991UL || hit.Hit>1 || hit.NormalValid>1 ||
+            result.TrianglePresent>1 || (result.TrianglePresent==0 && result.Triangle!=0) ||
+            (hit.Hit==0 && (hit.Entity!=default || hit.NormalValid!=0 || result.TrianglePresent!=0 || result.Item!=default)) ||
+            (hit.Hit==1 && (hit.Entity==default || hit.Entity==result.Item ||
+                !double.IsFinite(hit.Fraction) || hit.Fraction<0 || hit.Fraction>1 ||
+                !double.IsFinite(hit.Distance) || hit.Distance<0)))
+            throw new InvalidOperationException("Invalid released-item aim observation.");
+        RayHit? collider=hit.Hit==0 ? null : new(hit.Entity,hit.Distance,hit.Position,hit.NormalValid!=0 ? hit.Normal : null);
+        return new(result.Item==default ? null : result.Item,collider,hit.Hit==0 ? null : hit.Fraction,
+            result.TrianglePresent==0 ? null : result.Triangle,result.SampledTick,result.StructureRevision);
     }
 
     /// <summary>Read this item's completed attempt from the tick entering this callback.</summary>

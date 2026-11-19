@@ -19,7 +19,7 @@ from runtime_pose_frames import id_request, transform, uid
 from runtime_surface_measure import accessor
 import world_physical_contract as native
 
-CAMERA, ACTOR, RIG, ITEM, SUPPORT, FLOOR, PROXY = map(uid, (20, 21, 22, 23, 24, 25, 26))
+CAMERA, ACTOR, RIG, ITEM, SUPPORT, FLOOR, PROXY, FAR, FAR_SUPPORT, WALL = map(uid, range(20,30))
 HAND = hashlib.sha256(f'poima.instance.v1/{RIG}/node/3'.encode()).hexdigest()[:32]
 SKIN = hashlib.sha256(f'poima.instance.v1/{RIG}/node/0/primitive/0'.encode()).hexdigest()[:32]
 GAME = 'Poima.Examples.ReachPickupGame'
@@ -63,21 +63,33 @@ def panel(owner, skinned):
     return owner.rpc('asset.import',dict(source=native.native(source)))['asset']
 
 
-def configure(owner):
+def configure(owner, aimed=False):
     arm, prop = panel(owner, True), panel(owner, False)
     lens = dict(vertical_fov=60,near=.02,far=20)
     body = dict(motion='static',mass=.8,friction=.75,restitution=0)
     ops = []
-    for key, name, parent, components in (
+    item_x = 0 if aimed else .12
+    entities = [
         (ACTOR,'Player',None,dict(Transform=transform((0,.001,0)),CharacterController=dict(
             camera=CAMERA,radius=.20,height=1.60,speed=1.2,jump_speed=4))),
         (CAMERA,'Eye',ACTOR,dict(Transform=transform((0,1.12,0)),Camera=dict(lens,viewmodel=lens,viewmodel_world_depth=True))),
-        (ITEM,'Resting contact panel',CAMERA,dict(Transform=transform((.12,-.045,-.60)),
+        (ITEM,'Resting contact panel',CAMERA,dict(Transform=transform((item_x,-.045,-.60)),
             CameraDraw=dict(camera=CAMERA,mode='viewmodel'),StaticMesh=dict(asset=prop,primitive=0,visible=True))),
-        (SUPPORT,'Physical shelf',None,dict(Transform=transform((.12,.951,-.60)),
+        (SUPPORT,'Physical shelf',None,dict(Transform=transform((item_x,.951,-.60)),
             BoxCollider=dict(body,half_extents=[.20,.05,.09]))),
         (FLOOR,'Physical floor',None,dict(Transform=transform((0,-.4,0)),BoxCollider=dict(body,half_extents=[10,.4,10]))),
-    ):
+    ]
+    if aimed:
+        entities.extend([
+            (FAR,'Second panel',CAMERA,dict(Transform=transform((0,-.16,-1.15)),
+                CameraDraw=dict(camera=CAMERA,mode='viewmodel'),StaticMesh=dict(asset=prop,primitive=0,visible=True))),
+            (FAR_SUPPORT,'Second shelf',None,dict(Transform=transform((0,.863,-1.15)),
+                BoxCollider=dict(body,half_extents=[.2,.05,.09]))),
+            (WALL,'Movable sight blocker',None,dict(Transform=transform((0,1.05,-.36),scale=(.32,.28,.05)),
+                MeshRenderer=dict(primitive='box',albedo=[.35,.12,.08],visible=True),
+                BoxCollider=dict(body,motion='kinematic',half_extents=[.5,.5,.5]))),
+        ])
+    for key, name, parent, components in entities:
         ops.append(dict(op='entity.create',id=key,name=name,parent=parent))
         ops.extend(native.component(key,kind,value) for kind,value in components.items())
     ops.extend([dict(op='asset.instantiate',id=RIG,name='Analytic reach rig',asset=arm,parent=CAMERA),
@@ -89,6 +101,12 @@ def configure(owner):
         dict(op='template.set',id=PROXY,name='Panel proxy',components=dict(Transform=transform(),
             BoxCollider=dict(body,motion='dynamic',half_extents=[.11,.024,.045])))])
     return native.transact(owner,ops,0)['revision']
+
+
+def settings():
+    return dict(Actor=ACTOR,Rig=RIG,Hand=HAND,Item=ITEM,FingerMesh=SKIN,Vertex1=0,Vertex2=1,Vertex3=2,Vertex4=3,
+        AimTicks=12,RetryTicks=18,ReturnTicks=8,FingerLayer=1,OpenClip=0,OpenTime=.2,GripQw=1,
+        PoleX=.4,PoleY=.15,PoleZ=.02,FrameLimit=.006,AngleLimit=5,SurfaceLimit=.005)
 
 
 def advance(game,index,frames):
@@ -124,9 +142,7 @@ def verify(args):
         game.step(140)
         resting=body_state(game.save('resting'),drop['body'])
         assert not resting['active'] and resting['linear_velocity']==[0,0,0] and 1.01<resting['position'][1]<1.04
-        values=dict(Actor=ACTOR,Rig=RIG,Hand=HAND,Item=ITEM,FingerMesh=SKIN,Vertex1=0,Vertex2=1,Vertex3=2,Vertex4=3,
-            AimTicks=12,RetryTicks=18,ReturnTicks=8,FingerLayer=1,OpenClip=0,OpenTime=.2,GripQw=1,
-            PoleX=.4,PoleY=.15,PoleZ=.02,FrameLimit=.006,AngleLimit=5,SurfaceLimit=.005)
+        values=settings()
         loaded=game.call('runtime.gameplay.load_native' if args.descriptor else 'runtime.gameplay.load',
             request_id=id_request(),expected_tick=game.tick,expected_structure_revision=game.structure,
             expected_revision=0,values=values,**config)

@@ -1,0 +1,238 @@
+{
+  "engine_version": "0.0.265",
+  "discovery_schema": 154,
+  "scope": [
+    "Two resting released props and a kinematic blocker in a bounded physics fixture.",
+    "Selection uses the first physical ray hit at the committed tick. The optional item identifies a released binding whose proxy was hit.",
+    "The compiled example keeps a selected target, cancels on lost line of sight or explicit cancellation, and requires sampled grip guards to retire its proxy.",
+    "The captures cover three gameplay states. Arm-route planning and physical input are outside this fixture."
+  ],
+  "contract": {
+    "method": "runtime.attachment.aim",
+    "feature": "item_attachment_aim_v1",
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "query_version": 4,
+    "query_bytes": 208
+  },
+  "fixtures": {
+    "aim": "tests/item_aim_pickup.py",
+    "retained_reach": "tests/item_reach_pickup.py"
+  },
+  "linux_coreclr": {
+    "rpc_replies": 333,
+    "replies_by_owner": {
+      "warm": 218,
+      "cold": 112,
+      "previous": 3
+    },
+    "clean_owner_exits": 3,
+    "retained_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks item_attachment_aim_v1."
+    },
+    "pickup_tick": 202,
+    "canceled_reaches": 2,
+    "sampled_pickup_misses": 2,
+    "selected_before_retirement": "00000000000000000000000000000017",
+    "hit_distances_m": {
+      "blocked_hit": 0.339175820350647,
+      "nearest_hit": 0.5619181394577026,
+      "second_hit": 1.1187740564346313,
+      "after_retirement": 1.1187740564346313
+    },
+    "archive_pairs": [
+      {
+        "slots": [
+          "resting",
+          "after-query"
+        ],
+        "bytes": 19202,
+        "sha256": "476945a78251da7b4d0d51bb87b1e717fa1b5dd331d9f921feea93adc887e938"
+      },
+      {
+        "slots": [
+          "reach",
+          "cold-reach"
+        ],
+        "bytes": 23537,
+        "sha256": "cb4328fc5f7c5dadcf7ba2146a4125d316d59edec5ee4f74b25e54d94d6aaad6"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 22805,
+        "sha256": "4f6bb27fd542d9c39c9853de8a56a9a502c0023867350a051230bffb0bba71ea"
+      }
+    ],
+    "vulkan_captures": {},
+    "runtime_sha256": "b783ed7abcdad8c7a4e26d62c38d480bda39775b0cffaf8219b82403aa97ae1d",
+    "gameplay_sha256": "e200692c5010387979f56a90628a81c2550682b14976155a7c2cfb3380928a27",
+    "previous_runtime_sha256": "04606b6e8daab7f0d8e2355c23b6493bc02b4587ce45249ca22b5b9455024111"
+  },
+  "windows_native_aot": {
+    "rpc_replies": 336,
+    "replies_by_owner": {
+      "warm": 221,
+      "cold": 112,
+      "previous": 3
+    },
+    "clean_owner_exits": 3,
+    "retained_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: item_attachment_aim_v1"
+    },
+    "pickup_tick": 202,
+    "canceled_reaches": 2,
+    "sampled_pickup_misses": 2,
+    "selected_before_retirement": "00000000000000000000000000000017",
+    "hit_distances_m": {
+      "blocked_hit": 0.339175820350647,
+      "nearest_hit": 0.5619181394577026,
+      "second_hit": 1.1187740564346313,
+      "after_retirement": 1.1187740564346313
+    },
+    "archive_pairs": [
+      {
+        "slots": [
+          "resting",
+          "after-query"
+        ],
+        "bytes": 19202,
+        "sha256": "e2ab43e43228deb3f6ebd08eb444ee4d8b226bfffedc3c6c84017bb33f1a839b"
+      },
+      {
+        "slots": [
+          "reach",
+          "cold-reach"
+        ],
+        "bytes": 23542,
+        "sha256": "24ec43ca9a9d152cb626e114ae1d68395d7ac1532d77158c126995f48e133d9b"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 22809,
+        "sha256": "74f4d3896b082d66e1618faaf3ecb0b11f6ddb0876f67c2a56e31a2219aa8f6b"
+      }
+    ],
+    "vulkan_captures": {
+      "blocked": {
+        "tick": 140,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "5e0badc0f38079d6bef6df3a97460c028cc5da0a1f200ed631db45f3b5c43a25",
+        "size": [
+          640,
+          360
+        ]
+      },
+      "clear": {
+        "tick": 147,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "ae5fd309f32ef86207c9da6ee598bf905a85f64ecd9897762a098afe88c5b19a",
+        "size": [
+          640,
+          360
+        ]
+      },
+      "held": {
+        "tick": 226,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "afb4d39984523653292edbd4364ec24ba674516247988a563b318bd7d9d0cfeb",
+        "size": [
+          640,
+          360
+        ]
+      }
+    },
+    "runtime_sha256": "165265d94fc8abd663e3ca107d94abe4a01cf7eb7b8bba8471bc54f72c68c26d",
+    "gameplay_descriptor_sha256": "9d9395268a04dac27f3e37df1a8ea28d6400f80f9f7b487b43744d161b9526d1",
+    "gameplay_sha256": "61b0a4c121097df6a720792bd126a42121e2a48b2aaa419b1e4f6132e84974da",
+    "previous_runtime_sha256": "10338ca6cac023d72d121c3b5b3edf3f635356bd39329a10f9f97276b64d8628"
+  },
+  "retained_reach_modules_on_current_hosts": {
+    "linux": {
+      "calls": 302,
+      "pickup_tick": 174,
+      "exact_archives": 2
+    },
+    "windows": {
+      "calls": 302,
+      "pickup_tick": 174,
+      "exact_archives": 2
+    }
+  },
+  "linux_native_mcp": {
+    "passed": true,
+    "native_replies": 9,
+    "whole_archive_pairs": 1,
+    "matched_direct_rays": 3,
+    "stale_structure_code": -32009
+  },
+  "linux_regressions": [
+    {
+      "name": "grip_motion_review",
+      "passed": true
+    },
+    {
+      "name": "authoring_core_conformance",
+      "passed": true
+    },
+    {
+      "name": "authoring_contract_identity",
+      "passed": true
+    },
+    {
+      "name": "gameplay_compatibility_policy",
+      "passed": true
+    },
+    {
+      "name": "native_gameplay_publish_requirements",
+      "passed": true
+    },
+    {
+      "name": "save_upgrade_document_native",
+      "passed": true
+    },
+    {
+      "name": "player_lens_native",
+      "passed": true
+    },
+    {
+      "name": "runtime_viewmodel_clearance_native",
+      "passed": true
+    },
+    {
+      "name": "mcp_contract",
+      "passed": true
+    },
+    {
+      "name": "runtime_camera_draw_native",
+      "passed": true
+    },
+    {
+      "name": "world_ui_contract",
+      "passed": true
+    },
+    {
+      "name": "physical_gameplay_publish_requirements",
+      "passed": true
+    },
+    {
+      "name": "runtime_attachment_contract",
+      "passed": true
+    },
+    {
+      "name": "item_attachment_pickup_contract",
+      "passed": true
+    },
+    {
+      "name": "asset_references_contract",
+      "passed": true
+    }
+  ]
+}

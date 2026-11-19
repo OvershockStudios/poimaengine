@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.264**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.265**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.265 adds [released-item aim](ITEM_ATTACHMENTS.md#aim-at-a-released-item)
+to the world service and compiled gameplay. It distinguishes a released
+item's physics proxy from a closer obstruction. The aimed reach example
+checks visibility during the approach and uses the existing contact guards
+at pickup. [Results](evidence/m2-item-aim.json)
 
 Version 0.0.264 adds a compiled [reach and pickup example](../examples/reach-pickup/README.md)
 with input cancellation, oriented wrist motion and fingertip contact retries.

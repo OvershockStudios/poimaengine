@@ -22,10 +22,13 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     IItemAttachmentPickupGame, ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
 {
     private const int Idle=0, Reaching=1, Returning=2, Held=3;
+    private const double AimDistance=2;
 
     public override void Initialize(ref ReachPickupState state) { }
 
-    public override void Tick(ref ReachPickupState state, GameContext context)
+    public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
+
+    internal static void Update(ref ReachPickupState state, GameContext context, bool aim)
     {
         if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
             outcome.SampledTick==(ulong)state.PendingTick)
@@ -41,7 +44,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         if(state.Phase==Held)return;
 
         bool cancel=context.GetInputAction(state.Actor,"cancel_pickup").Pressed;
-        if(state.Phase==Reaching && cancel)
+        if(state.Phase==Reaching && (cancel || (aim && !TargetVisible(state,context))))
         {
             ++state.Cancellations;
             BeginReturn(ref state);
@@ -49,6 +52,13 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         if(state.Phase==Idle)
         {
             if(cancel || !context.GetInputAction(state.Actor,"pickup").Pressed)return;
+            if(aim)
+            {
+                var eye=context.Get(state.Rig).Transform;
+                var aimed=context.AimReleasedItem(eye.Position,eye.Forward,AimDistance,[state.Actor]);
+                if(aimed.Item is not { } selected)return;
+                state.Item=selected;
+            }
             ValidateSettings(state);
             state.Phase=Reaching;
             state.TicksInPhase=0;
@@ -117,6 +127,17 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     private static ItemSurfaceProbe Probe(ReachPickupState s,int vertex) =>
         new(new(s.FingerMesh,(uint)vertex),s.Item,s.SurfaceLimit);
 
+    private static bool TargetVisible(ReachPickupState state,GameContext context)
+    {
+        if(context.GetItemAttachment(state.Item)?.Anchor is not { } proxy)return false;
+        var eye=context.Get(state.Rig).Transform;
+        var origin=eye.Position;
+        var target=context.Get(proxy).Transform.Position;
+        Vector3d direction=new(target.X-origin.X,target.Y-origin.Y,target.Z-origin.Z);
+        if(direction==default)direction=eye.Forward;
+        return context.AimReleasedItem(origin,direction,AimDistance,[state.Actor]).Item==state.Item;
+    }
+
     private static Vector3d TransformedPoint(WorldTransform m,Vector3d point) => new(
         m[3,0]+m[0,0]*point.X+m[1,0]*point.Y+m[2,0]*point.Z,
         m[3,1]+m[0,1]*point.X+m[1,1]*point.Y+m[2,1]*point.Z,
@@ -155,4 +176,13 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         context.SetAnimationLayer(state.Rig,(uint)state.FingerLayer,state.OpenClip,1,
             time:state.OpenTime*state.Opening,loop:false,playing:false);
     }
+}
+
+[GameModule("poima.example.aimed-reach-pickup")]
+public sealed class AimedReachPickupGame : Game<ReachPickupState>,
+    IItemAttachmentAimGame, IItemAttachmentPickupGame, ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        ReachPickupGame.Update(ref state,context,true);
 }

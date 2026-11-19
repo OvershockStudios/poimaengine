@@ -334,6 +334,33 @@ Prerequisites and commands are in the
 
 ## Pick up a released item
 
+### Aim at a released item
+
+`runtime.attachment.aim` traces a world-space ray through the same colliders
+and tie rules as [`runtime.raycast`](PHYSICS_INTERACTIONS.md#query-a-collider).
+Supply an exact `session_id`, `tick` and `structure_revision` along with
+`origin`, `direction`, `distance` and any explicit collider IDs to `ignore`.
+The result reports the nearest `hit`. If that hit is the active physics proxy
+of a released item, it also reports the item's entity ID in `item`.
+A closer wall, ordinary dynamic body or other collider returns its hit with
+`item: null`. A ray with no hit returns both fields as null.
+
+The structure guard distinguishes a hit sampled before a same-tick release
+or pickup from the current body membership. Querying leaves the physics
+state, tick and saved contents intact. Each ray measures physical proxies.
+Use the pickup's separate frame and surface guards to verify actual contact
+before attaching the object.
+
+Compiled gameplay implements `IItemAttachmentAimGame` and calls
+`context.AimReleasedItem(origin, direction, distance, ignore)` in `Tick`.
+It returns nullable item and collider identities, the hit fraction and
+optional mesh-triangle ordinal, and the sampled tick and structure revision.
+The callback reads committed state at Tick entry and shares the attachment
+read budget. The feature is `item_attachment_aim_v1` with a 208-byte
+version 4 query in the existing epoch-7 528-byte services prefix.
+
+### Verify contact and pick up
+
 Read the release with `runtime.attachment.inspect`. Use the item ID in
 `runtime.attachment.apply` with mode `pickup`. The current binding identifies
 the body's ownership. Include the receiving anchor, explicit alignment limits

@@ -72,6 +72,7 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(item_attachment_recovery_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_release_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_pickup_feature));
+    std::erase(old_attachment_host.features,std::string(item_attachment_aim_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
@@ -100,6 +101,13 @@ void policy() {
     auto pickup_without_recovery=pickup;std::erase(pickup_without_recovery.features,std::string(item_attachment_recovery_feature));
     check(!compatibility_error(pickup_without_recovery,capable).empty() &&
         !compatibility_error(baseline,pickup_without_recovery).empty(),"Pickup requires recovery.");
+    auto aim=attachment;aim.features.push_back(item_attachment_aim_feature);
+    auto before_aim=capable;std::erase(before_aim.features,std::string(item_attachment_aim_feature));
+    check(compatibility_error(aim,capable).empty() && compatibility_error(pickup,before_aim).empty() &&
+        !compatibility_error(aim,before_aim).empty(),"Released-item aim needs its named capability at the same extent.");
+    auto aim_without_attachment=aim;std::erase(aim_without_attachment.features,std::string(item_attachment_feature));
+    check(!compatibility_error(aim_without_attachment,capable).empty() &&
+        !compatibility_error(baseline,aim_without_attachment).empty(),"Released-item aim needs the base attachment feature.");
     auto recovery_without_surface=recovery;std::erase(recovery_without_surface.features,std::string(item_attachment_surface_feature));
     check(!compatibility_error(recovery_without_surface,capable).empty() &&
         !compatibility_error(baseline,recovery_without_surface).empty(),"Grip recovery needs the surface feature.");

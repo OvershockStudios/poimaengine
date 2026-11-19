@@ -46,6 +46,20 @@ interaction. Discovery, obstruction planning and inventory rules are game
 decisions. Use [shared world depth](../../docs/VIEWMODELS.md#share-depth-with-the-world)
 where the hand and released prop should depth-test together.
 
+## Select the prop by aim
+
+Load `Poima.Examples.AimedReachPickupGame` to choose a released item at
+the start of the reach. Set the initial `Item` field to the zero identity.
+Author the rig wrapper at the camera's pose. The variant casts from
+the wrapper up to two metres, ignoring the player's own capsule. Give the candidate
+props the same grip calibration for the configured finger points.
+
+The variant checks the selected proxy's visibility again during the reach.
+A closer collider interrupts the reach and leaves the prop in the world.
+The player keeps the selected target during an uninterrupted reach, even
+when the view turns away. Wrist and fingertip guards still govern the
+actual pickup. [Aim query](../../docs/ITEM_ATTACHMENTS.md#aim-at-a-released-item)
+
 ## Build and verify
 
 Build the module and matching CoreCLR bridge with .NET 10:
@@ -65,8 +79,18 @@ misses, successful contact, collision body retirement, and byte-exact
 continuation from a fresh host that loads the canceled reach in progress.
 It retains literal requests and responses in a fresh output directory.
 
+Run `tests/item_aim_pickup.py` with the same CoreCLR paths to test the
+aimed variant. The test places a movable wall before two released items,
+checks a blocked press and an interrupted reach, then picks up the nearer
+item and confirms the remaining item becomes selectable. Use `--gpu` on
+a Windows Vulkan build for three corresponding captures. Use
+`--previous-binary` to exercise rejection by an older matching-platform
+host that lacks the feature.
+
 For Native AOT, publish the same project with
 [`publish_native_gameplay.py`](../../scripts/publish_native_gameplay.py) and
 `--type Poima.Examples.ReachPickupGame`. Replace the three CoreCLR paths
 with `--descriptor <native-gameplay.json>` and choose a fresh output.
-[Qualification and imported-rig comparison](../../docs/evidence/m2-reach-pickup.json)
+Use `--type Poima.Examples.AimedReachPickupGame` when publishing the aimed
+variant. [Reach qualification](../../docs/evidence/m2-reach-pickup.json) ·
+[Aim qualification](../../docs/evidence/m2-item-aim.json)

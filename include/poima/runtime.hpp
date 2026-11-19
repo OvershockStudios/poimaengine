@@ -459,6 +459,10 @@ struct RuntimeRayHit {
     std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
 };
+struct ReleasedItemAim {
+    std::optional<RuntimeRayHit> hit;
+    std::optional<std::string> item;
+};
 struct RuntimeHitResult {
     std::string entity;
     std::optional<std::string> region_entity,region;
@@ -661,6 +665,7 @@ public:
     RuntimeControlResult control(std::uint64_t expected_ui_revision,
         std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    ReleasedItemAim aim_released_item(const RuntimeRay& ray) const;
     // Precise fixed-orientation physical capsule query; no state mutation.
     std::optional<CapsuleCastHit> capsule_cast(const CapsuleCastRequest& request) const;
     std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;

@@ -2422,6 +2422,18 @@ RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& r
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     return impl_->physics_raycast(query);
 }
+ReleasedItemAim Runtime::aim_released_item(const RuntimeRay& query) const {
+    ReleasedItemAim result{raycast(query),{}};
+    if(result.hit && impl_->attachment_graph) {
+        for(const auto& [item,binding]:impl_->attachment_graph->bindings) {
+            if(binding.released && binding.anchor==result.hit->entity) {
+                result.item=item;
+                break;
+            }
+        }
+    }
+    return result;
+}
 std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest& request) const {return impl_->capsule_cast(request);}
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay& query) const {
     std::set<std::string> proxies;

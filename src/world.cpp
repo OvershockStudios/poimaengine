@@ -3954,8 +3954,13 @@ public:
             catch(const std::runtime_error& error){throw Error(-32602,error.what());}
             catch(const std::invalid_argument& error){throw Error(-32602,error.what());}
         }
-        if(method=="runtime.raycast") {
-            fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});runtime_guard(params);
+        if(method=="runtime.raycast" || method=="runtime.attachment.aim") {
+            const bool picking=method=="runtime.attachment.aim";
+            if(picking)fields(params,{"session_id","tick","structure_revision","origin","direction","distance","ignore"},
+                {"session_id","tick","structure_revision","origin","direction","distance"});
+            else fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});
+            runtime_guard(params);
+            if(picking)structure_read_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             RuntimeRay ray;ray.origin=query_vector(params.at("origin"));ray.direction=query_vector(params.at("direction"));
             require(params.at("distance").is_number(),"Ray distance must be numeric.");ray.distance=params.at("distance").get<double>();
@@ -3964,9 +3969,15 @@ public:
                 for(const auto& id:ids)ray.ignore.push_back(identifier(id));
             }
             try {
-                const auto hit=runtime_->raycast(ray);Json value=nullptr;
+                auto result=picking ? runtime_->aim_released_item(ray) : ReleasedItemAim{runtime_->raycast(ray),{}};
+                const auto& hit=result.hit;Json value=nullptr;
                 if(hit)value={{"entity",hit->entity},{"fraction",hit->fraction},{"distance",hit->distance},{"position",hit->position},{"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)},{"triangle",hit->triangle ? Json(*hit->triangle) : Json(nullptr)}};
-                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
+                Json response={{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",std::move(value)}};
+                if(picking) {
+                    response["structure_revision"]=runtime_->structure_revision();
+                    response["item"]=result.item ? Json(*result.item) : Json(nullptr);
+                }
+                return response;
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
         if(method=="runtime.hit_test") {
