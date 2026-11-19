@@ -88,4 +88,10 @@ class PhysicalRequirements(unittest.TestCase):
         self.assertEqual(self.read(value),value)
         with self.assertRaises(ValueError):
             self.read(dict(value,features=[name for name in features if name!='item_attachment_surface_v1']))
+    def test_release_requires_the_base_attachment_feature(self):
+        features=['baseline_v7','item_attachment_v1','item_attachment_release_v1']
+        value=dict(self.baseline,services_bytes=528,features=features)
+        self.assertEqual(self.read(value),value)
+        with self.assertRaises(ValueError):
+            self.read(dict(value,features=[name for name in features if name!='item_attachment_v1']))
 if __name__=='__main__':unittest.main()

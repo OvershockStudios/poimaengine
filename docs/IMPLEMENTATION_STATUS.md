@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.258**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.259**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.259 connects [held-item release to C# gameplay](ITEM_ATTACHMENTS.md#release-from-c-gameplay).
+A blocked box reports the obstruction and leaves the item with its current
+holder. A successful release uses the pose reached on the input tick. A
+save requested on either tick includes the committed result.
+[CoreCLR and Native AOT checks](evidence/m2-compiled-item-release.json)
+cover input routing, rollback, fresh-process continuation and Windows
+Vulkan captures.
 
 Version 0.0.258 adds [held-item release](ITEM_ATTACHMENTS.md#release-to-world-physics)
 to the native service. An accepted release retains the item pose, spawns a

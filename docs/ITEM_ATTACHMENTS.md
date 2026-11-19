@@ -261,7 +261,9 @@ when the world pose stays continuous.
 At admission, the box must clear the current world within 1 mm of
 penetration. Invalid bounds, an obstruction or a stale guard leave the
 binding, physics and allocator unchanged. Read the current item and
-collision geometry before repairing the request. An exact retry of an
+collision geometry before repairing the request. An obstructed service
+request returns `-32602` with `data.obstacle` and `data.penetration_m`
+for the deepest overlap. An exact retry of an
 accepted request returns the original body within the runtime receipt
 window.
 
@@ -270,10 +272,8 @@ Save and load keep the active release, body identities, contacts and
 sleep state together. To reclaim the item, transfer it to the holder
 with `keep_world` or `snap`, then despawn the former proxy with
 `runtime.structure.transact`. The engine rejects despawning the proxy
-while it still anchors the released prop. The existing C# attachment
-callbacks support transfers. Release is currently a committed-tick
-service operation. Gameplay save upgrades currently reject the joined
-physical snapshot format.
+while it still anchors the released prop. Gameplay save upgrades currently
+reject the joined physical snapshot format.
 
 Run the [release fixture](../tests/item_attachment_release.py) with a new
 output directory:
@@ -288,6 +288,44 @@ from WSL and the appropriate adapter number. Compare visible geometry
 before and after release, in flight, and after restoring the same launch.
 The fixture also restores a separate save with live floor contact and
 checks exact continuation to a settled body.
+
+### Release from C# gameplay
+
+Implement `IItemAttachmentReleaseGame` and call
+`AttemptItemRelease` from `Tick`. The caller supplies the authored
+template ID, velocities and optional collision frame. Here, the held prop
+drops from the pose reached on the input tick.
+
+```csharp
+if (drop.Pressed && heldItem is { } item)
+    context.AttemptItemRelease(item, dropBodyTemplate, new Vector3d(0, 0, 0),
+        new Vector3d(0, 0, 0), bodyInItem);
+```
+
+Supply the authored template ID from game configuration. Serialized
+`EntityId` state fields are validated against live entities.
+
+The engine applies staged handoffs first, then checks releases in staging
+order using the final animation and physics of that tick. Each successful
+release advances the structure revision. A blocked release advances the
+tick and keeps the holder. A malformed command still rejects the entire
+step batch, including earlier successful releases and queued saves.
+An item may receive one attachment command per tick. Releases share the
+64-write and 1,024-read budgets with the other attachment callbacks.
+
+Read `GetItemReleaseOutcome(item)` from the next `Tick`. It returns
+`Released` with the generated body as `Anchor`, or `Blocked` with the
+unchanged holder, the obstacle and its depth in metres. Use the blocked
+result to keep the prop equipped or play a recovery. The outcome is
+available on the same committed tick through `runtime.attachment.outcomes`
+as `released` or `release_blocked`. A save requested on the attempt tick
+captures the binding, physics and outcome before the next callback.
+
+The named feature is `item_attachment_release_v1`. It uses the existing
+528-byte epoch-7 table with a 152-byte version 5 command and 80-byte
+version 3 result. `GetItemTransferOutcome` reports only transfer results.
+Prerequisites and commands are in the
+[compiled release fixture](../tests/fixtures/item_attachment_release_gameplay/README.md).
 
 ## Observe and restore
 

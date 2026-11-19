@@ -128,6 +128,18 @@ Pose pose(const Matrix4& world) {
         JPH::Vec4(static_cast<float>(rotation[8]),static_cast<float>(rotation[9]),static_cast<float>(rotation[10]),0), JPH::Vec4(0,0,0,1));
     return {JPH::RVec3(world[12],world[13],world[14]), matrix.GetQuaternion().Normalized(), scale};
 }
+JPH::ShapeRefC box_shape(const BoxCollider& collider,const std::array<double,3>& scale) {
+    float extent[3];
+    for(std::size_t k=0;k<3;++k) {
+        const double value=collider.half_extents[k]*scale[k];
+        require(std::isfinite(value) && value>=0.001 && value<=10000,"Scaled collider half extent must be 0.001..10000 meters.");
+        extent[k]=static_cast<float>(value);
+    }
+    const float bevel=std::min(0.05f,0.1f*std::min({extent[0],extent[1],extent[2]}));
+    auto shape=JPH::BoxShapeSettings(JPH::Vec3(extent[0],extent[1],extent[2]),bevel).Create();
+    require(!shape.HasError(),"Jolt box shape creation failed.");
+    return shape.Get();
+}
 void set_pose(Node& node, JPH::RVec3Arg position, JPH::QuatArg rotation) {
     node.local.position={position.GetX(),position.GetY(),position.GetZ()};
     node.local.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
@@ -572,16 +584,8 @@ struct Runtime::Impl {
             for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
                 require(!moving_roots.contains(parent),"Static colliders cannot inherit a moving body/controller; use a separate kinematic root.");
             const auto p=pose(node.world);
-            float extent[3];
-            for(std::size_t k=0;k<3;++k) {
-                const double value=collider.half_extents[k]*p.scale[k];
-                require(std::isfinite(value) && value>=0.001 && value<=10000,"Scaled collider half extent must be 0.001..10000 meters.");
-                extent[k]=static_cast<float>(value);
-            }
-            const float bevel=std::min(0.05f,0.1f*std::min({extent[0],extent[1],extent[2]}));
-            auto shape=JPH::BoxShapeSettings(JPH::Vec3(extent[0],extent[1],extent[2]),bevel).Create();
-            require(!shape.HasError(),"Jolt box shape creation failed.");
-            JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
+            const auto shape=box_shape(collider,p.scale);
+            JPH::BodyCreationSettings settings(shape,p.position,p.rotation,
                 collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,collider.motion==BodyMotion::Static ? 0 : 1);
             settings.mFriction=collider.friction; settings.mRestitution=collider.restitution;
             settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;
@@ -1651,7 +1655,7 @@ struct Runtime::Impl {
             return publish_structure(expected_revision,requests,removals);
         });
     }
-    std::string release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
+    RuntimeStructureResult publish_attachment_release(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
         const auto& node=registry.get<Node>(find(request.item));
         const auto* held=attachment(attachment_graph.get(),node.id);
         require(held && !held->anchor.empty() && !held->released,"Release requires a currently attached item with a live holder.");
@@ -1670,41 +1674,54 @@ struct Runtime::Impl {
         };
         const auto linear=to_velocity(request.linear_velocity_m_s,100.);
         const auto angular=to_velocity(request.angular_velocity_rad_s,20.);
-        auto result=change_structure_transaction(expected,[&] {
-            auto spawn=publish_structure(expected,{{recipe.id,body_pose}},{});
-            const auto& body_id=spawn.spawned.front();
-            const auto e=find(body_id);
-            const auto body=registry.get<Body>(e).id;
-            auto& bodies=physics.GetBodyInterface();
-            class ReleaseClearance final : public JPH::CollideShapeCollector {
-            public:
-                bool blocked=false;
-                void AddHit(const JPH::CollideShapeResult& hit) override {
-                    require(std::isfinite(hit.mPenetrationDepth),"Release overlap depth is nonfinite.");
-                    if(hit.mPenetrationDepth>.001f) {blocked=true;ForceEarlyOut();}
+
+        // Query the same native box and canonical pose that creation uses, before
+        // reserving an ID or publishing topology. An obstruction is a normal
+        // gameplay result and cannot change other work already done this tick.
+        const auto candidate=pose(local_matrix(body_pose.position,body_pose.rotation,body_pose.scale));
+        const auto shape=box_shape(*recipe.collider,candidate.scale);
+        const auto body_world=JPH::RMat44::sRotationTranslation(candidate.rotation,candidate.position);
+        class ReleaseClearance final : public JPH::CollideShapeCollector {
+        public:
+            float depth=.001f;
+            JPH::BodyID obstacle;
+            void AddHit(const JPH::CollideShapeResult& hit) override {
+                require(std::isfinite(hit.mPenetrationDepth),"Release overlap depth is nonfinite.");
+                if(hit.mPenetrationDepth>depth ||
+                    (!obstacle.IsInvalid() && hit.mPenetrationDepth==depth && hit.mBodyID2<obstacle)) {
+                    depth=hit.mPenetrationDepth;
+                    obstacle=hit.mBodyID2;
                 }
-            } clearance;
-            JPH::CollideShapeSettings settings;
-            settings.mBackFaceMode=JPH::EBackFaceMode::CollideWithBackFaces;
-            const JPH::IgnoreSingleBodyFilter ignore(body);
-            const auto shape=bodies.GetShape(body);
-            const auto body_world=bodies.GetCenterOfMassTransform(body);
-            physics.GetNarrowPhaseQuery().CollideShape(shape.GetPtr(),JPH::Vec3::sReplicate(1),body_world,
-                settings,body_world.GetTranslation(),clearance,{}, {},ignore);
-            require(!clearance.blocked,"Release collision proxy penetrates the current world by more than 1 mm.");
-            bodies.SetLinearAndAngularVelocity(body,linear,angular);
-            require(bodies.GetLinearVelocity(body)==linear && bodies.GetAngularVelocity(body)==angular,
-                "Physics did not accept the release velocity.");
-            auto graph=std::make_shared<AttachmentGraph>(*attachment_graph);
-            const auto offset=multiply(inverse_affine(registry.get<Node>(e).world),item_world);
-            graph->bindings.at(request.item)={body_id,offset,true};
-            publish_attachment_transforms(std::move(graph));
-            const auto& released=registry.get<Node>(find(request.item)).world;
-            for(std::size_t i=0;i<released.size();++i)
-                require(std::abs(released[i]-item_world[i])<=1e-8*std::max(1.,std::abs(item_world[i])),
-                    "The release proxy could not preserve the current item pose.");
-            return spawn;
-        },true);
+            }
+        } clearance;
+        JPH::CollideShapeSettings settings;
+        settings.mBackFaceMode=JPH::EBackFaceMode::CollideWithBackFaces;
+        physics.GetNarrowPhaseQuery().CollideShape(shape.GetPtr(),JPH::Vec3::sReplicate(1),body_world,
+            settings,body_world.GetTranslation(),clearance);
+        if(!clearance.obstacle.IsInvalid())
+            throw RuntimeAttachmentReleaseRejected(held->anchor,
+                {topology->body_names.at(clearance.obstacle.GetIndexAndSequenceNumber()),clearance.depth});
+
+        auto spawn=publish_structure(expected,{{recipe.id,body_pose}},{});
+        const auto& body_id=spawn.spawned.front();
+        const auto e=find(body_id);
+        const auto body=registry.get<Body>(e).id;
+        auto& bodies=physics.GetBodyInterface();
+        bodies.SetLinearAndAngularVelocity(body,linear,angular);
+        require(bodies.GetLinearVelocity(body)==linear && bodies.GetAngularVelocity(body)==angular,
+            "Physics did not accept the release velocity.");
+        auto graph=std::make_shared<AttachmentGraph>(*attachment_graph);
+        const auto offset=multiply(inverse_affine(registry.get<Node>(e).world),item_world);
+        graph->bindings.at(request.item)={body_id,offset,true};
+        publish_attachment_transforms(std::move(graph));
+        const auto& released=registry.get<Node>(find(request.item)).world;
+        for(std::size_t i=0;i<released.size();++i)
+            require(std::abs(released[i]-item_world[i])<=1e-8*std::max(1.,std::abs(item_world[i])),
+                "The release proxy could not preserve the current item pose.");
+        return spawn;
+    }
+    std::string release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
+        auto result=change_structure_transaction(expected,[&] {return publish_attachment_release(expected,request);},true);
         return std::move(result.spawned.front());
     }
     std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) {
@@ -1732,7 +1749,8 @@ struct Runtime::Impl {
         validate_stance_commands(stance_commands);
         auto prepared=prepare_motions(motions);
         validate_physical_commands(physical_commands);
-        const auto structure_checkpoint=checkpoint_structure();auto physical_checkpoint=checkpoint_physical();
+        const auto structure_checkpoint=checkpoint_structure();
+        auto physical_checkpoint=checkpoint_physical(game && game->requires_item_attachment_release());
         std::vector<std::pair<entt::entity,std::optional<Motion>>> previous_motions;previous_motions.reserve(topology->kinematics.size());
         for(auto e:topology->kinematics)previous_motions.emplace_back(e,registry.get<Body>(e).target);
         // Internal rollback remains distinct from the portable save format.
@@ -1995,7 +2013,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_attachment_commands.clear();
+            game_attachment_commands.clear();game_release_commands.clear();
             clear_controller_preview();deferred_controller_inputs.clear();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));

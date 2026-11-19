@@ -85,6 +85,8 @@
             // preallocated response and receipt without allocating after commit.
             for(auto* reply:{&result,&receipts.back().at("result")})
                 std::copy(body.begin(),body.end(),reply->at("body").get_ref<std::string&>().begin());
+        } catch(const RuntimeAttachmentReleaseRejected& error) {
+            throw Error(-32602,error.what(),{{"obstacle",error.witness.obstacle},{"penetration_m",error.witness.penetration_m}});
         } catch(const std::runtime_error& error) {throw Error(-32602,error.what());}
         runtime_receipts_.swap(receipts);return result;
     }

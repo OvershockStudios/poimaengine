@@ -641,6 +641,22 @@ typedef struct PoimaGameItemAttachmentOutcomeV2 {
     double position_error_m,position_limit_m,rotation_error_deg,rotation_limit_deg,distance_m,distance_limit_m;
     uint32_t rotation_available,reserved;
 } PoimaGameItemAttachmentOutcomeV2;
+/* item_attachment_release_v1 uses attachment_set version 5 and
+ * attachment_get version 3. The collision result is sampled on the
+ * committed tick. Status: Absent0, Released1, Blocked2. The anchor is the
+ * new body on success or the unchanged holder on obstruction. */
+typedef struct PoimaGameItemReleaseCommandV5 {
+    uint32_t version,bytes;
+    PoimaEntityId item,body_template;
+    uint32_t reserved,reserved_tail;
+    double body_position[3],body_rotation[4],linear_velocity_m_s[3],angular_velocity_rad_s[3];
+} PoimaGameItemReleaseCommandV5;
+typedef struct PoimaGameItemReleaseOutcomeV3 {
+    uint32_t version,bytes,status,reserved;
+    PoimaEntityId item,anchor,obstacle;
+    uint64_t sampled_tick;
+    double penetration_m;
+} PoimaGameItemReleaseOutcomeV3;
 typedef struct PoimaGameItemAttachmentServicesV1 {
     PoimaGamePhysicalRecoveryServicesV1 recovery;
     int32_t (POIMA_CALL *attachment_get)(void*,const PoimaEntityId*,PoimaGameItemAttachmentStateV1*,PoimaGameError*);
@@ -654,6 +670,14 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameItemReleaseCommandV5)==152 && alignof(PoimaGameItemReleaseCommandV5)==8 &&
+    offsetof(PoimaGameItemReleaseCommandV5,item)==8 && offsetof(PoimaGameItemReleaseCommandV5,body_template)==24 &&
+    offsetof(PoimaGameItemReleaseCommandV5,body_position)==48 && offsetof(PoimaGameItemReleaseCommandV5,body_rotation)==72 &&
+    offsetof(PoimaGameItemReleaseCommandV5,linear_velocity_m_s)==104 && offsetof(PoimaGameItemReleaseCommandV5,angular_velocity_rad_s)==128);
+static_assert(sizeof(PoimaGameItemReleaseOutcomeV3)==80 && alignof(PoimaGameItemReleaseOutcomeV3)==8 &&
+    offsetof(PoimaGameItemReleaseOutcomeV3,item)==16 && offsetof(PoimaGameItemReleaseOutcomeV3,anchor)==32 &&
+    offsetof(PoimaGameItemReleaseOutcomeV3,obstacle)==48 && offsetof(PoimaGameItemReleaseOutcomeV3,sampled_tick)==64 &&
+    offsetof(PoimaGameItemReleaseOutcomeV3,penetration_m)==72);
 static_assert(sizeof(PoimaGameItemAttachmentOutcomeV2)==120 && alignof(PoimaGameItemAttachmentOutcomeV2)==8 &&
     offsetof(PoimaGameItemAttachmentOutcomeV2,entity)==16 && offsetof(PoimaGameItemAttachmentOutcomeV2,anchor)==32 &&
     offsetof(PoimaGameItemAttachmentOutcomeV2,sampled_tick)==48 && offsetof(PoimaGameItemAttachmentOutcomeV2,target_triangle)==56 &&

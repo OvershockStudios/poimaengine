@@ -70,10 +70,18 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_recovery_feature));
+    std::erase(old_attachment_host.features,std::string(item_attachment_release_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
-    auto original_surface=capable;std::erase(original_surface.features,std::string(item_attachment_recovery_feature));
+    auto before_release=capable;std::erase(before_release.features,std::string(item_attachment_release_feature));
+    auto release=attachment;release.features.push_back(item_attachment_release_feature);
+    check(compatibility_error(release,capable).empty() && compatibility_error(attachment,before_release).empty() &&
+        !compatibility_error(release,before_release).empty(),"Item release needs its named capability at the same extent.");
+    auto release_without_attachment=release;std::erase(release_without_attachment.features,std::string(item_attachment_feature));
+    check(!compatibility_error(release_without_attachment,capable).empty() &&
+        !compatibility_error(baseline,release_without_attachment).empty(),"Item release needs the base attachment feature.");
+    auto original_surface=before_release;std::erase(original_surface.features,std::string(item_attachment_recovery_feature));
     auto original_contact=original_surface;std::erase(original_contact.features,std::string(item_attachment_surface_feature));
     auto surface=contact;surface.features.push_back(item_attachment_surface_feature);
     check(compatibility_error(surface,capable).empty() && compatibility_error(contact,original_contact).empty() &&

@@ -2,7 +2,7 @@
 using System.Text.Json;
 namespace Poima;
 
-[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216 }
+[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216,ItemAttachmentRelease=33554432 }
 internal static unsafe class GameplayRequirements
 {
     internal const string Baseline="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
@@ -37,6 +37,7 @@ internal static unsafe class GameplayRequirements
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions,bool ik,bool rootMotion,bool cameraLens,bool stance,bool ikOrientation,bool grounding,bool animationRate,bool cameraPose,bool capsuleCast,bool physicalRig,bool physicalRigDrive,bool physicalRigAnimation,bool physicalRecovery,bool itemAttachment,bool attachmentContact)=>Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment||attachmentContact)|(attachmentContact ? GameplayRequiredFeatures.ItemAttachmentContact : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions,bool ik,bool rootMotion,bool cameraLens,bool stance,bool ikOrientation,bool grounding,bool animationRate,bool cameraPose,bool capsuleCast,bool physicalRig,bool physicalRigDrive,bool physicalRigAnimation,bool physicalRecovery,bool itemAttachment,bool attachmentContact,bool attachmentSurface)=>Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment,attachmentContact||attachmentSurface)|(attachmentSurface ? GameplayRequiredFeatures.ItemAttachmentSurface : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions,bool ik,bool rootMotion,bool cameraLens,bool stance,bool ikOrientation,bool grounding,bool animationRate,bool cameraPose,bool capsuleCast,bool physicalRig,bool physicalRigDrive,bool physicalRigAnimation,bool physicalRecovery,bool itemAttachment,bool attachmentContact,bool attachmentSurface,bool attachmentRecovery)=>Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment,attachmentContact,attachmentSurface||attachmentRecovery)|(attachmentRecovery ? GameplayRequiredFeatures.ItemAttachmentRecovery : GameplayRequiredFeatures.None);
+    internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences,bool actions,bool regions,bool ik,bool rootMotion,bool cameraLens,bool stance,bool ikOrientation,bool grounding,bool animationRate,bool cameraPose,bool capsuleCast,bool physicalRig,bool physicalRigDrive,bool physicalRigAnimation,bool physicalRecovery,bool itemAttachment,bool attachmentContact,bool attachmentSurface,bool attachmentRecovery,bool attachmentRelease)=>Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment||attachmentRelease,attachmentContact,attachmentSurface,attachmentRecovery)|(attachmentRelease ? GameplayRequiredFeatures.ItemAttachmentRelease : GameplayRequiredFeatures.None);
     internal static string Json(GameplayRequiredFeatures features)
     {
         ValidateRequired(features);
@@ -62,6 +63,7 @@ internal static unsafe class GameplayRequirements
             if((features & GameplayRequiredFeatures.InputActions)!=0)names.Add("input_actions_v1");
             if((features & GameplayRequiredFeatures.ItemAttachmentContact)!=0)names.Add("item_attachment_contact_v1");
             if((features & GameplayRequiredFeatures.ItemAttachmentRecovery)!=0)names.Add("item_attachment_recovery_v1");
+            if((features & GameplayRequiredFeatures.ItemAttachmentRelease)!=0)names.Add("item_attachment_release_v1");
             if((features & GameplayRequiredFeatures.ItemAttachmentSurface)!=0)names.Add("item_attachment_surface_v1");
             if((features & GameplayRequiredFeatures.ItemAttachment)!=0)names.Add("item_attachment_v1");
             if((features & GameplayRequiredFeatures.Navigation)!=0)names.Add("navigation_query_v1");
@@ -79,7 +81,7 @@ internal static unsafe class GameplayRequirements
     }
     private static void ValidateRequired(GameplayRequiredFeatures required)
     {
-        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery))!=0 ||
+        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery|GameplayRequiredFeatures.ItemAttachmentRelease))!=0 ||
             ((required & GameplayRequiredFeatures.MaskedAnimation)!=0 && (required & GameplayRequiredFeatures.InertialAnimation)==0) ||
             ((required & GameplayRequiredFeatures.TwoBoneIkOrientation)!=0 && (required & GameplayRequiredFeatures.TwoBoneIk)==0) ||
             ((required & GameplayRequiredFeatures.GroundingControl)!=0 && (required & GameplayRequiredFeatures.TwoBoneIkOrientation)==0) ||
@@ -89,7 +91,8 @@ internal static unsafe class GameplayRequirements
             ((required & GameplayRequiredFeatures.PhysicalRecovery)!=0 && (required & GameplayRequiredFeatures.PhysicalRig)==0) ||
             ((required & GameplayRequiredFeatures.ItemAttachmentContact)!=0 && (required & GameplayRequiredFeatures.ItemAttachment)==0) ||
             ((required & GameplayRequiredFeatures.ItemAttachmentSurface)!=0 && (required & GameplayRequiredFeatures.ItemAttachmentContact)==0) ||
-            ((required & GameplayRequiredFeatures.ItemAttachmentRecovery)!=0 && (required & GameplayRequiredFeatures.ItemAttachmentSurface)==0))
+            ((required & GameplayRequiredFeatures.ItemAttachmentRecovery)!=0 && (required & GameplayRequiredFeatures.ItemAttachmentSurface)==0) ||
+            ((required & GameplayRequiredFeatures.ItemAttachmentRelease)!=0 && (required & GameplayRequiredFeatures.ItemAttachment)==0))
             throw new ArgumentException("Invalid gameplay required features.");
     }
     // Existing generated Bindings already carry Requirements. Reading this once
@@ -125,6 +128,7 @@ internal static unsafe class GameplayRequirements
                 case "capsule_cast_v1":result|=GameplayRequiredFeatures.CapsuleCast;break;
                 case "item_attachment_contact_v1":result|=GameplayRequiredFeatures.ItemAttachmentContact;break;
                 case "item_attachment_recovery_v1":result|=GameplayRequiredFeatures.ItemAttachmentRecovery;break;
+                case "item_attachment_release_v1":result|=GameplayRequiredFeatures.ItemAttachmentRelease;break;
                 case "item_attachment_surface_v1":result|=GameplayRequiredFeatures.ItemAttachmentSurface;break;
                 case "item_attachment_v1":result|=GameplayRequiredFeatures.ItemAttachment;break;
                 case "physical_recovery_v1":result|=GameplayRequiredFeatures.PhysicalRecovery;break;
@@ -271,6 +275,8 @@ internal static unsafe class GameplayRequirements
             throw new ArgumentException("Gameplay host lacks item_attachment_surface_v1.");
         if((required & GameplayRequiredFeatures.ItemAttachmentRecovery)!=0 && !features.Contains("item_attachment_recovery_v1"))
             throw new ArgumentException("Gameplay host lacks item_attachment_recovery_v1.");
+        if((required & GameplayRequiredFeatures.ItemAttachmentRelease)!=0 && !features.Contains("item_attachment_release_v1"))
+            throw new ArgumentException("Gameplay host lacks item_attachment_release_v1.");
         // Unknown, well-formed available host features are intentionally ignored:
         // a later same-epoch host may append unrelated services safely.
     }

@@ -15,6 +15,9 @@ public interface IItemAttachmentSurfaceGame : IItemAttachmentContactGame { }
 /// <summary>Opts into recoverable sampled grabs and committed outcome reads.</summary>
 public interface IItemAttachmentRecoveryGame : IItemAttachmentSurfaceGame { }
 
+/// <summary>Opts into release to world physics and reading the committed result.</summary>
+public interface IItemAttachmentReleaseGame : IItemAttachmentGame { }
+
 /// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
 public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
 {
@@ -39,6 +42,11 @@ public readonly record struct ItemTransferSurfaceMiss(uint ProbeIndex, ulong Tar
     double DistanceM, double DistanceLimitM);
 public readonly record struct ItemTransferOutcome(EntityId Item, EntityId AttemptedAnchor, ulong SampledTick,
     ItemTransferStatus Status, ItemTransferFrameMiss? Frame, ItemTransferSurfaceMiss? Surface);
+
+public enum ItemReleaseStatus : uint { Released=1, Blocked=2 }
+/// <summary>Anchor is the new collision body on release, or the current holder on obstruction.</summary>
+public readonly record struct ItemReleaseOutcome(EntityId Item, EntityId Anchor, ulong SampledTick,
+    ItemReleaseStatus Status, EntityId? Obstacle, double? PenetrationM);
 
 /// <summary>A committed binding. A null anchor holds the item in world space.</summary>
 public readonly record struct ItemAttachment(EntityId Item, EntityId? Anchor, ulong SampledTick, ulong StructureRevision);
@@ -101,6 +109,24 @@ public readonly record struct ItemSocketOffset(Vector3d Position, Quaterniond Ro
     public uint RotationAvailable, Reserved;
 }
 
+[StructLayout(LayoutKind.Sequential)] internal struct NativeItemReleaseCommandV5
+{
+    public uint Version, Bytes;
+    public EntityId Item, BodyTemplate;
+    public uint Reserved, ReservedTail;
+    public Vector3d BodyPosition;
+    public Quaterniond BodyRotation;
+    public Vector3d LinearVelocityMps, AngularVelocityRadps;
+}
+
+[StructLayout(LayoutKind.Sequential)] internal struct NativeItemReleaseOutcomeV3
+{
+    public uint Version, Bytes, Status, Reserved;
+    public EntityId Item, Anchor, Obstacle;
+    public ulong SampledTick;
+    public double PenetrationM;
+}
+
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentServicesV1
 {
     public NativePhysicalRecoveryServicesV1 Recovery;
@@ -121,6 +147,8 @@ internal static unsafe class ItemAttachmentServiceAbi
         NativeItemAttachmentSurfaceCommandV3 sampled=default;
         NativeItemSurfaceProbeV1 probe=default;
         NativeItemAttachmentOutcomeV2 outcome=default;
+        NativeItemReleaseCommandV5 release=default;
+        NativeItemReleaseOutcomeV3 releaseOutcome=default;
         return PhysicalRecoveryServiceAbi.LayoutValid() && sizeof(NativeItemAttachmentServicesV1)==528 &&
             (byte*)&api.Recovery-(byte*)&api==0 && (byte*)&api.Get-(byte*)&api==512 && (byte*)&api.Set-(byte*)&api==520 &&
             sizeof(NativeItemAttachmentStateV1)==64 && (byte*)&state.Item-(byte*)&state==16 && (byte*)&state.Anchor-(byte*)&state==32 &&
@@ -141,7 +169,14 @@ internal static unsafe class ItemAttachmentServiceAbi
             sizeof(NativeItemAttachmentOutcomeV2)==120 && (byte*)&outcome.Item-(byte*)&outcome==16 &&
             (byte*)&outcome.Anchor-(byte*)&outcome==32 && (byte*)&outcome.SampledTick-(byte*)&outcome==48 &&
             (byte*)&outcome.TargetTriangle-(byte*)&outcome==56 && (byte*)&outcome.PositionErrorM-(byte*)&outcome==64 &&
-            (byte*)&outcome.DistanceM-(byte*)&outcome==96 && (byte*)&outcome.RotationAvailable-(byte*)&outcome==112;
+            (byte*)&outcome.DistanceM-(byte*)&outcome==96 && (byte*)&outcome.RotationAvailable-(byte*)&outcome==112 &&
+            sizeof(NativeItemReleaseCommandV5)==152 && (byte*)&release.Item-(byte*)&release==8 &&
+            (byte*)&release.BodyTemplate-(byte*)&release==24 && (byte*)&release.BodyPosition-(byte*)&release==48 &&
+            (byte*)&release.BodyRotation-(byte*)&release==72 && (byte*)&release.LinearVelocityMps-(byte*)&release==104 &&
+            (byte*)&release.AngularVelocityRadps-(byte*)&release==128 && sizeof(NativeItemReleaseOutcomeV3)==80 &&
+            (byte*)&releaseOutcome.Item-(byte*)&releaseOutcome==16 && (byte*)&releaseOutcome.Anchor-(byte*)&releaseOutcome==32 &&
+            (byte*)&releaseOutcome.Obstacle-(byte*)&releaseOutcome==48 && (byte*)&releaseOutcome.SampledTick-(byte*)&releaseOutcome==64 &&
+            (byte*)&releaseOutcome.PenetrationM-(byte*)&releaseOutcome==72;
     }
 
     internal static NativeItemAttachmentServicesV1* Validate(NativeServices* services)
@@ -156,6 +191,43 @@ internal static unsafe class ItemAttachmentServiceAbi
 
 public readonly unsafe ref partial struct GameContext
 {
+    /// <summary>Release at the end of this tick with explicit world velocities. An obstructed
+    /// release keeps the current holder and leaves a result for the next Tick.</summary>
+    public void AttemptItemRelease(EntityId item,EntityId bodyTemplate,Vector3d linearVelocityMps,
+        Vector3d angularVelocityRadps,ItemGripFrame? bodyInItem=null)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentRelease,nameof(IItemAttachmentReleaseGame));
+        if(item==default || bodyTemplate==default)throw new ArgumentException("Release requires live item and template identities.");
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        var frame=bodyInItem ?? ItemGripFrame.Identity;
+        NativeItemReleaseCommandV5 command=new(){Version=5,Bytes=152,Item=item,BodyTemplate=bodyTemplate,
+            BodyPosition=frame.Position,BodyRotation=frame.Rotation,
+            LinearVelocityMps=linearVelocityMps,AngularVelocityRadps=angularVelocityRadps};
+        NativeError error=default;
+        Check(api->Set(services->Context,(NativeItemAttachmentCommandV1*)&command,&error),&error);
+    }
+
+    /// <summary>Read the release attempted on the committed tick entering this callback.</summary>
+    public ItemReleaseOutcome? GetItemReleaseOutcome(EntityId item)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentRelease,nameof(IItemAttachmentReleaseGame));
+        if(item==default)throw new ArgumentException("Item identity is absent.",nameof(item));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        NativeItemReleaseOutcomeV3 result=new(){Version=3,Bytes=80};
+        NativeError error=default;
+        Check(api->Get(services->Context,&item,(NativeItemAttachmentStateV1*)&result,&error),&error);
+        bool blocked=result.Status==(uint)ItemReleaseStatus.Blocked;
+        if(result.Version!=3 || result.Bytes!=80 || result.Reserved!=0 || result.Item!=item ||
+            result.SampledTick!=Tick || result.Status>2 || result.Anchor==item ||
+            (result.Status==0)!=(result.Anchor==default) ||
+            (blocked ? result.Obstacle==default || !double.IsFinite(result.PenetrationM) || result.PenetrationM<=(double)0.001f :
+                result.Obstacle!=default || result.PenetrationM!=0))
+            throw new InvalidOperationException("Invalid committed item release outcome.");
+        if(result.Status==0)return null;
+        return new(item,result.Anchor,result.SampledTick,(ItemReleaseStatus)result.Status,
+            blocked ? result.Obstacle : null,blocked ? result.PenetrationM : null);
+    }
+
     /// <summary>Read the binding at the start of this tick. Null means the live item is unbound.</summary>
     public ItemAttachment? GetItemAttachment(EntityId item)
     {

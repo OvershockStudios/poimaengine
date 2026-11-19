@@ -1,0 +1,417 @@
+{
+  "format": "poima.evidence.compiled-item-release.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.259",
+  "schema_revision": 150,
+  "fixture": "tests/item_attachment_release_gameplay.py",
+  "feature": {
+    "name": "item_attachment_release_v1",
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command": {
+      "version": 5,
+      "bytes": 152
+    },
+    "reply": {
+      "version": 3,
+      "bytes": 80
+    }
+  },
+  "checks": [
+    "A real compiled Tick first attempts an obstructed release. The deepest reported overlap matches an independent immediate service query. The callback-requested save retains the result and the current hand binding.",
+    "A named drop input releases the animated prop from the pose reached on that exact tick, with the requested box frame and world velocities.",
+    "The next compiled callback reads the prior result and the native outcome expires after that tick. Fresh owners reopen both blocked and successful saves and reproduce the full settled archive.",
+    "A duplicate attachment command and a later invalid release roll back with byte-identical pre-batch saves, including the previous result. The successful release that precedes the invalid command does not leave a body or queued save.",
+    "The 0.0.258 runtime rejects the new named feature at the same service extent on both backends. Unchanged 0.0.257 recoverable-grip modules keep working."
+  ],
+  "coreclr_linux": {
+    "calls": 97,
+    "executable_sha256": "9dbd29f2b5d7f20eb31039b97e07f804029bbf20bf1c096a1dba80e2745a392f",
+    "clean_processes": 6,
+    "result": {
+      "path": "build/compiled-release-0.0.259/linux-qualified/report.json",
+      "bytes": 2616,
+      "sha256": "f60c3353cb45d14f2dcf4aabdca697291a02c8d6bb0aefa0f9d816d8ab88dcd2"
+    },
+    "target": "coreclr",
+    "previous_host": {
+      "sha256": "e80a9c2fd8b29c42e642737cb0fea8b060e4fc4de17466386ec7e217bddab28e",
+      "rejection": {
+        "code": -32060,
+        "message": "C# gameplay: Gameplay host lacks item_attachment_release_v1."
+      }
+    },
+    "exact_checkpoint_comparisons": 12,
+    "obstruction": {
+      "entity": "00000000000000000000000000000020",
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "status": "release_blocked",
+      "obstacle": "0000000000000000000000000000005a",
+      "penetration_m": 0.75
+    },
+    "position_after_132_more_ticks": [
+      0.036732344193423305,
+      -1.000782802695749,
+      0.002473691179820388
+    ],
+    "authoring_sources_unchanged": true,
+    "checkpoints": {
+      "blocked": {
+        "archives": 2,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/warm-saves/slot-engine-blocked/p-2e7a8b81d7aed7335be46988f47ad4ee.bin",
+          "bytes": 15289,
+          "sha256": "f682abfbb524fb835540a7ba8adddcf14b0f43a782a80c9c93dd5c75f62b85f8"
+        }
+      },
+      "released": {
+        "archives": 3,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/warm-saves/slot-engine-released/p-72602cef4152a2e55b83b641b2dbb5f7.bin",
+          "bytes": 18038,
+          "sha256": "e5b29654a140444bdf936c242e064dcd2db4c15750185da7150a79382691890f"
+        }
+      },
+      "settled": {
+        "archives": 3,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/warm-saves/slot-warm-landed/p-de56a52594cd4e2ba990eb3427eb9cd0.bin",
+          "bytes": 18446,
+          "sha256": "61d3b78d5d57e50b0575b6b07ba775827f07a309d5f48f930efe4623237641a4"
+        }
+      }
+    },
+    "wire": {
+      "oracle": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/oracle/requests.jsonl",
+          "bytes": 2216,
+          "sha256": "23cc9c540c99f009a941b77ddd88b40c957fffab00672f12671a0c2deb2377e8"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/oracle/responses.jsonl",
+          "bytes": 2861,
+          "sha256": "d4565591b93ec45d790824a813a38a6557f745c6fb650305a9eece43ce1262bb"
+        }
+      },
+      "warm": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/warm/requests.jsonl",
+          "bytes": 8989,
+          "sha256": "6bea3810be81e64cfa9b8d48e94bc654472a4b51eae43a23ba579b0fff66ef65"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/warm/responses.jsonl",
+          "bytes": 29781,
+          "sha256": "b5bb3013c877d18b4642a62a066d4035f0272adaccf25d844a122c95f936e35f"
+        }
+      },
+      "cold-blocked": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/cold-blocked/requests.jsonl",
+          "bytes": 7903,
+          "sha256": "7295e18f1b6ac9cf5dbfc4bbcd82a66aee5aa9585c34ab8aaecd404d8530b59d"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/cold-blocked/responses.jsonl",
+          "bytes": 25658,
+          "sha256": "8858008be8b74fdb423e63c7f40ab14959b346fece4ff18f3bd6186fcfdfcf2f"
+        }
+      },
+      "cold-released": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/cold-released/requests.jsonl",
+          "bytes": 2774,
+          "sha256": "9866c03893fa5fd4151026cc426f6d4716970cc604b10e1429c631fb3ec6f6fe"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/cold-released/responses.jsonl",
+          "bytes": 5582,
+          "sha256": "5b797ce136671a6a85bc5f0aef731e0a2f2d45bbdfd4f16d0fb37ce7e88d55c0"
+        }
+      },
+      "previous-host": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/previous-host/requests.jsonl",
+          "bytes": 1399,
+          "sha256": "d41f32164185e7d1daf9819f6e648088ad608e156e542959b6b0bfbb0552f5fd"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/linux-qualified/previous-host/responses.jsonl",
+          "bytes": 612,
+          "sha256": "97a93e9389b2d19245ec4232d09aedfee80b7b9150edc4837cadba51db24f6f7"
+        }
+      }
+    }
+  },
+  "native_aot_windows": {
+    "calls": 101,
+    "executable_sha256": "1e162386743f368e7b2e3e67b0d5aec6b50bf7cfe913980dcf766b9a840dc528",
+    "clean_processes": 6,
+    "result": {
+      "path": "build/compiled-release-0.0.259/windows-qualified/report.json",
+      "bytes": 2754,
+      "sha256": "77f46a0603792c648fb205565b92624ca8949a4fea9c9135a336a28352ab1d8d"
+    },
+    "target": "native_aot",
+    "previous_host": {
+      "sha256": "997f6935c4dd8acebb01424bea52098e6844600107b4a514e8bc1417eab4b66c",
+      "rejection": {
+        "code": -32060,
+        "message": "Unknown required gameplay feature: item_attachment_release_v1"
+      }
+    },
+    "exact_checkpoint_comparisons": 12,
+    "obstruction": {
+      "entity": "00000000000000000000000000000020",
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "status": "release_blocked",
+      "obstacle": "0000000000000000000000000000005a",
+      "penetration_m": 0.75
+    },
+    "position_after_132_more_ticks": [
+      0.036732344193423305,
+      -1.000782802695749,
+      0.002473691179820388
+    ],
+    "authoring_sources_unchanged": true,
+    "checkpoints": {
+      "blocked": {
+        "archives": 2,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm-saves/slot-engine-blocked/p-2f05225042740a62c9bbd37ca3a8ea92.bin",
+          "bytes": 15292,
+          "sha256": "a84b0ee321bb2553be360fff7ff52563ec9a4a1135d48dab8a31fb14ef18a2fd"
+        }
+      },
+      "released": {
+        "archives": 3,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm-saves/slot-engine-released/p-af15ce3c76b219b82b43aa3404702628.bin",
+          "bytes": 18041,
+          "sha256": "6003ecca32c6ff75d2645c60c8d06b5c852db3b6ef24539f3977a1aa6e3e6bef"
+        }
+      },
+      "settled": {
+        "archives": 3,
+        "reference": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm-saves/slot-warm-landed/p-a33bf5e2b78d1f621ed189c016a5a7de.bin",
+          "bytes": 18449,
+          "sha256": "dadf31d8e45d110a532aaa1cfe731f852096f769a404672c4c35e266b162bbd7"
+        }
+      }
+    },
+    "wire": {
+      "oracle": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/oracle/requests.jsonl",
+          "bytes": 2219,
+          "sha256": "6eff15fcafb7accebe4dfdbc63bbd97580af4dc96592ddcb8828b908a81e0717"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/oracle/responses.jsonl",
+          "bytes": 2864,
+          "sha256": "ce21e5926b7eba7b90a7a174ceb7fdf8269d1d3965efc07fa7693eb6acb5a4e5"
+        }
+      },
+      "warm": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm/requests.jsonl",
+          "bytes": 9559,
+          "sha256": "4bb885f5f4eeeed96205f1e8513da07c907e301350aa8dc4d29feb187a458fcd"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm/responses.jsonl",
+          "bytes": 45924,
+          "sha256": "a0c1329076d02779ce5c2181f161c464214e5d83b0746aa2aa4fbd8edfc8dc5d"
+        }
+      },
+      "cold-blocked": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-blocked/requests.jsonl",
+          "bytes": 8466,
+          "sha256": "837a23c6c8aa0d40417c272c11226d19c87ed94f947c82a5a3f84d918975d29d"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-blocked/responses.jsonl",
+          "bytes": 41748,
+          "sha256": "cd8e03603ce07fa3570193520f14da185ae871c5477faa97459f115f9272d467"
+        }
+      },
+      "cold-released": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-released/requests.jsonl",
+          "bytes": 2633,
+          "sha256": "d617712a41eb5f7da3a03690bdebe75cf8e6f21897701d13fafc469d6c26ecdf"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-released/responses.jsonl",
+          "bytes": 5636,
+          "sha256": "ecc1344d352eff7deeb040de1564541de554a22be6911dd6257aeeeadf4e88bc"
+        }
+      },
+      "previous-host": {
+        "requests": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/previous-host/requests.jsonl",
+          "bytes": 1267,
+          "sha256": "08bfb3dda892674b22e6319544a7a21e47ee8c2361badc55a89fc90bcf558f56"
+        },
+        "responses": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/previous-host/responses.jsonl",
+          "bytes": 618,
+          "sha256": "549c334c77a22945f6055f42c2c85fdfb4144fad2c8275c5d5430595dd923640"
+        }
+      }
+    },
+    "windows_vulkan": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "extent": [
+        720,
+        405
+      ],
+      "samples": 4,
+      "world_observation": {
+        "sha256": "ec31275cfa891347bad785784d85e97e9af4553038393afcaaf500b7f749b1ee",
+        "objects": 4,
+        "foreground": 0
+      },
+      "captures": {
+        "cold-held": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-held.bmp",
+          "bytes": 1166538,
+          "sha256": "a4d826ac6bd495c3c703c58bb9450f9d26fe3e9e43a5a2e3df7d9433d7132f3b"
+        },
+        "cold-released": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/cold-released.bmp",
+          "bytes": 1166538,
+          "sha256": "ec31275cfa891347bad785784d85e97e9af4553038393afcaaf500b7f749b1ee"
+        },
+        "warm-held": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm-held.bmp",
+          "bytes": 1166538,
+          "sha256": "a4d826ac6bd495c3c703c58bb9450f9d26fe3e9e43a5a2e3df7d9433d7132f3b"
+        },
+        "warm-released": {
+          "path": "build/compiled-release-0.0.259/windows-qualified/warm-released.bmp",
+          "bytes": 1166538,
+          "sha256": "ec31275cfa891347bad785784d85e97e9af4553038393afcaaf500b7f749b1ee"
+        }
+      }
+    }
+  },
+  "retained_compiled_grip": {
+    "coreclr": {
+      "calls": 88,
+      "executable_sha256": "9dbd29f2b5d7f20eb31039b97e07f804029bbf20bf1c096a1dba80e2745a392f",
+      "clean_processes": 3,
+      "result": {
+        "path": "build/compiled-release-0.0.259/retained-recovery-linux/report.json",
+        "bytes": 1237,
+        "sha256": "bc0c7c8a7eec714b90ed99db03c49f1b3c50cc4eaa04efcc25b4dba27e6b6fb8"
+      }
+    },
+    "native_aot": {
+      "calls": 88,
+      "executable_sha256": "1e162386743f368e7b2e3e67b0d5aec6b50bf7cfe913980dcf766b9a840dc528",
+      "clean_processes": 3,
+      "result": {
+        "path": "build/compiled-release-0.0.259/retained-recovery-windows/report.json",
+        "bytes": 1246,
+        "sha256": "76a67c5033d7c45fdfea44107aa1f0a03a249c52d3f901728f023da661b42e72"
+      }
+    }
+  },
+  "linux_regressions": {
+    "passed": [
+      "authoring_core_conformance",
+      "gameplay_compatibility_policy",
+      "mcp_contract",
+      "world_ui_contract",
+      "world_physical_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "asset_references_contract"
+    ],
+    "junit": {
+      "path": "build/compiled-release-0.0.259/linux-regressions.xml",
+      "bytes": 5046,
+      "sha256": "48454a028d2f10e26b94accc93ff6b5f893fc2588bc5c8d20b6795d6b1df7761"
+    }
+  },
+  "metadata_and_publication": {
+    "schema_cases": 32,
+    "publisher_cases": 10,
+    "linux": {
+      "path": "build/linux-game/runtime.json",
+      "bytes": 1253,
+      "sha256": "557545b9d3e1036cb79fcfcd11e68d0e2e642c89506fe9e43a3f385928954462"
+    },
+    "windows": {
+      "path": "build/windows-runtime/runtime.json",
+      "bytes": 1257,
+      "sha256": "4fee61bd46e925b1398d87efa5072e66bb99fd65710d3825b965ec5602eb3d72"
+    },
+    "windows_native_artifact": {
+      "path": "build/compiled-release-0.0.259/windows-aot/native-gameplay.json",
+      "bytes": 5370,
+      "sha256": "2e1f5e4711e9f2f34d9754612d74b5b3dd1136d05b74a3116c9fe0a17b940af8"
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "wire_requests": 11,
+    "replies": 10,
+    "fresh_receipts": 2,
+    "step_replayed": true,
+    "archive_sha256": "e42cf2f32f2f7f1cbfe592cef874e4c4d6b928062d8b0bf95d24cc8d18075a3c",
+    "retained_wire": [
+      {
+        "path": "build/compiled-release-0.0.259/mcp-qualified/report.json",
+        "bytes": 197,
+        "sha256": "b6c78134f3f1a36a27219bb93fb12870d4434c4b0a63adcb578a50382054dc03"
+      },
+      {
+        "path": "build/compiled-release-0.0.259/mcp-qualified/requests.jsonl",
+        "bytes": 3320,
+        "sha256": "a39b44b917a332315449550bd83dd412bb37625f99645f7ddd7d0c42ede38e94"
+      },
+      {
+        "path": "build/compiled-release-0.0.259/mcp-qualified/responses.jsonl",
+        "bytes": 12109,
+        "sha256": "2aa46e5e920c408a5a5a9e3726f05c35815b16370220640c132a2290d757a6b0"
+      }
+    ]
+  },
+  "earlier_attempts": [
+    {
+      "report": {
+        "path": "build/compiled-release-0.0.259/linux-first/report.json",
+        "bytes": 1150,
+        "sha256": "f59522c0a6e64cea4d4c6300d7de24f63eb8a4cf69744524ccdd7a381ae77f4c"
+      },
+      "reason": "An authored template ID was configured as a strong live-entity field in the fixture. The corrected fixture stores the two scalar ID words and constructs the handle for the callback."
+    },
+    {
+      "report": {
+        "path": "build/compiled-release-0.0.259/linux-second/report.json",
+        "bytes": 1072,
+        "sha256": "d23dac0ee52470f9f967055a023926c1c53e14bf6aef77d4dca09b8b2f3065a0"
+      },
+      "reason": "An intentional duplicate callback returned the simulation error -32040. The original fixture expected the immediate service error code."
+    },
+    {
+      "report": {
+        "path": "build/compiled-release-0.0.259/linux-third/report.json",
+        "bytes": 919,
+        "sha256": "4ce12a9f8c4a50e5734fb577322712aea519ea4dd703c34a181e46612dac1738"
+      },
+      "reason": "The fixture looked for a structure revision in the step acknowledgement. It now confirms the actual committed structure revision using runtime.status."
+    }
+  ],
+  "limits": [
+    "Input is a semantic named action. Window focus, keyboard hardware and gamepad behavior are separate.",
+    "Vulkan evidence consists of four 720x405 hardware readbacks from a small fixture.",
+    "The collision proxy is a box, velocities are caller-supplied, and a gameplay schema upgrade with joined physical state remains unsupported.",
+    "Qualification covers release and same-build persistence on the named builds. Future checks cover reclaim animation, geometry adaptation to terrain and cross-platform continuation."
+  ]
+}

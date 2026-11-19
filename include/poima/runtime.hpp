@@ -81,10 +81,23 @@ struct RuntimeAttachmentSurfaceMiss {
     std::size_t probe_index,target_triangle;
     double distance_m,distance_limit_m;
 };
+struct RuntimeAttachmentReleased {};
+struct RuntimeAttachmentReleaseBlocked {
+    std::string obstacle;
+    double penetration_m;
+};
+class RuntimeAttachmentReleaseRejected : public std::runtime_error {
+public:
+    RuntimeAttachmentReleaseRejected(std::string current_holder,RuntimeAttachmentReleaseBlocked obstruction)
+        : std::runtime_error("Release collision proxy penetrates the current world by more than 1 mm."),
+          holder(std::move(current_holder)),witness(std::move(obstruction)) {}
+    std::string holder;
+    RuntimeAttachmentReleaseBlocked witness;
+};
 struct RuntimeAttachmentOutcome {
     std::string anchor;
-    // A completed transfer has no miss details.
-    std::variant<std::monostate,RuntimeAttachmentFrameMiss,RuntimeAttachmentSurfaceMiss> detail;
+    std::variant<std::monostate,RuntimeAttachmentFrameMiss,RuntimeAttachmentSurfaceMiss,
+        RuntimeAttachmentReleased,RuntimeAttachmentReleaseBlocked> detail;
 };
 inline constexpr std::size_t max_runtime_attachments=64;
 struct RuntimeAttachmentRelease {

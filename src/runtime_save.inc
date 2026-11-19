@@ -63,9 +63,15 @@ std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const Sa
                 magnitude(row.at("distance_m"),4e12),magnitude(row.at("distance_limit_m"),1e9)};
             require(detail.distance_m>detail.distance_limit_m,"Saved surface outcome does not describe a miss.");
             outcome.detail=detail;
+        } else if(status=="release_blocked") {
+            save_fields(row,{"entity","anchor","status","obstacle","penetration_m"});
+            const auto depth=magnitude(row.at("penetration_m"),4e12);
+            require(depth>.001f,"Saved release obstruction must exceed the clearance threshold.");
+            outcome.detail=RuntimeAttachmentReleaseBlocked{entity(row.at("obstacle")),depth};
         } else {
             save_fields(row,{"entity","anchor","status"});
-            require(status=="transferred","Unknown saved attachment outcome.");
+            require(status=="transferred" || status=="released","Unknown saved attachment outcome.");
+            if(status=="released")outcome.detail=RuntimeAttachmentReleased{};
         }
         result.emplace(id,std::move(outcome));
     }

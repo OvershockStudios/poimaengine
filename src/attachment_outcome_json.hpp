@@ -18,7 +18,10 @@ inline nlohmann::json attachment_outcome_rows(const std::map<std::string,Runtime
             row["status"]="surface_miss";
             row["probe_index"]=surface->probe_index;row["target_triangle"]=surface->target_triangle;
             row["distance_m"]=surface->distance_m;row["distance_limit_m"]=surface->distance_limit_m;
-        } else row["status"]="transferred";
+        } else if(const auto* blocked=std::get_if<RuntimeAttachmentReleaseBlocked>(&outcome.detail)) {
+            row["status"]="release_blocked";
+            row["obstacle"]=blocked->obstacle;row["penetration_m"]=blocked->penetration_m;
+        } else row["status"]=std::holds_alternative<RuntimeAttachmentReleased>(outcome.detail) ? "released" : "transferred";
         rows.push_back(std::move(row));
     }
     return rows;
