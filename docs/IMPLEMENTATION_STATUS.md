@@ -4,6 +4,15 @@ Updated 2026-11-19 for **0.0.278**. Capability discovery reports what is availab
 
 ## Current limits
 
+The [0.0.278 Performance Yard background run](../examples/performance-yard/README.md#measure-in-the-background)
+records hardware Vulkan timings without taking desktop focus. Both GPUs run the
+retained compiled game for 60 measured seconds and complete three laps at
+about 60 simulation ticks/s. At 1080p with medium GTAO, total GPU p95 is
+6.91 ms on RTX 4070 Laptop and 24.91 ms on the AMD integrated GPU. The new
+background option retains raw present-return intervals and GPU timings for
+automated diagnosis. The current foreground attempts ended on focus changes
+before the timed window. [Results](evidence/m2-performance-yard-background-278.json)
+
 Version 0.0.278 opens an entry world by manifest from
 [`mcp --project`](MCP.md#launch), the headless CLI and the Python client.
 On Windows and Linux, MCP checks cover nested worlds, existing manifests,

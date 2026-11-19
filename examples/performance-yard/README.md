@@ -86,6 +86,19 @@ latency. A short run does not establish the
 VRAM usage, physical input, audible output or clean-machine support. See
 [frame capture](../../docs/FRAME_PERFORMANCE.md) for timing and memory definitions.
 
+## Measure in the background
+
+Add `--background` to the same command for automated diagnostics. The
+nonfocusable Windows player uses the same world, compiled controller, audio
+and render settings. It runs on the elapsed simulation clock and schedules
+presentation at nominal 60 Hz. The verifier requires the compiled route to
+complete, checks for an unfocused window with hardware input disabled, and
+retains raw present-return intervals, GPU pass times and process memory.
+
+Compare background runs using the same mode and workload. The foreground
+cadence budgets still require a separate focused run.
+[Background player behavior](../../docs/LIVE_PLAYER.md#background-play-for-agents)
+
 ## Recorded checkpoint
 
 The [0.0.94 measurements](../../docs/evidence/m2-performance-yard.json) use
@@ -107,3 +120,20 @@ applies and fresh-process continuation. It independently verifies over thirty
 minutes of unpaused play, complete snapshots and phase-aware memory recording.
 Its functional/cadence result is separate from the foreground frame budgets,
 physical input and memory-growth/overhead qualifications.
+
+The [0.0.278 background run](../../docs/evidence/m2-performance-yard-background-278.json)
+uses the retained world and Native AOT game with 30 seconds of warm-up and
+60 seconds of measurement per GPU. Both runs complete three laps at roughly
+60 simulation ticks per second on AC. The settings are 1080p, two frame slots,
+deferred lighting, medium GTAO and native audio.
+
+| GPU | p95 GPU time | p95 present-return interval | Sampled peak working set |
+| --- | ---: | ---: | ---: |
+| RTX 4070 Laptop | 6.91 ms | 21.83 ms | 414 MiB |
+| AMD Radeon integrated | 24.91 ms | 25.52 ms | 479 MiB |
+
+On AMD, ambient occlusion, deferred lighting and opaque rendering have the
+largest individual pass timings, at 7.65, 7.51 and 7.18 ms p95 respectively.
+GPU pass percentiles describe separate distributions. The evidence also
+records the two foreground attempts, which ended before measurement when
+the player lost or could not acquire focus.

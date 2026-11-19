@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Measure Performance Yard on the actual interactive Windows player clock.
+"""Measure Performance Yard on the native Windows player clock.
 
 Run after examples/performance-yard/prepare.py and native gameplay publication.
 The compiled circuit owns movement; no replay or per-tick RPC drives simulation.
@@ -82,6 +82,8 @@ def main():
     parser.add_argument('--width', type=int, default=1920)
     parser.add_argument('--height', type=int, default=1080)
     parser.add_argument('--lighting-path', choices=('forward', 'deferred'), default='deferred')
+    parser.add_argument('--background', action='store_true',
+                        help='Use the nonfocusable player for diagnostic timing without the foreground budget.')
     args = parser.parse_args()
     if os.name != 'nt':
         parser.error('Run with native Windows Python for actual HWND/process identity.')
@@ -97,7 +99,8 @@ def main():
     shutil.copy2(args.world, world)
     shutil.copytree(Path(str(args.world)+'.assets'), Path(str(world)+'.assets'))
     baseline = world.read_bytes()
-    record = dict(passed=False, scope='Interactive compiled small-game workload; not AAA or release qualification',
+    mode = 'background' if args.background else 'interactive'
+    record = dict(passed=False, scope=f'{mode.capitalize()} compiled small-game workload', player_mode=mode,
                   calls=[], owners=[], observations=[], binary_sha256=shared.sha(args.binary),
                   world_sha256=shared.sha(world), descriptor_sha256=shared.sha(args.descriptor),
                   test_sha256=shared.sha(Path(__file__)), settings=vars(args).copy())
@@ -128,7 +131,15 @@ def main():
         state = client.call('player.inspect')
         record['observations'].append(dict(elapsed=time.monotonic()-started, state=state))
         assert state['active'] and state['ready'], state
+        if args.background:
+            require_background(state)
         return state
+
+    def require_background(state):
+        readiness = state['readiness']
+        assert state['mode'] == 'background' and readiness['clock_mode'] == 'elapsed_zero_input', readiness
+        assert readiness['focusable'] is False and readiness['hardware_input_enabled'] is False, readiness
+        assert readiness['focused'] is False, readiness
 
     def pause():
         state = client.call('player.inspect')
@@ -173,7 +184,7 @@ def main():
             expected_tick=1, expected_ui_revision=state['ui_revision'], expected_control_sequence=state['control_sequence'],
             expected_gameplay_revision=module['revision'], expected_structure_revision=state['structure_revision'],
             id=shared.uid(911)))
-        params = shared.start_parameters(sid, expected_tick=1, width=args.width, height=args.height,
+        params = shared.start_parameters(sid, expected_tick=1, width=args.width, height=args.height, mode=mode,
                     gpu=args.gpu, frames_in_flight=2, audio=True, lighting_path=args.lighting_path,
                     expected_structure_revision=state['structure_revision'],
                     ambient_occlusion=dict(mode='gtao' if args.lighting_path == 'deferred' else 'none', quality='medium', radius=1))
@@ -195,13 +206,19 @@ def main():
         u.EnumWindows(visit, 0)
         assert len(windows) == 1, windows
         hwnd = windows[0]
-        # A real foreground request, scoped to this owner's window. Never fake focus flags.
-        record['foreground_request_accepted'] = bool(u.SetForegroundWindow(hwnd))
+        if args.background:
+            require_background(ready)
+        else:
+            # A real foreground request, scoped to this owner's window.
+            record['foreground_request_accepted'] = bool(u.SetForegroundWindow(hwnd))
         record['foreground_observed'] = u.GetForegroundWindow() == hwnd
         rect = w.RECT()
         assert u.GetClientRect(hwnd, ctypes.byref(rect))
         record['client_extent'] = [rect.right-rect.left, rect.bottom-rect.top]
-        assert record['foreground_observed'], 'Owned player window did not acquire actual foreground focus.'
+        if args.background:
+            assert not record['foreground_observed'], 'Background player acquired foreground focus.'
+        else:
+            assert record['foreground_observed'], 'Owned player window did not acquire actual foreground focus.'
         record['machine'] = machine_observation(hwnd)
         started = time.monotonic()
         record['before'] = snapshot('before')
@@ -238,16 +255,21 @@ def main():
         summary, rows = capture['summary'], capture['rows']
         assert not summary['full'] and summary['frames_dropped'] == 0 and summary['frames_rejected'] == 0
         assert all(row['session'] == sid and [row['width'], row['height']] == [args.width, args.height] for row in rows)
-        assert all(row['flags'] & 1 for row in rows), 'Player lost actual foreground focus.'
+        if args.background:
+            assert all(not (row['flags'] & 1) for row in rows), 'Background measurement included focused rows.'
+            assert summary['present_return_cadence_eligible']['samples'] == 0
+            assert summary['present_return_cadence_all']['samples'] >= 10, 'No background present cadence.'
+        else:
+            assert all(row['flags'] & 1 for row in rows), 'Player lost actual foreground focus.'
+            assert summary['present_return_cadence_eligible']['samples'] >= 10, 'No eligible interactive cadence.'
         assert all(not row['flags'] & (2|4|8|16|32|64|128|256) for row in rows[2:]), 'Unexpected workload intervention.'
-        assert summary['present_return_cadence_eligible']['samples'] >= 10, 'No eligible interactive cadence.'
         tick_delta = rows[-1]['tick_after']-rows[0]['tick_before']
         wall = (rows[-1]['end_ns']-rows[0]['begin_ns'])/1e9
         record['interactive_clock'] = dict(ticks=tick_delta, wall_seconds=wall, ticks_per_second=tick_delta/wall,
             max_ticks_per_poll=max(r['tick_after']-r['tick_before'] for r in rows))
         assert all(0 <= r['tick_after']-r['tick_before'] <= 8 for r in rows)
         assert all(b['tick_before'] == a['tick_after'] for a, b in zip(rows, rows[1:])), 'Unobserved simulation tick.'
-        assert 58 <= record['interactive_clock']['ticks_per_second'] <= 62, 'Interactive clock did not sustain 60 Hz.'
+        assert 58 <= record['interactive_clock']['ticks_per_second'] <= 62, 'Player clock did not sustain 60 Hz.'
         assert record['after']['player']['report']['dropped_wall_seconds'] == record['warmup']['player']['report']['dropped_wall_seconds'], 'Simulation dropped measured wall time.'
         initial_route, final_route = record['warmup']['route']['values'], record['after']['route']['values']
         field = shared.uid
@@ -278,10 +300,13 @@ def main():
         record['memory_sha256'] = shared.sha(args.output/'memory.json')
         record['summary'] = summary
         record['memory_summary'] = mem['summary']
-        record['budgets'] = dict(p95_16_7ms=cadence['p95'] <= 16_700_000,
-            p99_25ms=cadence['p99'] <= 25_000_000,
-            working_set_4GiB=mem['summary']['working_set_bytes']['maximum'] <= 4*1024**3, vram_qualified=False,
-            explanation='Application present-return cadence, not scanout FPS. No frame generation.')
+        record['budgets'] = dict(working_set_4GiB=mem['summary']['working_set_bytes']['maximum'] <= 4*1024**3,
+                                 vram_qualified=False)
+        if args.background:
+            record['background_cadence'] = summary['present_return_cadence_all']
+        else:
+            record['budgets'].update(p95_16_7ms=cadence['p95'] <= 16_700_000, p99_25ms=cadence['p99'] <= 25_000_000,
+                explanation='Application present-return cadence, not scanout FPS. No frame generation.')
         state = client.call('player.inspect')
         client.call('player.control', shared.control_parameters(state, 'stop'))
         final = client.call('player.inspect')

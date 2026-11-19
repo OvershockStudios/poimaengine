@@ -1,0 +1,263 @@
+{
+  "engine_version": "0.0.278",
+  "script_sha256": "61177ae237df0284753e1af88593340daeca0d61dde138d69e9b324d460feff7",
+  "render_settings": {
+    "width": 1920,
+    "height": 1080,
+    "frames_in_flight": 2,
+    "lighting_path": "deferred",
+    "ambient_occlusion": "GTAO medium",
+    "native_resolution": true,
+    "frame_generation": false,
+    "audio": true
+  },
+  "warmup_seconds": 30,
+  "requested_measurement_seconds": 60,
+  "scope": "Windows nonfocusable player, fixed compiled Performance Yard, native elapsed simulation and Vulkan.",
+  "foreground_attempts": [
+    {
+      "cause": "AssertionError: Workload paused during warmup.",
+      "foreground_acquired": true,
+      "last_player_readiness": {
+        "backend_available": true,
+        "closing": false,
+        "drawable": true,
+        "drawable_observation": "last_ordinary_frame_check",
+        "drawable_size": [
+          1920,
+          1080
+        ],
+        "finished": false,
+        "focus_observation": "focus_lost_event",
+        "focused": false,
+        "format": "poima.player-readiness.v1",
+        "initialized": true,
+        "interactive_active": false,
+        "owner_paused": true,
+        "pause_conditions": [
+          "owner_pause",
+          "interactive_inactive"
+        ],
+        "ready_conditions": [],
+        "replay": false,
+        "ui_observation_retained": true,
+        "ui_presented": true,
+        "ui_ready": true,
+        "ui_scale_pending": false
+      },
+      "measurement_started": false,
+      "owner_exit_codes": [
+        0,
+        0
+      ],
+      "evidence_sha256": "9f652dd365b79c9c188f30aab74ad106422e7fac1a1adc7269b9b5f46e4834d8"
+    },
+    {
+      "cause": "AssertionError: Owned player window did not acquire actual foreground focus.",
+      "foreground_acquired": false,
+      "last_player_readiness": null,
+      "measurement_started": false,
+      "owner_exit_codes": [
+        0,
+        0
+      ],
+      "evidence_sha256": "a70a2af55f243a33a2c78147d9e237dada79c6e2264e8aeebca6c9dd9dbc5f76"
+    }
+  ],
+  "background_runs": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "native_binary_sha256": "25d69b6a42a6958836deb3d1d3d8e3aef34e644693c06984d7db0164d79b3369",
+      "world_sha256": "2624dc6724f60ae4bb315f4ad7e645a36eebd3d35fa78527b1bd9441bf51ea8d",
+      "native_gameplay_descriptor_sha256": "e521c05c9cdc907c09cbe6bc9a7ecd11eec8c16ca695bd8fd4dcd7e419e2d3a9",
+      "native_window_focusable": false,
+      "acquired_foreground": false,
+      "eligible_foreground_intervals": 0,
+      "power_source": "AC",
+      "display_refresh_hz": 144,
+      "measurement_seconds": 60.03368069999851,
+      "ticks": 3601,
+      "ticks_per_second": 60.00296748916416,
+      "completed_laps": 3,
+      "successful_present_returns": 2776,
+      "native_gpu_timed": 2776,
+      "present_return_intervals_ns": {
+        "samples": 2775,
+        "mean": 21622565.477477476,
+        "p50": 21245700,
+        "p95": 25520500,
+        "p99": 26972300
+      },
+      "gpu_intervals_ns": {
+        "total": {
+          "samples": 2776,
+          "mean": 18602274.6037464,
+          "p50": 19337920,
+          "p95": 24906730,
+          "p99": 26450680
+        },
+        "skinning": {
+          "samples": 2776,
+          "mean": 117534.43804034582,
+          "p50": 89680,
+          "p95": 224600,
+          "p99": 508910
+        },
+        "light_assignment": {
+          "samples": 2776,
+          "mean": 24913.778818443803,
+          "p50": 21000,
+          "p95": 50760,
+          "p99": 53680
+        },
+        "shadows": {
+          "samples": 2776,
+          "mean": 755910.7492795389,
+          "p50": 670360,
+          "p95": 1276550,
+          "p99": 1773880
+        },
+        "opaque": {
+          "samples": 2776,
+          "mean": 4710621.667867435,
+          "p50": 4704680,
+          "p95": 7175550,
+          "p99": 8325900
+        },
+        "deferred_lighting": {
+          "samples": 2776,
+          "mean": 5678972.402737753,
+          "p50": 5895590,
+          "p95": 7510080,
+          "p99": 8031160
+        },
+        "ambient_occlusion": {
+          "samples": 2776,
+          "mean": 5322973.206051873,
+          "p50": 5640880,
+          "p95": 7652100,
+          "p99": 8689760
+        },
+        "ambient_occlusion_filter": {
+          "samples": 2776,
+          "mean": 1332531.6570605186,
+          "p50": 1409560,
+          "p95": 1624200,
+          "p99": 1752600
+        },
+        "post": {
+          "samples": 2776,
+          "mean": 12993293.969740635,
+          "p50": 13612280,
+          "p95": 17261490,
+          "p99": 18460680
+        }
+      },
+      "sampled_peak_working_set_bytes": 502788096,
+      "owner_exit_codes": [
+        0,
+        0
+      ],
+      "raw_frames_sha256": "38a8e22428d9fa165d3c12a5e90f213f511d6937dc96ca54607f60ff8d13c851",
+      "memory_samples_sha256": "7021dbc4fac81b8d3b745ce28d4286f36b324791ea36500960f77556823235cd"
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "native_binary_sha256": "25d69b6a42a6958836deb3d1d3d8e3aef34e644693c06984d7db0164d79b3369",
+      "world_sha256": "2624dc6724f60ae4bb315f4ad7e645a36eebd3d35fa78527b1bd9441bf51ea8d",
+      "native_gameplay_descriptor_sha256": "e521c05c9cdc907c09cbe6bc9a7ecd11eec8c16ca695bd8fd4dcd7e419e2d3a9",
+      "native_window_focusable": false,
+      "acquired_foreground": false,
+      "eligible_foreground_intervals": 0,
+      "power_source": "AC",
+      "display_refresh_hz": 144,
+      "measurement_seconds": 60.01272199998493,
+      "ticks": 3600,
+      "ticks_per_second": 59.99926740894494,
+      "completed_laps": 3,
+      "successful_present_returns": 3042,
+      "native_gpu_timed": 3042,
+      "present_return_intervals_ns": {
+        "samples": 3041,
+        "mean": 19728482.670174286,
+        "p50": 19655000,
+        "p95": 21832000,
+        "p99": 22827700
+      },
+      "gpu_intervals_ns": {
+        "total": {
+          "samples": 3042,
+          "mean": 5801405.233399079,
+          "p50": 6087968,
+          "p95": 6906016,
+          "p99": 7397472
+        },
+        "skinning": {
+          "samples": 3042,
+          "mean": 285557.4069690993,
+          "p50": 274144,
+          "p95": 330624,
+          "p99": 402944
+        },
+        "light_assignment": {
+          "samples": 3042,
+          "mean": 51304.54174884944,
+          "p50": 49600,
+          "p95": 59872,
+          "p99": 64064
+        },
+        "shadows": {
+          "samples": 3042,
+          "mean": 356495.65285996057,
+          "p50": 349760,
+          "p95": 401312,
+          "p99": 414944
+        },
+        "opaque": {
+          "samples": 3042,
+          "mean": 996368.157790927,
+          "p50": 1041408,
+          "p95": 1509376,
+          "p99": 1619968
+        },
+        "deferred_lighting": {
+          "samples": 3042,
+          "mean": 1943287.41617357,
+          "p50": 1996800,
+          "p95": 2355200,
+          "p99": 2427904
+        },
+        "ambient_occlusion": {
+          "samples": 3042,
+          "mean": 1539729.083497699,
+          "p50": 1603584,
+          "p95": 1818624,
+          "p99": 2039808
+        },
+        "ambient_occlusion_filter": {
+          "samples": 3042,
+          "mean": 531773.4332675871,
+          "p50": 573440,
+          "p95": 651264,
+          "p99": 710656
+        },
+        "post": {
+          "samples": 3042,
+          "mean": 4111679.4740302432,
+          "p50": 4324352,
+          "p95": 4795392,
+          "p99": 5070848
+        }
+      },
+      "sampled_peak_working_set_bytes": 433786880,
+      "owner_exit_codes": [
+        0,
+        0
+      ],
+      "raw_frames_sha256": "0148b2b6b061e79aefe568cb95feee567c3bbaca8c7757b66faf6134ac7f12a3",
+      "memory_samples_sha256": "3488ab3f4893e4e4fa15350885c37acd71ff2a27e956269a58a34b9c48a5f436"
+    }
+  ]
+}
