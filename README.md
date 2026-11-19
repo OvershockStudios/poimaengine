@@ -42,17 +42,15 @@ Production graphics and animation, water and weather, and the rest of the Window
 
 ## Get started
 
-From Linux or WSL, build the headless authoring CLI with CMake 3.24+, Ninja, and a C++20/C99 toolchain. The test preset also needs Python 3.9+.
+1. **Get Poima.** Use the [build and installation guide](docs/BUILD.md) to set up the current pre-alpha engine.
+2. **Make a project.** With Poima on your path, run `poima project create MyGame --name "My Game"`.
+3. **Open the `MyGame` folder in Codex or Claude Code.** [Connect Poima once](docs/AGENT_CLIENTS.md#connect-a-project), then describe what you want to play. You can use the desktop client or launch the coding agent from that folder.
 
-```sh
-cmake --preset headless
-cmake --build --preset headless
-ctest --preset headless
-./build/headless/poima capabilities
-./build/headless/poima project create build/FirstProject --name "First Project"
-```
+> Make a small 3D puzzle room with three switches that unlock a door. Playtest the solution and tell me what you checked.
 
-The authoring CLI runs without a display, a GPU, or .NET. Use the [build guide](docs/BUILD.md) to enable simulation and compiled gameplay, or the [desktop guide](docs/DESKTOP_EDITOR.md#build-and-launch) to launch the Windows Vulkan editor.
+Open the same project in the [Poima editor](docs/DESKTOP_EDITOR.md#build-and-launch) whenever you want to inspect, edit, or play it yourself. To edit together live, connect your agent to the [shared session](docs/SHARED_SESSIONS.md). You can also work directly in the editor.
+
+### Examples
 
 - **Build a small game:** [Collection Room](examples/collection-game) shows first-person movement, interactions, HUD, and save continuation.
 - **Import a character:** [Locomotion Yard](examples/locomotion-yard) connects imported clips, movement, and a standalone export.
