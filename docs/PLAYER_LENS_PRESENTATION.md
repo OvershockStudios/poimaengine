@@ -87,8 +87,9 @@ Opt-in observed, submitted and presented player material receipts include
   `rendered_world` is the interpolated, preference-composed lens.
 - `previous_viewmodel` and `target_viewmodel` are committed foreground lenses.
   `rendered_viewmodel` uses its own interpolated FOV by default, and uses
-  `rendered_world.vertical_fov` when the camera enables matching. These fields
-  are null when the foreground channel is absent.
+  `rendered_world.vertical_fov` when the camera enables matching. With shared
+  world depth, `rendered_viewmodel` is the complete `rendered_world` lens.
+  These fields are null when the foreground channel is absent.
 - `authored_fov` and `preference_fov` expose the world composition baselines.
 
 The renderer scene receipt's `camera_lens` and foreground lens are the exact

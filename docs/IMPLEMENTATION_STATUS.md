@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.261**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.262**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.262 supports [shared world depth for first-person viewmodels](VIEWMODELS.md#share-depth-with-the-world).
+Close props and walls can occlude the hands using the world's projection and
+clip planes. Camera ownership and the clearance constraint still govern which
+viewmodels reach the pass. Forward and deferred Windows Vulkan captures
+matched the ordinary world reference before and after an opaque prop moved to
+world physics. [Results](evidence/m2-viewmodel-world-depth.json)
 
 Version 0.0.261 lets a [first-person camera match the world FOV](VIEWMODELS.md#configure-a-camera-and-drawables).
 The foreground follows the effective world projection through preferences and

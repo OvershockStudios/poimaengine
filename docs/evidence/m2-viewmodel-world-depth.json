@@ -1,0 +1,399 @@
+{
+  "format": "poima.viewmodel-world-depth.v1",
+  "version": "0.0.262",
+  "schema_revision": 153,
+  "scope": "Opaque quad geometry, a foreground hand and held prop against a near world occluder. The prop is released to a dynamic collision proxy without advancing the simulation tick. Includes authored and runtime captures. Same-tick geometry, color and depth evidence only.",
+  "verifier": "tests/viewmodel_world_depth.py",
+  "verifier_sha256": "03d9e5b41e72955b2d531e50e3718ee11164fd04d20e2cf72f85bb1be8d59d30",
+  "witnesses_xy": [
+    [
+      192,
+      120
+    ],
+    [
+      72,
+      120
+    ],
+    [
+      142,
+      92
+    ]
+  ],
+  "linux": {
+    "engine_sha256": "912f0f9d435c1199e5ca668441071b0ae47248fb5131289f4a31d1ed5b21a565",
+    "tests": [
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "save_upgrade_document_native",
+      "player_lens_native",
+      "runtime_viewmodel_clearance_native",
+      "mcp_contract",
+      "runtime_camera_draw_native",
+      "world_ui_contract",
+      "runtime_attachment_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ]
+  },
+  "windows": {
+    "engine_sha256": "be562f7aab544e33d7845197090880e711b3ad6208f362d88404a4228ba4cc65",
+    "width": 320,
+    "height": 240,
+    "world_samples": 1,
+    "cases": [
+      {
+        "lighting_path": "forward",
+        "captures": 9,
+        "request_count": 35,
+        "natural_owner_exits": 3,
+        "matches_ordinary_world": true,
+        "witnesses": {
+          "reference": {
+            "before": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            },
+            "after": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            }
+          },
+          "overlay": {
+            "before": {
+              "sha256": "910d35db41167c6e850560cd4b5b0ddcb66aa21d8f82934b0e566f2c4643543c",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                null,
+                0.8872509002685547,
+                null
+              ]
+            },
+            "after": {
+              "sha256": "d38ddb2d92141a5a18c644e6dce71e03f78400118ac5b2517974e143931581d2",
+              "colors": [
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                null
+              ]
+            }
+          },
+          "depth": {
+            "before": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            },
+            "after": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            }
+          }
+        }
+      },
+      {
+        "lighting_path": "deferred",
+        "captures": 9,
+        "request_count": 35,
+        "natural_owner_exits": 3,
+        "matches_ordinary_world": true,
+        "witnesses": {
+          "reference": {
+            "before": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            },
+            "after": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            }
+          },
+          "overlay": {
+            "before": {
+              "sha256": "910d35db41167c6e850560cd4b5b0ddcb66aa21d8f82934b0e566f2c4643543c",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                null,
+                0.8872509002685547,
+                null
+              ]
+            },
+            "after": {
+              "sha256": "d38ddb2d92141a5a18c644e6dce71e03f78400118ac5b2517974e143931581d2",
+              "colors": [
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                null
+              ]
+            }
+          },
+          "depth": {
+            "before": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            },
+            "after": {
+              "sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583",
+              "colors": [
+                [
+                  0,
+                  178,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  178
+                ],
+                [
+                  178,
+                  0,
+                  0
+                ]
+              ],
+              "depths": [
+                0.902863621711731,
+                0.8872509002685547,
+                0.9175843000411987
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+  },
+  "matched_fov_regression": {
+    "captures": 9,
+    "request_count": 29,
+    "coverage": [
+      {
+        "case": "authored_fov",
+        "world_pixels": 10873,
+        "independent_pixels": 24384,
+        "matched_pixels": 10873,
+        "independent_delta": 13511,
+        "matched_delta": 0
+      },
+      {
+        "case": "zoomed_fov",
+        "world_pixels": 29156,
+        "independent_pixels": 6760,
+        "matched_pixels": 29156,
+        "independent_delta": 22396,
+        "matched_delta": 0
+      }
+    ]
+  }
+}

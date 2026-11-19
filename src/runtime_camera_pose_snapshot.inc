@@ -58,7 +58,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
         }
     }
     finalize_lighting(result.lighting);
-    select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_match_world_fov);
+    select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_projection);
     if(result.viewmodel && *viewmodel!=RuntimeCameraPose{}) {
         // The skin palette already uses the derived hierarchy. This last rigid
         // camera-space presentation moves each complete foreground mesh once.

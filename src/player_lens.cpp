@@ -20,6 +20,8 @@ void validate(const PlayerLensSample& sample) {
             throw std::invalid_argument("Player lens requires finite FOV5..150 and .001<=near<far<=1e7.");
     };
     lens(sample.world);if(sample.viewmodel)lens(*sample.viewmodel);
+    if(!sample.viewmodel && sample.projection!=ViewmodelProjection::Independent)
+        throw std::invalid_argument("Player lens sharing requires a viewmodel lens.");
     if(sample.authored_fov && !valid_fov(*sample.authored_fov))
         throw std::invalid_argument("Player authored FOV must be finite within5..150.");
 }
@@ -31,7 +33,8 @@ std::string_view mismatch(const PlayerLensSample& old,const PlayerLensSample& fr
     if(old.world.near_plane!=fresh.world.near_plane || old.world.far_plane!=fresh.world.far_plane)
         return "world_clip_changed";
     if(old.viewmodel.has_value()!=fresh.viewmodel.has_value())return "viewmodel_presence_changed";
-    if(old.viewmodel && (old.viewmodel->near_plane!=fresh.viewmodel->near_plane ||
+    if(old.projection!=fresh.projection)return "viewmodel_projection_changed";
+    if(old.viewmodel && fresh.projection!=ViewmodelProjection::WorldDepth && (old.viewmodel->near_plane!=fresh.viewmodel->near_plane ||
        old.viewmodel->far_plane!=fresh.viewmodel->far_plane))return "viewmodel_clip_changed";
     if(old.authored_fov!=fresh.authored_fov)return "authored_fov_changed";
     return {};
@@ -72,13 +75,14 @@ void PlayerLensHistory::reconcile(const PlayerLensSample& sample) {
     const auto reason=mismatch(*target_,sample);
     reset(sample,reason.empty() ? "external_change" : std::string(reason));
 }
-PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled,std::optional<double> pref,bool match_world_fov) const {
+PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled,std::optional<double> pref) const {
     if(!std::isfinite(alpha) || alpha<0 || alpha>1)
         throw std::invalid_argument("Player lens alpha must be finite within0..1.");
     if(pref && !valid_fov(*pref))
         throw std::invalid_argument("Player preferred FOV must be finite within5..150.");
     if(!target_)throw std::logic_error("Player lens presentation requires a committed sample.");
     const auto& before=*previous_;const auto& target=*target_;
+    const auto projection=target.projection;
     const bool pair=consecutive(before.tick,target.tick);
     PlayerLensPresentation result;
     result.enabled=enabled;result.previous_tick=before.tick;result.target_tick=target.tick;
@@ -90,12 +94,14 @@ PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled
     result.rendered_world.vertical_fov=interpolate(before.world.vertical_fov,target.world.vertical_fov,result.alpha);
     result.rendered_world.vertical_fov=player_effective_vertical_fov(result.rendered_world.vertical_fov,target.authored_fov,pref);
     result.rendered_viewmodel=target.viewmodel;
-    if(result.rendered_viewmodel)
-        result.rendered_viewmodel->vertical_fov=match_world_fov ? result.rendered_world.vertical_fov :
-            interpolate(before.viewmodel->vertical_fov,target.viewmodel->vertical_fov,result.alpha);
+    if(result.rendered_viewmodel) {
+        if(projection==ViewmodelProjection::WorldDepth)result.rendered_viewmodel=result.rendered_world;
+        else if(projection==ViewmodelProjection::MatchWorldFov)result.rendered_viewmodel->vertical_fov=result.rendered_world.vertical_fov;
+        else result.rendered_viewmodel->vertical_fov=interpolate(before.viewmodel->vertical_fov,target.viewmodel->vertical_fov,result.alpha);
+    }
     result.interpolating=enabled && pair && result.alpha<1 &&
         (before.world.vertical_fov!=target.world.vertical_fov ||
-         (!match_world_fov && before.viewmodel && before.viewmodel->vertical_fov!=target.viewmodel->vertical_fov));
+         (projection==ViewmodelProjection::Independent && before.viewmodel && before.viewmodel->vertical_fov!=target.viewmodel->vertical_fov));
     return result;
 }
 }

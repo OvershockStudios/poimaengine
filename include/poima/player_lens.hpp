@@ -10,6 +10,7 @@ struct PlayerLensSample {
     SceneLens world;
     std::optional<SceneLens> viewmodel;
     std::optional<double> authored_fov;
+    ViewmodelProjection projection=ViewmodelProjection::Independent;
     friend bool operator==(const PlayerLensSample&,const PlayerLensSample&)=default;
 };
 struct PlayerLensPresentation {
@@ -32,6 +33,6 @@ public:
     void commit(const PlayerLensSample& sample);
     void reconcile(const PlayerLensSample& sample);
     PlayerLensPresentation presentation(double alpha,bool enabled,
-        std::optional<double> pref={},bool match_world_fov=false) const;
+        std::optional<double> pref={}) const;
 };
 }

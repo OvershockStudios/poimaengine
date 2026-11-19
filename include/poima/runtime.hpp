@@ -156,7 +156,7 @@ struct RuntimeCamera {
     std::optional<SceneLens> viewmodel;
     RuntimeCameraPose world_pose,viewmodel_pose;
     std::optional<ViewmodelClearanceProfile> viewmodel_clearance;
-    bool viewmodel_match_world_fov=false;
+    ViewmodelProjection viewmodel_projection=ViewmodelProjection::Independent;
 };
 // Complete lenses for selected channels; omitted channels retain committed values.
 // Foreground availability is frozen by the authored Camera definition.
@@ -169,6 +169,7 @@ struct RuntimeCameraLensState {
     SceneLens world;
     std::optional<SceneLens> viewmodel;
     SceneLens authored_world;
+    ViewmodelProjection viewmodel_projection=ViewmodelProjection::Independent;
 };
 // Owned live camera and lighting values, without geometry, skin palettes or UI.
 struct RuntimeCameraState {
@@ -177,7 +178,7 @@ struct RuntimeCameraState {
     SceneLighting lighting;
     std::optional<SceneLens> viewmodel;
     double authored_vertical_fov=60;
-    bool viewmodel_match_world_fov=false;
+    ViewmodelProjection viewmodel_projection=ViewmodelProjection::Independent;
 };
 struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;
@@ -413,7 +414,7 @@ void validate_runtime_hit_regions(const RuntimeDefinition& definition);
 void validate_runtime_camera_draw(const RuntimeDefinition& definition);
 // Partition a detached generic snapshot once, after named camera/lens and all
 // incarnations are assigned. Stages before publication; never mutates a cache.
-void select_scene_camera_draw(SceneSnapshot&,std::optional<SceneLens>,bool match_world_fov=false);
+void select_scene_camera_draw(SceneSnapshot&,std::optional<SceneLens>,ViewmodelProjection=ViewmodelProjection::Independent);
 // Validates recipe values/assets without creating entities or physics bodies.
 // Custom entity-reference liveness resolves against the eventual spawn candidate.
 void validate_runtime_templates(const RuntimeDefinition& definition);

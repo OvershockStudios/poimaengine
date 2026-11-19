@@ -71,6 +71,13 @@ void catchup_and_reversal() {
 }
 void preference_composition() {
     PlayerLensHistory history;history.commit(sample(1,70,75));history.commit(sample(2,35,50));
+    PlayerLensHistory matched_history,world_depth_history;
+    auto previous=sample(1,70,75),next=sample(2,35,50);
+    previous.projection=next.projection=ViewmodelProjection::MatchWorldFov;
+    matched_history.commit(previous);matched_history.commit(next);
+    previous.projection=next.projection=ViewmodelProjection::WorldDepth;
+    next.viewmodel->near_plane=.04;
+    world_depth_history.commit(previous);world_depth_history.commit(next);
     constexpr double half_radians=0.0087266462599716478846;
     for(double alpha:{0.,.25,.5,1.}) {
         const auto shown=history.presentation(alpha,true,90);
@@ -80,15 +87,21 @@ void preference_composition() {
         close(shown.rendered_viewmodel->vertical_fov,oracle(75,50,alpha),"World preference leaked into foreground.");
         check(shown.authored_fov==70 && shown.preference_fov==90 && shown.target_world.vertical_fov==35,
             "Preference overwrote authoritative target or authored baseline.");
-        const auto matched=history.presentation(alpha,true,90,true);
+        const auto matched=matched_history.presentation(alpha,true,90);
         close(matched.rendered_viewmodel->vertical_fov,expected,"Matched foreground missed the effective world zoom.");
         check(matched.rendered_viewmodel->near_plane==.01 && matched.rendered_viewmodel->far_plane==10 &&
             matched.previous_viewmodel->vertical_fov==75 && matched.target_viewmodel->vertical_fov==50,
             "Matching changed foreground clipping or committed endpoints.");
+        const auto shared=world_depth_history.presentation(alpha,true,90);
+        check(shared.rendered_viewmodel==shared.rendered_world && shared.target_viewmodel->near_plane==.04 &&
+            shared.alpha==alpha && shared.target_tick==2,
+            "World-depth foreground did not share the complete displayed lens across raw clip edits.");
     }
     check(history.presentation(0,true,90).rendered_world.vertical_fov==90,"Neutral preference endpoint was not exact.");
     history.commit(sample(3,35,65));
-    check(!history.presentation(.5,true,90,true).interpolating &&
+    auto stable=sample(3,35,65);stable.projection=ViewmodelProjection::MatchWorldFov;
+    matched_history.commit(stable);
+    check(!matched_history.presentation(.5,true,90).interpolating &&
         history.presentation(.5,true,90).interpolating,"Unused foreground FOV produced a matched transition.");
     auto external=sample(3,60);external.authored_fov.reset();history.reset(external,"external_camera");
     check(history.presentation(.5,true,95).rendered_world.vertical_fov==95,"External camera lost absolute preference semantics.");
@@ -99,8 +112,10 @@ void reset_boundaries() {
     const auto boundary=[](auto mutate,const char* reason) {
         PlayerLensHistory history;history.commit(sample(10));auto changed=sample(11,35,50);mutate(changed);history.commit(changed);
         auto shown=history.presentation(.25,true);
+        const auto foreground=changed.projection==ViewmodelProjection::WorldDepth ?
+            std::optional<SceneLens>(changed.world) : changed.viewmodel;
         check(shown.reset_reason==reason && !shown.interpolating && shown.alpha==1 && shown.previous_tick==11 &&
-            shown.rendered_world==changed.world && shown.rendered_viewmodel==changed.viewmodel,"Unsafe boundary retained an interpolation pair.");
+            shown.rendered_world==changed.world && shown.rendered_viewmodel==foreground,"Unsafe boundary retained an interpolation pair.");
         changed.tick=12;history.commit(changed);
         check(history.presentation(.25,true).reset_reason.empty(),"Reset reason survived a subsequent consecutive pair.");
     };
@@ -113,6 +128,7 @@ void reset_boundaries() {
     boundary([](auto& s){s.viewmodel.reset();},"viewmodel_presence_changed");
     boundary([](auto& s){s.viewmodel->near_plane=.02;},"viewmodel_clip_changed");
     boundary([](auto& s){s.viewmodel->far_plane=15;},"viewmodel_clip_changed");
+    boundary([](auto& s){s.projection=ViewmodelProjection::WorldDepth;},"viewmodel_projection_changed");
     boundary([](auto& s){s.authored_fov=75;},"authored_fov_changed");
     boundary([](auto& s){s.authored_fov.reset();},"authored_fov_changed");
     PlayerLensHistory history;history.reset(sample(9),"pause");

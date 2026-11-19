@@ -24,15 +24,15 @@ void binding(const CameraDrawBinding& value) {
 }
 void validate_runtime_camera_draw(const RuntimeDefinition& definition) {
     const bool present=std::any_of(definition.entities.begin(),definition.entities.end(),[](const auto& e) {
-        return e.camera_draw.has_value() || (e.camera && (e.camera->viewmodel || e.camera->viewmodel_match_world_fov));
+        return e.camera_draw.has_value() || (e.camera && (e.camera->viewmodel || e.camera->viewmodel_projection!=ViewmodelProjection::Independent));
     });
     if(!present)return; // Preserve legacy native admission/error precedence.
     check(definition.entities.size()<=10000,"CameraDraw hierarchy exceeds the runtime entity budget.");
     std::map<std::string,const RuntimeEntityDefinition*> graph;
     for(const auto& entity:definition.entities) {
         check(graph.emplace(entity.id,&entity).second,"Duplicate entity in CameraDraw hierarchy.");
-        if(entity.camera && entity.camera->viewmodel_match_world_fov)
-            check(entity.camera->viewmodel.has_value(),"Matching the world field of view requires a foreground lens.");
+        if(entity.camera && entity.camera->viewmodel_projection!=ViewmodelProjection::Independent)
+            check(entity.camera->viewmodel.has_value(),"Sharing world projection or depth requires a viewmodel lens.");
         if(entity.camera && entity.camera->viewmodel)lens(*entity.camera->viewmodel);
     }
     // Visit each edge once, with no recursion or quadratic ancestry walks for
@@ -66,16 +66,16 @@ void validate_runtime_camera_draw(const RuntimeDefinition& definition) {
         }
     }
 }
-void select_scene_camera_draw(SceneSnapshot& scene,std::optional<SceneLens> viewmodel_lens,bool match_world_fov) {
+void select_scene_camera_draw(SceneSnapshot& scene,std::optional<SceneLens> viewmodel_lens,ViewmodelProjection projection) {
     check(!scene.viewmodel,"CameraDraw selector requires a generic unpartitioned snapshot.");
-    check(!match_world_fov || viewmodel_lens.has_value(),"Matching the world field of view requires a foreground lens.");
+    check(projection==ViewmodelProjection::Independent || viewmodel_lens.has_value(),"Sharing world projection or depth requires a viewmodel lens.");
     const bool present=viewmodel_lens.has_value() || std::any_of(scene.objects.begin(),scene.objects.end(),[](const auto& e){return e.camera_draw.has_value();});
     if(!present)return; // No allocations or changes for omitted feature.
     check(identity(scene.camera_id),"CameraDraw selection requires a named canonical Camera.");
     if(viewmodel_lens)lens(*viewmodel_lens);
     std::vector<SceneObject> world;world.reserve(scene.objects.size());
     std::optional<SceneViewmodel> foreground;
-    if(viewmodel_lens)foreground.emplace(SceneViewmodel{*viewmodel_lens,{},match_world_fov});
+    if(viewmodel_lens)foreground.emplace(SceneViewmodel{*viewmodel_lens,{},projection});
     std::size_t hidden=0;
     for(const auto& source:scene.objects) {
         check(source.camera_visible,"CameraDraw selector requires generic camera visibility.");

@@ -13,7 +13,7 @@
         const auto& authored=topology->definitions.at(id).camera;
         require(authored.has_value(),"Frozen Camera membership differs from runtime.");
         return RuntimeCameraLensState{id,{camera->vertical_fov,camera->near_plane,camera->far_plane},
-            camera->viewmodel,{authored->vertical_fov,authored->near_plane,authored->far_plane}};
+            camera->viewmodel,{authored->vertical_fov,authored->near_plane,authored->far_plane},camera->viewmodel_projection};
     }
     void validate_camera_lens_command(const RuntimeCameraLensCommand& command,bool allow_pending=false) const {
         require(command.world || command.viewmodel,"Camera lens command must select a channel.");

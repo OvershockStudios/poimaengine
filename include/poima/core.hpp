@@ -198,6 +198,7 @@ struct SceneDrawableIdentity {
 struct RendererCameraDrawResult {
     std::optional<SceneLens> viewmodel_lens;
     std::vector<SceneDrawableIdentity> viewmodels,hidden;
+    bool viewmodel_world_depth=false;
     friend bool operator==(const RendererCameraDrawResult&,const RendererCameraDrawResult&)=default;
 };
 struct RendererPoseDrawable {

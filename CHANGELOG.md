@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.262
+
+- Let physically framed first-person hands and held props share world depth during pickups and releases.
+
 ## 0.0.261
 
 - Let first-person cameras share the effective world FOV with the viewmodel pass for screen-space alignment at item handoffs.

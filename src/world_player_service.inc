@@ -113,6 +113,7 @@
                 sample.camera_id=camera;sample.tick=owner.runtime_->inspect().tick;
                 sample.material_revision=owner.runtime_->material_revision();sample.world=lens->world;
                 sample.viewmodel=lens->viewmodel;sample.authored_fov=lens->authored_world.vertical_fov;
+                sample.projection=lens->viewmodel_projection;
                 return sample;
             }
             std::optional<PlayerPoseSample> pose_sample(const std::string& camera) const override {
@@ -788,7 +789,7 @@
         prepared->result["capture"]={{"path",output},{"format","BMP"},{"camera",player_owner_->prepared.options.camera},
             {"camera_world",snapshot.camera_world},
             {"lens",{{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}}},
-            {"object_count",snapshot.objects.size()},{"ui_revision",runtime_->ui_model().revision()},
+            {"object_count",snapshot.world_object_count()},{"ui_revision",runtime_->ui_model().revision()},
             {"lighting",lighting_json(snapshot.lighting)},{"build_version",build_metadata().version}};
         if(frozen.lens_presentation() && frozen.lens_presentation()->enabled)prepared->result["capture"]["lens_presentation"]=
             player_lens_presentation_json(*frozen.lens_presentation());

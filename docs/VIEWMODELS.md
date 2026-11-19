@@ -66,7 +66,7 @@ removes its bindings. Discover the strict schemas with `world.describe` using
 | Drawable | Bound Game camera | Other Game camera | External Scene camera |
 |---|---|---|---|
 | Ordinary | World geometry | World geometry | World geometry |
-| Viewmodel | Foreground geometry | Omitted | Ordinary inspection geometry |
+| Viewmodel | Foreground geometry, with optional world depth | Omitted | Ordinary inspection geometry |
 | Hidden body | Camera-hidden; world shadows retained | World geometry | World geometry |
 
 Viewmodels never cast world shadows, including during external inspection.
@@ -85,7 +85,26 @@ anti-aliasing can still change the image at a handoff. Use camera-aligned
 poses when checking screen-space contact. Committed lens reads and saves
 retain their actual configured values.
 
-Lens presence and matching mode are fixed by the authored Camera. Runtime
+### Share depth with the world
+
+Set `"viewmodel_world_depth": true` on a Camera with a complete `viewmodel`
+lens to render its selected viewmodels in the world pass. Hands, props and
+walls then use the same projection, clip planes, depth, lighting and
+anti-aliasing. A close prop can occlude a finger on either side of an
+attachment transfer. A wall can also occlude the hands. Use the authored
+clearance profile to retract hands and equipment before contact. Select a
+world near plane that fits the closest expected pose.
+
+This mode takes precedence over `viewmodel_match_world_fov`. Committed reads
+retain the configured viewmodel lens. Display uses the effective world lens.
+Prepared viewmodel pose offsets and clearance still
+apply, so continuity depends on the rendered matrices at the handoff.
+Selected drawables remain private to the named Game camera and do not cast
+world shadows while bound. They contribute to that view's world depth and
+other enabled scene products. The dedicated foreground pass and its sample
+setting apply only to the separate-depth modes.
+
+Lens presence and projection mode are fixed by the authored Camera. Runtime
 [attachment transfers](ITEM_ATTACHMENTS.md) can change a drawable's binding.
 [Gameplay camera controls](CAMERA_LENSES.md)
 can change complete world/foreground lenses on fixed ticks. Optional
@@ -102,7 +121,7 @@ contract.
 
 ## Rendering and observations
 
-World rendering and optional reconstruction finish first. An unjittered
+For separate-depth viewmodels, world rendering and optional reconstruction finish first. An unjittered
 foreground pass renders to output-resolution linear HDR and its own depth.
 A distinct HDR composite then feeds the ordinary exposure/tone-map pass; game
 UI follows it. World depth, normals, motion, AO and reconstruction inputs remain
@@ -113,6 +132,9 @@ body exists. It contains the exact lens and sorted drawable IDs/incarnations
 for the snapshot used by observed, submitted and presented work. Configured
 empty foreground differs from an absent lens. Selected membership is not a
 claim that every drawable survived camera culling or depth tests.
+`camera_draw.viewmodel_world_depth: true` identifies the shared pass. In this
+mode the world draw counts include the prepared viewmodels and the separate
+foreground diagnostic is absent.
 
 Rendering diagnostics separately report `viewmodel.rendered`, output extent,
 sample count, actual draw counts, logical payload bytes and its own light-assignment
@@ -181,3 +203,13 @@ python tests/viewmodel_matched_fov.py --binary build/windows-runtime/bin/poima.e
 
 See the [recorded coverage](evidence/m2-viewmodel-matched-fov.json) and
 [implementation status](IMPLEMENTATION_STATUS.md).
+
+Run the [world-depth verifier](../tests/viewmodel_world_depth.py) for wall
+occlusion and the before/after render of an actual release to physics.
+It compares to ordinary world geometry at the same tick. Pass
+`--lighting-path deferred` and a fresh output directory to exercise deferred
+lighting. [Recorded results](evidence/m2-viewmodel-world-depth.json)
+
+```powershell
+python tests/viewmodel_world_depth.py --binary build/windows-runtime/bin/poima.exe --gpu 1 --output build/world-depth-check
+```

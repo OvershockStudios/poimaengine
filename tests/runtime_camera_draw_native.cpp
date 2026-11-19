@@ -57,29 +57,43 @@ void omission_and_lens() {
     d.entities[0].camera->viewmodel=SceneLens{5,.001,1e7};validate_runtime_camera_draw(d);
     d.entities[0].camera->viewmodel->vertical_fov=150;validate_runtime_camera_draw(d);
     RuntimeEntityDefinition orphan;orphan.id=id(1);orphan.camera=RuntimeCamera{};
-    orphan.camera->viewmodel_match_world_fov=true;
+    orphan.camera->viewmodel_projection=ViewmodelProjection::WorldDepth;
     RuntimeDefinition invalid;invalid.entities={orphan};
     rejects([&]{validate_runtime_camera_draw(invalid);});
 }
 void matched_projection() {
     auto d=definition();
-    d.entities[0].camera->viewmodel_match_world_fov=true;
+    d.entities[0].camera->viewmodel_projection=ViewmodelProjection::MatchWorldFov;
     Runtime live(d);
     const auto initial=live.snapshot(id(1));
     check(initial.viewmodel->lens==SceneLens{40,.01,10} &&
-        initial.viewmodel->effective_lens(initial.vertical_fov)==SceneLens{60,.01,10},
+        initial.viewmodel->effective_lens(initial.world_lens())==SceneLens{60,.01,10},
         "Matching did not retain the configured lens or use world FOV.");
     RuntimeCameraPose interpolated;interpolated.position={.01,0,0};
     const auto posed=live.snapshot(id(1),RuntimeCameraPose{},interpolated);
-    check(posed.viewmodel->effective_lens(posed.vertical_fov)==SceneLens{60,.01,10} &&
+    check(posed.viewmodel->effective_lens(posed.world_lens())==SceneLens{60,.01,10} &&
         posed.viewmodel->objects[0].world!=initial.viewmodel->objects[0].world,
         "Interpolated pose lost matched projection or did not move the draw.");
     const auto saved=live.save_snapshot(hash);
     auto restored=Runtime::from_snapshot(d,hash,saved);
     const auto other=restored->snapshot(id(2));
-    check(restored->save_snapshot(hash)==saved && restored->snapshot(id(1)).viewmodel->match_world_fov &&
-        other.viewmodel->effective_lens(other.vertical_fov)==SceneLens{50,.02,20},
+    check(restored->save_snapshot(hash)==saved && restored->snapshot(id(1)).viewmodel->projection==ViewmodelProjection::MatchWorldFov &&
+        other.viewmodel->effective_lens(other.world_lens())==SceneLens{50,.02,20},
         "Exact restore lost authored mode or changed another camera's lens.");
+
+    d.entities[0].camera->viewmodel_projection=ViewmodelProjection::WorldDepth;
+    Runtime physical(d);
+    const auto shared=physical.snapshot(id(1),RuntimeCameraPose{},interpolated);
+    check(shared.world_object_count()==3 && shared.world_viewmodel_draws().size()==1 &&
+        shared.world_viewmodel_draws().front().entity_id==id(3) &&
+        shared.world_viewmodel_draws().front().world==posed.viewmodel->objects[0].world &&
+        !shared.world_viewmodel_draws().front().cast_shadows,
+        "World-depth routing lost pose, shadow policy, or drawable count.");
+    check(shared.viewmodel->effective_lens(shared.world_lens())==SceneLens{60,.1,100} &&
+        physical.camera_lens(id(1))->viewmodel==SceneLens{40,.01,10} &&
+        physical.camera_lens(id(1))->viewmodel_projection==ViewmodelProjection::WorldDepth &&
+        physical.snapshot(id(2)).world_viewmodel_draws().empty(),
+        "World-depth routing changed committed optics or leaked across cameras.");
 }
 void graph_rejection() {
     const auto original=definition();

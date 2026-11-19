@@ -624,6 +624,11 @@ SceneLens scene_lens_value(const Json& value) {
         "Camera needs 0.001 <= near < far <= 10000000.");
     return result;
 }
+ViewmodelProjection viewmodel_projection_value(const Json& camera) {
+    if(camera.value("viewmodel_world_depth",false))return ViewmodelProjection::WorldDepth;
+    if(camera.value("viewmodel_match_world_fov",false))return ViewmodelProjection::MatchWorldFov;
+    return ViewmodelProjection::Independent;
+}
 CameraDrawBinding camera_draw_value(const Json& value) {
     fields(value,{"camera","mode"},{"camera","mode"});
     const auto camera=identifier(value.at("camera"));require(camera!=std::string(32,'0'),"CameraDraw camera cannot be zero.");
@@ -697,12 +702,12 @@ void validate_component(const std::string& type, const Json& value) {
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
-        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance","viewmodel_match_world_fov"},{"vertical_fov","near","far"});
+        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance","viewmodel_match_world_fov","viewmodel_world_depth"},{"vertical_fov","near","far"});
         (void)scene_lens_value(Json{{"vertical_fov",value.at("vertical_fov")},{"near",value.at("near")},{"far",value.at("far")}});
         if(value.contains("viewmodel"))(void)scene_lens_value(value.at("viewmodel"));
-        if(value.contains("viewmodel_match_world_fov"))
-            require(value.contains("viewmodel") && value.at("viewmodel_match_world_fov").is_boolean(),
-                "Viewmodel matching requires a foreground lens and a boolean.");
+        for(const auto* option:{"viewmodel_match_world_fov","viewmodel_world_depth"})
+            if(value.contains(option))require(value.contains("viewmodel") && value.at(option).is_boolean(),
+                "Viewmodel projection and depth options require a foreground lens and boolean values.");
         if(value.contains("viewmodel_clearance")) {
             require(value.contains("viewmodel"),"Viewmodel clearance requires a foreground lens.");
             (void)viewmodel_clearance_value(value.at("viewmodel_clearance"));
@@ -1652,7 +1657,7 @@ public:
         camera.near_plane=lens.at("near");camera.far_plane=lens.at("far");
         auto result=editor_snapshot(camera,false);result.camera_id=id;
         select_scene_camera_draw(result,lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(lens.at("viewmodel"))) : std::nullopt,
-            lens.value("viewmodel_match_world_fov",false));
+            viewmodel_projection_value(lens));
         return result;
     }
     Json asset_reference_dispatch(const Json& params) const {
@@ -1924,6 +1929,7 @@ public:
             for(const auto& object:draw.hidden)hidden.push_back({{"entity_id",object.entity_id},{"incarnation",object.incarnation}});
             Json lens=nullptr;if(draw.viewmodel_lens)lens={{"vertical_fov",draw.viewmodel_lens->vertical_fov},{"near",draw.viewmodel_lens->near_plane},{"far",draw.viewmodel_lens->far_plane}};
             result["camera_draw"]={{"viewmodel_lens",std::move(lens)},{"viewmodels",std::move(foreground)},{"hidden",std::move(hidden)}};
+            if(draw.viewmodel_world_depth)result["camera_draw"]["viewmodel_world_depth"]=true;
         }
         return result;
     }
@@ -3039,7 +3045,7 @@ public:
         if(!live && !asset_preview) {
             const auto& authored_lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
             select_scene_camera_draw(snapshot,authored_lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(authored_lens.at("viewmodel"))) : std::nullopt,
-                authored_lens.value("viewmodel_match_world_fov",false));
+                viewmodel_projection_value(authored_lens));
         }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         if(ui_scale && snapshot.logical_ui && !snapshot.logical_ui->elements.empty()) {
@@ -3060,7 +3066,7 @@ public:
         require(report.diagnostics.scene_presented && same_renderer_snapshot(*report.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Capture presentation receipt differs from its immutable scene snapshot.",-32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
             {"source",asset_preview ? "asset_animation" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
-            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"material_revision",snapshot.material_revision}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
+            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"material_revision",snapshot.material_revision}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.world_object_count()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"ui_scale",ui_scale ? params.at("ui_scale") : Json(nullptr)},
@@ -3206,7 +3212,7 @@ public:
             if(components.contains("Camera")) {
                 const auto& c=components.at("Camera");value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")};
                 if(c.contains("viewmodel"))value.camera->viewmodel=scene_lens_value(c.at("viewmodel"));
-                value.camera->viewmodel_match_world_fov=c.value("viewmodel_match_world_fov",false);
+                value.camera->viewmodel_projection=viewmodel_projection_value(c);
                 if(c.contains("viewmodel_clearance"))value.camera->viewmodel_clearance=viewmodel_clearance_value(c.at("viewmodel_clearance"));
             }
             if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));

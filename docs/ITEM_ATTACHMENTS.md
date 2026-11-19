@@ -12,6 +12,8 @@ rigid primitives before attaching it. [Rigid mesh extraction](ANIMATION_ASSETS.m
 Use [matched viewmodel FOV](VIEWMODELS.md#configure-a-camera-and-drawables)
 when a first-person pickup or release should keep its projection scale as it
 changes render passes.
+Use [world depth](VIEWMODELS.md#share-depth-with-the-world) when the fingers
+and prop should depth-test together throughout that transfer.
 
 ## Transfer on a committed tick
 

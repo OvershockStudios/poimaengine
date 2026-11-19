@@ -908,7 +908,7 @@ struct Context {
     }
 
     void prepare_object_buffer() {
-        const auto count=std::max<std::size_t>(1,scene ? scene->objects.size() : 0);
+        const auto count=std::max<std::size_t>(1,scene ? scene->world_object_count() : 0);
         require(count<=16u*1024u*1024u/sizeof(ObjectData),"Structured object data exceeds the 16 MiB budget.");
         if(object_buffer && object_capacity>=count)return;
         object_capacity=count;
@@ -931,9 +931,12 @@ struct Context {
         std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
         pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
         pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
-        // Foreground lens changes do not alter world products or reconstruction.
-        // Keep binding membership in the history key, including empty domains.
-        if(pending_history.camera_draw)pending_history.camera_draw->viewmodel_lens.reset();
+        if(pending_history.camera_draw) {
+            pending_history.camera_draw->viewmodel_lens.reset();
+            // A world-depth handoff keeps the same drawable in the world pass.
+            // Its identity and transform still participate in per-object history.
+            if(pending_history.camera_draw->viewmodel_world_depth)pending_history.camera_draw->viewmodels.clear();
+        }
         pending_history_reset.clear();
         if(!scene_motion)pending_history_reset="products_unavailable";
         else if(pending_history.source.empty())pending_history_reset="source_unavailable";
@@ -1920,7 +1923,10 @@ struct Context {
         return bundle;
     }
     void prepare_viewmodel(std::set<std::string>& active_skins) {
-        viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();if(scene->viewmodel) {pending_viewmodel.emplace();pending_viewmodel->samples=viewmodel_samples;}viewmodel_enabled=scene_visible && scene->viewmodel.has_value() && scene_debug_view==SceneDebugView::color;
+        viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();
+        const bool separate_pass=scene->viewmodel && scene->viewmodel->projection!=ViewmodelProjection::WorldDepth;
+        if(separate_pass) {pending_viewmodel.emplace();pending_viewmodel->samples=viewmodel_samples;}
+        viewmodel_enabled=scene_visible && separate_pass && scene_debug_view==SceneDebugView::color;
         if(!viewmodel_enabled) {
             if(viewmodel) {retire_frames(true);viewmodel.reset();output_bindings=nullptr;}
             viewmodel_lights={};return;
@@ -1934,7 +1940,7 @@ struct Context {
             }
             validate_viewmodel_budget(viewmodel_resident_bytes());
             viewmodel->materials.clear();viewmodel_frame=frame_constants;
-            const auto lens=foreground.effective_lens(scene->vertical_fov);
+            const auto lens=foreground.effective_lens(scene->world_lens());
             require(std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Invalid foreground lens.");
             const auto projection=multiply(perspective(lens.vertical_fov,double(width)/height,lens.near_plane,lens.far_plane),inverse_affine(scene->camera_world));
             for(std::size_t i=0;i<16;++i) {require(std::isfinite(projection[i]) && std::abs(projection[i])<=std::numeric_limits<float>::max(),"Foreground projection exceeds float range.");viewmodel_frame.view_projection[i]=static_cast<float>(projection[i]);viewmodel_frame.previous_view_projection[i]=static_cast<float>(projection[i]);}
@@ -2044,7 +2050,7 @@ struct Context {
     }
     void validate_viewmodel_snapshot() const {
         if(!scene->viewmodel)return;
-        const auto& foreground=*scene->viewmodel;const auto lens=foreground.effective_lens(scene->vertical_fov);
+        const auto& foreground=*scene->viewmodel;const auto lens=foreground.effective_lens(scene->world_lens());
         require(foreground.objects.size()<=32 && std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Malformed foreground snapshot lens or count.");
         std::set<std::string> ids;for(const auto& object:scene->objects) {require(ids.insert(object.entity_id).second,"World snapshot drawable identities are duplicated.");}
         for(const auto& object:foreground.objects)require(!object.entity_id.empty() && ids.insert(object.entity_id).second,"Foreground identity is missing, duplicated or also belongs to world geometry.");
@@ -2057,7 +2063,8 @@ struct Context {
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
         }
         require(!deferred || rigid_transform(scene->camera_world),"Deferred lighting requires a rigid camera transform.");
-        if(deferred)for(const auto& object:scene->objects) {
+        const std::array<std::span<const SceneObject>,2> world_drawables{scene->objects,scene->world_viewmodel_draws()};
+        if(deferred)for(const auto objects:world_drawables)for(const auto& object:objects) {
             for(float value:object.albedo)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred preview base exceeds half-float storage.");
             if(object.material) {
                 for(float value:object.material->base_color)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred base exceeds half-float storage.");
@@ -2146,9 +2153,9 @@ struct Context {
         if(reconstruction_mode!=ReconstructionMode::none)for(std::size_t k=0;k<4;++k) {culling_projection[k*4]/=1+2.0f/static_cast<float>(render_extent.width);culling_projection[k*4+1]/=1+2.0f/static_cast<float>(render_extent.height);}
         const auto camera_frustum=frustum(culling_projection.data());
         std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
-        pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
+        pending_draws.objects=scene->world_object_count();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
         std::set<std::string> active_skins;
-        for(const auto& object:scene->objects) {
+        for(std::size_t list=0;list<world_drawables.size();++list)for(const auto& object:world_drawables[list]) {
             if(object.material)validate_material_alpha(*object.material);
             if(object.mesh)validate_material_alpha(object.mesh->material);
             DrawItem item;item.object_index=static_cast<std::uint32_t>(draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
@@ -2183,7 +2190,7 @@ struct Context {
             item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
             if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
             else if(object.camera_visible)++pending_draws.camera_culled;
-            for(std::size_t layer=0;object.cast_shadows && !(object.camera_draw && object.camera_draw->mode==CameraDrawMode::Viewmodel) && layer<shadow_frusta.size();++layer) {
+            for(std::size_t layer=0;list==0 && object.cast_shadows && !(object.camera_draw && object.camera_draw->mode==CameraDrawMode::Viewmodel) && layer<shadow_frusta.size();++layer) {
                 ++pending_draws.shadow_candidates;
                 if(!diagnostics.culling || intersects(bounds,shadow_frusta[layer])) { item.shadow_mask|=1u<<layer;++pending_draws.shadow_draws;pending_draws.shadow_triangles+=item.geometry.count/3; }
                 else ++pending_draws.shadow_culled;
@@ -3875,6 +3882,7 @@ struct PlayerWindow::Impl {
             const auto preference=configuration ? configuration->values.vertical_fov : options.vertical_fov;
             require(player_effective_vertical_fov(sample.world.vertical_fov,sample.authored_fov,preference)==fresh.vertical_fov &&
                 sample.world.near_plane==fresh.near_plane && sample.world.far_plane==fresh.far_plane &&
+                sample.projection==(fresh.viewmodel ? fresh.viewmodel->projection : ViewmodelProjection::Independent) &&
                 sample.viewmodel==(fresh.viewmodel ? std::optional<SceneLens>(fresh.viewmodel->lens) : std::nullopt),
                 "Player committed lens sample differs from its owned scene projection.");
             if(initialized && (owner_paused || (!options.background && (!focused || !active))))lens_history.reset(sample,"paused");
@@ -3884,7 +3892,7 @@ struct PlayerWindow::Impl {
             else lens_history.reconcile(sample);
             lens_view_cut=fresh.view_cut_generation;lens_generation=fresh.presentation_generation;lens_world=fresh.world_id;
 
-            lenses=lens_history.presentation(phase,true,preference,fresh.viewmodel && fresh.viewmodel->match_world_fov);
+            lenses=lens_history.presentation(phase,true,preference);
             fresh.vertical_fov=lenses->rendered_world.vertical_fov;
             if(fresh.viewmodel)fresh.viewmodel->lens=*lenses->rendered_viewmodel;
         }

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -116,6 +117,7 @@ struct SceneLens {
     friend bool operator==(const SceneLens&,const SceneLens&)=default;
 };
 enum class CameraDrawMode { Viewmodel, Hidden };
+enum class ViewmodelProjection { Independent, MatchWorldFov, WorldDepth };
 struct CameraDrawBinding {
     std::string camera;
     CameraDrawMode mode=CameraDrawMode::Viewmodel;
@@ -139,10 +141,12 @@ struct SceneObject {
 struct SceneViewmodel {
     SceneLens lens;
     std::vector<SceneObject> objects;
-    bool match_world_fov=false;
+    ViewmodelProjection projection=ViewmodelProjection::Independent;
 
-    SceneLens effective_lens(double world_fov) const {
-        return {match_world_fov ? world_fov : lens.vertical_fov,lens.near_plane,lens.far_plane};
+    SceneLens effective_lens(SceneLens world) const {
+        if(projection==ViewmodelProjection::WorldDepth)return world;
+        return {projection==ViewmodelProjection::MatchWorldFov ? world.vertical_fov : lens.vertical_fov,
+            lens.near_plane,lens.far_plane};
     }
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
@@ -173,6 +177,13 @@ struct SceneSnapshot {
     std::optional<double> authored_vertical_fov;
     // Opt-in receipt of actual prepared camera and foreground matrices.
     bool camera_pose_receipt=false;
+
+    SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
+    std::span<const SceneObject> world_viewmodel_draws() const {
+        if(viewmodel && viewmodel->projection==ViewmodelProjection::WorldDepth)return viewmodel->objects;
+        return {};
+    }
+    std::size_t world_object_count() const { return objects.size()+world_viewmodel_draws().size(); }
 };
 struct ShadowView {
     Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0;

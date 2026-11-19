@@ -12,7 +12,8 @@
             if(const auto* pending=self.pending_entity(id)) {
                 if(pending->camera) {
                     const auto& c=*pending->camera;
-                    state=RuntimeCameraLensState{id,{c.vertical_fov,c.near_plane,c.far_plane},c.viewmodel,{c.vertical_fov,c.near_plane,c.far_plane}};
+                    state=RuntimeCameraLensState{id,{c.vertical_fov,c.near_plane,c.far_plane},c.viewmodel,
+                        {c.vertical_fov,c.near_plane,c.far_plane},c.viewmodel_projection};
                 }
             }else state=self.camera_lens(id);
             PoimaGameCameraLensStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);

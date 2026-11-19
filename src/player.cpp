@@ -49,10 +49,11 @@ RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     RendererSceneResult result{snapshot.world_id,snapshot.camera_id,snapshot.presentation_source_id,
         snapshot.revision,snapshot.presentation_generation,snapshot.material_revision,0,0,{},{},{},{}};
     result.viewmodel_clearance=snapshot.viewmodel_clearance;
-    result.camera_lens=SceneLens{snapshot.vertical_fov,snapshot.near_plane,snapshot.far_plane};
+    result.camera_lens=snapshot.world_lens();
     RendererCameraDrawResult draw;
     if(snapshot.viewmodel) {
-        draw.viewmodel_lens=snapshot.viewmodel->effective_lens(snapshot.vertical_fov);
+        draw.viewmodel_lens=snapshot.viewmodel->effective_lens(*result.camera_lens);
+        draw.viewmodel_world_depth=snapshot.viewmodel->projection==ViewmodelProjection::WorldDepth;
         for(const auto& object:snapshot.viewmodel->objects)
             draw.viewmodels.push_back({object.entity_id,object.incarnation});
     }

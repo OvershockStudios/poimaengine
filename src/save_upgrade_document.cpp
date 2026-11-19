@@ -72,9 +72,9 @@ void camera_draw_references(const Json& rows) {
         if(bag.contains("Camera")) {
             const auto& camera=bag.at("Camera");
             if(camera.contains("viewmodel"))viewmodel_lens(camera.at("viewmodel"));
-            if(camera.contains("viewmodel_match_world_fov"))
-                check(camera.contains("viewmodel") && camera.at("viewmodel_match_world_fov").is_boolean(),
-                    "Viewmodel matching requires a foreground lens and a boolean.");
+            for(const auto* option:{"viewmodel_match_world_fov","viewmodel_world_depth"})
+                if(camera.contains(option))check(camera.contains("viewmodel") && camera.at(option).is_boolean(),
+                    "Viewmodel projection and depth options require a foreground lens and boolean values.");
         }
         if(!bag.contains("CameraDraw"))continue;
         const auto& draw=bag.at("CameraDraw");keys(draw,{"camera","mode"});

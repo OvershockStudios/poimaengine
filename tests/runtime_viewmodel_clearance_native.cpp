@@ -69,6 +69,11 @@ void blocked_anchor_and_avatar_ignore(){
     const auto saved=blocked.save_snapshot(digest);const auto s=blocked.snapshot(id(1));const auto& c=result(s);
     check(c.status==ViewmodelClearanceStatus::BlockedAnchor && c.suppressed && !c.resolved && c.anchor_hit && c.anchor_hit->initial_overlap && c.suppressed_entities==std::vector<std::string>{id(2)},"Blocked anchor was hidden as a resolved clear interval.");
     check(s.viewmodel && s.viewmodel->objects.empty() && s.objects.size()==1 && blocked.save_snapshot(digest)==saved,"Blocked policy changed world geometry, lens presence or saved state.");
+    d.entities[0].camera->viewmodel_projection=ViewmodelProjection::WorldDepth;
+    Runtime shared_blocked(d);
+    const auto shared=shared_blocked.snapshot(id(1));
+    check(result(shared)==c && shared.world_viewmodel_draws().empty() && shared.world_object_count()==1,
+        "World-depth rendering could draw a blocked viewmodel.");
     d=definition(false);auto actor=node(10);actor.character=CharacterController{};actor.character->camera=id(1);d.entities[0].parent=actor.id;d.entities[0].transform.position={0,1.6,0};d.entities.push_back(actor);Runtime own(d);
     const auto own_before=own.save_snapshot(digest);const auto actual=own.snapshot(id(1));const auto& ignored=result(actual);
     check(ignored.resolved && !ignored.suppressed && ignored.status==ViewmodelClearanceStatus::Clear && ignored.ignored_entities==std::vector<std::string>{id(10)},"Native policy did not ignore its physical camera ancestor.");

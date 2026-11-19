@@ -47,7 +47,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     camera["properties"]["viewmodel_clearance"]=clearance;
     camera["properties"]["viewmodel_match_world_fov"]={{"type","boolean"},{"default",false},
         {"description","Use the effective world field of view for the foreground pass, with its own clip planes and depth."}};
-    camera["dependentRequired"]={{"viewmodel_clearance",{"viewmodel"}},{"viewmodel_match_world_fov",{"viewmodel"}}};
+    camera["properties"]["viewmodel_world_depth"]={{"type","boolean"},{"default",false},
+        {"description","Render this camera's viewmodels in the world pass, sharing projection, clip planes and depth."}};
+    camera["dependentRequired"]={{"viewmodel_clearance",{"viewmodel"}},{"viewmodel_match_world_fov",{"viewmodel"}},{"viewmodel_world_depth",{"viewmodel"}}};
     auto draw_camera=id;draw_camera["not"]={{"const",std::string(32,'0')}};
     const Json camera_draw=object_schema({{"camera",draw_camera},{"mode",{{"enum",{"viewmodel","hidden"}}}}},{"camera","mode"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -223,7 +225,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 152}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 153}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
