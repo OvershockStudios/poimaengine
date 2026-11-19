@@ -77,15 +77,24 @@ void camera_draw_references(const Json& rows) {
                     "Viewmodel projection and depth options require a foreground lens and boolean values.");
         }
         if(!bag.contains("CameraDraw"))continue;
-        const auto& draw=bag.at("CameraDraw");keys(draw,{"camera","mode"});
+        const auto& draw=bag.at("CameraDraw");
+        if(draw.contains("scene_anchored"))keys(draw,{"camera","mode","scene_anchored"});
+        else keys(draw,{"camera","mode"});
         check(draw.at("camera").is_string() && draw.at("mode").is_string(),"CameraDraw needs camera and mode strings.");
         const auto camera=draw.at("camera").get<std::string>(),mode=draw.at("mode").get<std::string>();identifier(camera,true);
         check(mode=="viewmodel" || mode=="hidden","CameraDraw mode is invalid.");
+        const auto anchored=draw.value("scene_anchored",Json(false));
+        check(anchored.is_boolean() && (anchored==false || mode=="viewmodel"),
+            "Scene-anchored CameraDraw requires a Boolean and viewmodel mode.");
         check(int(bag.contains("MeshRenderer"))+int(bag.contains("StaticMesh"))+int(bag.contains("SkinnedMesh"))==1,"CameraDraw requires exactly one drawable.");
         check(rows.contains(camera) && rows.at(camera).at("components").contains("Camera"),"CameraDraw needs a local Camera.");
         check(++counts[{camera,mode}]<=32,"CameraDraw count exceeds 32 per mode per camera, invisible included.");
         if(mode=="viewmodel") {
             check(rows.at(camera).at("components").at("Camera").contains("viewmodel"),"Viewmodel CameraDraw requires a lens.");
+            if(anchored.get<bool>()) {
+                check(id!=camera,"A Camera cannot be its own viewmodel.");
+                continue;
+            }
             auto ancestor=entity.at("parent").is_null() ? std::string{} : entity.at("parent").get<std::string>();
             while(!ancestor.empty() && ancestor!=camera) {
                 const auto& parent=rows.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : parent.get<std::string>();

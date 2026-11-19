@@ -630,11 +630,15 @@ ViewmodelProjection viewmodel_projection_value(const Json& camera) {
     return ViewmodelProjection::Independent;
 }
 CameraDrawBinding camera_draw_value(const Json& value) {
-    fields(value,{"camera","mode"},{"camera","mode"});
+    fields(value,{"camera","mode","scene_anchored"},{"camera","mode"});
     const auto camera=identifier(value.at("camera"));require(camera!=std::string(32,'0'),"CameraDraw camera cannot be zero.");
     require(value.at("mode").is_string() && (value.at("mode")=="viewmodel" || value.at("mode")=="hidden"),
         "CameraDraw mode must be viewmodel or hidden.");
-    return {camera,value.at("mode")=="viewmodel" ? CameraDrawMode::Viewmodel : CameraDrawMode::Hidden};
+    const auto anchored=value.value("scene_anchored",Json(false));
+    require(anchored.is_boolean() && (anchored==false || value.at("mode")=="viewmodel"),
+        "Scene-anchored CameraDraw requires a Boolean and viewmodel mode.");
+    return {camera,value.at("mode")=="viewmodel" ? CameraDrawMode::Viewmodel : CameraDrawMode::Hidden,
+        anchored.get<bool>()};
 }
 void camera_draw_references(const Json& entities) {
     std::map<std::pair<std::string,CameraDrawMode>,std::size_t> counts;
@@ -648,6 +652,10 @@ void camera_draw_references(const Json& entities) {
         require(++counts[{binding.camera,binding.mode}]<=32,"CameraDraw permits at most 32 bindings per mode per camera, including invisible meshes.");
         if(binding.mode==CameraDrawMode::Viewmodel) {
             require(entities.at(binding.camera).at("components").at("Camera").contains("viewmodel"),"Viewmodel CameraDraw requires a configured camera lens.");
+            if(binding.scene_anchored) {
+                require(id!=binding.camera,"A Camera cannot be its own viewmodel.");
+                continue;
+            }
             auto ancestor=entity.at("parent").is_null() ? std::string{} : identifier(entity.at("parent"));
             while(!ancestor.empty() && ancestor!=binding.camera) {
                 const auto& parent=entities.at(ancestor).at("parent");ancestor=parent.is_null() ? std::string{} : identifier(parent);

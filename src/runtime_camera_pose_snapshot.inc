@@ -49,13 +49,8 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
         const auto& node=impl_->registry.get<Node>(e);
         if(const auto* light=impl_->registry.try_get<Light>(e))append_light(result.lighting,node.id,*light,matrix(node.id));
         if(const auto* environment=impl_->registry.try_get<LightingEnvironment>(e)) {result.lighting.environment=*environment;result.lighting.preview=false;}
-        if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(e);mesh && mesh->visible) {
-            result.objects.push_back({node.id,matrix(node.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
-                impl_->animations->skin(node.id,matrix),1,mesh->cast_shadows,mesh->receive_shadows,true,
-                impl_->topology->definitions.at(node.id).camera_draw});
-            auto& object=result.objects.back();
-            if(object.camera_draw && object.camera_draw->mode==CameraDrawMode::Viewmodel)object.cast_shadows=false;
-        }
+        if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(e);mesh && mesh->visible)
+            result.objects.push_back(impl_->drawable(e,*mesh,&worlds));
     }
     finalize_lighting(result.lighting);
     select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_projection);

@@ -27,7 +27,7 @@ RECIPES = (
 WITNESSES = ((192, 120), (72, 120), (142, 92))
 
 
-def configure(owner, mode):
+def configure(owner, mode, scene_anchored):
     schema = owner.rpc('world.describe', dict(view='component', name='Camera'))['components']['Camera']
     depth = schema['properties']['viewmodel_world_depth']
     assert depth['type'] == 'boolean' and depth['default'] is False
@@ -53,13 +53,26 @@ def configure(owner, mode):
                    mass=.6, friction=.5, restitution=0)))]
     for identity, position, scale, color in RECIPES:
         bound = mode != 'reference' and identity in (HAND, PROP)
-        ops.extend([dict(op='entity.create', id=identity, name='Depth witness', parent=CAMERA if bound else None),
+        ops.extend([dict(op='entity.create', id=identity, name='Depth witness',
+                         parent=CAMERA if bound and not scene_anchored else None),
                     native.component(identity, 'Transform', transform(position, scale=scale)),
                     native.component(identity, 'StaticMesh', dict(asset=asset, primitive=0, visible=True, cast_shadows=False)),
                     native.component(identity, 'PbrMaterial', dict(base_color=[0,0,0], emissive=color,
                         metallic=0, roughness=1, double_sided=True))])
         if bound:
-            ops.append(native.component(identity, 'CameraDraw', dict(camera=CAMERA, mode='viewmodel')))
+            draw = dict(camera=CAMERA, mode='viewmodel')
+            if scene_anchored:
+                draw['scene_anchored'] = True
+            ops.append(native.component(identity, 'CameraDraw', draw))
+    if scene_anchored and mode == 'depth':
+        draw = owner.rpc('world.describe', dict(view='component', name='CameraDraw'))['components']['CameraDraw']
+        assert draw['properties']['scene_anchored']['type'] == 'boolean'
+        for changes in (dict(scene_anchored=False), dict(scene_anchored=1), dict(mode='hidden')):
+            invalid = copy.deepcopy(ops)
+            for op in invalid:
+                if op.get('type')=='CameraDraw':
+                    op['value'].update(changes)
+            native.transact(owner, invalid, 0, error=-32602)
     return native.transact(owner, ops, 0)['revision']
 
 
@@ -71,6 +84,7 @@ def capture(owner, args, mode, label, released=False, **guard):
         scene_product_probes=[dict(x=x, y=y) for x,y in WITNESSES]))
     assert answer['hardware'] and answer['capture_written'] and answer['nvrhi_errors'] == 0
     diagnostics = answer['render_diagnostics']
+    assert diagnostics['lighting_path'] == args.lighting_path
     receipts = diagnostics['scene_receipts']
     observed, presented = copy.deepcopy(receipts['observed']), copy.deepcopy(receipts['presented'])
     assert receipts['submitted'] == presented
@@ -99,13 +113,14 @@ def capture(owner, args, mode, label, released=False, **guard):
 def run(args, mode):
     owner = native.Session(args.output / mode)
     try:
-        revision = configure(owner, mode)
+        revision = configure(owner, mode, args.scene_anchored)
         authored = capture(owner, args, mode, 'authored', revision=revision)
         session = uuid4().hex
         start = owner.rpc('runtime.start', dict(session_id=session, revision=revision))
         assert start['tick'] == 0
+        anchor = HAND if args.scene_anchored else CAMERA
         receipt = owner.rpc('runtime.attachment.apply', dict(session_id=session, request_id=uuid4().hex,
-            expected_tick=0, expected_structure_revision=0, commands=[dict(entity=PROP, mode='keep_world', anchor=CAMERA)]))
+            expected_tick=0, expected_structure_revision=0, commands=[dict(entity=PROP, mode='keep_world', anchor=anchor)]))
         assert receipt['tick'] == 0 and receipt['structure_revision'] == 1
         before = capture(owner, args, mode, 'held', session_id=session, tick=0, structure_revision=1)
         assert authored == before
@@ -132,11 +147,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--gpu', type=int, required=True)
     parser.add_argument('--lighting-path', choices=('forward', 'deferred'), default='forward')
+    parser.add_argument('--scene-anchored', action='store_true')
     parser.add_argument('--windows-interop', action='store_true')
     args = parser.parse_args()
     args.output.mkdir()
     native.ARGS, native.DEADLINE = args, time.monotonic() + 180
-    report = dict(passed=False, gpu=args.gpu, lighting_path=args.lighting_path, cases={}, owners=native.REPORT['owners'])
+    report = dict(passed=False, gpu=args.gpu, lighting_path=args.lighting_path, scene_anchored=args.scene_anchored,
+                  cases={}, owners=native.REPORT['owners'])
     try:
         for mode in ('reference', 'overlay', 'depth'):
             report['cases'][mode] = run(args, mode)

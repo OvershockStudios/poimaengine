@@ -108,6 +108,23 @@ int main() {
             check(failed,"Unexplained authored change accepted.");++rejected;
         };
         auto bad_target=[&](const auto& edit) {auto b=target;edit(b);reject(source,b,approved);};
+        auto anchored_source=source,anchored_target=target;
+        for(auto* document:{&anchored_source,&anchored_target}) {
+            auto& entities=(*document)["entities"];
+            entities[id('b')]["components"]["Camera"]={{"vertical_fov",60},{"near",.1},{"far",100},
+                {"viewmodel",{{"vertical_fov",48},{"near",.03},{"far",8}}}};
+            entities[id('c')]["parent"]=nullptr;
+            auto& foreground=entities[id('c')]["components"];
+            foreground["MeshRenderer"]={{"primitive","box"},{"albedo",{1,1,1}},{"visible",true}};
+            foreground["CameraDraw"]={{"camera",id('b')},{"mode","viewmodel"},{"scene_anchored",true}};
+        }
+        const auto anchored=map_authored_document(anchored_source.dump(),anchored_target.dump(),approved);
+        check(Json::parse(anchored.mapped_document).at("entities").at(id('c')).at("components").at("CameraDraw")==
+              anchored_source.at("entities").at(id('c')).at("components").at("CameraDraw"),
+              "Gameplay-only upgrade lost the authored foreground anchor.");
+        auto missing_anchor=anchored_source;
+        missing_anchor["entities"][id('c')]["components"]["CameraDraw"].erase("scene_anchored");
+        reject(missing_anchor,anchored_target,approved);
         bad_target([](Json& b){b["entities"].erase(id('c'));});
         bad_target([](Json& b){b["entities"][id('e')]=b["entities"][id('b')];});
         bad_target([](Json& b){b["entities"][id('c')]["parent"]=nullptr;});

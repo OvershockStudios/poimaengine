@@ -37,8 +37,8 @@ ordinary imported rig hierarchy. Add a CameraDraw component to **each drawable**
 Membership is explicit and is not inherited from a parent, AnimationRig or
 import wrapper. CameraDraw belongs to an entity with exactly one MeshRenderer,
 StaticMesh or SkinnedMesh. Bind imported primitive entities rather than their
-non-drawable wrapper. Each viewmodel drawable must be a strict descendant of
-its referenced Camera, and that Camera must have a viewmodel lens.
+non-drawable wrapper. The referenced Camera needs a viewmodel lens. By
+default its viewmodel drawables are strict descendants of the Camera.
 
 For a third-person body that should cast world shadows without obscuring the
 player's view, use CameraDraw with `mode:"hidden"`. A hidden body needs neither
@@ -60,6 +60,31 @@ create the camera, rig and bindings together. Removing a referenced camera,
 required lens or drawable rejects unless that transaction also repairs or
 removes its bindings. Discover the strict schemas with `world.describe` using
 `view:"component",name:"CameraDraw"` or `name:"Camera"`.
+
+### Anchor a viewmodel to the scene
+
+Add `"scene_anchored": true` to a `mode:"viewmodel"` binding to allow the
+drawable outside the selected camera's hierarchy. A Camera still needs a
+viewmodel lens and cannot select itself as a viewmodel. The flag defaults to
+false. A hidden-body binding does not use this option.
+
+Place the animation wrapper under a body or equipment anchor and author its
+ready transform in that parent's space. A rig under the character body follows
+movement and body yaw while the controller can pitch the camera independently.
+The renderer still selects the rig only for its named Game camera. Use
+[`viewmodel_world_depth`](#share-depth-with-the-world) when fingertips and
+props need the same projection and depth as the world.
+
+The rig, joints and attached items retain their ordinary committed transforms.
+Camera effects follow the authored hierarchy. The separate viewmodel effect
+and clearance profile can still adjust foreground presentation. Fit any
+camera-relative clearance capsule across the intended aim range.
+
+To preserve a reference posture when changing parents, observe the rig and
+new parent's world matrices at the same tick. Multiply the rig's world
+matrix by the inverse parent world matrix on the left. Author the resulting
+local translation, rotation and scale with the reparent in one transaction.
+Check the skinned pose during both the idle re-aim and the subsequent reach.
 
 ## Cameras and editor inspection
 
@@ -208,7 +233,10 @@ Run the [world-depth verifier](../tests/viewmodel_world_depth.py) for wall
 occlusion and the before/after render of an actual release to physics.
 It compares to ordinary world geometry at the same tick. Pass
 `--lighting-path deferred` and a fresh output directory to exercise deferred
-lighting. [Recorded results](evidence/m2-viewmodel-world-depth.json)
+lighting. Pass `--scene-anchored` to put the hand and prop in their own
+hierarchies and release the prop from the scene-anchored hand.
+[World-depth results](evidence/m2-viewmodel-world-depth.json) ·
+[Scene-anchor results](evidence/m2-scene-anchored-viewmodels.json)
 
 ```powershell
 python tests/viewmodel_world_depth.py --binary build/windows-runtime/bin/poima.exe --gpu 1 --output build/world-depth-check

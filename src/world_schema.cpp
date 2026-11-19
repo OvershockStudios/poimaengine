@@ -51,7 +51,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"description","Render this camera's viewmodels in the world pass, sharing projection, clip planes and depth."}};
     camera["dependentRequired"]={{"viewmodel_clearance",{"viewmodel"}},{"viewmodel_match_world_fov",{"viewmodel"}},{"viewmodel_world_depth",{"viewmodel"}}};
     auto draw_camera=id;draw_camera["not"]={{"const",std::string(32,'0')}};
-    const Json camera_draw=object_schema({{"camera",draw_camera},{"mode",{{"enum",{"viewmodel","hidden"}}}}},{"camera","mode"});
+    auto camera_draw=object_schema({{"camera",draw_camera},{"mode",{{"enum",{"viewmodel","hidden"}}}},
+        {"scene_anchored",{{"type","boolean"},{"default",false},
+            {"description","Keep the authored scene hierarchy independent of the selected camera's ancestry."}}}},{"camera","mode"});
+    camera_draw["if"]={{"required",{"scene_anchored"}},{"properties",{{"scene_anchored",{{"const",true}}}}}};
+    camera_draw["then"]={{"properties",{{"mode",{{"const","viewmodel"}}}}}};
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
@@ -225,7 +229,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 161}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 162}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -260,7 +264,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             "Single cooperative writer per document; manual file changes require reopening.",
             "Camera and optional complete viewmodel lens require 5..150 degree FOV and 0.001 <= near < far <= 10000000; camera world transforms must be unscaled.",
             "Optional Camera.viewmodel_clearance requires a foreground lens and a conservative local-Y capsule envelope: normalized XYZW rotation, position within10m, radius.001..10m, half_height0..10m, max_retraction.001..10m, and skin.0001..min(radius,max_retraction). Runtime presentation uses current physics after pose interpolation, ignores physical camera ancestors, retracts all foreground draws together and reports unresolved anchor/final checks with foreground suppression. Authored Scene previews do not evaluate physics clearance. Envelope containment of arbitrary meshes/animation is author-owned.",
-            "CameraDraw requires one drawable and an existing nonzero Camera reference. Viewmodels require that Camera's viewmodel lens and a strict descendant hierarchy. Hidden references need no lens or descendant relationship.",
+            "CameraDraw requires one drawable and an existing nonzero Camera reference. Viewmodels require that Camera's viewmodel lens and a strict descendant hierarchy, unless scene_anchored is true. Scene-anchored viewmodels use their own hierarchy and cannot select themselves as the camera. Hidden references need no lens or descendant relationship.",
             "CameraDraw limits count at most 32 bindings per mode per camera, including invisible meshes. Templates require local camera references. Named Game views separate viewmodels globally and hide bodies only for the target camera while retaining body shadows; external editor Scene views keep ordinary geometry. Viewmodels never cast world shadows and retain receive_shadows.",
             "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",

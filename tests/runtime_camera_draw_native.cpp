@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <span>
 #include <stdexcept>
 using namespace poima;
 namespace {
@@ -14,11 +15,11 @@ const std::string hash(64,'a');
 std::string id(unsigned n) {auto value=std::to_string(n);return std::string(32-value.size(),'0')+value;}
 void check(bool value,const char* message) {if(!value)throw std::runtime_error(message);}
 template<class F>void rejects(F&& f) {bool failed=false;try{f();}catch(const std::exception&){failed=true;}check(failed,"Invalid camera draw operation succeeded.");}
-const SceneObject& object(const std::vector<SceneObject>& objects,const std::string& entity) {
+const SceneObject& object(std::span<const SceneObject> objects,const std::string& entity) {
     const auto found=std::find_if(objects.begin(),objects.end(),[&](const auto& value){return value.entity_id==entity;});
     check(found!=objects.end(),"Expected presentation object is absent.");return *found;
 }
-bool contains(const std::vector<SceneObject>& objects,const std::string& entity) {
+bool contains(std::span<const SceneObject> objects,const std::string& entity) {
     return std::any_of(objects.begin(),objects.end(),[&](const auto& value){return value.entity_id==entity;});
 }
 RuntimeSpawnTemplate recipe();
@@ -94,6 +95,67 @@ void matched_projection() {
         physical.camera_lens(id(1))->viewmodel_projection==ViewmodelProjection::WorldDepth &&
         physical.snapshot(id(2)).world_viewmodel_draws().empty(),
         "World-depth routing changed committed optics or leaked across cameras.");
+}
+void scene_anchored_viewmodel() {
+    auto d=definition();
+    RuntimeEntityDefinition actor;actor.id=id(100);actor.character=CharacterController{};
+    actor.character->camera=id(1);
+    d.entities[0].parent=actor.id;d.entities[0].transform.position={0,1.5,0};
+    d.entities[0].camera->viewmodel_projection=ViewmodelProjection::WorldDepth;
+    auto& arm=d.entities[2];
+    arm.parent=actor.id;arm.transform.position={.15,1.35,-.8};arm.camera_draw->scene_anchored=true;
+    auto marker=d.entities[2];marker.id=id(8);marker.parent=id(1);
+    marker.transform.position={.2,-.2,-.7};marker.camera_draw->scene_anchored=false;
+    d.entities.push_back(marker);d.entities.push_back(actor);
+    RuntimeSpawnTemplate proxy;proxy.id=id(90);proxy.name="Released prop";
+    proxy.collider=BoxCollider{{.03f,.03f,.03f},BodyMotion::Dynamic};d.templates={proxy};
+
+    auto invalid=d;invalid.entities[2].camera_draw->scene_anchored=false;
+    rejects([&]{validate_runtime_camera_draw(invalid);});
+    invalid=d;invalid.entities[2].camera_draw->mode=CameraDrawMode::Hidden;
+    rejects([&]{validate_runtime_camera_draw(invalid);});
+    invalid=d;invalid.entities[0].camera->viewmodel.reset();
+    rejects([&]{validate_runtime_camera_draw(invalid);});
+    invalid=d;invalid.entities[0].mesh=RuntimeMesh{};
+    invalid.entities[0].camera_draw=CameraDrawBinding{id(1),CameraDrawMode::Viewmodel,true};
+    rejects([&]{validate_runtime_camera_draw(invalid);});
+
+    Runtime live(d);
+    const auto ready=live.snapshot(id(1));
+    RuntimeInput look;look.entity=actor.id;look.look={0,-28};
+    live.step(1,{look});
+    const auto down=live.snapshot(id(1));
+    const auto world=live.entity(id(3)).world;
+    const auto& before=object(ready.world_viewmodel_draws(),id(3)).world;
+    check(std::equal(world.begin(),world.begin()+12,before.begin()) && world[12]==before[12] && world[14]==before[14],
+        "Camera pitch rotated or laterally shifted a scene-anchored arm.");
+    check(object(down.world_viewmodel_draws(),id(3)).world==world && down.camera_world!=ready.camera_world &&
+        object(down.world_viewmodel_draws(),id(8)).world!=object(ready.world_viewmodel_draws(),id(8)).world,
+        "Committed pitch did not preserve the separate anchor hierarchies.");
+    check(!contains(live.snapshot(id(2)).objects,id(3)) && live.snapshot(id(2)).world_viewmodel_draws().empty(),
+        "Scene-anchored arm leaked into a different Game camera.");
+
+    RuntimeCameraPose effect;effect.position={.1,.03,0};
+    auto rendered=live.snapshot(id(1),effect,RuntimeCameraPose{});
+    check(object(rendered.world_viewmodel_draws(),id(3)).world==world &&
+          object(rendered.world_viewmodel_draws(),id(8)).world!=object(down.world_viewmodel_draws(),id(8)).world,
+          "Interpolated world camera effects did not respect the separate anchors.");
+    look.look={21,0};live.step(1,{look});
+    const auto turned=live.entity(id(3)).world;
+    const auto& transform=d.entities[2].transform;
+    check(turned!=world && turned==multiply(live.entity(actor.id).world,
+        local_matrix(transform.position,transform.rotation,transform.scale)),
+        "Scene-anchored wrist did not follow the body's yaw.");
+    live.change_attachments(0,{{id(3),actor.id,RuntimeAttachmentMode::KeepWorld}});
+    live.release_attachment(1,{id(3),proxy.id,{}});
+    rendered=live.snapshot(id(1),effect,RuntimeCameraPose{});
+    check(contains(rendered.objects,id(3)) && !contains(rendered.world_viewmodel_draws(),id(3)) &&
+          object(rendered.objects,id(3)).world==live.entity(id(3)).world,
+          "Interpolated camera effects routed a released prop back into the viewmodel pass.");
+    const auto saved=live.save_snapshot(hash);
+    const auto fresh=Runtime::from_snapshot(d,hash,saved);
+    check(fresh->save_snapshot(hash)==saved && contains(fresh->snapshot(id(1)).objects,id(3)),
+        "Exact restore changed released scene-anchored presentation membership.");
 }
 void graph_rejection() {
     const auto original=definition();
@@ -226,6 +288,7 @@ int main() {
         omission_and_lens();graph_rejection();invisible_bounds();selection_matrix();selection_atomicity_and_owners();
         if(!Runtime::available()) {std::cout<<"5 camera draw portable checks passed\n";return 0;}
         live_snapshots_and_adoption();weighted_pose();templates_and_restore();failed_membership_rollback();matched_projection();
-        std::cout<<"10 camera draw checks passed\n";return 0;
+        scene_anchored_viewmodel();
+        std::cout<<"11 camera draw checks passed\n";return 0;
     }catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

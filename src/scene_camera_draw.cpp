@@ -20,6 +20,8 @@ void lens(const SceneLens& value) {
 void binding(const CameraDrawBinding& value) {
     check(identity(value.camera),"CameraDraw camera must be a nonzero canonical entity ID.");
     check(value.mode==CameraDrawMode::Viewmodel || value.mode==CameraDrawMode::Hidden,"CameraDraw mode is invalid.");
+    check(!value.scene_anchored || value.mode==CameraDrawMode::Viewmodel,
+        "Scene-anchored CameraDraw requires viewmodel mode.");
 }
 }
 void validate_runtime_camera_draw(const RuntimeDefinition& definition) {
@@ -57,6 +59,10 @@ void validate_runtime_camera_draw(const RuntimeDefinition& definition) {
         check(++counts[{value.camera,value.mode}]<=32,"CameraDraw limit is 32 bindings per mode per camera including invisible drawables.");
         if(value.mode==CameraDrawMode::Viewmodel) {
             check(camera->second->camera->viewmodel.has_value(),"Viewmodel binding requires a Camera viewmodel lens.");
+            if(value.scene_anchored) {
+                check(entity.id!=value.camera,"A Camera cannot be its own viewmodel.");
+                continue;
+            }
             bool descendant=false;std::string parent=entity.parent;
             while(!parent.empty()) {
                 if(parent==value.camera) {descendant=true;break;}

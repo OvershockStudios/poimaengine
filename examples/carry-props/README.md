@@ -84,6 +84,11 @@ committed sample. Use the original grip calibration and run the steering
 verifier above with `--staged-recovery`. This uses the 0.0.273 host.
 [Imported rig and save/restore results](../../docs/evidence/m2-staged-pickup-recovery.json)
 
+With 0.0.274, the ready rig can follow the body while the aim camera pitches
+independently. Calibrate the rig under the player body and mark its foreground
+drawables with [scene-anchored CameraDraw](../../docs/VIEWMODELS.md#anchor-a-viewmodel-to-the-scene).
+Keep the camera in `CarryPropSettings.Camera` for aim queries.
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

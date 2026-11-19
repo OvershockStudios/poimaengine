@@ -1,0 +1,201 @@
+{
+  "engine_version": "0.0.274",
+  "schema_revision": 162,
+  "component": "CameraDraw.scene_anchored",
+  "scope": "A named camera selects the same foreground rendering policy for drawables with independent scene transforms. The imported ready rig was calibrated in the controller body frame. Four selected skinned pad points are compared against the same static support box through a matched scripted re-aim and retry.",
+  "linux_ctest": [
+    "authoring_api_compatibility",
+    "authoring_response_compatibility",
+    "save_upgrade_document_native",
+    "runtime_camera_draw_native",
+    "world_ui_contract",
+    "runtime_observe_contract",
+    "runtime_pose_clearance_contract",
+    "item_attachment_release_contract",
+    "item_attachment_pickup_contract",
+    "asset_references_contract"
+  ],
+  "windows_native": {
+    "camera_draw_checks": 11,
+    "authored_save_upgrade_validator": true
+  },
+  "native_mcp": {
+    "passed": true,
+    "replies": 7,
+    "authored_revision": 1,
+    "runtime_tick": 0
+  },
+  "legacy_camera_child_linux": {
+    "replies": 959,
+    "exact_retained_saves": 3,
+    "matching_steps": 90
+  },
+  "imported_linux_coreclr": {
+    "native_replies": 626,
+    "matching_step_requests": 90,
+    "exact_archive_pairs": 4,
+    "matching_camera_matrices": 57,
+    "unchanged_rig_through_ready_reaim": true,
+    "ready_reaim_camera_pitch_change_deg": 11.131517102027939,
+    "independently_sampled_skinned_pad_vertices": 4,
+    "blocked_recovery": {
+      "ticks": [
+        188,
+        209
+      ],
+      "before_overlap_ticks": 6,
+      "after_overlap_ticks": 6,
+      "before_peak_m": 0.008909801245966707,
+      "after_peak_m": 0.008909794518976631
+    },
+    "ready_reaim": {
+      "ticks": [
+        210,
+        222
+      ],
+      "before_overlap_ticks": 7,
+      "after_overlap_ticks": 0,
+      "before_peak_m": 0.04006395186400887,
+      "after_peak_m": 0
+    },
+    "active_retry_approach": {
+      "ticks": [
+        223,
+        239
+      ],
+      "before_overlap_ticks": 15,
+      "after_overlap_ticks": 13,
+      "before_peak_m": 0.03984538806739698,
+      "after_peak_m": 0.027431564365909065
+    },
+    "pickup": {
+      "tick": 240,
+      "gaps_m": [
+        0.0009122742896413168,
+        0.003234648260524882,
+        0.0021632884448829323,
+        0.0005902280612386094
+      ]
+    },
+    "native_vulkan_frames": []
+  },
+  "imported_windows_native_aot": {
+    "native_replies": 642,
+    "matching_step_requests": 90,
+    "exact_archive_pairs": 4,
+    "matching_camera_matrices": 57,
+    "unchanged_rig_through_ready_reaim": true,
+    "ready_reaim_camera_pitch_change_deg": 11.131517102027939,
+    "independently_sampled_skinned_pad_vertices": 4,
+    "blocked_recovery": {
+      "ticks": [
+        188,
+        209
+      ],
+      "before_overlap_ticks": 6,
+      "after_overlap_ticks": 6,
+      "before_peak_m": 0.00890979729729243,
+      "after_peak_m": 0.008909798031325265
+    },
+    "ready_reaim": {
+      "ticks": [
+        210,
+        222
+      ],
+      "before_overlap_ticks": 7,
+      "after_overlap_ticks": 0,
+      "before_peak_m": 0.04006395186400887,
+      "after_peak_m": 0
+    },
+    "active_retry_approach": {
+      "ticks": [
+        223,
+        239
+      ],
+      "before_overlap_ticks": 15,
+      "after_overlap_ticks": 13,
+      "before_peak_m": 0.03984538714424587,
+      "after_peak_m": 0.02743156350658956
+    },
+    "pickup": {
+      "tick": 240,
+      "gaps_m": [
+        0.0009122742896416068,
+        0.0032346482605249897,
+        0.002163288444883178,
+        0.0005902280612385789
+      ]
+    },
+    "native_vulkan_frames": [
+      {
+        "tick": 188,
+        "digest": "6c76c89a8b4c2a5cdf739c0f3519d7b89788c98a65af85113bfcaf006333da5a",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 194,
+        "digest": "023bd024668ace800469749ac3e2d089ea02e889ecf6dc28616152213960d00a",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 209,
+        "digest": "5d607ef92c2817871965126ae0dc28bb28f01dc432cfda3f0a4d3fc6ce2c886a",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 216,
+        "digest": "485c6415adbb22653d693ce04bc226e47356a211b89a4426a4ec7d2525677f22",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 222,
+        "digest": "ebe6028e698d9030945330810469d05164cf2f4d05accdff4895f8e1372d4100",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 231,
+        "digest": "7731d63e84a445c5d8cf8219dd1880184aa0e49de8fc95f767513f5bbc113e7b",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 239,
+        "digest": "2b4ac493f991cad22d8a75bf4c5c13d9d6e4b1cbc65164d6983e53712bb52106",
+        "selected_draws": 1,
+        "shared_depth": true
+      },
+      {
+        "tick": 240,
+        "digest": "26b269dcbcb3254dfca00f6d806a72cdd66d542e91c9026c7b9c60d07c6eee45",
+        "selected_draws": 3,
+        "shared_depth": true
+      }
+    ]
+  },
+  "windows_vulkan_forward": {
+    "lighting_path": "forward",
+    "native_replies": 39,
+    "matching_scene_depth": [
+      0.902863621711731,
+      0.8872509002685547,
+      0.9175843000411987
+    ],
+    "matched_world_reference_bmp_sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583"
+  },
+  "windows_vulkan_deferred": {
+    "lighting_path": "deferred",
+    "native_replies": 39,
+    "matching_scene_depth": [
+      0.902863621711731,
+      0.8872509002685547,
+      0.9175843000411987
+    ],
+    "matched_world_reference_bmp_sha256": "4782477d46f8b6d7978909eb4a756a7ca80b92f093a033a8af5fd3633604e583"
+  },
+  "limit": "The initial blocked fallback and active retry still produce some sampled hand overlap. This does not add dynamic hand collision or guarantee clearance throughout arbitrary camera and player motion."
+}

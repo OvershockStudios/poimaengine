@@ -121,6 +121,7 @@ enum class ViewmodelProjection { Independent, MatchWorldFov, WorldDepth };
 struct CameraDrawBinding {
     std::string camera;
     CameraDrawMode mode=CameraDrawMode::Viewmodel;
+    bool scene_anchored=false;
 };
 struct SceneObject {
     std::string entity_id;

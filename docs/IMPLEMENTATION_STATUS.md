@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.273**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.274**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.274 adds [scene-anchored viewmodels](VIEWMODELS.md#anchor-a-viewmodel-to-the-scene).
+A first-person rig can follow the player's body while the camera pitches
+independently. The selected camera still owns foreground visibility, lens
+and depth policy. In the imported replay, four sampled fingertips stayed
+clear during an 11° idle re-aim that previously produced up to 40 mm of
+overlap. The later active reach still produces some overlap and completes
+the pickup on the same tick. [Results](evidence/m2-scene-anchored-viewmodels.json)
 
 Version 0.0.273 adds [committed pose clearance](POSE_CLEARANCE.md). Agents can
 check up to sixteen joint or local-offset capsules in one guarded read. The
