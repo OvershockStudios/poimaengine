@@ -41,6 +41,7 @@ independent gameplay, save continuation, and standalone Windows checks.
 ## Credits and license
 
 Created and architected by Divesh Gupta ([Legendile7](https://github.com/Legendile7)),
-publishing as Overshock Studios. Implemented with Codex, including GPT-6-Astra.
+publishing as Overshock Studios. Built with GPT-6 Astra, GPT-6 Sol, GPT-6.2 Astra,
+GPT-6.2 Sol, and Claude Opus 5.5.
 
 [Apache-2.0](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md) · [Branding notice](TRADEMARKS.md)
