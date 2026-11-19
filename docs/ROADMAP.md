@@ -176,6 +176,10 @@ readable action/camera motion and visible legs. The local camera should see the
 legs follow the same stance, gait and contacts as the world body as the player
 looks down, turns, steps or crouches. Keep the world body’s silhouette, shadows,
 and interactions coherent while allowing separate framing of hands and equipment.
+Support joint-local authoring and inspection through the wrists, palms, thumbs
+and individual finger segments. Use arm and hand IK with explicit item contact
+targets, joint limits and authored changes of grip for reloads, drawing and
+releasing a bowstring, and other precise hand interactions.
 Third-person checks additionally cover support transitions, pelvis and torso
 weight shifts, joint motion, clothing and equipment follow-through at gameplay
 distance. Use licensed capture or performance reference for comparable starts,

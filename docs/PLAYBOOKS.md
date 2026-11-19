@@ -147,6 +147,11 @@ In first person, verify the static rest and equipped poses before adding motion.
 Check the arm roots, wrist and palm transforms, hand-to-prop grip and viewmodel
 clearance from the player camera and from front, side and top. Then replay the
 action at normal speed, including interruption, recovery and camera motion.
+For a multi-step grip, record which hand or socket owns the item and where each
+hand should touch it at each phase. Compare requested and achieved wrist, palm
+and finger positions in item space. Check the fingers for clipping and the elbow
+for flips as the hand lets go, reaches and regrips. Use a complete reload and a
+bow draw and release as separate checks when qualifying these capabilities.
 For a visible first-person body, inspect look-down views during standing,
 crouching, stepping and turning. Check leg placement against actual ground and
 keep the local camera clear of the head and overlapping foreground meshes.
