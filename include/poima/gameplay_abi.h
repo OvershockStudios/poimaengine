@@ -641,6 +641,9 @@ typedef struct PoimaGameItemAttachmentOutcomeV2 {
     double position_error_m,position_limit_m,rotation_error_deg,rotation_limit_deg,distance_m,distance_limit_m;
     uint32_t rotation_available,reserved;
 } PoimaGameItemAttachmentOutcomeV2;
+/* item_attachment_pickup_v1 uses PoimaGameItemAttachmentCommandV3 at
+ * version 6 with mode KeepWorld0. A successful sampled transfer retires the
+ * item's active release body. Read the result with the version-2 outcome. */
 /* item_attachment_release_v1 uses attachment_set version 5 and
  * attachment_get version 3. The collision result is sampled on the
  * committed tick. Status: Absent0, Released1, Blocked2. The anchor is the

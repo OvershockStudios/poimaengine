@@ -17,9 +17,9 @@ GAME = 'Poima.Tests.AttachmentSurfaceGame'
 FEATURES = {'baseline_v7', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1'}
 
 
-def parameters(parser):
+def parameters(parser, *, output_required=True):
     parser.add_argument('--binary',type=Path,required=True)
-    parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--output',type=Path,required=output_required)
     parser.add_argument('--windows-interop',action='store_true')
     parser.add_argument('--hostfxr',type=Path)
     parser.add_argument('--bridge',type=Path)

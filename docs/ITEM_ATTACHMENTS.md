@@ -37,6 +37,7 @@ items in one transaction.
 | `keep_world` | Retains the item's current world matrix and derives its offset from the new anchor. Set `anchor` to null to hold the item in world space. |
 | `snap` | Requires an anchor and a complete `offset` with `position` in metres, a normalized XYZW `rotation`, and positive XYZ `scale`. Composes the offset with the anchor. A nonmatching socket produces a deliberate snap. |
 | `reset` | Supply only `entity` and `mode`. Restores the active item's authored parent and local transform. |
+| `pickup` | Requires a released item, a live receiving anchor and sampled contact. Preserves the item pose and retires the release body in the same transaction. |
 
 All commands take effect together at the requested tick. If a command follows
 another item that moves in the transaction, it uses that item's new anchor
@@ -269,11 +270,9 @@ window.
 
 `runtime.attachment.inspect` shows `released: true` and the body anchor.
 Save and load keep the active release, body identities, contacts and
-sleep state together. To reclaim the item, transfer it to the holder
-with `keep_world` or `snap`, then despawn the former proxy with
-`runtime.structure.transact`. The engine rejects despawning the proxy
-while it still anchors the released prop. Gameplay save upgrades currently
-reject the joined physical snapshot format.
+sleep state together. Use [pickup](#pick-up-a-released-item) to reclaim
+the item and retire its proxy. Gameplay save upgrades currently reject
+the joined physical snapshot format.
 
 Run the [release fixture](../tests/item_attachment_release.py) with a new
 output directory:
@@ -326,6 +325,55 @@ The named feature is `item_attachment_release_v1`. It uses the existing
 version 3 result. `GetItemTransferOutcome` reports only transfer results.
 Prerequisites and commands are in the
 [compiled release fixture](../tests/fixtures/item_attachment_release_gameplay/README.md).
+
+## Pick up a released item
+
+Read the release with `runtime.attachment.inspect`. Use the item ID in
+`runtime.attachment.apply` with mode `pickup`. The current binding identifies
+the body's ownership. Include the receiving anchor, explicit alignment limits
+and 1–8 [surface probes](#require-contact-at-sampled-points) from the reaching
+hand or tool to the released prop. The item keeps the world pose it reached on
+that tick and returns to its authored draw scope. The proxy retires in the
+same structure revision.
+
+```json
+{
+  "entity": "30000000000000000000000000000001",
+  "mode": "pickup",
+  "anchor": "30000000000000000000000000000002",
+  "contact": {
+    "position_limit_m": 0.015,
+    "rotation_limit_deg": 5,
+    "surface": [{
+      "source": {"entity": "a0000000000000000000000000000012", "vertex": 24},
+      "target": {"entity": "30000000000000000000000000000001", "triangles": [12, 13]},
+      "distance_limit_m": 0.005
+    }]
+  }
+}
+```
+
+Use the actual guard measurements to tune the reach. A direct contact miss
+returns `-32040` with the failed frame or surface witness. A body that still
+has live strong references blocks retirement. Move any dependent attachment
+bindings in the same direct transaction and clear any component or gameplay
+state references to the old proxy before requesting pickup. The engine keeps
+the whole original state when validation fails. An exact successful retry
+replays its receipt.
+
+From C# gameplay, implement `IItemAttachmentPickupGame` and call
+`context.AttemptItemPickup(item, receivingHand, contact, probes)` during
+`Tick`. Use `GetItemTransferOutcome(item)` on the next callback. A contact
+miss advances the tick while keeping the prop in the world. Successful pickup
+reports `Transferred`. Invalid requests roll back the step batch. Saves
+requested on the pickup tick preserve the result and the new holder.
+
+The named feature is `item_attachment_pickup_v1`. It uses version 6 of the
+existing 272-byte sampled command, the 120-byte transfer outcome and the
+epoch-7 528-byte service table. The
+[pickup fixture](../tests/fixtures/item_attachment_pickup_gameplay/README.md)
+checks a dynamic drop, contact rejection, collision retirement, and exact
+continuation after cold load.
 
 ## Observe and restore
 

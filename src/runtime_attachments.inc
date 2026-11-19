@@ -186,7 +186,7 @@
         }
         attachment_graph=graph->bindings.empty() ? nullptr : std::move(graph);
     }
-    void change_attachments(std::uint64_t expected,std::span<const RuntimeAttachmentCommand> commands,
+    RuntimeStructureResult change_attachments(std::uint64_t expected,std::span<const RuntimeAttachmentCommand> commands,
         std::size_t* tick_checks=nullptr,bool recover_miss=false) {
         require(expected==structure_revision && structure_revision<9007199254740991ULL,
             "Attachment structure revision is stale or exhausted.");
@@ -194,13 +194,17 @@
         auto graph=std::make_shared<AttachmentGraph>();
         if(attachment_graph)graph->bindings=attachment_graph->bindings;
         std::set<std::string> seen,keep;
+        std::vector<std::string> retired_bodies;
+        std::map<std::string,Matrix4> pickup_poses;
         AttachmentContacts contacts;
         std::size_t surface_pairs=0;
         for(const auto& command:commands) {
-            (void)find(command.entity);
+            const auto e=find(command.entity);
             require(seen.insert(command.entity).second,"Duplicate attachment item in one transaction.");
+            const bool pickup=command.mode==RuntimeAttachmentMode::Pickup;
+            if(pickup)require(command.contact && !command.contact->surface.empty(),"Pickup requires sampled surface contact.");
             if(command.contact) {
-                require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
+                require((pickup || command.mode==RuntimeAttachmentMode::KeepWorld) && !command.anchor.empty(),
                     "Attachment contact requires a live keep-world destination anchor.");
                 const auto count=command.contact->surface.size();
                 require(count<=max_attachment_surface_probes && count<=max_surface_pairs-surface_pairs,
@@ -214,7 +218,15 @@
                     require(graph->bindings.erase(command.entity)==1,"Reset requires an active attachment item.");
                     break;
                 case RuntimeAttachmentMode::KeepWorld:
+                case RuntimeAttachmentMode::Pickup:
                     require(!command.offset,"Keep-world computes its own attachment offset.");
+                    if(pickup) {
+                        const auto* dropped=attachment(attachment_graph.get(),command.entity);
+                        require(dropped && dropped->released,"Pickup requires an active released item.");
+                        require(command.anchor!=dropped->anchor,"Pickup cannot use the body it retires as a holder.");
+                        retired_bodies.push_back(dropped->anchor);
+                        pickup_poses.emplace(command.entity,registry.get<Node>(e).world);
+                    }
                     graph->bindings[command.entity]={command.anchor,identity_matrix()};
                     keep.insert(command.entity);
                     break;
@@ -232,5 +244,15 @@
             }
         }
         publish_attachment_transforms(std::move(graph),keep,contacts,tick_checks,recover_miss);
-        ++structure_revision;
+        if(retired_bodies.empty())return {++structure_revision,{}};
+        // The enclosing owner transaction retains the original graph and live
+        // physics until topology retirement and strong-reference checks succeed.
+        auto result=publish_structure(expected,{},retired_bodies);
+        for(const auto& [id,before]:pickup_poses) {
+            const auto& after=registry.get<Node>(find(id)).world;
+            for(std::size_t i=0;i<after.size();++i)
+                require(std::abs(after[i]-before[i])<=1e-8*std::max(1.,std::abs(before[i])),
+                    "Pickup could not preserve the current item matrix after retiring its body.");
+        }
+        return result;
     }

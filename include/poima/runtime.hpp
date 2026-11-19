@@ -60,7 +60,7 @@ public:
         : std::runtime_error("A surface probe is outside the item attachment contact limit."),contact(std::move(report)) {}
     RuntimeAttachmentSurfaceReport contact;
 };
-enum class RuntimeAttachmentMode { KeepWorld, Snap, Reset };
+enum class RuntimeAttachmentMode { KeepWorld, Snap, Reset, Pickup };
 struct RuntimeAttachmentCommand {
     std::string entity,anchor;
     RuntimeAttachmentMode mode=RuntimeAttachmentMode::KeepWorld;

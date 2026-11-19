@@ -71,10 +71,12 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_recovery_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_release_feature));
+    std::erase(old_attachment_host.features,std::string(item_attachment_pickup_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
-    auto before_release=capable;std::erase(before_release.features,std::string(item_attachment_release_feature));
+    auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
+    auto before_release=before_pickup;std::erase(before_release.features,std::string(item_attachment_release_feature));
     auto release=attachment;release.features.push_back(item_attachment_release_feature);
     check(compatibility_error(release,capable).empty() && compatibility_error(attachment,before_release).empty() &&
         !compatibility_error(release,before_release).empty(),"Item release needs its named capability at the same extent.");
@@ -92,6 +94,12 @@ void policy() {
     auto recovery=surface;recovery.features.push_back(item_attachment_recovery_feature);
     check(compatibility_error(recovery,capable).empty() && compatibility_error(surface,original_surface).empty() &&
         !compatibility_error(recovery,original_surface).empty(),"Recoverable transfers must negotiate version 4.");
+    auto pickup=recovery;pickup.features.push_back(item_attachment_pickup_feature);
+    check(compatibility_error(pickup,capable).empty() && compatibility_error(recovery,before_pickup).empty() &&
+        !compatibility_error(pickup,before_pickup).empty(),"Pickup must negotiate version 6 at the same extent.");
+    auto pickup_without_recovery=pickup;std::erase(pickup_without_recovery.features,std::string(item_attachment_recovery_feature));
+    check(!compatibility_error(pickup_without_recovery,capable).empty() &&
+        !compatibility_error(baseline,pickup_without_recovery).empty(),"Pickup requires recovery.");
     auto recovery_without_surface=recovery;std::erase(recovery_without_surface.features,std::string(item_attachment_surface_feature));
     check(!compatibility_error(recovery_without_surface,capable).empty() &&
         !compatibility_error(baseline,recovery_without_surface).empty(),"Grip recovery needs the surface feature.");

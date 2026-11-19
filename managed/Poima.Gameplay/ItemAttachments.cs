@@ -18,6 +18,9 @@ public interface IItemAttachmentRecoveryGame : IItemAttachmentSurfaceGame { }
 /// <summary>Opts into release to world physics and reading the committed result.</summary>
 public interface IItemAttachmentReleaseGame : IItemAttachmentGame { }
 
+/// <summary>Opts into checked pickups that retire a released item's collision body.</summary>
+public interface IItemAttachmentPickupGame : IItemAttachmentRecoveryGame { }
+
 /// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
 public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
 {
@@ -298,6 +301,15 @@ public readonly unsafe ref partial struct GameContext
     {
         RequireFeature(GameplayRequiredFeatures.ItemAttachmentRecovery,nameof(IItemAttachmentRecoveryGame));
         StageSampledTransfer(item,anchor,contact,probes,4);
+    }
+
+    /// <summary>Pick up a released item if the final grip reaches it this tick.
+    /// A successful pickup retires the release body with the transfer.</summary>
+    public void AttemptItemPickup(EntityId item, EntityId anchor, ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentPickup,nameof(IItemAttachmentPickupGame));
+        StageSampledTransfer(item,anchor,contact,probes,6);
     }
 
     private void StageSampledTransfer(EntityId item, EntityId anchor, ItemAttachmentContact contact,

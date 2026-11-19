@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 150}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 151}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -276,7 +276,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"command_bytes",128},{"state_bytes",64},{"contact_feature","item_attachment_contact_v1"},{"contact_command_bytes",256},{"surface_feature","item_attachment_surface_v1"},
         {"surface_command_bytes",272},{"surface_probe_bytes",88},{"recovery_feature","item_attachment_recovery_v1"},
         {"recovery_command_version",4},{"outcome_bytes",120},{"release_feature","item_attachment_release_v1"},
-        {"release_command_version",5},{"release_command_bytes",152},{"release_outcome_version",3},{"release_outcome_bytes",80},{"max_surface_probes",max_attachment_surface_probes},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},
+        {"release_command_version",5},{"release_command_bytes",152},{"release_outcome_version",3},{"release_outcome_bytes",80},
+        {"pickup_feature","item_attachment_pickup_v1"},{"pickup_command_version",6},{"pickup_command_bytes",272},
+        {"max_surface_probes",max_attachment_surface_probes},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},
         {"reads","Committed attachment before the current tick's movement."},
         {"writes","Tick-only. Apply after final animation and physics, before committing the tick and servicing gameplay saves."}};
     result["gameplay_camera_poses"]={{"feature","camera_pose_v1"},{"services_abi",7},{"services_bytes",392},
@@ -493,17 +495,21 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"surface",{{"type","array"},{"minItems",1},{"maxItems",max_attachment_surface_probes},{"items",guarded_pair},
             {"description","At most 32 probes and 32768 target triangle checks across the batch."}}}},
         {"position_limit_m","rotation_limit_deg"});
+    auto pickup_contact=attachment_contact;
+    pickup_contact["required"].push_back("surface");
     const auto attachment_command=Json{{"oneOf",Json::array({
         object_schema({{"entity",id},{"mode",{{"const","keep_world"}}},{"anchor",parent}},{"entity","mode","anchor"}),
         object_schema({{"entity",id},{"mode",{{"const","keep_world"}}},{"anchor",id},{"contact",attachment_contact}},
             {"entity","mode","anchor","contact"}),
         object_schema({{"entity",id},{"mode",{{"const","snap"}}},{"anchor",id},{"offset",transform}},{"entity","mode","anchor","offset"}),
-        object_schema({{"entity",id},{"mode",{{"const","reset"}}}},{"entity","mode"})})}};
+        object_schema({{"entity",id},{"mode",{{"const","reset"}}}},{"entity","mode"}),
+        object_schema({{"entity",id},{"mode",{{"const","pickup"}}},{"anchor",id},{"contact",pickup_contact}},
+            {"entity","mode","anchor","contact"})})}};
     methods["runtime.attachment.apply"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
         {"expected_structure_revision",rev},{"commands",{{"type","array"},{"minItems",1},
             {"maxItems",max_runtime_attachments},{"items",attachment_command}}}},
         {"session_id","request_id","expected_tick","expected_structure_revision","commands"});
-    methods["runtime.attachment.apply"]["description"]="Atomically transfer ordinary visual items to live anchors, hold their current world matrices, or restore authored hierarchy. Keep-world preserves the item at handoff and may use null to hold it in world space. Optional frame and surface contact limits with a live anchor reject a missed grip before publication. Snap uses the supplied local transform. Increments the structure revision without advancing time. Outside runtime-game-session v1.";
+    methods["runtime.attachment.apply"]["description"]="Atomically transfer ordinary visual items to live anchors, hold their current world matrices, or restore authored hierarchy. Keep-world preserves the item at handoff and may use null to hold it in world space. Optional frame and surface contact limits with a live anchor reject a missed grip before publication. Snap uses the supplied local transform. Pickup requires an active released item and sampled contact; on success it rebinds the item and retires its release body together. Increments the structure revision without advancing time. Outside runtime-game-session v1.";
     methods["runtime.attachment.release"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
         {"expected_structure_revision",rev},{"item",id},{"body_template",id},{"body_in_item",frame_offset},
         {"linear_velocity_m_s",pose_vector(3,100)},{"angular_velocity_rad_s",pose_vector(3,20)}},

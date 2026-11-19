@@ -94,4 +94,11 @@ class PhysicalRequirements(unittest.TestCase):
         self.assertEqual(self.read(value),value)
         with self.assertRaises(ValueError):
             self.read(dict(value,features=[name for name in features if name!='item_attachment_v1']))
+    def test_pickup_requires_recoverable_sampled_transfer(self):
+        features=['baseline_v7','item_attachment_v1','item_attachment_contact_v1',
+                  'item_attachment_surface_v1','item_attachment_recovery_v1','item_attachment_pickup_v1']
+        value=dict(self.baseline,services_bytes=528,features=features)
+        self.assertEqual(self.read(value),value)
+        with self.assertRaises(ValueError):
+            self.read(dict(value,features=[name for name in features if name!='item_attachment_recovery_v1']))
 if __name__=='__main__':unittest.main()

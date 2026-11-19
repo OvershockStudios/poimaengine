@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.259**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.260**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.260 supports [sampled pickup](ITEM_ATTACHMENTS.md#pick-up-a-released-item)
+through the native service and C#. A valid grip keeps the prop's pose and
+retires the release collider in one transaction. A missed grip can keep
+gameplay running with the prop in the world. [Native and compiled checks](evidence/m2-item-attachment-pickup.json)
+cover retirements, collision queries, save continuation and Windows Vulkan
+visibility before and after pickup. A relocated Windows bundle runs the
+same Native AOT drop and pickup and restores the completed checkpoint.
 
 Version 0.0.259 connects [held-item release to C# gameplay](ITEM_ATTACHMENTS.md#release-from-c-gameplay).
 A blocked box reports the obstruction and leaves the item with its current

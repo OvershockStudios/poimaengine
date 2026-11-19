@@ -196,7 +196,7 @@
             }
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
-                ((source->version==3 || source->version==4) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3))) &&
+                ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3))) &&
                 source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;
@@ -242,7 +242,12 @@
                     std::memcpy(&sampled,source,sizeof(sampled));
                     contact.surface=self.game_surface_probes(sampled);
                 }
-                command.recover_miss=source->version==4;
+                if(source->version==6) {
+                    require(self.game->requires_item_attachment_pickup(),
+                        "Gameplay must declare item_attachment_pickup_v1 to stage a pickup.");
+                    command.mode=RuntimeAttachmentMode::Pickup;
+                }
+                command.recover_miss=source->version==4 || source->version==6;
                 require(!command.recover_miss || self.game->requires_item_attachment_recovery(),
                     "Gameplay must declare item_attachment_recovery_v1 to stage a recoverable transfer.");
                 command.contact=std::move(contact);

@@ -20,7 +20,7 @@ KNOWN_FEATURES = frozenset((
     'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1',
     'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1',
     'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'physical_recovery_v1', 'item_attachment_v1',
-    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'navigation_query_v1'))
+    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'navigation_query_v1'))
 NAVIGATION = 'navigation_query_v1'
 
 
@@ -64,7 +64,7 @@ def canonical(header):
     refs = ['baseline_feature', *re.findall(r'result\.features\.push_back\(([a-z_]+)\);', body)]
     need(len(refs) == len(set(refs)) and all(name in symbols for name in refs), 'Canonical native feature symbols are incomplete or duplicated.')
     features = [symbols[name] for name in refs]
-    need(set(features) == KNOWN_FEATURES and len(features) == 29 and refs.count('navigation_feature') == 1,
+    need(set(features) == KNOWN_FEATURES and len(features) == 30 and refs.count('navigation_feature') == 1,
          'Known native availability feature contract changed.')
     extents = re.findall(r'result\.services_bytes=([a-z_]+);', body)
     need(extents and extents[-1] == 'item_attachment_services_bytes' and all(name in numbers for name in extents),
@@ -125,7 +125,7 @@ def self_test(header, cmake, stale_runtime=None):
         generated = copy.deepcopy(seed);generated['features']['navigation'] = navigation
         generated.update(generated_fields(cmake, navigation))
         result = validate(generated, header)
-        need(result['feature_count'] == (29 if navigation else 28), 'Generated descriptor has the wrong feature count.')
+        need(result['feature_count'] == (30 if navigation else 29), 'Generated descriptor has the wrong feature count.')
         cases += 1
     good = copy.deepcopy(seed);good.update(generated_fields(cmake, False))
     def reject(value):
@@ -138,13 +138,14 @@ def self_test(header, cmake, stale_runtime=None):
         raise AssertionError('Invalid descriptor was accepted.')
     old_496 = copy.deepcopy(good)
     old_496['gameplay_services_bytes'] = 496
-    for feature in ('physical_recovery_v1', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1'):
+    for feature in ('physical_recovery_v1', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1'):
         old_496['gameplay_features'].remove(feature)
     need(len(old_496['gameplay_features']) == 22, 'Retained496 witness changed its frozen feature membership.')
     reject(old_496)
     old_512 = copy.deepcopy(old_496);old_512['gameplay_services_bytes'] = 512
     old_512['gameplay_features'].append('physical_recovery_v1');reject(old_512)
-    old_release_528 = copy.deepcopy(good);old_release_528['gameplay_features'].remove('item_attachment_release_v1');reject(old_release_528)
+    old_pickup_528 = copy.deepcopy(good);old_pickup_528['gameplay_features'].remove('item_attachment_pickup_v1');reject(old_pickup_528)
+    old_release_528 = copy.deepcopy(old_pickup_528);old_release_528['gameplay_features'].remove('item_attachment_release_v1');reject(old_release_528)
     strict_528 = copy.deepcopy(old_release_528);strict_528['gameplay_features'].remove('item_attachment_recovery_v1');reject(strict_528)
     old_528 = copy.deepcopy(strict_528);old_528['gameplay_features'].remove('item_attachment_surface_v1');reject(old_528)
     older_528 = copy.deepcopy(old_528);older_528['gameplay_features'].remove('item_attachment_contact_v1');reject(older_528)

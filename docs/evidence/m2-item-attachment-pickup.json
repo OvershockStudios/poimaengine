@@ -1,0 +1,514 @@
+{
+  "format": "poima.evidence.item-attachment-pickup.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.260",
+  "schema_revision": 151,
+  "fixture": "tests/item_attachment_pickup.py",
+  "feature": {
+    "name": "item_attachment_pickup_v1",
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 6,
+    "command_bytes": 272,
+    "result_version": 2,
+    "result_bytes": 120
+  },
+  "verified": [
+    "The service measures a settled or contacting released prop. A sampled miss, unretired dependent binding, self-retirement destination and absent samples each reject before a successful repaired transaction.",
+    "The accepted grip keeps the item pose, moves its dependent binding and retires the exact physics body in one revision. The retired ID and its collision ray no longer hit. Native receipts replay exactly.",
+    "CoreCLR and Windows Native AOT drop and then attempt pickup. A miss preserves the proxy. A live serialized reference blocks retirement. A later invalid callback rolls back an earlier successful pickup and its queued save.",
+    "After a semantic pickup input, the item follows the moving joint. The managed callback reads the prior result, same-tick saves contain the committed state, and fresh processes reproduce the same archives.",
+    "The 0.0.259 host rejects the new named feature. Its unchanged CoreCLR and Native AOT release consumers still run on 0.0.260."
+  ],
+  "linux_coreclr": {
+    "calls": 152,
+    "engine_sha256": "c045f633c012a3bfe1576dbd6a9c214dcab1e1c396b5850e2661865e66ec0ac9",
+    "clean_processes": 7,
+    "report": {
+      "path": "build/item-pickup-0.0.260/linux-third/report.json",
+      "bytes": 2641,
+      "sha256": "944be717c7a2fb37a943089258e7b826b60c59f03bc825271328d9e0b846b641"
+    },
+    "direct_gap_m": 0.12616273834195324,
+    "compiled_miss": {
+      "anchor": "45ac1ccadb379eb7412013590ffbe047",
+      "distance_limit_m": 0.02,
+      "distance_m": 0.12616273838717118,
+      "entity": "0000000000000000000000000000003d",
+      "probe_index": 0,
+      "status": "surface_miss",
+      "target_triangle": 3
+    },
+    "direct_checkpoint_pairs": 3,
+    "compiled_checkpoint_pairs": 12,
+    "previous_host": {
+      "sha256": "9dbd29f2b5d7f20eb31039b97e07f804029bbf20bf1c096a1dba80e2745a392f",
+      "rejection": {
+        "code": -32060,
+        "message": "C# gameplay: Gameplay host lacks item_attachment_pickup_v1."
+      }
+    },
+    "traces": {
+      "direct": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct/requests.jsonl",
+          "bytes": 10058,
+          "sha256": "7df6604d2ad0c47c62f302607d056650005e9c041e280264a8d0456bb92d07bf"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct/responses.jsonl",
+          "bytes": 10035,
+          "sha256": "e25e57b5b788856d4277b8f1858276278dd7649c66f543e1fe7d39a89914bae2"
+        }
+      },
+      "direct-cold": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct-cold/requests.jsonl",
+          "bytes": 4805,
+          "sha256": "0078dc7806dfc06b7c28c4d38638c1fc40cbb761f1923a0d103577ecd8b991f1"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct-cold/responses.jsonl",
+          "bytes": 6817,
+          "sha256": "a23e0be8e64bc2481b427c065400d0cd71bf4f1b11fb168e7ab6536af782866f"
+        }
+      },
+      "warm": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/warm/requests.jsonl",
+          "bytes": 11133,
+          "sha256": "e24ca51258e4e13a755884ce156b868c41ccf4417aa9c2a29cf192fe4703d539"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/warm/responses.jsonl",
+          "bytes": 29001,
+          "sha256": "0e366f7b11bb2dff7a18b80cfcbbe05c5a41ad640ca9ce3e2c518164387f4114"
+        }
+      },
+      "cold-miss": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/cold-miss/requests.jsonl",
+          "bytes": 9334,
+          "sha256": "f6217ace4ddf26574c6346f210f04285503c4d722037fad58dfed77b72b10af4"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/cold-miss/responses.jsonl",
+          "bytes": 24225,
+          "sha256": "95c49202a55cde45fa0b431e892642a1545b1eca9c902a742751780ba36e3338"
+        }
+      },
+      "cold-completed": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/cold-completed/requests.jsonl",
+          "bytes": 3369,
+          "sha256": "bc24766c7352c673352f352e3f79668c9f4801be1afdbdc0f8f59b803e1c5377"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/cold-completed/responses.jsonl",
+          "bytes": 7713,
+          "sha256": "10fe8b132427929379bc7a97fc10b2d03b44195f0cc39273b6f6f61614ce9ec6"
+        }
+      },
+      "previous-host": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/linux-third/previous-host/requests.jsonl",
+          "bytes": 1497,
+          "sha256": "3caca96e2b4108cfbc698c69a34e81923b29beb30dd1c15f1a12e77b8f5c8e60"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/linux-third/previous-host/responses.jsonl",
+          "bytes": 606,
+          "sha256": "42f32eecf6379c4335ad0bc42840479cd0fb7b133876ec15801edd21d3e30e73"
+        }
+      }
+    },
+    "checkpoints": {
+      "direct-before": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct-saves/slot-direct-before/p-f58158d4095f9dd59aeb338e345eb720.bin",
+          "bytes": 14744,
+          "sha256": "f66955f24ca858721a16b1428b8527c549a39dd47cb3b5042f48f85c7a8a4bda"
+        }
+      },
+      "direct-pickup": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/linux-third/direct-saves/slot-direct-picked/p-6881341bb07fc6392dedc133aeac2c3a.bin",
+          "bytes": 9923,
+          "sha256": "f60db32dfe8896597d67fd5a23f511afb9e389bf6828b7369e84ec52a1ec209b"
+        }
+      },
+      "compiled-miss": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/linux-third/warm-saves/slot-pickup-miss/p-346a062ffb23fdee7c563084a1b45ce7.bin",
+          "bytes": 16605,
+          "sha256": "82dcabf8aece5623612256b2ce088d178c6f23bfed757b5daf2aeee70997d382"
+        }
+      },
+      "compiled-pickup": {
+        "archives": 3,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/linux-third/warm-saves/slot-pickup-complete/p-a94efacf8a327485c578b390ba57bcbe.bin",
+          "bytes": 11801,
+          "sha256": "33e78b2650e36d9c685181b694867727b4f4f44b5757c9d962275101ae58f94d"
+        }
+      },
+      "compiled-follow": {
+        "archives": 3,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/linux-third/warm-saves/slot-warm-follow/p-58460ee5541463bda07f23c5e2a39439.bin",
+          "bytes": 11613,
+          "sha256": "a7f82d174e8353ca3cc0c2f58ce00046f29205069dad562b15fd77b08ca862ed"
+        }
+      }
+    }
+  },
+  "windows_native_aot": {
+    "calls": 162,
+    "engine_sha256": "652f7bda416f3e6edb3de6d3c7c33f78ab3d029d71b01c9db28e53b979f444ab",
+    "clean_processes": 7,
+    "report": {
+      "path": "build/item-pickup-0.0.260/windows-qualified/report.json",
+      "bytes": 3224,
+      "sha256": "ecec90a8424e4d9908a8c880a9ef5d4cb454e397821eecc33010c4631491598e"
+    },
+    "direct_gap_m": 0.12616273834195324,
+    "compiled_miss": {
+      "anchor": "45ac1ccadb379eb7412013590ffbe047",
+      "distance_limit_m": 0.02,
+      "distance_m": 0.12616273838717118,
+      "entity": "0000000000000000000000000000003d",
+      "probe_index": 0,
+      "status": "surface_miss",
+      "target_triangle": 3
+    },
+    "direct_checkpoint_pairs": 3,
+    "compiled_checkpoint_pairs": 12,
+    "previous_host": {
+      "sha256": "1e162386743f368e7b2e3e67b0d5aec6b50bf7cfe913980dcf766b9a840dc528",
+      "rejection": {
+        "code": -32060,
+        "message": "Unknown required gameplay feature: item_attachment_pickup_v1"
+      }
+    },
+    "traces": {
+      "direct": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct/requests.jsonl",
+          "bytes": 11123,
+          "sha256": "2254f9edd83372f547e627a1e85ea221179bb43dba5c71ff2c8f39c1c16ddd86"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct/responses.jsonl",
+          "bytes": 32533,
+          "sha256": "a498ebcc358d5dbbaaa95960616cdfac24ef337b768c516cd1dfc35445a9dca4"
+        }
+      },
+      "direct-cold": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-cold/requests.jsonl",
+          "bytes": 5885,
+          "sha256": "bba34e1a4f196f896e644c61fc91832963f8286f69df653241fcdd567c3b88ff"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-cold/responses.jsonl",
+          "bytes": 29327,
+          "sha256": "139a75aafb109773959a375df3c8f9eefa8c3d8f4564ace4f1daf62d9cb0efc2"
+        }
+      },
+      "warm": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm/requests.jsonl",
+          "bytes": 11711,
+          "sha256": "e1bfaeca81ce2439b5c794b2c996d0affffcc42924eefc8d6c06ee2554428564"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm/responses.jsonl",
+          "bytes": 44705,
+          "sha256": "e7782ed115c459ec0d52e7e72b23abd7af994e144d71d6a64d1a6d2916b61f39"
+        }
+      },
+      "cold-miss": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-miss/requests.jsonl",
+          "bytes": 9903,
+          "sha256": "1694be4175815256f40ad07d266db5f6ea6d4435f024eeea9260c28b1475bf68"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-miss/responses.jsonl",
+          "bytes": 39875,
+          "sha256": "767882abead32e85165d324288d802a2f85a5d433bb1227878fc9ad3d874867f"
+        }
+      },
+      "cold-completed": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-completed/requests.jsonl",
+          "bytes": 3239,
+          "sha256": "7d6c09dbaaf5793670f9f498ec6aaf4c82c5aaf0556e4b37007f196d9475b655"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-completed/responses.jsonl",
+          "bytes": 7772,
+          "sha256": "e60a950e7487b9a18ba61610c67898ebc989aaed121d1139e672ca31e74e13e1"
+        }
+      },
+      "previous-host": {
+        "requests": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/previous-host/requests.jsonl",
+          "bytes": 1374,
+          "sha256": "fcc34f596d6e8258f6582599f51ff31280d123e37cc0daea9e3c948c04debe24"
+        },
+        "responses": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/previous-host/responses.jsonl",
+          "bytes": 614,
+          "sha256": "c2e805d5bad9386774612f33337296cbbe92058f79a8b4e551d2e2a97e3c9987"
+        }
+      }
+    },
+    "checkpoints": {
+      "direct-before": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-saves/slot-direct-before/p-ea2047dbc2c503618cc7456fff9bfb05.bin",
+          "bytes": 14744,
+          "sha256": "720cde9a51b20c710711115a8871baa9712a23b9e7631ba0cc581559463cdad7"
+        }
+      },
+      "direct-pickup": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-saves/slot-direct-picked/p-d4f9e6fb84cadf258c8d6c2e83f0d190.bin",
+          "bytes": 9923,
+          "sha256": "60a9326833247cfaeeacfc344e2a58915a9cd5f2c1527d35b6a763a2b51b4852"
+        }
+      },
+      "compiled-miss": {
+        "archives": 2,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm-saves/slot-pickup-miss/p-20bdbea61004904884b0fe7d29064064.bin",
+          "bytes": 16608,
+          "sha256": "36398b7a1f4eb011f4cdf9b6b5a57928aa2c57f4eea1e8ef3756e478449d3627"
+        }
+      },
+      "compiled-pickup": {
+        "archives": 3,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm-saves/slot-pickup-complete/p-b7f49e6024c76cd53282b56e52bf8870.bin",
+          "bytes": 11804,
+          "sha256": "48efcf804b815f52724f3c612af825ce72a2aa168274e878da53f1f62b9de3bd"
+        }
+      },
+      "compiled-follow": {
+        "archives": 3,
+        "reference": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm-saves/slot-warm-follow/p-3ad9d6d9e28a3365b4dc68a7bcedadf4.bin",
+          "bytes": 11616,
+          "sha256": "a43bb293a40890d2eef4d6a4f5b866d418af171332bb3b81f2b4287da9a62dbf"
+        }
+      }
+    },
+    "windows_vulkan": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "resolution": [
+        720,
+        405
+      ],
+      "samples": 4,
+      "direct": {
+        "before": {
+          "sha256": "d6a9d82a38749fc11c52e3ae35df1f3912e8c333fab129f5007851d8bb4e1f44",
+          "objects": 3,
+          "foreground": 0
+        },
+        "world": {
+          "sha256": "2bac9a5d779f77b001fac15a6bb0a6cb7fc5dad282d8508b3b0d58238cac2b93",
+          "objects": 2,
+          "foreground": 0
+        },
+        "eye": {
+          "sha256": "4cb1dc004ff957fad68738723c4e36bad78cbf74edf3780dda792566acc11e63",
+          "objects": 2,
+          "foreground": 1
+        }
+      },
+      "compiled": {
+        "sha256": "4ff789b4c469fc33afa2f22ee1e7a4641a24b6c70fad0dfcdebe33ff233d041a",
+        "objects": 2,
+        "foreground": 1
+      },
+      "native_captures": {
+        "cold-dropped": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-dropped.bmp",
+          "bytes": 1166538,
+          "sha256": "d6a9d82a38749fc11c52e3ae35df1f3912e8c333fab129f5007851d8bb4e1f44"
+        },
+        "cold-picked": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/cold-picked.bmp",
+          "bytes": 1166538,
+          "sha256": "4ff789b4c469fc33afa2f22ee1e7a4641a24b6c70fad0dfcdebe33ff233d041a"
+        },
+        "direct-cold-dropped": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-cold-dropped.bmp",
+          "bytes": 1166538,
+          "sha256": "d6a9d82a38749fc11c52e3ae35df1f3912e8c333fab129f5007851d8bb4e1f44"
+        },
+        "direct-cold-picked-eye": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-cold-picked-eye.bmp",
+          "bytes": 1166538,
+          "sha256": "4cb1dc004ff957fad68738723c4e36bad78cbf74edf3780dda792566acc11e63"
+        },
+        "direct-cold-picked-world": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-cold-picked-world.bmp",
+          "bytes": 1166538,
+          "sha256": "2bac9a5d779f77b001fac15a6bb0a6cb7fc5dad282d8508b3b0d58238cac2b93"
+        },
+        "direct-dropped": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-dropped.bmp",
+          "bytes": 1166538,
+          "sha256": "d6a9d82a38749fc11c52e3ae35df1f3912e8c333fab129f5007851d8bb4e1f44"
+        },
+        "direct-picked-eye": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-picked-eye.bmp",
+          "bytes": 1166538,
+          "sha256": "4cb1dc004ff957fad68738723c4e36bad78cbf74edf3780dda792566acc11e63"
+        },
+        "direct-picked-world": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/direct-picked-world.bmp",
+          "bytes": 1166538,
+          "sha256": "2bac9a5d779f77b001fac15a6bb0a6cb7fc5dad282d8508b3b0d58238cac2b93"
+        },
+        "warm-dropped": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm-dropped.bmp",
+          "bytes": 1166538,
+          "sha256": "d6a9d82a38749fc11c52e3ae35df1f3912e8c333fab129f5007851d8bb4e1f44"
+        },
+        "warm-picked": {
+          "path": "build/item-pickup-0.0.260/windows-qualified/warm-picked.bmp",
+          "bytes": 1166538,
+          "sha256": "4ff789b4c469fc33afa2f22ee1e7a4641a24b6c70fad0dfcdebe33ff233d041a"
+        }
+      }
+    }
+  },
+  "retained_release": {
+    "linux": {
+      "calls": 93,
+      "engine_sha256": "c045f633c012a3bfe1576dbd6a9c214dcab1e1c396b5850e2661865e66ec0ac9",
+      "clean_processes": 5,
+      "report": {
+        "path": "build/item-pickup-0.0.260/retained-release-linux/report.json",
+        "bytes": 2145,
+        "sha256": "7b6ae6030dcf7060820d6dcfbf098309ec6751d63006c033260a5ffcf2dc4408"
+      }
+    },
+    "windows": {
+      "calls": 93,
+      "engine_sha256": "652f7bda416f3e6edb3de6d3c7c33f78ab3d029d71b01c9db28e53b979f444ab",
+      "clean_processes": 5,
+      "report": {
+        "path": "build/item-pickup-0.0.260/retained-release-windows/report.json",
+        "bytes": 2158,
+        "sha256": "4262ee2fde24603129c0a31815e29b01fd4741f4ee75c70d828805dbb728aa5e"
+      }
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "requests": 12,
+    "replies": 11,
+    "independent_archive_sha256": "f60db32dfe8896597d67fd5a23f511afb9e389bf6828b7369e84ec52a1ec209b",
+    "retired_identity_error": -32004,
+    "wire": [
+      {
+        "path": "build/item-pickup-0.0.260/mcp/requests.jsonl",
+        "bytes": 4313,
+        "sha256": "00422d2cab34044a692b0dc5b04f30776b29058fef042ebc5b7249ea7a6a6088"
+      },
+      {
+        "path": "build/item-pickup-0.0.260/mcp/responses.jsonl",
+        "bytes": 27660,
+        "sha256": "5f1e7bd0e12ac74c4f3ba5c1d2634451289a2de51de7fa4274a2ac923758ace7"
+      }
+    ]
+  },
+  "selected_linux_ctests": {
+    "passed": [
+      "authoring_core_conformance",
+      "gameplay_compatibility_policy",
+      "mcp_contract",
+      "world_ui_contract",
+      "world_physical_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ],
+    "junit": {
+      "path": "build/item-pickup-0.0.260/linux-regressions.xml",
+      "bytes": 5275,
+      "sha256": "97a02bb5cf90497dd0220ce39f77f8170b93453c5bba3122c318a33ab67190f7"
+    }
+  },
+  "compiler_and_packaging_policy": {
+    "descriptor_checks": 33,
+    "native_publisher_checks": 11,
+    "windows_native_artifact": {
+      "path": "build/item-pickup-0.0.260/windows-aot/native-gameplay.json",
+      "bytes": 4768,
+      "sha256": "d22060bfadaf33bf9a5ded4ac4a2ed3d8c6d432cd54261660a2b8cece45efcd9"
+    }
+  },
+  "earlier_attempts": [
+    {
+      "report": {
+        "path": "build/item-pickup-0.0.260/direct-first/report.json",
+        "bytes": 527,
+        "sha256": "0920c98101d17138bd78f2a129a55ddede854f8c52b7bccf1330cd50d2dc9006"
+      },
+      "reason": "The synthetic authoring transaction omitted the recursive field on entity.delete."
+    },
+    {
+      "report": {
+        "path": "build/item-pickup-0.0.260/linux-second/report.json",
+        "bytes": 564,
+        "sha256": "672be6f303dee2c5e2ad69c58c8df92f193815fa7612747bbf5dd0a010d78a74"
+      },
+      "reason": "The first fixture made the viewmodel an authored root. The final scene explicitly parents its visual subtree to the camera and preserves world placement."
+    },
+    {
+      "report": {
+        "path": "build/item-pickup-0.0.260/export-check/report.json",
+        "bytes": 67,
+        "sha256": "36acece038343efc9b375184da5f307a08cfed82a6f6b3be049510c2fc0fced3"
+      },
+      "reason": "The initial export harness attempted Windows Native AOT adoption through a Linux executable. The final harness adopts and builds through the installed Windows host."
+    }
+  ],
+  "limits": [
+    "The synthetic grip represents contact and ownership; visual animation quality is assessed separately.",
+    "The tested release body is a dynamic box. Pickup retains the existing frame and sampled-distance limits.",
+    "Input is a semantic action. Save comparisons are exact within each host build."
+  ],
+  "relocated_windows_game": {
+    "native_calls": 18,
+    "source_renamed": true,
+    "inventory_files": 62,
+    "bundle_manifest_sha256": "3645aed9e153bce564dd3d8683a59eb732a73dd5fd933c002a52ac72ca350918",
+    "bundled_engine_sha256": "0932a1cad508f5260625703652e439ccb3520288801d98e24424f58f0b095a5b",
+    "artifact_sha256": "d22060bfadaf33bf9a5ded4ac4a2ed3d8c6d432cd54261660a2b8cece45efcd9",
+    "complete_checkpoint_pairs": 3,
+    "report": {
+      "path": "build/item-pickup-0.0.260/export-qualified/report.json",
+      "bytes": 19204,
+      "sha256": "97b4e8d479d55e2dc8849edf6ed10e8e7fd20ddfadeaa969ac3afb3bff4f138c"
+    },
+    "verifier": "tests/item_attachment_pickup_export.py",
+    "cli": {
+      "path": "build/item-pickup-0.0.260/export-qualified/cli.jsonl",
+      "bytes": 15124,
+      "sha256": "a229044770626cbf73afd773b97faf13cc57188fc858f7f906269e5a1d8bba8c"
+    }
+  }
+}

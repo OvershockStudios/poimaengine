@@ -106,9 +106,13 @@
             if(mode=="reset") {
                 require(!row.contains("anchor") && !row.contains("offset"),"Reset accepts neither anchor nor offset.");
                 command.mode=RuntimeAttachmentMode::Reset;
-            } else if(mode=="keep_world") {
+            } else if(mode=="keep_world" || mode=="pickup") {
                 require(row.contains("anchor") && !row.contains("offset"),"Keep-world needs an anchor or null and computes its own offset.");
                 if(!row.at("anchor").is_null())command.anchor=identifier(row.at("anchor"));
+                if(mode=="pickup") {
+                    require(!command.anchor.empty() && row.contains("contact"),"Pickup requires a live holder and sampled contact.");
+                    command.mode=RuntimeAttachmentMode::Pickup;
+                }
             } else {
                 require(mode=="snap" && row.contains("anchor") && row.contains("offset"),"Snap requires an anchor and complete offset transform.");
                 command.mode=RuntimeAttachmentMode::Snap;command.anchor=identifier(row.at("anchor"));
@@ -116,7 +120,7 @@
                 command.offset=RuntimeTransform{offset.at("position"),offset.at("rotation"),offset.at("scale")};
             }
             if(row.contains("contact")) {
-                require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
+                require((command.mode==RuntimeAttachmentMode::KeepWorld || command.mode==RuntimeAttachmentMode::Pickup) && !command.anchor.empty(),
                     "Attachment contact requires a live keep-world destination anchor.");
                 const auto& guard=row.at("contact");
                 fields(guard,{"item_offset","anchor_offset","position_limit_m","rotation_limit_deg","surface"},

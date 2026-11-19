@@ -2321,6 +2321,10 @@ std::map<std::string,RuntimeAttachmentOutcome> Runtime::attachment_outcomes() co
 }
 void Runtime::change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save intent before transferring attachments.");
+    if(std::any_of(commands.begin(),commands.end(),[](const auto& command){return command.mode==RuntimeAttachmentMode::Pickup;})) {
+        (void)impl_->change_structure_transaction(expected,[&] {return impl_->change_attachments(expected,commands);});
+        return;
+    }
     impl_->change_attachments(expected,commands);
 }
 std::string Runtime::release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {

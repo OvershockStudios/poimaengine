@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.260
+
+- Pick up released items with sampled grip contact and retire their world collision bodies in the same transaction.
+
 ## 0.0.259
 
 - Let compiled gameplay release held props, recover from blocked releases, and save the result on the same tick.
