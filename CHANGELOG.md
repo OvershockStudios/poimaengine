@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.245
+
+- Bind a hand IK slot to an animated item attachment on the same rig. Gameplay
+  can change the grip offset, elbow target and wrist orientation at runtime.
+
 ## 0.0.244
 
 - Compare committed hand, item and attachment frames at a guarded runtime

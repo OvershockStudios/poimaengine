@@ -405,9 +405,15 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
                 rest.push_back({t.position,t.scale,t.rotation});
             }
             ik::validate_chains(parents,rest,source.ik);
-            for(const auto& chain:source.ik)for(int node=static_cast<int>(chain.end);node>=0;node=parents[static_cast<std::size_t>(node)]) {
-                const auto parent=parents[static_cast<std::size_t>(node)];
-                check(binding[static_cast<std::size_t>(node)]->parent==(parent<0?id:binding[static_cast<std::size_t>(parent)]->id),"IK model and authored chain/ancestor direct parents must correspond exactly.");
+            const auto validate_path=[&](std::uint32_t leaf){
+                for(int node=static_cast<int>(leaf);node>=0;node=parents[static_cast<std::size_t>(node)]) {
+                    const auto parent=parents[static_cast<std::size_t>(node)];
+                    check(binding[static_cast<std::size_t>(node)]->parent==(parent<0?id:binding[static_cast<std::size_t>(parent)]->id),"IK model and authored chain/attachment direct parents must correspond exactly.");
+                }
+            };
+            for(const auto& chain:source.ik) {
+                validate_path(chain.end);
+                if(chain.target_node)validate_path(*chain.target_node);
             }
         }
     }
@@ -584,7 +590,7 @@ void RuntimeAnimations::rebind(const RuntimeDefinition& definition,std::uint64_t
     };
     auto ik_equal=[](const std::vector<RuntimeTwoBoneIk>& a,const std::vector<RuntimeTwoBoneIk>& b) {
         if(a.size()!=b.size())return false;
-        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.metric_policy!=y.metric_policy||x.grounding!=y.grounding||x.end_orientation.has_value()!=y.end_orientation.has_value()||
+        for(std::size_t i=0;i<a.size();++i){const auto& x=a[i];const auto& y=b[i];if(x.slot!=y.slot||x.root!=y.root||x.middle!=y.middle||x.end!=y.end||x.enabled!=y.enabled||x.space!=y.space||x.target!=y.target||x.pole!=y.pole||x.weight!=y.weight||x.metric_policy!=y.metric_policy||x.grounding!=y.grounding||x.target_node!=y.target_node||x.end_orientation.has_value()!=y.end_orientation.has_value()||
             (x.end_orientation&&(x.end_orientation->rotation!=y.end_orientation->rotation||x.end_orientation->weight!=y.end_orientation->weight)))return false;}
         return true;
     };
@@ -1041,18 +1047,25 @@ void RuntimeAnimations::apply_grounding(const std::vector<RuntimeGroundingComman
 }
 std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& entity,std::uint32_t slot) const {
     check(slot>=1&&slot<=8,"IK slot must be 1..8.");const auto found=membership_->indices.find(entity);if(found==membership_->indices.end())return {};
-    const auto& states=ik_states_[found->second];for(const auto& state:states)if(state.slot==slot)return state;return {};
+    const auto index=found->second;
+    const auto& states=ik_states_[index];
+    for(std::size_t i=0;i<states.size();++i)if(states[i].slot==slot){
+        auto state=states[i];state.target_node=membership_->rigs[index].ik[i].target_node;return state;
+    }
+    return {};
 }
 void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
     for(const auto& command:commands)check(!return_owns_controls(command.entity),"Physical return owns IK requests during its finite blend.");
     check(commands.size()<=64,"IK command budget is 64 per tick.");if(commands.empty())return;auto candidate=ik_;std::set<std::pair<std::string,std::uint32_t>> seen;
     for(const auto& command:commands) {
-        validate_ik_command(command);check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
+        check(seen.emplace(command.entity,command.slot).second,"Duplicate IK command entity/slot.");
         const auto found=membership_->indices.find(command.entity);check(found!=membership_->indices.end(),"IK command entity has no AnimationRig.");
         check(!procedural_suspended(command.entity),"Physical ownership has suspended this rig's procedural IK writes.");
         check(!owns_grounding(command.entity,command.slot),"Grounding owns this IK slot; manual writes are not permitted.");
         auto& controls=candidate[found->second];const auto control=std::find_if(controls.begin(),controls.end(),[&](const auto& c){return c.slot==command.slot;});
-        check(control!=controls.end(),"IK command slot is not configured.");*control=command;control->end_orientation=canonical_ik_end_orientation(command.end_orientation);
+        check(control!=controls.end(),"IK command slot is not configured.");
+        ik::validate_control(membership_->rigs[found->second].ik[static_cast<std::size_t>(control-controls.begin())],command);
+        *control=command;control->end_orientation=canonical_ik_end_orientation(command.end_orientation);
     }
     ik_.swap(candidate);
 }
@@ -1269,9 +1282,10 @@ namespace {
 using StateJson=nlohmann::json;
 constexpr std::size_t animation_state_bytes=16*1024*1024;
 constexpr std::size_t layered_animation_state_bytes=64*1024*1024;
-void state_fields(const StateJson& value,std::initializer_list<const char*> fields) {
-    check(value.is_object() && value.size()==fields.size(),"Invalid animation state object fields.");
+void state_fields(const StateJson& value,std::initializer_list<const char*> fields,const char* extra=nullptr) {
+    check(value.is_object() && value.size()==fields.size()+(extra?1u:0u),"Invalid animation state object fields.");
     for(const auto* field:fields)check(value.contains(field),"Missing animation state field.");
+    if(extra)check(value.contains(extra),"Missing animation state field.");
 }
 void clock_fields(const StateJson& value,std::initializer_list<const char*> fields,bool retimed) {
     if(!retimed){state_fields(value,fields);return;}
@@ -1705,10 +1719,11 @@ std::string RuntimeAnimations::save_state_impl(std::uint64_t tick,bool verify_pr
         if(configured_ik||configured_root) {
             auto saved=StateJson::array();const auto& rig=membership_->rigs[index];
             for(std::size_t i=0;i<rig.ik.size();++i) {
-                const auto& frozen=rig.ik[i];const auto& control=ik_[index][i];validate_ik_command(control);
+                const auto& frozen=rig.ik[i];const auto& control=ik_[index][i];ik::validate_control(frozen,control);
                 saved.push_back({{"slot",frozen.slot},{"root",frozen.root},{"middle",frozen.middle},{"end",frozen.end},
                     {"enabled",control.enabled},{"space",control.space==IkSpace::World?"world":"rig"},
                     {"target",control.target},{"pole",control.pole},{"weight",control.weight}});
+                if(frozen.target_node)saved.back()["target_node"]=*frozen.target_node;
                 if(oriented||grounded)saved.back()["end_orientation"]=control.end_orientation ? StateJson{{"rotation",control.end_orientation->rotation},{"weight",control.end_orientation->weight}} : StateJson(nullptr);
                 if(grounded) {
                     check(ik_states_[index][i].grounding.has_value()==frozen.grounding.has_value(),"Grounding save membership differs.");
@@ -1895,11 +1910,13 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
             check(saved.is_array()&&saved.size()==rig.ik.size(),"Animation state must contain every configured IK chain exactly once.");
             for(std::size_t i=0;i<saved.size();++i) {
                 const auto& value=saved[i];const auto& frozen=rig.ik[i];
-                if(grounded)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation","grounding"});
-                else if(oriented)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation"});
-                else state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"});
+                const auto* binding=frozen.target_node?"target_node":nullptr;
+                if(grounded)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation","grounding"},binding);
+                else if(oriented)state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight","end_orientation"},binding);
+                else state_fields(value,{"slot","root","middle","end","enabled","space","target","pole","weight"},binding);
                 check(state_uint(value.at("slot"),8)==frozen.slot&&state_uint(value.at("root"),UINT32_MAX)==frozen.root&&
                     state_uint(value.at("middle"),UINT32_MAX)==frozen.middle&&state_uint(value.at("end"),UINT32_MAX)==frozen.end,"Animation state IK chain differs from frozen configuration.");
+                if(binding)check(state_uint(value.at(binding),UINT32_MAX)==*frozen.target_node,"Saved IK target_node differs from frozen configuration.");
                 check(value.at("space")=="world"||value.at("space")=="rig","Unknown animation state IK space.");
                 RuntimeIkCommand control{entity,frozen.slot,state_bool(value.at("enabled")),value.at("space")=="world"?IkSpace::World:IkSpace::Rig,
                     state_vector<3>(value.at("target")),state_vector<3>(value.at("pole")),state_number(value.at("weight"))};
@@ -1911,7 +1928,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                     for(std::size_t component=0;component<4;++component)check(std::signbit(canonical->rotation[component])==std::signbit(goal.rotation[component]),"Animation state end orientation has noncanonical signed zero.");
                     control.end_orientation=canonical;any_orientation=true;
                 }
-                validate_ik_command(control);
+                ik::validate_control(frozen,control);
                 if(grounded) {
                     const auto& saved=value.at("grounding");check(saved.is_null()==!frozen.grounding,"Saved grounding chain membership differs.");
                     candidate_ik_states[index][i].grounding.reset();

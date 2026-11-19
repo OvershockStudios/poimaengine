@@ -1,0 +1,239 @@
+{
+  "format": "poima.evidence.ik-attachment.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.245",
+  "schema_revision": 137,
+  "original_input": {
+    "asset": "Knight.glb",
+    "license": "CC0-1.0",
+    "source_pin": "docs/CHARACTER_LIBRARY.md#original-source",
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+  },
+  "calibration": {
+    "source_take": "2H_Melee_Idle at 0.1 seconds",
+    "chain": [
+      9,
+      8,
+      7
+    ],
+    "anchor_node": 11,
+    "metric": "near-uniform-v1",
+    "alternate_mesh_instances_removed_for_captures": 6
+  },
+  "linux": {
+    "executable_sha256": "d04abeeee76f98f1543e499bf684ddee58b4d8f8ca5b7987872ad119bbef9e6f",
+    "rpc_count": 58,
+    "owners_naturally_closed": 2,
+    "cold_exact_save": true,
+    "four_tick_replay_exact": true,
+    "samples": [
+      {
+        "clip": "2H_Melee_Idle",
+        "seconds": 0.1,
+        "tick": 2,
+        "baseline_m": 1.773115452742096e-09,
+        "corrected_m": 8.617648093045562e-16,
+        "angular_error_rad": 7.850462293418876e-17,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Idle",
+        "seconds": 0.55,
+        "tick": 4,
+        "baseline_m": 0.04478704506455619,
+        "corrected_m": 1.5927505220466222e-08,
+        "angular_error_rad": 2.0014830212433607e-16,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 0.15,
+        "tick": 6,
+        "baseline_m": 0.14446428892882593,
+        "corrected_m": 5.749483615932537e-08,
+        "angular_error_rad": 2.220446049250313e-16,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 0.53,
+        "tick": 8,
+        "baseline_m": 0.21943960450640018,
+        "corrected_m": 8.93666906046255e-08,
+        "angular_error_rad": 1.1443916996305594e-16,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 1,
+        "tick": 10,
+        "baseline_m": 0.400920889078895,
+        "corrected_m": 0.219264391732777,
+        "angular_error_rad": 9.74933499332183e-17,
+        "clamped": true,
+        "baseline_captures": [],
+        "corrected_captures": []
+      }
+    ],
+    "report_sha256": "5ad8b0f0145db80a761c7bb440dde289176d020251d6aeb5aaee3ac3db84aa04",
+    "rebuilt_regression_suites": [
+      "mcp_contract",
+      "runtime_two_bone_ik_native",
+      "world_ui_contract",
+      "runtime_physical_ik",
+      "runtime_animation_return_native",
+      "runtime_animation_layers_contract",
+      "runtime_animation_inertial_contract",
+      "asset_references_contract"
+    ],
+    "retained_native_aot_unbound_ik_consumer": {
+      "rpc_count": 265,
+      "image_sha256": "5a6fccb4066137f14da25e10334029f4cc591cd4e57747e2aaf2e97cb1da7395",
+      "report_sha256": "45340cdaa9be1c5edbc730457fbe4a25cb94dbe20c31fe1d8512c325b7f4f492"
+    }
+  },
+  "windows": {
+    "executable_sha256": "3a348181acd65d24c4ca606402fae8f54119c71470b9a2afdbcb551b95404a65",
+    "rpc_count": 66,
+    "owners_naturally_closed": 2,
+    "cold_exact_save": true,
+    "four_tick_replay_exact": true,
+    "samples": [
+      {
+        "clip": "2H_Melee_Idle",
+        "seconds": 0.1,
+        "tick": 2,
+        "baseline_m": 1.773115452742096e-09,
+        "corrected_m": 8.617648093045562e-16,
+        "angular_error_rad": 1.7554167342883506e-16,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Idle",
+        "seconds": 0.55,
+        "tick": 4,
+        "baseline_m": 0.04478704506455619,
+        "corrected_m": 1.5927505204753853e-08,
+        "angular_error_rad": 2.077037090527612e-16,
+        "clamped": false,
+        "baseline_captures": [],
+        "corrected_captures": []
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 0.15,
+        "tick": 6,
+        "baseline_m": 0.14446428892882593,
+        "corrected_m": 5.749483621644623e-08,
+        "angular_error_rad": 1.2412670766236363e-16,
+        "clamped": false,
+        "baseline_captures": [
+          {
+            "file": "baseline-front-5.bmp",
+            "tick": 5,
+            "sha256": "2bba3ac01f23290a1d07de5f50844284b2fdf489c8ff2b59af625a712d64ce15"
+          },
+          {
+            "file": "baseline-overhead-5.bmp",
+            "tick": 5,
+            "sha256": "aa87e52f7f2b785989c47b95bde3d2533f909653441dac89e6ac6d863640d2e4"
+          }
+        ],
+        "corrected_captures": [
+          {
+            "file": "corrected-front-6.bmp",
+            "tick": 6,
+            "sha256": "d5fb4ddd5d33d0c329ac74ee6a2a67fc5e80e8ece40a4a8492a4ea7c27e6de5d"
+          },
+          {
+            "file": "corrected-overhead-6.bmp",
+            "tick": 6,
+            "sha256": "7d728ca40f85f973c99a76cf0df38dc007db7609442302559f33fbcf26027d6f"
+          }
+        ]
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 0.53,
+        "tick": 8,
+        "baseline_m": 0.2194396045064002,
+        "corrected_m": 8.936669063838194e-08,
+        "angular_error_rad": 1.5469220910896388e-16,
+        "clamped": false,
+        "baseline_captures": [
+          {
+            "file": "baseline-front-7.bmp",
+            "tick": 7,
+            "sha256": "4226abe418d2dc823b2cd0fb304220563b5ea654cecc0d79ff0a33ea649210d0"
+          },
+          {
+            "file": "baseline-overhead-7.bmp",
+            "tick": 7,
+            "sha256": "d0f9787300fb2d47c345b818c506093b7c27e3c231ae638ed61e0f8225d46ec2"
+          }
+        ],
+        "corrected_captures": [
+          {
+            "file": "corrected-front-8.bmp",
+            "tick": 8,
+            "sha256": "aa548355e9c25593d2fe19be224ad0bed0b6bcc39b2e11c10350a262dd38129f"
+          },
+          {
+            "file": "corrected-overhead-8.bmp",
+            "tick": 8,
+            "sha256": "99ae0b97f7d443e0ee8d3d727d9af0b12d1855221ae9b4da5928562fc06ca54e"
+          }
+        ]
+      },
+      {
+        "clip": "2H_Melee_Attack_Chop",
+        "seconds": 1,
+        "tick": 10,
+        "baseline_m": 0.400920889078895,
+        "corrected_m": 0.2192643917327769,
+        "angular_error_rad": 2.520193376039653e-16,
+        "clamped": true,
+        "baseline_captures": [],
+        "corrected_captures": []
+      }
+    ],
+    "report_sha256": "eaf1c1321d58dc584cefa58d94de5a1bc2cdc49c34811aa48f11eeff73ea7029",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "capture_extent": [
+      960,
+      540
+    ],
+    "msaa_samples": 4,
+    "native_two_bone_groups": 16,
+    "physical_handoff_checks_with_original_compiled_cpp_callback": 3861,
+    "physical_return_groups": 5,
+    "physical_return_complete_archive_pairs": 66
+  },
+  "request_schema_compatibility": {
+    "authoring_core_v1": "Linux and Windows selected authoring projection",
+    "runtime_game_session_v1": "Windows source_world"
+  },
+  "qualification_history": [
+    "First Linux native test build stopped at a fixture initializer type mismatch. Rebuilt after correcting the test.",
+    "The first original-rig Linux probe omitted the required animation speed. A fresh run supplies the complete live control.",
+    "An unscoped Windows authoring comparison failed on the exhaustive mutation union. Both documented authoring projections pass.",
+    "The first reviewed Windows comparison still showed alternative weapons and shields. The published results use a fresh review after removing six alternative mesh instances from the fixture world.",
+    "An intermediate final-binary Native AOT run stopped with exit 143 and no complete report. The fresh serial retained-image run has its own result."
+  ],
+  "limits": [
+    "Five sampled source poses and four continuation ticks from the separately restored state.",
+    "Position residuals are for the calibrated wrist frame. Actual finger contact, skin collision and first-person animation quality require their own checks.",
+    "The retained Native AOT scenario exercises existing unbound IK controls. The anchored path has direct native CLI and solver qualification."
+  ],
+  "reproduce": "tests/runtime_ik_attachment.py and tests/runtime_two_bone_ik_native.cpp"
+}

@@ -15,6 +15,7 @@ std::optional<RuntimeIkEndOrientation> canonical_ik_end_orientation(
 inline constexpr double ik_near_uniform_metric_limit=1e-4;
 namespace ik {
 inline constexpr double near_uniform_position_absolute_limit=1e-9;
+void validate_control(const RuntimeTwoBoneIk& chain,const RuntimeIkCommand& command);
 // Parent indices and incoming locals are immutable model snapshots, not assets
 // or registry references. The optional end correction is independent of the
 // root/middle position solve and is expressed in the model's quaternion frame.

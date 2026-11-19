@@ -87,6 +87,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"end_orientation",object_schema({{"rotation",vector(Json{{"type","number"}},4)},
             {"weight",unit}},{"rotation","weight"})}};
     auto ik_chain=ik_fields;ik_chain["root"]=model_node;ik_chain["middle"]=model_node;ik_chain["end"]=model_node;
+    ik_chain["target_node"]=model_node;
+    ik_chain["target_node"]["description"]="Optional same-rig model node outside every configured solved branch. Requires space=rig, uses attachment-local target, pole and end orientation, and is mutually exclusive with grounding.";
     ik_chain["metric"]={{"enum",{"uniform","near-uniform-v1"}},{"default","uniform"},
         {"description","Frozen IK scale profile. Uniform requires exact positive uniform ancestor/root/middle scales. Near-uniform-v1 preserves source data, checks incoming and published local scale ratio, cumulative frame and Gram errors within 1e-4, and rejects an unweighted model-space endpoint residual above max(1e-9,1e-4 times combined link length)."}};
     ik_chain["grounding"]=object_schema({
@@ -219,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 136}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 137}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -401,12 +403,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"include_end_orientation",{{"type","boolean"},{"default",false}}},
         {"include_metric",{{"type","boolean"},{"default",false}}},
         {"include_grounding",{{"type","boolean"},{"default",false}}},
-        {"include_planting",{{"type","boolean"},{"default",false}}}}, {"session_id","tick","entity","slot"});
+        {"include_planting",{{"type","boolean"},{"default",false}}},
+        {"include_target_node",{{"type","boolean"},{"default",false}}}}, {"session_id","tick","entity","slot"});
     methods["runtime.ik"]["description"]="Read cached committed two-bone IK controls and diagnostics with exact session/tick. Returns source=runtime and state=null for an existing nonrig or absent configured slot; missing entity rejects. State includes frozen model indices, target/pole/space/weight/enabled, actual world end_position/target_error and clamped/pole_fallback. Inspection never samples or advances.";
-    methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_end_orientation adds state.end_orientation=null or cached rig-space goal rotation/weight, actual_rotation and angular_error radians. The default response shape is unchanged.";
+    methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_end_orientation adds state.end_orientation=null or requested goal rotation/weight, actual rig-space rotation and angular_error radians. The default response shape is unchanged.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_metric adds state.metric=null for the uniform profile, or near-uniform-v1 cached evaluated/frame/Gram/local-scale and unweighted endpoint diagnostics. Frame/Gram/local-scale errors are maxima over the incoming and published poses. Inactive metric errors are null. The authored metric profile is frozen; runtime.step cannot replace it.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_grounding adds cached grounding decisions, probe counts, support and full-affine sole diagnostics, or null for manual slots. It never queries physics.";
     methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Independent include_planting adds state.planting=null or cached armed/status/support-local anchor, world sole/normal/heading targets and achieved residuals for plant_lock slots. It changes neither the previous grounding shape nor state; inspection never resolves support frames or probes.";
+    methods["runtime.ik"]["description"]=methods["runtime.ik"]["description"].get<std::string>()+" Opt-in include_target_node adds the frozen attachment node index or null. For anchored slots the reported target, pole and orientation goal are the requested attachment-local values. Position and orientation errors include the committed attachment transform.";
     const Json sounds={{"type","array"},{"maxItems",64},{"items",{{"oneOf",Json::array({
         object_schema({{"op",{{"const","play"}}},{"emitter",id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4},{"default",1}}}}, {"op","emitter"}),
         object_schema({{"op",{{"const","stop"}}},{"voice",{{"type","integer"},{"minimum",1},{"maximum",max_revision}}}}, {"op","voice"})

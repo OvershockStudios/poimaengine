@@ -149,6 +149,92 @@ RuntimeDefinition definition(bool configured=true){
     RuntimeEntityDefinition render;render.id=id(5);render.parent=id(2);render.mesh=RuntimeMesh{};render.mesh->mesh=m->primitives[0];render.skinned_mesh=RuntimeSkinnedMesh{id(1),0};d.entities.push_back(render);
     RuntimeEntityDefinition camera;camera.id=id(6);camera.camera=RuntimeCamera{};camera.transform.position={0,0,8};d.entities.push_back(camera);return d;
 }
+void animated_attachment_follow(){
+    auto d=definition();
+    auto asset=std::const_pointer_cast<ModelAsset>(d.entities.front().animation_rig->model);
+    asset->nodes.resize(5);
+    asset->roots.push_back(3);
+    asset->nodes[3].name="Item";
+    asset->nodes[3].position={1,0,0};
+    asset->nodes[4].name="Grip anchor";
+    asset->nodes[4].parent=3;
+    asset->nodes[4].position={0,.25,0};
+    const auto half=std::sqrt(.5f);
+    asset->animations.push_back({"Raise and roll item",1.,{
+        {3,AnimationPath::translation,AnimationInterpolation::linear,{0,1},{{1,0,0,0},{.5,1,0,0}}},
+        {3,AnimationPath::rotation,AnimationInterpolation::linear,{0,1},{{0,0,0,1},{0,0,half,half}}}}});
+    for(unsigned n=3;n<=4;++n){
+        RuntimeEntityDefinition node;
+        node.id=id(n+4);
+        node.parent=n==3?id(1):id(7);
+        node.transform.position=asset->nodes[n].position;
+        node.rig_node=RuntimeRigNode{id(1),n};
+        d.entities.push_back(node);
+    }
+    auto& rig=*d.entities.front().animation_rig;
+    rig.clip=2;
+    rig.playing=true;
+    rig.loop=false;
+    auto& config=rig.ik.front();
+    config.target_node=4;
+    config.target={.2,0,0};
+    config.pole={0,1,0};
+    const auto wrist=axis({1,0,0},.35);
+    config.end_orientation=RuntimeIkEndOrientation{wrist,1};
+
+    RuntimeAnimations anim(d);
+    for(const auto tick:{0u,30u,60u}){
+        const auto poses=anim.sample(tick);
+        const auto state=*anim.ik_state(id(1),1);
+        const double t=static_cast<double>(tick)/60;
+        const auto angle=t*std::acos(-1.)/2;
+        const auto expected_rotation=axis({0,0,1},angle);
+        const auto c=std::cos(angle),s=std::sin(angle);
+        const V target={1-.5*t+.2*c-.25*s,t+.2*s+.25*c,0};
+        const V pole={1-.5*t-1.25*s,t+1.25*c,0};
+        const auto projection=(pole[0]*target[0]+pole[1]*target[1])/(target[0]*target[0]+target[1]*target[1]);
+        const V bend={pole[0]-projection*target[0],pole[1]-projection*target[1],0};
+        const auto height=std::sqrt(1-(target[0]*target[0]+target[1]*target[1])/4);
+        const auto middle=rotated(poses[0].local.rotation,{0,1,0});
+        near(middle,{.5*target[0]+height*bend[0]/std::hypot(bend[0],bend[1]),
+                     .5*target[1]+height*bend[1]/std::hypot(bend[0],bend[1]),0});
+        check(state.target_node==4&&state.target==config.target&&state.pole==config.pole&&
+            !state.clamped&&state.end_orientation.has_value(),"Animated attachment lost controls or hit an unexpected reach limit.");
+        near(state.end_position,target);
+        near(state.target_error,0);
+        same_rotation(state.end_orientation->goal.rotation,wrist);
+        same_rotation(state.end_orientation->actual_rotation,product(expected_rotation,wrist));
+        near(state.end_orientation->angular_error,0);
+    }
+    const auto before=anim.save_state(60);
+    RuntimeAnimations restored(d);
+    restored.load_state(before,60);
+    restored.sample(60);
+    check(restored.save_state(60)==before&&equal(*restored.ik_state(id(1),1),*anim.ik_state(id(1),1)),
+        "Animated attachment changed during exact restoration.");
+    for(unsigned fault=0;fault<3;++fault){
+        auto edited=Json::parse(before);
+        auto& state=edited["rigs"][0]["ik"][0];
+        if(fault==0)state.erase("target_node");
+        if(fault==1)state["target_node"]=3;
+        if(fault==2)state["space"]="world";
+        rejects([&]{anim.load_state(edited.dump(),60);});
+        check(anim.save_state(60)==before,"Invalid attachment restore changed saved state.");
+    }
+    auto bad=goal({1,1,0},{0,0,1},1,IkSpace::World);
+    rejects([&]{anim.apply_ik({bad});});
+    auto changed=d;
+    changed.entities.front().animation_rig->ik.front().target_node=3;
+    rejects([&]{anim.rebind(changed,60);});
+    check(anim.save_state(60)==before,"Invalid attachment write changed committed controls.");
+    for(auto invalid:{2u,5u}){
+        changed.entities.front().animation_rig->ik.front().target_node=invalid;
+        rejects([&]{RuntimeAnimations refused(changed);});
+    }
+    changed.entities.front().animation_rig->ik.front().target_node=4;
+    changed.entities.back().parent=id(1);
+    rejects([&]{RuntimeAnimations refused(changed);});
+}
 void animation_state_and_jobs(){
     auto d=definition();RuntimeAnimations a(d);check(a.has_ik(),"Configured rig has no IK.");const auto initial=a.sample(0);const auto state=*a.ik_state(id(1),1);near(state.end_position,{1,1,0});
     const auto before=a.save_state(0);const auto encoded=Json::parse(before);check(encoded["version"]==4&&encoded["rigs"][0]["ik"].size()==1,"IK save is not version4.");check(!encoded["rigs"][0]["ik"][0].contains("end_position"),"Derived diagnostics persisted.");
@@ -349,7 +435,7 @@ void native_metric_profile_save_and_late_rollback(){
 }
 int main(){try{
     reachable_and_clamp();fold_antipodal_and_pole();weight_and_field_fidelity();affine_spaces();malformed_and_metric();animation_state_and_jobs();layers_histories_and_membership();orientation_geometry_and_independent_weights();orientation_canonical_validation_and_old_paths();orientation_animation_history_and_versions();
-    metric_profile_geometry_and_admission();
-    if(Runtime::available()){native_pose_skin_hit_and_rollback();native_physical_wrapper_and_templates();native_orientation_save_batch_and_rollback();native_metric_profile_save_and_late_rollback();std::cout<<"15 native two-bone IK groups passed (13 retained, 2 metric profile)\n";}
-    else std::cout<<"11 portable two-bone IK groups passed\n";return 0;
+    metric_profile_geometry_and_admission();animated_attachment_follow();
+    if(Runtime::available()){native_pose_skin_hit_and_rollback();native_physical_wrapper_and_templates();native_orientation_save_batch_and_rollback();native_metric_profile_save_and_late_rollback();std::cout<<"16 native two-bone IK groups passed\n";}
+    else std::cout<<"12 portable two-bone IK groups passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

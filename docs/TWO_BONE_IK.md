@@ -53,6 +53,41 @@ Hierarchical templates retain the model indices and remap ordinary RigNode
 ownership to each spawned instance. Later authored edits leave the running
 definition frozen; restart to adopt a changed chain.
 
+### Follow a moving item
+
+Set `target_node` on an authored slot to use an animated attachment from that
+same model. For example, an off-hand wrist can follow the grip on an item
+carried by the animated primary hand. Use the item's original model node index.
+
+```json
+"ik": [{
+  "slot": 1, "root": 9, "middle": 8, "end": 7,
+  "target_node": 11, "space": "rig",
+  "target": [0.04, 0.09, 0.01], "pole": [-0.24, 0.08, 0.16],
+  "end_orientation": {"rotation": [0, 0, 0, 1], "weight": 1}
+}]
+```
+
+The indices and offsets are illustrative. Inspect the original model first.
+Calibrate the wrist point, elbow pole and desired wrist rotation against a good
+equipped pose. The complete live control must explicitly specify `space:"rig"`
+(`IkSpace.Rig` in compiled gameplay) for a bound slot. The slot interprets the
+target and pole as attachment-local points and resolves them through the
+sampled node's full affine transform. The end goal is relative to the node's
+composed logical quaternion. Position and orientation are resolved after the
+same base pose and layers have been sampled, so neither requires a prior-tick
+item transform or a per-tick gameplay write.
+
+The anchor and its ancestors must preserve their imported parenting. Choose
+an anchor outside every configured solved branch. A shared ancestor or a
+separate animated branch can drive several limbs. This rule prevents feedback
+and makes independent slot order irrelevant. Grounding and an attachment
+cannot own the same slot. Changing the target node requires a fresh runtime.
+Live changes to the offsets, weights and enabled flag use the ordinary IK
+commands, including for a release and regrip. Reach clamping and metric
+requirements still apply. Verify the authored pose and clipped reach with
+[`runtime.pose.compare`](POSE_FRAME_COMPARISON.md) and native captures.
+
 ## Replace live controls
 
 Supply optional `ik` commands with ordinary guarded `runtime.step` parameters:
@@ -75,8 +110,9 @@ Replace the IDs, tick and points with current inspected values. Each command
 completely replaces the configured slot's controls on the first Tick and
 persists until another command. Omitted optional fields use the fixed API
 defaults true/world/1, not the previous live controls. `world` points stay
-fixed as the actor moves; `rig` points move with the wrapper. Pole is a point
-that selects the bend plane, in the same space as target.
+fixed as the actor moves; `rig` points move with the wrapper or the configured
+attachment. Pole is a point that selects the bend plane, in the same space as
+target.
 
 At most 64 combined caller/gameplay IK commands are admitted per Tick.
 Duplicate `(entity, slot)` writes and caller/gameplay conflicts reject;
@@ -100,7 +136,8 @@ Add `end_orientation` to an authored chain or a complete live IK command:
 ```
 
 The quaternion is XYZW in the rig's logical model frame, regardless of whether
-the target and pole use `world` or `rig` space. Choose it from the imported
+the target and pole use `world` or `rig` space. If the slot has a `target_node`,
+use the attachment's logical frame. Choose it from the imported
 joint's actual axes. It describes the desired final end frame, rather than a
 delta from the rest pose. Its weight is independent of the positional weight;
 position weight zero can therefore rotate a hand without moving the chain.
@@ -151,6 +188,26 @@ It is null without a retained goal; otherwise it contains the canonical goal's
 shortest angular error in radians. A disabled chain can retain a goal and
 report its unapplied error. Missing state remains null. Omitted or false keeps
 the existing response shape. Inspection never solves the chain.
+
+Set `include_target_node:true` to add the frozen index or null on an
+unbound slot. For an anchored slot, `target`, `pole` and the requested
+`end_orientation.rotation` remain attachment-local values. The world
+`target_error` and `end_orientation.angular_error` already account for the
+sampled attachment, including when the reach clamps or the slot is disabled.
+The selected model index is retained in the save and verified against the
+frozen rig on restore. Unbound slots keep their original save fields.
+
+To reproduce the attachment check with the
+[pinned original Knight](CHARACTER_LIBRARY.md#original-source):
+
+```sh
+python3 tests/runtime_ik_attachment.py --binary build/linux-game/poima \
+  --source /path/to/Knight.glb --output build/ik-attachment-check
+```
+
+On Windows pass `--gpu` with the Vulkan adapter index to capture two target
+poses with the slot disabled and enabled. From WSL, also pass
+`--windows-interop` to open the Windows executable and translate asset paths.
 
 Commands participate in complete physics/gameplay/animation/component/save
 rollback. Removing an instance removes its IK state; newly spawned rigs use

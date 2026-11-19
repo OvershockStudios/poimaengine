@@ -390,7 +390,7 @@ RuntimeIkCommand return_read_control(const StateJson& row,const std::string& ent
         const auto& goal=row.at("end_orientation");state_fields(goal,{"rotation","weight"});
         value.end_orientation=RuntimeIkEndOrientation{state_vector<4>(goal.at("rotation")),state_number(goal.at("weight"))};
     }
-    validate_ik_command(value);check(procedural_controls_json({value})[0].dump()==row.dump(),"Return control must retain canonical original values.");return value;
+    ik::validate_control(chain,value);check(procedural_controls_json({value})[0].dump()==row.dump(),"Return control must retain canonical original values.");return value;
 }
 void return_offset_equal(const RuntimeAnimations::InertialNode& saved,const RuntimeAnimations::InertialNode& expected) {
     check(state_pose(saved.source_pose).dump()==state_pose(expected.source_pose).dump(),"Return offset changed its exact captured source.");

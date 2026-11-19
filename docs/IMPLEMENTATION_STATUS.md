@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.244**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.245**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.245 adds [animation-driven grip attachments](TWO_BONE_IK.md#follow-a-moving-item).
+A two-bone slot follows a calibrated wrist position, elbow pole and wrist
+orientation on the same rig's moving item. The [native checks](evidence/m2-ik-attachment.json)
+cover live offset changes, reach clamping, exact cold continuation and eight
+Windows Vulkan captures of the original Knight rig. The grip controls address
+the wrist frame. Skinned hand contact, finger articulation and first-person
+motion quality remain separate work.
 
 Version 0.0.244 adds [guarded pose-frame comparisons](POSE_FRAME_COMPARISON.md).
 Agents can measure hand-to-item position and rotation at one committed tick.

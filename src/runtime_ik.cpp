@@ -101,26 +101,47 @@ std::optional<RuntimeIkEndOrientation> canonical_ik_end_orientation(std::optiona
 }
 void validate_ik_command(const RuntimeIkCommand& c){check(c.slot>=1&&c.slot<=8,"IK slot must be 1..8.");check(c.space==IkSpace::World||c.space==IkSpace::Rig,"Unknown IK space.");check(std::isfinite(c.weight)&&c.weight>=0&&c.weight<=1,"IK weight must be finite in 0..1.");for(const auto& v:{c.target,c.pole})for(auto x:v)check(std::isfinite(x)&&std::abs(x)<=1e6,"IK target/pole coordinates must be finite within +/-1000000.");(void)canonical_ik_end_orientation(c.end_orientation);}
 namespace ik {
+void validate_control(const RuntimeTwoBoneIk& chain,const RuntimeIkCommand& command){
+    validate_ik_command(command);
+    check(command.slot==chain.slot,"IK control slot differs from frozen chain.");
+    check(!chain.target_node||command.space==IkSpace::Rig,"IK target_node requires rig-space controls.");
+}
 void validate_chains(std::span<const int> parents,std::span<const NodePose> rest,std::span<const RuntimeTwoBoneIk> chains){
     check(chains.size()<=8,"AnimationRig permits at most eight IK chains.");if(chains.empty())return;
     ModelPose pose;pose.local.assign(rest.begin(),rest.end());compose(parents,pose);std::uint32_t previous=0;
-    for(const auto& c:chains){metric_policy(c);validate_ik_command({{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight,c.end_orientation});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
+    for(const auto& c:chains){metric_policy(c);validate_control(c,{{},c.slot,c.enabled,c.space,c.target,c.pole,c.weight,c.end_orientation});check(c.slot>previous,"IK slots must be unique and sorted.");previous=c.slot;
         check(c.root<parents.size()&&c.middle<parents.size()&&c.end<parents.size()&&c.root!=c.middle&&c.middle!=c.end&&c.root!=c.end,"IK chain indices must be distinct existing nodes.");
         check(parents[c.middle]==static_cast<int>(c.root)&&parents[c.end]==static_cast<int>(c.middle),"IK chain must have direct model root/middle/end parent correspondence.");(void)evaluated_metric(parents,pose,c);
     }
     auto ancestor=[&](std::uint32_t a,std::uint32_t b){for(int n=static_cast<int>(b);n>=0;n=parents[static_cast<std::size_t>(n)])if(static_cast<std::uint32_t>(n)==a)return true;return false;};
     for(std::size_t i=0;i<chains.size();++i)for(std::size_t j=0;j<i;++j)check(!ancestor(chains[i].root,chains[j].root)&&!ancestor(chains[j].root,chains[i].root),"IK solved branches cannot overlap.");
+    for(const auto& chain:chains)if(chain.target_node){
+        check(*chain.target_node<parents.size(),"IK target_node must be an existing model node.");
+        check(!chain.grounding,"Grounding and target_node cannot own the same IK slot.");
+        for(const auto& solved:chains)
+            check(!ancestor(solved.root,*chain.target_node),"IK target_node must be outside every solved branch.");
+    }
 }
 RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeTwoBoneIk& chain,const RuntimeIkCommand& control,const Matrix4& world){
-    metric_policy(chain);validate_ik_command(control);wrapper(world);check(control.slot==chain.slot,"IK control slot differs from frozen chain.");check(chain.root<pose.local.size()&&chain.middle<pose.local.size()&&chain.end<pose.local.size()&&chain.root!=chain.middle&&chain.middle!=chain.end&&chain.root!=chain.end&&parents.size()==pose.local.size(),"IK chain pose count differs.");
+    metric_policy(chain);validate_control(chain,control);wrapper(world);check(chain.root<pose.local.size()&&chain.middle<pose.local.size()&&chain.end<pose.local.size()&&chain.root!=chain.middle&&chain.middle!=chain.end&&chain.root!=chain.end&&parents.size()==pose.local.size(),"IK chain pose count differs.");
     check(parents[chain.middle]==static_cast<int>(chain.root)&&parents[chain.end]==static_cast<int>(chain.middle),"Invalid IK chain parent correspondence.");
     RuntimeIkState result{control.entity,chain.slot,chain.root,chain.middle,chain.end,control.enabled,control.space,control.target,control.pole};result.weight=control.weight;
     if(chain.metric_policy==RuntimeIkMetricPolicy::NearUniformV1)result.metric=RuntimeIkMetricState{};
     // Recomposition leaves all incoming locals untouched, including disabled
     // and zero-weight paths. Diagnostics describe the actual published pose.
-    compose(parents,pose);const auto requested=control.space==IkSpace::World?control.target:point(world,control.target);
-    if(control.enabled&&control.weight>0){result.metric=evaluated_metric(parents,pose,chain);const auto inv=inverse_affine(world);const auto target=control.space==IkSpace::World?point(inv,control.target):control.target;
-        const auto pole=control.space==IkSpace::World?point(inv,control.pole):control.pole;const auto root=position(pose.world[chain.root]),middle=position(pose.world[chain.middle]),end=position(pose.world[chain.end]);
+    compose(parents,pose);
+    auto target=control.target,pole=control.pole;
+    if(chain.target_node){
+        check(*chain.target_node<pose.world.size(),"IK target_node is outside the sampled pose.");
+        const auto& anchor=pose.world[*chain.target_node];
+        target=point(anchor,target);pole=point(anchor,pole);
+    }
+    const auto requested=control.space==IkSpace::World?target:point(world,target);
+    if(control.enabled&&control.weight>0){
+        result.metric=evaluated_metric(parents,pose,chain);
+        const auto inv=inverse_affine(world);
+        if(control.space==IkSpace::World){target=point(inv,target);pole=point(inv,pole);}
+        const auto root=position(pose.world[chain.root]),middle=position(pose.world[chain.middle]),end=position(pose.world[chain.end]);
         const auto upper=sub(middle,root),lower=sub(end,middle),aim_vector=sub(target,root);const auto a=length(upper),b=length(lower),requested_distance=length(aim_vector);
         const auto aim=requested_distance>0?unit(aim_vector):unit(upper);const auto reach=std::clamp(requested_distance,std::abs(a-b),a+b);result.clamped=requested_distance<std::abs(a-b)||requested_distance>a+b;
         auto bend=sub(sub(pole,root),times(aim,dot(sub(pole,root),aim)));const auto pole_length=length(sub(pole,root));
@@ -144,19 +165,22 @@ RuntimeIkState solve(std::span<const int> parents,ModelPose& pose,const RuntimeT
     }
     const auto end_orientation=canonical_ik_end_orientation(control.end_orientation);
     if(end_orientation){
+        auto requested_rotation=end_orientation->rotation;
+        if(chain.target_node)
+            requested_rotation=product(orientation(parents,pose.local,static_cast<int>(*chain.target_node)),requested_rotation);
         // Use the actual parent after positional blending. This final local
         // rotation leaves the end joint's translation and its ancestors alone.
         if(control.enabled){
             if(control.weight==0)result.metric=evaluated_metric(parents,pose,chain);
             const auto parent=orientation(parents,pose.local,parents[chain.end]);
-            const auto goal=product(inverse(parent),end_orientation->rotation);
+            const auto goal=product(inverse(parent),requested_rotation);
             pose.local[chain.end].rotation=blend(pose.local[chain.end].rotation,goal,end_orientation->weight);
             compose(parents,pose);
         }
         // Disabled retained intent still has an opt-in cached diagnostic, but
         // never acquires active metric checks or modifies the incoming pose.
         const auto actual=canonical_ik_end_orientation(RuntimeIkEndOrientation{orientation(parents,pose.local,static_cast<int>(chain.end)),1})->rotation;
-        const auto relative=product(inverse(actual),end_orientation->rotation);
+        const auto relative=product(inverse(actual),requested_rotation);
         const auto error=2*std::atan2(std::hypot(relative[0],relative[1],relative[2]),std::abs(relative[3]));
         check(std::isfinite(error),"IK end orientation error exceeds numeric range.");
         result.end_orientation=RuntimeIkEndOrientationState{*end_orientation,actual,error};

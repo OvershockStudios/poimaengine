@@ -192,6 +192,7 @@ struct RuntimeTwoBoneIk {
     std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
     RuntimeIkMetricPolicy metric_policy=RuntimeIkMetricPolicy::Uniform;
     std::optional<RuntimeGroundingDefinition> grounding=std::nullopt;
+    std::optional<std::uint32_t> target_node=std::nullopt;
 };
 struct RuntimeIkCommand {
     std::string entity;
@@ -220,6 +221,7 @@ struct RuntimeIkState {
     std::optional<RuntimeIkEndOrientationState> end_orientation=std::nullopt;
     std::optional<RuntimeIkMetricState> metric=std::nullopt;
     std::optional<RuntimeGroundingState> grounding=std::nullopt;
+    std::optional<std::uint32_t> target_node=std::nullopt;
 };
 enum class RootMotionMode : std::uint32_t { Extract=0, Character=1 };
 struct RuntimeRootMotionDefinition {
