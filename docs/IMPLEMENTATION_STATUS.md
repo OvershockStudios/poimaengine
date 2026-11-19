@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.248**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.249**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.249 adds [rigid item transfers](ITEM_ATTACHMENTS.md). Agents can
+keep an item in place while switching anchors, snap it into a socket, or
+restore its authored hierarchy. The [native checks](evidence/m2-item-attachments.json)
+cover full save continuation between animated anchors, kinematic following,
+and guarded render continuity. Compiled gameplay controls and physical release
+remain separate work.
 
 Version 0.0.248 adds [committed joint angle checks](JOINT_POSE_CHECKS.md).
 Agents can evaluate a rig node's final local rotation against a supplied

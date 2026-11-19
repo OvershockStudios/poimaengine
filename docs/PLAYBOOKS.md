@@ -149,7 +149,9 @@ Check the arm roots, wrist and palm transforms, hand-to-prop grip and viewmodel
 clearance from the player camera and from front, side and top. Then replay the
 action at normal speed, including interruption, recovery and camera motion.
 For a multi-step grip, record which hand or socket owns the item and where each
-hand should touch it at each phase. Use [frame comparisons](POSE_FRAME_COMPARISON.md)
+hand should touch it at each phase. Transfer a rigid item at the agreed contact
+tick and verify that it follows the new anchor. [Item attachments](ITEM_ATTACHMENTS.md)
+Use [frame comparisons](POSE_FRAME_COMPARISON.md)
 to compare requested and achieved wrist, palm
 and finger positions in item space. Then sample the visible finger pad against
 the chosen handle triangles at the same tick. Keep the sampled surface point

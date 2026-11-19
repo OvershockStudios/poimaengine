@@ -178,6 +178,13 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     SaveJson payload={{"content_sha256",content_sha256},{"world_id",s.world_id},{"authored_revision",s.revision},{"tick",s.tick},
         {"gameplay_revision",s.game_revision},{"entities",entities},{"animation",SaveJson::parse(s.animations->save_state(s.tick))},
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
+    if(s.attachment_graph) {
+        SaveJson bindings=SaveJson::array();
+        for(const auto& [id,binding]:s.attachment_graph->bindings)
+            bindings.push_back({{"entity",id},{"anchor",binding.anchor.empty() ? SaveJson(nullptr) : SaveJson(binding.anchor)},
+                {"offset_matrix",binding.offset}});
+        payload["attachments"]={{"version",1},{"bindings",std::move(bindings)}};
+    }
     SaveJson cameras=SaveJson::array();
     for(const auto e:s.topology->order)if(const auto* camera=s.registry.try_get<RuntimeCamera>(e)) {
         const SceneLens world{camera->vertical_fov,camera->near_plane,camera->far_plane};Impl::validate_camera_lens(world);
@@ -262,6 +269,26 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         const auto& states=pose_extension.at("states");
         require(states.is_array() && !states.empty() && states.size()<=10000,"Camera pose extension requires1..10000 nonidentity states.");
     }
+    std::shared_ptr<Impl::AttachmentGraph> attachment_graph;
+    if(data.contains("attachments")) {
+        const auto& extension=data.at("attachments");
+        save_fields(extension,{"version","bindings"});
+        require(save_integer(extension.at("version"))==1,"Unsupported attachment extension version.");
+        attachment_graph=std::make_shared<Impl::AttachmentGraph>();
+        const auto& rows=extension.at("bindings");
+        require(rows.is_array() && !rows.empty() && rows.size()<=max_runtime_attachments,
+            "Saved attachment extension requires 1..64 bindings.");
+        std::string previous;
+        for(const auto& row:rows) {
+            save_fields(row,{"entity","anchor","offset_matrix"});
+            const auto id=save_text(row.at("entity"));
+            require(previous.empty() || previous<id,"Saved attachment items must be unique and sorted.");
+            previous=id;
+            const auto anchor=row.at("anchor").is_null() ? std::string{} : save_text(row.at("anchor"));
+            attachment_graph->bindings.emplace(id,RuntimeAttachmentBinding{anchor,save_vector<16>(row.at("offset_matrix"),1e12)});
+        }
+        data.erase("attachments");
+    }
     if(version>=7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
     else if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
     else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
@@ -269,6 +296,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
     const bool structural=version==6 || version==3 || ((version>=7 || logical_ui) && !data.at("structure").is_null());
+    require(!attachment_graph || structural,"Saved attachments require a structure revision.");
     if(version>=6)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
@@ -684,6 +712,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         // calibrated physical history, without re-solving presentation locals.
         if(physical_checkpoint)save_physical_final_history(s,*physical_checkpoint);
     }
+    if(attachment_graph)s.publish_attachment_transforms(std::move(attachment_graph));
     std::map<std::string,AudioEmitter> emitters;
     for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);
     s.sounds.load_state(data.at("sound").dump(),tick,emitters);

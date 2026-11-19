@@ -168,6 +168,7 @@ struct Runtime::Impl {
     // One immutable live membership root. Retired native owners must remain in
     // the separate ownership inventory until their batch commits.
     std::shared_ptr<const Topology> topology;
+#include "runtime_attachments.inc"
     std::vector<entt::entity> owned_entities;
     RuntimeBodyIds body_ids;
     std::optional<RuntimeEntityIds> entity_ids;
@@ -268,13 +269,21 @@ struct Runtime::Impl {
     void world_matrices() {
         profiling::Scope profile("runtime.hierarchy",static_cast<std::int64_t>(tick));
         std::uint64_t recomputed=0;
-        for (auto e : topology->hierarchy) {
+        const auto& hierarchy=transform_hierarchy();
+        const auto* graph=attachment_graph && !attachment_graph->bindings.empty() ? attachment_graph.get() : nullptr;
+        for (auto e : hierarchy) {
             auto& n=registry.get<Node>(e);
-            // Parents precede children in this pass. Their bindings are fixed
-            // for each Node lifetime; new/cold nodes start with invalid caches.
-            const auto* parent=n.parent.empty() ? nullptr : &registry.get<Node>(find(n.parent));
-            n.world_recomputed=n.hierarchy_cache.update(n.local,parent ? &parent->world : nullptr,
-                parent && parent->world_recomputed,n.world);
+            const auto* binding=attachment(graph,n.id);
+            const auto& parent_id=transform_parent(n,binding);
+            const auto* parent=parent_id.empty() ? nullptr : &registry.get<Node>(find(parent_id));
+            if(binding) {
+                const auto candidate=parent ? multiply(parent->world,binding->offset) : binding->offset;
+                validate_attachment_world(candidate);
+                n.world=candidate;n.world_recomputed=true;n.hierarchy_cache.invalidate();
+            } else {
+                n.world_recomputed=n.hierarchy_cache.update(n.local,parent ? &parent->world : nullptr,
+                    parent && parent->world_recomputed,n.world);
+            }
             if(const auto* camera=registry.try_get<RuntimeCamera>(e);camera && camera->world_pose!=RuntimeCameraPose{}) {
                 n.world=multiply(n.world,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
                 for(double v:n.world)require(std::isfinite(v) && std::abs(v)<=1e12,"Effected camera hierarchy matrix exceeds the supported range.");
@@ -285,7 +294,7 @@ struct Runtime::Impl {
             recomputed+=n.world_recomputed ? 1u : 0u;
         }
         profiling::counter("runtime.hierarchy.recomputed",recomputed);
-        profiling::counter("runtime.hierarchy.reused",topology->hierarchy.size()-recomputed);
+        profiling::counter("runtime.hierarchy.reused",hierarchy.size()-recomputed);
     }
     std::optional<RuntimeAnimations::ProceduralSupportBinding> procedural_support(
         const std::string& rig,const std::string& support) const {
@@ -1374,6 +1383,7 @@ struct Runtime::Impl {
     }
     struct StructureCheckpoint {
         std::shared_ptr<const Topology> topology;
+        std::shared_ptr<const AttachmentGraph> attachments;
         std::size_t owners;
         RuntimeEntityIds entities;
         RuntimeBodyIds bodies;
@@ -1381,7 +1391,7 @@ struct Runtime::Impl {
         std::set<std::uint32_t> suppressed_bodies;
     };
     StructureCheckpoint checkpoint_structure() const {
-        StructureCheckpoint result{topology,owned_entities.size(),*entity_ids,body_ids,structure_revision,{}};
+        StructureCheckpoint result{topology,attachment_graph,owned_entities.size(),*entity_ids,body_ids,structure_revision,{}};
         for(const auto e:topology->characters) {
             const auto& motor=*registry.get<Controller>(e).character;
             if(motor.IsSuppressed())result.suppressed_bodies.insert(motor.GetBodyID().GetIndexAndSequenceNumber());
@@ -1407,7 +1417,7 @@ struct Runtime::Impl {
     // Restore physical membership before the caller restores Jolt state.
     void rollback_structure(const StructureCheckpoint& saved) {
         for(std::size_t i=saved.owners;i<owned_entities.size();++i)destroy_prop_owner(owned_entities[i],false);
-        owned_entities.resize(saved.owners);topology=saved.topology;
+        owned_entities.resize(saved.owners);topology=saved.topology;attachment_graph=saved.attachments;
         auto& bodies=physics.GetBodyInterface();
         for(const auto& [raw,name]:topology->body_names) {
             (void)name;const JPH::BodyID id(raw);
@@ -1432,18 +1442,20 @@ struct Runtime::Impl {
         for(const auto& [id,entity]:candidate.definitions) {(void)id;result.entities.push_back(entity);}
         return result;
     }
-    void rebuild_hierarchy(Topology& candidate) {
-        candidate.hierarchy.clear();candidate.hierarchy.reserve(candidate.order.size());
+    std::vector<entt::entity> sorted_hierarchy(const Topology& candidate,const AttachmentGraph* graph=nullptr) {
+        std::vector<entt::entity> order;order.reserve(candidate.order.size());
         std::set<entt::entity> done;
         for(const auto e:candidate.order) {
             std::vector<entt::entity> chain;std::set<entt::entity> visiting;auto current=e;
             while(!done.contains(current)) {
                 require(visiting.insert(current).second,"Runtime hierarchy cycle.");chain.push_back(current);
-                const auto& parent=registry.get<Node>(current).parent;if(parent.empty())break;
+                const auto& node=registry.get<Node>(current);
+                const auto& parent=transform_parent(node,attachment(graph,node.id));if(parent.empty())break;
                 const auto found=candidate.identities.find(parent);require(found!=candidate.identities.end(),"Runtime hierarchy parent is absent.");current=found->second;
             }
-            for(auto it=chain.rbegin();it!=chain.rend();++it) {candidate.hierarchy.push_back(*it);done.insert(*it);}
+            for(auto it=chain.rbegin();it!=chain.rend();++it) {order.push_back(*it);done.insert(*it);}
         }
+        return order;
     }
     void validate_scene_membership(const Topology& candidate) const {
         std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0;std::uint32_t resolution=1024;
@@ -1543,7 +1555,7 @@ struct Runtime::Impl {
         }
         *entity_ids=std::move(cursor);
         auto by_id=[&](auto a,auto b){return registry.get<Node>(a).id<registry.get<Node>(b).id;};
-        std::sort(candidate->order.begin(),candidate->order.end(),by_id);rebuild_hierarchy(*candidate);
+        std::sort(candidate->order.begin(),candidate->order.end(),by_id);candidate->hierarchy=sorted_hierarchy(*candidate);
         validate_scene_membership(*candidate);
         candidate->live=live_definition(*candidate);const auto& definition=candidate->live;
         validate_runtime_mesh_colliders(definition);
@@ -1551,6 +1563,11 @@ struct Runtime::Impl {
         validate_runtime_camera_draw(definition);validate_physical_ownership(definition);
         // Private candidate binding lets existing helpers resolve the complete
         // hierarchy. Outer tick/structure checkpoints restore it on any failure.
+        if(attachment_graph && !attachment_graph->bindings.empty()) {
+            auto graph=std::make_shared<AttachmentGraph>(*attachment_graph);
+            validate_attachment_graph(*graph,*candidate);
+            attachment_graph=std::move(graph);
+        }
         topology=candidate;animations->rebind(definition,tick);animation_locals();world_matrices();
         std::set<std::string> moving_roots,controlled_cameras;
         for(const auto& [id,d]:candidate->definitions) {
@@ -2201,6 +2218,12 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
+std::map<std::string,RuntimeAttachmentBinding> Runtime::attachments() const {
+    return impl_->attachment_graph ? impl_->attachment_graph->bindings : std::map<std::string,RuntimeAttachmentBinding>{};
+}
+void Runtime::change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
+    impl_->change_attachments(expected,commands);
+}
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands); }
 std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string& id,bool include_parts,bool include_joints) const {
     (void)impl_->find(id);if(!impl_->physical_owners.contains(id))return {};

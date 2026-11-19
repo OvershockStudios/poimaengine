@@ -1,0 +1,86 @@
+{
+  "version": "0.0.249",
+  "status": "passed",
+  "scope": "Guarded attachment transfers and exact animated-anchor cold continuation. Kinematic following has a separate live test. Legacy kinematic sleep continuity remains open.",
+  "fixture": "tests/runtime_attachment.py",
+  "linux_x86_64": {
+    "engine_sha256": "2651143925cc94d1e20f777e729abea6886a5e5dff9d1884e49e27429738dc56",
+    "report_sha256": "0599cdf39d77be4bd3e3e99470fdfd35dbe6bcbe2adbabf25fc1d542532e9fc7",
+    "native_rpc_calls": 81,
+    "natural_process_exits": 2,
+    "complete_cold_checkpoint_equal": true,
+    "complete_replayed_save_equal": true,
+    "complete_save_equal_after_rejections": true,
+    "kinematic_following": true,
+    "before_handoff_m": [
+      -0.8,
+      -0.4,
+      0.0
+    ],
+    "following_position_m": [
+      -0.36981767273671573,
+      0.2143640332167439,
+      0.0
+    ]
+  },
+  "windows_x86_64": {
+    "engine_sha256": "a7d6179dad7ad43e3f255c7c5050429cb3e41252cb4cdd5e84d20e9d90fe0eb9",
+    "report_sha256": "0ccdc611608e60b181bbced891f6b7f22043a29d5c13dd24059bad3023292e92",
+    "native_rpc_calls": 85,
+    "natural_process_exits": 2,
+    "complete_cold_checkpoint_equal": true,
+    "complete_replayed_save_equal": true,
+    "complete_save_equal_after_rejections": true,
+    "kinematic_following": true,
+    "before_handoff_m": [
+      -0.8,
+      -0.4,
+      0.0
+    ],
+    "following_position_m": [
+      -0.36981767273671573,
+      0.2143640332167439,
+      0.0
+    ],
+    "vulkan_viewmodel_frames": 4,
+    "matching_same_tick_handoff_frames": true,
+    "matching_fresh_continuation_frames": true,
+    "selected_authoring_request_check_sha256": "2bc35316c0636e0724f69ff463348bcd7129eb200995245c84452532f140e27d",
+    "selected_session_request_check_sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+  },
+  "linux_regressions": [
+    "physical_pose_diagnostics_contract",
+    "mcp_contract",
+    "world_ui_contract",
+    "runtime_save_contract",
+    "player_service_contract",
+    "runtime_animation_layers_contract",
+    "runtime_joint_pose_contract",
+    "runtime_attachment_contract",
+    "asset_references_contract"
+  ],
+  "linux_mcp": {
+    "requests": 7,
+    "replies": 6,
+    "natural_exit_code": 0,
+    "report_sha256": "44a1cebc7742ab64964c6022b77846063cb68bc01e2b55444fefc2fafc7e2c2e"
+  },
+  "original_knight": {
+    "raw_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "windows_report_sha256": "630b6f3570781bdacca30443eb18c1345645e2db5c7f7f4f439405928ceb3673",
+    "linux_report_sha256": "50d83cbe60c7dac6235b73e316ac2a5eb311ad56873c2eef385f065d7d09d68a",
+    "matched_vulkan_handoff_views": 2,
+    "item_travel_m": 0.42297147474708485,
+    "max_handoff_matrix_delta": 1.1102230246251565e-16,
+    "max_source_oracle_matrix_error": 1.0858952070869066e-09,
+    "world_fixed_matrix_delta": 0.0
+  },
+  "idle_kinematic_limitation": {
+    "initial_failed_report_sha256": "4971a186299f8a9fc6f810d2d8e533fc8323874c82473748c6612bb6d9ddff1e",
+    "independent_reproduction_sha256": "969f618f4c789b64b3cb03be4b3bae56553a81e221774b58148a9d8d1f07f584",
+    "attachment_transactions": 0,
+    "original_active": false,
+    "restored_active": true,
+    "observation": "Tick 30 idle kinematic body active flag differs after cold continuation from tick 12."
+  }
+}

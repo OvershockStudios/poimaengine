@@ -22,6 +22,8 @@ For distances and angular errors between grip or attachment frames, use
 [`runtime.pose.compare`](POSE_FRAME_COMPARISON.md) at the same tick.
 For constraints on final joint rotations, use
 [`runtime.pose.joints`](JOINT_POSE_CHECKS.md).
+For a held item's current anchor, query [the attachment binding](ITEM_ATTACHMENTS.md)
+at the same tick and structure revision.
 
 ## Select entities and component fields
 

@@ -22,10 +22,12 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
     const auto bounded=[](const Matrix4& matrix) {
         for(double value:matrix)require(std::isfinite(value) && std::abs(value)<=1e12,"Presentation hierarchy matrix exceeds the supported range.");
     };
-    for(const auto e:impl_->topology->hierarchy) {
+    for(const auto e:impl_->transform_hierarchy()) {
         const auto& node=impl_->registry.get<Node>(e);
-        const auto local=local_matrix(node.local.position,node.local.rotation,node.local.scale);
-        auto matrix=node.parent.empty() ? local : multiply(worlds.at(node.parent),local);
+        const auto* binding=Impl::attachment(impl_->attachment_graph.get(),node.id);
+        const auto& parent=Impl::transform_parent(node,binding);
+        const auto local=Impl::transform_local(node,binding);
+        auto matrix=parent.empty() ? local : multiply(worlds.at(parent),local);
         if(const auto* other=impl_->registry.try_get<RuntimeCamera>(e)) {
             const auto& offset=node.id==camera ? world : other->world_pose;
             if(offset!=RuntimeCameraPose{})matrix=multiply(matrix,local_matrix(offset.position,offset.rotation,{1,1,1}));

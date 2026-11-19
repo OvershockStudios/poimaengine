@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 140}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 141}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -464,6 +464,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"joints",{{"type","array"},{"minItems",1},{"maxItems",max_joint_pose_checks},{"items",joint_check}}}},
         {"session_id","tick","rig","joints"});
     methods["runtime.pose.joints"]["description"]="Check final committed rig-node local rotations against explicit hinge or swing/twist limits in radians. Defaults to the frozen authored local reference and identity limit frame. Returns signed twist, swing, per-joint status and a read-only fit when the chart is well defined. Model node indices must be distinct. Outside runtime-game-session v1.";
+    methods["runtime.attachment.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev}},
+        {"session_id","tick"});
+    methods["runtime.attachment.inspect"]["description"]="Read active rigid item attachment anchors and affine matrices at an exact committed tick. Outside runtime-game-session v1.";
+    const auto attachment_command=Json{{"oneOf",Json::array({
+        object_schema({{"entity",id},{"mode",{{"const","keep_world"}}},{"anchor",parent}},{"entity","mode","anchor"}),
+        object_schema({{"entity",id},{"mode",{{"const","snap"}}},{"anchor",id},{"offset",transform}},{"entity","mode","anchor","offset"}),
+        object_schema({{"entity",id},{"mode",{{"const","reset"}}}},{"entity","mode"})})}};
+    methods["runtime.attachment.apply"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
+        {"expected_structure_revision",rev},{"commands",{{"type","array"},{"minItems",1},
+            {"maxItems",max_runtime_attachments},{"items",attachment_command}}}},
+        {"session_id","request_id","expected_tick","expected_structure_revision","commands"});
+    methods["runtime.attachment.apply"]["description"]="Atomically transfer ordinary visual items to live anchors, hold their current world matrices, or restore authored hierarchy. Keep-world preserves the item at handoff and may use null to hold it in world space. Snap uses the supplied local transform. Increments the structure revision without advancing time. Outside runtime-game-session v1.";
     const auto source_vertex=object_schema({{"entity",id},{"vertex",rev}},{"entity","vertex"});
     const auto source_face=object_schema({{"entity",id},{"triangle",rev},
         {"barycentric",vector(unit,3)}},{"entity","triangle","barycentric"});
@@ -936,6 +948,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"dependencies","The original frozen asset/provenance closure must still validate unchanged. Only dependencies directly selected by changed PbrTextures may be introduced or fully retired. New provenance bindings require newly introduced selected dependencies; existing bindings cannot be rewritten."},
         {"limitations","No geometry, rig, PbrMaterial scalar, template, double_sided or general scene changes. Every selected component must change. Synchronous asset validation and texture upload are not a latency guarantee."}};
     methods["runtime.capture"]["properties"]["material_revision"]=rev;
+    methods["runtime.capture"]["properties"]["structure_revision"]=rev;
     methods["player.capture"]["properties"]["expected_material_revision"]=rev;
     methods["player.capture_current"]["properties"]["expected_material_revision"]=rev;
     methods["save.write"]["properties"]["expected_material_revision"]=rev;

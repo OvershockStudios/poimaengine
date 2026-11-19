@@ -25,6 +25,17 @@ struct RuntimeTransform {
     std::array<double,4> rotation{0,0,0,1};
     std::array<double,3> scale{1,1,1};
 };
+enum class RuntimeAttachmentMode { KeepWorld, Snap, Reset };
+struct RuntimeAttachmentCommand {
+    std::string entity,anchor;
+    RuntimeAttachmentMode mode=RuntimeAttachmentMode::KeepWorld;
+    std::optional<RuntimeTransform> offset;
+};
+struct RuntimeAttachmentBinding {
+    std::string anchor;
+    Matrix4 offset;
+};
+inline constexpr std::size_t max_runtime_attachments=64;
 enum class BodyMotion { Static, Dynamic, Kinematic };
 struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
@@ -499,6 +510,8 @@ public:
     RuntimeStructureResult change_structure(std::uint64_t expected_revision,
         const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns);
     std::uint64_t structure_revision() const;
+    std::map<std::string,RuntimeAttachmentBinding> attachments() const;
+    void change_attachments(std::uint64_t expected_revision,const std::vector<RuntimeAttachmentCommand>& commands);
     RuntimeSpawnInstance instance(const std::string& root) const;
     std::string instance_node(const std::string& root,const std::string& local) const;
     bool is_player_controller(const std::string& id) const;

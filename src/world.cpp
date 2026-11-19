@@ -2924,8 +2924,9 @@ public:
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","structure_revision","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            structure_read_guard(params);
             material_guard(params,"material_revision");
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
@@ -3635,6 +3636,7 @@ public:
 #include "world_pose_frames.inc"
 #include "world_joint_pose.inc"
 #include "world_surface_measure.inc"
+#include "world_attachments.inc"
 #include "world_physical.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
@@ -3815,6 +3817,8 @@ public:
         if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
         if(method=="runtime.pose.joints")return check_runtime_joint_pose(params);
         if(method=="runtime.surface.measure")return measure_runtime_surfaces(params);
+        if(method=="runtime.attachment.inspect")return inspect_runtime_attachments(params);
+        if(method=="runtime.attachment.apply")return apply_runtime_attachments(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
