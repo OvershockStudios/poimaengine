@@ -1,4 +1,4 @@
-# Poima Engine
+<h1><a href="https://poimaengine.com/"><img src="docs/branding/poima-wordmark.svg" alt="Poima Engine" width="208" height="77"></a></h1>
 
 **An open-source, agent-native 3D game engine.**
 

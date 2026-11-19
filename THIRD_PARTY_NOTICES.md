@@ -1,5 +1,14 @@
 # Third-party notices
 
+## Poima wordmark
+
+The [README wordmark](docs/branding/poima-wordmark.svg) uses outlined lettering
+from Playball, the typeface used on [poimaengine.com](https://poimaengine.com/).
+Copyright 2011 The Playball Project Authors. The
+[Playball font](https://github.com/google/fonts/tree/main/ofl/playball) is
+under the [SIL Open Font License 1.1](docs/branding/Playball-OFL.txt).
+Poima ships the wordmark artwork and does not bundle the font.
+
 ## Rigged Figure documentation images
 
 - [Rigged Figure](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/RiggedFigure), copyright © 2017 Cesium, is licensed under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/). Its [source license notice](https://github.com/KhronosGroup/glTF-Sample-Assets/blob/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/RiggedFigure/LICENSE.md) identifies the model and associated files.
