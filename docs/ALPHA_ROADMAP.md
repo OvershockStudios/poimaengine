@@ -1,10 +1,10 @@
 # Road to Alpha 1 — 1.0.0-alpha.1
 
-Alpha 1 is the first usable release for building small 3D single-player games
-with agents, with a desktop editor available for inspection and manual work.
-It is a milestone toward the full engine, not completion of its graphics,
-simulation or platform ambitions. Version numbers count development checkpoints;
-they do not measure completion.
+Alpha 1 is the first release where a person new to game development can make
+a small 3D single-player game in Poima's Windows creator workspace. They can
+agree on a brief, play a verified build, request a change, recover an earlier
+working version and export a standalone game. The same project opens in the
+desktop editor for inspection and direct editing.
 
 Pre-alpha development checkpoints use `0.x.x`. The first alpha release will be
 tagged `1.0.0-alpha.1`, followed by further alpha candidates, then
@@ -14,6 +14,28 @@ The [full release roadmap](ROADMAP.md) defines the wider destination and beta
 entry criteria. Alpha 1 is an intermediate usable-game milestone.
 
 ## Release gates
+
+### First-time creator journey
+
+Test the shipped Windows workspace on a fresh setup with someone who has
+never made a game. They may sign in with a supported agent provider and bring
+references. They should be able to complete these steps inside the workspace.
+
+1. Create a blank project, reconnect to it, and agree on a short game brief
+   through adaptive questions and choices.
+2. Play the generated game and see which gameplay checks ran against its
+   specific build. Request a revision and play the verified result.
+3. Exercise a failed change. Keep playing the last verified build and restore
+   an earlier project version after restarting the app. Verify the source,
+   assets and native build attached to the restored version.
+4. Export the verified game. Run it from a new location with its original
+   project unavailable, and complete the declared play and save checks.
+
+Record first-play time, setup and assistance needed, failed attempts, and
+whether the creator could recognize a verified build and recover it.
+The technical release gates below still apply.
+
+### Engine and delivery
 
 | Gate | Current evidence | What must be closed for Alpha 1 |
 | --- | --- | --- |
@@ -183,8 +205,9 @@ This closes the selected breadth requirement, not an entire Alpha release gate.
 The separate contract, content, representative performance, physical-input,
 editor and delivery gates remain open. Each workflow retains its own toolchain,
 reproducibility and observation limits, and earlier failed attempts remain
-failed. Return to the fixed representative performance/reliability workload;
-additional genre demonstrations are not the next release requirement.
+failed. Use the fixed representative performance and reliability workload
+alongside the first-time creator journey. The next release work is to make
+the existing qualifying workflows accessible through the creator workspace.
 
 The initial alpha matrix is Windows native editor/player/rendering and Linux
 native CLI authoring/simulation. Each needs a fresh-project regression and
@@ -252,15 +275,19 @@ it does not close the thirty-minute mixed-reliability or wider performance gate.
 
 ## Implementation order
 
-1. Extend the qualified character/content consumer to representative imported
-   locomotion and the supported rig/clip profile.
-2. Close the practical agent/gameplay gaps revealed by that game, including
-   UI, settings, audio and save continuation.
-3. Qualify repeated fresh-project agent workflows and define the supported
-   alpha contracts and upgrade behavior.
-4. Measure a representative scene and game; fix material performance and
-   reliability problems before freezing the alpha candidate.
-5. Finish blocking editor issues, branding, installation and release checks.
+1. Connect a small local creator workspace to manifest creation, the shared
+   owner, an installed agent, the game brief and the native player. Run the
+   first chat-to-playable flow from a blank project.
+2. Add verified project candidates, working-build retention, plain-language
+   test results and restart-safe recovery. Export from the same workspace.
+   Define the supported alpha contracts and upgrade behavior.
+3. Close practical gameplay gaps exposed by the first-game flow and the
+   supported character/content consumer, including imported locomotion,
+   rig and clip intake, UI, settings, audio and save continuation.
+4. Qualify representative performance, reliability, physical input and
+   editor interaction for the supported workloads.
+5. Validate fresh installation, the first-time creator journey and standalone
+   export using the candidate release artifacts.
 
 Independent source/test/review work can run in parallel. Heavy native builds
 and GPU qualification are scheduled to fit the development laptop. Findings

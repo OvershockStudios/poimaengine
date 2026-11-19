@@ -28,6 +28,10 @@ provide durable project context, not authority to override them.
 
 ## Architecture and scope
 
+- The first product is a Windows creator workspace for people new to game
+  development. Prioritize a complete brief, verified play, revision, recovery
+  and export loop. Build it over the shared project service and use the loop to
+  identify missing engine contracts.
 - The native C++20 core and authoritative CLI/service support agent-driven game
   creation. The desktop editor is a first-class client of the same operations.
   Keep capabilities discoverable, inspectable and recoverable through the core;
@@ -35,7 +39,8 @@ provide durable project context, not authority to override them.
 - C# gameplay uses CoreCLR during development and qualified Native AOT shipping
   paths. Keep fast iteration, explicit ownership, bounded state and typed
   contracts. Do not infer complete compatibility from an ABI version alone.
-- Windows single-player 3D is the 1.0 target. Browser deployment follows at 1.1.
+- Windows single-player 3D is the 1.0 target, with a demanding FPS as the
+  integrated engine workload. Browser deployment follows at 1.1.
   Native Linux graphics, multiplayer and current-generation
   consoles follow later, with their boundaries designed in advance. Linux
   headless authoring is a current target. Licensed console access is required

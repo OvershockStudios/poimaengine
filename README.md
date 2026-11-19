@@ -2,9 +2,10 @@
 
 **An open-source, agent-native 3D game engine.**
 
-Describe the game you want to play. Codex or Claude Code can edit the world,
-playtest it, and inspect what happened through Poima. Open the same project in
-the desktop editor whenever you want to see or change it yourself.
+Poima's goal is to let anyone make a game by describing it, playing a build,
+and asking for changes. Today Codex or Claude Code can edit, playtest and
+inspect games through Poima's native engine. The same projects open in the
+desktop editor. [Roadmap](docs/ROADMAP.md#product-milestones)
 
 ## Winter Village
 

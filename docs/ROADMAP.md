@@ -1,10 +1,15 @@
 # Road to Poima 1.0
 
-Poima is being built as a general-purpose engine for agent-driven and human
-game development. Its first usable milestone is a small 3D single-player game
-workflow. The complete destination also includes advanced rendering, reactive
-worlds, deterministic simulation, browser deployment, multiplayer and
-current-generation consoles.
+Poima is for people who want to make a game and may never have made one
+before. They describe it, play what the agent builds, and direct the next
+change. Poima's native 3D engine gives the agent the same project authority,
+observations and recovery operations that power the desktop editor.
+
+The first product is a local Windows creator workspace. Its first release
+gate is a small single-player game made from a blank project and finished as
+a standalone build. Advanced rendering, reactive worlds, deterministic simulation,
+browser deployment, multiplayer and current-generation consoles remain part
+of the engine's delivery roadmap.
 
 This roadmap segments that work by dependencies and observable results. It
 does not assign dates or equate development version numbers with completion.
@@ -33,8 +38,10 @@ does not remove requirements from that destination. Single-player PC work comes
 first; multiplayer and console integration follow it. Console implementation
 needs licensed SDKs and approved development hardware.
 
-The 1.0 acceptance target is a complete Windows single-player FPS workflow,
-with Linux headless authoring and the engine systems below. Browser deployment
+The 1.0 acceptance targets are the supported Windows creator workflow and a
+complete Windows single-player FPS that exercises the engine under a demanding
+workload. Linux headless authoring and the engine systems below remain in
+scope. Browser deployment
 is targeted for 1.1.0, before Linux graphics, multiplayer and consoles. Their
 portability boundaries and feasibility work begin earlier; their implementation
 and platform qualification do not block 1.0.
@@ -53,9 +60,31 @@ Core jobs, state ownership and resource/lifecycle services remain shared
 foundations. Optional hosted
 services and community adoption are not release gates.
 
-## Segmented implementation
+## Product milestones
 
-### 1. Complete the first usable game workflow
+| Milestone | What the creator can do | Proof |
+| --- | --- | --- |
+| Pre-alpha, local creator workspace | Create or reopen one project, connect a supported agent, and agree on a brief through chat. Open a native preview from the workspace. | Fresh Windows install, project creation, provider connection or recovery, completed brief, first playable build and clean close/reopen through the GUI. |
+| Pre-alpha, verified iteration | Play the latest verified build, request a change, see whether it passed, and return to an earlier working version. An unsettled change leaves the last verified build playable. | A successful requested change, an independent playtest that catches a bad change, and recovery checked across a restart. Build identity covers gameplay, scene, assets and dependencies. |
+| Alpha 1, first game from start to finish | Make, play, revise and export a small 3D game through the workspace without writing code, opening a terminal or learning the full editor. | A first-time creator completes the flow on a fresh Windows setup. The independently verified game runs from a different location. The separate [engine and delivery gates](ALPHA_ROADMAP.md) also pass. |
+| Later alphas, wider creative range | Make richer games using the same workflow. Inspect visuals and test results, use focused direct controls, or open the advanced editor on the same project. | Representative games demonstrate each added capability through authoring, play, save and export. Both agent and manual workflows preserve the same authored project. |
+| Beta through 1.0, supported Windows product | Rely on versioned projects, understandable recovery, strong game quality and reliable delivery. | Supported creator workflows and the demanding FPS both pass the published quality, upgrade, performance and delivery gates. |
+
+The next implementation priority is one complete local creator loop on the
+existing engine. Start with project creation, a supported agent connection,
+the brief and a single playable result. Add core capabilities when the loop
+exposes a missing contract, then qualify whole-project candidate recovery and
+export. Keep closing performance, physical-input and reliability gates in
+parallel as the work permits. Installable desktop workflows establish the
+product before optional hosting.
+
+## Engine capability tracks
+
+These tracks describe the systems required to support the product and the
+broader engine. Shared dependencies determine their technical order. Each
+new capability needs a playable use case and an observable result.
+
+### 1. Qualify the first usable game workflow
 
 Qualify three compact 3D games from fresh projects: combat, puzzle/adventure and
 simulation/management. Both Codex and Claude complete qualifying workflows
@@ -299,15 +328,7 @@ schemas and character/navigation systems. **Exit:** a living settlement passes
 long-run replay, inventory/resource conservation, time acceleration, saves and
 active/offscreen promotion checks under a declared population budget.
 
-### 8. Complete authoring, player UX and creative packages
-
-The primary creator experience is for someone making their first game. From
-one workspace, they describe an idea, answer short rounds of questions, play
-verified builds, request changes in everyday language and export a standalone
-game. The workspace uses Poima's native authoring, verification and recovery
-operations and opens the same project in the editor for direct control.
-A first-time creator should be able to finish this workflow without writing
-code, using a terminal or learning the editor.
+### 8. Extend creator, editor and player workflows
 
 Finish agent access to hierarchy, components, animation, VFX, UI and world
 systems, with focused queries, diagnostics, observations and low-volume results.
@@ -386,6 +407,12 @@ adding their full implementation to 1.0.
 | Multiplayer | Self-hosted authority, replication/interest management, prediction/reconciliation, co-op followed by extraction-scale play, reconnect/late join and acoustic proximity voice. | 4–8-player co-op and a representative 24–32-player extraction workload with AI pass latency/loss, authority and match-persistence checks. |
 | Consoles | Xbox Series X/S and PS5 native graphics, shader, audio, input, users, storage/save, lifecycle and packaging adapters. | Actual approved SDK/hardware execution and platform requirements; this track is gated by developer access. |
 
+The browser release provides playable links from browser-qualified exports.
+Browser authoring, remote builds and streaming previews can follow their own
+feasibility checks. The local workflow supplies the project and verification
+contracts for those services. A shared or remixed game needs a complete
+dependency inventory and redistribution rights for its content.
+
 Before 1.0, keep renderer/platform services behind native interfaces, separate
 authoritative simulation from presentation, and define stable entity/event/time
 ownership and serialization boundaries. Use bounded portability experiments to
@@ -401,6 +428,10 @@ Beta entry requires the explicit 1.0 support manifest and its complete evidence
 matrix. Each included system must work in the declared end-to-end games, be
 authorable through the shared engine, have meaningful diagnostics/observation,
 and support its declared persistence and platform behavior.
+
+Run first-time creator journeys on clean installations with the supported
+agent adapters. Verify guided project setup, test-backed changes, inspection,
+recovery, and standalone export using the shipped workspace.
 
 Large missing systems remain alpha work. A required capability cannot be
 counted complete merely because its package is optional to install. The supported contracts,
