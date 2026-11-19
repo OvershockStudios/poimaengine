@@ -1,0 +1,240 @@
+{
+  "engine_version": "0.0.271",
+  "schema_revision": 159,
+  "verifier": "tests/pickup_pose_blend.py",
+  "scope": "A bounded search for a clear blocked-pickup arm endpoint, retaining the prior wrist goal. Matched imported-rig takes use identical normalized runtime.step inputs, including the single-tick blocker movement and retry.",
+  "contract": {
+    "feature": "item_attachment_pickup_blend_v1",
+    "command_version": 9,
+    "command_bytes": 312,
+    "services_bytes": 528,
+    "max_intermediate_poses": 4,
+    "reserved_capsule_queries": 20,
+    "witness_version": 4
+  },
+  "analytic_coreclr": {
+    "native_replies": 423,
+    "natural_owner_exits": 9,
+    "blocked_tick": 171,
+    "successful_retry_tick": 200,
+    "exact_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "sha256": "436b57e32ca9c58e00ac320d736731a2a14e2b89ec46f9a5c92df9ed42660974"
+      },
+      {
+        "slots": [
+          "finished",
+          "cold-finished"
+        ],
+        "sha256": "f03a3e5e96fc5cd56ea70c4c5866acfe5855caec4d98b81cd36489d70ca19be0"
+      },
+      {
+        "slots": [
+          "finished",
+          "after-invalid-load"
+        ],
+        "sha256": "f03a3e5e96fc5cd56ea70c4c5866acfe5855caec4d98b81cd36489d70ca19be0"
+      },
+      {
+        "slots": [
+          "endpoint",
+          "endpoint-restored"
+        ],
+        "sha256": "1e9914140b2630aa55e604e010f3a0cf54be05441c479fd2e5c57bbda95023fd"
+      },
+      {
+        "slots": [
+          "previous",
+          "previous-cold"
+        ],
+        "sha256": "7dfb999fdf0fc99684f7234603c53173c77d490354882612f0f7dd714ff93414"
+      },
+      {
+        "slots": [
+          "unresolved",
+          "unresolved-cold"
+        ],
+        "sha256": "955e04534898682935fbf6288a6a41be62727416943996c9a2fae16e0d4e822b"
+      }
+    ],
+    "retained_v8_outcome": "animation",
+    "saved_pose": "blended",
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks item_attachment_pickup_blend_v1."
+    },
+    "invalid_pose_rejection": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "captures": {}
+  },
+  "analytic_windows_native_aot": {
+    "native_replies": 427,
+    "natural_owner_exits": 9,
+    "blocked_tick": 171,
+    "successful_retry_tick": 200,
+    "exact_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "sha256": "f16da859087f94900327171c487c12ec703ef8c3fe4c32085719e92b0c010363"
+      },
+      {
+        "slots": [
+          "finished",
+          "cold-finished"
+        ],
+        "sha256": "bd5f6e3d091e0b72d8e80bc5c3ec158a34af67645b3a696c6dfc9a00a4af371f"
+      },
+      {
+        "slots": [
+          "finished",
+          "after-invalid-load"
+        ],
+        "sha256": "bd5f6e3d091e0b72d8e80bc5c3ec158a34af67645b3a696c6dfc9a00a4af371f"
+      },
+      {
+        "slots": [
+          "endpoint",
+          "endpoint-restored"
+        ],
+        "sha256": "9d673a2439d98af3fbe394774dada333f8a92c6a18e4925a9ff3f0fe8dc30a52"
+      },
+      {
+        "slots": [
+          "previous",
+          "previous-cold"
+        ],
+        "sha256": "48d39093132a8e326b083b5dea0323c814da5aab5538837f3e5e496622d22ca6"
+      },
+      {
+        "slots": [
+          "unresolved",
+          "unresolved-cold"
+        ],
+        "sha256": "42563c7fe89dfdd6907d01581fa99a322221c4af0e8bfa115d5533cc1155028c"
+      }
+    ],
+    "retained_v8_outcome": "animation",
+    "saved_pose": "blended",
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: item_attachment_pickup_blend_v1"
+    },
+    "invalid_pose_rejection": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "captures": {
+      "blended": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "32a92d2afb3aaeac511f946ca343f556bf0cb908aca4d61ae775c86ec33244a7"
+      },
+      "endpoint": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "fd5237b831d282d7a46b90bd8d53248236b3d03d8403a3894eb77b50a26f1cfb"
+      }
+    }
+  },
+  "imported_coreclr": {
+    "native_replies": 931,
+    "exact_whole_archive_pairs": 2,
+    "identical_normalized_runtime_steps": 90,
+    "blocked_tick": 188,
+    "pickup_tick": 240,
+    "retained_positional_weight": 0.3125,
+    "retained_wrist_weight": 1.0,
+    "peak_wrist_step_after_deg": 7.958610909078571,
+    "before": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 79.7233194910557,
+      "wrist_step_mm": 39.161288466746306,
+      "wrist_step_degrees": 74.36657073968804
+    },
+    "after": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 55.22556337947777,
+      "wrist_step_mm": 23.954978171433826,
+      "wrist_step_degrees": 0.0
+    },
+    "fingertips_mm": [
+      0.9122699911955192,
+      3.234643305384149,
+      2.1632849586761216,
+      0.5902301725048309
+    ],
+    "native_capture_frames": 0
+  },
+  "imported_windows_native_aot": {
+    "native_replies": 1107,
+    "exact_whole_archive_pairs": 2,
+    "identical_normalized_runtime_steps": 90,
+    "blocked_tick": 188,
+    "pickup_tick": 240,
+    "retained_positional_weight": 0.3125,
+    "retained_wrist_weight": 1.0,
+    "peak_wrist_step_after_deg": 7.958610904470343,
+    "before": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 79.72331383954727,
+      "wrist_step_mm": 39.16128846674615,
+      "wrist_step_degrees": 74.36657073968806
+    },
+    "after": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 55.225559473283,
+      "wrist_step_mm": 23.954978520974887,
+      "wrist_step_degrees": 0.0
+    },
+    "fingertips_mm": [
+      0.9122699911954115,
+      3.234643305384044,
+      2.1632849586761216,
+      0.5902301725045807
+    ],
+    "native_capture_frames": 88
+  },
+  "imported_native_vulkan": {
+    "extent": [
+      800,
+      450
+    ],
+    "frames": 88,
+    "encoded_rate": 60,
+    "sha256": "a7c194efb05d81e512077d2962aa47168acb1a8147ab5ec3aa720c30a7e7bc7d"
+  },
+  "qualification": {
+    "linux_ctest": [
+      "grip_motion_review",
+      "native_gameplay_publish_requirements",
+      "world_ui_contract",
+      "runtime_joint_pose_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ],
+    "linux_native_compatibility": true,
+    "linux_mcp": {
+      "passed": true,
+      "native_replies": 7,
+      "exact_archive_pairs": 1,
+      "restored_native_witness": true,
+      "stale_structure_code": -32009
+    }
+  },
+  "limits": "Endpoint clearance for the selected two capsules and scripts. The test does not validate skinned hand collision, continuous arm routing, or player presentation cadence."
+}

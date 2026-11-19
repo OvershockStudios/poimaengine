@@ -170,3 +170,13 @@ public sealed class PoseFallbackCarryPropsGame : Game<ReachPickupState>,
     public override void Tick(ref ReachPickupState state, GameContext context) =>
         CarryPropsGame.Update(ref state,context,ReachGuard.PoseFallback);
 }
+
+[GameModule("poima.example.blended-fallback-carry-props")]
+public sealed class BlendedFallbackCarryPropsGame : Game<ReachPickupState>,
+    IIkClearanceGame, IItemAttachmentAimGame, IItemPickupBlendGame, IItemAttachmentReleaseGame,
+    ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        CarryPropsGame.Update(ref state,context,ReachGuard.BlendedFallback);
+}

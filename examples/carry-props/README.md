@@ -64,6 +64,12 @@ tick and recovery from the same side camera, with sleeves and joint markers
 attached to the live rig. The verifier can also take an older host
 and its original final-clearance module to reproduce the clipping.
 
+Use `Poima.Examples.BlendedFallbackCarryPropsGame` on a 0.0.271 host to
+try clear intermediate arm poses and ease wrist orientation through the
+return. Run `tests/pickup_pose_blend.py` with the selected module and the
+same runtime paths as above. Its comparison artifact selects
+`Poima.Examples.PoseFallbackCarryPropsGame`.
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

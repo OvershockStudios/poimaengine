@@ -15,7 +15,9 @@
         std::array<double,2> radii;
         std::array<std::array<double,3>,3> start;
         std::optional<RuntimeIkCommand> fallback;
+        bool blend=false;
     };
+    static constexpr unsigned pickup_blend_samples=4;
     struct PickupClearanceRejected {
         RuntimeAttachmentReachBlocked detail;
     };
@@ -179,25 +181,48 @@
         using Pose=RuntimeAttachmentReachBlocked::Pose;
         const auto ignore=pickup_clearance_exclusions(item,guard.rig);
         const auto& wrapper=registry.get<Node>(find(guard.rig)).world;
-        const auto commit_if_clear=[&](const RuntimeIkCommand& control) {
+        const auto clear_pose=[&](const RuntimeIkCommand& control) -> std::optional<RuntimeAnimations::IkChainPreview> {
             auto preview=animations->preview_ik_chain(control,tick,wrapper);
-            if(sweep_chain(preview.candidate,preview.candidate,guard.radii,ignore))return false;
+            if(sweep_chain(preview.candidate,preview.candidate,guard.radii,ignore))return std::nullopt;
+            return preview;
+        };
+        const auto commit=[&](const RuntimeIkCommand& control,RuntimeAnimations::IkChainPreview preview,Pose pose) {
             // Publish only the three validated, disjoint local joints. Other
             // rig clocks and cached physics/grounding samples already committed.
             animations->publish_pickup_fallback(control,std::move(preview.state));
             for(std::size_t i=0;i<preview.entities.size();++i)
                 registry.get<Node>(find(preview.entities[i])).local=preview.locals[i];
             world_matrices();
-            return true;
+            return pose;
         };
-        auto control=guard.fallback.value();
-        if(commit_if_clear(control))return Pose::Previous;
+        const auto& previous=guard.fallback.value();
+        if(auto pose=clear_pose(previous))return commit(previous,std::move(*pose),Pose::Previous);
         // Disabled controls already sampled the unmodified incoming pose.
-        if(!control.enabled)return Pose::Unresolved;
-        control.enabled=false;
-        control.weight=0;
-        control.end_orientation.reset();
-        return commit_if_clear(control) ? Pose::Animation : Pose::Unresolved;
+        if(!previous.enabled)return Pose::Unresolved;
+        auto neutral=previous;
+        neutral.weight=0;
+        if(!guard.blend)neutral.end_orientation.reset();
+        neutral.enabled=neutral.end_orientation.has_value();
+        if(neutral.enabled && previous.weight==0)return Pose::Unresolved;
+        auto best=clear_pose(neutral);
+        auto control=neutral;
+        if(guard.blend && previous.weight>0) {
+            double lower=0,upper=previous.weight;
+            for(unsigned i=0;i<pickup_blend_samples;++i) {
+                auto probe=previous;
+                // If both endpoints are blocked, still look for a clear
+                // interior solution. Every published candidate is queried.
+                probe.weight=best ? std::midpoint(lower,upper)
+                    : previous.weight*(pickup_blend_samples-i)/double(pickup_blend_samples+1);
+                if(auto pose=clear_pose(probe)) {
+                    lower=probe.weight;
+                    control=probe;
+                    best=std::move(pose);
+                } else upper=probe.weight;
+            }
+        }
+        if(!best)return Pose::Unresolved;
+        return commit(control,std::move(*best),control.enabled ? Pose::Blended : Pose::Animation);
     }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
         const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false,

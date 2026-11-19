@@ -42,7 +42,7 @@ def generated_requirements(path):
     if not isinstance(features, list) or not 1 <= len(features) <= 64 or any(type(v) is not str for v in features):
         raise ValueError('Generated gameplay features must be bounded text.')
     if len(set(features)) != len(features) or 'baseline_v7' not in features or any(
-            v not in ('baseline_v7', 'animation_inertial_v1', 'animation_layers_v1', 'character_input_v1', 'navigation_query_v1', 'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'physical_recovery_v1', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_aim_v1', 'animation_ik_clearance_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1') for v in features):
+            v not in ('baseline_v7', 'animation_inertial_v1', 'animation_layers_v1', 'character_input_v1', 'navigation_query_v1', 'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1', 'hit_regions_v1', 'animation_ik_v1', 'animation_root_motion_v1', 'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'physical_recovery_v1', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_aim_v1', 'animation_ik_clearance_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_blend_v1') for v in features):
         raise ValueError('Unsupported or duplicate generated gameplay feature.')
     if (data['call_version'], data['call_bytes'], data['services_version']) != (1, 80, 7):
         raise ValueError('Generated gameplay requires an unsupported ABI.')
@@ -74,6 +74,8 @@ def generated_requirements(path):
         raise ValueError('Pickup clearance requires item_attachment_pickup_v1.')
     if 'item_attachment_pickup_pose_v1' in features and 'item_attachment_pickup_clearance_v1' not in features:
         raise ValueError('Pickup pose fallback requires item_attachment_pickup_clearance_v1.')
+    if 'item_attachment_pickup_blend_v1' in features and 'item_attachment_pickup_pose_v1' not in features:
+        raise ValueError('Blended pickup fallback requires item_attachment_pickup_pose_v1.')
     if 'item_attachment_aim_v1' in features and 'item_attachment_v1' not in features:
         raise ValueError('Item aim requires item_attachment_v1.')
     if 'animation_ik_clearance_v1' in features and not {'animation_ik_v1','capsule_cast_v1'} <= set(features):

@@ -225,7 +225,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 158}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 159}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -284,6 +284,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pickup_feature","item_attachment_pickup_v1"},{"pickup_command_version",6},{"pickup_command_bytes",272},
         {"pickup_clearance_feature","item_attachment_pickup_clearance_v1"},{"pickup_clearance_command_version",7},
         {"pickup_pose_feature","item_attachment_pickup_pose_v1"},{"pickup_pose_command_version",8},
+        {"pickup_blend_feature","item_attachment_pickup_blend_v1"},{"pickup_blend_command_version",9},
         {"pickup_clearance_command_bytes",312},{"pickup_clearance_outcome_version",5},{"pickup_clearance_outcome_bytes",88},
         {"aim_feature","item_attachment_aim_v1"},{"aim_query_version",4},{"aim_query_bytes",208},
         {"max_surface_probes",max_attachment_surface_probes},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},

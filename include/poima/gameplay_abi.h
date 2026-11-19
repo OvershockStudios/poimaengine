@@ -646,7 +646,8 @@ typedef struct PoimaGameItemAttachmentCommandV3 {
 /* item_attachment_pickup_clearance_v1 extends attachment_set version 7.
  * The arm uses a live manual IK chain ending at the receiving hand.
  * item_attachment_pickup_pose_v1 uses the same layout at version 8 and
- * additionally tries clear fallback poses when the final reach is blocked. */
+ * additionally tries clear fallback poses when the final reach is blocked.
+ * item_attachment_pickup_blend_v1 uses version 9 and checks intermediate poses. */
 typedef struct PoimaGameItemPickupClearanceV7 {
     PoimaGameItemAttachmentCommandV3 sampled;
     PoimaEntityId rig;

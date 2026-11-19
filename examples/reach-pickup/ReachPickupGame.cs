@@ -16,7 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
-internal enum ReachGuard { None, Preview, Pickup, PoseFallback }
+internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -32,13 +32,14 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default,
         ReachGuard guard=ReachGuard.None)
     {
-        if(state.PendingTick!=0 && guard is (ReachGuard.Pickup or ReachGuard.PoseFallback) &&
+        if(state.PendingTick!=0 && guard is (ReachGuard.Pickup or ReachGuard.PoseFallback or ReachGuard.BlendedFallback) &&
             context.GetItemPickupBlocker(state.Item) is { } block &&
             block.SampledTick==(ulong)state.PendingTick)
         {
             state.PendingTick=0;
             ++state.Cancellations;
-            if(guard==ReachGuard.PoseFallback && context.GetTwoBoneIkOrientation(state.Rig,1) is { } committed)
+            if(guard is (ReachGuard.PoseFallback or ReachGuard.BlendedFallback) &&
+                context.GetTwoBoneIkOrientation(state.Rig,1) is { } committed)
                 state.Weight=committed.Point.Enabled ? committed.Point.Weight : 0;
             BeginReturn(ref state,blocked:true);
         }
@@ -101,7 +102,9 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                         Probe(state,state.Vertex1),Probe(state,state.Vertex2),
                         Probe(state,state.Vertex3),Probe(state,state.Vertex4)
                     ];
-                    if(guard==ReachGuard.PoseFallback)
+                    if(guard==ReachGuard.BlendedFallback)
+                        context.AttemptItemPickupWithBlendedFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
+                    else if(guard==ReachGuard.PoseFallback)
                         context.AttemptItemPickupWithPoseFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
                     else if(guard==ReachGuard.Pickup)
                         context.AttemptItemPickup(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
@@ -119,7 +122,16 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             double remaining=1-Ease(Math.Min(1.0,(double)++candidate.TicksInPhase/state.ReturnTicks));
             candidate.Weight=remaining*state.ReturnWeight;
             candidate.Opening=remaining*state.ReturnOpening;
-            if(!TryApplyPose(candidate,context,guard!=ReachGuard.None))return;
+            IkEndOrientationGoal? wrist=null;
+            if(guard==ReachGuard.BlendedFallback && state.Phase==BlockedReturning && remaining>0 &&
+                context.GetTwoBoneIkOrientation(state.Rig,1)?.EndOrientation is { } held)
+            {
+                // Advance from the last committed wrist sample, including after
+                // save/restore or a return tick rejected by the clearance probe.
+                double previousRemaining=1-Ease((double)state.TicksInPhase/state.ReturnTicks);
+                wrist=held.Goal with { Weight=held.Goal.Weight*remaining/previousRemaining };
+            }
+            if(!TryApplyPose(candidate,context,guard!=ReachGuard.None,wrist))return;
             if(remaining==0)candidate.Phase=state.PickupTick==0 ? Idle : Held;
             state=candidate;
         }
@@ -193,12 +205,13 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         (state.TargetQx,state.TargetQy,state.TargetQz,state.TargetQw)=(rotation.X,rotation.Y,rotation.Z,rotation.W);
     }
 
-    private static bool TryApplyPose(in ReachPickupState state,GameContext context,bool checkClearance)
+    private static bool TryApplyPose(in ReachPickupState state,GameContext context,bool checkClearance,
+        IkEndOrientationGoal? wrist=null)
     {
         var rig=context.Get(state.Rig).Transform;
         var pole=TransformedPoint(rig,new(state.PoleX,state.PoleY,state.PoleZ));
         var goal=new IkCommand(state.Rig,1,new(state.TargetX,state.TargetY,state.TargetZ),
-            pole,state.Weight>0,IkSpace.World,state.Weight);
+            pole,state.Weight>0 || wrist.HasValue,IkSpace.World,state.Weight);
         if(checkClearance)
         {
             Span<EntityId> ignore=stackalloc EntityId[2];
@@ -209,14 +222,13 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             var clearance=context.ProbeIkClearance(goal,.02,.02,ignore[..count]);
             if(clearance.Blocker.HasValue)return false;
         }
-        IkEndOrientationGoal? orientation=null;
-        if(state.Weight>0)
+        if(!wrist.HasValue && state.Weight>0)
         {
             var world=new Quaternion((float)state.TargetQx,(float)state.TargetQy,(float)state.TargetQz,(float)state.TargetQw);
             var local=Quaternion.Normalize(Quaternion.Inverse(Rotation(rig))*world);
-            orientation=new(new(local.X,local.Y,local.Z,local.W),state.Weight);
+            wrist=new(new(local.X,local.Y,local.Z,local.W),state.Weight);
         }
-        context.SetTwoBoneIkOrientation(new(goal.Entity,goal.Slot,goal.Target,goal.Pole,goal.Enabled,goal.Space,goal.Weight,orientation));
+        context.SetTwoBoneIkOrientation(new(goal.Entity,goal.Slot,goal.Target,goal.Pole,goal.Enabled,goal.Space,goal.Weight,wrist));
         context.SetAnimationLayer(state.Rig,(uint)state.FingerLayer,state.OpenClip,1,
             time:state.OpenTime*state.Opening,loop:false,playing:false);
         return true;

@@ -488,6 +488,31 @@ service table. Version 7 remains available. Outcome encoding version 3
 includes the pose receipt. Earlier outcome encodings remain readable.
 [Verification](evidence/m2-pickup-pose-fallback.json)
 
+### Keep wrist orientation during fallback
+
+Declare `IItemPickupBlendGame` and call
+`AttemptItemPickupWithBlendedFallback(item, hand, contact, probes, arm)`.
+This keeps the same ownership guard and tries the preceding controls first.
+If they overlap, the runtime checks zero positional influence and up to
+four intermediate positional weights. Each candidate reuses the preceding
+wrist goal, when present. The runtime accepts a fallback only when its
+endpoint capsules clear the final colliders.
+
+The receipt adds the `blended` pose for an accepted intermediate reach or a
+zero-weight positional fallback that retains wrist orientation. Read
+`GetTwoBoneIkOrientation` after the block. The Carry Props example eases the
+committed wrist weight across subsequent return ticks, independently of the
+positional blend. The prop stays released until a valid pickup.
+
+`item_attachment_pickup_blend_v1` requires `item_attachment_pickup_pose_v1`.
+Command version 9 uses the same 312-byte record and 528-byte service table
+and reserves 20 queries from the shared Tick capsule budget. An archive with
+a `blended` receipt uses outcome version 4. Use the same manual-slot and rig
+rules as version 8. Four intermediate probes can miss a viable configuration.
+The capsule checks cover the published arm segments. Finger and skin
+collision and continuous retraction paths require separate checks.
+[Verification](evidence/m2-pickup-pose-blend.json)
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

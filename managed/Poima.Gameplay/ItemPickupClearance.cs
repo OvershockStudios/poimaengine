@@ -9,6 +9,9 @@ public interface IItemPickupClearanceGame : IItemAttachmentPickupGame { }
 /// <summary>Declares same-tick arm pose fallback when a sampled pickup is obstructed.</summary>
 public interface IItemPickupPoseGame : IItemPickupClearanceGame { }
 
+/// <summary>Declares a search for clear intermediate pickup poses with independent wrist orientation.</summary>
+public interface IItemPickupBlendGame : IItemPickupPoseGame { }
+
 /// <summary>World-space capsule radii for the live manual chain at the receiving hand.</summary>
 public readonly record struct ItemPickupClearance(EntityId Rig,uint Slot,double UpperRadius,double LowerRadius);
 public readonly record struct ItemPickupBlocker(EntityId Item,EntityId Hand,ulong SampledTick,IkClearanceBlocker Blocker);
@@ -64,6 +67,15 @@ public readonly unsafe ref partial struct GameContext
         RequireFeature(GameplayRequiredFeatures.ItemPickupPose,nameof(IItemPickupPoseGame));
         ValidatePickupClearance(clearance);
         StageSampledTransfer(item,hand,contact,probes,8,clearance);
+    }
+
+    /// <summary>Try a reduced reach on the blocked tick while retaining the prior wrist goal.</summary>
+    public void AttemptItemPickupWithBlendedFallback(EntityId item,EntityId hand,ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes,ItemPickupClearance clearance)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemPickupBlend,nameof(IItemPickupBlendGame));
+        ValidatePickupClearance(clearance);
+        StageSampledTransfer(item,hand,contact,probes,9,clearance);
     }
 
     private static void ValidatePickupClearance(ItemPickupClearance clearance)
