@@ -5,7 +5,9 @@
 Use an attachment to move a rigid item between a character's hands, a holster,
 a weapon socket or another live entity. Anchors may follow animation or
 physics. The item and its ordinary mesh descendants follow the anchor's
-committed matrix, so their relative alignment survives subsequent ticks.
+committed matrix, so their relative alignment survives subsequent ticks. If
+the prop is part of an imported skin and has a single joint owner, extract its
+rigid primitives before attaching it. [Rigid mesh extraction](ANIMATION_ASSETS.md#extract-a-rigid-item-from-a-skin)
 
 ## Transfer on a committed tick
 

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.253
+
+- Extract independently attachable rigid props from single-joint skinned geometry.
+
 ## 0.0.252
 
 - Guard rigid handoffs with calibrated item and receiving socket alignment.

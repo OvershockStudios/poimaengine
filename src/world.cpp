@@ -1188,7 +1188,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -2501,7 +2501,9 @@ public:
         catch(const FbxMaterialProfileError& error) {throw fbx_material_profile_error(error,params.value("fbx_profile_diagnostics",false),true);}
         catch(const std::exception& error) {throw Error(-32050,asset_diagnostic(error.what()));}
     }
+#include "world_rigid_mesh.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.mesh.extract_rigid")return extract_rigid_mesh(params);
         if(method=="asset.animation.capture")return capture(params,false,true);
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);

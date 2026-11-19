@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.252**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.253**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.253 can [extract a rigid prop](ANIMATION_ASSETS.md#extract-a-rigid-item-from-a-skin)
+from a skinned model when each selected vertex is fully weighted to one joint.
+The extracted item preserves its material and textures and can move independently
+of the original skin. The [native checks](evidence/m2-rigid-mesh-extraction.json)
+cover two material primitives, bind-space geometry, live attachment and a
+relocated Windows game using only the extracted asset.
 
 Version 0.0.252 adds [grip alignment limits](ITEM_ATTACHMENTS.md#require-grip-alignment)
 to live immediate and compiled keep-world handoffs. A miss supplies position

@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 143}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 144}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -844,6 +844,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.animation.author"]=object_schema({{"asset",asset_id},
         {"clips",{{"type","array"},{"minItems",1},{"maxItems",8},{"items",authored_clip}}}},{"asset","clips"});
     methods["asset.animation.author"]["description"]="Append 1..8 joint-local rotation clips to an immutable cooked model and return a new model hash with clip indices. Keys use unit XYZW in the joint's parent frame, or an explicit unit hinge axis and signed degree offsets from model rest. Hinge interval width is at most 179.9 degrees. Times must strictly increase after float32 encoding, at most 4096 total keys. Track nodes and new clip names must be unique in their scope. No world edit occurs.";
+    methods["asset.mesh.extract_rigid"]=object_schema({{"asset",asset_id},{"node",model_index},{"joint",model_node},
+        {"primitives",{{"type","array"},{"minItems",1},{"maxItems",32},{"uniqueItems",true},{"items",model_index}}}},
+        {"asset","node","joint","primitives"});
+    methods["asset.mesh.extract_rigid"]["description"]="Extract selected primitives into a separate static model in the selected joint's local space. Each vertex must have exactly one nonzero weight, one on that joint. The inverse bind transforms positions, normals and tangents. UVs, indices, material factors and used embedded textures survive. Output follows sorted source primitive order. The source package and world remain unchanged. Outside authoring-core v1.";
     methods["asset.mesh.triangles"]=object_schema({{"asset",asset_id},{"primitive",model_index},{"offset",rev},{"limit",page_limit}},
         {"asset","primitive"});
     methods["asset.mesh.triangles"]["description"]="Page zero-based triangle ordinals and the three cooked vertex indices in winding order for one immutable model primitive. Read-only, outside authoring-core v1.";

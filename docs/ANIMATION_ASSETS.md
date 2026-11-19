@@ -45,6 +45,54 @@ Node sampling is the default: each item supplies local position/rotation/scale, 
 
 Invalid selectors/parameters return `-32602`; invalid packages or unevaluable poses return `-32050`. The sampler rejects a cubic quaternion that evaluates to zero, nonpositive evaluated scale, singular blended skin transforms or out-of-range coordinates. These are reported failures, not silently substituted poses.
 
+## Extract a rigid item from a skin
+
+Some imported characters include a rigid prop inside the skin. Extract that
+prop when it needs to move independently, for example to change hands. Find
+the skinned mesh node and its primitive indices with `asset.inspect`. Use
+`asset.animation.skin` to find the model node index of its controlling joint.
+
+```json
+{
+  "asset": "<cooked model hash>",
+  "node": 17,
+  "joint": 6,
+  "primitives": [2]
+}
+```
+
+Send these parameters to `asset.mesh.extract_rigid`. Select 1–32 distinct
+primitives from the same mesh node. Every vertex in each selected primitive
+must have one nonzero weight of exactly one on the specified joint. A
+rejection identifies the first mismatched primitive and vertex. The operation
+preflights the complete selection before publishing one new cooked model.
+
+The new model has one identity root and a `joint_local` frame. The inverse
+bind transforms positions, normals and tangents into that frame. Indices,
+UVs, material factors, alpha mode, samplers and referenced texture mips are
+retained. The `primitives` mapping lists source and output indices in sorted
+source order. Repeating the request returns the same content hash. The source
+model and authored world stay unchanged.
+
+Place the new model under the controlling joint with identity placement and
+hide the matching skinned drawable. Preserve any per-entity material and
+first-person draw settings when replacing it. The resulting ordinary mesh
+subtree can be transferred to another anchor through the runtime attachment
+API. [Item transfers](ITEM_ATTACHMENTS.md) · [First-person draw settings](VIEWMODELS.md)
+
+Invalid selections return `-32602`. Package I/O and encoding failures return
+`-32050`. Packaged read-only worlds reject the extraction with `-32081`.
+
+```sh
+python3 tests/rigid_mesh_extraction.py --binary build/linux-game/poima \
+  --output build/rigid-extraction-check
+```
+
+Use `--windows-interop` for a Windows executable launched from WSL. The test
+compares baked vertices, normal and tangent frames, texture bytes and sampled
+world positions. It then pins the extracted prop while its original joint
+keeps moving.
+
 ## Author joint rotation clips
 
 `asset.animation.author` makes a new cooked model from an existing model hash

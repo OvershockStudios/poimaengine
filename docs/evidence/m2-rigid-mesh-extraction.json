@@ -1,0 +1,72 @@
+{
+  "version": "0.0.253",
+  "schema_revision": 144,
+  "status": "passed",
+  "scope": "Two selected material primitives from a single animated joint, package-content checks and native runtime transfer.",
+  "fixture": "tests/rigid_mesh_extraction.py",
+  "fixture_sha256": "d69844f20b937e89ecac94c18afc27214ff0d985f99e857f2a3f5a9e65400c64",
+  "linux": {
+    "passed": true,
+    "engine_sha256": "daa6bef25a0d2b5b07aaa5e8f36387e5c924dae57aabc8abb6a8416ea03d87ff",
+    "payload_maximum_error": 0,
+    "live_vertex_maximum_error_m": 3.3306690738754696e-16,
+    "source_asset": "10e5b616994ada9a967c2f15c2b9af9fc724ce7fa66aefb2ac68b9d88e0322aa",
+    "extracted_asset": "c0eadd96a943382a7b8415ec7c514bb43cccbd04c8d245648ff86fd0ab8dff8a",
+    "calls": 58,
+    "report_sha256": "daa13ae628fa3ea289a9e16c1cba195384549903ab805cfcf6e4a24b49b8015f"
+  },
+  "windows": {
+    "passed": true,
+    "engine_sha256": "6ca614fb2f505e2ec49bd034f4a6a322b9e6f939bff3090bd2ce9d073449a8da",
+    "payload_maximum_error": 0,
+    "live_vertex_maximum_error_m": 3.3306690738754696e-16,
+    "source_asset": "10e5b616994ada9a967c2f15c2b9af9fc724ce7fa66aefb2ac68b9d88e0322aa",
+    "extracted_asset": "c0eadd96a943382a7b8415ec7c514bb43cccbd04c8d245648ff86fd0ab8dff8a",
+    "calls": 58,
+    "report_sha256": "06e54cb8f7b822d84cefc645112d2689a4e4aacde7295d04dd03f941c02f60c2"
+  },
+  "linux_mcp": {
+    "replies": 5,
+    "report_sha256": "d240add9450937d7c198692a94a1d951e323510b2e4297d3a38b9e8f561cb3d0",
+    "blended_rejection": {
+      "joint": 1,
+      "primitive": 0,
+      "reason": "non_rigid_skin_weights",
+      "vertex": 0
+    }
+  },
+  "package_sha256_equal_across_platforms": true,
+  "latest_runtime_descriptors_verified": [
+    "Linux",
+    "Windows"
+  ],
+  "descriptor_test_cases": 29,
+  "linux_regressions": [
+    "gameplay_compatibility_policy",
+    "world_asset_cache_native",
+    "mcp_contract",
+    "world_ui_contract",
+    "physical_gameplay_abi_native",
+    "runtime_save_contract",
+    "runtime_attachment_contract",
+    "rigid_mesh_extraction_contract",
+    "asset_references_contract"
+  ],
+  "windows_relocated_game": {
+    "report_sha256": "8cc11d5f80e2bebb3f43c7dfc9447e2554e1fec645cc361425282755731544f7",
+    "asset": "c0eadd96a943382a7b8415ec7c514bb43cccbd04c8d245648ff86fd0ab8dff8a",
+    "packaged_points": [
+      [
+        0.25,
+        -1.0,
+        1.5
+      ],
+      [
+        0.25,
+        -1.0,
+        1.5
+      ]
+    ],
+    "mutation_rejected": -32081
+  }
+}

@@ -84,7 +84,7 @@ verify the resulting player rather than expanding the budget to ship symbols.
 
 The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. The default install includes only runtime files, including when the desktop bridge is enabled. Its C ABI development header is opt-in: `cmake --install build/windows-runtime --component Development --prefix build/desktop-sdk`. Keep that SDK prefix separate from the runtime. Use a fresh runtime prefix if an older installation left development headers in it; CMake does not remove obsolete installed files.
 
-The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`. The current services extent is 424 bytes; read the generated feature list for the actual build, with navigation conditional on its configuration. Check it against the native contract with `python3 tests/runtime_descriptor_contract.py --runtime build/runtime-windows/runtime.json`. This example shows a 0.0.230 runtime with audio, managed gameplay, navigation and the desktop bridge disabled:
+The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`. The current services extent is 528 bytes. Read the generated feature list for the actual build, with navigation conditional on its configuration. Check it against the native contract with `python3 tests/runtime_descriptor_contract.py --runtime build/runtime-windows/runtime.json`. This example shows a 0.0.230 runtime with audio, managed gameplay, navigation and the desktop bridge disabled:
 
 ```json
 {
