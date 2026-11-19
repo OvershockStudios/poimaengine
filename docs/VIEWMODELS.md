@@ -75,8 +75,19 @@ atlas where it covers them. A wider foreground lens does not expand world
 cascades. This provides neither foreground-specific cascades nor viewmodel
 self-shadowing; its independent depth provides self-occlusion.
 
-Player FOV preferences affect the world lens only. Lens presence and bindings
-are frozen when the runtime starts. [Gameplay camera controls](CAMERA_LENSES.md)
+Player FOV preferences affect the world lens by default. For a physical grip
+that moves a prop between the foreground and the world, set
+`"viewmodel_match_world_fov": true` on the Camera alongside its complete
+`viewmodel` lens. This shares the effective vertical FOV, including player
+preferences and interpolated zoom, while keeping the foreground clip planes
+and depth buffer. Foreground pose offsets, clearance, occlusion, lighting and
+anti-aliasing can still change the image at a handoff. Use camera-aligned
+poses when checking screen-space contact. Committed lens reads and saves
+retain their actual configured values.
+
+Lens presence and matching mode are fixed by the authored Camera. Runtime
+[attachment transfers](ITEM_ATTACHMENTS.md) can change a drawable's binding.
+[Gameplay camera controls](CAMERA_LENSES.md)
 can change complete world/foreground lenses on fixed ticks. Optional
 [lens](PLAYER_LENS_PRESENTATION.md) and [pose](PLAYER_POSE_PRESENTATION.md)
 interpolation control presentation separately. Existing animation playback,
@@ -160,5 +171,13 @@ specification](https://docs.vulkan.org/spec/latest/chapters/primsrast.html#prims
   exceeds the foreground budget. Logical payload is not measured Vulkan
   allocator heap usage or a performance estimate.
 
-Qualification results belong in the implementation status and evidence record;
-this contract does not establish a complete FPS weapon framework or Alpha readiness.
+Run the [matched FOV verifier](../tests/viewmodel_matched_fov.py) against a
+Windows Vulkan build. It uses a clean output directory and an original
+off-axis quad. Set `--gpu` to your Vulkan adapter index.
+
+```powershell
+python tests/viewmodel_matched_fov.py --binary build/windows-runtime/bin/poima.exe --gpu 1 --output build/matched-fov-check
+```
+
+See the [recorded coverage](evidence/m2-viewmodel-matched-fov.json) and
+[implementation status](IMPLEMENTATION_STATUS.md).

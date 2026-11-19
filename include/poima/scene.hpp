@@ -136,7 +136,15 @@ struct SceneObject {
     bool camera_visible=true;
     std::optional<CameraDrawBinding> camera_draw;
 };
-struct SceneViewmodel { SceneLens lens;std::vector<SceneObject> objects; };
+struct SceneViewmodel {
+    SceneLens lens;
+    std::vector<SceneObject> objects;
+    bool match_world_fov=false;
+
+    SceneLens effective_lens(double world_fov) const {
+        return {match_world_fov ? world_fov : lens.vertical_fov,lens.near_plane,lens.far_plane};
+    }
+};
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;

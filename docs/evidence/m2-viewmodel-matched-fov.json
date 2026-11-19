@@ -1,0 +1,188 @@
+{
+  "format": "poima.viewmodel-matched-fov.v1",
+  "version": "0.0.261",
+  "schema_revision": 152,
+  "scope": "Pixel masks of an original off-axis opaque quad under explicitly authored, runtime and zoomed lenses. The test compares coverage at single-sample forward rendering and checks exact rendered receipts. It does not measure temporal stability, foreground pose offsets, self-occlusion, physical input or performance.",
+  "verification_script": "tests/viewmodel_matched_fov.py",
+  "verifier_sha256": "c0ad85970e0b75f1cd0816419d1cd76c7fb1ed008f7eabf9099c5cfc91629908",
+  "linux": {
+    "engine_sha256": "b617d08d7b72663f2540e8ad5be0075453f9e7b82f7d906759a4ac5d18303984",
+    "tests": [
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "save_upgrade_document_native",
+      "player_lens_native",
+      "mcp_contract",
+      "runtime_camera_draw_native",
+      "world_ui_contract",
+      "runtime_attachment_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ]
+  },
+  "windows": {
+    "engine_sha256": "0932c5c672c4c9ce1ae7053d997e20b0405f642bd1f50aea167a2e15e5e4266b",
+    "request_count": 29,
+    "natural_owner_exits": 3,
+    "gpu_index": 1,
+    "cases": [
+      {
+        "mode": "world",
+        "captures": [
+          {
+            "method": "world.capture",
+            "tick": null,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": null,
+            "sha256": "93739f69b0d0584ca33c2e6de9f0d15228992a14d350a573f98712973dd3cb7a"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 0,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": null,
+            "sha256": "93739f69b0d0584ca33c2e6de9f0d15228992a14d350a573f98712973dd3cb7a"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 1,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 39.0
+            },
+            "foreground_lens": null,
+            "sha256": "9a5efda709cd0058e85345065cb9ee58fa7dfa3aea306f0c2031ec5ac14e0fd1"
+          }
+        ]
+      },
+      {
+        "mode": "independent",
+        "captures": [
+          {
+            "method": "world.capture",
+            "tick": null,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.005,
+              "vertical_fov": 45.0
+            },
+            "sha256": "6a7e77af4584a199f9a62e1a7549a2ee12817865848778d23b09b521b359f4ab"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 0,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.005,
+              "vertical_fov": 45.0
+            },
+            "sha256": "6a7e77af4584a199f9a62e1a7549a2ee12817865848778d23b09b521b359f4ab"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 1,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 39.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.015,
+              "vertical_fov": 77.0
+            },
+            "sha256": "2bbcb60e178c3b90c9c4b09be16a055c1653328b5ce447979d30553d8cf2e082"
+          }
+        ]
+      },
+      {
+        "mode": "matched",
+        "captures": [
+          {
+            "method": "world.capture",
+            "tick": null,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.005,
+              "vertical_fov": 65.0
+            },
+            "sha256": "93739f69b0d0584ca33c2e6de9f0d15228992a14d350a573f98712973dd3cb7a"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 0,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 65.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.005,
+              "vertical_fov": 65.0
+            },
+            "sha256": "93739f69b0d0584ca33c2e6de9f0d15228992a14d350a573f98712973dd3cb7a"
+          },
+          {
+            "method": "runtime.capture",
+            "tick": 1,
+            "world_lens": {
+              "far": 100.0,
+              "near": 0.1,
+              "vertical_fov": 39.0
+            },
+            "foreground_lens": {
+              "far": 8.0,
+              "near": 0.015,
+              "vertical_fov": 39.0
+            },
+            "sha256": "9a5efda709cd0058e85345065cb9ee58fa7dfa3aea306f0c2031ec5ac14e0fd1"
+          }
+        ]
+      }
+    ],
+    "coverage": [
+      {
+        "case": "authored_fov",
+        "world_pixels": 10873,
+        "independent_pixels": 24384,
+        "matched_pixels": 10873,
+        "independent_delta": 13511,
+        "matched_delta": 0
+      },
+      {
+        "case": "zoomed_fov",
+        "world_pixels": 29156,
+        "independent_pixels": 6760,
+        "matched_pixels": 29156,
+        "independent_delta": 22396,
+        "matched_delta": 0
+      }
+    ],
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+  }
+}

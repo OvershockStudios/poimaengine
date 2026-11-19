@@ -9,6 +9,10 @@ committed matrix, so their relative alignment survives subsequent ticks. If
 the prop is part of an imported skin and has a single joint owner, extract its
 rigid primitives before attaching it. [Rigid mesh extraction](ANIMATION_ASSETS.md#extract-a-rigid-item-from-a-skin)
 
+Use [matched viewmodel FOV](VIEWMODELS.md#configure-a-camera-and-drawables)
+when a first-person pickup or release should keep its projection scale as it
+changes render passes.
+
 ## Transfer on a committed tick
 
 Read the active session, tick and structure revision from `runtime.inspect`.

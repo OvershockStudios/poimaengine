@@ -56,6 +56,30 @@ void omission_and_lens() {
         rejects([&]{validate_runtime_camera_draw(bad);});}
     d.entities[0].camera->viewmodel=SceneLens{5,.001,1e7};validate_runtime_camera_draw(d);
     d.entities[0].camera->viewmodel->vertical_fov=150;validate_runtime_camera_draw(d);
+    RuntimeEntityDefinition orphan;orphan.id=id(1);orphan.camera=RuntimeCamera{};
+    orphan.camera->viewmodel_match_world_fov=true;
+    RuntimeDefinition invalid;invalid.entities={orphan};
+    rejects([&]{validate_runtime_camera_draw(invalid);});
+}
+void matched_projection() {
+    auto d=definition();
+    d.entities[0].camera->viewmodel_match_world_fov=true;
+    Runtime live(d);
+    const auto initial=live.snapshot(id(1));
+    check(initial.viewmodel->lens==SceneLens{40,.01,10} &&
+        initial.viewmodel->effective_lens(initial.vertical_fov)==SceneLens{60,.01,10},
+        "Matching did not retain the configured lens or use world FOV.");
+    RuntimeCameraPose interpolated;interpolated.position={.01,0,0};
+    const auto posed=live.snapshot(id(1),RuntimeCameraPose{},interpolated);
+    check(posed.viewmodel->effective_lens(posed.vertical_fov)==SceneLens{60,.01,10} &&
+        posed.viewmodel->objects[0].world!=initial.viewmodel->objects[0].world,
+        "Interpolated pose lost matched projection or did not move the draw.");
+    const auto saved=live.save_snapshot(hash);
+    auto restored=Runtime::from_snapshot(d,hash,saved);
+    const auto other=restored->snapshot(id(2));
+    check(restored->save_snapshot(hash)==saved && restored->snapshot(id(1)).viewmodel->match_world_fov &&
+        other.viewmodel->effective_lens(other.vertical_fov)==SceneLens{50,.02,20},
+        "Exact restore lost authored mode or changed another camera's lens.");
 }
 void graph_rejection() {
     const auto original=definition();
@@ -187,7 +211,7 @@ int main() {
     try {
         omission_and_lens();graph_rejection();invisible_bounds();selection_matrix();selection_atomicity_and_owners();
         if(!Runtime::available()) {std::cout<<"5 camera draw portable checks passed\n";return 0;}
-        live_snapshots_and_adoption();weighted_pose();templates_and_restore();failed_membership_rollback();
-        std::cout<<"9 camera draw checks passed\n";return 0;
+        live_snapshots_and_adoption();weighted_pose();templates_and_restore();failed_membership_rollback();matched_projection();
+        std::cout<<"10 camera draw checks passed\n";return 0;
     }catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

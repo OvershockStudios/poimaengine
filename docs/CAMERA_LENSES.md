@@ -161,9 +161,10 @@ The calculation uses radians internally and returns degrees. Effective FOV
 saturates to 5–150 degrees. Without a player override, the runtime FOV is used
 exactly. Restoring the authored runtime FOV restores the player's chosen FOV
 exactly. Updating a preference while zoomed changes the baseline immediately;
-it does not rewrite gameplay lens state. First-person FOV and clipping remain
-independent of the world preference. Existing settings observations report the
-composed effective value.
+it does not rewrite gameplay lens state. First-person clipping remains
+independent. First-person FOV can track the effective world FOV with
+[`Camera.viewmodel_match_world_fov`](VIEWMODELS.md#configure-a-camera-and-drawables).
+Existing settings observations report the composed effective value.
 
 ## Persistence and rendering
 

@@ -52,7 +52,7 @@ RendererSceneResult renderer_scene_result(const SceneSnapshot& snapshot) {
     result.camera_lens=SceneLens{snapshot.vertical_fov,snapshot.near_plane,snapshot.far_plane};
     RendererCameraDrawResult draw;
     if(snapshot.viewmodel) {
-        draw.viewmodel_lens=snapshot.viewmodel->lens;
+        draw.viewmodel_lens=snapshot.viewmodel->effective_lens(snapshot.vertical_fov);
         for(const auto& object:snapshot.viewmodel->objects)
             draw.viewmodels.push_back({object.entity_id,object.incarnation});
     }

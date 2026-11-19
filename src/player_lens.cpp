@@ -72,7 +72,7 @@ void PlayerLensHistory::reconcile(const PlayerLensSample& sample) {
     const auto reason=mismatch(*target_,sample);
     reset(sample,reason.empty() ? "external_change" : std::string(reason));
 }
-PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled,std::optional<double> pref) const {
+PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled,std::optional<double> pref,bool match_world_fov) const {
     if(!std::isfinite(alpha) || alpha<0 || alpha>1)
         throw std::invalid_argument("Player lens alpha must be finite within0..1.");
     if(pref && !valid_fov(*pref))
@@ -91,10 +91,11 @@ PlayerLensPresentation PlayerLensHistory::presentation(double alpha,bool enabled
     result.rendered_world.vertical_fov=player_effective_vertical_fov(result.rendered_world.vertical_fov,target.authored_fov,pref);
     result.rendered_viewmodel=target.viewmodel;
     if(result.rendered_viewmodel)
-        result.rendered_viewmodel->vertical_fov=interpolate(before.viewmodel->vertical_fov,target.viewmodel->vertical_fov,result.alpha);
+        result.rendered_viewmodel->vertical_fov=match_world_fov ? result.rendered_world.vertical_fov :
+            interpolate(before.viewmodel->vertical_fov,target.viewmodel->vertical_fov,result.alpha);
     result.interpolating=enabled && pair && result.alpha<1 &&
         (before.world.vertical_fov!=target.world.vertical_fov ||
-         (before.viewmodel && before.viewmodel->vertical_fov!=target.viewmodel->vertical_fov));
+         (!match_world_fov && before.viewmodel && before.viewmodel->vertical_fov!=target.viewmodel->vertical_fov));
     return result;
 }
 }

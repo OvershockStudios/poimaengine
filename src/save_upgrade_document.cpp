@@ -69,7 +69,13 @@ void camera_draw_references(const Json& rows) {
     std::map<std::pair<std::string,std::string>,std::size_t> counts;
     for(const auto& [id,entity]:rows.items()) {
         const auto& bag=entity.at("components");
-        if(bag.contains("Camera") && bag.at("Camera").contains("viewmodel"))viewmodel_lens(bag.at("Camera").at("viewmodel"));
+        if(bag.contains("Camera")) {
+            const auto& camera=bag.at("Camera");
+            if(camera.contains("viewmodel"))viewmodel_lens(camera.at("viewmodel"));
+            if(camera.contains("viewmodel_match_world_fov"))
+                check(camera.contains("viewmodel") && camera.at("viewmodel_match_world_fov").is_boolean(),
+                    "Viewmodel matching requires a foreground lens and a boolean.");
+        }
         if(!bag.contains("CameraDraw"))continue;
         const auto& draw=bag.at("CameraDraw");keys(draw,{"camera","mode"});
         check(draw.at("camera").is_string() && draw.at("mode").is_string(),"CameraDraw needs camera and mode strings.");

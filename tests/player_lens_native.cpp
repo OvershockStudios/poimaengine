@@ -80,8 +80,16 @@ void preference_composition() {
         close(shown.rendered_viewmodel->vertical_fov,oracle(75,50,alpha),"World preference leaked into foreground.");
         check(shown.authored_fov==70 && shown.preference_fov==90 && shown.target_world.vertical_fov==35,
             "Preference overwrote authoritative target or authored baseline.");
+        const auto matched=history.presentation(alpha,true,90,true);
+        close(matched.rendered_viewmodel->vertical_fov,expected,"Matched foreground missed the effective world zoom.");
+        check(matched.rendered_viewmodel->near_plane==.01 && matched.rendered_viewmodel->far_plane==10 &&
+            matched.previous_viewmodel->vertical_fov==75 && matched.target_viewmodel->vertical_fov==50,
+            "Matching changed foreground clipping or committed endpoints.");
     }
     check(history.presentation(0,true,90).rendered_world.vertical_fov==90,"Neutral preference endpoint was not exact.");
+    history.commit(sample(3,35,65));
+    check(!history.presentation(.5,true,90,true).interpolating &&
+        history.presentation(.5,true,90).interpolating,"Unused foreground FOV produced a matched transition.");
     auto external=sample(3,60);external.authored_fov.reset();history.reset(external,"external_camera");
     check(history.presentation(.5,true,95).rendered_world.vertical_fov==95,"External camera lost absolute preference semantics.");
     auto clamped=sample(4,150);clamped.authored_fov=5;history.reset(clamped,"clamp");

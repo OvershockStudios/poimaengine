@@ -697,9 +697,12 @@ void validate_component(const std::string& type, const Json& value) {
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
-        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance"},{"vertical_fov","near","far"});
+        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance","viewmodel_match_world_fov"},{"vertical_fov","near","far"});
         (void)scene_lens_value(Json{{"vertical_fov",value.at("vertical_fov")},{"near",value.at("near")},{"far",value.at("far")}});
         if(value.contains("viewmodel"))(void)scene_lens_value(value.at("viewmodel"));
+        if(value.contains("viewmodel_match_world_fov"))
+            require(value.contains("viewmodel") && value.at("viewmodel_match_world_fov").is_boolean(),
+                "Viewmodel matching requires a foreground lens and a boolean.");
         if(value.contains("viewmodel_clearance")) {
             require(value.contains("viewmodel"),"Viewmodel clearance requires a foreground lens.");
             (void)viewmodel_clearance_value(value.at("viewmodel_clearance"));
@@ -1648,7 +1651,8 @@ public:
         camera.world=world_matrices(entities).at(id);camera.vertical_fov=lens.at("vertical_fov");
         camera.near_plane=lens.at("near");camera.far_plane=lens.at("far");
         auto result=editor_snapshot(camera,false);result.camera_id=id;
-        select_scene_camera_draw(result,lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(lens.at("viewmodel"))) : std::nullopt);
+        select_scene_camera_draw(result,lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(lens.at("viewmodel"))) : std::nullopt,
+            lens.value("viewmodel_match_world_fov",false));
         return result;
     }
     Json asset_reference_dispatch(const Json& params) const {
@@ -3034,7 +3038,8 @@ public:
         }
         if(!live && !asset_preview) {
             const auto& authored_lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
-            select_scene_camera_draw(snapshot,authored_lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(authored_lens.at("viewmodel"))) : std::nullopt);
+            select_scene_camera_draw(snapshot,authored_lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(authored_lens.at("viewmodel"))) : std::nullopt,
+                authored_lens.value("viewmodel_match_world_fov",false));
         }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         if(ui_scale && snapshot.logical_ui && !snapshot.logical_ui->elements.empty()) {
@@ -3201,6 +3206,7 @@ public:
             if(components.contains("Camera")) {
                 const auto& c=components.at("Camera");value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")};
                 if(c.contains("viewmodel"))value.camera->viewmodel=scene_lens_value(c.at("viewmodel"));
+                value.camera->viewmodel_match_world_fov=c.value("viewmodel_match_world_fov",false);
                 if(c.contains("viewmodel_clearance"))value.camera->viewmodel_clearance=viewmodel_clearance_value(c.at("viewmodel_clearance"));
             }
             if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));

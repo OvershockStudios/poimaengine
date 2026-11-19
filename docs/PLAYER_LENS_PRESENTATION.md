@@ -85,8 +85,10 @@ Opt-in observed, submitted and presented player material receipts include
   `reset_reason` describe the sampling interval.
 - `previous_world` and `target_world` are committed native lenses;
   `rendered_world` is the interpolated, preference-composed lens.
-- `previous_viewmodel`, `target_viewmodel` and `rendered_viewmodel` describe the
-  independent foreground channel, or are null when it is absent.
+- `previous_viewmodel` and `target_viewmodel` are committed foreground lenses.
+  `rendered_viewmodel` uses its own interpolated FOV by default, and uses
+  `rendered_world.vertical_fov` when the camera enables matching. These fields
+  are null when the foreground channel is absent.
 - `authored_fov` and `preference_fov` expose the world composition baselines.
 
 The renderer scene receipt's `camera_lens` and foreground lens are the exact

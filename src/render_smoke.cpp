@@ -1934,7 +1934,7 @@ struct Context {
             }
             validate_viewmodel_budget(viewmodel_resident_bytes());
             viewmodel->materials.clear();viewmodel_frame=frame_constants;
-            const auto& lens=foreground.lens;
+            const auto lens=foreground.effective_lens(scene->vertical_fov);
             require(std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Invalid foreground lens.");
             const auto projection=multiply(perspective(lens.vertical_fov,double(width)/height,lens.near_plane,lens.far_plane),inverse_affine(scene->camera_world));
             for(std::size_t i=0;i<16;++i) {require(std::isfinite(projection[i]) && std::abs(projection[i])<=std::numeric_limits<float>::max(),"Foreground projection exceeds float range.");viewmodel_frame.view_projection[i]=static_cast<float>(projection[i]);viewmodel_frame.previous_view_projection[i]=static_cast<float>(projection[i]);}
@@ -2044,7 +2044,7 @@ struct Context {
     }
     void validate_viewmodel_snapshot() const {
         if(!scene->viewmodel)return;
-        const auto& foreground=*scene->viewmodel;const auto& lens=foreground.lens;
+        const auto& foreground=*scene->viewmodel;const auto lens=foreground.effective_lens(scene->vertical_fov);
         require(foreground.objects.size()<=32 && std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Malformed foreground snapshot lens or count.");
         std::set<std::string> ids;for(const auto& object:scene->objects) {require(ids.insert(object.entity_id).second,"World snapshot drawable identities are duplicated.");}
         for(const auto& object:foreground.objects)require(!object.entity_id.empty() && ids.insert(object.entity_id).second,"Foreground identity is missing, duplicated or also belongs to world geometry.");
@@ -3884,7 +3884,7 @@ struct PlayerWindow::Impl {
             else lens_history.reconcile(sample);
             lens_view_cut=fresh.view_cut_generation;lens_generation=fresh.presentation_generation;lens_world=fresh.world_id;
 
-            lenses=lens_history.presentation(phase,true,preference);
+            lenses=lens_history.presentation(phase,true,preference,fresh.viewmodel && fresh.viewmodel->match_world_fov);
             fresh.vertical_fov=lenses->rendered_world.vertical_fov;
             if(fresh.viewmodel)fresh.viewmodel->lens=*lenses->rendered_viewmodel;
         }

@@ -32,6 +32,6 @@ public:
     void commit(const PlayerLensSample& sample);
     void reconcile(const PlayerLensSample& sample);
     PlayerLensPresentation presentation(double alpha,bool enabled,
-        std::optional<double> pref={}) const;
+        std::optional<double> pref={},bool match_world_fov=false) const;
 };
 }

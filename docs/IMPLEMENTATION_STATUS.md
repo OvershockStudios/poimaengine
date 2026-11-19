@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.260**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.261**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.261 lets a [first-person camera match the world FOV](VIEWMODELS.md#configure-a-camera-and-drawables).
+The foreground follows the effective world projection through preferences and
+zoom and keeps its own clip planes and depth. Lens reads and saves retain the
+configured values. Windows Vulkan checks found identical foreground and world
+silhouette coverage at two FOVs for an off-axis quad. Linux checks cover
+preference interpolation and save restore. Pose offsets and clearance still
+apply. [Results](evidence/m2-viewmodel-matched-fov.json)
 
 Version 0.0.260 supports [sampled pickup](ITEM_ATTACHMENTS.md#pick-up-a-released-item)
 through the native service and C#. A valid grip keeps the prop's pose and

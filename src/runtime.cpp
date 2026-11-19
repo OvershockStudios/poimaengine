@@ -278,6 +278,7 @@ struct Runtime::Impl {
         result.camera_world=registry.get<Node>(e).world;
         result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
         result.viewmodel=lens.viewmodel;
+        result.viewmodel_match_world_fov=lens.viewmodel_match_world_fov;
         result.authored_vertical_fov=topology->definitions.at(camera).camera->vertical_fov;
         require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
         return result;
@@ -2549,7 +2550,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     result.camera_world=projection.camera_world;result.vertical_fov=projection.vertical_fov;
     result.authored_vertical_fov=projection.authored_vertical_fov;
     result.near_plane=projection.near_plane;result.far_plane=projection.far_plane;
-    select_scene_camera_draw(result,projection.viewmodel);
+    select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_match_world_fov);
     const auto& effect=impl_->registry.get<RuntimeCamera>(impl_->find(camera)).viewmodel_pose;
     if(result.viewmodel && effect!=RuntimeCameraPose{}) {
         const auto delta=multiply(multiply(result.camera_world,local_matrix(effect.position,effect.rotation,{1,1,1})),inverse_affine(result.camera_world));
