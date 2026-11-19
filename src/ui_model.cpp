@@ -128,6 +128,7 @@ UI_ENUM(Justify,{"start",Justify::start},{"center",Justify::center},{"end",Justi
 UI_ENUM(HitTest,{"capture",HitTest::capture},{"pass_through",HitTest::pass_through})
 UI_ENUM(Overflow,{"visible",Overflow::visible},{"hidden",Overflow::hidden},{"auto",Overflow::auto_scroll})
 UI_ENUM(TextAlign,{"left",TextAlign::left},{"center",TextAlign::center},{"right",TextAlign::right})
+UI_ENUM(ImageFit,{"contain",ImageFit::contain},{"stretch",ImageFit::stretch})
 #undef UI_ENUM
 template<class E>std::string enum_name(E value) {for(const auto& [key,item]:enum_names<E>())if(item==value)return key;throw std::runtime_error("Invalid UI layout/style enum.");}
 template<class E>E enumeration(const Json& j) {const auto value=string(j);for(const auto& [key,item]:enum_names<E>())if(value==key)return item;throw std::runtime_error("Unknown UI layout/style enum.");}
@@ -170,15 +171,30 @@ Json layout_json(const Layout& value) {
     const auto identity=[](const auto& v){return Json(v);};emit_optional(j,"padding",value.padding,identity);emit_optional(j,"gap",value.gap,identity);emit_optional(j,"grow",value.grow,identity);emit_optional(j,"shrink",value.shrink,identity);emit_optional(j,"order",value.order,identity);return j;
 }
 Style style(const Json& j) {
-    optional_fields(j,{"color","background_color","border_color","font_size","border_width","border_radius","text_align","hover","focus","pressed","disabled"});Style value;
+    optional_fields(j,{"color","background_color","border_color","font_size","border_width","border_radius","text_align","hover","focus","pressed","disabled","image"});Style value;
     read_optional(j,"color",value.color,string);read_optional(j,"background_color",value.background_color,string);read_optional(j,"border_color",value.border_color,string);
     read_optional(j,"font_size",value.font_size,number);read_optional(j,"border_width",value.border_width,number);read_optional(j,"border_radius",value.border_radius,number);read_optional(j,"text_align",value.text_align,enumeration<TextAlign>);
+    read_optional(j,"image",value.image,[](const Json& image) {
+        optional_fields(image,{"asset","fit"});
+        Image result;
+        result.asset=at("asset",[&] {
+            require(image.contains("asset"),"UI image needs a cooked asset identity.");
+            return string(image.at("asset"));
+        });
+        read_optional(image,"fit",result.fit,enumeration<ImageFit>);
+        return result;
+    });
     read_optional(j,"hover",value.hover,color_state);read_optional(j,"focus",value.focus,color_state);read_optional(j,"pressed",value.pressed,color_state);read_optional(j,"disabled",value.disabled,color_state);return value;
 }
 Json style_json(const Style& value) {
     Json j=Json::object();const auto identity=[](const auto& v){return Json(v);};
     emit_optional(j,"color",value.color,identity);emit_optional(j,"background_color",value.background_color,identity);emit_optional(j,"border_color",value.border_color,identity);
     emit_optional(j,"font_size",value.font_size,identity);emit_optional(j,"border_width",value.border_width,identity);emit_optional(j,"border_radius",value.border_radius,identity);emit_optional(j,"text_align",value.text_align,[](auto e){return Json(enum_name(e));});
+    emit_optional(j,"image",value.image,[](const Image& image) {
+        Json result={{"asset",image.asset}};
+        if(image.fit)result["fit"]=enum_name(*image.fit);
+        return result;
+    });
     emit_optional(j,"hover",value.hover,color_state_json);emit_optional(j,"focus",value.focus,color_state_json);emit_optional(j,"pressed",value.pressed,color_state_json);emit_optional(j,"disabled",value.disabled,color_state_json);return j;
 }
 void bounded(double value,double low,double high) {require(std::isfinite(value) && value>=low && value<=high,"UI layout/style numeric value exceeds bounds.");}
@@ -222,7 +238,7 @@ void validate_metadata(const Element& element) {
         require(element.kind==Kind::panel || !(l.direction || l.align || l.justify || l.gap || l.hit_test || l.overflow),"UI container fields require a panel.");
     });
     if(element.style)at("style",[&] {
-        const auto& s=*element.style;require(s.color || s.background_color || s.border_color || s.font_size || s.border_width || s.border_radius || s.text_align || s.hover || s.focus || s.pressed || s.disabled,"UI style must be nonempty.");
+        const auto& s=*element.style;require(s.color || s.background_color || s.border_color || s.font_size || s.border_width || s.border_radius || s.text_align || s.hover || s.focus || s.pressed || s.disabled || s.image,"UI style must be nonempty.");
         at("color",[&]{validate_color(s.color);},ValidationKind::string);
         at("background_color",[&]{validate_color(s.background_color);},ValidationKind::string);
         at("border_color",[&]{validate_color(s.border_color);},ValidationKind::string);
@@ -230,6 +246,14 @@ void validate_metadata(const Element& element) {
         if(s.font_size)at("font_size",[&]{bounded(*s.font_size,8,128);},ValidationKind::number,ValidationReason::out_of_range);
         if(s.border_width)at("border_width",[&]{bounded(*s.border_width,0,32);},ValidationKind::number,ValidationReason::out_of_range);
         if(s.border_radius)at("border_radius",[&]{bounded(*s.border_radius,0,128);},ValidationKind::number,ValidationReason::out_of_range);
+        if(s.image)at("image",[&] {
+            at("asset",[&] {
+                const auto& id=s.image->asset;
+                require(id.size()==64 && id.find_first_not_of("0123456789abcdef")==std::string::npos,
+                    "UI image asset must be 64 lowercase hexadecimal digits.");
+            },ValidationKind::string);
+            if(s.image->fit)at("fit",[&]{(void)enum_name(*s.image->fit);});
+        });
         for(const auto& [key,state]:{std::pair{"hover",&s.hover},{"focus",&s.focus},{"pressed",&s.pressed},{"disabled",&s.disabled}})
             if(*state)at(key,[&]{validate_color_state(**state);});
         require(!(s.border_radius && *s.border_radius>0 && element.layout && element.layout->overflow && *element.layout->overflow!=Overflow::visible),"Rounded UI clipping is unsupported.");

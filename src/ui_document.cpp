@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/ui_document.hpp"
+#include "poima/assets.hpp"
+#include "poima/ui_model.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/ElementUtilities.h>
 #include <algorithm>
@@ -70,6 +72,7 @@ struct Renderer final:Rml::RenderInterface {
     struct Geometry {std::vector<UiVertex> vertices;std::vector<std::uint32_t> indices;};
     std::string& error;std::map<Rml::CompiledGeometryHandle,Geometry> geometry;
     std::map<Rml::TextureHandle,UiTexture> textures;std::uintptr_t next_geometry=1,next_texture=1;
+    decltype(UiDocumentSource::images) images;
     std::size_t resident_vertices=0,resident_indices=0,resident_bytes=0;
     UiFrame packet;std::map<Rml::TextureHandle,std::uint32_t> frame_textures;
     bool scissor_enabled=false;std::array<std::int32_t,4> clip{};std::array<float,16> matrix=UiDraw{}.transform;
@@ -104,10 +107,40 @@ struct Renderer final:Rml::RenderInterface {
         for(auto i:mesh.indices)packet.indices.push_back(offset+i);
         packet.draws.push_back(draw);
     }
-    Rml::TextureHandle LoadTexture(Rml::Vector2i&,const Rml::String&) override {unsupported("external texture resource");return 0;}
+    Rml::TextureHandle LoadTexture(Rml::Vector2i& extent,const Rml::String& source) override {
+        const std::string_view resource(source);
+        const auto found=resource.starts_with(ui_image_source_prefix)?
+            images.find(resource.substr(ui_image_source_prefix.size())):images.end();
+        if(found==images.end()) {unsupported("unbound texture resource");return 0;}
+        const auto& mip=found->second->mips.front();
+        extent={static_cast<int>(mip.width),static_cast<int>(mip.height)};
+        UiTexture texture{mip.width,mip.height,mip.rgba};
+        // The packet uses premultiplied sRGB; the GPU unpremultiplies,
+        // decodes and premultiplies in linear light before filtering.
+        for(std::size_t pixel=0;pixel<texture.rgba.size();pixel+=4) {
+            const auto alpha=texture.rgba[pixel+3];
+            for(std::size_t channel=0;channel<3;++channel) {
+                auto& value=texture.rgba[pixel+channel];
+                value=static_cast<std::uint8_t>((static_cast<unsigned>(value)*alpha+127)/255);
+            }
+        }
+        return store_texture(std::move(texture));
+    }
+    Rml::TextureHandle store_texture(UiTexture texture) {
+        if(texture.rgba.size()>max_ui_texture_bytes-resident_bytes || textures.size()>=max_ui_textures) {
+            diagnose(error,"UI resident texture budget exceeded.");return 0;
+        }
+        const auto handle=next_texture++;
+        const auto bytes=texture.rgba.size();
+        textures.emplace(handle,std::move(texture));resident_bytes+=bytes;return handle;
+    }
     Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> bytes,Rml::Vector2i extent) override {
-        if(extent.x<1 || extent.y<1 || extent.x>4096 || extent.y>4096 || bytes.size()!=std::size_t(extent.x)*std::size_t(extent.y)*4 || bytes.size()>max_ui_texture_bytes-resident_bytes || textures.size()>=max_ui_textures) {diagnose(error,"UI generated texture budget/extent invalid.");return 0;}
-        UiTexture texture;texture.width=static_cast<std::uint32_t>(extent.x);texture.height=static_cast<std::uint32_t>(extent.y);texture.rgba.assign(bytes.begin(),bytes.end());const auto handle=next_texture++;textures.emplace(handle,std::move(texture));resident_bytes+=bytes.size();return handle;
+        if(extent.x<1 || extent.y<1 || extent.x>4096 || extent.y>4096 ||
+            bytes.size()!=std::size_t(extent.x)*std::size_t(extent.y)*4 ||
+            bytes.size()>max_ui_texture_bytes-resident_bytes || textures.size()>=max_ui_textures) {
+            diagnose(error,"UI generated texture budget/extent invalid.");return 0;
+        }
+        return store_texture({static_cast<std::uint32_t>(extent.x),static_cast<std::uint32_t>(extent.y),{bytes.begin(),bytes.end()}});
     }
     void ReleaseTexture(Rml::TextureHandle handle) override {const auto it=textures.find(handle);if(it!=textures.end()) {resident_bytes-=it->second.rgba.size();textures.erase(it);}}
     void EnableScissorRegion(bool enable) override {scissor_enabled=enable;}
@@ -144,6 +177,19 @@ struct UiDocument::Impl {
     }
     void init(UiDocumentSource source) {
         text_bound(source.rml,1024*1024);check(source.elements.size()<=256 && source.fonts.size()<=16,"UI registration/font budget exceeded.");
+        check(source.images.size()<=ui::max_images,"UI document image count exceeds bounds.");
+        std::size_t image_bytes=0;
+        for(const auto& [id,image]:source.images) {
+            check(id.size()==64 && id.find_first_not_of("0123456789abcdef")==std::string::npos,
+                "UI document image requires a cooked asset identity.");
+            check(image && image->srgb && !image->mips.empty(),"UI document image needs a base sRGB level.");
+            const auto& mip=image->mips.front();
+            check(mip.width>=1 && mip.height>=1 && mip.width<=4096 && mip.height<=4096 &&
+                mip.rgba.size()==std::size_t(mip.width)*mip.height*4 &&
+                mip.rgba.size()<=ui::max_image_bytes-image_bytes,"UI document image extent or bytes exceed bounds.");
+            image_bytes+=mip.rgba.size();
+        }
+        renderer.images=std::move(source.images);
         auto lower=source.rml;std::transform(lower.begin(),lower.end(),lower.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
         check(lower.find("<script")==std::string::npos,"UI scripts are disabled.");
         auto& g=globals();g.acquire();joined=true;

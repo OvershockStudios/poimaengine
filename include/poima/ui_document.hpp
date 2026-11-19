@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/ui.hpp"
+#include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 namespace poima {
+struct TextureImage;
+inline constexpr std::string_view ui_image_source_prefix="?poima-image-";
 enum class UiElementKind { label,button };
 struct UiFontSource { std::string family;std::vector<std::uint8_t> bytes; };
 struct UiElementBinding { std::string id;UiElementKind kind=UiElementKind::label;std::string action; };
-struct UiDocumentSource { std::string rml;std::vector<UiFontSource> fonts;std::vector<UiElementBinding> elements;std::vector<std::string> hit_regions; };
+struct UiDocumentSource {
+    std::string rml;
+    std::vector<UiFontSource> fonts;
+    std::vector<UiElementBinding> elements;
+    std::vector<std::string> hit_regions;
+    std::map<std::string,std::shared_ptr<const TextureImage>,std::less<>> images;
+};
 struct UiPointerTarget {std::optional<std::string> button;bool region=false;};
 struct UiElementInspection {
     std::string id,action,text;UiElementKind kind=UiElementKind::label;
@@ -17,7 +27,8 @@ struct UiElementInspection {
     float font_size_px=0; // RmlUi computed inherited font size, in physical pixels.
 };
 // Native presentation only: semantic actions are returned to the owner, never
-// executed as gameplay. No script host, disk resources, external images or URLs.
+// executed as gameplay. Only supplied immutable images are addressable.
+// No script host, disk resources or URL requests.
 // Calls across documents serialize RmlUi's global state. Published frames own
 // their atlas/geometry bytes and outlive this document. Time is caller supplied.
 class UiDocument {

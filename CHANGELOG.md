@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.243
+
+- Bind cooked images to native game UI panels, labels and buttons. The same
+  asset IDs appear in authored dependency queries and travel with game exports
+  and frozen save content.
+
 ## 0.0.242
 
 - Start newly created projects with an editable game-brief guide for coding

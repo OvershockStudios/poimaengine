@@ -5,8 +5,9 @@ Poima owns logical controls in the world/runtime and uses native retained layout
 Typed authored layout and styling are available in 0.0.50 development. Agents can
 place HUDs and menus, choose a palette and inspect virtual-viewport bounds through
 the native service. The blue skin remains the compatibility fallback when metadata
-is absent. Theme assets, reusable style inheritance, images, text inputs, inventory
-widgets, animations and a visual UI authoring tool remain future work.
+is absent. Typed styles can bind cooked images. Theme assets, reusable style
+inheritance, text inputs, inventory widgets, animations and a visual UI authoring
+tool remain future work.
 
 The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
 
@@ -147,6 +148,52 @@ and style participate in the trusted content hash, preventing a saved snapshot
 from being restored against a different embedded definition. Loading an older
 save still uses that save's frozen world, even when current authoring has changed.
 
+## Use cooked images
+
+Import a PNG or JPEG with `asset.image.import` and `color_space: "srgb"`.
+Place the returned hash in `style.image` on a panel, label or button.
+
+```json
+{
+  "background_color": "#171318",
+  "image": {
+    "asset": "<cooked image hash>",
+    "fit": "contain"
+  }
+}
+```
+
+The image is drawn behind the content inside the padding box. The default
+`contain` keeps the aspect ratio and centers the whole image. `stretch` fills
+the box. Use a transparent PNG for shaped artwork. Layout still sets the
+dimensions, including for an empty label used as a decorative icon. The
+parent scissor clips the image along with the rest of the element. The control
+definition still supplies the hit region, text and action.
+
+`world.ui.get` and `runtime.ui.inspect` retain the style reference.
+`world.asset.references` lists each use, while `world.dependencies`
+deduplicates the cooked bytes. Each definition can reference up to 32 unique
+images with 16 MiB total base-level RGBA data and sides up to 4096 pixels.
+The native renderer uses the base level, preserving source alpha.
+
+Virtual layout and runtime freeze validate missing, corrupt, incorrectly
+typed and over-budget packages before use. Asset references are ordinary
+immutable world dependencies. Active runtimes and saves use their pinned
+images, including hidden controls. Export copies these dependencies into the
+game. Change the authored style and start a fresh runtime to adopt different
+artwork. Preserve an older cooked package as long as a save still refers to it.
+
+On a simulation build with game UI enabled, run the authored, layout and save
+checks with a new output directory:
+
+```sh
+python3 tests/ui_image_contract.py build/linux-game/poima --output build/ui-image-check
+```
+
+On Windows Vulkan, pass `--gpu` for pixel checks and `--runtime` with the
+matching installed Windows runtime for a relocated export check. Add
+`--windows-interop` when driving the Windows executable from WSL.
+
 ## Authoring validation diagnostics
 
 Rejected UI definitions retain their existing `-32602` code and human-readable
@@ -270,7 +317,12 @@ Dependency downloads are verified by SHA-256. Renderer checks additionally requi
 
 ## Native API
 
-[UiDocument](../include/poima/ui_document.hpp) accepts document text, owned font bytes and an explicit list of registered labels/buttons. Font families are shared within the library lifetime; case aliases must resolve to identical font bytes. Resource references cannot read disk or fetch URLs. Inline scripts, data-binding expressions, external images/stylesheets and unimplemented rendering effects are rejected.
+[UiDocument](../include/poima/ui_document.hpp) accepts document text, owned font
+bytes, a map of immutable image resources and an explicit list of registered
+labels/buttons. Font families are shared within the library lifetime; case
+aliases must resolve to identical font bytes. Texture lookup is limited to
+the supplied image map. Other resource access, inline scripts, data binding
+and unimplemented rendering effects are rejected.
 
 ```cpp
 poima::UiDocumentSource source;

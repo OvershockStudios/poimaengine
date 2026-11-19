@@ -202,7 +202,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         reference_cursor_variant("entity",texture_type,texture_paths),
         reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
         reference_cursor_variant("template",texture_type,texture_paths),
-        reference_cursor_variant("world",{{"const","navigation"}},direct_path)})}};
+        reference_cursor_variant("world",{{"const","navigation"}},direct_path),
+        reference_cursor_variant("world",{{"const","ui"}},{{"type","string"},{"pattern","^/ui/(?!0{32}/)[0-9a-f]{32}/style/image/asset$"}})})}};
     for(const auto* type:{"AnimationRig","AudioEmitter","MeshCollider","PbrTextures","SkinnedMesh","StaticMesh"}) {
         const std::string suffix=std::string(type)=="PbrTextures" ? "/(base_color|emissive|metallic_roughness|normal|occlusion)/asset" : "/asset";
         reference_cursor["oneOf"].push_back(reference_cursor_variant("template",{{"const",type}},
@@ -217,7 +218,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 134}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 135}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -952,6 +953,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["save.load"]["properties"]["expected_control_sequence"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     result["ui"]={{"presentation_available",static_cast<bool>(POIMA_GAME_UI)},{"authored_version",4},{"max_elements",256},{"max_depth",32},{"element",ui_element},
         {"max_text_bytes",16384},{"max_total_text_bytes",1048576},
+        {"images",{{"max_unique",ui::max_images},{"max_base_level_bytes",ui::max_image_bytes},
+            {"scope","Immutable standalone sRGB image packages loaded with runtime content. The image paints behind the element contents without changing layout or hit-testing."}}},
         {"state","Same-tick native text/visibility/enabled/modal edits with independent ui_revision and retry receipts. Runtime inspection pagination requires ui_revision after the first page."},
         {"save_guard","save.write/load require expected_ui_revision and expected_control_sequence for an active UI-bearing world; stopped restore accepts absent or null. Snapshot v5 preserves logical UI state and control sequence; v4 restores sequence zero."},
         {"limits","Button actions invoke compiled Control callbacks without advancing simulation. C# UI writes are staged atomically; Optional typed layout/style metadata is frozen at runtime start; absent metadata retains the default layout. world.ui.layout observes an ephemeral virtual viewport, not live focus/scroll or physical input."},

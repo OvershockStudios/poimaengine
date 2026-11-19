@@ -1,0 +1,172 @@
+{
+  "format": "poima.evidence.ui-cooked-images.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.243",
+  "schema_revision": 135,
+  "scope": "A cooked sRGB RGBA image style from native authoring through layout, dependencies, frozen state, Vulkan capture and a relocated Windows export.",
+  "linux": {
+    "fixture": {
+      "executable_sha256": "ff25245c2220f4e28e243cd91008e6a5eaa7d4e9400af4bd38a35f6af0fdcb7b",
+      "rpc_calls": 32,
+      "clean_exits": 2,
+      "captures": {},
+      "report": {
+        "path": "build/ui-images-0.0.243/linux-final/report.json",
+        "bytes": 41255,
+        "sha256": "9c113a4c119c4a1efd750d5d2a0f74236272cda7d3ca266943420f6951a28ad7"
+      }
+    },
+    "ctest": {
+      "tests": [
+        "ui_model_native",
+        "ui_document_native",
+        "ui_presenter_native",
+        "world_ui_contract",
+        "ui_authoring_contract",
+        "runtime_ui_contract",
+        "asset_references_contract"
+      ],
+      "report": {
+        "path": "build/ui-images-0.0.243/linux-ctest-current.xml",
+        "bytes": 4542,
+        "sha256": "ee5bc5c94bcb50fbdfc3b0f691ed0f3e28d751b7e6cc51b7f9f1285c22551fb4"
+      }
+    },
+    "first_regression_run": {
+      "passed": false,
+      "report": {
+        "path": "build/ui-images-0.0.243/linux-ctest.xml",
+        "bytes": 5942,
+        "sha256": "0c7e4edf18da754302d7ab2aa21cf6951f8d4cf728138a8405600a495123440d"
+      },
+      "cause": "Two old tests pinned exact discovery revisions. Both failures reproduce with the installed 0.0.242 executable.",
+      "baseline_reproduction": {
+        "world-ui": {
+          "prior_reported_revision": 134,
+          "prior_expected_revision": 52,
+          "log": {
+            "path": "build/ui-images-0.0.243/previous-world-ui.log",
+            "bytes": 1509,
+            "sha256": "50e091cc73fd566c2ad5964d85ee18f5915c9dbc4e07931bebc0fe039a5b6d2b"
+          }
+        },
+        "asset-references": {
+          "prior_reported_revision": 134,
+          "prior_expected_revision": 59,
+          "log": {
+            "path": "build/ui-images-0.0.243/previous-asset-references.log",
+            "bytes": 1816,
+            "sha256": "a900c20ee4a8bd492131c3b2fdd83f2ad006384de4bf1f4767b6dae70d7265a7"
+          }
+        }
+      },
+      "resolution": "Update the exact assertions to revision 135; preserve all behavioral assertions."
+    }
+  },
+  "windows": {
+    "rtx_4070_laptop_and_relocated_export": {
+      "executable_sha256": "46089fda144cdbad4be4d0eb250dc5e1406c1e466c9e5a0c2719326b1a63d86c",
+      "rpc_calls": 38,
+      "clean_exits": 3,
+      "captures": {
+        "original": {
+          "sha256": "80534c5d84b64dcd251be58e5b5424a9042b9eff402ceae46a12a6bf07d62fb1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "ui_revision": 0
+        },
+        "frozen": {
+          "sha256": "80534c5d84b64dcd251be58e5b5424a9042b9eff402ceae46a12a6bf07d62fb1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "ui_revision": 0
+        },
+        "cold-save": {
+          "sha256": "80534c5d84b64dcd251be58e5b5424a9042b9eff402ceae46a12a6bf07d62fb1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "ui_revision": 0
+        },
+        "fresh-runtime": {
+          "sha256": "cdd187f420c07fc304ed5978f606607ca755ea9c6a8a3bb5a456ce84067f25c1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "ui_revision": 0
+        },
+        "relocated-game": {
+          "sha256": "cdd187f420c07fc304ed5978f606607ca755ea9c6a8a3bb5a456ce84067f25c1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "ui_revision": 0
+        }
+      },
+      "report": {
+        "path": "build/ui-images-0.0.243/windows-export/report.json",
+        "bytes": 112053,
+        "sha256": "61e83a61aed4fa6e1f2dd1282ee92320f6595a24991950ee40d778a3be01e78b"
+      }
+    },
+    "second_adapter": {
+      "executable_sha256": "46089fda144cdbad4be4d0eb250dc5e1406c1e466c9e5a0c2719326b1a63d86c",
+      "rpc_calls": 36,
+      "clean_exits": 2,
+      "captures": {
+        "original": {
+          "sha256": "dfde4d79bbd7ae411651939f9c7a3bcd2519961748f5435a16f2ee9efc8fd15e",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "ui_revision": 0
+        },
+        "frozen": {
+          "sha256": "dfde4d79bbd7ae411651939f9c7a3bcd2519961748f5435a16f2ee9efc8fd15e",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "ui_revision": 0
+        },
+        "cold-save": {
+          "sha256": "dfde4d79bbd7ae411651939f9c7a3bcd2519961748f5435a16f2ee9efc8fd15e",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "ui_revision": 0
+        },
+        "fresh-runtime": {
+          "sha256": "e79608e735782bcf1923ad08e35d85a6b66d7cb8d9dfc820b062989d7f84c43c",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "ui_revision": 0
+        }
+      },
+      "report": {
+        "path": "build/ui-images-0.0.243/windows-adapter-0/report.json",
+        "bytes": 97857,
+        "sha256": "97b209c22cf645b4ad5a91efdb791c74cde74efb6b29fdba81a6a18044c5c483"
+      }
+    },
+    "installed_runtime": {
+      "path": "build/ui-images-0.0.243/installed-windows-runtime/runtime.json",
+      "bytes": 1114,
+      "sha256": "67d113d956aeda60ef80ecca7e54f6898e28d9c532f31d28429ddc386021763f"
+    },
+    "retained_native_aot_ui": {
+      "rpc_calls": 363,
+      "clean_exits": 3,
+      "report": {
+        "path": "build/ui-images-0.0.243/windows-legacy-live/evidence.json",
+        "bytes": 6822847,
+        "sha256": "9fe476da750e5caca51b875adf19f08437f0f971963f8bf40d80528a8052608b"
+      }
+    },
+    "frozen_source_world_request_contract": {
+      "passed": true,
+      "baseline_sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+      "report": {
+        "path": "build/ui-images-0.0.243/windows-schema/request-check.json",
+        "bytes": 603,
+        "sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+      }
+    }
+  },
+  "checks": [
+    "Both reference uses are paged independently; package closure deduplicates the shared asset.",
+    "Invalid URL, missing and corrupt packages, and linear textures exercise their intended rejection paths.",
+    "Numeric pixel witnesses cover aspect preserving fit, stretch, opaque and transparent texels, and a half-alpha blend.",
+    "Old pixels remain identical after the authored image change and after a save opens in a fresh process.",
+    "The newly authored image changes pixels after runtime start. The relocated game reproduces those same pixels with the input PNGs and source project unavailable at their original paths."
+  ],
+  "limits": [
+    "Small deterministic image fixture, two laptop GPUs and one Windows packaged rendering check.",
+    "Native UI regression uses synthetic activation and retained compiled gameplay.",
+    "No physical device, shaped glyph, UI editor, custom font or production performance measurements."
+  ]
+}

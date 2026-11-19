@@ -67,6 +67,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | Component and field | Package kind | Subresource |
 | --- | --- | --- |
 | World `navigation.asset` | navigation | null |
+| World UI `style.image.asset` | image | null |
 | `AnimationRig.asset` | model | null |
 | `AudioEmitter.asset` | audio | null |
 | `MeshCollider.asset` | model | authored primitive |
@@ -75,7 +76,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | `PbrTextures.<slot>.asset`, without `image` | image | null |
 | `PbrTextures.<slot>.asset`, with `image` | model | authored embedded image |
 
-Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`; their cursor paths are `/<slot>/asset`. Templates currently admit only the StaticMesh and PbrTextures reference rows. A world owner uses the current `world_id` from `world.inspect`; its optional [navigation binding](NAVIGATION.md#bind-a-world) is the only supported world reference, at component `navigation`, path `/asset`.
+Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`; their cursor paths are `/<slot>/asset`. Templates currently admit only the StaticMesh and PbrTextures reference rows. A world owner uses the current `world_id` from `world.inspect`. Its [navigation binding](NAVIGATION.md#bind-a-world) uses component `navigation` and path `/asset`. Its [UI images](GAME_UI.md#use-cooked-images) use component `ui` and path `/ui/<element-id>/style/image/asset`.
 
 Invisible meshes, collision-only geometry, disabled emitters and frozen template references are included. Omitted texture slots inherit imported maps; null slots disable them. Neither creates another explicit edge. Imported material images, skins, curves and layer/reference clips live inside the referenced model package; this operation does not decode them into an effective material graph. Use [effective material inspection](MATERIAL_AUTHORING.md#inspect-the-effective-material) when that is needed.
 

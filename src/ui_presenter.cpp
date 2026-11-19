@@ -40,6 +40,11 @@ std::string authored_css(const ui::Element& e) {
     }
     if(e.style) {
         const auto& s=*e.style;base+=colors({s.color,s.background_color,s.border_color});
+        if(s.image) {
+            const auto fit=s.image->fit.value_or(ui::ImageFit::contain);
+            base+="decorator:image(\""+std::string(ui_image_source_prefix)+s.image->asset+"\" "+
+                (fit==ui::ImageFit::contain?"contain":"fill")+");";
+        }
         if(s.font_size)base+="font-size:"+number(*s.font_size)+"dp;";
         if(s.border_width)base+="border-width:"+number(*s.border_width)+"dp;";
         if(s.border_radius)base+="border-radius:"+number(*s.border_radius)+"dp;";
@@ -80,6 +85,12 @@ UiDocumentSource document_source(const ui::Presentation& projection) {
         }
     }
     UiDocumentSource source;const auto font=embedded_ui_font();source.fonts.push_back({"Poima Runtime Inter",{font.begin(),font.end()}});
+    for(const auto& row:projection.elements)if(row.element.style && row.element.style->image) {
+        const auto& image=*row.element.style->image;
+        check(image.texture!=nullptr,"UI image is not resolved.");
+        const auto [asset,inserted]=source.images.try_emplace(image.asset,image.texture);
+        check(inserted || asset->second==image.texture,"UI image identity maps to more than one loaded texture.");
+    }
     source.rml=R"(<rml><head><style>
 body { margin: 0px; width: 100%; height: 100%; font-family: Poima Runtime Inter; font-size: 18dp; color: #edf2fa; }
 #ui-root { position: absolute; left: 3%; top: 3%; width: 44%; max-height: 94%; overflow: auto; clip: always; }

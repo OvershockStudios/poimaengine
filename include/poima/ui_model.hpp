@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
+namespace poima { struct TextureImage; }
 namespace poima::ui {
 enum class ValidationKind { unknown,null_value,boolean,integer,number,string,array,object };
 enum class ValidationReason { invalid_value,type_mismatch,missing_field,unknown_field,out_of_range,invalid_hierarchy };
@@ -36,6 +38,15 @@ enum class Justify { start,center,end,space_between };
 enum class HitTest { capture,pass_through };
 enum class Overflow { visible,hidden,auto_scroll };
 enum class TextAlign { left,center,right };
+enum class ImageFit { contain,stretch };
+inline constexpr std::size_t max_images=32,max_image_bytes=16u*1024u*1024u;
+struct Image {
+    std::string asset;
+    std::optional<ImageFit> fit;
+    // Resolved only when freezing a runtime or preparing a virtual viewport.
+    // This is owned immutable content, never a serialized part of the style.
+    std::shared_ptr<const TextureImage> texture;
+};
 struct Layout {
     std::optional<Position> position;
     std::optional<Length> width,height,min_width,max_width,min_height,max_height,left,top,right,bottom;
@@ -56,6 +67,7 @@ struct Style {
     std::optional<double> font_size,border_width,border_radius;
     std::optional<TextAlign> text_align;
     std::optional<ColorState> hover,focus,pressed,disabled;
+    std::optional<Image> image;
 };
 struct Element {
     std::string id,parent,name;Kind kind=Kind::panel;std::string text,action;

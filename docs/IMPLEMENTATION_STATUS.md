@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.242**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.243**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.243 binds [cooked artwork to game UI](GAME_UI.md#use-cooked-images).
+Panel, label and button styles can contain or stretch a standalone sRGB image.
+[Qualification](evidence/m2-ui-images.json) covers native layout, color and
+alpha in Vulkan, older save restoration, runtime freezing and a relocated
+Windows export. This path uses the base texture level and the existing
+control layout. Font import and reusable themes remain separate work.
 
 Version 0.0.242 includes an editable [first-game interview guide](GAME_BRIEF.md)
 in new projects. A fresh Codex CLI session follows the guide over three turns,

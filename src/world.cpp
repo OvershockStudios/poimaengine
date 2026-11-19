@@ -1405,6 +1405,29 @@ public:
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
         presentation_shapes_=next_presentation_shapes(doc_,presentation_incarnation_cursor_);
     }
+    void resolve_ui_images(ui::Definition& elements,ModelCache& assets) const {
+        std::set<std::string> seen;
+        std::size_t bytes=0;
+        for(auto& element:elements) {
+            if(!element.style || !element.style->image)continue;
+            auto& image=*element.style->image;
+            try {
+                const bool first=seen.insert(image.asset).second;
+                require(seen.size()<=ui::max_images,"UI exceeds the 32-image budget.",-32050);
+                image.texture=assets.image(asset_directory(),image.asset);
+                require(image.texture->srgb && !image.texture->mips.empty(),
+                    "UI images require a cooked sRGB texture.",-32050);
+                if(first) {
+                    const auto& mip=image.texture->mips.front();
+                    require(mip.width<=4096 && mip.height<=4096 && mip.rgba.size()<=ui::max_image_bytes-bytes,
+                        "UI image extent or 16 MiB base-level budget exceeded.",-32050);
+                    bytes+=mip.rgba.size();
+                }
+            } catch(const std::exception& error) {
+                throw Error(-32050,"UI image "+image.asset+" for element "+element.id+": "+error.what());
+            }
+        }
+    }
     FrozenContent freeze_content(const Json& source) const {
         WorldPackageContent result;result.revision=revision(source.at("revision"));
         std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
@@ -1449,6 +1472,11 @@ public:
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio);
+        resolve_ui_images(definition.ui,assets);
+        for(const auto& element:definition.ui)if(element.style && element.style->image) {
+            const auto& id=element.style->image->asset;
+            add(id,".pimage",assets.images.at(id).bytes);
+        }
         if(source.contains("navigation")) {
             auto checked=navigation_binding(source);definition.navigation=checked.definition;result.needs_navigation=true;
             add(checked.definition.asset,".pnav",checked.bytes);
@@ -1635,7 +1663,7 @@ public:
         auto owner_json=[](const asset_references::Owner& owner) { return Json{{"kind",owner.kind},{"id",owner.id}}; };
         auto cursor_json=[&](const asset_references::Cursor& cursor) { return Json{{"owner",owner_json(cursor.owner)},{"component",cursor.component},{"path",cursor.path}}; };
         asset_references::Page page;
-        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr); }
+        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr,doc_.contains("ui") ? &doc_.at("ui"):nullptr); }
         catch(const asset_references::Error& error) { throw Error(error.code,error.what()); }
         Json selection=Json::object();if(query.asset)selection["asset"]=*query.asset;if(query.owner)selection["owner"]=owner_json(*query.owner);
         Json edges=Json::array();
@@ -1719,7 +1747,10 @@ public:
             const auto scale=params.value("scale",1.0);
             require(std::isfinite(scale) && scale>=.25 && scale<=8,"UI scale must be .25..8.");
 #if POIMA_GAME_UI
-            const ui::Model model(ui::parse_definition(doc_.value("ui",Json::object()).dump()));
+            auto definition=ui::parse_definition(doc_.value("ui",Json::object()).dump());
+            ModelCache assets;
+            resolve_ui_images(definition,assets);
+            const ui::Model model(definition);
             UiPresenter presenter;
             (void)presenter.frame(model.presentation(),static_cast<std::uint32_t>(width),static_cast<std::uint32_t>(height),static_cast<float>(scale));
             auto controls=Json::array();

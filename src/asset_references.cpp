@@ -32,7 +32,15 @@ bool valid_owner(const Owner& value) noexcept { return (value.kind=="entity" || 
 bool valid_asset(const std::string& value) noexcept { return hex(value,64); }
 bool valid_cursor(const Cursor& value) noexcept {
     if(!valid_owner(value.owner))return false;
-    if(value.owner.kind=="world")return value.component=="navigation" && value.path=="/asset";
+    if(value.owner.kind=="world") {
+        if(value.component=="navigation")return value.path=="/asset";
+        constexpr std::string_view suffix="/style/image/asset";
+        if(value.component!="ui" || value.path.size()!=4+32+suffix.size() ||
+            !value.path.starts_with("/ui/") || !value.path.ends_with(suffix))return false;
+        const auto local=std::string_view(value.path).substr(4,32);
+        return local.find_first_not_of("0123456789abcdef")==std::string_view::npos &&
+            local.find_first_not_of('0')!=std::string_view::npos;
+    }
     std::string_view path=value.path;
     bool member=false;
     if(path.starts_with("/entities/")) {
@@ -58,11 +66,12 @@ bool valid_cursor(const Cursor& value) noexcept {
 bool before(const Cursor& a,const Cursor& b) noexcept {
     return std::tie(a.owner.kind,a.owner.id,a.component,a.path)<std::tie(b.owner.kind,b.owner.id,b.component,b.path);
 }
-Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation) {
+Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation,const Json* ui) {
     need(world_id.empty() || hex(world_id,32),"Malformed authored world identity.");
     need(!navigation || (!world_id.empty() && navigation->is_object() && navigation->size()==1 && navigation->contains("asset")),"Malformed authored navigation binding.");
     need(entities.is_object() && entities.size()<=max_entities,"Asset-reference entity map exceeds bounds.");
     need(!templates || (templates->is_object() && templates->size()<=max_templates),"Asset-reference template map exceeds bounds.");
+    need(!ui || (!world_id.empty() && ui->is_object() && ui->size()<=max_ui_elements),"Asset-reference UI map exceeds bounds.");
     need(query.limit>=1 && query.limit<=max_page,"Asset-reference page limit must be 1..256.");
     need(!(query.asset && query.owner),"Asset and owner selectors are mutually exclusive.");
     need(!query.asset || valid_asset(*query.asset),"Invalid asset-reference asset selector.");
@@ -123,15 +132,31 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
             if(result.edges.size()>query.limit)return;
         }
     };
+    auto visit_world=[&](const Owner& owner) {
+        if(navigation)emit(owner,"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);
+        if(!ui)return;
+        for(const auto& [id,element]:ui->items()) {
+            if(result.edges.size()>query.limit)return;
+            need(hex(id,32) && id.find_first_not_of('0')!=std::string::npos && element.is_object(),
+                "Malformed authored UI element.");
+            const auto style=element.find("style");
+            if(style==element.end())continue;
+            need(style->is_object(),"Malformed authored UI style.");
+            const auto image=style->find("image");
+            if(image==style->end())continue;
+            need(image->is_object() && image->contains("asset"),"Malformed authored UI image reference.");
+            emit(owner,"ui","/ui/"+id+"/style/image/asset",image->at("asset"),"image",std::nullopt);
+        }
+    };
     if(query.owner) {
-        if(query.owner->kind=="world") {if(navigation)emit(*query.owner,"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);}
+        if(query.owner->kind=="world")visit_world(*query.owner);
         else {const auto& owners=query.owner->kind=="entity" ? entities : *templates;visit_owner(*query.owner,owners.at(query.owner->id));}
     } else {
         // nlohmann::json object storage is a sorted std::map, not insertion order.
         for(const auto& [id,value]:entities.items()) { visit_owner({"entity",id},value);if(result.edges.size()>query.limit)break; }
         if(result.edges.size()<=query.limit && templates)
             for(const auto& [id,value]:templates->items()) { visit_owner({"template",id},value);if(result.edges.size()>query.limit)break; }
-        if(result.edges.size()<=query.limit && navigation)emit({"world",world_id},"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);
+        if(result.edges.size()<=query.limit && (navigation || ui))visit_world({"world",world_id});
     }
     if(result.edges.size()>query.limit) { result.edges.pop_back();result.next_after=result.edges.back().source; }
     return result;

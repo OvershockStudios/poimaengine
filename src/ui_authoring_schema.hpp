@@ -26,6 +26,9 @@ inline Json style() {
     properties["font_size"]=number(8,128);properties["border_width"]=number(0,32);
     properties["border_radius"]=number(0,128);
     properties["text_align"]={{"enum",{"left","center","right"}}};
+    properties["image"]=object({{"asset",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
+        {"fit",{{"enum",{"contain","stretch"}},{"default","contain"}}}},{"asset"});
+    properties["image"]["description"]="A standalone cooked sRGB image, drawn behind the content. Contain centers the full image; stretch fills the padding rectangle.";
     for(const auto* state:{"hover","focus","pressed","disabled"})properties[state]=colors();
     return result;
 }
