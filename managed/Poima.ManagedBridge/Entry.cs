@@ -162,6 +162,7 @@ public static unsafe class Entry
             if(typeof(IItemPickupPoseGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.ItemPickupPose;
             if(typeof(IItemPickupBlendGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.ItemPickupBlend;
             if(typeof(IItemPickupSteeringGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.ItemPickupSteering;
+            if(typeof(IItemPickupHandFallbackGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.ItemPickupHandFallback;
             GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)

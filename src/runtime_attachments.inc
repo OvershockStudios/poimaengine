@@ -17,6 +17,7 @@
         std::optional<RuntimeIkCommand> fallback;
         bool blend=false;
         bool steer=false;
+        bool sample_hand=false;
     };
     static constexpr unsigned pickup_blend_samples=4;
     static constexpr unsigned pickup_steer_samples=2;
@@ -190,31 +191,99 @@
         return step;
     }
     static std::optional<std::array<double,3>> pickup_steering_offset(const ChainPoints& points,
-        const RuntimeIkClearanceBlocker& blocker,double radius) {
-        if(!blocker.hit.normal)return std::nullopt;
+        const CapsuleCastHit& hit,double radius) {
+        if(!hit.normal)return std::nullopt;
         double arm_length=0,lever=0;
         for(std::size_t i=0;i<3;++i) {
             const auto axis=points[2][i]-points[0][i];
             arm_length+=axis*axis;
-            lever+=(blocker.hit.point_on_query[i]-points[0][i])*axis;
+            lever+=(hit.point_on_query[i]-points[0][i])*axis;
         }
         if(arm_length<1e-12)return std::nullopt;
         // A contact near the shoulder responds less to a wrist displacement.
         // Bound this estimate and let the following native casts decide.
         const auto margin=std::max(.001,.1*radius);
-        const auto shift=(blocker.hit.penetration_depth+margin)/std::clamp(lever/arm_length,.25,1.);
+        const auto shift=(hit.penetration_depth+margin)/std::clamp(lever/arm_length,.25,1.);
         const auto metres=std::min(shift,.14*std::sqrt(arm_length));
-        auto offset=*blocker.hit.normal;
+        auto offset=*hit.normal;
         for(auto& coordinate:offset)coordinate*=metres;
         return offset;
     }
-    RuntimeAttachmentReachBlocked::Pose resolve_pickup_pose(const std::string& item,const StagedPickupClearance& guard) {
+    static constexpr double pickup_hand_radius=.001;
+    std::optional<CapsuleCastHit> pickup_hand_overlap(const RuntimeAnimations::IkChainPreview& preview,
+        std::span<const RuntimeSurfaceProbe> samples,const std::vector<std::string>& ignore) const {
+        std::map<std::string,Matrix4> projected;
+        const auto world=[&](const std::string& id)->const Matrix4& {
+            std::vector<entt::entity> branch;
+            for(auto current=id;!current.empty() && !projected.contains(current);) {
+                const auto e=find(current);
+                branch.push_back(e);
+                const auto& node=registry.get<Node>(e);
+                current=transform_parent(node,attachment(attachment_graph.get(),current));
+            }
+            for(auto entry=branch.rbegin();entry!=branch.rend();++entry) {
+                const auto& node=registry.get<Node>(*entry);
+                const auto* binding=attachment(attachment_graph.get(),node.id);
+                const auto& parent=transform_parent(node,binding);
+                const auto changed=std::find(preview.entities.begin(),preview.entities.end(),node.id);
+                auto matrix=transform_local(node,binding);
+                if(!binding && changed!=preview.entities.end()) {
+                    const auto& pose=preview.locals[static_cast<std::size_t>(changed-preview.entities.begin())];
+                    matrix=local_matrix(pose.position,pose.rotation,pose.scale);
+                }
+                if(!parent.empty())matrix=multiply(projected.at(parent),matrix);
+                if(const auto* camera=registry.try_get<RuntimeCamera>(*entry);camera && camera->world_pose!=RuntimeCameraPose{})
+                    matrix=multiply(matrix,local_matrix(camera->world_pose.position,camera->world_pose.rotation,{1,1,1}));
+                projected.emplace(node.id,matrix);
+            }
+            return projected.at(id);
+        };
+        std::map<std::string,SceneObject> sources;
+        std::optional<CapsuleCastHit> deepest;
+        for(const auto& sample:samples) {
+            auto source=sources.find(sample.source);
+            if(source==sources.end()) {
+                const auto& mesh=registry.get<RuntimeMesh>(find(sample.source));
+                SceneObject pose{};
+                pose.world=world(sample.source);
+                pose.mesh=mesh.mesh;
+                pose.skin=animations->skin(sample.source,world);
+                source=sources.emplace(sample.source,std::move(pose)).first;
+            }
+            CapsuleCastRequest shape;
+            shape.radius=pickup_hand_radius;
+            shape.half_height=0;
+            shape.distance=0;
+            shape.position=surface_measure::source_sample(sample,source->second).first;
+            shape.ignore=ignore;
+            auto hit=capsule_cast(shape);
+            if(hit && (!deepest || hit->penetration_depth>deepest->penetration_depth))
+                deepest=std::move(hit);
+        }
+        return deepest;
+    }
+    RuntimeAttachmentReachBlocked::Pose resolve_pickup_pose(const std::string& item,const StagedPickupClearance& guard,
+        std::span<const RuntimeSurfaceProbe> probes) {
         using Pose=RuntimeAttachmentReachBlocked::Pose;
         const auto ignore=pickup_clearance_exclusions(item,guard.rig);
         const auto& wrapper=registry.get<Node>(find(guard.rig)).world;
+        const auto hand=guard.sample_hand ? probes : std::span<const RuntimeSurfaceProbe>{};
+        struct HandCorrection {
+            RuntimeIkCommand control;
+            ChainPoints points;
+            CapsuleCastHit hit;
+            double step;
+        };
+        std::optional<HandCorrection> hand_correction;
         const auto clear_pose=[&](const RuntimeIkCommand& control) -> std::optional<RuntimeAnimations::IkChainPreview> {
             auto preview=animations->preview_ik_chain(control,tick,wrapper);
             if(sweep_chain(preview.candidate,preview.candidate,guard.radii,ignore))return std::nullopt;
+            if(!hand.empty())if(auto hit=pickup_hand_overlap(preview,hand,ignore)) {
+                const auto step=pickup_pose_step(guard.start,preview.candidate);
+                if(control.weight>0 && hit->normal && (!hand_correction || step<hand_correction->step))
+                    hand_correction=HandCorrection{control,preview.candidate,std::move(*hit),step};
+                return std::nullopt;
+            }
             return preview;
         };
         const auto commit=[&](const RuntimeIkCommand& control,RuntimeAnimations::IkChainPreview preview,Pose pose) {
@@ -229,7 +298,8 @@
         const auto& previous=guard.fallback.value();
         auto prior_pose=animations->preview_ik_chain(previous,tick,wrapper);
         const auto prior_hit=sweep_chain(prior_pose.candidate,prior_pose.candidate,guard.radii,ignore);
-        if(!prior_hit)return commit(previous,std::move(prior_pose),Pose::Previous);
+        const auto prior_hand_hit=hand.empty() ? std::optional<CapsuleCastHit>{} : pickup_hand_overlap(prior_pose,hand,ignore);
+        if(!prior_hit && !prior_hand_hit)return commit(previous,std::move(prior_pose),Pose::Previous);
         // Disabled controls already sampled the unmodified incoming pose.
         if(!previous.enabled)return Pose::Unresolved;
         auto neutral=previous;
@@ -256,28 +326,33 @@
         }
         auto kind=control.enabled ? Pose::Blended : Pose::Animation;
         if(guard.steer && previous.weight>0 && !animations->ik_state(guard.rig,guard.slot)->target_node) {
-            if(auto offset=pickup_steering_offset(prior_pose.candidate,*prior_hit,guard.radii[prior_hit->segment-1])) {
+            auto best_step=best ? pickup_pose_step(guard.start,best->candidate) : std::numeric_limits<double>::infinity();
+            for(unsigned i=0;i<pickup_steer_samples;++i) {
+                auto probe=previous;
+                auto offset=prior_hit ? pickup_steering_offset(prior_pose.candidate,prior_hit->hit,guard.radii[prior_hit->segment-1])
+                    : pickup_steering_offset(prior_pose.candidate,*prior_hand_hit,pickup_hand_radius);
+                if(i>0 && hand_correction) {
+                    probe=hand_correction->control;
+                    offset=pickup_steering_offset(hand_correction->points,hand_correction->hit,pickup_hand_radius);
+                }
+                if(!offset)continue;
                 if(previous.space==IkSpace::Rig) {
                     const auto inverse=inverse_affine(wrapper);
                     const auto world_offset=*offset;
                     for(std::size_t i=0;i<3;++i)
                         (*offset)[i]=inverse[i]*world_offset[0]+inverse[4+i]*world_offset[1]+inverse[8+i]*world_offset[2];
                 }
-                auto best_step=best ? pickup_pose_step(guard.start,best->candidate) : std::numeric_limits<double>::infinity();
-                for(unsigned i=0;i<pickup_steer_samples;++i) {
-                    auto probe=previous;
-                    const double multiplier=1.+.5*i;
-                    for(std::size_t axis=0;axis<3;++axis)probe.target[axis]+=(*offset)[axis]*multiplier;
-                    if(std::any_of(probe.target.begin(),probe.target.end(),[](double x){return !std::isfinite(x) || std::abs(x)>1e6;}))
-                        continue;
-                    if(auto pose=clear_pose(probe)) {
-                        const auto step=pickup_pose_step(guard.start,pose->candidate);
-                        if(step<best_step) {
-                            best_step=step;
-                            control=probe;
-                            best=std::move(pose);
-                            kind=Pose::Steered;
-                        }
+                const double multiplier=1.+.5*i;
+                for(std::size_t axis=0;axis<3;++axis)probe.target[axis]+=(*offset)[axis]*multiplier;
+                if(std::any_of(probe.target.begin(),probe.target.end(),[](double x){return !std::isfinite(x) || std::abs(x)>1e6;}))
+                    continue;
+                if(auto pose=clear_pose(probe)) {
+                    const auto step=pickup_pose_step(guard.start,pose->candidate);
+                    if(step<best_step) {
+                        best_step=step;
+                        control=probe;
+                        best=std::move(pose);
+                        kind=Pose::Steered;
                     }
                 }
             }

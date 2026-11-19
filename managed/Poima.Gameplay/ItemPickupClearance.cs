@@ -15,6 +15,9 @@ public interface IItemPickupBlendGame : IItemPickupPoseGame { }
 /// <summary>Declares contact-normal steering for clear pickup fallback poses.</summary>
 public interface IItemPickupSteeringGame : IItemPickupBlendGame { }
 
+/// <summary>Declares collision checks for posed grip samples on blocked pickup fallbacks.</summary>
+public interface IItemPickupHandFallbackGame : IItemPickupSteeringGame { }
+
 /// <summary>World-space capsule radii for the live manual chain at the receiving hand.</summary>
 public readonly record struct ItemPickupClearance(EntityId Rig,uint Slot,double UpperRadius,double LowerRadius);
 public readonly record struct ItemPickupBlocker(EntityId Item,EntityId Hand,ulong SampledTick,IkClearanceBlocker Blocker);
@@ -88,6 +91,16 @@ public readonly unsafe ref partial struct GameContext
         RequireFeature(GameplayRequiredFeatures.ItemPickupSteering,nameof(IItemPickupSteeringGame));
         ValidatePickupClearance(clearance);
         StageSampledTransfer(item,hand,contact,probes,10,clearance);
+    }
+
+    /// <summary>On final arm obstruction, check each fallback with 1 mm spheres at the
+    /// posed grip sample sources in addition to the arm capsules.</summary>
+    public void AttemptItemPickupWithHandFallback(EntityId item,EntityId hand,ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes,ItemPickupClearance clearance)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemPickupHandFallback,nameof(IItemPickupHandFallbackGame));
+        ValidatePickupClearance(clearance);
+        StageSampledTransfer(item,hand,contact,probes,11,clearance);
     }
 
     private static void ValidatePickupClearance(ItemPickupClearance clearance)

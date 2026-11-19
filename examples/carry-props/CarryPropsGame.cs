@@ -210,3 +210,13 @@ public sealed class ArcingApproachCarryPropsGame : Game<ReachPickupState>,
     public override void Tick(ref ReachPickupState state, GameContext context) =>
         CarryPropsGame.Update(ref state,context,ReachGuard.ArcingApproach);
 }
+
+[GameModule("poima.example.hand-fallback-carry-props")]
+public sealed class HandFallbackCarryPropsGame : Game<ReachPickupState>,
+    IIkClearanceGame, IItemAttachmentAimGame, IItemPickupHandFallbackGame, IItemAttachmentReleaseGame,
+    ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        CarryPropsGame.Update(ref state,context,ReachGuard.HandFallback);
+}

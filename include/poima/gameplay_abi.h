@@ -648,7 +648,9 @@ typedef struct PoimaGameItemAttachmentCommandV3 {
  * item_attachment_pickup_pose_v1 uses the same layout at version 8 and
  * additionally tries clear fallback poses when the final reach is blocked.
  * item_attachment_pickup_blend_v1 uses version 9 and checks intermediate poses.
- * item_attachment_pickup_steering_v1 uses version 10 and tries contact-guided targets. */
+ * item_attachment_pickup_steering_v1 uses version 10 and tries contact-guided targets.
+ * item_attachment_pickup_hand_fallback_v1 uses version 11 and checks 1 mm
+ * spheres at the posed grip sample sources before publishing a fallback. */
 typedef struct PoimaGameItemPickupClearanceV7 {
     PoimaGameItemAttachmentCommandV3 sampled;
     PoimaEntityId rig;

@@ -1,0 +1,150 @@
+{
+  "engine_version": "0.0.275",
+  "schema_revision": 162,
+  "control_commit": "68b4ceb",
+  "scope": "A final forearm obstruction refuses the pickup. Version 11 additionally checks 1 mm sphere overlaps at four posed grip probes when selecting a fallback, then uses the existing staged recovery.",
+  "hosts": {
+    "linux_coreclr": {
+      "analytic": {
+        "replies": 479,
+        "exact_archive_pairs": 3,
+        "blocked_tick": 171,
+        "arm_only_pad_sphere_contact_m": 0.0069998446851968765,
+        "hand_filtered_pad_sphere_contacts": 0,
+        "arm_only_pose": "steered",
+        "hand_filtered_pose": "blended"
+      },
+      "imported": {
+        "replies": 698,
+        "exact_archive_pairs": 4,
+        "cold_boundary_ticks": [
+          188,
+          229
+        ],
+        "matched_step_requests": 90,
+        "blocked_tick": 188,
+        "chosen_pose": "blended",
+        "control_blocked_tick_maximum_pad_penetration_m": 0.008909794518976631,
+        "current_blocked_tick_minimum_pad_clearance_m": 0.01643352241750632,
+        "recovery_and_retry_ticks": [
+          188,
+          239
+        ],
+        "current_minimum_sample_clearance_m": 0.0009424226933710048,
+        "blocked_tick_elbow_step_m": {
+          "control": 0.014941965806209823,
+          "current": 0.05338434036676158
+        },
+        "blocked_tick_wrist_step_m": {
+          "control": 0.024310580142100323,
+          "current": 0.018146651884079216
+        },
+        "pickup": {
+          "tick": 240,
+          "gaps_m": [
+            0.0009122742896413168,
+            0.003234648260524882,
+            0.0021632884448829323,
+            0.0005902280612386094
+          ]
+        },
+        "native_vulkan_readbacks": []
+      }
+    },
+    "windows_native_aot": {
+      "analytic": {
+        "replies": 479,
+        "exact_archive_pairs": 3,
+        "blocked_tick": 171,
+        "arm_only_pad_sphere_contact_m": 0.0069998446851968765,
+        "hand_filtered_pad_sphere_contacts": 0,
+        "arm_only_pose": "steered",
+        "hand_filtered_pose": "blended"
+      },
+      "imported": {
+        "replies": 712,
+        "exact_archive_pairs": 4,
+        "cold_boundary_ticks": [
+          188,
+          229
+        ],
+        "matched_step_requests": 90,
+        "blocked_tick": 188,
+        "chosen_pose": "blended",
+        "control_blocked_tick_maximum_pad_penetration_m": 0.008909798031325265,
+        "current_blocked_tick_minimum_pad_clearance_m": 0.01643352264685486,
+        "recovery_and_retry_ticks": [
+          188,
+          239
+        ],
+        "current_minimum_sample_clearance_m": 0.0009424226933710048,
+        "blocked_tick_elbow_step_m": {
+          "control": 0.014941966975062046,
+          "current": 0.05338433640637276
+        },
+        "blocked_tick_wrist_step_m": {
+          "control": 0.0243105834188843,
+          "current": 0.01814665191071703
+        },
+        "pickup": {
+          "tick": 240,
+          "gaps_m": [
+            0.0009122742896416068,
+            0.0032346482605249897,
+            0.002163288444883178,
+            0.0005902280612385789
+          ]
+        },
+        "native_vulkan_readbacks": [
+          {
+            "tick": 188,
+            "digest": "aaf1fdd770e9ee72b47de4dad2287cd9eee97dc7de97c3355eff7a864e0e0e38",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 194,
+            "digest": "5a9d074e8450bd5b6aba278dbc36c0f9650101e288ece1845ae7e944b335e425",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 222,
+            "digest": "ebe6028e698d9030945330810469d05164cf2f4d05accdff4895f8e1372d4100",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 229,
+            "digest": "6759b2b151973572f3a982935bccd8b0456aabdb0d97c73e19784bda0e04003d",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 231,
+            "digest": "dcea27b1daf44cbdff53169c4a80f399ed07976b021e4c933af6e0179ba56d80",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 239,
+            "digest": "7ff50772c51b7d17d6406bcdee5db7d31c3ce2337a0d296d0ac0dd7075d8caed",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 240,
+            "digest": "26b269dcbcb3254dfca00f6d806a72cdd66d542e91c9026c7b9c60d07c6eee45",
+            "selected_draws": 3,
+            "shared_depth": true
+          }
+        ]
+      }
+    }
+  },
+  "limits": [
+    "Selected grip points and static spheres measure a bounded sample of final-pose clearance.",
+    "The imported forearm reaction moves the elbow farther on the blocked tick.",
+    "The sample uses one source rig and one late obstruction sequence."
+  ]
+}

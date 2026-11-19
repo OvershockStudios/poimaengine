@@ -290,6 +290,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pickup_pose_feature","item_attachment_pickup_pose_v1"},{"pickup_pose_command_version",8},
         {"pickup_blend_feature","item_attachment_pickup_blend_v1"},{"pickup_blend_command_version",9},
         {"pickup_steering_feature","item_attachment_pickup_steering_v1"},{"pickup_steering_command_version",10},
+        {"pickup_hand_fallback_feature","item_attachment_pickup_hand_fallback_v1"},
+        {"pickup_hand_fallback_command_version",11},{"pickup_hand_radius_m",.001},
         {"pickup_clearance_command_bytes",312},{"pickup_clearance_outcome_version",5},{"pickup_clearance_outcome_bytes",88},
         {"aim_feature","item_attachment_aim_v1"},{"aim_query_version",4},{"aim_query_bytes",208},
         {"max_surface_probes",max_attachment_surface_probes},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},

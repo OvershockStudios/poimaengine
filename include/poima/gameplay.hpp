@@ -57,6 +57,7 @@ public:
     bool requires_item_pickup_pose() const;
     bool requires_item_pickup_blend() const;
     bool requires_item_pickup_steering() const;
+    bool requires_item_pickup_hand_fallback() const;
     void validate_services(const gameplay_abi::Contract& available) const;
     void edit(const std::string& values);
     // Cached field offsets; no JSON/reflection/allocation on success. Null IDs

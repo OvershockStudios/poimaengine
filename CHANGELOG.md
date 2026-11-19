@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.275
+
+- Check posed grip samples for physical overlap when selecting a fallback after a blocked pickup.
+
 ## 0.0.274
 
 - Bind a first-person drawable to a camera while keeping its transform in an independent scene hierarchy.

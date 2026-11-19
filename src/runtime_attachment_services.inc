@@ -34,7 +34,8 @@
                             row.measurement.distance_m,row.distance_limit_m};
                     } catch(const PickupClearanceRejected& blocked) {
                         auto detail=blocked.detail;
-                        if(guard->second.fallback)detail.pose=resolve_pickup_pose(command.entity,guard->second);
+                        if(guard->second.fallback)detail.pose=resolve_pickup_pose(command.entity,guard->second,
+                            command.contact->surface);
                         outcome.detail=std::move(detail);
                     }
                     outcomes.emplace(command.entity,std::move(outcome));
@@ -125,10 +126,13 @@
         require(request.reserved==0 && request.slot>=1 && request.slot<=8,"Invalid pickup clearance slot or reserved field.");
         const bool with_fallback=source->version>=8;
         const bool blend=source->version>=9;
-        const bool steer=source->version==10;
+        const bool steer=source->version>=10;
+        const bool sample_hand=source->version==11;
         require(!with_fallback || game->requires_item_pickup_pose(),"Gameplay must declare item_attachment_pickup_pose_v1.");
         require(!blend || game->requires_item_pickup_blend(),"Gameplay must declare item_attachment_pickup_blend_v1.");
         require(!steer || game->requires_item_pickup_steering(),"Gameplay must declare item_attachment_pickup_steering_v1.");
+        require(!sample_hand || game->requires_item_pickup_hand_fallback(),
+            "Gameplay must declare item_attachment_pickup_hand_fallback_v1.");
         const auto casts=2*ik_clearance_intervals+(with_fallback ? 4u : 0u)+
             (blend ? 2*pickup_blend_samples : 0u)+(steer ? 2*pickup_steer_samples : 0u);
         require(game_capsule_query_attempts<=capsule_query_tick_budget-casts,"Gameplay exceeded the capsule query budget.");
@@ -147,7 +151,8 @@
         }),"Pickup pose fallback requires an exclusive arm slot for this Tick.");
         std::optional<RuntimeIkCommand> fallback;
         if(with_fallback)fallback=animations->pickup_fallback_control(rig,request.slot);
-        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start,std::move(fallback),blend,steer});
+        game_pickup_checks.emplace(command.entity,StagedPickupClearance{
+            rig,request.slot,joints,radii,start,std::move(fallback),blend,steer,sample_hand});
         game_capsule_query_attempts+=casts;
     }
 
@@ -291,7 +296,7 @@
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
                 ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3)) ||
-                ((source->version>=7 && source->version<=10) && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
+                ((source->version>=7 && source->version<=11) && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
                 source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;

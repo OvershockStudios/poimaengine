@@ -98,6 +98,11 @@ checks and staged recovery. Tune the curve for your rig and props. Run the
 steering verifier with `--arcing-approach` on the 0.0.274 host.
 [Imported-rig results](../../docs/evidence/m2-arcing-pickup-approach.json)
 
+Use `Poima.Examples.HandFallbackCarryPropsGame` on 0.0.275 to also check
+those grip sample positions against the physics scene on blocked-tick
+fallbacks. It uses the same approach curve and wrist release.
+[Hand fallback contract](../../docs/ITEM_ATTACHMENTS.md#check-the-hand-when-a-late-obstruction-blocks-the-arm)
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

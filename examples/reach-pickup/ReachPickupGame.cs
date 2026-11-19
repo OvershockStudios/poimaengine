@@ -16,7 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
-internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback, StagedRecovery, ArcingApproach }
+internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback, StagedRecovery, ArcingApproach, HandFallback }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -94,7 +94,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                 candidate.Weight=Ease(progress);
                 candidate.Opening=Ease(Math.Min(progress/.35,(1-progress)/.35));
                 ReadTarget(ref candidate,context.Get(state.Item).Transform);
-                if(guard==ReachGuard.ArcingApproach)
+                if(guard>=ReachGuard.ArcingApproach)
                 {
                     const double crest=.30;
                     double arch=Math.Min(progress/crest,(1-progress)/(1-crest));
@@ -115,7 +115,9 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                         Probe(state,state.Vertex1),Probe(state,state.Vertex2),
                         Probe(state,state.Vertex3),Probe(state,state.Vertex4)
                     ];
-                    if(guard>=ReachGuard.SteeredFallback)
+                    if(guard==ReachGuard.HandFallback)
+                        context.AttemptItemPickupWithHandFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
+                    else if(guard>=ReachGuard.SteeredFallback)
                         context.AttemptItemPickupWithSteeredFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
                     else if(guard==ReachGuard.BlendedFallback)
                         context.AttemptItemPickupWithBlendedFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));

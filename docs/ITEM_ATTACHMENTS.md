@@ -537,6 +537,33 @@ containing a `steered` result use attachment outcome version 5 and retain
 the chosen target and pose. Clearance covers endpoint capsules on that tick.
 [Verification](evidence/m2-pickup-pose-steering.json)
 
+### Check the hand when a late obstruction blocks the arm
+
+Declare `IItemPickupHandFallbackGame` and call
+`AttemptItemPickupWithHandFallback(item, hand, contact, probes, arm)`.
+When the final arm check refuses the pickup, each candidate fallback must
+clear both arm capsules and 1 mm spheres centred on the existing grip
+probes' posed source points. The runtime applies the candidate arm pose to
+the same skinned vertices or barycentric points used by the grip test.
+The released item's proxy and the character's owning collider are excluded.
+Workbench and wall colliders remain obstacles.
+
+The search can use a hand contact normal to adjust a candidate whose arm
+is already clear. The existing `previous`, `animation`, `blended`,
+`steered` and `unresolved` receipts retain their meanings. If no candidate
+clears the samples, the verdict is `unresolved` and the pickup stays refused.
+The samples check the final fallback pose at the blocked tick. Use
+[pose clearance](POSE_CLEARANCE.md) to inspect subsequent recovery motion.
+
+`item_attachment_pickup_hand_fallback_v1` requires
+`item_attachment_pickup_steering_v1`. Command version 11 reuses the
+312-byte record and 528-byte service table. With at most eight fallback
+poses and eight grip probes, it issues at most 64 additional sphere
+overlap queries on a blocked tick. The spheres measure local clearance
+around the selected points. For coverage, place samples on the relevant
+fingers, knuckles or palm for the grip you're authoring.
+[Verification](evidence/m2-pickup-hand-fallback.json)
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

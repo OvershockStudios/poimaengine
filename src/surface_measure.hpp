@@ -6,6 +6,8 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <tuple>
+#include <utility>
 
 namespace poima::surface_measure {
 using pose_frames::Vector;
@@ -87,6 +89,28 @@ inline Sample nearest(const Triangle& triangle,const Vector& query) {
     }
     return closest;
 }
+inline std::pair<Vector,std::optional<Vector>> source_sample(const RuntimeSurfaceProbe& probe,const SceneObject& source) {
+    if(probe.source_weights) {
+        if(probe.source_index>=source.mesh->indices.size()/3)
+            throw std::invalid_argument("Triangle index is outside the cooked drawable.");
+        auto weights=*probe.source_weights;
+        double sum=0;
+        for(const double weight:weights) {
+            if(!std::isfinite(weight) || weight<0 || weight>1)
+                throw std::invalid_argument("Barycentric weights must be within 0..1.");
+            sum+=weight;
+        }
+        if(std::abs(sum-1)>1e-8)
+            throw std::invalid_argument("Barycentric weights must sum to one within 1e-8.");
+        for(auto& weight:weights)weight/=sum;
+        const auto face=triangle(source,probe.source_index);
+        return {point(face,weights),face.normal};
+    }
+    if(probe.source_index>=source.mesh->vertices.size())
+        throw std::invalid_argument("Vertex index is outside the cooked drawable.");
+    return {world_vertex(source,static_cast<std::uint32_t>(probe.source_index)),std::nullopt};
+}
+
 inline RuntimeSurfaceMeasurement measure(const RuntimeSurfaceProbe& probe,const SceneObject& source,
     const SceneObject& target,std::size_t& triangle_checks) {
     const auto target_count=target.mesh->indices.size()/3;
@@ -104,27 +128,7 @@ inline RuntimeSurfaceMeasurement measure(const RuntimeSurfaceProbe& probe,const 
     triangle_checks+=count;
 
     RuntimeSurfaceMeasurement result;
-    if(probe.source_weights) {
-        if(probe.source_index>=source.mesh->indices.size()/3)
-            throw std::invalid_argument("Triangle index is outside the cooked drawable.");
-        auto weights=*probe.source_weights;
-        double sum=0;
-        for(const double weight:weights) {
-            if(!std::isfinite(weight) || weight<0 || weight>1)
-                throw std::invalid_argument("Barycentric weights must be within 0..1.");
-            sum+=weight;
-        }
-        if(std::abs(sum-1)>1e-8)
-            throw std::invalid_argument("Barycentric weights must sum to one within 1e-8.");
-        for(auto& weight:weights)weight/=sum;
-        const auto face=triangle(source,probe.source_index);
-        result.source_point=point(face,weights);
-        result.source_normal=face.normal;
-    } else {
-        if(probe.source_index>=source.mesh->vertices.size())
-            throw std::invalid_argument("Vertex index is outside the cooked drawable.");
-        result.source_point=world_vertex(source,static_cast<std::uint32_t>(probe.source_index));
-    }
+    std::tie(result.source_point,result.source_normal)=source_sample(probe,source);
 
     Sample closest;
     for(std::size_t i=0;i<count;++i) {

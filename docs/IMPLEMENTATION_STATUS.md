@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.274**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.275**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.275 adds [hand clearance during blocked pickup fallback](ITEM_ATTACHMENTS.md#check-the-hand-when-a-late-obstruction-blocks-the-arm).
+The imported replay keeps all four sampled fingertips clear during the
+blocked recovery and picks up the prop on the same tick. The more retracted
+fallback increases the blocked-tick elbow step in this take.
+[Linux, Windows and Vulkan results](evidence/m2-pickup-hand-fallback.json)
 
 Version 0.0.274 adds [scene-anchored viewmodels](VIEWMODELS.md#anchor-a-viewmodel-to-the-scene).
 A first-person rig can follow the player's body while the camera pitches
