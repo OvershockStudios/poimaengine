@@ -39,6 +39,8 @@ using Json=nlohmann::json;
 namespace fs=std::filesystem;
 constexpr std::uint64_t file_limit=256ULL*1024*1024,total_limit=1024ULL*1024*1024;
 constexpr std::size_t count_limit=4096;
+constexpr auto project_manifest_filename="project.poimaproject";
+constexpr auto game_manifest_filename="game.json";
 void require(bool condition,const std::string& detail) { if(!condition)throw std::runtime_error(detail); }
 fs::path path_of(const std::string& value) { require(!value.empty() && value.find('\0')==std::string::npos,"Path must be nonempty and NUL-free.");return fs::path(std::u8string(value.begin(),value.end())); }
 // Only native filesystem calls receive this spelling. Logical paths, journal
@@ -195,7 +197,8 @@ struct Stage {
         require(owned,"Cannot reserve staging directory.");
     }
     ~Stage() { if(owned) { std::error_code error;fs::remove_all(path,error); } }
-    void publish() {
+    void publish(const fs::path& marker) {
+        require(fs::is_regular_file(fs::symlink_status(path/marker)),"Staged manifest is missing.");
 #ifdef _WIN32
         require(owned,"Directory publication has no owned staging directory.");
         const auto fingerprint=publication_fingerprint(path);ULONGLONG started=0,deadline=0;
@@ -247,8 +250,7 @@ struct Stage {
         require(fs::create_directory(destination),"Output was claimed concurrently; existing directory was preserved.");
         try {
             exclusive_write(destination/".poima-incomplete","Publication is incomplete. Retry into a new destination.\n");
-            const auto marker=fs::is_regular_file(path/"game.json") ? fs::path("game.json") : fs::path("project.json");
-            require(fs::is_regular_file(path/marker),"Staged manifest is missing.");std::vector<fs::path> files;
+            std::vector<fs::path> files;
             for(const auto& item:fs::recursive_directory_iterator(path)) {
                 const auto relative=item.path().lexically_relative(path);const auto status=item.symlink_status();
                 require(!fs::is_symlink(status),"Staging tree changed during publication.");
@@ -562,7 +564,10 @@ approved brief or explicitly asks you to implement a defined change, work from
 it directly. The creator can edit these instructions.
 )");
         exclusive_write(stage.path/"CLAUDE.md","@AGENTS.md\n");
-        exclusive_write(stage.path/"project.json",spec.dump(2)+"\n");project(text(stage.path/"project.json"));stage.publish();return Json{{"manifest",text(stage.destination/"project.json")},{"directory",text(stage.destination)},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"name",name},{"project_id",project_id}};
+        exclusive_write(stage.path/project_manifest_filename,spec.dump(2)+"\n");
+        project(text(stage.path/project_manifest_filename));
+        stage.publish(project_manifest_filename);
+        return Json{{"manifest",text(stage.destination/project_manifest_filename)},{"directory",text(stage.destination)},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"name",name},{"project_id",project_id}};
     });
 }
 Reply inspect_project(const std::string& manifest) { return operation("project.inspect",[&]{return project_summary(project(manifest));}); }
@@ -642,7 +647,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
             const auto current=load_native_gameplay_artifact(text(source));
             require(current.library_sha256==p.gameplay->library_sha256,"Gameplay artifact changed during export.");
         }
-        stage.publish();return Json{{"output",text(stage.destination)},{"game_manifest",text(stage.destination/"game.json")},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"file_count",inventory.files.size()},{"bytes",inventory.total},{"revision",p.content.revision},{"project_id",p.spec.at("project_id")}};
+        stage.publish(game_manifest_filename);return Json{{"output",text(stage.destination)},{"game_manifest",text(stage.destination/game_manifest_filename)},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"file_count",inventory.files.size()},{"bytes",inventory.total},{"revision",p.content.revision},{"project_id",p.spec.at("project_id")}};
     });
 }
 GameDefinition load_game(const std::string& manifest) { return verify_game(manifest).definition; }

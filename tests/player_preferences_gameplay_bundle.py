@@ -641,8 +641,8 @@ def main():
             type=descriptor['type'], image_sha256=libraries[0]['sha256'],
             descriptor_sha256=sha(artifact), running_engine_version=runtime['engine_version'])
         project = output/'Owned settings source project'
-        cli(binary, 'project', 'create', project, '--name', 'Exported compiled settings acceptance')
-        project_file = project/'project.json'; spec = read_json(project_file)
+        created = cli(binary, 'project', 'create', project, '--name', 'Exported compiled settings acceptance')
+        project_file = project / Path(created['manifest']).name; spec = read_json(project_file)
         # project create ships a starter world already at revision one. The
         # reused contract author deliberately starts a separate fresh world at
         # revision zero; retain the native-created input profile unchanged.

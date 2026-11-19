@@ -262,8 +262,8 @@ class Exercise:
         version = self.cli(self.binary, 'version')['result']['version']
         need(spec['engine_version'] == version, 'Exporter and installed runtime must match')
         project = self.output/'Owned source project'
-        self.cli(self.binary, 'project', 'create', self.native(project), '--name', 'Exported service room')
-        manifest = project/'project.json'
+        created = self.cli(self.binary, 'project', 'create', self.native(project), '--name', 'Exported service room')
+        manifest = project/Path(created['result']['manifest']).name
         authored = json.loads(manifest.read_text(encoding='utf-8'))
         authored['audio'] = False
         manifest.write_text(json.dumps(authored, indent=2)+'\n', encoding='utf-8')

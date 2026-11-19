@@ -14,7 +14,7 @@ def main():
     report={'passed':False,'calls':[],'checks':[],'input_sha256':{k:hashlib.sha256(v.read_bytes()).hexdigest()for k,v in paths.items()},'limitations':['Real C ABI and a hidden owned HWND without draw; no GPU rendering, native history pixel output, physical input or GUI qualification.']}
     try:
         project=run/'project';r=subprocess.run([str(paths['binary']),'project','create',str(project),'--name','Camera cut ownership'],capture_output=True,text=True,timeout=30);check(r.returncode==0,r.stdout+r.stderr)
-        manifest=json.loads((project/'project.json').read_text());world=project/manifest['entry']['world']
+        manifest=json.loads((project / Path(json.loads(r.stdout)['result']['manifest']).name).read_text());world=project/manifest['entry']['world']
         search=os.add_dll_directory(str(paths['bridge'].parent));lib=ctypes.CDLL(str(paths['bridge']))
         lib.poima_desktop_create.argtypes=[ctypes.c_char_p,ctypes.c_char_p,ctypes.c_int32,ctypes.c_uint32];lib.poima_desktop_create.restype=ctypes.c_void_p
         lib.poima_desktop_call.argtypes=[ctypes.c_void_p,ctypes.c_char_p];lib.poima_desktop_call.restype=ctypes.c_void_p

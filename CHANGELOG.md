@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.277
+
+- Create projects with a `.poimaproject` manifest. Open it directly by passing its path to the editor.
+- Support the new manifest extension in project inspection, gameplay adoption, and export, including through development profiles. Existing `project.json` files continue to open.
+
 ## 0.0.276
 
 - Import FBX geometry with neutral materials and assign locally selected textures.

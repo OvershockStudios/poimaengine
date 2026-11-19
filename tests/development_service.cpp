@@ -13,13 +13,16 @@ std::string utf8(const fs::path& path) { const auto text=path.u8string();return 
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 void project_operations(const fs::path& root) {
     const auto projects=root/"project-routing",outputs=root/"artifact-routing";
-    fs::create_directory(projects);fs::create_directory(outputs);std::ofstream(projects/"project.json")<<"{}";
+    const auto legacy=projects/"project.json",current=projects/"Starter.poimaproject";
+    fs::create_directory(projects);fs::create_directory(outputs);
+    std::ofstream(legacy)<<"{}";std::ofstream(current)<<"{}";
     Profile profile;profile.name="projects";profile.fingerprint=std::string(64,'a');profile.target_rid="win-x64";
     profile.project_root=fs::canonical(projects);profile.output_root=fs::canonical(outputs);
-    unsigned inspections=0,adoptions=0;Json forwarded;
-    profile.inspect_project=[&](const fs::path& manifest) {check(manifest==projects/"project.json","Inspection path escaped profile root.");++inspections;return Json{{"manifest_sha256",std::string(64,'b')}}.dump();};
+    unsigned inspections=0,adoptions=0;Json forwarded;fs::path inspected_path,adopted_path;
+    profile.inspect_project=[&](const fs::path& manifest) {inspected_path=manifest;++inspections;return Json{{"manifest_sha256",std::string(64,'b')}}.dump();};
     profile.adopt_gameplay=[&](const fs::path& manifest,const fs::path& artifact,const std::string& request) {
-        check(manifest==projects/"project.json" && artifact==outputs/"retained/native-gameplay.json","Adoption selectors escaped configured roots.");
+        check(artifact==outputs/"retained/native-gameplay.json","Artifact selector escaped configured root.");
+        adopted_path=manifest;
         forwarded=Json::parse(request);++adoptions;
         if(forwarded.value("values",Json::object()).contains("reject"))throw ServiceError(-32009,"Native journal conflict");
         if(forwarded.value("values",Json::object()).contains("io"))throw std::runtime_error("Native retained artifact failed");
@@ -29,10 +32,12 @@ void project_operations(const fs::path& root) {
     const auto capabilities=service.dispatch("development.profiles",Json::object()).at("profiles").at(0);
     check(capabilities.at("project_inspect")==true && capabilities.at("gameplay_adopt")==true && capabilities.at("publish")==false && capabilities.at("export")==false,"Project-only profile capabilities differ.");
     const Json inspect={{"profile","projects"},{"project","project.json"}};
-    check(service.dispatch("project.inspect",inspect).at("manifest_sha256")==std::string(64,'b') && inspections==1,"Project callback result changed.");
-    Json adopt={{"profile","projects"},{"project","project.json"},{"artifact","retained/native-gameplay.json"},{"request_id",std::string(32,'1')},
+    check(service.dispatch("project.inspect",inspect).at("manifest_sha256")==std::string(64,'b') && inspections==1 && inspected_path==legacy,"Legacy project inspection changed.");
+    auto current_inspect=inspect;current_inspect["project"]="Starter.poimaproject";
+    check(service.dispatch("project.inspect",current_inspect).at("manifest_sha256")==std::string(64,'b') && inspections==2 && inspected_path==current,"Project file did not reach inspection.");
+    Json adopt={{"profile","projects"},{"project","Starter.poimaproject"},{"artifact","retained/native-gameplay.json"},{"request_id",std::string(32,'1')},
         {"expected_project_sha256",std::string(64,'b')},{"expected_artifact_sha256",std::string(64,'c')}};
-    check(service.dispatch("project.gameplay.adopt",adopt).at("receipt_scope")=="project","Adoption did not return synchronous project receipt.");
+    check(service.dispatch("project.gameplay.adopt",adopt).at("receipt_scope")=="project" && adopted_path==current,"Adoption did not return synchronous project receipt for the project file.");
     auto expected=adopt;for(const auto* key:{"profile","project","artifact"})expected.erase(key);
     check(forwarded==expected && !forwarded.contains("values"),"Service altered omitted values or forwarded profile selectors.");
     check(service.dispatch("project.gameplay.adopt",adopt).at("replayed")==true && adoptions==2,"Service intercepted durable core replay.");

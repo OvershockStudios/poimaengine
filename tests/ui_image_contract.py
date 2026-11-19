@@ -133,8 +133,8 @@ def main():
         assert result['generation'] == 1
 
     try:
-        manifest = project / 'project.json'
-        cli('project', 'create', native(project), '--name', 'Cooked HUD fixture')
+        created = cli('project', 'create', native(project), '--name', 'Cooked HUD fixture')
+        manifest = project / Path(created['manifest']).name
         camera = json.loads(manifest.read_text(encoding='utf-8'))['entry']['camera']
         client = WorldClient.open(str(binary), native(world), close_timeout=10)
         world_id = call('world.inspect')['world_id']

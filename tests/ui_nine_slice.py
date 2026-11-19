@@ -163,9 +163,10 @@ def main():
 
     binary = args.binary.resolve()
     project = output / 'game'
-    subprocess.run([str(binary), 'project', 'create', native(project), '--name', 'UI slice fixture'],
+    created = subprocess.run([str(binary), 'project', 'create', native(project), '--name', 'UI slice fixture'],
                    check=True, capture_output=True, timeout=30)
-    camera = json.loads((project / 'project.json').read_text())['entry']['camera']
+    manifest = project / Path(json.loads(created.stdout)['result']['manifest']).name
+    camera = json.loads(manifest.read_text())['entry']['camera']
     captures = []
     report = dict(passed=False, binary_sha256=sha(binary), captures=captures)
     try:

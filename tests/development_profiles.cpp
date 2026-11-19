@@ -81,7 +81,7 @@ int contract_main(int argc,char** argv){
         struct Cleanup{fs::path root;~Cleanup(){std::error_code error;fs::remove_all(root,error);}}cleanup{root};
         const std::string literal="literal $(no-shell); & \"wine\" \xE2\x98\x83";
         const std::string project_name="Game $(literal) 'wine' \xE2\x98\x83.csproj";
-        for(const auto& name:{project_name,std::string("slow.csproj"),std::string("nonzero.csproj"),std::string("bad-marker.csproj"),std::string("project.json")})std::ofstream(root/"projects"/path(name))<<"fixture\n";
+        for(const auto& name:{project_name,std::string("slow.csproj"),std::string("nonzero.csproj"),std::string("bad-marker.csproj"),std::string("project.json"),std::string("Starter.poimaproject")})std::ofstream(root/"projects"/path(name))<<"fixture\n";
         std::ofstream(root/"outside.csproj")<<"fixture\n";std::ofstream(root/"tooling/publisher.py")<<"self-child fixture\n";
         auto publish_calls=std::make_shared<std::atomic<int>>(0),export_calls=std::make_shared<std::atomic<int>>(0);
         dev::Profile profile;profile.name="fixture";profile.fingerprint=std::string(64,'a');
@@ -166,6 +166,10 @@ int contract_main(int argc,char** argv){
         const auto export_status=wait(exported);check(export_status.at("state")=="succeeded" && export_status.at("result")==Json{{"verified_fixture","export"}} && *export_calls==1,"Export was not verified.");
         check(service.dispatch("development.export",export_params).at("replayed")==true && *export_calls==1,"Export retry verified twice.");
         const auto exported_marker=read(profile.output_root/"exported/fixture.json");check(exported_marker.at("arguments")==Json{"project","build",utf8(profile.project_root/"project.json"),"--output",utf8(profile.output_root/"exported"),"--runtime",utf8(profile.runtime_root)},"Export arguments differ.");
+        auto new_export=params(true,"exported-starter");new_export["project"]="Starter.poimaproject";
+        check(wait(service.dispatch("development.export",new_export)).at("state")=="succeeded","Project file export failed.");
+        const auto starter_marker=read(profile.output_root/"exported-starter/fixture.json");
+        check(starter_marker.at("arguments")==Json{"project","build",utf8(profile.project_root/"Starter.poimaproject"),"--output",utf8(profile.output_root/"exported-starter"),"--runtime",utf8(profile.runtime_root)},"Project file did not reach exporter.");
         auto failed_params=params(false,"nonzero");failed_params["project"]="nonzero.csproj";const auto before_failure=publish_calls->load();
         const auto failed=wait(service.dispatch("development.publish",failed_params));check(failed.at("state")=="failed" && failed.at("exit_code")==7 && failed.at("result").is_null() && *publish_calls==before_failure,"Nonzero child entered verifier or published result.");
         const auto slow_params=[&](){auto value=params(false,"reserved");value["project"]="slow.csproj";return value;}();

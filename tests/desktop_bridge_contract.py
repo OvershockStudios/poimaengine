@@ -176,7 +176,7 @@ try:
     created = subprocess.run([str(args.binary.resolve()), 'project', 'create', str(project), '--name', 'Desktop bridge room'],
                              capture_output=True, text=True, encoding='utf-8', timeout=30)
     check(created.returncode == 0, created.stdout+created.stderr)
-    manifest = json.loads((project/'project.json').read_text(encoding='utf-8'))
+    manifest = json.loads((project / Path(json.loads(created.stdout)['result']['manifest']).name).read_text(encoding='utf-8'))
     world = project/manifest['entry']['world']
     endpoint = 'desktop-test-'+uuid.uuid4().hex
     host = library.poima_desktop_create(str(world).encode('utf-8'), endpoint.encode('ascii'),

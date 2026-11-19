@@ -30,7 +30,7 @@ def main():
         created=subprocess.run([str(args.binary.resolve()),'project','create',str(project),'--name','UI desktop controls'],
             capture_output=True,text=True,encoding='utf-8',timeout=30)
         check(created.returncode==0,created.stdout+created.stderr)
-        manifest=json.loads((project/'project.json').read_text());world=project/manifest['entry']['world']
+        manifest=json.loads((project / Path(json.loads(created.stdout)['result']['manifest']).name).read_text());world=project/manifest['entry']['world']
         desktop=Desktop(args,world,record)
         uid=lambda n:f'{n:032x}'
         definitions=[(1,'panel','',''),(2,'label','Original',''),(3,'button','Edit','edit'),

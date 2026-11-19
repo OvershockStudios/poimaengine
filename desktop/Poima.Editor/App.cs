@@ -30,10 +30,10 @@ public sealed class App : Application
             if (Program.Options is { } options) OpenEditor(desktop, options);
             else
             {
-                var launcher = new LauncherWindow((world, endpoint) =>
+                var launcher = new LauncherWindow(project =>
                 {
                     var previous = desktop.MainWindow!;
-                    OpenEditor(desktop, LaunchOptions.Parse([world, "--endpoint", endpoint]));
+                    OpenEditor(desktop, LaunchOptions.Parse([project.World], project));
                     desktop.MainWindow!.Show();
                     previous.Close();
                 });
@@ -51,7 +51,7 @@ public sealed class App : Application
         var script = new DesktopScript(options.Script, options.Frames);
         var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples);
         MainWindow window;
-        try { window = new MainWindow(host, options.Layout); }
+        try { window = new MainWindow(host, options.Layout, options.ProjectRoot); }
         catch { host.Dispose(); throw; }
         desktop.MainWindow = window;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };

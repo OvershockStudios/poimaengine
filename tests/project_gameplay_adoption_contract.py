@@ -249,8 +249,8 @@ class Harness:
 
     def project(self, label, *, starter=False):
         directory = self.args.output / 'projects' / label
-        self.cli('create-' + label, ['project', 'create', directory, '--name', 'Adoption ' + label])
-        manifest = directory / 'project.json';spec = read(manifest)
+        created = self.cli('create-' + label, ['project', 'create', directory, '--name', 'Adoption ' + label])
+        manifest = directory / Path(created['manifest']).name;spec = read(manifest)
         if self.args.prepared_world is not None and not starter:
             world = directory / spec['entry']['world']
             world.rename(directory / 'retained-starter-world.json')
@@ -504,7 +504,7 @@ def service_cases(harness, source, config):
                  'Profile adoption failure mutated complete inputs: ' + domain)
             evidence['errors'].append(dict(owner=label, domain=domain, code=failure['code']))
         alias = args.output/'projects'/('alias-' + label);native_links(harness, manifest.parent, alias)
-        call('project.inspect', dict(inspect_params, project=alias.name+'/project.json'), error=-32602)
+        call('project.inspect', dict(inspect_params, project=f'{alias.name}/{manifest.name}'), error=-32602)
         before = inventory(manifest.parent);result = call('project.gameplay.adopt', params, mutate=True)
         admitted_project(manifest, artifact, {}, before, result)
         stable = inventory(manifest.parent)

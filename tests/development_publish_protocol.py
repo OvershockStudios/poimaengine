@@ -174,11 +174,11 @@ def main():
             created = json.loads(cli('project-create', [args.binary, 'project', 'create', game, '--name', 'Native job check']))
             need(created['status'] == 'ok', 'Project creation failed.')
             shutil.copytree(descriptor.parent, game/'gameplay')
-            manifest = game/'project.json'; spec = json.loads(manifest.read_text())
+            manifest = game / Path(created['result']['manifest']).name; spec = json.loads(manifest.read_text())
             spec['version'] = 2
             spec['gameplay'] = dict(descriptor='gameplay/native-gameplay.json', values={field['name']: '0' if field['kind'] in ('int64', 'uint64') else 0 for field in artifact['schema']['fields']})
             manifest.write_text(json.dumps(spec, indent=2)+'\n')
-            export = dict(request_id=uuid.uuid4().hex, profile='native', project='export-project/project.json', output='bundle')
+            export = dict(request_id=uuid.uuid4().hex, profile='native', project=f'export-project/{manifest.name}', output='bundle')
             exported = wait(tool('development.export', export, build=True))
             need(exported['state'] == 'succeeded' and exported['result']['kind'] == 'game_bundle', 'Native export failed: '+str(exported))
             bundle = products/'bundle/game.json'

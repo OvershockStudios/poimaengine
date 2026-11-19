@@ -129,23 +129,24 @@ def worker(args, admission):
         reply = read(stdout); need(reply['status'] == 'ok', 'Native CLI envelope failed: '+label)
         return reply['result']
 
-    def adopt(project, mode, label):
-        spec = read(project/'project.json')
+    def adopt(manifest, mode, label):
+        spec = read(manifest)
         request = out/(label+'-request.json')
         values = dict(Mode=mode,TriggerTick='0',ExpectedGeneration='0' if mode == 1 else '1')
-        write(request,dict(request_id=uuid.uuid4().hex, expected_project_sha256=pin(project/'project.json')['sha256'],
+        write(request,dict(request_id=uuid.uuid4().hex, expected_project_sha256=pin(manifest)['sha256'],
             expected_artifact_sha256=pin(args.artifact)['sha256'],values=values))
-        cli(['project','adopt-gameplay',project/'project.json','--artifact',args.artifact,'--request',request],label)
-        result = read(project/'project.json')
+        cli(['project','adopt-gameplay',manifest,'--artifact',args.artifact,'--request',request],label)
+        result = read(manifest)
         need(result['project_id'] == spec['project_id'] and exact(result['gameplay']['values'],values),
              'Adoption changed project identity or launch values')
         return result
 
-    def export(project, destination, label):
+    def export(manifest, destination, label):
+        project = manifest.parent
         before = tree(project)
-        cli(['project','build',project/'project.json','--runtime',args.runtime,'--output',destination],label)
+        cli(['project','build',manifest,'--runtime',args.runtime,'--output',destination],label)
         need(exact(tree(project),before), 'Export changed adopted project')
-        spec = read(destination/'game.json'); original = read(project/'project.json')
+        spec = read(destination/'game.json'); original = read(manifest)
         need(spec['project_id'] == original['project_id'] and exact(spec['gameplay']['values'],original['gameplay']['values']),
              'Export changed project identity or launch initialization')
         need(exact(read(destination/spec['entry']['world']),frozen_world(read(project/original['entry']['world']))),
@@ -185,14 +186,15 @@ def worker(args, admission):
 
     try:
         project = out/'source-project'
-        cli(['project','create',project,'--name','Launcher save workflow'],'create')
-        first = adopt(project,1,'adopt-save')
+        created = cli(['project','create',project,'--name','Launcher save workflow'],'create')
+        manifest = project / Path(created['manifest']).name
+        first = adopt(manifest,1,'adopt-save')
         world_identity = pin(project/first['entry']['world'])
         save_bundle, load_bundle = out/'Save export',out/'Load export'
-        save_spec, save_files = export(project,save_bundle,'export-save')
-        second = adopt(project,2,'adopt-load')
+        save_spec, save_files = export(manifest,save_bundle,'export-save')
+        second = adopt(manifest,2,'adopt-load')
         need(pin(project/second['entry']['world']) == world_identity, 'Launch configuration changed source world')
-        load_spec, load_files = export(project,load_bundle,'export-load')
+        load_spec, load_files = export(manifest,load_bundle,'export-load')
         need(save_spec['project_id'] == load_spec['project_id'] and
              exact(read(save_bundle/save_spec['entry']['world']),read(load_bundle/load_spec['entry']['world'])),
              'Save/Load export changed the stable game/world identity')

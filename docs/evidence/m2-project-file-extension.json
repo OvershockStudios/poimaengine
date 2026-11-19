@@ -1,0 +1,57 @@
+{
+  "engine_version": "0.0.277",
+  "archive": {
+    "sha256": "6c9f614ea4ffe780e8ea22ff8fed9329f0885b6bc1c96f5b692ef8e18743c8d7",
+    "bytes": 128294738,
+    "file_count": 443
+  },
+  "editor": {
+    "direct_launch": {
+      "named-editor": {
+        "pump_frames": 16,
+        "presented_frames": 14,
+        "vulkan_ui": "Avalonia.Vulkan.VulkanPlatformGraphics",
+        "project_directory_verified": true
+      },
+      "legacy-editor": {
+        "pump_frames": 16,
+        "presented_frames": 14,
+        "vulkan_ui": "Avalonia.Vulkan.VulkanPlatformGraphics",
+        "project_directory_verified": true
+      }
+    },
+    "nested_world": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "nvrhi_errors": 0,
+    "file_picker_interactions": 0
+  },
+  "linux": {
+    "ctest_suites_passed": 8,
+    "navigation_project_contract_tests_passed": 6,
+    "headless_ui_image_calls": 32,
+    "engine_sha256": "96587fb75b2cae65869992d57f727c3c5279172734b5457a234a7d16674a56c6"
+  },
+  "windows": {
+    "project_contract_tests_passed": 15,
+    "project_contract_tests_skipped": 0,
+    "engine_sha256": "f7c7c4cab88b0bc7427fe8518693824080efbf255f6b46742b21090b140b6eed",
+    "packaged_mcp_replies": 3,
+    "installed_runtime_bundle_export": true,
+    "legacy_project_exported": true
+  },
+  "collection_room": {
+    "source_manifest": "project.poimaproject",
+    "gameplay_artifact_engine_version": "0.0.276",
+    "gameplay_library_sha256": "9471a659a422b129b53dad403c82a1dd44fd1df31dcbcd46d05c270526cb2a9e",
+    "gameplay_adopted": true,
+    "adoption_retry_replayed": true,
+    "export_source_moved_before_replay": true,
+    "game_manifest": "game.json",
+    "backend": "native_aot",
+    "tick": 245,
+    "frames_presented": 245,
+    "stop_reason": "replay_complete",
+    "nvrhi_errors": 0,
+    "collected": 3
+  }
+}

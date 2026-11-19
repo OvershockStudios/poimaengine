@@ -65,8 +65,8 @@ class GameplayProjects(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=SCRATCH)
         self.root = Path(self.temp.name)
         self.project = self.root / 'Source project'
-        self.cli('project', 'create', native(self.project), '--name', 'Native gameplay metadata')
-        self.manifest = self.project / 'project.json'
+        created = self.cli('project', 'create', native(self.project), '--name', 'Native gameplay metadata')
+        self.manifest = self.project / Path(created['manifest']).name
         self.spec = json.loads(self.manifest.read_text())
         self.version = self.cli('version')['version']
         self.artifact = self.project / 'gameplay'

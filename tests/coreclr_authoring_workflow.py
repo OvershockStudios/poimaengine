@@ -225,9 +225,10 @@ def main():
     saved_environment = dict(os.environ)
     try:
         os.environ.clear();os.environ.update(env)
-        run_command([str(engine),'project','create',str(project),'--name','Installed CoreCLR workflow'],
+        created = run_command([str(engine),'project','create',str(project),'--name','Installed CoreCLR workflow'],
                     output,'create',limits,report)
-        world = project/read(project/'project.json')['entry']['world']
+        manifest = project / Path(read(Path(created['stdout']))['result']['manifest']).name
+        world = project/read(manifest)['entry']['world']
         managed = project/'managed';managed.mkdir()
         working_source = managed/'InstalledGame.cs'
         shutil.copyfile(source,working_source)

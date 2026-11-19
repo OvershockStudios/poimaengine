@@ -128,7 +128,7 @@ try:
     made = subprocess.run([str(args.binary.resolve()), 'project', 'create', str(project), '--name', 'Desktop save contract'],
                           capture_output=True, text=True, encoding='utf-8', timeout=30)
     check(made.returncode == 0, made.stdout + made.stderr)
-    manifest = json.loads((project / 'project.json').read_text(encoding='utf-8'))
+    manifest = json.loads((project / Path(json.loads(made.stdout)['result']['manifest']).name).read_text(encoding='utf-8'))
     world = project / manifest['entry']['world']
     controller, camera = manifest['entry']['controller'], manifest['entry']['camera']
     storage = run / 'External saves'

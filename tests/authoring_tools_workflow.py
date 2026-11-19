@@ -340,7 +340,8 @@ def main():
             row['returncode'] = process.returncode
         need(process.returncode == 0 and stdout.stat().st_size+stderr.stat().st_size <= 8*1024**2,
              'Native project create failed or exceeded logs')
-        native_project = project/'project.json'
+        native_project = project / Path(read(stdout)['result']['manifest']).name
+        project_selector = f'Installed/{native_project.name}'
         world = project/read(native_project)['entry']['world']
         managed = project/'managed';managed.mkdir()
         shutil.copyfile(source,managed/'InstalledGame.cs')
@@ -368,10 +369,10 @@ def main():
         need(len(generated) == 1, 'Actual generated component manifest missing/ambiguous')
         report['authored'] = prepare_world(author,descriptor.parent/generated[0]['path'])
         report['adoption'] = author.call('project.gameplay.adopt',dict(profile='installed',
-            project='Installed/project.json',artifact='native/native-gameplay.json',request_id=uuid.uuid4().hex,
+            project=project_selector,artifact='native/native-gameplay.json',request_id=uuid.uuid4().hex,
             expected_project_sha256=pin(native_project)['sha256'],expected_artifact_sha256=pin(descriptor)['sha256'],values={}))
         report['export'] = author.completed('development.export',dict(request_id=uuid.uuid4().hex,
-            profile='installed',project='Installed/project.json',output='game',timeout_ms=120000))
+            profile='installed',project=project_selector,output='game',timeout_ms=120000))
         author.close();need(author.transport.returncode == 0, 'Profile owner failed natural EOF closure')
         report['owners'].append(dict(role='publish-adopt-export',calls=len(author.calls),returncode=author.transport.returncode,
             transcript=str(author.directory/'transcript.json')));author=None

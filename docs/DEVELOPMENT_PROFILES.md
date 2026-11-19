@@ -128,7 +128,7 @@ for project references, intermediate ownership and the separate qualification
 requirements.
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"development.export","params":{"request_id":"22222222222222222222222222222222","profile":"native","project":"MyGame/project.json","output":"game-build-1"}}
+{"jsonrpc":"2.0","id":2,"method":"development.export","params":{"request_id":"22222222222222222222222222222222","profile":"native","project":"MyGame/project.poimaproject","output":"game-build-1"}}
 ```
 
 Export invokes the selected native engine's existing `project build` operation

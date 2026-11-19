@@ -119,7 +119,8 @@ def main():
 
         project, game = output/'source-project', output/'game'
         cli([binary, 'project', 'create', project, '--name', 'Typed Component Workflow'], 'create')
-        manifest = project/'project.json'
+        created = json.loads((output/'create-stdout.txt').read_bytes())
+        manifest = project / Path(created['result']['manifest']).name
         spec = json.loads(manifest.read_bytes())
         world = project/spec['entry']['world']
         with WorldClient.open(binary, world, close_timeout=5) as client:

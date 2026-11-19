@@ -153,7 +153,7 @@ try:
     project_dir = run/'project'
     process = subprocess.run([str(args.binary.resolve()), 'project', 'create', str(project_dir), '--name', 'Lifecycle cache qualification'], capture_output=True, text=True)
     check(process.returncode == 0, process.stdout+process.stderr)
-    manifest = json.loads((project_dir/'project.json').read_text())
+    manifest = json.loads((project_dir / Path(json.loads(process.stdout)['result']['manifest']).name).read_text())
     world = project_dir/manifest['entry']['world']
     host = lib.poima_desktop_create(str(world).encode(), b'', args.gpu, args.samples)
     check(host, error())

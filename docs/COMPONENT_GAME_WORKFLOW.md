@@ -125,7 +125,7 @@ Create, author, adopt and export with the matching engine:
 if ($LASTEXITCODE -ne 0) { throw "Preparation failed; inspect fixture/report.json" }
 ```
 
-Preparation creates `fixture/source-project/project.json` and
+Preparation creates `fixture/source-project/project.poimaproject` and
 `fixture/game/game.json`. It imports the generated schemas, assigns `Health` to
 three entities and `Interaction` to one of them, and declares initial `Mode=0`.
 It verifies the whole typed exported world against the source with only the
@@ -143,7 +143,8 @@ if ($LASTEXITCODE -ne 0) { throw "Verification failed; inspect verification/repo
 ```
 
 `--project` aliases `--source`; either can name the project directory or
-`project.json`. `--game` accepts the exported directory or `game.json`. Readonly
+a manifest file (`.poimaproject` or legacy `project.json`). `--game` accepts
+the exported directory or `game.json`. Readonly
 hosts and clients use the **declared bundled engine executable**, whose exact
 inventory path, size and hash are checked. The standalone source phase uses
 `--binary`. Readonly owners automatically start their declared module at tick

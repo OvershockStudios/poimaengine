@@ -49,10 +49,10 @@ public sealed partial class MainWindow : Window
     private bool qualificationClosing;
     private bool closingRequested, closeReady;
     public bool ClosingPending => closingRequested || Model.Host.State["closing"]?.GetValue<bool>() == true;
-    public MainWindow(NativeHost host, string? layoutFile = null)
+    public MainWindow(NativeHost host, string? layoutFile = null, string? manifestRoot = null)
     {
         Title = $"{System.IO.Path.GetFileNameWithoutExtension(host.WorldPath)} — Poima";
-        if (Program.Options.Script is not null) Title += " — Automated check (viewport input disabled)";
+        if (Program.Options?.Script is not null) Title += " — Automated check (viewport input disabled)";
         Width = 1440; Height = 900; MinWidth = 960; MinHeight = 620;
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter");
         FontSize = 12; UseLayoutRounding = true;
@@ -78,7 +78,7 @@ public sealed partial class MainWindow : Window
         Game = new GameInput(Model);
         Game.Error += text => status.Text = text;
         Navigation.Error += text => status.Text = text;
-        projectRoot = FindProjectRoot(host.WorldPath);
+        projectRoot = manifestRoot ?? FindProjectRoot(host.WorldPath);
         layoutStore = new EditorLayoutStore(projectRoot, layoutFile);
         Opened += (_, _) => { if (layoutStore.TryLoad(out var saved, out var error)) Run(() => RestoreLayout(saved!)); else if (error is not null) { LayoutError = error; Model.Note(error); } };
         factory = new EditorDockFactory(BuildPanel); layout = factory.CreateLayout(); factory.InitLayout(layout);
@@ -261,7 +261,8 @@ public sealed partial class MainWindow : Window
         var fallback = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(world))!;
         var directory = new DirectoryInfo(fallback);
         for (int depth = 0; depth < 16 && directory is not null; ++depth, directory = directory.Parent)
-            if (File.Exists(System.IO.Path.Combine(directory.FullName, "project.json"))) return directory.FullName;
+            if (File.Exists(System.IO.Path.Combine(directory.FullName, ProjectFiles.DefaultManifestName)) ||
+                File.Exists(System.IO.Path.Combine(directory.FullName, ProjectFiles.LegacyManifestName))) return directory.FullName;
         return fallback;
     }
     public void ResetLayout() => SetTallLayout(false);

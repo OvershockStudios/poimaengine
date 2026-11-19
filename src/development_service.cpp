@@ -25,6 +25,14 @@ std::filesystem::path absolute(const Json& value) {
 }
 std::string utf8(const std::filesystem::path& value) { const auto s=value.u8string();return std::string(reinterpret_cast<const char*>(s.data()),s.size()); }
 namespace fs=std::filesystem;
+std::string lower_extension(const fs::path& path) {
+    auto extension=utf8(path.extension());
+    std::transform(extension.begin(),extension.end(),extension.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
+    return extension;
+}
+bool project_manifest_extension(const std::string& extension) {
+    return extension==".poimaproject" || extension==".json";
+}
 bool within(const fs::path& child,const fs::path& root) {
     auto a=child.begin(),b=root.begin();
     for(;b!=root.end();++a,++b) {
@@ -277,7 +285,8 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         }
         const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);const auto& profile=selected->second;
         need(adopt ? bool(profile.adopt_gameplay):bool(profile.inspect_project),"Development profile does not enable this project operation.",-32004);
-        const auto project=contained(profile.project_root,project_name,true);need(project.extension()==".json","Project inspection/adoption expects a JSON manifest.");
+        const auto project=contained(profile.project_root,project_name,true);
+        need(project_manifest_extension(lower_extension(project)),"Project inspection/adoption expects a .poimaproject or .json manifest.");
         std::string result;
         try {
             if(adopt) {
@@ -302,8 +311,7 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         std::string project_name,output_name,type;const Profile* profile=nullptr;
         if(compile) {
             const auto executable=absolute(p.at("executable")),project=absolute(p.at("project")),output=absolute(p.at("output"));
-            auto extension=project.extension().string();std::transform(extension.begin(),extension.end(),extension.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
-            need(extension==".csproj","Compile expects a C# project (.csproj).");
+            need(lower_extension(project)==".csproj","Compile expects a C# project (.csproj).");
             const auto configuration=p.contains("configuration") ? text(p.at("configuration"),32):std::string("Debug");need(configuration=="Debug" || configuration=="Release","Configuration must be Debug or Release.");
             const auto restore=p.contains("restore") ? p.at("restore"):Json(true);need(restore.is_boolean(),"Restore must be a boolean.");
             // Only lexical/type admission precedes exact replay. The worker
@@ -346,8 +354,8 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         need(used_requests_.size()<4096,"Session development request budget exhausted.",-32090);
         if(!compile) {
             const auto project=contained(profile->project_root,project_name,true),output=contained(profile->output_root,output_name,false);
-            auto extension=project.extension().string();std::transform(extension.begin(),extension.end(),extension.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
-            need(extension==(publish ? ".csproj":".json"),"Unexpected development project extension.");
+            const auto extension=lower_extension(project);
+            need(publish ? extension==".csproj" : project_manifest_extension(extension),"Unexpected development project extension.");
             need(!fs::exists(fs::symlink_status(output)),"Development output must name a new directory.",-32009);
             for(const auto& prior:output_reservations_)need(!overlap(output,prior),"Development output is already reserved.",-32009);
             request.working_directory=profile->project_root;request.environment=profile->environment;reservation=output;

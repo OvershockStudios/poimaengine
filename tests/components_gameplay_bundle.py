@@ -49,8 +49,8 @@ def main():
         descriptor = json.loads(args.artifact.read_text(encoding='utf-8'))
         assert descriptor['type'] == 'Poima.Tests.ComponentGame' and descriptor['services_version'] == 7
         project = run/'Source project'
-        cli(args.binary, 'project', 'create', native(project), '--name', 'Packaged gameplay save probe')
-        manifest = project/'project.json'; spec = json.loads(manifest.read_text(encoding='utf-8'))
+        created = cli(args.binary, 'project', 'create', native(project), '--name', 'Packaged gameplay save probe')
+        manifest = project/Path(created['result']['manifest']).name; spec = json.loads(manifest.read_text(encoding='utf-8'))
         artifact = project/'gameplay'; artifact.mkdir()
         # Copy precisely the verified descriptor payloads, not build intermediates.
         shutil.copyfile(args.artifact, artifact/'native-gameplay.json')

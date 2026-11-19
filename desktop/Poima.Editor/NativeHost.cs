@@ -166,7 +166,7 @@ public sealed class VulkanView(NativeHost host, string view, IViewportInteractio
         try
         {
             host.Attach(view, child.Handle);
-            input = new ViewportInput(child.Handle, interaction.Handle, qualificationInput: Program.Options.Script is not null);
+            input = new ViewportInput(child.Handle, interaction.Handle, qualificationInput: Program.Options?.Script is not null);
             interaction.Attach(input, child.Handle); return child;
         }
         catch { input?.Dispose(); input = null; host.Detach(view, child.Handle); base.DestroyNativeControlCore(child); throw; }

@@ -40,8 +40,8 @@ class ProvenanceProjects(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix='provenance-project-',dir=ARGS.output)
         self.root=Path(self.temp.name);self.project=self.root/'Source project';self.sequence=0;self.client=None
-        self.cli('project','create',native(self.project),'--name','Provenance package contract')
-        self.manifest=self.project/'project.json';self.spec=json.loads(self.manifest.read_text(encoding='utf-8'))
+        created = self.cli('project','create',native(self.project),'--name','Provenance package contract')
+        self.manifest=self.project/Path(created['manifest']).name;self.spec=json.loads(self.manifest.read_text(encoding='utf-8'))
         self.world=self.project/self.spec['entry']['world'];self.version=self.cli('version')['version']
         self.target='Windows' if ARGS.windows_interop or os.name=='nt' else 'Linux'
     def tearDown(self):

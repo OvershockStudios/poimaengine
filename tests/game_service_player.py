@@ -301,8 +301,8 @@ def main():
             image_sha256=libraries[0]['sha256'], descriptor_sha256=sha(artifact),
             running_engine_version=installed_runtime['engine_version'])
         project = output/'Owned compiled service source'
-        cli(binary, 'project', 'create', project, '--name', 'Source-free compiled game service acceptance')
-        project_file = project/'project.json'; spec = read_json(project_file)
+        created = cli(binary, 'project', 'create', project, '--name', 'Source-free compiled game service acceptance')
+        project_file = project / Path(created['manifest']).name; spec = read_json(project_file)
         world_file = project/'compiled-service-world.json'
         author = WorldClient.open(binary, world_file, cwd=project, close_timeout=10)
         class Author:

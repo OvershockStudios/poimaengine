@@ -18,7 +18,7 @@ import uuid
 import json
 
 from workflow_components_game_service import (Checked, HEALTH, artifact, assigned_job,
-    checkpoint, contained, exact, manifest, need, payload, pin, read, ticket, tree, write)
+    checkpoint, contained, exact, manifest, need, payload, pin, project_manifest, read, ticket, tree, write)
 
 OWNER = f'{1:032x}'
 CURRENT, SCORE = f'{1:032x}', f'{3:032x}'
@@ -282,7 +282,7 @@ def main():
     need(30 <= args.timeout <= 600, 'Timeout must be30..600 seconds')
     assigned_job()
     args.binary, args.output = args.binary.resolve(), args.output.resolve()
-    source, game = manifest(args.source, 'project.json'), manifest(args.game, 'game.json')
+    source, game = project_manifest(args.source), manifest(args.game, 'game.json')
     need(not args.output.exists() and not args.output.is_relative_to(source.parent) and not args.output.is_relative_to(game.parent),
          'Fresh independent output outside source/game required')
     originals = dict(source=tree(source.parent), game=tree(game.parent))

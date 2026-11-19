@@ -10,8 +10,15 @@ The parent directory must already exist. Creation requires a new directory, incl
 
 ```sh
 ./build/headless/poima project create build/MyRoom --name "My Room"
-./build/headless/poima project inspect build/MyRoom/project.json
+./build/headless/poima project inspect build/MyRoom/project.poimaproject
 ```
+
+The create command returns the manifest path in `result.manifest`. A
+`.poimaproject` file contains the JSON project manifest. You can rename it
+within its project directory and pass the new path explicitly. Existing
+`project.json` files still support inspection, gameplay adoption, export, and
+direct editor launch. Gameplay adoption receipts include the manifest filename,
+so use the original filename to retry an earlier adoption request.
 
 New projects contain an editable `AGENTS.md` and a `CLAUDE.md` that imports
 it. They guide the installed coding agent through the
@@ -20,7 +27,7 @@ They can be changed or removed by the project owner. They are not required for
 project inspection, editing, saves or export, and are not included in a shipped
 game.
 
-The starter contains `project.json`, `world.json`, and `settings/default.poima-input.json`. Its world has a solid floor, a capsule character, a child camera, and an Environment with a procedural sky and shadow-casting directional Sun. New starters explicitly use 1024-pixel shadow maps, fractional PCF filtering, and
+The starter contains `project.poimaproject`, `world.json`, and `settings/default.poima-input.json`. Its world has a solid floor, a capsule character, a child camera, and an Environment with a procedural sky and shadow-casting directional Sun. New starters explicitly use 1024-pixel shadow maps, fractional PCF filtering, and
 Sun shadows with 80-metre coverage, depth bias 0.0001 and normal bias 0.005 metres.
 These starter choices do not rewrite existing worlds: an omitted authored filter
 still falls back to point PCF. See [shadow authoring and filter precedence](SHADOWS.md#filter-selection). The persisted v2 input profile supplies keyboard/mouse and gamepad defaults. Creation removes its own writer-lock sidecars before publication.
@@ -70,7 +77,7 @@ Export takes an installed runtime tree, not a raw build directory. Build a rende
 cmake --build build/windows-runtime --target poima poima_desktop
 cmake --install build/windows-runtime --strip --prefix build/runtime-windows
 
-./build/headless/poima project build build/MyRoom/project.json \
+./build/headless/poima project build build/MyRoom/project.poimaproject \
   --output build/MyRoom-game --runtime build/runtime-windows
 ./build/headless/poima game inspect build/MyRoom-game/game.json
 ```

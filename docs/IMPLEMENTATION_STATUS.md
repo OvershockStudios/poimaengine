@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.276**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.277**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.277 creates [`.poimaproject` manifests](PROJECTS.md#create-and-inspect).
+The Windows preview opened a renamed `.poimaproject` and a legacy
+`project.json` by path. Both resolved the same nested world and presented
+14 Vulkan Scene frames. The packaged CLI read the world over MCP.
+Collection Room was exported from the new manifest and collected all three
+cells in a standalone replay after the source moved.
+[Linux and Windows results](evidence/m2-project-file-extension.json)
 
 Version 0.0.276 adds a [Windows preview](WINDOWS_PREVIEW.md) with a project
 launcher and a standalone sample. A fresh extraction launched Collection

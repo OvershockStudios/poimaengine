@@ -33,7 +33,7 @@ def main():
         project = run/'Project'
         result = subprocess.run([str(args.binary.resolve()), 'project', 'create', str(project), '--name', 'UI input'], capture_output=True, text=True, timeout=30)
         check(result.returncode == 0, result.stdout+result.stderr)
-        world = project/json.loads((project/'project.json').read_text())['entry']['world']
+        world = project/json.loads((project / Path(json.loads(result.stdout)['result']['manifest']).name).read_text())['entry']['world']
         desktop = Desktop(args, world, record)
         if args.gpu != -1:
             desktop.lib.poima_desktop_destroy(desktop.host)

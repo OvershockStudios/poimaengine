@@ -6,7 +6,13 @@ Vulkan graphics driver. Open `Poima.Editor.exe`.
 - **Play Collection Room** opens the bundled game. Use WASD and the mouse
   to move and aim, E to collect the three green cells, and Esc to exit.
 - **Create project** uses the project name and a folder you choose.
-- **Open project** loads an existing Poima `project.json`.
+- **Open project** loads a `.poimaproject` or an existing `project.json`.
+
+You can also open a project directly from PowerShell.
+
+```powershell
+.\Poima.Editor.exe "D:\My Projects\MyRoom\project.poimaproject"
+```
 
 The included editor, CLI, and sample run without compiling Poima or installing
 a separate .NET runtime. Gameplay development and export have their own
@@ -18,7 +24,7 @@ Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable
 with arguments `mcp --world <full path to world.json>`. If the launcher
 opened the project in the editor, use `mcp --endpoint poima-<project_id>`
-with the ID from `project.json`.
+with the ID from the project manifest.
 [Client setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#connect-a-project)
 
 New projects include instructions for the agent to ask you about your game

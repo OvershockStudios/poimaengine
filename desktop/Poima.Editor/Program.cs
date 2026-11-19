@@ -4,13 +4,18 @@ using System.Text.Json.Nodes;
 
 namespace Poima.Editor;
 
-internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uint Samples, int Frames, string? Report, bool SoftwareUi, string? Script, string? Layout)
+internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uint Samples, int Frames, string? Report,
+    bool SoftwareUi, string? Script, string? Layout, string? ProjectRoot)
 {
-    public static LaunchOptions Parse(string[] args)
+    public static LaunchOptions Parse(string[] args, ProjectLocation? project = null)
     {
         if (args.Length == 0 || args[0].StartsWith("--"))
-            throw new ArgumentException("Use: Poima.Editor <world.json> [--endpoint name] [--gpu N] [--samples 1|4] [--frames N] [--report new.json] [--script actions.json] [--software-ui] [--layout preferences.json]");
-        var world = Path.GetFullPath(args[0]); var endpoint = "poima-desktop"; var gpu = -1; uint samples = 4; var frames = 0;
+            throw new ArgumentException("Use: Poima.Editor <project.poimaproject | project.json | world.json> [--endpoint name] [--gpu N] [--samples 1|4] [--frames N] [--report new.json] [--script actions.json] [--software-ui] [--layout preferences.json]");
+        if (project is null && ProjectFiles.IsManifest(args[0]))
+            project = ProjectFiles.Open(args[0]).GetAwaiter().GetResult();
+        var world = project?.World ?? Path.GetFullPath(args[0]);
+        var endpoint = project?.Endpoint ?? "poima-desktop";
+        var gpu = -1; uint samples = 4; var frames = 0;
         string? report = null, script = null, layout = null; var software = false; var seen = new HashSet<string>();
         for (var i = 1; i < args.Length; i++)
         {
@@ -37,12 +42,12 @@ internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uin
         {
             if (File.Exists(report) || Directory.Exists(report) || !Directory.Exists(Path.GetDirectoryName(report)))
                 throw new ArgumentException("Report requires a new file in an existing directory.");
-            var parent = Path.GetDirectoryName(world)! + Path.DirectorySeparatorChar;
+            var parent = (project?.Root ?? Path.GetDirectoryName(world)!) + Path.DirectorySeparatorChar;
             if (report.StartsWith(parent, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Report must be outside the project directory.");
         }
         if (script != null && (frames == 0 || !File.Exists(script)))
             throw new ArgumentException("A qualification script needs an existing file and an explicit --frames limit.");
-        return new(world, endpoint, gpu, samples, frames, report, software, script, layout);
+        return new(world, endpoint, gpu, samples, frames, report, software, script, layout, project?.Root);
     }
 }
 

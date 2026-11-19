@@ -25,10 +25,10 @@ the SHA-256 hashes of the current manifest and selected artifact descriptor:
 ```
 
 ```sh
-poima project inspect MyGame/project.json
-poima project adopt-gameplay MyGame/project.json \
+poima project inspect MyGame/project.poimaproject
+poima project adopt-gameplay MyGame/project.poimaproject \
   --artifact products/native-gameplay.json --request adopt-request.json
-poima project build MyGame/project.json --output MyGame-player --runtime runtime
+poima project build MyGame/project.poimaproject --output MyGame-player --runtime runtime
 ```
 
 Omitting `values` preserves the current version-2 project's initial gameplay
@@ -48,7 +48,7 @@ An owner-configured development profile defines the project and product roots.
 These methods accept relative selectors within those roots:
 
 ```json
-{"method":"project.inspect","params":{"profile":"native","project":"MyGame/project.json"}}
+{"method":"project.inspect","params":{"profile":"native","project":"MyGame/project.poimaproject"}}
 ```
 
 ```json
@@ -56,7 +56,7 @@ These methods accept relative selectors within those roots:
   "method": "project.gameplay.adopt",
   "params": {
     "profile": "native",
-    "project": "MyGame/project.json",
+    "project": "MyGame/project.poimaproject",
     "artifact": "products/native-gameplay.json",
     "request_id": "0123456789abcdef0123456789abcdef",
     "expected_project_sha256": "<64 lowercase hexadecimal characters>",

@@ -102,6 +102,16 @@ def manifest(path, name):
     return result
 
 
+def project_manifest(path):
+    path = path.resolve()
+    if path.is_dir():
+        current = path / 'project.poimaproject'
+        path = current if current.is_file() else path / 'project.json'
+    need(path.suffix.lower() == '.poimaproject' or path.name == 'project.json', 'Expected a Poima project manifest')
+    pin(path)
+    return path
+
+
 def assigned_job():
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.GetCurrentProcess.restype = wintypes.HANDLE
@@ -448,7 +458,7 @@ def main():
     need(30 <= args.timeout <= 600, 'Timeout must be 30..600 seconds')
     assigned_job()
     args.binary, args.output = args.binary.resolve(), args.output.resolve()
-    source, game = manifest(args.source, 'project.json'), manifest(args.game, 'game.json')
+    source, game = project_manifest(args.source), manifest(args.game, 'game.json')
     need(not args.output.exists() and not args.output.is_relative_to(source.parent)
          and not args.output.is_relative_to(game.parent), 'Fresh independent output outside source/game required')
     initial_inventory = dict(source=tree(source.parent), game=tree(game.parent))

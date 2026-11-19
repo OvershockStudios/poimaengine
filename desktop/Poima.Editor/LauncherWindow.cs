@@ -5,22 +5,20 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using System.Diagnostics;
-using System.Text.Json;
 
 namespace Poima.Editor;
 
 internal sealed class LauncherWindow : Window
 {
     private static readonly string Root = AppContext.BaseDirectory;
-    private readonly Action<string,string> openWorld;
+    private readonly Action<ProjectLocation> openProject;
     private readonly TextBox projectName = new() { PlaceholderText = "Project name", MaxLength = 96, MinHeight = 34 };
     private readonly StackPanel actions = new() { Spacing = 10 };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
 
-    public LauncherWindow(Action<string,string> openWorld)
+    public LauncherWindow(Action<ProjectLocation> openProject)
     {
-        this.openWorld = openWorld;
+        this.openProject = openProject;
         Title = "Poima";
         Width = 510;
         MinWidth = 420;
@@ -86,8 +84,8 @@ internal sealed class LauncherWindow : Window
             { Title = "Choose where to create the project", AllowMultiple = false });
         if (folders.Count == 0) return;
         var parent = folders[0].TryGetLocalPath() ?? throw new InvalidOperationException("Choose a local folder.");
-        var created = await ProjectCommand("create", Path.Combine(parent, name), "--name", name);
-        await OpenProject(created.GetProperty("manifest").GetString()!);
+        var created = await ProjectFiles.Command("create", Path.Combine(parent, name), "--name", name);
+        openProject(await ProjectFiles.Open(created.GetProperty("manifest").GetString()!));
     }
 
     private async Task PickProject()
@@ -95,50 +93,16 @@ internal sealed class LauncherWindow : Window
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Open a Poima project", AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("Poima project") { Patterns = ["project.json"] }]
+            FileTypeFilter = [new FilePickerFileType("Poima project") { Patterns = ["*" + ProjectFiles.Extension, ProjectFiles.LegacyManifestName] }]
         });
         if (files.Count != 0)
-            await OpenProject(files[0].TryGetLocalPath() ?? throw new InvalidOperationException("Choose a local project."));
-    }
-
-    private async Task OpenProject(string manifest)
-    {
-        var project = await ProjectCommand("inspect", manifest);
-        var entry = project.GetProperty("entry").GetProperty("world").GetString()!;
-        var endpoint = "poima-" + project.GetProperty("project_id").GetString();
-        openWorld(Path.GetFullPath(entry, Path.GetDirectoryName(manifest)!), endpoint);
-    }
-
-    private static Process Start(string executable, params string[] arguments)
-    {
-        var info = new ProcessStartInfo(executable)
-        {
-            WorkingDirectory = Root, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        return Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");
-    }
-
-    private static async Task<JsonElement> ProjectCommand(params string[] arguments)
-    {
-        using var process = Start(Path.Combine(Root, "poima.exe"), ["project", .. arguments]);
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        var body = await output;
-        var stderr = await error;
-        if (body.Length == 0) throw new InvalidOperationException(stderr.Length > 0 ? stderr : "Poima did not return a project result.");
-        using var response = JsonDocument.Parse(body);
-        if (process.ExitCode != 0)
-            throw new InvalidOperationException(response.RootElement.GetProperty("diagnostics")[0].GetProperty("message").GetString());
-        return response.RootElement.GetProperty("result").Clone();
+            openProject(await ProjectFiles.Open(files[0].TryGetLocalPath() ?? throw new InvalidOperationException("Choose a local project.")));
     }
 
     private static async Task PlaySample()
     {
         var executable = Path.Combine(Path.GetDirectoryName(SampleManifest)!, "runtime", "bin", "poima.exe");
-        using var process = Start(executable, "game", "run", SampleManifest, "--default-save-root", "true");
+        using var process = ProjectFiles.Start(executable, "game", "run", SampleManifest, "--default-save-root", "true");
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

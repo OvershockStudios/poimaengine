@@ -197,8 +197,8 @@ def main():
         record['runtime_inventory'] = runtime_before
         record['runtime_descriptor_sha256'] = sha(distribution / 'runtime.json')
         project = output / 'Owned source project'
-        cli(binary, 'project', 'create', project, '--name', 'Packaged collection acceptance')
-        project_file = project / 'project.json'
+        created = cli(binary, 'project', 'create', project, '--name', 'Packaged collection acceptance')
+        project_file = project / Path(created['manifest']).name
         project_spec = read_json(project_file)
         (project / project_spec['entry']['world']).write_text(json.dumps(fixture_world, indent=2) + '\n', encoding='utf-8')
         project_spec.update(version=2, entry=dict(world='world.json', controller=uid(100), camera=uid(101)),

@@ -142,7 +142,7 @@ try:
     project_dir = run/'project'
     process = subprocess.run([str(args.binary.resolve()), 'project', 'create', str(project_dir), '--name', 'Dual viewport qualification'], capture_output=True, text=True)
     check(process.returncode == 0, process.stdout+process.stderr)
-    manifest = json.loads((project_dir/'project.json').read_text())
+    manifest = json.loads((project_dir / Path(json.loads(process.stdout)['result']['manifest']).name).read_text())
     world = project_dir/manifest['entry']['world']
     camera, controller = manifest['entry']['camera'], manifest['entry']['controller']
     original = world.read_bytes()

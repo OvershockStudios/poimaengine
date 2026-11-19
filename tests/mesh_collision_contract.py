@@ -353,8 +353,8 @@ class MeshCollision(unittest.TestCase):
             p = subprocess.run([BINARY, *arguments], capture_output=True, text=True, encoding='utf-8', timeout=90)
             reply = json.loads(p.stdout);CALLS.append({'test': self.id(), 'argv': arguments, 'reply': reply, 'stderr': p.stderr})
             self.assertEqual(p.returncode, 0, reply);self.assertEqual(reply['status'], 'ok');return reply['result']
-        cli('project', 'create', self.native(project), '--name', 'Triangle fixture')
-        manifest = project/'project.json';spec = json.loads(manifest.read_text())
+        created = cli('project', 'create', self.native(project), '--name', 'Triangle fixture')
+        manifest = project/Path(created['manifest']).name;spec = json.loads(manifest.read_text())
         self.world = project/spec['entry']['world']
         asset = self.import_model(*fixture())
         revision = json.loads(self.world.read_text())['revision']

@@ -308,9 +308,9 @@ def cli(binary, arguments, label, marker, success=True):
 def bundle_gate(profile):
     directory = ARGS.output/'bundle'; directory.mkdir()
     source = directory/'source'
-    cli(ARGS.binary, ['project', 'create', native(source), '--name', 'Player preferences'],
+    created = cli(ARGS.binary, ['project', 'create', native(source), '--name', 'Player preferences'],
         'bundle-project-create', native(source))
-    project = source/'project.json'
+    project = source/Path(created['manifest']).name
     before = inventory(source)
     export = directory/'export'
     cli(ARGS.binary, ['project', 'build', native(project), '--output', native(export),

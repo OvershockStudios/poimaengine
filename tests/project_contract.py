@@ -37,7 +37,7 @@ class ProjectContract(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.project = self.root/'Portable project'
         self.created = self.run_cli('project', 'create', native(self.project), '--name', 'Portable room')
-        self.manifest = self.project/'project.json'
+        self.manifest = self.project/'project.poimaproject'
         self.document = json.loads(self.manifest.read_text(encoding='utf-8'))
 
     def tearDown(self):
@@ -78,6 +78,8 @@ class ProjectContract(unittest.TestCase):
 
     def test_starter_manifest_and_no_write_inspection(self):
         doc = self.document
+        self.assertEqual(self.created['manifest'].replace('\\', '/'), native(self.manifest).replace('\\', '/'))
+        self.assertFalse((self.project/'project.json').exists(), 'Starter wrote a second manifest.')
         self.assertIn(self.created['publication'], ('atomic_directory', 'manifest_last'))
         self.assertFalse((self.project/'.poima-incomplete').exists(), 'Successful creation retained an incomplete marker.')
         agent_guide = (self.project/'AGENTS.md').read_text(encoding='utf-8')
@@ -105,6 +107,17 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])
         self.assertFalse(list(self.project.rglob('*.lock')), 'Starter/inspection unexpectedly created a lock sidecar.')
+
+    def test_manifest_name_compatibility(self):
+        original = self.inspect()
+        for name in ('project.json', 'Room with spaces.poimaproject'):
+            alternate = self.project/name
+            self.manifest.rename(alternate)
+            self.manifest = alternate
+            restored = self.inspect()
+            self.assertNotEqual(original['manifest'], restored['manifest'])
+            self.assertEqual({k: v for k, v in original.items() if k != 'manifest'},
+                             {k: v for k, v in restored.items() if k != 'manifest'})
 
     def test_agent_guides_are_editable_and_optional(self):
         guide = self.project/'AGENTS.md'
@@ -277,6 +290,7 @@ class ProjectContract(unittest.TestCase):
         before = tree(self.project)
         destination = self.root/'Exported game'
         result = self.run_cli('project', 'build', native(self.manifest), '--output', native(destination), '--runtime', native(args.runtime))
+        self.assertEqual(result['output'].replace('\\', '/'), native(destination).replace('\\', '/'))
         self.assertGreater(result['file_count'], 0)
         self.assertIn(result['publication'], ('atomic_directory', 'manifest_last'))
         self.assertFalse((destination/'.poima-incomplete').exists(), 'Successful export retained an incomplete marker.')

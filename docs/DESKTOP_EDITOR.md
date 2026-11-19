@@ -30,10 +30,14 @@ The [install and staging checks](evidence/m2-desktop-native-install.json) cover
 portable failure models and actual installed native consumption; GUI publication
 and clean-machine qualification remain separate.
 
-After packaging, open **`Poima.Editor.exe`** without arguments to create or
-open a project. A project opened this way uses the endpoint
-`poima-<project_id>` from its manifest. The [Windows preview](WINDOWS_PREVIEW.md)
-also adds a playable sample to this window.
+After packaging, open **`Poima.Editor.exe`** without arguments to open the
+launcher. Pass a `.poimaproject` or legacy `project.json` path to open a
+project directly. Both routes use the endpoint `poima-<project_id>`.
+The [Windows preview](WINDOWS_PREVIEW.md) adds a playable sample to the launcher.
+
+```powershell
+.\Poima.Editor.exe "D:\My Projects\MyRoom\project.poimaproject"
+```
 
 To assemble the preview from a packaged editor and a Windows x64
 Collection Room export at the same engine version, run
@@ -92,8 +96,9 @@ These selection changes create no authored revision or undo entry. The
 [selection checks](evidence/m2-editor-selection-reconciliation.json) distinguish
 managed model tests, native bridge checks and displayed/physical interaction.
 
-The Project browser starts at the nearest ancestor containing `project.json`,
-within 16 levels, or otherwise the world directory. It supports lazy folder
+The Project browser starts in the opened manifest's directory. When you open a
+world directly, it looks up to 16 levels for `project.poimaproject` or
+`project.json` and falls back to the world directory. It supports lazy folder
 expansion, folder search, list/grid views, glTF/GLB and FBX import, and cooked
 model inspection and instantiation. The File menu also imports FBX geometry,
 PNG/JPEG color and data images, and WAV clips. The Console reports imported
