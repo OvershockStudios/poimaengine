@@ -3,6 +3,67 @@
     std::vector<RuntimeAttachmentCommand> game_attachment_commands;
     std::size_t game_attachment_reads=0,game_attachment_attempts=0;
 
+    void finish_game_attachments() {
+        attachment_outcomes.reset();
+        if(game_attachment_commands.empty())return;
+        try {
+            if(std::none_of(game_attachment_commands.begin(),game_attachment_commands.end(),
+                [](const auto& command){return command.recover_miss;})) {
+                change_attachments(structure_revision,game_attachment_commands);
+            } else {
+                std::size_t checks=0;
+                std::vector<RuntimeAttachmentCommand> strict;
+                for(auto& command:game_attachment_commands)
+                    if(!command.recover_miss)strict.push_back(std::move(command));
+                if(!strict.empty())change_attachments(structure_revision,strict,&checks);
+                auto outcomes=std::make_shared<AttachmentOutcomes>();
+                for(const auto& command:game_attachment_commands)if(command.recover_miss) {
+                    RuntimeAttachmentOutcome outcome{command.anchor,{}};
+                    try {change_attachments(structure_revision,{&command,1},&checks,true);}
+                    catch(const RuntimeAttachmentContactRejected& error) {
+                        const auto& row=error.contact;
+                        outcome.detail=RuntimeAttachmentFrameMiss{row.position_error_m,row.position_limit_m,
+                            row.rotation_limit_deg,row.rotation_error_deg};
+                    } catch(const RuntimeAttachmentSurfaceRejected& error) {
+                        const auto& row=error.contact;
+                        outcome.detail=RuntimeAttachmentSurfaceMiss{row.probe_index,row.measurement.target_triangle,
+                            row.measurement.distance_m,row.distance_limit_m};
+                    }
+                    outcomes->emplace(command.entity,std::move(outcome));
+                }
+                attachment_outcomes=std::move(outcomes);
+            }
+        } catch(const std::invalid_argument& error) {throw std::runtime_error(error.what());}
+        game_attachment_commands.clear();
+    }
+
+    void get_game_attachment_outcome(const PoimaEntityId& entity,PoimaGameItemAttachmentStateV1* output) const {
+        require(game && game->requires_item_attachment_recovery() &&
+            output->bytes==sizeof(PoimaGameItemAttachmentOutcomeV2) && output->present==0 && output->reserved==0,
+            "Invalid gameplay attachment outcome query or missing recovery feature.");
+        PoimaGameItemAttachmentOutcomeV2 result{};
+        result.version=2;result.bytes=sizeof(result);result.entity=entity;result.sampled_tick=tick;
+        if(attachment_outcomes) {
+            const auto found=attachment_outcomes->find(gameplay_id(entity));
+            if(found!=attachment_outcomes->end()) {
+                const auto& row=found->second;
+                result.status=static_cast<std::uint32_t>(row.detail.index()+1);
+                result.anchor=gameplay_id(row.anchor);
+                if(const auto* frame=std::get_if<RuntimeAttachmentFrameMiss>(&row.detail)) {
+                    result.position_error_m=frame->position_error_m;result.position_limit_m=frame->position_limit_m;
+                    result.rotation_limit_deg=frame->rotation_limit_deg;
+                    result.rotation_available=frame->rotation_error_deg.has_value();
+                    result.rotation_error_deg=frame->rotation_error_deg.value_or(0.);
+                }
+                if(const auto* surface=std::get_if<RuntimeAttachmentSurfaceMiss>(&row.detail)) {
+                    result.probe_index=static_cast<std::uint32_t>(surface->probe_index);result.target_triangle=surface->target_triangle;
+                    result.distance_m=surface->distance_m;result.distance_limit_m=surface->distance_limit_m;
+                }
+            }
+        }
+        std::memcpy(output,&result,sizeof(result));
+    }
+
     std::vector<RuntimeSurfaceProbe> game_surface_probes(const PoimaGameItemAttachmentCommandV3& command) const {
         require(command.reserved==0 && command.probes && command.probe_count>0 &&
             command.probe_count<=max_attachment_surface_probes,"A gameplay grip requires 1..8 surface probes.");
@@ -45,6 +106,10 @@
             auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_attachment_reads<1024,"Gameplay exceeded 1024 item attachment reads.");
             ++self.game_attachment_reads;
+            if(entity && output && output->version==2) {
+                self.get_game_attachment_outcome(*entity,output);
+                return;
+            }
             require(entity && output && output->version==1 && output->bytes==sizeof(*output) &&
                 output->present==0 && output->reserved==0,"Invalid item attachment query header.");
             const auto id=gameplay_id(*entity);
@@ -68,7 +133,8 @@
             ++self.game_attachment_attempts;
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
-                (source->version==3 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3))) && source->reserved==0 && source->mode<=2,
+                ((source->version==3 || source->version==4) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3))) &&
+                source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;
             command.entity=gameplay_id(source->entity);
@@ -106,13 +172,16 @@
                 std::copy_n(guarded.anchor_position,3,contact.anchor.position.begin());
                 std::copy_n(guarded.anchor_rotation,4,contact.anchor.rotation.begin());
                 contact.position_limit_m=guarded.position_limit_m;contact.rotation_limit_deg=guarded.rotation_limit_deg;
-                if(source->version==3) {
+                if(source->version>=3) {
                     require(self.game->requires_item_attachment_surface(),
                         "Gameplay must declare item_attachment_surface_v1 to stage surface probes.");
                     PoimaGameItemAttachmentCommandV3 sampled;
                     std::memcpy(&sampled,source,sizeof(sampled));
                     contact.surface=self.game_surface_probes(sampled);
                 }
+                command.recover_miss=source->version==4;
+                require(!command.recover_miss || self.game->requires_item_attachment_recovery(),
+                    "Gameplay must declare item_attachment_recovery_v1 to stage a recoverable transfer.");
                 command.contact=std::move(contact);
             }
             require(std::none_of(self.game_attachment_commands.begin(),self.game_attachment_commands.end(),

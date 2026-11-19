@@ -127,6 +127,29 @@ void run(){
     }
     auto missing_camera=camera_source;missing_camera["payload"].erase("cameras");
     rejects([&]{transform(seal(missing_camera),plan,target_game,before,after);});
+    auto grip_source=original;
+    grip_source["payload"]["attachments"]={{"version",1},{"bindings",Json::array({
+        {{"entity",second},{"anchor",id('1')},{"offset_matrix",identity_matrix()}}})}};
+    grip_source["payload"]["attachment_outcomes"]={{"version",1},{"tick",3},{"outcomes",Json::array({
+        {{"entity",second},{"anchor",id('1')},{"status","surface_miss"},{"probe_index",0},
+         {"target_triangle",3},{"distance_m",.125},{"distance_limit_m",.01}}})}};
+    const auto grip_bytes=seal(grip_source);
+    const auto grip_mapping=transform(grip_bytes,plan,target_game,before,after);
+    const auto grip_mapped=Json::parse(grip_mapping.snapshot);
+    for(const auto* extension:{"attachments","attachment_outcomes"})
+        check(grip_mapped["payload"][extension]==grip_source["payload"][extension],"Upgrade changed native attachment state.");
+    if(Runtime::available()) {
+        Runtime::validate_snapshot(definition,source_hash,grip_bytes);
+        auto converted=definition;converted.authored_revision=8;converted.component_schemas=after;
+        const auto payload=map_component_scalars(components::schema_json(a),components::schema_json(b),
+            components::values_json(a,source_values),cm.dump()).target_payload;
+        converted.entities[0].components[a.id]=payload;converted.templates[0].components[a.id]=payload;
+        Runtime::validate_snapshot(converted,target_hash,grip_mapping.snapshot);
+        auto stale_outcome=grip_source;stale_outcome["payload"]["attachment_outcomes"]["tick"]=2;
+        rejects([&]{Runtime::validate_snapshot(definition,source_hash,seal(stale_outcome));});
+        auto false_miss=grip_source;false_miss["payload"]["attachment_outcomes"]["outcomes"][0]["distance_m"]=.001;
+        rejects([&]{Runtime::validate_snapshot(definition,source_hash,seal(false_miss));});
+    }
     // New defaulted cells on an existing authored entity; live spawned and
     // retired IDs never become eligible through checkpoint membership alone.
     const auto added=components::parse_schema(Json{{"id",id('5')},{"name","Progression"},{"version",2},{"fields",Json::array({

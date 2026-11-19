@@ -13,6 +13,7 @@
 #include "poima/physical_target.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
+#include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
@@ -3825,6 +3826,7 @@ public:
         if(method=="runtime.pose.joints")return check_runtime_joint_pose(params);
         if(method=="runtime.surface.measure")return measure_runtime_surfaces(params);
         if(method=="runtime.attachment.inspect")return inspect_runtime_attachments(params);
+        if(method=="runtime.attachment.outcomes")return inspect_attachment_outcomes(params);
         if(method=="runtime.attachment.apply")return apply_runtime_attachments(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).

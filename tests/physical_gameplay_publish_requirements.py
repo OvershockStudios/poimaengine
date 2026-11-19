@@ -81,4 +81,11 @@ class PhysicalRequirements(unittest.TestCase):
         for feature in (attachment,guard):
             with self.subTest(feature=feature),self.assertRaises(ValueError):
                 self.read(dict(value,features=[name for name in value['features'] if name!=feature]))
+    def test_recoverable_grip_requires_surface_contact(self):
+        features=['baseline_v7','item_attachment_v1','item_attachment_contact_v1',
+                  'item_attachment_surface_v1','item_attachment_recovery_v1']
+        value=dict(self.baseline,services_bytes=528,features=features)
+        self.assertEqual(self.read(value),value)
+        with self.assertRaises(ValueError):
+            self.read(dict(value,features=[name for name in features if name!='item_attachment_surface_v1']))
 if __name__=='__main__':unittest.main()

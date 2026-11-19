@@ -182,6 +182,40 @@ a 272-byte version 3 command. A miss returns the structured surface
 measurement through `runtime.step` and rolls back the whole step batch,
 including earlier transfers and staged saves.
 
+### Continue gameplay after a missed grip
+
+Implement `IItemAttachmentRecoveryGame` and call
+`context.AttemptItemTransfer(item, receivingHand, contact, probes)` during
+`Tick`. The engine resolves the pose and returns a committed outcome.
+A contact miss leaves ownership with the current holder and lets the tick
+finish, including animation, other gameplay and any queued save.
+
+At the start of the next `Tick`, call
+`context.GetItemTransferOutcome(item)` to read the previous tick's result.
+The status is `Transferred`, `FrameMiss`, or `SurfaceMiss`. A frame miss
+includes the position and angular measurements. A surface miss includes the
+failed probe index, closest triangle, distance and limit. Use the status to
+choose a recovery animation or wait for another grip attempt.
+
+The ordinary strict batch runs first. Recoverable attempts then run one at
+a time in staging order, with successful transfers available to later
+attempts. Each successful attempt advances the structure revision once.
+Contact misses consume the attempt and leave the structure revision alone.
+An invalid command still rejects the step, including any earlier writes or
+outcomes in that batch. All attempts share the per-tick handoff and probe
+budgets.
+
+Agents can read the same results using `runtime.attachment.outcomes` with the
+session, exact committed tick and optional structure revision. The query
+returns results in item ID order. Outcomes describe only the tick that just
+committed. Consume them each tick or store them in the game if they need to
+survive longer. Saves retain outcomes for the saved tick. Loading restores
+them before the first resumed callback.
+
+The feature negotiates `item_attachment_recovery_v1` in the existing
+528-byte service table. A version 4 command uses the sampled command layout.
+Outcome reads use the version 2, 120-byte response.
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

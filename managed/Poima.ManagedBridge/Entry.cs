@@ -151,8 +151,9 @@ public static unsafe class Entry
             bool itemAttachment=typeof(IItemAttachmentGame).IsAssignableFrom(type);
             bool attachmentContact=typeof(IItemAttachmentContactGame).IsAssignableFrom(type);
             bool attachmentSurface=typeof(IItemAttachmentSurfaceGame).IsAssignableFrom(type);
+            bool attachmentRecovery=typeof(IItemAttachmentRecoveryGame).IsAssignableFrom(type);
             bool stance=typeof(ICharacterStanceGame).IsAssignableFrom(type);
-            var required=GameplayRequirements.Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment,attachmentContact,attachmentSurface);
+            var required=GameplayRequirements.Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment,attachmentContact,attachmentSurface,attachmentRecovery);
             GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)

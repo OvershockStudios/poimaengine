@@ -27,14 +27,14 @@ def parameters(parser):
     parser.add_argument('--descriptor',type=Path)
 
 
-def configuration(args):
+def configuration(args, game_type=GAME, features=FEATURES):
     if args.descriptor:
         declaration=json.loads(args.descriptor.read_text(encoding='utf-8'))
-        assert set(declaration['required_features'])==FEATURES and declaration['minimum_services_bytes']==528
+        assert set(declaration['required_features'])==features and declaration['minimum_services_bytes']==528
         return dict(descriptor=native.native(args.descriptor),expected_descriptor_sha256=sha(args.descriptor))
     assert args.hostfxr and args.bridge and args.assembly
     return dict(hostfxr=native.native(args.hostfxr),bridge=native.native(args.bridge),
-                assembly=native.native(args.assembly),type=GAME)
+                assembly=native.native(args.assembly),type=game_type)
 
 
 def load(run, values, *, error=None):
@@ -59,7 +59,7 @@ def expected_late(owner, revision):
     return row
 
 
-def check_previous(args, output, settings, world, revision, values):
+def check_previous(args, output, settings, world, revision, values, feature='item_attachment_surface_v1'):
     old=copy.copy(args)
     old.binary=args.previous_binary.resolve()
     native.ARGS=old
@@ -69,7 +69,7 @@ def check_previous(args, output, settings, world, revision, values):
         saves=output/'previous-saves';saves.mkdir()
         game=Run(previous,revision,saves,settings,bool(args.descriptor))
         rejected=load(game,values,error=-32060)
-        assert 'item_attachment_surface_v1' in rejected['message'], rejected
+        assert feature in rejected['message'], rejected
         assert game.bindings()==[]
         previous.close()
         return dict(sha256=sha(old.binary),rejection=rejected)

@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included in World.
+    Json inspect_attachment_outcomes(const Json& params) const {
+        fields(params,{"session_id","tick","structure_revision"},{"session_id","tick"});
+        runtime_guard(params);structure_read_guard(params);
+        const auto tick=runtime_->inspect().tick;
+        require(revision(params.at("tick"))==tick,"Runtime tick conflict.",-32009);
+        return {{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
+            {"outcomes",attachment_outcome_rows(runtime_->attachment_outcomes())}};
+    }
     Json inspect_runtime_attachments(const Json& params) const {
         fields(params,{"session_id","tick","structure_revision"},{"session_id","tick"});
         runtime_guard(params);structure_read_guard(params);

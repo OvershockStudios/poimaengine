@@ -5,6 +5,8 @@
         std::vector<entt::entity> order;
     };
     std::shared_ptr<const AttachmentGraph> attachment_graph;
+    using AttachmentOutcomes=std::map<std::string,RuntimeAttachmentOutcome>;
+    std::shared_ptr<const AttachmentOutcomes> attachment_outcomes;
 
     static const RuntimeAttachmentBinding* attachment(const AttachmentGraph* graph,const std::string& id) {
         if(!graph)return nullptr;
@@ -63,7 +65,7 @@
         validate_attachment_world(frame);
         return frame;
     }
-    static void check_attachment_contact(const Node& node,const RuntimeAttachmentBinding& binding,
+    static std::optional<RuntimeAttachmentContactReport> check_attachment_contact(const Node& node,const RuntimeAttachmentBinding& binding,
         const Matrix4& anchor,const RuntimeAttachmentContact& contact) {
         require(contact.position_limit_m>=0 && contact.position_limit_m<=1e9 &&
             contact.rotation_limit_deg>=0 && contact.rotation_limit_deg<=180,"Invalid attachment contact limits.");
@@ -75,7 +77,8 @@
         if(item_axes.basis==pose_frames::Basis::regular && anchor_axes.basis==pose_frames::Basis::regular)
             rotation=pose_frames::rotation_error(item_axes,anchor_axes);
         if(position>contact.position_limit_m || !rotation || *rotation>contact.rotation_limit_deg)
-            throw RuntimeAttachmentContactRejected({node.id,binding.anchor,position,contact.position_limit_m,contact.rotation_limit_deg,rotation});
+            return RuntimeAttachmentContactReport{node.id,binding.anchor,position,contact.position_limit_m,contact.rotation_limit_deg,rotation};
+        return {};
     }
     bool attachment_contains(const AttachmentGraph* graph,const std::string& root,const std::string& id) const {
         for(auto current=id;!current.empty();) {
@@ -86,7 +89,7 @@
         return false;
     }
     void check_attachment_surfaces(const AttachmentGraph& candidate,const AttachmentContacts& contacts,
-        const std::map<std::string,Matrix4>& prepared) const {
+        const std::map<std::string,Matrix4>& prepared,std::size_t& checks) const {
         std::map<std::string,SceneObject> drawables;
         const auto mesh=[&](const std::string& id)->const SceneObject& {
             if(const auto cached=drawables.find(id);cached!=drawables.end())return cached->second;
@@ -95,7 +98,6 @@
             require(geometry && geometry->mesh && geometry->visible,"Select a visible indexed mesh drawable.");
             return drawables.emplace(id,drawable(entity,*geometry,&prepared)).first->second;
         };
-        std::size_t checks=0;
         std::optional<RuntimeAttachmentSurfaceReport> missed;
         for(const auto& [item,contact]:contacts) {
             for(std::size_t i=0;i<contact->surface.size();++i) {
@@ -119,10 +121,11 @@
         if(missed)throw RuntimeAttachmentSurfaceRejected(std::move(*missed));
     }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
-        const AttachmentContacts& contacts={}) {
+        const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false) {
         validate_attachment_graph(*graph,*topology);
         const auto& order=graph->bindings.empty() ? topology->hierarchy : graph->order;
         std::map<std::string,Matrix4> prepared;
+        std::optional<RuntimeAttachmentContactReport> frame_miss;
         for(const auto e:order) {
             const auto& node=registry.get<Node>(e);
             const auto item=graph->bindings.find(node.id);
@@ -130,8 +133,11 @@
             const auto& parent=transform_parent(node,binding);
             const auto* anchor=parent.empty() ? nullptr : &prepared.at(parent);
             if(binding && keep.contains(node.id)) {
-                if(const auto found=contacts.find(node.id);found!=contacts.end())
-                    check_attachment_contact(node,*binding,*anchor,*found->second);
+                if(const auto found=contacts.find(node.id);found!=contacts.end()) {
+                    frame_miss=check_attachment_contact(node,*binding,*anchor,*found->second);
+                    if(frame_miss && !recover_miss)
+                        throw RuntimeAttachmentContactRejected(std::move(*frame_miss));
+                }
                 binding->offset=anchor ? multiply(inverse_affine(*anchor),node.world) : node.world;
                 validate_attachment_offset(binding->offset);
             }
@@ -145,7 +151,10 @@
                     "Attachment anchor could not preserve the current item matrix.");
             prepared.emplace(node.id,world);
         }
-        check_attachment_surfaces(*graph,contacts,prepared);
+        std::size_t own_checks=0;
+        try {check_attachment_surfaces(*graph,contacts,prepared,tick_checks ? *tick_checks : own_checks);}
+        catch(const RuntimeAttachmentSurfaceRejected&) {if(!frame_miss)throw;}
+        if(frame_miss)throw RuntimeAttachmentContactRejected(std::move(*frame_miss));
         // All validation and allocation is complete. There is no partial graph
         // when a later command or matrix fails, and the old cache keys are stale.
         for(const auto e:order) {
@@ -154,7 +163,8 @@
         }
         attachment_graph=graph->bindings.empty() ? nullptr : std::move(graph);
     }
-    void change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
+    void change_attachments(std::uint64_t expected,std::span<const RuntimeAttachmentCommand> commands,
+        std::size_t* tick_checks=nullptr,bool recover_miss=false) {
         require(expected==structure_revision && structure_revision<9007199254740991ULL,
             "Attachment structure revision is stale or exhausted.");
         require(!commands.empty() && commands.size()<=max_runtime_attachments,"Submit 1..64 attachment commands.");
@@ -198,6 +208,6 @@
                 default: throw std::runtime_error("Unknown attachment transfer mode.");
             }
         }
-        publish_attachment_transforms(std::move(graph),keep,contacts);
+        publish_attachment_transforms(std::move(graph),keep,contacts,tick_checks,recover_miss);
         ++structure_revision;
     }

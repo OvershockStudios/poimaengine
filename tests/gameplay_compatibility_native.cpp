@@ -69,16 +69,24 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
+    std::erase(old_attachment_host.features,std::string(item_attachment_recovery_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
-    auto original_contact=capable;std::erase(original_contact.features,std::string(item_attachment_surface_feature));
+    auto original_surface=capable;std::erase(original_surface.features,std::string(item_attachment_recovery_feature));
+    auto original_contact=original_surface;std::erase(original_contact.features,std::string(item_attachment_surface_feature));
     auto surface=contact;surface.features.push_back(item_attachment_surface_feature);
     check(compatibility_error(surface,capable).empty() && compatibility_error(contact,original_contact).empty() &&
         !compatibility_error(surface,original_contact).empty(),"Surface probes must negotiate their own command feature.");
     auto surface_without_contact=surface;std::erase(surface_without_contact.features,std::string(item_attachment_contact_feature));
     check(!compatibility_error(surface_without_contact,capable).empty() &&
         !compatibility_error(baseline,surface_without_contact).empty(),"Surface probes need the contact dependency.");
+    auto recovery=surface;recovery.features.push_back(item_attachment_recovery_feature);
+    check(compatibility_error(recovery,capable).empty() && compatibility_error(surface,original_surface).empty() &&
+        !compatibility_error(recovery,original_surface).empty(),"Recoverable transfers must negotiate version 4.");
+    auto recovery_without_surface=recovery;std::erase(recovery_without_surface.features,std::string(item_attachment_surface_feature));
+    check(!compatibility_error(recovery_without_surface,capable).empty() &&
+        !compatibility_error(baseline,recovery_without_surface).empty(),"Grip recovery needs the surface feature.");
     auto original_attachment=original_contact;std::erase(original_attachment.features,std::string(item_attachment_contact_feature));
     check(compatibility_error(attachment,original_attachment).empty() && !compatibility_error(contact,original_attachment).empty(),
         "Old attachment host advertised a version-2 command it cannot accept.");

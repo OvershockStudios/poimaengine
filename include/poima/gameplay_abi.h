@@ -631,6 +631,16 @@ typedef struct PoimaGameItemAttachmentCommandV3 {
     const PoimaGameItemSurfaceProbeV1* probes;
     uint32_t probe_count,reserved;
 } PoimaGameItemAttachmentCommandV3;
+/* item_attachment_recovery_v1 accepts the same command layout at version 4.
+ * attachment_get accepts version 2 for receipt readback from the input tick.
+ * status is Absent0, Transferred1, FrameMiss2 or SurfaceMiss3. */
+typedef struct PoimaGameItemAttachmentOutcomeV2 {
+    uint32_t version,bytes,status,probe_index;
+    PoimaEntityId entity,anchor;
+    uint64_t sampled_tick,target_triangle;
+    double position_error_m,position_limit_m,rotation_error_deg,rotation_limit_deg,distance_m,distance_limit_m;
+    uint32_t rotation_available,reserved;
+} PoimaGameItemAttachmentOutcomeV2;
 typedef struct PoimaGameItemAttachmentServicesV1 {
     PoimaGamePhysicalRecoveryServicesV1 recovery;
     int32_t (POIMA_CALL *attachment_get)(void*,const PoimaEntityId*,PoimaGameItemAttachmentStateV1*,PoimaGameError*);
@@ -644,6 +654,11 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameItemAttachmentOutcomeV2)==120 && alignof(PoimaGameItemAttachmentOutcomeV2)==8 &&
+    offsetof(PoimaGameItemAttachmentOutcomeV2,entity)==16 && offsetof(PoimaGameItemAttachmentOutcomeV2,anchor)==32 &&
+    offsetof(PoimaGameItemAttachmentOutcomeV2,sampled_tick)==48 && offsetof(PoimaGameItemAttachmentOutcomeV2,target_triangle)==56 &&
+    offsetof(PoimaGameItemAttachmentOutcomeV2,position_error_m)==64 && offsetof(PoimaGameItemAttachmentOutcomeV2,distance_m)==96 &&
+    offsetof(PoimaGameItemAttachmentOutcomeV2,rotation_available)==112);
 static_assert(sizeof(PoimaGameItemSurfaceProbeV1)==88 && alignof(PoimaGameItemSurfaceProbeV1)==8 &&
     offsetof(PoimaGameItemSurfaceProbeV1,target)==16 && offsetof(PoimaGameItemSurfaceProbeV1,source_index)==32 &&
     offsetof(PoimaGameItemSurfaceProbeV1,target_count)==40 && offsetof(PoimaGameItemSurfaceProbeV1,barycentric)==48 &&

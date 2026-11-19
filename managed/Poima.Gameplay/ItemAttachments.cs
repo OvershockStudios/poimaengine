@@ -12,6 +12,9 @@ public interface IItemAttachmentContactGame : IItemAttachmentGame { }
 /// <summary>Opts into checked handoffs that also require surface contact at the end of the tick.</summary>
 public interface IItemAttachmentSurfaceGame : IItemAttachmentContactGame { }
 
+/// <summary>Opts into recoverable sampled grabs and committed outcome reads.</summary>
+public interface IItemAttachmentRecoveryGame : IItemAttachmentSurfaceGame { }
+
 /// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
 public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
 {
@@ -28,6 +31,14 @@ public readonly record struct ItemSurfacePoint(EntityId Drawable, uint Index, Ve
 /// <summary>A point that must reach the target drawable within DistanceLimitM.</summary>
 public readonly record struct ItemSurfaceProbe(ItemSurfacePoint Source, EntityId Target, double DistanceLimitM,
     ReadOnlyMemory<uint> TargetTriangles = default);
+
+public enum ItemTransferStatus : uint { Transferred=1, FrameMiss=2, SurfaceMiss=3 }
+public readonly record struct ItemTransferFrameMiss(double PositionErrorM, double PositionLimitM,
+    double? RotationErrorDegrees, double RotationLimitDegrees);
+public readonly record struct ItemTransferSurfaceMiss(uint ProbeIndex, ulong TargetTriangle,
+    double DistanceM, double DistanceLimitM);
+public readonly record struct ItemTransferOutcome(EntityId Item, EntityId AttemptedAnchor, ulong SampledTick,
+    ItemTransferStatus Status, ItemTransferFrameMiss? Frame, ItemTransferSurfaceMiss? Surface);
 
 /// <summary>A committed binding. A null anchor holds the item in world space.</summary>
 public readonly record struct ItemAttachment(EntityId Item, EntityId? Anchor, ulong SampledTick, ulong StructureRevision);
@@ -81,6 +92,15 @@ public readonly record struct ItemSocketOffset(Vector3d Position, Quaterniond Ro
     public uint ProbeCount, Reserved;
 }
 
+[StructLayout(LayoutKind.Sequential)] internal struct NativeItemAttachmentOutcomeV2
+{
+    public uint Version, Bytes, Status, ProbeIndex;
+    public EntityId Item, Anchor;
+    public ulong SampledTick, TargetTriangle;
+    public double PositionErrorM, PositionLimitM, RotationErrorDegrees, RotationLimitDegrees, DistanceM, DistanceLimitM;
+    public uint RotationAvailable, Reserved;
+}
+
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentServicesV1
 {
     public NativePhysicalRecoveryServicesV1 Recovery;
@@ -100,6 +120,7 @@ internal static unsafe class ItemAttachmentServiceAbi
         NativeItemAttachmentContactCommandV2 guarded=default;
         NativeItemAttachmentSurfaceCommandV3 sampled=default;
         NativeItemSurfaceProbeV1 probe=default;
+        NativeItemAttachmentOutcomeV2 outcome=default;
         return PhysicalRecoveryServiceAbi.LayoutValid() && sizeof(NativeItemAttachmentServicesV1)==528 &&
             (byte*)&api.Recovery-(byte*)&api==0 && (byte*)&api.Get-(byte*)&api==512 && (byte*)&api.Set-(byte*)&api==520 &&
             sizeof(NativeItemAttachmentStateV1)==64 && (byte*)&state.Item-(byte*)&state==16 && (byte*)&state.Anchor-(byte*)&state==32 &&
@@ -116,7 +137,11 @@ internal static unsafe class ItemAttachmentServiceAbi
             (byte*)&sampled.Reserved-(byte*)&sampled==268 && sizeof(NativeItemSurfaceProbeV1)==88 &&
             (byte*)&probe.Target-(byte*)&probe==16 && (byte*)&probe.SourceIndex-(byte*)&probe==32 &&
             (byte*)&probe.TargetCount-(byte*)&probe==40 && (byte*)&probe.Barycentric-(byte*)&probe==48 &&
-            (byte*)&probe.DistanceLimitM-(byte*)&probe==72 && (byte*)&probe.TargetTriangles-(byte*)&probe==80;
+            (byte*)&probe.DistanceLimitM-(byte*)&probe==72 && (byte*)&probe.TargetTriangles-(byte*)&probe==80 &&
+            sizeof(NativeItemAttachmentOutcomeV2)==120 && (byte*)&outcome.Item-(byte*)&outcome==16 &&
+            (byte*)&outcome.Anchor-(byte*)&outcome==32 && (byte*)&outcome.SampledTick-(byte*)&outcome==48 &&
+            (byte*)&outcome.TargetTriangle-(byte*)&outcome==56 && (byte*)&outcome.PositionErrorM-(byte*)&outcome==64 &&
+            (byte*)&outcome.DistanceM-(byte*)&outcome==96 && (byte*)&outcome.RotationAvailable-(byte*)&outcome==112;
     }
 
     internal static NativeItemAttachmentServicesV1* Validate(NativeServices* services)
@@ -148,6 +173,29 @@ public readonly unsafe ref partial struct GameContext
         return new(item,state.Anchor==default ? null : state.Anchor,state.SampledTick,state.StructureRevision);
     }
 
+    /// <summary>Read this item's completed attempt from the tick entering this callback.</summary>
+    public ItemTransferOutcome? GetItemTransferOutcome(EntityId item)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentRecovery,nameof(IItemAttachmentRecoveryGame));
+        if(item==default)throw new ArgumentException("Item identity is absent.",nameof(item));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        NativeItemAttachmentOutcomeV2 result=new(){Version=2,Bytes=120};
+        NativeError error=default;
+        Check(api->Get(services->Context,&item,(NativeItemAttachmentStateV1*)&result,&error),&error);
+        if(result.Version!=2 || result.Bytes!=120 || result.Item!=item || result.SampledTick!=Tick ||
+            result.Reserved!=0 || result.RotationAvailable>1 || result.Status>3 || result.Anchor==item ||
+            (result.Status==0)!=(result.Anchor==default))
+            throw new InvalidOperationException("Invalid committed item transfer outcome.");
+        if(result.Status==0)return null;
+        var status=(ItemTransferStatus)result.Status;
+        ItemTransferFrameMiss? frame=status==ItemTransferStatus.FrameMiss
+            ? new(result.PositionErrorM,result.PositionLimitM,
+                result.RotationAvailable==1 ? result.RotationErrorDegrees : null,result.RotationLimitDegrees) : null;
+        ItemTransferSurfaceMiss? surface=status==ItemTransferStatus.SurfaceMiss
+            ? new(result.ProbeIndex,result.TargetTriangle,result.DistanceM,result.DistanceLimitM) : null;
+        return new(item,result.Anchor,result.SampledTick,status,frame,surface);
+    }
+
     /// <summary>Transfer without a pose jump after this tick moves the current holder. Null pins to world space.</summary>
     public void TransferItem(EntityId item, EntityId? anchor) => StageItemAttachment(item,anchor,0,default);
 
@@ -168,8 +216,23 @@ public readonly unsafe ref partial struct GameContext
         ReadOnlySpan<ItemSurfaceProbe> probes)
     {
         RequireFeature(GameplayRequiredFeatures.ItemAttachmentSurface,nameof(IItemAttachmentSurfaceGame));
+        StageSampledTransfer(item,anchor,contact,probes,3);
+    }
+
+    /// <summary>Stage a handoff whose contact miss leaves the item with its current holder.
+    /// Read the committed result in a later Tick. Invalid commands roll back the step.</summary>
+    public void AttemptItemTransfer(EntityId item, EntityId anchor, ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentRecovery,nameof(IItemAttachmentRecoveryGame));
+        StageSampledTransfer(item,anchor,contact,probes,4);
+    }
+
+    private void StageSampledTransfer(EntityId item, EntityId anchor, ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes, uint version)
+    {
         var api=ItemAttachmentServiceAbi.Validate(services);
-        var guarded=ContactCommand(item,anchor,contact,3,272);
+        var guarded=ContactCommand(item,anchor,contact,version,272);
         if(probes.Length is <1 or >8)
             throw new ArgumentException("Supply 1..8 item surface probes.",nameof(probes));
 

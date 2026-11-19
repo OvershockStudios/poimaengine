@@ -1,0 +1,316 @@
+{
+  "format": "poima.evidence.attachment-recovery.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.257",
+  "schema_revision": 148,
+  "scope": "Opt-in recoverable grip outcomes for committed gameplay, native service readback and save continuation.",
+  "abi": {
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 4,
+    "command_bytes": 272,
+    "outcome_version": 2,
+    "outcome_bytes": 120,
+    "required_features": [
+      "baseline_v7",
+      "item_attachment_contact_v1",
+      "item_attachment_recovery_v1",
+      "item_attachment_surface_v1",
+      "item_attachment_v1"
+    ]
+  },
+  "fixture": "tests/item_attachment_recovery_gameplay.py",
+  "cases": [
+    "A recoverable sampled miss commits while the previous holder keeps the item.",
+    "An invalid vertex in the next tick rolls back despite the simultaneously missed frame limit.",
+    "A frame miss and a later successful transfer are observed at the next compiled Tick boundary.",
+    "A separately staged strict command commits in the same tick as a sampled miss.",
+    "The miss snapshot is byte-identical after cold load. A continued replay produces identical complete checkpoint bytes.",
+    "The same table extent on an older host requires rejecting the new feature by name. Retained strict modules execute unchanged."
+  ],
+  "linux": {
+    "coreclr": {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/report.json",
+        "bytes": 1731,
+        "sha256": "9cbc7680c88da3880827e6f3fb9b320f90213ae0618e48f2f7ca288b3ff041e5"
+      },
+      "rpc_count": 92,
+      "engine_sha256": "c40bd5a92f4aa5edc7999776e92410b524e957ebaee22650d1b4c5714e452796",
+      "natural_exits": 4,
+      "complete_checkpoint_checks": 5,
+      "previous_host": {
+        "sha256": "afddaf996bb71fa29bdf9b15a64d365c3e82cff8e47bfcd46300e975ad99a94c",
+        "rejection": {
+          "code": -32060,
+          "message": "C# gameplay: Gameplay host lacks item_attachment_recovery_v1."
+        }
+      },
+      "mode": "coreclr",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/cold/requests.jsonl",
+            "bytes": 6302,
+            "sha256": "798dff78aef6abc08d5d8771f3e94b3792b81034a2a7e9eb0a5d40bfd0be2610"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/cold/responses.jsonl",
+            "bytes": 24705,
+            "sha256": "5860e8af41ac10545a9160af47d54a383ea0fcd4656232dabc950bc4c65e0b3c"
+          }
+        },
+        "mixed": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/mixed/requests.jsonl",
+            "bytes": 2535,
+            "sha256": "f86f55249ae17ce4e5990b8c00b1db0457ecd355b73124c4c0294c75f92f109d"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/mixed/responses.jsonl",
+            "bytes": 5735,
+            "sha256": "86567206b19a33bf9b1150f14831cfd40d8ebcf7f3bafc6e12ce2d14a1df784b"
+          }
+        },
+        "previous-host": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/previous-host/requests.jsonl",
+            "bytes": 1535,
+            "sha256": "d61a8ee31943ee5b006ce864a937480c7f8f80741c03e4143f9e167599b7edf4"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/previous-host/responses.jsonl",
+            "bytes": 622,
+            "sha256": "d48d6c4ab02a8a7e091d6724a1b2f88d57c503520299e86559c088019de8fae6"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/runtime/requests.jsonl",
+            "bytes": 14883,
+            "sha256": "d1fc38805205c081d982ec4a01821dd4e9c0b9740f4e55a9e5f4190f63d88315"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/linux-mixed-qualified/runtime/responses.jsonl",
+            "bytes": 464523,
+            "sha256": "f35950b4c6c7834797b36215d9cfb934c64db0ab7e5327c7e6da7ad91663ca3d"
+          }
+        }
+      }
+    },
+    "retained_strict_coreclr": {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/legacy-strict-linux/report.json",
+        "bytes": 1529,
+        "sha256": "1100af8c616c53561e3923eb8a407a9ec18965c11f11120cb89eeb97ae624806"
+      },
+      "rpc_count": 38,
+      "engine_sha256": "c40bd5a92f4aa5edc7999776e92410b524e957ebaee22650d1b4c5714e452796",
+      "natural_exits": 2,
+      "complete_checkpoint_checks": 4,
+      "mode": "coreclr",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-linux/cold/requests.jsonl",
+            "bytes": 2302,
+            "sha256": "640b3cc4dd7834bc178c2f8098155d2c0c06c226933ab0c7397220f5e55a6ca1"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-linux/cold/responses.jsonl",
+            "bytes": 4814,
+            "sha256": "101d8d4e0775a6524ded3fbebff09af98a050e2581e78c619d3db3fce921a278"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-linux/runtime/requests.jsonl",
+            "bytes": 11238,
+            "sha256": "3bc7d6d8a706b0128d7f034081442fa77d957573dd4826ca736e333582440ad1"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-linux/runtime/responses.jsonl",
+            "bytes": 446351,
+            "sha256": "a3c87bc604ea417cefd47d85d0835ab908751f233f94c7f98718b7e5d6521289"
+          }
+        }
+      }
+    },
+    "ctest": {
+      "path": "build/attachment-recovery-0.0.257/linux-ctest.xml",
+      "bytes": 4339,
+      "sha256": "fb566358d9293bd70074b43d3e698ee3e81913cd6435ae576d003f8bcd15ad37"
+    },
+    "save_upgrade": {
+      "path": "build/attachment-recovery-0.0.257/save-upgrade.log",
+      "bytes": 447,
+      "sha256": "52bb00b6c9717ebcb600cbd86f727b1d09a56b1a0e1d6b33f4715c2835b2539b"
+    },
+    "native_mcp": {
+      "report.json": {
+        "path": "build/attachment-recovery-0.0.257/mcp/report.json",
+        "bytes": 141,
+        "sha256": "9a923ec56f37d38bb791adf31e2f74d4b7921408467b37b290b079ff3c17284a"
+      },
+      "requests.jsonl": {
+        "path": "build/attachment-recovery-0.0.257/mcp/requests.jsonl",
+        "bytes": 2504,
+        "sha256": "1edc6e3867d421323f0c0825572ce06159d85dacd9006b2236489dc14a11a378"
+      },
+      "responses.jsonl": {
+        "path": "build/attachment-recovery-0.0.257/mcp/responses.jsonl",
+        "bytes": 9124,
+        "sha256": "88f247cb6e060e34b7b321a8ba63d74327726897a89949727e7f15674be70fef"
+      }
+    }
+  },
+  "windows": {
+    "native_aot": {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/windows-qualified/report.json",
+        "bytes": 1719,
+        "sha256": "dd191931eaddbf7849a8be3acf8d238cba3cc244e20461e218249a55d7b844b8"
+      },
+      "rpc_count": 92,
+      "engine_sha256": "d943ff8a1c1d2e0068a95aacceb622569fb8cd4d4c073d84da56baa0ce87b05a",
+      "natural_exits": 4,
+      "complete_checkpoint_checks": 5,
+      "previous_host": {
+        "sha256": "1e75aa2a19f1848d31b495bb600520a326525efb4bcc37758f4ef49705bb6a67",
+        "rejection": {
+          "code": -32060,
+          "message": "Unknown required gameplay feature: item_attachment_recovery_v1"
+        }
+      },
+      "mode": "native_aot",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/cold/requests.jsonl",
+            "bytes": 6150,
+            "sha256": "14a9ecafaab58e4a1c186432e50b46a9eb47ef06cef46e849a9a629578c89b73"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/cold/responses.jsonl",
+            "bytes": 24952,
+            "sha256": "e86d27fd5ae9613e05e88b911564f731ed680983b78b8d3759370fc878fe07f6"
+          }
+        },
+        "mixed": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/mixed/requests.jsonl",
+            "bytes": 2390,
+            "sha256": "2e30da658dc5c9c0350e1dbab1b0813b6fa70dcfa7aa54c07d78498e15f84774"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/mixed/responses.jsonl",
+            "bytes": 5782,
+            "sha256": "f0ebd1f8d41c35e4c2358fc39a53626c1bb9b88126488ac584adcc7050761295"
+          }
+        },
+        "previous-host": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/previous-host/requests.jsonl",
+            "bytes": 1390,
+            "sha256": "e755e77e6f0bafddd61f625de9f6ea2ca51e76df373ac8a111a288a5bd0072e4"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/previous-host/responses.jsonl",
+            "bytes": 620,
+            "sha256": "c4541334141a877c37a55aea7619567f2052ddc6f68175be28de2436a1b6700a"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/runtime/requests.jsonl",
+            "bytes": 14732,
+            "sha256": "bc5718bdcb430efe63d2107e44811aafde8258062600cc9619926fe41f316e8f"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/windows-qualified/runtime/responses.jsonl",
+            "bytes": 464870,
+            "sha256": "6cc941ed49554ebe1073438126d36d657fcea651c519b0df740cd16ee68a2c20"
+          }
+        }
+      }
+    },
+    "descriptor": {
+      "path": "build/attachment-recovery-0.0.257/windows-aot/native-gameplay.json",
+      "bytes": 6136,
+      "sha256": "f4410022519bc2acf54ccfa2c70e005ba050a393f34cb3277d21bc1095ab8a85"
+    },
+    "retained_strict_aot": {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/legacy-strict-windows/report.json",
+        "bytes": 1536,
+        "sha256": "e1c79e12508bd6ada799ea2534a6b59e71419a860c02cf1c817c53db3f6ab4eb"
+      },
+      "rpc_count": 38,
+      "engine_sha256": "d943ff8a1c1d2e0068a95aacceb622569fb8cd4d4c073d84da56baa0ce87b05a",
+      "natural_exits": 2,
+      "complete_checkpoint_checks": 4,
+      "mode": "native_aot",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-windows/cold/requests.jsonl",
+            "bytes": 2150,
+            "sha256": "386729c52c2a5edcdba190fece0b1cd995b3c35e4261e8a4a62adfeaff1d1b35"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-windows/cold/responses.jsonl",
+            "bytes": 4868,
+            "sha256": "9f6a82c2e22354c2a010d0964e3662342bd05a9e23e8f2623fa98ec275ae7583"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-windows/runtime/requests.jsonl",
+            "bytes": 11105,
+            "sha256": "f5b6769b95dc2d999d6b6860531d4fe2bc2f671777d806b4b5ef1b7c9020791e"
+          },
+          "responses": {
+            "path": "build/attachment-recovery-0.0.257/legacy-strict-windows/runtime/responses.jsonl",
+            "bytes": 446558,
+            "sha256": "80611ec9688133024a5c796813151b91a515514f082713587d04315cd061e544"
+          }
+        }
+      }
+    },
+    "native_compatibility": {
+      "path": "build/attachment-recovery-0.0.257/windows-compatibility.log",
+      "bytes": 68,
+      "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+    }
+  },
+  "policy": {
+    "metadata": {
+      "path": "build/attachment-recovery-0.0.257/metadata.json",
+      "bytes": 463,
+      "sha256": "05deda6931ebca55c6072aaa78899f27e7877fdf1e19c65a00813d38b31ef21f"
+    },
+    "publish": {
+      "path": "build/attachment-recovery-0.0.257/publish-policy.log",
+      "bytes": 107,
+      "sha256": "9a6edf8ef37706071598674e7255ea7542fa59703e7d9d8e750067baebe400c4"
+    }
+  },
+  "corrected_fixture_attempts": [
+    {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/linux/report.json",
+        "bytes": 433,
+        "sha256": "31ca94f0be01563df4e3374f7bb8b9d25f778ca6f8f9dc0c2fdca0ebb0c12f26"
+      },
+      "cause": "The fixture expected a JSON number for a C# int64 tick. The protocol encodes int64 globals as decimal strings."
+    },
+    {
+      "report": {
+        "path": "build/attachment-recovery-0.0.257/linux-final/report.json",
+        "bytes": 807,
+        "sha256": "b26453648da19955d1db3c0683c994f766d8e251410c34157e8a6c2be01699a8"
+      },
+      "cause": "The mixed run reused a process whose save configuration generation had already advanced. The corrected fixture starts a fresh owner."
+    }
+  ]
+}

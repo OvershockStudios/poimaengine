@@ -22,6 +22,7 @@
 #include "runtime_hierarchy.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
+#include "attachment_outcome_json.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -1387,6 +1388,7 @@ struct Runtime::Impl {
     struct StructureCheckpoint {
         std::shared_ptr<const Topology> topology;
         std::shared_ptr<const AttachmentGraph> attachments;
+        std::shared_ptr<const AttachmentOutcomes> attachment_outcomes;
         std::size_t owners;
         RuntimeEntityIds entities;
         RuntimeBodyIds bodies;
@@ -1394,7 +1396,7 @@ struct Runtime::Impl {
         std::set<std::uint32_t> suppressed_bodies;
     };
     StructureCheckpoint checkpoint_structure() const {
-        StructureCheckpoint result{topology,attachment_graph,owned_entities.size(),*entity_ids,body_ids,structure_revision,{}};
+        StructureCheckpoint result{topology,attachment_graph,attachment_outcomes,owned_entities.size(),*entity_ids,body_ids,structure_revision,{}};
         for(const auto e:topology->characters) {
             const auto& motor=*registry.get<Controller>(e).character;
             if(motor.IsSuppressed())result.suppressed_bodies.insert(motor.GetBodyID().GetIndexAndSequenceNumber());
@@ -1421,6 +1423,7 @@ struct Runtime::Impl {
     void rollback_structure(const StructureCheckpoint& saved) {
         for(std::size_t i=saved.owners;i<owned_entities.size();++i)destroy_prop_owner(owned_entities[i],false);
         owned_entities.resize(saved.owners);topology=saved.topology;attachment_graph=saved.attachments;
+        attachment_outcomes=saved.attachment_outcomes;
         auto& bodies=physics.GetBodyInterface();
         for(const auto& [raw,name]:topology->body_names) {
             (void)name;const JPH::BodyID id(raw);
@@ -1922,11 +1925,7 @@ struct Runtime::Impl {
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
                 ++tick;animation_locals(true);sync();physical_record_final();
-                if(!game_attachment_commands.empty()) {
-                    try {change_attachments(structure_revision,game_attachment_commands);}
-                    catch(const std::invalid_argument& error) {throw std::runtime_error(error.what());}
-                    game_attachment_commands.clear();
-                }
+                finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
             }
             sync();
@@ -2234,6 +2233,9 @@ RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const st
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
 std::map<std::string,RuntimeAttachmentBinding> Runtime::attachments() const {
     return impl_->attachment_graph ? impl_->attachment_graph->bindings : std::map<std::string,RuntimeAttachmentBinding>{};
+}
+std::map<std::string,RuntimeAttachmentOutcome> Runtime::attachment_outcomes() const {
+    return impl_->attachment_outcomes ? *impl_->attachment_outcomes : Impl::AttachmentOutcomes{};
 }
 void Runtime::change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save intent before transferring attachments.");

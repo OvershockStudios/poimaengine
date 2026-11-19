@@ -128,7 +128,7 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -879,7 +879,7 @@ struct Gameplay::Impl {
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
     gameplay_abi::Contract requirements,prefix_requirements;
-    bool has_attachments=false,has_attachment_contact=false,has_attachment_surface=false;
+    bool has_attachments=false,has_attachment_contact=false,has_attachment_surface=false,has_attachment_recovery=false;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
         for(const auto& [offset,is_float]:floating_fields)
@@ -935,6 +935,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     impl_->has_attachments=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_feature))!=0;
     impl_->has_attachment_contact=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_contact_feature))!=0;
     impl_->has_attachment_surface=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_surface_feature))!=0;
+    impl_->has_attachment_recovery=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_recovery_feature))!=0;
     prefix.services_bytes=gameplay_abi::service_prefix_bytes(prefix);
     if(config.native_aot) {
         require_compatible(impl_->requirements,offered);
@@ -1000,6 +1001,7 @@ std::string Gameplay::memory_snapshot() const {
 }
 bool Gameplay::requires_item_attachment_contact() const {return impl_->has_attachment_contact;}
 bool Gameplay::requires_item_attachment_surface() const {return impl_->has_attachment_surface;}
+bool Gameplay::requires_item_attachment_recovery() const {return impl_->has_attachment_recovery;}
 void Gameplay::validate_services(const gameplay_abi::Contract& available) const {require_compatible(impl_->requirements,available);}
 const std::vector<components::Schema>& Gameplay::component_schemas() const { return impl_->component_schemas; }
 std::vector<std::uint64_t>& Gameplay::state() { return impl_->storage; }

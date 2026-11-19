@@ -17,6 +17,7 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <variant>
 
 namespace poima {
 namespace jobs { class Executor; }
@@ -65,10 +66,24 @@ struct RuntimeAttachmentCommand {
     RuntimeAttachmentMode mode=RuntimeAttachmentMode::KeepWorld;
     std::optional<RuntimeTransform> offset;
     std::optional<RuntimeAttachmentContact> contact=std::nullopt;
+    bool recover_miss=false;
 };
 struct RuntimeAttachmentBinding {
     std::string anchor;
     Matrix4 offset;
+};
+struct RuntimeAttachmentFrameMiss {
+    double position_error_m,position_limit_m,rotation_limit_deg;
+    std::optional<double> rotation_error_deg;
+};
+struct RuntimeAttachmentSurfaceMiss {
+    std::size_t probe_index,target_triangle;
+    double distance_m,distance_limit_m;
+};
+struct RuntimeAttachmentOutcome {
+    std::string anchor;
+    // A completed transfer has no miss details.
+    std::variant<std::monostate,RuntimeAttachmentFrameMiss,RuntimeAttachmentSurfaceMiss> detail;
 };
 inline constexpr std::size_t max_runtime_attachments=64;
 enum class BodyMotion { Static, Dynamic, Kinematic };
@@ -546,6 +561,7 @@ public:
         const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns);
     std::uint64_t structure_revision() const;
     std::map<std::string,RuntimeAttachmentBinding> attachments() const;
+    std::map<std::string,RuntimeAttachmentOutcome> attachment_outcomes() const;
     void change_attachments(std::uint64_t expected_revision,const std::vector<RuntimeAttachmentCommand>& commands);
     RuntimeSpawnInstance instance(const std::string& root) const;
     std::string instance_node(const std::string& root,const std::string& local) const;

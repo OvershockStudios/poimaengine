@@ -23,6 +23,54 @@ std::string save_text(const SaveJson& v,std::size_t bound=256,bool empty=false) 
     require(v.is_string(),"Runtime snapshot requires a string.");const auto s=v.get<std::string>();
     require((empty || !s.empty()) && s.size()<=bound && s.find('\0')==std::string::npos,"Runtime snapshot string is out of range.");return s;
 }
+std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const SaveJson& data,std::uint64_t tick) {
+    save_fields(data,{"version","tick","outcomes"});
+    require(save_integer(data.at("version"))==1 && tick>0 && save_integer(data.at("tick"))==tick,
+        "Saved attachment outcomes must match the committed tick.");
+    const auto& rows=data.at("outcomes");
+    require(rows.is_array() && !rows.empty() && rows.size()<=max_runtime_attachments,
+        "Saved attachment outcomes require 1..64 entries.");
+    const auto entity=[](const SaveJson& value) {
+        auto id=save_text(value,32);
+        require(id.size()==32 && id!=std::string(32,'0') && id.find_first_not_of("0123456789abcdef")==std::string::npos,
+            "Saved attachment outcome identity is invalid.");
+        return id;
+    };
+    const auto magnitude=[](const SaveJson& value,double max) {
+        const auto number=save_number(value,max);
+        require(number>=0,"Saved attachment measurement must be nonnegative.");
+        return number;
+    };
+    std::map<std::string,RuntimeAttachmentOutcome> result;
+    for(const auto& row:rows) {
+        const auto id=entity(row.at("entity")),anchor=entity(row.at("anchor"));
+        require(id!=anchor && (result.empty() || result.rbegin()->first<id),
+            "Saved attachment outcomes must be unique and sorted with distinct anchors.");
+        const auto status=save_text(row.at("status"),16);
+        RuntimeAttachmentOutcome outcome{anchor,{}};
+        if(status=="frame_miss") {
+            save_fields(row,{"entity","anchor","status","position_error_m","position_limit_m","rotation_error_deg","rotation_limit_deg"});
+            RuntimeAttachmentFrameMiss detail{magnitude(row.at("position_error_m"),4e12),
+                magnitude(row.at("position_limit_m"),1e9),magnitude(row.at("rotation_limit_deg"),180.),{}};
+            if(!row.at("rotation_error_deg").is_null())detail.rotation_error_deg=magnitude(row.at("rotation_error_deg"),180.);
+            require(detail.position_error_m>detail.position_limit_m || !detail.rotation_error_deg ||
+                *detail.rotation_error_deg>detail.rotation_limit_deg,"Saved frame outcome does not describe a miss.");
+            outcome.detail=detail;
+        } else if(status=="surface_miss") {
+            save_fields(row,{"entity","anchor","status","probe_index","target_triangle","distance_m","distance_limit_m"});
+            RuntimeAttachmentSurfaceMiss detail{static_cast<std::size_t>(save_integer(row.at("probe_index"),max_attachment_surface_probes-1)),
+                static_cast<std::size_t>(save_integer(row.at("target_triangle"),UINT32_MAX)),
+                magnitude(row.at("distance_m"),4e12),magnitude(row.at("distance_limit_m"),1e9)};
+            require(detail.distance_m>detail.distance_limit_m,"Saved surface outcome does not describe a miss.");
+            outcome.detail=detail;
+        } else {
+            save_fields(row,{"entity","anchor","status"});
+            require(status=="transferred","Unknown saved attachment outcome.");
+        }
+        result.emplace(id,std::move(outcome));
+    }
+    return result;
+}
 template<std::size_t N>std::array<double,N> save_vector(const SaveJson& v,double bound) {
     require(v.is_array() && v.size()==N,"Invalid runtime snapshot vector.");std::array<double,N> out{};
     for(std::size_t i=0;i<N;++i)out[i]=save_number(v[i],bound);
@@ -194,6 +242,8 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
                 {"offset_matrix",binding.offset}});
         payload["attachments"]={{"version",1},{"bindings",std::move(bindings)}};
     }
+    if(s.attachment_outcomes)
+        payload["attachment_outcomes"]={{"version",1},{"tick",s.tick},{"outcomes",attachment_outcome_rows(*s.attachment_outcomes)}};
     SaveJson cameras=SaveJson::array();
     for(const auto e:s.topology->order)if(const auto* camera=s.registry.try_get<RuntimeCamera>(e)) {
         const SceneLens world{camera->vertical_fov,camera->near_plane,camera->far_plane};Impl::validate_camera_lens(world);
@@ -307,6 +357,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             attachment_graph->bindings.emplace(id,RuntimeAttachmentBinding{anchor,save_vector<16>(row.at("offset_matrix"),1e12)});
         }
         data.erase("attachments");
+    }
+    std::shared_ptr<const Impl::AttachmentOutcomes> attachment_outcomes;
+    if(data.contains("attachment_outcomes")) {
+        attachment_outcomes=std::make_shared<const Impl::AttachmentOutcomes>(
+            read_attachment_outcomes(data.at("attachment_outcomes"),save_integer(data.at("tick"))));
+        data.erase("attachment_outcomes");
     }
     if(version>=7)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence","cameras"});
     else if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
@@ -732,6 +788,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         if(physical_checkpoint)save_physical_final_history(s,*physical_checkpoint);
     }
     if(attachment_graph)s.publish_attachment_transforms(std::move(attachment_graph));
+    s.attachment_outcomes=std::move(attachment_outcomes);
     if(!kinematic_sleep.is_null()) {
         // Install last: restoring public body pose/activation and rebuilding
         // controller support can otherwise reset the sleep test spheres/timer.
