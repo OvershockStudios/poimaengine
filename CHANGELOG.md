@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.279
+
+- Share depth, normal and visibility samples across neighboring pixels in the Vulkan ambient occlusion filter.
+
 ## 0.0.278
 
 - Open a project's entry world by passing its manifest to `mcp --project`, `world --project`, or `serve --project`.

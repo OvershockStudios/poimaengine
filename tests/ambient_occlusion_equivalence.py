@@ -353,6 +353,8 @@ def main():
     parser.add_argument('--gpu', type=int, required=True)
     parser.add_argument('--reference', type=Path)
     parser.add_argument('--workload-world', type=Path)
+    parser.add_argument('--odd-extent', action='store_true',
+                        help='Compare the corner at 323 by 243 pixels to exercise partial workgroups.')
     args = parser.parse_args()
     need(os.name == 'nt', 'Use native Windows Python for this hardware cohort.')
     binary = args.binary.resolve(strict=True)
@@ -405,7 +407,7 @@ def main():
             record['workload_input'] = dict(world_sha256=workload_original['world_sha256'], assets=workload_original['assets'])
             specs += [dict(name='workload-initial', workload=base, camera_position=[-4, 1.6, 7], settings=[('medium', 1)]),
                       dict(name='workload-interior', workload=base, camera_position=[3.2, 1.6, 3], settings=[('medium', 1)])]
-        expected_count = 19 + (6 if workload_original else 0)
+        expected_count = 19 + (6 if workload_original else 0) + (2 if args.odd_extent else 0)
         if reference is not None:
             need(reference.get('workload_input') == record.get('workload_input') and len(reference['captures']) == expected_count,
                  'Reference workload closure or expected capture set differs.')
@@ -459,6 +461,12 @@ def main():
                     label = f'{name}-{quality}-{radius}-{view}'
                     observed = capture(active, directory, label, camera, size, probes, settings, view, record, reference)
                     fixture_oracles(name, observed, True, quality, radius)
+            if args.odd_extent and name == 'corner':
+                settings = dict(mode='gtao', quality='medium', radius=1.25)
+                edge_probes = probes + [dict(x=x, y=y) for x, y in ((320, 120), (322, 120), (160, 240), (160, 242), (322, 242))]
+                for view in ('color', 'ambient_occlusion'):
+                    capture(active, directory, f'corner-partial-groups-{view}', camera,
+                            (323, 243), edge_probes, settings, view, record, reference)
             need(sha(world) == fixture['world_sha256'] and inventory(Path(str(world) + '.assets')) == fixture['assets'],
                  'Captures changed fixture/content.')
             active.close()

@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.278**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.279**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.279 shares reconstructed samples in the [Vulkan ambient
+occlusion filter](AMBIENT_OCCLUSION.md#shared-spatial-filter--00279).
+The candidate matches 54 reference bitmaps byte-for-byte and preserves all
+sampled visibility values. On the retained 1080p Performance Yard workload,
+filter p95 falls from 1.624 to 1.274 ms on AMD integrated graphics and from
+0.651 to 0.347 ms on RTX 4070 Laptop. Those timings come from background
+play. [Results](evidence/m2-ao-filter-tiles-279.json)
 
 The [0.0.278 Performance Yard background run](../examples/performance-yard/README.md#measure-in-the-background)
 records hardware Vulkan timings without taking desktop focus. Both GPUs run the
