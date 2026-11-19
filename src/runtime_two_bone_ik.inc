@@ -1,13 +1,59 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included inside Runtime::Impl. Queries read committed native controls;
 // complete replacements publish only after a successful Tick callback.
+    void probe_game_ik_clearance(const PoimaEntityId& entity,std::uint32_t slot,PoimaGameTwoBoneIkStateV1* output) {
+        constexpr auto casts=2*ik_clearance_intervals;
+        std::uint32_t header[2];
+        std::memcpy(header,output,sizeof(header));
+        require(game && game->requires_ik_clearance() && header[1]==sizeof(PoimaGameIkClearanceV2),
+            "Gameplay must declare animation_ik_clearance_v1 and pass a version-2, 288-byte query.");
+        require(game_capsule_query_attempts<=capsule_query_tick_budget-casts,"Gameplay exceeded the capsule query budget.");
+        game_capsule_query_attempts+=casts;
+        PoimaGameIkClearanceV2 query;
+        std::memcpy(&query,output,sizeof(query));
+        require(query.reserved==0 && query.enabled<=1 && query.space<=1 && query.ignore_count<=128 &&
+            (!query.ignore_count || query.ignore),"Invalid IK clearance input flags or ignore list.");
+        RuntimeIkClearanceRequest request;
+        request.goal.entity=gameplay_id(entity);
+        request.goal.slot=slot;
+        request.goal.enabled=query.enabled!=0;
+        request.goal.space=static_cast<IkSpace>(query.space);
+        request.goal.weight=query.weight;
+        std::copy_n(query.radii,2,request.radii.begin());
+        std::copy_n(query.target,3,request.goal.target.begin());
+        std::copy_n(query.pole,3,request.goal.pole.begin());
+        for(std::uint32_t i=0;i<query.ignore_count;++i)request.ignore.push_back(gameplay_id(query.ignore[i]));
+        const auto checked=ik_clearance(request);
+        PoimaGameIkClearanceV2 result{};
+        result.version=2;
+        result.bytes=sizeof(result);
+        for(std::size_t i=0;i<checked.current.size();++i) {
+            std::copy_n(checked.current[i].begin(),3,result.current+i*3);
+            std::copy_n(checked.candidate[i].begin(),3,result.candidate+i*3);
+        }
+        if(checked.blocker) {
+            const auto& blocker=*checked.blocker;
+            result.segment=blocker.segment;
+            result.interval=blocker.interval;
+            result.obstacle=gameplay_id(blocker.hit.entity);
+            result.fraction=blocker.hit.fraction;
+            result.penetration_depth=blocker.hit.penetration_depth;
+        }
+        std::memcpy(output,&result,sizeof(result));
+    }
     static int32_t POIMA_CALL get_two_bone_ik(void* context,const PoimaEntityId* id,
         std::uint32_t slot,PoimaGameTwoBoneIkStateV1* output,PoimaGameError* error) {
         return callback(error,[&] {
             require(context && id && output,"IK state query is absent.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            std::uint32_t version;
+            std::memcpy(&version,output,sizeof(version));
+            if(version==2) {
+                self.probe_game_ik_clearance(*id,slot,output);
+                return;
+            }
             require(output->version==1 && output->bytes>=sizeof(PoimaGameTwoBoneIkStateV1) &&
                 output->reserved==0 && output->reserved_tail==0,"IK state requires version 1, at least 160 bytes and zero reserved fields.");
-            auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_ik_read_calls<1024,"Gameplay exceeded 1024 IK reads in one Tick.");
             const auto state=self.owner->ik(gameplay_id(*id),slot);
             PoimaGameTwoBoneIkStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);

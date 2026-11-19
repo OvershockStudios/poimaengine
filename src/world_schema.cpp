@@ -225,7 +225,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 154}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 155}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -458,6 +458,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         object_schema(phase_layer,{"entity","layer","clip","time","speed","loop","playing","weight","phase_sync"})});
     methods["runtime.step"]["properties"]["animation_phase_matches"]={{"type","array"},{"maxItems",64},{"items",phase_item}};
     auto ik_command=ik_fields;ik_command["entity"]=id;
+    methods["runtime.ik.clearance"]=object_schema({
+        {"session_id",id},{"tick",rev},{"structure_revision",rev},
+        {"goal",object_schema(ik_command,{"entity","slot","target","pole"})},
+        {"radii",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",.001},{"maximum",1}}}}},
+        {"ignore",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",id}}}},
+        {"session_id","tick","structure_revision","goal","radii"});
+    methods["runtime.ik.clearance"]["description"]="Predict a manual two-bone slot over the current committed clip and layer sample. World-space radii describe the upper and lower segments. Four intervals conservatively sweep two capsules along linear joint paths. Reports current and candidate joint points and the first segment/interval blocker. Caller owns exclusions. Requires exact session, tick and structure revision. No state or clock changes. Outside frozen runtime-game-session-v1.";
     methods["runtime.step"]["properties"]["ik"]={{"type","array"},{"maxItems",64},{"items",object_schema(ik_command,{"entity","slot","target","pole"})}};
     auto lens_command=object_schema({{"entity",id},{"world",lens},{"viewmodel",lens}},{"entity"});
     lens_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});

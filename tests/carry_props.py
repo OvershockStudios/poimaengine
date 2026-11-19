@@ -84,19 +84,23 @@ class CarryRun(Run):
         return row
 
 
-def author(owner, manifest):
+def author(owner, manifest, wall_scale=(.32,.28,.05), rig_degrees=None):
     revision = configure(owner, aimed=True)
     added = owner.rpc('component.schema.import', dict(request_id=id_request(), base_revision=revision, manifest=manifest))
     assert {schema['id'] for schema in manifest['schemas']} == {CONFIG}
     q = math.sqrt(.5)
+    rig_rotation = (-q,0,0,q)
+    if rig_degrees is not None:
+        half_angle = math.radians(rig_degrees)/2
+        rig_rotation = (math.sin(half_angle),0,0,math.cos(half_angle))
     prompt = dict(name='Prop interaction', kind='label', parent=None, action=None, text='', visible=False, enabled=True,
         layout=dict(position='absolute', bottom=dict(unit='dp', value=20), left=dict(unit='percent', value=29),
                     width=dict(unit='percent', value=42), padding=[7,14,7,14]),
         style=dict(color='#fff2de',background_color='#221a19e8',border_color='#94745e',
                    border_width=1,border_radius=6,font_size=20,text_align='center'))
     ops = [
-        native.component(RIG,'Transform',transform((0,0,0), rotation=(-q,0,0,q))),
-        native.component(WALL,'Transform',transform((1.5,1.05,-.36), scale=(.32,.28,.05))),
+        native.component(RIG,'Transform',transform((0,0,0),rotation=rig_rotation)),
+        native.component(WALL,'Transform',transform((1.5,1.05,-.36), scale=wall_scale)),
         dict(op='component.set', id=ACTOR, type='game:'+CONFIG,
             value={uid(1):'0',uid(2):str(int(PROXY,16)),uid(3):'0',uid(4):str(int(PROMPT,16)),
                    uid(5):7,uid(6):9,uid(7):CAMERA,uid(8):SUPPORT}),

@@ -171,6 +171,73 @@ nonuniform or sheared wrapper. [Ground queries](GROUND_CONTACTS.md) and optional
 [planted-foot locking](FOOT_PLANTING.md) use separate profiles. Pelvis compensation
 and joint limits remain further work.
 
+## Probe a reach for obstacles
+
+`runtime.ik.clearance` tests a proposed manual two-bone goal over the
+committed animation and physics. It reads the current three world-space
+joint points, runs the same solver on a copy of the current clip and
+layer sample, and returns the three candidate joint points. It sweeps
+world-space capsules along the upper and lower segments, with independently
+authored radii. An eye ray can miss a blocker that the sweep finds.
+
+```json
+{
+  "session_id": "00000000000000000000000000000384",
+  "tick": 60,
+  "structure_revision": 2,
+  "goal": {
+    "entity": "000000000000000000000000000000c8",
+    "slot": 1,
+    "target": [1, 1, 0],
+    "pole": [0, 0, 1],
+    "weight": 0.65
+  },
+  "radii": [0.04, 0.03],
+  "ignore": ["00000000000000000000000000000001"]
+}
+```
+
+Use the current session, tick and structure revision. `goal` accepts the
+[complete IK command](#replace-live-controls). The point path is unaffected by
+rotation at the end joint. Radii are 0.001–1 m, in upper-to-lower order, and
+should enclose the art at the scale used by the character. Ignore entries are
+explicit, unique live identities. Typically exclude the actor's collision
+owner and the prop's release proxy if the hand is intended to touch it.
+Covers animated manual chains. Automatic grounding and physical rig owners
+reject the query.
+
+`current` and `candidate` list root, middle and end points. `blocker` is
+null when the corridor is clear. Otherwise it reports the segment (1 upper,
+2 lower), the interval (1–4) and the native capsule hit. Intervals are
+checked in time order, with the upper segment first within each interval.
+Contact fraction and overlap depth belong to that capsule cast. An overlap
+in a later interval is relative to that interval's start. The reported
+segment and interval give a stable first blocked interval, with upper
+segment priority when both block in the same interval.
+
+The probe connects committed and candidate joint points linearly. Each of
+four intervals retains its starting capsule axis, sweeps its midpoint, and
+expands its radius by the differential endpoint travel. This encloses the
+interval's interpolated segment and can report an obstruction before the
+actual limb mesh touches it. The probe leaves animation, physics, ticks and
+saves unchanged. Evaluate the result again when the scene changes. Later
+physics, staged movement or animation changes can move the next pose. Use
+the separate attachment contact guards to authorize a grip.
+
+Compiled gameplay declares `IIkClearanceGame` and calls
+`context.ProbeIkClearance(goal, upperRadius, lowerRadius, ignore)` during
+`Tick`. The gameplay result contains the same points and the blocker
+identity, segment, interval, fraction and penetration. Each call reserves
+eight of the 32 native capsule queries allowed per Tick. Exhaustion rejects
+the call. The named feature is `animation_ik_clearance_v1`, with
+`animation_ik_v1` and `capsule_cast_v1`. It uses a 288-byte version-2
+payload on the existing point IK callback and a 400-byte minimum epoch-7
+table. The legacy point and orientation payloads retain their layouts.
+
+[Carry Props](../examples/carry-props/README.md#check-the-arm-corridor) uses
+the probe before staging each reach and return in its opt-in module.
+[Verification](evidence/m2-ik-clearance.json)
+
 ## Observe and save
 
 `runtime.ik` requires `session_id`, exact `tick`, `entity` and slot 1–8.

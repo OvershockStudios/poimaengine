@@ -50,6 +50,7 @@ inline constexpr std::uint32_t animation_rate_services_bytes=376;
 inline constexpr const char* camera_pose_feature="camera_pose_v1";
 inline constexpr std::uint32_t camera_pose_services_bytes=392;
 inline constexpr const char* capsule_cast_feature="capsule_cast_v1";
+inline constexpr const char* ik_clearance_feature="animation_ik_clearance_v1";
 inline constexpr std::uint32_t capsule_cast_services_bytes=400;
 inline constexpr const char* physical_rig_feature="physical_rig_v1";
 inline constexpr std::uint32_t physical_rig_services_bytes=424;
@@ -96,6 +97,7 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=animation_rate_services_bytes;result.features.push_back(animation_rate_feature);
     result.services_bytes=camera_pose_services_bytes;result.features.push_back(camera_pose_feature);
     result.services_bytes=capsule_cast_services_bytes;result.features.push_back(capsule_cast_feature);
+    result.features.push_back(ik_clearance_feature);
     result.services_bytes=physical_rig_services_bytes;result.features.push_back(physical_rig_feature);
     result.services_bytes=physical_rig_drive_services_bytes;result.features.push_back(physical_rig_drive_feature);
     result.services_bytes=physical_rig_animation_services_bytes;result.features.push_back(physical_rig_animation_feature);
@@ -145,6 +147,7 @@ inline std::uint32_t service_prefix_bytes(const Contract& contract) {
         {animation_rate_feature,animation_rate_services_bytes},
         {camera_pose_feature,camera_pose_services_bytes},
         {capsule_cast_feature,capsule_cast_services_bytes},
+        {ik_clearance_feature,capsule_cast_services_bytes},
         {physical_rig_feature,physical_rig_services_bytes},
         {physical_rig_drive_feature,physical_rig_drive_services_bytes},
         {physical_rig_animation_feature,physical_rig_animation_services_bytes},
@@ -203,6 +206,9 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(required.features.begin(),required.features.end(),item_attachment_aim_feature)!=required.features.end() &&
        std::find(required.features.begin(),required.features.end(),item_attachment_feature)==required.features.end())
         return "Gameplay item_attachment_aim_v1 also requires item_attachment_v1.";
+    if(std::find(required.features.begin(),required.features.end(),ik_clearance_feature)!=required.features.end() &&
+       (!ik_required || std::find(required.features.begin(),required.features.end(),capsule_cast_feature)==required.features.end()))
+        return "Gameplay animation_ik_clearance_v1 requires animation_ik_v1 and capsule_cast_v1.";
     if(std::find(required.features.begin(),required.features.end(),item_attachment_release_feature)!=required.features.end() &&
        std::find(required.features.begin(),required.features.end(),item_attachment_feature)==required.features.end())
         return "Gameplay item_attachment_release_v1 also requires item_attachment_v1.";
@@ -286,6 +292,11 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(available.features.begin(),available.features.end(),item_attachment_aim_feature)!=available.features.end() &&
        std::find(available.features.begin(),available.features.end(),item_attachment_feature)==available.features.end())
         return "Runtime item_attachment_aim_v1 also requires item_attachment_v1.";
+    if(std::find(available.features.begin(),available.features.end(),ik_clearance_feature)!=available.features.end() &&
+       (available.services_bytes<capsule_cast_services_bytes ||
+        std::find(available.features.begin(),available.features.end(),two_bone_ik_feature)==available.features.end() ||
+        std::find(available.features.begin(),available.features.end(),capsule_cast_feature)==available.features.end()))
+        return "Runtime animation_ik_clearance_v1 requires animation_ik_v1 and capsule_cast_v1.";
     if(std::find(available.features.begin(),available.features.end(),item_attachment_release_feature)!=available.features.end() &&
        std::find(available.features.begin(),available.features.end(),item_attachment_feature)==available.features.end())
         return "Runtime item_attachment_release_v1 also requires item_attachment_v1.";
@@ -294,7 +305,7 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         return "Runtime item_attachment_recovery_v1 also requires item_attachment_surface_v1.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature && feature!=item_attachment_contact_feature && feature!=item_attachment_surface_feature && feature!=item_attachment_recovery_feature && feature!=item_attachment_release_feature && feature!=item_attachment_pickup_feature && feature!=item_attachment_aim_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature && feature!=item_attachment_contact_feature && feature!=item_attachment_surface_feature && feature!=item_attachment_recovery_feature && feature!=item_attachment_release_feature && feature!=item_attachment_pickup_feature && feature!=item_attachment_aim_feature && feature!=ik_clearance_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

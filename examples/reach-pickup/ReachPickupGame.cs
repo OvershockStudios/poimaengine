@@ -21,14 +21,15 @@ public struct ReachPickupState
 public sealed class ReachPickupGame : Game<ReachPickupState>,
     IItemAttachmentPickupGame, ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
 {
-    internal const int Idle=0, Reaching=1, Returning=2, Held=3;
+    internal const int Idle=0, Reaching=1, Returning=2, Held=3, BlockedReturning=8;
     internal const double AimDistance=2;
 
     public override void Initialize(ref ReachPickupState state) { }
 
     public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
 
-    internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default)
+    internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default,
+        bool checkClearance=false)
     {
         if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
             outcome.SampledTick==(ulong)state.PendingTick)
@@ -70,9 +71,17 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             else
             {
                 double progress=Math.Min(1.0,(double)state.TicksInPhase/state.AimTicks);
-                state.Weight=Ease(progress);
-                state.Opening=Ease(Math.Min(progress/.35,(1-progress)/.35));
-                ReadTarget(ref state,context.Get(state.Item).Transform);
+                var candidate=state;
+                candidate.Weight=Ease(progress);
+                candidate.Opening=Ease(Math.Min(progress/.35,(1-progress)/.35));
+                ReadTarget(ref candidate,context.Get(state.Item).Transform);
+                if(!TryApplyPose(candidate,context,checkClearance))
+                {
+                    ++state.Cancellations;
+                    BeginReturn(ref state,blocked:true);
+                    return;
+                }
+                state=candidate;
                 if(progress==1)
                 {
                     var itemFrame=Grip(state);
@@ -85,17 +94,18 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                     ++state.Attempts;
                     state.PendingTick=checked((long)context.Tick+1);
                 }
-                ApplyPose(state,context);
                 return;
             }
         }
-        if(state.Phase==Returning)
+        if(state.Phase is Returning or BlockedReturning)
         {
-            double remaining=1-Ease(Math.Min(1.0,(double)++state.TicksInPhase/state.ReturnTicks));
-            state.Weight=remaining*state.ReturnWeight;
-            state.Opening=remaining*state.ReturnOpening;
-            ApplyPose(state,context);
-            if(remaining==0)state.Phase=state.PickupTick==0 ? Idle : Held;
+            var candidate=state;
+            double remaining=1-Ease(Math.Min(1.0,(double)++candidate.TicksInPhase/state.ReturnTicks));
+            candidate.Weight=remaining*state.ReturnWeight;
+            candidate.Opening=remaining*state.ReturnOpening;
+            if(!TryApplyPose(candidate,context,checkClearance))return;
+            if(remaining==0)candidate.Phase=state.PickupTick==0 ? Idle : Held;
+            state=candidate;
         }
     }
 
@@ -105,9 +115,9 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         return context.AimReleasedItem(eye.Position,eye.Forward,AimDistance,[state.Actor]).Item;
     }
 
-    private static void BeginReturn(ref ReachPickupState state)
+    private static void BeginReturn(ref ReachPickupState state,bool blocked=false)
     {
-        state.Phase=Returning;
+        state.Phase=blocked ? BlockedReturning : Returning;
         state.TicksInPhase=0;
         state.ReturnWeight=state.Weight;
         state.ReturnOpening=state.Opening;
@@ -167,18 +177,33 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         (state.TargetQx,state.TargetQy,state.TargetQz,state.TargetQw)=(rotation.X,rotation.Y,rotation.Z,rotation.W);
     }
 
-    private static void ApplyPose(ReachPickupState state,GameContext context)
+    private static bool TryApplyPose(in ReachPickupState state,GameContext context,bool checkClearance)
     {
         var rig=context.Get(state.Rig).Transform;
         var pole=TransformedPoint(rig,new(state.PoleX,state.PoleY,state.PoleZ));
-        var world=new Quaternion((float)state.TargetQx,(float)state.TargetQy,(float)state.TargetQz,(float)state.TargetQw);
-        var local=Quaternion.Normalize(Quaternion.Inverse(Rotation(rig))*world);
-        IkEndOrientationGoal? orientation=state.Weight>0
-            ? new(new(local.X,local.Y,local.Z,local.W),state.Weight) : null;
-        context.SetTwoBoneIkOrientation(new(state.Rig,1,new(state.TargetX,state.TargetY,state.TargetZ),
-            pole,state.Weight>0,IkSpace.World,state.Weight,orientation));
+        var goal=new IkCommand(state.Rig,1,new(state.TargetX,state.TargetY,state.TargetZ),
+            pole,state.Weight>0,IkSpace.World,state.Weight);
+        if(checkClearance)
+        {
+            Span<EntityId> ignore=stackalloc EntityId[2];
+            ignore[0]=state.Actor;
+            var anchor=context.GetItemAttachment(state.Item)?.Anchor;
+            int count=1;
+            if(anchor is { } body && body!=state.Actor)ignore[count++]=body;
+            var clearance=context.ProbeIkClearance(goal,.02,.02,ignore[..count]);
+            if(clearance.Blocker.HasValue)return false;
+        }
+        IkEndOrientationGoal? orientation=null;
+        if(state.Weight>0)
+        {
+            var world=new Quaternion((float)state.TargetQx,(float)state.TargetQy,(float)state.TargetQz,(float)state.TargetQw);
+            var local=Quaternion.Normalize(Quaternion.Inverse(Rotation(rig))*world);
+            orientation=new(new(local.X,local.Y,local.Z,local.W),state.Weight);
+        }
+        context.SetTwoBoneIkOrientation(new(goal.Entity,goal.Slot,goal.Target,goal.Pole,goal.Enabled,goal.Space,goal.Weight,orientation));
         context.SetAnimationLayer(state.Rig,(uint)state.FingerLayer,state.OpenClip,1,
             time:state.OpenTime*state.Opening,loop:false,playing:false);
+        return true;
     }
 }
 

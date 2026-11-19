@@ -1054,6 +1054,31 @@ std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& ent
     }
     return {};
 }
+RuntimeAnimations::IkChainPreview RuntimeAnimations::preview_ik_chain(const RuntimeIkCommand& goal,
+    std::uint64_t tick,const Matrix4& wrapper) const {
+    const auto found=membership_->indices.find(goal.entity);
+    check(found!=membership_->indices.end(),"IK clearance requires a live animation rig.");
+    const auto index=found->second;
+    const auto& rig=membership_->rigs[index];
+    const auto chain=std::find_if(rig.ik.begin(),rig.ik.end(),[&](const auto& slot){return slot.slot==goal.slot;});
+    check(chain!=rig.ik.end() && !chain->grounding,"IK clearance requires a configured manual slot.");
+    check(!procedural_suspended(goal.entity) && !physical_return_active(goal.entity,tick),
+        "IK clearance requires fully animated ownership.");
+    ik::validate_control(*chain,goal);
+    auto pose=composed(index,clocks_[index],layers_[index],tick);
+    strip_root(index,pose);
+    // Validated solved branches are disjoint, with target anchors outside all
+    // solved branches. Other slots cannot change the selected three points.
+    (void)ik::solve(rig.model_parents,pose,*chain,goal,wrapper);
+    IkChainPreview result;
+    const std::array nodes{chain->root,chain->middle,chain->end};
+    for(std::size_t i=0;i<nodes.size();++i) {
+        result.entities[i]=rig.nodes.at(nodes[i]);
+        const auto point=multiply(wrapper,pose.world.at(nodes[i]));
+        result.candidate[i]={point[12],point[13],point[14]};
+    }
+    return result;
+}
 void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
     for(const auto& command:commands)check(!return_owns_controls(command.entity),"Physical return owns IK requests during its finite blend.");
     check(commands.size()<=64,"IK command budget is 64 per tick.");if(commands.empty())return;auto candidate=ik_;std::set<std::pair<std::string,std::uint32_t>> seen;

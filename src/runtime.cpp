@@ -56,6 +56,7 @@
 #include <cstring>
 #include <cstdio>
 #include <limits>
+#include <numeric>
 #include <map>
 #include <charconv>
 #include <numbers>
@@ -2435,6 +2436,7 @@ ReleasedItemAim Runtime::aim_released_item(const RuntimeRay& query) const {
     return result;
 }
 std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest& request) const {return impl_->capsule_cast(request);}
+RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest& request) const {return impl_->ik_clearance(request);}
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay& query) const {
     std::set<std::string> proxies;
     for(const auto& [id,definition]:impl_->topology->definitions) {

@@ -79,6 +79,65 @@
         physics.GetNarrowPhaseQuery().CastShape(cast,cast_settings,base,sweep,{}, {},filter);
         return sweep.hit;
     }
+    RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const {
+        const auto& goal=request.goal;
+        const auto rig=find(goal.entity);
+        require(!topology->definitions.at(goal.entity).physical_rig,
+            "IK clearance supports animated rigs without a physical pose owner.");
+        for(double radius:request.radii)
+            require(std::isfinite(radius) && radius>=.001 && radius<=1.,
+                "IK clearance radii must be .001..1 metres.");
+        const auto preview=animations->preview_ik_chain(goal,tick,registry.get<Node>(rig).world);
+        RuntimeIkClearance result;
+        result.candidate=preview.candidate;
+        for(std::size_t i=0;i<result.current.size();++i) {
+            const auto& world=registry.get<Node>(find(preview.entities[i])).world;
+            result.current[i]={world[12],world[13],world[14]};
+            for(std::size_t k=0;k<3;++k)
+                require(std::isfinite(result.current[i][k]) && std::abs(result.current[i][k])<=1e6 &&
+                    std::isfinite(result.candidate[i][k]) && std::abs(result.candidate[i][k])<=1e6,
+                    "IK clearance joint points must remain within +/-1000km.");
+        }
+        for(std::uint32_t interval=0;interval<ik_clearance_intervals;++interval) {
+            const auto start=static_cast<double>(interval)/ik_clearance_intervals;
+            const auto end=static_cast<double>(interval+1)/ik_clearance_intervals;
+            for(std::uint32_t segment=0;segment<request.radii.size();++segment) {
+                CapsuleCastRequest cast;
+                cast.ignore=request.ignore;
+                std::array<double,3> axis{},delta{},deviation{};
+                for(std::size_t k=0;k<3;++k) {
+                    const double a=std::lerp(result.current[segment][k],result.candidate[segment][k],start);
+                    const double b=std::lerp(result.current[segment+1][k],result.candidate[segment+1][k],start);
+                    const double da=std::lerp(result.current[segment][k],result.candidate[segment][k],end)-a;
+                    const double db=std::lerp(result.current[segment+1][k],result.candidate[segment+1][k],end)-b;
+                    cast.position[k]=std::midpoint(a,b);
+                    axis[k]=b-a;
+                    delta[k]=std::midpoint(da,db);
+                    deviation[k]=(db-da)*.5;
+                }
+                const auto length=[](const auto& v){return std::hypot(v[0],v[1],v[2]);};
+                cast.half_height=length(axis)*.5;
+                // A capsule following the midpoint with the starting axis
+                // covers linear endpoint travel when expanded by the largest
+                // difference between either endpoint and the midpoint motion.
+                cast.radius=request.radii[segment]+length(deviation)+capsule_query_collision_tolerance;
+                cast.distance=length(delta);
+                if(cast.half_height>0) {
+                    const auto direction=JPH::Vec3(static_cast<float>(axis[0]/(2*cast.half_height)),
+                        static_cast<float>(axis[1]/(2*cast.half_height)),static_cast<float>(axis[2]/(2*cast.half_height)));
+                    const auto rotation=JPH::Quat::sFromTo(JPH::Vec3::sAxisY(),direction);
+                    cast.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
+                }
+                if(cast.distance>0)
+                    for(std::size_t k=0;k<3;++k)cast.direction[k]=delta[k]/cast.distance;
+                if(auto hit=capsule_cast(cast)) {
+                    result.blocker=RuntimeIkClearanceBlocker{segment+1,interval+1,std::move(*hit)};
+                    return result;
+                }
+            }
+        }
+        return result;
+    }
     static int32_t POIMA_CALL cast_capsule_gameplay(void* context,const PoimaGameCapsuleCastRequestV1* source,
         PoimaGameCapsuleCastResultV1* output,PoimaGameError* error) {
         return callback(error,[&] {

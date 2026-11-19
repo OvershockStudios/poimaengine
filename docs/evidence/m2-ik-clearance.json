@@ -1,0 +1,274 @@
+{
+  "engine_version": "0.0.267",
+  "schema_revision": 155,
+  "fixture": "tests/ik_clearance.py",
+  "scope": [
+    "Narrow box obstacle at the upper or lower arm while a physics eye ray still selects the prop.",
+    "Native prediction is compared against the same stopped clip sampled by the ordinary live IK solver.",
+    "The optional compiled module aborts its reach and retains the previously clear pose, then retries after the obstacle moves.",
+    "Segment envelopes use linear interpolation of sampled joint points and do not plan around obstacles or assert future movement and deformation clearance."
+  ],
+  "contract": {
+    "method": "runtime.ik.clearance",
+    "feature": "animation_ik_clearance_v1",
+    "minimum_services_bytes": 400,
+    "services_epoch": 7,
+    "payload_version": 2,
+    "payload_bytes": 288
+  },
+  "linux_coreclr": {
+    "passed": true,
+    "calls": 227,
+    "exact_archive_pairs": 3,
+    "upper_blocker": {
+      "hit": {
+        "distance": 0.0,
+        "entity": "0000000000000000000000000000001d",
+        "fraction": 0.0,
+        "initial_overlap": true,
+        "normal": [
+          -0.9999999999999971,
+          4.794219628570697e-08,
+          5.892894960118149e-08
+        ],
+        "penetration_depth": 0.0005278328899294138,
+        "point_on_obstacle": [
+          0.0428282355567601,
+          1.1305970472901705,
+          -0.42880573117140725
+        ],
+        "point_on_query": [
+          0.043356064488568574,
+          1.130597046358848,
+          -0.42880572372082665
+        ],
+        "triangle": null
+      },
+      "interval": 3,
+      "segment": 1
+    },
+    "lower_blocker": {
+      "hit": {
+        "distance": 0.004501548992112017,
+        "entity": "0000000000000000000000000000001d",
+        "fraction": 0.2135847508907318,
+        "initial_overlap": false,
+        "normal": [
+          -0.686672659724206,
+          0.7173710266482575,
+          0.11772624394292781
+        ],
+        "penetration_depth": 0.0,
+        "point_on_obstacle": [
+          0.023652683943510056,
+          1.1293593561877784,
+          -0.48596741240215335
+        ],
+        "point_on_query": [
+          0.023652683943510056,
+          1.1293593561877784,
+          -0.48596741240215335
+        ],
+        "triangle": null
+      },
+      "interval": 1,
+      "segment": 2
+    },
+    "world_check_residual_m": 2.220446049250313e-16,
+    "block_outcome_tick": 179,
+    "successful_pickup_tick": 207,
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks animation_ik_clearance_v1."
+    },
+    "captures": {
+      "blocked": null,
+      "recovered": null
+    },
+    "archives": [
+      {
+        "slots": [
+          "before-probes",
+          "after-probes"
+        ],
+        "bytes": 30519,
+        "sha256": "6b643c01cbec1b9f8403972b6e316f7b152959dcb92f753ee0a839105b3ddca2"
+      },
+      {
+        "slots": [
+          "blocked-reach",
+          "cold-reach"
+        ],
+        "bytes": 31031,
+        "sha256": "ee6d1f86bfab6cdc95388d038f78f760394188e015c174b60c5680225e2d46d9"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 25505,
+        "sha256": "9eee0aa05c217f9ab344449502f0795cfffdd041aa032b6bbaae05d673d18628"
+      }
+    ],
+    "native_replies_by_owner": {
+      "warm": 151,
+      "cold": 73,
+      "previous": 3
+    },
+    "hashes": {
+      "runtime_sha256": "ce24de7e464591d9f1c6e9d8861a8f7ee67bdb13cba0011ca6acefc38f29e19b",
+      "gameplay_sha256": "ad226aa557f25cbea9b69876214f1876bfb58f7e2d98e0809fd3a758c29abe31",
+      "previous_runtime_sha256": "4cafd0ec9b8d45b70bc94132b3fc108a0f61e5cd869207f42c91d30a1f6b12e5"
+    }
+  },
+  "windows_native_aot": {
+    "passed": true,
+    "calls": 231,
+    "exact_archive_pairs": 3,
+    "upper_blocker": {
+      "hit": {
+        "distance": 0.0,
+        "entity": "0000000000000000000000000000001d",
+        "fraction": 0.0,
+        "initial_overlap": true,
+        "normal": [
+          -0.9999999999999971,
+          4.794219628570697e-08,
+          5.892894960118149e-08
+        ],
+        "penetration_depth": 0.0005278328899294138,
+        "point_on_obstacle": [
+          0.04282823555676012,
+          1.1305970472901705,
+          -0.42880573117140725
+        ],
+        "point_on_query": [
+          0.043356064488568595,
+          1.130597046358848,
+          -0.42880572372082665
+        ],
+        "triangle": null
+      },
+      "interval": 3,
+      "segment": 1
+    },
+    "lower_blocker": {
+      "hit": {
+        "distance": 0.004501548992112016,
+        "entity": "0000000000000000000000000000001d",
+        "fraction": 0.2135847508907318,
+        "initial_overlap": false,
+        "normal": [
+          -0.686672659724206,
+          0.7173710266482575,
+          0.11772624394292781
+        ],
+        "penetration_depth": 0.0,
+        "point_on_obstacle": [
+          0.023652683943510056,
+          1.1293593561877784,
+          -0.48596741240215335
+        ],
+        "point_on_query": [
+          0.023652683943510056,
+          1.1293593561877784,
+          -0.48596741240215335
+        ],
+        "triangle": null
+      },
+      "interval": 1,
+      "segment": 2
+    },
+    "world_check_residual_m": 2.482534153247273e-16,
+    "block_outcome_tick": 179,
+    "successful_pickup_tick": 207,
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: animation_ik_clearance_v1"
+    },
+    "captures": {
+      "blocked": {
+        "tick": 179,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "1ab5c12182fa874e56d12935791ba853a85381221f95d6a5647244f576f1cdb8",
+        "size": [
+          640,
+          360
+        ]
+      },
+      "recovered": {
+        "tick": 215,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "714f92e7199878e74b0b198670150027fe5071eba59defd920d8e9b0c1d9c36e",
+        "size": [
+          640,
+          360
+        ]
+      }
+    },
+    "archives": [
+      {
+        "slots": [
+          "before-probes",
+          "after-probes"
+        ],
+        "bytes": 30522,
+        "sha256": "e76d0fb32e70dbc9b4abca0b59a514d2027217ad9280672934135a6d88249210"
+      },
+      {
+        "slots": [
+          "blocked-reach",
+          "cold-reach"
+        ],
+        "bytes": 31034,
+        "sha256": "9d8cb1486e46dd9c86d231669e1a2a7672af636cd5088b887cd2dd6ccf5142c1"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 25485,
+        "sha256": "3ab8af61711d194349a083e03e63d55f9f9e4b806792b40337d50994d039a6bd"
+      }
+    ],
+    "native_replies_by_owner": {
+      "warm": 155,
+      "cold": 73,
+      "previous": 3
+    },
+    "hashes": {
+      "runtime_sha256": "6160dbc8ef635cfbd86b3a340523c63c6b8f486c43b966c5cdea3a0b676a9e7b",
+      "gameplay_sha256": "f5d5b8c560e5884f7501f1c933af7cf0fae4a7be5a89ec2f0c057fb34d281a1a",
+      "previous_runtime_sha256": "0cb0f57ffc7fd28889357fafff2b378a58f045f9b028d653fd368c40fbd53909",
+      "descriptor_sha256": "51ff724aaedb4cc1d7ab9d26d0e0cded6db7d1557123ef6f29b1b648f39e2479"
+    }
+  },
+  "native_mcp": {
+    "passed": true,
+    "native_replies": 8,
+    "exact_archive_pairs": 1,
+    "matched_direct_corridors": 2,
+    "stale_structure_code": -32009
+  },
+  "retained_carry_modules_on_current_hosts": {
+    "linux": {
+      "calls": 296,
+      "exact_archive_pairs": 2
+    },
+    "windows": {
+      "calls": 296,
+      "exact_archive_pairs": 2
+    }
+  },
+  "linux_regressions": [
+    "gameplay_compatibility_policy",
+    "runtime_capsule_cast_native",
+    "runtime_two_bone_ik_native",
+    "world_ui_contract",
+    "item_attachment_release_contract",
+    "item_attachment_pickup_contract",
+    "asset_references_contract"
+  ]
+}

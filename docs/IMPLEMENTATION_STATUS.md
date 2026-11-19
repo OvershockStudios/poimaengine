@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.266**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.267**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.267 adds a [two-bone clearance probe](TWO_BONE_IK.md#probe-a-reach-for-obstacles)
+to the world service and compiled gameplay. It solves the proposed pose
+at the current animation sample and sweeps the upper and lower segments
+against physics. In the Carry Props test the eye ray still selects the
+item when a separate obstacle blocks the arm. Compiled gameplay aborts
+the reach and can retry after the obstacle moves.
+[Results](evidence/m2-ik-clearance.json)
 
 Version 0.0.266 adds the compiled [Carry Props example](../examples/carry-props/README.md).
 It animates release and recovery, presents live interaction prompts, and

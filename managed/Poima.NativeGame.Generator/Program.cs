@@ -59,6 +59,7 @@ bool attachmentPickup=typeof(IItemAttachmentPickupGame).IsAssignableFrom(game);
 bool stance=typeof(ICharacterStanceGame).IsAssignableFrom(game);
 var features=GameplayRequirements.Features(inertial,masked,character,navigation,instances,preferences,actions,regions,ik,rootMotion,cameraLens,stance,ikOrientation,grounding,animationRate,cameraPose,capsuleCast,physicalRig,physicalRigDrive,physicalRigAnimation,physicalRecovery,itemAttachment,attachmentContact,attachmentSurface,attachmentRecovery,attachmentRelease,attachmentPickup);
 if(typeof(IItemAttachmentAimGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.ItemAttachmentAim;
+if(typeof(IIkClearanceGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.IkClearance;
 string requirements=GameplayRequirements.Json(features);
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();

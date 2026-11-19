@@ -4066,6 +4066,37 @@ public:
                 return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
             }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
         }
+        if(method=="runtime.ik.clearance") {
+            fields(params,{"session_id","tick","structure_revision","goal","radii","ignore"},
+                {"session_id","tick","structure_revision","goal","radii"});
+            runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            require(revision(params.at("structure_revision"))==runtime_->structure_revision(),
+                "Runtime structure revision conflict.",-32009);
+            const auto& radii=params.at("radii");
+            require(radii.is_array() && radii.size()==2 && radii[0].is_number() && radii[1].is_number(),
+                "IK clearance requires two numeric radii.");
+            RuntimeIkClearanceRequest request{parse_ik(Json::array({params.at("goal")})).front(),
+                radii.get<std::array<double,2>>(),{}};
+            if(params.contains("ignore")) {
+                const auto& ids=params.at("ignore");
+                require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
+                for(const auto& id:ids)request.ignore.push_back(identifier(id));
+            }
+            try{(void)runtime_->entity(request.goal.entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
+            try {
+                const auto result=runtime_->ik_clearance(request);
+                Json blocker=nullptr;
+                if(result.blocker) {
+                    const auto& b=*result.blocker;
+                    blocker={{"segment",b.segment},{"interval",b.interval},{"hit",capsule_cast_hit_json(b.hit)}};
+                }
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},
+                    {"structure_revision",runtime_->structure_revision()},{"current",result.current},
+                    {"candidate",result.candidate},{"blocker",std::move(blocker)}};
+            } catch(const std::invalid_argument& error){throw Error(-32602,error.what());}
+            catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+        }
         if(method=="runtime.ik") {
             fields(params,{"session_id","tick","entity","slot","include_end_orientation","include_metric","include_grounding","include_planting","include_target_node"},{"session_id","tick","entity","slot"});runtime_guard(params);
             if(params.contains("include_end_orientation"))require(params.at("include_end_orientation").is_boolean(),"include_end_orientation must be boolean.");

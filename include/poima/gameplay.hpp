@@ -52,6 +52,7 @@ public:
     bool requires_item_attachment_release() const;
     bool requires_item_attachment_pickup() const;
     bool requires_item_attachment_aim() const;
+    bool requires_ik_clearance() const;
     void validate_services(const gameplay_abi::Contract& available) const;
     void edit(const std::string& values);
     // Cached field offsets; no JSON/reflection/allocation on success. Null IDs

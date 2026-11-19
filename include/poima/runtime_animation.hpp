@@ -281,6 +281,11 @@ public:
     std::optional<RuntimeGroundingCommand> grounding_control(const std::string& entity,std::uint32_t slot) const;
     void apply_grounding(const std::vector<RuntimeGroundingCommand>& commands);
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
+    struct IkChainPreview {
+        std::array<std::string,3> entities;
+        std::array<std::array<double,3>,3> candidate;
+    };
+    IkChainPreview preview_ik_chain(const RuntimeIkCommand&,std::uint64_t,const Matrix4&) const;
     void apply_ik(const std::vector<RuntimeIkCommand>& commands);
     bool has_root_motion() const noexcept;
     std::optional<RuntimeRootMotionState> root_motion_state(const std::string& entity) const;

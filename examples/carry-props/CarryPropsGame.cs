@@ -31,7 +31,9 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
 
     public override void Initialize(ref ReachPickupState state) { }
 
-    public override void Tick(ref ReachPickupState state, GameContext context)
+    public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
+
+    internal static void Update(ref ReachPickupState state, GameContext context, bool checkClearance)
     {
         var settings=context.Get<CarryPropSettings>(state.Actor);
         if(settings.Camera==default || settings.Template==default ||
@@ -84,7 +86,7 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
                 Recover(ref state,context,settings.RecoverTicks);
                 break;
             default:
-                ReachPickupGame.Update(ref state,context,true,settings.Camera);
+                ReachPickupGame.Update(ref state,context,true,settings.Camera,checkClearance);
                 break;
         }
 
@@ -127,6 +129,7 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
             ReachPickupGame.Idle => ReachPickupGame.AimedItem(state,context,settings.Camera).HasValue ? "Pick up" : "",
             ReachPickupGame.Reaching => "Reaching",
             ReachPickupGame.Returning => "",
+            ReachPickupGame.BlockedReturning => "Reach blocked",
             ReachPickupGame.Held => "Drop",
             Blocked => "No room to drop",
             PreparingDrop or AwaitingDrop => "Releasing",
@@ -136,4 +139,14 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
         bool visible=text.Length>0;
         if(current.Text!=text || current.Visible!=visible)context.SetUi(settings.Prompt,text,visible);
     }
+}
+
+[GameModule("poima.example.clearance-carry-props")]
+public sealed class ClearanceCarryPropsGame : Game<ReachPickupState>,
+    IIkClearanceGame, IItemAttachmentAimGame, IItemAttachmentPickupGame, IItemAttachmentReleaseGame,
+    ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        CarryPropsGame.Update(ref state,context,true);
 }

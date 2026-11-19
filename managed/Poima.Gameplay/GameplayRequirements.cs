@@ -2,7 +2,7 @@
 using System.Text.Json;
 namespace Poima;
 
-[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216,ItemAttachmentRelease=33554432,ItemAttachmentPickup=67108864,ItemAttachmentAim=134217728 }
+[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216,ItemAttachmentRelease=33554432,ItemAttachmentPickup=67108864,ItemAttachmentAim=134217728,IkClearance=268435456 }
 internal static unsafe class GameplayRequirements
 {
     internal const string Baseline="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
@@ -57,6 +57,7 @@ internal static unsafe class GameplayRequirements
             if((features & GameplayRequiredFeatures.CameraLens)!=0)names.Add("camera_lens_v1");
             if((features & GameplayRequiredFeatures.CameraPose)!=0)names.Add("camera_pose_v1");
             if((features & GameplayRequiredFeatures.CapsuleCast)!=0)names.Add("capsule_cast_v1");
+            if((features & GameplayRequiredFeatures.IkClearance)!=0)names.Add("animation_ik_clearance_v1");
             if((features & GameplayRequiredFeatures.CharacterInput)!=0)names.Add("character_input_v1");
             if((features & GameplayRequiredFeatures.CharacterStance)!=0)names.Add("character_stance_v1");
             if((features & GameplayRequiredFeatures.HierarchicalInstances)!=0)names.Add("hierarchical_instances_v1");
@@ -84,7 +85,7 @@ internal static unsafe class GameplayRequirements
     }
     private static void ValidateRequired(GameplayRequiredFeatures required)
     {
-        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery|GameplayRequiredFeatures.ItemAttachmentRelease|GameplayRequiredFeatures.ItemAttachmentPickup|GameplayRequiredFeatures.ItemAttachmentAim))!=0 ||
+        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery|GameplayRequiredFeatures.ItemAttachmentRelease|GameplayRequiredFeatures.ItemAttachmentPickup|GameplayRequiredFeatures.ItemAttachmentAim|GameplayRequiredFeatures.IkClearance))!=0 ||
             ((required & GameplayRequiredFeatures.MaskedAnimation)!=0 && (required & GameplayRequiredFeatures.InertialAnimation)==0) ||
             ((required & GameplayRequiredFeatures.TwoBoneIkOrientation)!=0 && (required & GameplayRequiredFeatures.TwoBoneIk)==0) ||
             ((required & GameplayRequiredFeatures.GroundingControl)!=0 && (required & GameplayRequiredFeatures.TwoBoneIkOrientation)==0) ||
@@ -97,7 +98,9 @@ internal static unsafe class GameplayRequirements
             ((required & GameplayRequiredFeatures.ItemAttachmentRecovery)!=0 && (required & GameplayRequiredFeatures.ItemAttachmentSurface)==0) ||
             ((required & GameplayRequiredFeatures.ItemAttachmentRelease)!=0 && (required & GameplayRequiredFeatures.ItemAttachment)==0) ||
             ((required & GameplayRequiredFeatures.ItemAttachmentPickup)!=0 && (required & GameplayRequiredFeatures.ItemAttachmentRecovery)==0) ||
-            ((required & GameplayRequiredFeatures.ItemAttachmentAim)!=0 && (required & GameplayRequiredFeatures.ItemAttachment)==0))
+            ((required & GameplayRequiredFeatures.ItemAttachmentAim)!=0 && (required & GameplayRequiredFeatures.ItemAttachment)==0) ||
+            ((required & GameplayRequiredFeatures.IkClearance)!=0 &&
+             (required & (GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.CapsuleCast))!=(GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.CapsuleCast)))
             throw new ArgumentException("Invalid gameplay required features.");
     }
     // Existing generated Bindings already carry Requirements. Reading this once
@@ -131,6 +134,7 @@ internal static unsafe class GameplayRequirements
                 case "camera_lens_v1":result|=GameplayRequiredFeatures.CameraLens;break;
                 case "camera_pose_v1":result|=GameplayRequiredFeatures.CameraPose;break;
                 case "capsule_cast_v1":result|=GameplayRequiredFeatures.CapsuleCast;break;
+                case "animation_ik_clearance_v1":result|=GameplayRequiredFeatures.IkClearance;break;
                 case "item_attachment_contact_v1":result|=GameplayRequiredFeatures.ItemAttachmentContact;break;
                 case "item_attachment_aim_v1":result|=GameplayRequiredFeatures.ItemAttachmentAim;break;
                 case "item_attachment_pickup_v1":result|=GameplayRequiredFeatures.ItemAttachmentPickup;break;
@@ -286,6 +290,8 @@ internal static unsafe class GameplayRequirements
             throw new ArgumentException("Gameplay host lacks item_attachment_release_v1.");
         if((required & GameplayRequiredFeatures.ItemAttachmentPickup)!=0 && !features.Contains("item_attachment_pickup_v1"))
             throw new ArgumentException("Gameplay host lacks item_attachment_pickup_v1.");
+        if((required & GameplayRequiredFeatures.IkClearance)!=0 && !features.Contains("animation_ik_clearance_v1"))
+            throw new InvalidOperationException("Gameplay host lacks animation_ik_clearance_v1.");
         if((required & GameplayRequiredFeatures.ItemAttachmentAim)!=0 && !features.Contains("item_attachment_aim_v1"))
             throw new ArgumentException("Gameplay host lacks item_attachment_aim_v1.");
         // Unknown, well-formed available host features are intentionally ignored:

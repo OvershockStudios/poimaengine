@@ -286,6 +286,20 @@ struct RuntimeIkCommand {
     double weight=1;
     std::optional<RuntimeIkEndOrientation> end_orientation=std::nullopt;
 };
+struct RuntimeIkClearanceRequest {
+    RuntimeIkCommand goal;
+    std::array<double,2> radii{};
+    std::vector<std::string> ignore;
+};
+struct RuntimeIkClearanceBlocker {
+    std::uint32_t segment=0, interval=0;
+    CapsuleCastHit hit;
+};
+struct RuntimeIkClearance {
+    std::array<std::array<double,3>,3> current{}, candidate{};
+    std::optional<RuntimeIkClearanceBlocker> blocker;
+};
+inline constexpr std::uint32_t ik_clearance_intervals=4;
 struct RuntimeIkMetricState {
     // Opt-in worst errors of the incoming and final published model poses.
     bool evaluated=false;
@@ -668,6 +682,7 @@ public:
     ReleasedItemAim aim_released_item(const RuntimeRay& ray) const;
     // Precise fixed-orientation physical capsule query; no state mutation.
     std::optional<CapsuleCastHit> capsule_cast(const CapsuleCastRequest& request) const;
+    RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const;
     std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;
     // Immutable bound mesh, live capsule foot start; no state/time mutation.
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;

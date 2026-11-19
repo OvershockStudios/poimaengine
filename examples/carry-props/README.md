@@ -73,3 +73,20 @@ template. The sample drops from rest with zero initial world velocity.
 Its aim checks visibility and its contact probes validate the grip.
 An authored clear route for the arm and a calibrated carried rest pose are
 still required. [Verification](../../docs/evidence/m2-carry-props.json)
+
+## Check the arm corridor
+
+Publish `Poima.Examples.ClearanceCarryPropsGame` from the same project to
+probe the arm before applying each new reach and return pose. If the
+corridor is blocked, the hand abandons that reach and the HUD says
+“Reach blocked.” The prop stays in the world. A blocked return keeps the
+prior IK controls and retries on later ticks. The sample uses a 2 cm capsule
+radius for each segment of its small analytic rig.
+
+Use `tests/ik_clearance.py` with the same CoreCLR or Native AOT paths.
+The test positions a kinematic obstacle beside the center ray. It verifies
+that the prop is still aimable, compares the predicted joint locations with
+the native pose, tests both arm segments and loads a save taken during the
+blocked reach. The same item can be picked up after the obstacle moves.
+With Windows Vulkan, `--gpu` captures the blocked and recovered states.
+[IK clearance](../../docs/TWO_BONE_IK.md#probe-a-reach-for-obstacles)

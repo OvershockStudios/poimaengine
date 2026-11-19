@@ -62,6 +62,15 @@ void policy() {
         grounding_control_feature,animation_rate_feature,camera_pose_feature,capsule_cast_feature};
     if(poima::runtime_navigation_available())legacy400.features.push_back(navigation_feature);
     check(compatibility_error(baseline,legacy400).empty(),"Explicit old400 host fixture is invalid.");
+    auto clearance=baseline;
+    clearance.services_bytes=capsule_cast_services_bytes;
+    clearance.features.insert(clearance.features.end(),{two_bone_ik_feature,capsule_cast_feature,ik_clearance_feature});
+    check(compatibility_error(clearance,capable).empty() &&
+        !compatibility_error(clearance,legacy400).empty(),"IK clearance requires its named capability.");
+    auto clearance_without_capsule=clearance;
+    std::erase(clearance_without_capsule.features,std::string(capsule_cast_feature));
+    check(!compatibility_error(clearance_without_capsule,capable).empty() &&
+        !compatibility_error(baseline,clearance_without_capsule).empty(),"IK clearance requires the capsule query capability.");
 
     auto attachment=baseline;attachment.services_bytes=528;attachment.features.push_back(item_attachment_feature);
     check(compatibility_error(attachment,capable).empty(),"Attachment unexpectedly requires another optional service.");
