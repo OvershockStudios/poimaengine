@@ -58,7 +58,7 @@ def configure(session):
     entity(OTHER, 'Second item', dict(transform((1.8, -1, -5)), scale=[.3, .3, .3]), parent=CAMERA,
            MeshRenderer=dict(primitive='box', visible=True, albedo=[.5, .2, .8]), CameraDraw=foreground)
     collider=dict(motion='static', half_extents=[.5, .5, .5], mass=1, friction=.5, restitution=0)
-    entity(BODY, 'Physical target rejection', transform((20, 0, 0)), BoxCollider=collider)
+    entity(BODY, 'Idle kinematic body', transform((20, 0, 0)), BoxCollider=dict(collider,motion='kinematic'))
     ops.extend([
         dict(op='template.set', id=SPAWN, name='Removable anchor',
              components=dict(Transform=transform((4, 0, 0)))),
@@ -167,9 +167,13 @@ def compare_pose(session, args, revision, output):
     assert observed(ITEM)['local_transform']==initial_item['local_transform']
     close_matrix(multiply(world(second_anchor),binding['offset_matrix']),old_item)
     checkpoint=save('handoff')
-    extension=json.loads(checkpoint)['snapshot']['payload']['attachments']
+    payload=json.loads(checkpoint)['snapshot']['payload']
+    extension=payload['attachments']
     assert extension['version']==1 and len(extension['bindings'])==1
     assert extension['bindings'][0]['offset_matrix']==binding['offset_matrix']
+    trackers=payload['kinematic_sleep']['trackers']
+    assert [row['entity'] for row in trackers]==[BODY]
+    assert trackers[0]['state']['sleep_timer']>.1
 
     apply(keep(OTHER,ITEM),keep(ITEM,OTHER),error=-32602)
     apply(keep(OTHER,first_anchor),keep(BODY,first_anchor),error=-32602)
@@ -187,6 +191,8 @@ def compare_pose(session, args, revision, output):
     if before is not None:
         assert following!=before
     continuation=save('continued')
+    settled=json.loads(continuation)['snapshot']['payload']
+    assert next(row for row in settled['entities'] if row['id']==BODY)['body']['active'] is False
     expected_tip=world(DETAIL)
     session.rpc('runtime.stop',dict(session_id=owner))
     session.close()
@@ -246,7 +252,7 @@ def compare_pose(session, args, revision, output):
         assert session.world.read_bytes()==authored
         session.rpc('runtime.stop',dict(session_id=owner))
         return dict(cold_bytes_equal=True, continuation_bytes_equal=True, failed_batch_bytes_equal=True,
-                    follows_kinematic_anchor=True, denied_anchor_removal_bytes_equal=True,
+                    follows_kinematic_anchor=True, cold_idle_kinematic_slept=True, denied_anchor_removal_bytes_equal=True,
                     following_position_m=moved[12:15], before_handoff_m=old_item[12:15], captures=captures)
     finally:
         session.close()

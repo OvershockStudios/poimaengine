@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <nlohmann/json.hpp>
 
-namespace JPH { class PhysicsSystem; struct PoimaBodyOwnerState; }
+namespace JPH { class BodyID; class PhysicsSystem; struct PoimaBodyOwnerState; }
 namespace poima {
 inline constexpr std::size_t runtime_physics_state_max_bodies=4096;
 inline constexpr std::size_t runtime_physics_state_max_pairs=8192;
@@ -52,4 +52,10 @@ void validate_runtime_physics_state_joined(const JPH::PhysicsSystem&,const nlohm
 // separate from this native-module boundary. No arbitrary user bytes accepted.
 void restore_runtime_physics_state_joined(JPH::PhysicsSystem&,const nlohmann::json&,
     const JPH::PoimaBodyOwnerState&);
+
+// The ordinary portable save restores body pose, velocities and activation
+// through Jolt's public setters. Install the sleep tracker afterwards on its
+// detached candidate, preserving the motion properties already restored.
+nlohmann::json capture_runtime_kinematic_sleep(const JPH::PhysicsSystem&,const JPH::BodyID&);
+void restore_runtime_kinematic_sleep(JPH::PhysicsSystem&,const JPH::BodyID&,const nlohmann::json&);
 }

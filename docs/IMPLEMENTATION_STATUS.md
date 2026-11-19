@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.249**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.250**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.250 preserves [ordinary kinematic sleep timing](GAMEPLAY_SAVES.md)
+by saving the native timing and movement samples. The
+[cold replay checks](evidence/m2-kinematic-sleep.json) compare complete saves
+across the idle-to-sleep transition, including the attachment fixture that
+previously diverged. Legacy saves without the tracker remain readable.
 
 Version 0.0.249 adds [rigid item transfers](ITEM_ATTACHMENTS.md). Agents can
 keep an item in place while switching anchors, snap it into a socket, or

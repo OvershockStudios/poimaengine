@@ -51,7 +51,8 @@ void run(){
     Plan plan;plan.source=source;plan.target=target;plan.global_mapping=gm.dump();plan.components.push_back({a.id,components::fingerprint_hex(a),components::fingerprint_hex(b),cm.dump()});
     const auto source_values=components::parse_values(a,Json{{id('1'),7},{id('2'),id('1')},{id('3'),"-9223372036854775808"}}.dump());
     RuntimeDefinition definition;definition.world_id="fixture";definition.authored_revision=3;definition.component_schemas=before;
-    RuntimeEntityDefinition entity;entity.id=id('1');entity.components[a.id]=source_values;definition.entities.push_back(entity);
+    RuntimeEntityDefinition entity;entity.id=id('1');entity.components[a.id]=source_values;
+    entity.collider=BoxCollider{};entity.collider->motion=BodyMotion::Kinematic;definition.entities.push_back(entity);
     RuntimeSpawnTemplate recipe;recipe.id=id('c');recipe.name="Spawned stats";recipe.components[a.id]=source_values;definition.templates.push_back(recipe);
     definition.ui={{id('d'),"","HUD",ui::Kind::label,"Original HUD","",true,true}};
     Json original;std::string first,second;
@@ -93,6 +94,8 @@ void run(){
     check(untouched_old.dump()==untouched_new.dump(),"Transformation changed state outside its explicit allowlist");
     check(p.at("structure")==original.at("payload").at("structure") && p.at("control_sequence")==original.at("payload").at("control_sequence"),"Allocator/UI control lineage changed");
     if(Runtime::available()){
+        check(p.at("kinematic_sleep").dump()==original.at("payload").at("kinematic_sleep").dump(),
+            "Gameplay upgrade changed the saved kinematic sleep tracker.");
         auto target_definition=definition;target_definition.authored_revision=8;target_definition.component_schemas=after;
         const auto converted=map_component_scalars(components::schema_json(a),components::schema_json(b),components::values_json(a,source_values),cm.dump()).target_payload;
         target_definition.entities[0].components[a.id]=converted;target_definition.templates[0].components[a.id]=converted;

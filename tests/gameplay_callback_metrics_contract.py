@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -89,6 +90,8 @@ def bucket(data,name,*,calls,returned,threw,minimum_bytes):
 class Probe(NativeOwner):
     def __init__(self,engine,directory,deadline,world,saves,*,bridge=None,assembly=None,hostfxr=None):
         self.stable_validated=0;self.bridge=bridge;self.assembly=assembly;self.hostfxr=hostfxr
+        version=json.loads(subprocess.check_output([str(engine),'--version'],timeout=15))['result']['version']
+        self.expect_kinematic_sleep=tuple(map(int,version.split('-',1)[0].split('.')))>=(0,0,250)
         Checked.__init__(self,engine,directory,deadline,world=world,saves=saves)
     def call(self,method,params=None,error=None):
         need(len(self.calls)<1200,'Bounded native protocol request census')
@@ -107,7 +110,11 @@ class Probe(NativeOwner):
         row=self.call('runtime.gameplay.metrics',dict(session_id=self.session,tick=self.tick));return row,validate_metrics(row,self,enabled=enabled,backend=backend)
     def checkpoint(self,label,report):
         point=self.probe('metrics-'+label);doc=point['document'];payload=doc['snapshot']['payload']
-        need(doc['format']=='poima.world-save'and doc['snapshot']['version']==7 and set(payload)==KEYS,'Whole unmodified v7 native snapshot')
+        expected=KEYS|{'kinematic_sleep'} if self.expect_kinematic_sleep else KEYS
+        need(doc['format']=='poima.world-save'and doc['snapshot']['version']==7 and set(payload)==expected,'Whole unmodified v7 native snapshot')
+        if self.expect_kinematic_sleep:
+            sleep=payload['kinematic_sleep']
+            need(sleep['version']==1 and [row['entity'] for row in sleep['trackers']]==[ACTOR],'Complete saved kinematic tracker membership')
         retained=self.directory.parent/'checkpoints'/(label+'.bin');retained.parent.mkdir(exist_ok=True)
         shutil.copyfile(point['path'],retained);need(pin(retained)==point['identity'],'Retained complete original save bytes')
         report['checkpoints'][label]=dict(file=str(retained),identity=pin(retained),payload_sha256=doc['snapshot']['sha256'],tick=payload['tick'])

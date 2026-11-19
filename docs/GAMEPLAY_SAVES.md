@@ -30,6 +30,15 @@ records, and the animation-return state. These are separate from the outer
 runtime snapshot version. Other rigs and worlds keep their earlier encodings;
 this extension does not authorize changing a frozen profile during load.
 
+Since 0.0.250, ordinary kinematic bodies save the elapsed sleep test and all
+three sample spheres in the optional `kinematic_sleep` extension. Restore
+installs the tracker after body pose, activation and controller support have
+been reconstructed. Worlds with joined physical snapshots already store the
+tracker there. Older saves still load with a fresh tracker. Exact sleep timing
+after loading one of those saves depends on when the body next moves or sleeps.
+The tracker covers kinematic sleep. Ordinary dynamic contact histories have
+their own compatibility limits. [Qualification](evidence/m2-kinematic-sleep.json)
+
 ## Configure storage
 
 In the editor, use **Window > Saves**, or call `save.configure` through the world service. A standalone bundle accepts an existing external directory:

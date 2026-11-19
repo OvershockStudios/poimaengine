@@ -69,10 +69,9 @@ the effective item transforms. A spawned item or anchor with an active
 binding can be removed after the binding is reset or moved. An ordinary
 save with zero attachment edits uses its prior layout. Resetting all
 bindings omits the attachment extension and retains the structure revision.
-The cold replay fixture uses animated anchors. Legacy ordinary kinematic
-bodies can resume with a different sleep timer after load, which can change
-when their active flag clears. The fixture exercises kinematic following
-separately after the cold replay.
+The cold replay fixture uses animated anchors and verifies that an idle
+kinematic body sleeps on the same tick after restore. It exercises following
+a spawned kinematic anchor separately. [Kinematic save behavior](GAMEPLAY_SAVES.md)
 
 This path moves ordinary transform and rigid-mesh subtrees. Collision,
 hit regions, skinned meshes, emitters, cameras, lights and other independent

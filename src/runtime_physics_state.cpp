@@ -104,6 +104,26 @@ struct TrustedReader {
     std::uint32_t count(std::size_t max){auto n=read<std::uint32_t>();if(n>max)throw std::runtime_error("Pinned Jolt state exceeded its owned count.");return n;}
     Json key(){return {{"body1",read<std::uint32_t>()},{"subshape1",read<std::uint32_t>()},{"body2",read<std::uint32_t>()},{"subshape2",read<std::uint32_t>()}};}
 };
+Json decode_motion(TrustedReader& r) {
+    Json motion={{"linear_velocity",r.values<float>(3)},{"angular_velocity",r.values<float>(3)},
+        {"force",r.values<float>(3)},{"torque",r.values<float>(3)},{"sleep_offset",r.values<double>(3)},
+        {"sleep_spheres",Json::array()}};
+    // Sphere is exactly Float3 center + float radius in the pinned source.
+    for(int k=0;k<3;++k)motion["sleep_spheres"].push_back({{"center",r.values<float>(3)},{"radius",r.read<float>()}});
+    motion["sleep_timer"]=r.read<float>();motion["allow_sleeping"]=r.flag();
+    return motion;
+}
+void validate_sleep(const Json& motion) {
+    vector(motion.at("sleep_offset"),3,1e7,false);
+    const auto& spheres=motion.at("sleep_spheres");
+    if(!spheres.is_array()||spheres.size()!=3)invalid("Physics sleep sphere count differs from the pinned profile.");
+    for(const auto& sphere:spheres) {
+        keys(sphere,{"center","radius"});
+        vector(sphere.at("center"),3,1e7);
+        if(number(sphere.at("radius"),1e7)<0)invalid("Physics sleep radius must be nonnegative.");
+    }
+    if(number(motion.at("sleep_timer"),1e9)<0)invalid("Physics sleep timer must be nonnegative.");
+}
 Json decode(const std::string& data,const std::vector<BodyInfo>& infos) {
     TrustedReader r{data};
     if(r.read<std::uint8_t>()!=7)throw std::runtime_error("Pinned Jolt state mask changed.");
@@ -115,14 +135,7 @@ Json decode(const std::string& data,const std::vector<BodyInfo>& infos) {
         auto id=r.read<std::uint32_t>();if(id!=infos[i].id)throw std::runtime_error("Pinned Jolt body slot order changed.");
         Json b={{"id",id},{"active",r.flag()},{"motion_type",infos[i].motion},
             {"position",r.values<double>(3)},{"rotation",r.values<float>(4)},{"motion",nullptr}};
-        if(infos[i].properties) {
-            Json m={{"linear_velocity",r.values<float>(3)},{"angular_velocity",r.values<float>(3)},
-                {"force",r.values<float>(3)},{"torque",r.values<float>(3)},{"sleep_offset",r.values<double>(3)},
-                {"sleep_spheres",Json::array()}};
-            // Sphere is exactly Float3 center + float radius in the pinned source.
-            for(int k=0;k<3;++k)m["sleep_spheres"].push_back({{"center",r.values<float>(3)},{"radius",r.read<float>()}});
-            m["sleep_timer"]=r.read<float>();m["allow_sleeping"]=r.flag();b["motion"]=std::move(m);
-        }
+        if(infos[i].properties)b["motion"]=decode_motion(r);
         out["bodies"].push_back(std::move(b));
     }
     count=r.count(runtime_physics_state_max_pairs);std::size_t manifolds=0;
@@ -174,10 +187,7 @@ void validate(const Json& s,const std::vector<BodyInfo>& infos) {
         keys(m,{"linear_velocity","angular_velocity","force","torque","sleep_offset","sleep_spheres","sleep_timer","allow_sleeping"});
         vector(m.at("linear_velocity"),3,1e4);vector(m.at("angular_velocity"),3,1e4);
         vector(m.at("force"),3,1e10);vector(m.at("torque"),3,1e10);
-        vector(m.at("sleep_offset"),3,1e7,false);
-        const auto& spheres=m.at("sleep_spheres");if(!spheres.is_array()||spheres.size()!=3)invalid("Physics sleep sphere count differs from the pinned profile.");
-        for(const auto& sphere:spheres){keys(sphere,{"center","radius"});vector(sphere.at("center"),3,1e7);if(number(sphere.at("radius"),1e7)<0)invalid("Physics sleep radius must be nonnegative.");}
-        if(number(m.at("sleep_timer"),1e9)<0)invalid("Physics sleep timer must be nonnegative.");boolean(m.at("allow_sleeping"));
+        validate_sleep(m);boolean(m.at("allow_sleeping"));
     }
     const auto& pairs=s.at("pairs");array(pairs,runtime_physics_state_max_pairs);
     std::uint64_t last_pair=0;bool first=true;std::size_t total=0;std::set<Key> all_keys;
@@ -214,6 +224,14 @@ void validate(const Json& s,const std::vector<BodyInfo>& infos) {
     if(s.dump().size()>runtime_physics_state_max_json_bytes)invalid("Physics state JSON exceeds its owned byte budget.");
 }
 template<class T>void write_values(JPH::StateRecorderImpl& r,const Json& values) {for(const auto& v:values)r.Write(v.get<T>());}
+void write_motion(JPH::StateRecorderImpl& r,const Json& motion) {
+    for(auto name:{"linear_velocity","angular_velocity","force","torque"})write_values<float>(r,motion.at(name));
+    write_values<double>(r,motion.at("sleep_offset"));
+    for(const auto& sphere:motion.at("sleep_spheres")) {
+        write_values<float>(r,sphere.at("center"));r.Write(sphere.at("radius").get<float>());
+    }
+    r.Write(motion.at("sleep_timer").get<float>());r.Write(motion.at("allow_sleeping").get<bool>());
+}
 void write_key(JPH::StateRecorderImpl& r,const Json& key) {
     // Exact field order of SubShapeIDPair, all four fields are uint32, no padding.
     for(auto name:{"body1","subshape1","body2","subshape2"})r.Write(key.at(name).get<std::uint32_t>());
@@ -225,10 +243,7 @@ JPH::StateRecorderImpl encode(const Json& s) {
         r.Write(b.at("id").get<std::uint32_t>());r.Write(b.at("active").get<bool>());
         write_values<double>(r,b.at("position"));write_values<float>(r,b.at("rotation"));
         const auto& m=b.at("motion");if(m.is_null())continue;
-        for(auto name:{"linear_velocity","angular_velocity","force","torque"})write_values<float>(r,m.at(name));
-        write_values<double>(r,m.at("sleep_offset"));
-        for(const auto& sphere:m.at("sleep_spheres")){write_values<float>(r,sphere.at("center"));r.Write(sphere.at("radius").get<float>());}
-        r.Write(m.at("sleep_timer").get<float>());r.Write(m.at("allow_sleeping").get<bool>());
+        write_motion(r,m);
     }
     r.Write(static_cast<std::uint32_t>(s.at("pairs").size()));
     for(const auto& p:s.at("pairs")) {
@@ -292,6 +307,47 @@ void validate_owner(const JPH::PhysicsSystem& system,const Json& state,const JPH
     }
     if(queued_live!=flagged)invalid("Joined live invalidation flags and queue do not match.");
 }
+std::string capture_motion_bytes(const JPH::MotionProperties& motion) {
+    JPH::StateRecorderImpl r;
+    motion.SaveState(r);
+    if(r.IsFailed()||r.GetDataSize()>256)throw std::runtime_error("Pinned Jolt motion capture exceeded its profile.");
+    return r.GetData();
+}
+Json capture_kinematic_motion(const JPH::Body& body) {
+    if(!body.IsRigidBody()||!body.IsKinematic()||!body.IsInBroadPhase()||!body.GetMotionProperties())
+        invalid("Sleep tracker requires a live ordinary kinematic body.");
+    const auto bytes=capture_motion_bytes(*body.GetMotionProperties());
+    TrustedReader reader{bytes};
+    auto state=decode_motion(reader);
+    if(reader.offset!=bytes.size())throw std::runtime_error("Pinned Jolt motion state has extra bytes.");
+    JPH::StateRecorderImpl reencoded;write_motion(reencoded,state);
+    if(reencoded.IsFailed()||reencoded.GetData()!=bytes)
+        throw std::runtime_error("Named motion fields did not exactly re-encode the pinned native state.");
+    return state;
+}
+}
+Json capture_runtime_kinematic_sleep(const JPH::PhysicsSystem& system,const JPH::BodyID& id) {
+    JPH::BodyLockRead lock(system.GetBodyLockInterface(),id);
+    if(!lock.Succeeded())invalid("Kinematic sleep tracker body is absent.");
+    auto state=capture_kinematic_motion(lock.GetBody());
+    validate_sleep(state);
+    return {{"sleep_offset",std::move(state.at("sleep_offset"))},
+        {"sleep_spheres",std::move(state.at("sleep_spheres"))},{"sleep_timer",state.at("sleep_timer")}};
+}
+void restore_runtime_kinematic_sleep(JPH::PhysicsSystem& system,const JPH::BodyID& id,const Json& tracker) {
+    keys(tracker,{"sleep_offset","sleep_spheres","sleep_timer"});validate_sleep(tracker);
+    JPH::BodyLockWrite lock(system.GetBodyLockInterface(),id);
+    if(!lock.Succeeded())invalid("Kinematic sleep tracker body is absent.");
+    auto& body=lock.GetBody();
+    auto state=capture_kinematic_motion(body);
+    state.update(tracker);
+    JPH::StateRecorderImpl recorder;write_motion(recorder,state);
+    if(recorder.IsFailed())throw std::runtime_error("Cannot encode the kinematic sleep tracker.");
+    const auto expected=recorder.GetData();recorder.Rewind();
+    auto& motion=*body.GetMotionProperties();
+    motion.RestoreState(recorder);
+    if(recorder.IsFailed()||capture_motion_bytes(motion)!=expected)
+        throw std::runtime_error("Kinematic sleep tracker restore failed verification. Discard the candidate world.");
 }
 Json capture_runtime_physics_state(const JPH::PhysicsSystem& system) {
     const auto infos=body_info(system);auto native=native_capture(system);const auto bytes=native.GetData();

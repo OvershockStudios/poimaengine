@@ -1,0 +1,74 @@
+{
+  "version": "0.0.250",
+  "status": "passed",
+  "scope": "Portable kinematic sleep tracking at committed save boundaries. Ordinary dynamic contact history has a separate scope.",
+  "retained_0_0_249": {
+    "engine_sha256": "2651143925cc94d1e20f777e729abea6886a5e5dff9d1884e49e27429738dc56",
+    "report_sha256": "2437c9411d2d29859560d597c84907ed9cc5db5821d8c39ed8b70bfbfeb0f76d",
+    "native_rpc_calls": 13,
+    "original_active_at_tick_30": false,
+    "restored_active_at_tick_30": true
+  },
+  "linux_x86_64": {
+    "engine_sha256": "96f34f6cac73e40e17542034894f9dbfb4a023c467fd0e44810d806d13e498ca",
+    "ordinary_report_sha256": "77c866b1d5ece83b0e32660b43a491dbe44535ac3561dd877d4a34e90c6c2623",
+    "attachment_report_sha256": "ac9522ea75a9b2478690bf82e813e113a5106826653739e439651a570113912f",
+    "ordinary_rpc_calls": 18,
+    "attachment_rpc_calls": 81,
+    "idle_checkpoint_tick": 12,
+    "retained_sleep_timer_seconds": 0.20000000298023224,
+    "matching_inactive_tick": 30,
+    "complete_save_bytes_equal_after_restore": true,
+    "complete_save_bytes_equal_after_continuation": true,
+    "legacy_checkpoint_sha256": "a159d61243b870146664417bea003a3bb6ffcc67cec3d8e64f594a36006bb83e",
+    "legacy_checkpoint_fields_preserved": true
+  },
+  "windows_x86_64": {
+    "engine_sha256": "4345fc5fe4abbee5f81caafacabf3b78d16f57af9a4132e5623e20c8bda54ed1",
+    "ordinary_report_sha256": "4ffb0f31ca447b2bdf110d12bf7dc3e341af3d595aa8ab388f471bc3bf53ec6b",
+    "attachment_report_sha256": "66634f92f3239f2a4fd8d57a48ee7a1f955dd36422e2411a055e0814adaa2d1b",
+    "ordinary_rpc_calls": 18,
+    "attachment_rpc_calls": 85,
+    "idle_checkpoint_tick": 12,
+    "retained_sleep_timer_seconds": 0.20000000298023224,
+    "matching_inactive_tick": 30,
+    "complete_save_bytes_equal_after_restore": true,
+    "complete_save_bytes_equal_after_continuation": true,
+    "legacy_checkpoint_sha256": "a159d61243b870146664417bea003a3bb6ffcc67cec3d8e64f594a36006bb83e",
+    "legacy_checkpoint_fields_preserved": true,
+    "vulkan_capture_pairs_equal": 2,
+    "native_save_test_sha256": "a62353e7c59d57dbef5106586fca231abb54fb04b8fafd33c4c70e3029fce72a",
+    "native_upgrade_test_sha256": "01ceb487bfd9f01c961cd4b8496e32f9dcf29229b38c167372e686d0bf7fd6f4"
+  },
+  "linux_regressions": [
+    "save_upgrade_snapshot_native",
+    "physical_pose_diagnostics_contract",
+    "mcp_contract",
+    "world_ui_contract",
+    "runtime_save_native",
+    "runtime_save_fixture",
+    "runtime_save_contract",
+    "runtime_attachment_contract",
+    "asset_references_contract",
+    "runtime_physics_state_native",
+    "runtime_physical_rig_native"
+  ],
+  "cross_platform_exchange": {
+    "exchange": {
+      "snapshot_sha256": "4fdef203ec084775d761fd4abceb255af4c1b0e9873d9ddccf8fef92d132bf73",
+      "read_in_both_directions": true,
+      "independent_writer_bytes_equal": true
+    },
+    "lifecycle": {
+      "snapshot_sha256": "421dc852dbce4b5214ac27a3f146ad00a1580e9896f4861dab8f1e990ca33e5f",
+      "read_in_both_directions": true,
+      "independent_writer_bytes_equal": true
+    }
+  },
+  "retained_v1_fixture_sha256": "42c8743185a136f5ac48269125886dc6c02f4c82f0bf370ed3458a50a91bbcc9",
+  "native_moving_to_sleep_check": {
+    "full_saved_ticks": 55,
+    "malformed_trackers_rejected": 9,
+    "fixture": "tests/runtime_save_native.cpp"
+  }
+}

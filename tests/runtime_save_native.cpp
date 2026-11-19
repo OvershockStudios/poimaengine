@@ -38,6 +38,40 @@ std::string sealed(Json document) {
     const auto payload=document.at("payload").dump();
     document["sha256"]=sha256(std::as_bytes(std::span(payload.data(),payload.size())));return document.dump();
 }
+void check_fixture_checkpoint(const std::string& bytes,const Runtime& restored) {
+    const auto recaptured=restored.save_snapshot(content);
+    auto original=Json::parse(bytes);
+    if(original.at("payload").contains("kinematic_sleep")) {
+        check(recaptured==bytes,"Fresh-process restore changed complete snapshot bytes.");
+        return;
+    }
+    const auto current=Json::parse(recaptured);
+    const auto& sleep=current.at("payload").at("kinematic_sleep");
+    std::vector<std::string> expected,actual;
+    for(const auto& row:original.at("payload").at("entities"))
+        if(!row.at("body").is_null() && row.at("body").at("motion")=="kinematic")
+            expected.push_back(row.at("id"));
+    for(const auto& tracker:sleep.at("trackers")) {
+        actual.push_back(tracker.at("entity"));
+        check(tracker.at("state").at("sleep_timer")==0.,"Legacy fixture did not start a fresh sleep test.");
+    }
+    check(sleep.at("version")==1 && !expected.empty() && actual==expected,"Legacy fixture tracker membership differs.");
+    // The retained v1 animated fixture predates explicit Camera persistence.
+    // Its authored camera still has the original default lens on restore.
+    if(original.at("version")==1 && current.at("version")==7) {
+        original["version"]=7;
+        auto& payload=original["payload"];
+        payload["cameras"]=Json::array({{{"entity","camera"},
+            {"world",{{"vertical_fov",60.},{"near",.1},{"far",1000.}}},{"viewmodel",nullptr}}});
+        payload["components"]={{"revision",0},{"types",Json::array()}};
+        payload["structure"]=nullptr;payload["ui"]=nullptr;payload["control_sequence"]=0;
+    }
+    // Retain every historical payload field in the complete expected shape.
+    original["payload"]["kinematic_sleep"]=sleep;
+    const auto upgraded=sealed(original);
+    if(upgraded!=recaptured)
+        throw std::runtime_error("Legacy fixture fields differ after restore: "+Json::diff(Json::parse(upgraded),current).dump());
+}
 void equal_entity(const Runtime& a,const Runtime& b,const std::string& id,double tolerance=1e-5,bool support=true) {
     const auto x=a.entity(id),y=b.entity(id);
     check(x.id==y.id && x.has_body==y.has_body && x.is_character==y.is_character && x.motion==y.motion,"Restored entity classification differs.");
@@ -97,6 +131,62 @@ void roundtrip_motion() {
         staged->step(1,{});
         check(source.save_snapshot(content)==later,"Repeated staging mutated the live source.");
     }
+}
+void kinematic_sleep_continuation() {
+    RuntimeDefinition d;d.world_id="ordinary-kinematic-sleep";d.authored_revision=1;
+    d.entities={box("second",{4,0,0},{1,1,1},BodyMotion::Kinematic),
+        box("first",{0,0,0},{1,1,1},BodyMotion::Kinematic)};
+    Runtime source(d);
+    source.step(12,{});
+    const auto bytes=source.save_snapshot(content);
+    const auto original=Json::parse(bytes);
+    const auto& saved=original.at("payload").at("kinematic_sleep");
+    const auto& trackers=saved.at("trackers");
+    check(saved.at("version")==1 && trackers.size()==2 && trackers[0].at("entity")=="first" &&
+        trackers[1].at("entity")=="second","Saved sleep trackers differ from sorted kinematic membership.");
+    check(trackers[0].at("state").at("sleep_timer").get<float>()>.1f &&
+        trackers[0].at("state").at("sleep_spheres").size()==3,"Checkpoint must contain the active idle sleep test.");
+    auto previous_format=original;
+    previous_format["payload"].erase("kinematic_sleep"); // Construct a legacy-format input only.
+    auto legacy=Runtime::from_snapshot(d,content,sealed(previous_format));
+    equal_entity(source,*legacy,"first");
+
+    auto restored=Runtime::from_snapshot(d,content,bytes);
+    check(restored->save_snapshot(content)==bytes,"Complete sleep checkpoint changed at restore.");
+    source.step(18,{});restored->step(5,{});restored->step(13,{});
+    const auto at_sleep=source.save_snapshot(content);
+    auto settled=Json::parse(at_sleep);
+    check(row(settled,"first").at("body").at("active")==false,"Original idle kinematic did not sleep by tick 30.");
+    check(restored->save_snapshot(content)==at_sleep,"Idle sleep timing differs in the complete continued save.");
+
+    const KinematicTarget target{"first",{1,0,0},{0,0,0,1},24};
+    source.step(7,{},{target});
+    const auto moving=source.save_snapshot(content);
+    restored=Runtime::from_snapshot(d,content,moving);
+    check(restored->save_snapshot(content)==moving,"Complete moving kinematic checkpoint changed at restore.");
+    for(unsigned tick=0;tick<55;++tick) {
+        source.step(1,{});restored->step(1,{});
+        check(source.save_snapshot(content)==restored->save_snapshot(content),
+            "Moving kinematic endpoint or subsequent sleep differs in a complete saved tick.");
+    }
+    auto finished=Json::parse(source.save_snapshot(content));
+    check(row(finished,"first").at("body").at("active")==false,"Moved kinematic never went back to sleep.");
+    near(source.entity("first").world[12],1,1e-6,"Restored movement endpoint differs.");
+
+    const auto reject_tracker=[&](auto change) {
+        auto document=original;change(document["payload"]["kinematic_sleep"]);
+        rejects([&]{Runtime::validate_snapshot(d,content,sealed(document));});
+    };
+    reject_tracker([](auto& e){e["version"]=1.0;});
+    reject_tracker([](auto& e){e["trackers"].erase(0);});
+    reject_tracker([](auto& e){std::swap(e["trackers"][0],e["trackers"][1]);});
+    reject_tracker([](auto& e){e["trackers"][1]["entity"]="first";});
+    reject_tracker([](auto& e){e["trackers"][0]["state"]["sleep_spheres"][0]["radius"]=-1.;});
+    reject_tracker([](auto& e){e["trackers"][0]["state"]["sleep_spheres"].erase(0);});
+    reject_tracker([](auto& e){e["trackers"][0]["state"]["sleep_timer"]=.1;});
+    reject_tracker([](auto& e){e["trackers"][0]["state"]["sleep_offset"][0]=true;});
+    reject_tracker([](auto& e){e["trackers"][0]["state"]["allow_sleeping"]=false;});
+    std::cout<<"Kinematic sleep tracker cold continuation, frame-by-frame moved continuation and nine invalid trackers passed.\n";
 }
 RuntimeDefinition animated_definition() {
     auto d=definition();auto model=std::make_shared<ModelAsset>();model->nodes.resize(1);
@@ -236,12 +326,12 @@ void fixture_file(const std::string& mode,const std::filesystem::path& path) {
     check(restored->inspect().tick==154,"Fresh-process restore changed the simulation clock.");
     for(const auto& entity:d.entities)equal_entity(*expected,*restored,entity.id,1e-5,false);
     equal_animation(*expected,*restored);equal_sound(*expected,*restored);
-    check(restored->save_snapshot(content)==bytes,"Fresh-process round-trip changed canonical snapshot bytes.");
+    check_fixture_checkpoint(bytes,*restored);
     expected->step(31,{});restored->step(31,{});
     equal_entity(*expected,*restored,"door");equal_entity(*expected,*restored,"handle");
     equal_animation(*expected,*restored);equal_sound(*expected,*restored);
     check(!restored->animation("rig")->transition,"Fresh-process restored fade missed its original endpoint.");
-    std::cout<<"Read fresh-process fixture: exact canonical bytes, all live entities, animation/sound state and future logical motion passed.\n";
+    std::cout<<"Read fresh-process fixture: preserved checkpoint fields, live entities, animation/sound state and future logical motion passed.\n";
 }
 RuntimeDefinition lifecycle_definition() {
     auto d=definition();
@@ -342,12 +432,12 @@ void lifecycle_fixture_file(const std::string& mode,const std::filesystem::path&
     for(const auto& e:d.entities)equal_entity(expected,*restored,e.id,1e-5,false);
     for(std::size_t i=0;i<3;++i)equal_entity(expected,*restored,born[i]);
     rejects([&]{(void)restored->entity(born[3]);});
-    check(restored->save_snapshot(content)==bytes,"Fresh-process lifecycle restore changed canonical snapshot bytes.");
+    check_fixture_checkpoint(bytes,*restored);
     expected.step(7,{});restored->step(7,{});
     for(std::size_t i=0;i<3;++i)equal_entity(expected,*restored,born[i],1e-4);
     const auto next=expected.change_structure(2,{{d.templates[3].id,{}}},{}).spawned;
     check(restored->change_structure(2,{{d.templates[3].id,{}}},{}).spawned==next && next.front()>born.back(),"Fresh-process lifecycle restore reused a retired identity.");
-    std::cout<<"Read fresh-process version 3 fixture: exact canonical bytes, live prop state, future motion and retired identity continuity passed.\n";
+    std::cout<<"Read fresh-process version 3 fixture: preserved checkpoint fields, live props, future motion and retired identity continuity passed.\n";
 }
 
 void lifecycle_malformed() {
@@ -489,7 +579,7 @@ int main(int argc,char** argv) {
             else fixture_file(mode,std::filesystem::path(argv[2]));
             return 0;
         }
-        source_validation_without_code();roundtrip_motion();animation_and_sound();angular_and_sleep();export_boundaries();malformed();lifecycle_roundtrip();lifecycle_components();lifecycle_malformed();
+        source_validation_without_code();roundtrip_motion();kinematic_sleep_continuation();animation_and_sound();angular_and_sleep();export_boundaries();malformed();lifecycle_roundtrip();lifecycle_components();lifecycle_malformed();
         std::cout<<"Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging, lifecycle provenance/frontier/reference restoration and malformed/binding rejection passed.\n";
         return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
