@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.254
+
+- Preserve the corners and borders of game UI artwork when controls resize.
+- Keep words together in authored UI text when each word fits on its own line.
+
 ## 0.0.253
 
 - Extract independently attachable rigid props from single-joint skinned geometry.

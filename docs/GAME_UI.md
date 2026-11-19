@@ -76,7 +76,9 @@ enabled state and modal ownership; it does not edit presentation metadata.
 
 Lengths use `{ "unit": "dp", "value": 320 }` or
 `{ "unit": "percent", "value": 100 }`. Density-independent pixels scale with
-the viewport's UI density. Percentages use the containing layout box.
+the viewport's UI density. Percentages use the containing layout box. Labels
+and buttons with authored layouts wrap at word boundaries. A word wider
+than the available width can still break across lines.
 
 | Layout field | Values and bounds |
 | --- | --- |
@@ -170,6 +172,25 @@ dimensions, including for an empty label used as a decorative icon. The
 parent scissor clips the image along with the rest of the element. The control
 definition still supplies the hit region, text and action.
 
+Use `nine_slice` for textured frames, button faces and dialogue panels with
+artwork at the edges. Choose the cut lines where the edges and center can
+stretch independently.
+
+```json
+{
+  "asset": "<cooked image hash>",
+  "fit": "nine_slice",
+  "slice_insets_px": [12, 16, 12, 16]
+}
+```
+
+Insets are source pixels in top, right, bottom, left order. Each is an integer
+from 0 to 4095, at least one is positive, and the resolved image must have a
+positive width and height between the opposing insets. One source edge pixel
+occupies one dp at normal size. At smaller control sizes, edges contract to
+fit. The renderer stretches the center and the length of each edge while
+preserving the corner proportions on controls large enough to hold them.
+
 `world.ui.get` and `runtime.ui.inspect` retain the style reference.
 `world.asset.references` lists each use, while `world.dependencies`
 deduplicates the cooked bytes. Each definition can reference up to 32 unique
@@ -193,6 +214,9 @@ python3 tests/ui_image_contract.py build/linux-game/poima --output build/ui-imag
 On Windows Vulkan, pass `--gpu` for pixel checks and `--runtime` with the
 matching installed Windows runtime for a relocated export check. Add
 `--windows-interop` when driving the Windows executable from WSL.
+Run [the slice fixture](../tests/ui_nine_slice.py) with the same binary and a
+fresh `--output` directory to verify shape validation and native layout.
+Add `--gpu` for pixel probes at 1× and 2× UI density.
 
 ## Authoring validation diagnostics
 

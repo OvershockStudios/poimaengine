@@ -1426,9 +1426,14 @@ public:
                 image.texture=assets.image(asset_directory(),image.asset);
                 require(image.texture->srgb && !image.texture->mips.empty(),
                     "UI images require a cooked sRGB texture.",-32050);
+                const auto& mip=image.texture->mips.front();
+                if(image.slice_insets_px) {
+                    const auto [top,right,bottom,left]=*image.slice_insets_px;
+                    require(left+right<mip.width && top+bottom<mip.height,
+                        "UI slice insets must leave a positive center in the source image.",-32050);
+                }
                 if(first) {
-                    const auto& mip=image.texture->mips.front();
-                    require(mip.width<=4096 && mip.height<=4096 && mip.rgba.size()<=ui::max_image_bytes-bytes,
+                    require(mip.width<=ui::max_image_side && mip.height<=ui::max_image_side && mip.rgba.size()<=ui::max_image_bytes-bytes,
                         "UI image extent or 16 MiB base-level budget exceeded.",-32050);
                     bytes+=mip.rgba.size();
                 }

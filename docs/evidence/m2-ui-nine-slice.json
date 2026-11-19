@@ -1,0 +1,156 @@
+{
+  "format": "poima.evidence.ui-nine-slice.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.254",
+  "schema_revision": 145,
+  "scope": "Cooked UI images with nine-slice borders and ordinary word wrapping for authored labels and buttons.",
+  "test": "tests/ui_nine_slice.py",
+  "fixture_checks": [
+    "Discover the image fields for every control kind.",
+    "Reject nine malformed style shapes without changing the authored revision.",
+    "Reject source insets with a zero-width center when resolving dependencies and starting a runtime.",
+    "Keep style metadata available in authoring and runtime inspection and confirm geometry at two virtual viewports.",
+    "Sample all nine regions on narrow and wide controls, two corners on a small control, and an unsliced stretch control.",
+    "Compare the automatic word wrap pixel-for-pixel with an explicit newline."
+  ],
+  "linux": {
+    "nine_slice": {
+      "executable_sha256": "ee60169bd4c8c05984461a9680cb1dc3826a6bbfe9e07cf1502b45b2647df213",
+      "report": {
+        "path": "build/ui-nine-slice-0.0.254/linux-wrap-final/report.json",
+        "bytes": 126,
+        "sha256": "68493f49c08a38fe9ce637e6f9fce162249bc4b6b7a8fb91a865ac9aff45299f"
+      },
+      "rpc_calls": 23,
+      "requests": {
+        "path": "build/ui-nine-slice-0.0.254/linux-wrap-final/rpc/stdin.ndjson",
+        "bytes": 11352,
+        "sha256": "092c406a51c2eb2ac2a025b8570718c3b3b46c2f25eb675edea6bb740b2033b6"
+      },
+      "responses": {
+        "path": "build/ui-nine-slice-0.0.254/linux-wrap-final/rpc/stdout.ndjson",
+        "bytes": 45697,
+        "sha256": "2c344f58dad250eac0e08af379a89bc0b0a5bf014f8d28affefe62e6bbf43c98"
+      },
+      "captures": []
+    },
+    "legacy_images": {
+      "executable_sha256": "ee60169bd4c8c05984461a9680cb1dc3826a6bbfe9e07cf1502b45b2647df213",
+      "report": {
+        "path": "build/ui-nine-slice-0.0.254/linux-old-image-final/report.json",
+        "bytes": 41395,
+        "sha256": "90f3787a1d477e88db5199ede240e5f7c2616355b7c371180ba8b1bc08ce1b1f"
+      },
+      "rpc_calls": 32,
+      "captures": 0,
+      "owner_exits": [
+        0,
+        0
+      ]
+    },
+    "ctest": [
+      "ui_presenter_native",
+      "world_ui_contract",
+      "ui_authoring_contract",
+      "runtime_ui_contract",
+      "asset_references_contract"
+    ],
+    "ctest_report": {
+      "path": "build/ui-nine-slice-0.0.254/linux-regressions-final.xml",
+      "bytes": 3911,
+      "sha256": "d050349e6655915405c1858fa7b02acfd0705f1efcf74c6e2bad5ac46427a122"
+    }
+  },
+  "windows": {
+    "nvidia": {
+      "executable_sha256": "ae5ebe91cd1dd41a3e053aebb385fcd808392599cfe73638c5d67b555d96e34e",
+      "report": {
+        "path": "build/ui-nine-slice-0.0.254/windows-nvidia-final/report.json",
+        "bytes": 596,
+        "sha256": "af75859764a61f975165f51ec63d0eb01d2805db05986999774aca207a2f21ab"
+      },
+      "rpc_calls": 25,
+      "requests": {
+        "path": "build/ui-nine-slice-0.0.254/windows-nvidia-final/rpc/stdin.ndjson",
+        "bytes": 12025,
+        "sha256": "93aace91074660aa9abe36925db0618ab9e0c3a0f5a3f360e6378a080050ef8c"
+      },
+      "responses": {
+        "path": "build/ui-nine-slice-0.0.254/windows-nvidia-final/rpc/stdout.ndjson",
+        "bytes": 60437,
+        "sha256": "52d376e8da2d978e88175c7c4c3050ea3227f1d303736bd8d820b4a792843808"
+      },
+      "captures": [
+        {
+          "scale": 2,
+          "width": 720,
+          "height": 460,
+          "pixels_checked": 21,
+          "wrapped_text_matches_explicit_break": true,
+          "sha256": "956836f3e5bb05deaeca492af3371179d19a5fad5011e125b0b51e17aa78abc6"
+        },
+        {
+          "scale": 1,
+          "width": 480,
+          "height": 270,
+          "pixels_checked": 21,
+          "wrapped_text_matches_explicit_break": true,
+          "sha256": "b20dab6b315d864f74fff1f59cadb6b0d5ab4c7ee784f88f01c522de45d48a77"
+        }
+      ],
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    },
+    "amd": {
+      "executable_sha256": "ae5ebe91cd1dd41a3e053aebb385fcd808392599cfe73638c5d67b555d96e34e",
+      "report": {
+        "path": "build/ui-nine-slice-0.0.254/windows-amd-final/report.json",
+        "bytes": 596,
+        "sha256": "e95b4e57325a77fc2c58439da7027679a2f221d3e3fa0336552b04c1581a56c6"
+      },
+      "rpc_calls": 25,
+      "requests": {
+        "path": "build/ui-nine-slice-0.0.254/windows-amd-final/rpc/stdin.ndjson",
+        "bytes": 12016,
+        "sha256": "48546a44b734b946f8d131ad8a604c688f55800149f17cb5c1b4c6f4ffa5790b"
+      },
+      "responses": {
+        "path": "build/ui-nine-slice-0.0.254/windows-amd-final/rpc/stdout.ndjson",
+        "bytes": 60729,
+        "sha256": "a84e1c501e1930ae4d741954219dfdb6dde0f90d5d8faf7b96a7e662fa5b026c"
+      },
+      "captures": [
+        {
+          "scale": 2,
+          "width": 720,
+          "height": 460,
+          "pixels_checked": 21,
+          "wrapped_text_matches_explicit_break": true,
+          "sha256": "dfb8a8c78d181470ad658791f52ea5aaf3f92c7a977e52839d896d2f7c76902d"
+        },
+        {
+          "scale": 1,
+          "width": 480,
+          "height": 270,
+          "pixels_checked": 21,
+          "wrapped_text_matches_explicit_break": true,
+          "sha256": "13c91ab9726cd4441b545463f097733f8e7b97c585cd08ce3c1f28d1f29aab11"
+        }
+      ],
+      "gpu": "AMD Radeon(TM) Graphics"
+    },
+    "legacy_images_nvidia": {
+      "executable_sha256": "ae5ebe91cd1dd41a3e053aebb385fcd808392599cfe73638c5d67b555d96e34e",
+      "report": {
+        "path": "build/ui-nine-slice-0.0.254/windows-old-image-final/report.json",
+        "bytes": 96930,
+        "sha256": "2a8c88116d6938618a6cb41023fbc02670e3bbfedb9a844cece76939d55598ec"
+      },
+      "rpc_calls": 36,
+      "captures": 4,
+      "owner_exits": [
+        0,
+        0
+      ]
+    }
+  }
+}

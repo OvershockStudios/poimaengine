@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/ui_presenter.hpp"
+#include "poima/assets.hpp"
 #include "poima/ui_document.hpp"
 #include <algorithm>
 #include <cmath>
@@ -23,10 +24,11 @@ std::string colors(const ui::ColorState& value) {
     std::string out;if(value.color)out+="color:"+*value.color+";";if(value.background_color)out+="background-color:"+*value.background_color+";";if(value.border_color)out+="border-color:"+*value.border_color+";";return out;
 }
 std::string authored_css(const ui::Element& e) {
-    std::string rules,base;
+    std::string rules,base,sprites;
     if(e.layout) {
         const auto& l=*e.layout;base+="margin:0dp;box-sizing:border-box;";
         if(e.kind==ui::Kind::panel)base+="display:flex;flex-direction:"+std::string(l.direction.value_or(ui::Direction::column)==ui::Direction::row?"row":"column")+";";
+        else base+="word-break:break-word;";
         if(l.position)base+="position:"+std::string(*l.position==ui::Position::absolute?"absolute":"relative")+";";
         const auto emit_length=[&](const char* key,const std::optional<ui::Length>& v){if(v)base+=std::string(key)+":"+length(*v)+";";};
         emit_length("width",l.width);emit_length("height",l.height);emit_length("min-width",l.min_width);emit_length("max-width",l.max_width);emit_length("min-height",l.min_height);emit_length("max-height",l.max_height);emit_length("left",l.left);emit_length("top",l.top);emit_length("right",l.right);emit_length("bottom",l.bottom);
@@ -41,9 +43,22 @@ std::string authored_css(const ui::Element& e) {
     if(e.style) {
         const auto& s=*e.style;base+=colors({s.color,s.background_color,s.border_color});
         if(s.image) {
-            const auto fit=s.image->fit.value_or(ui::ImageFit::contain);
-            base+="decorator:image(\""+std::string(ui_image_source_prefix)+s.image->asset+"\" "+
-                (fit==ui::ImageFit::contain?"contain":"fill")+");";
+            const auto& image=*s.image;
+            const auto path=std::string(ui_image_source_prefix)+image.asset;
+            if(image.slice_insets_px) {
+                check(image.texture && !image.texture->mips.empty(),"UI nine-slice image is not resolved.");
+                const auto& mip=image.texture->mips.front();
+                const auto [top,right,bottom,left]=*image.slice_insets_px;
+                check(left+right<mip.width && top+bottom<mip.height,"UI slice insets must leave a positive source center.");
+                const auto name="poima-slice-"+e.id;
+                sprites="@spritesheet "+name+"{src:\""+path+"\";"+
+                    name+"-outer:0px 0px "+std::to_string(mip.width)+"px "+std::to_string(mip.height)+"px;"+
+                    name+"-inner:"+std::to_string(left)+"px "+std::to_string(top)+"px "+
+                    std::to_string(mip.width-left-right)+"px "+std::to_string(mip.height-top-bottom)+"px;}";
+                base+="decorator:ninepatch("+name+"-outer,"+name+"-inner);";
+            } else {
+                base+="decorator:image(\""+path+"\" "+(image.fit==ui::ImageFit::stretch?"fill":"contain")+");";
+            }
         }
         if(s.font_size)base+="font-size:"+number(*s.font_size)+"dp;";
         if(s.border_width)base+="border-width:"+number(*s.border_width)+"dp;";
@@ -53,7 +68,7 @@ std::string authored_css(const ui::Element& e) {
         state(":hover",s.hover);state(":focus",s.focus);state(":active",s.pressed);
         if(s.disabled)rules+="#"+e.id+":disabled,#"+e.id+".disabled{"+colors(*s.disabled)+"}";
     }
-    return base.empty()?rules:"#"+e.id+"{"+base+"}"+rules;
+    return base.empty()?rules:sprites+"#"+e.id+"{"+base+"}"+rules;
 }
 std::uint32_t hit_signature(UiDocument& document,const UiElementInspection& row) {
     const auto left=std::max(row.bounds[0],row.clip[0]),top=std::max(row.bounds[1],row.clip[1]);

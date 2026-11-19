@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.253**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.254**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.254 adds [nine-slice game UI artwork](GAME_UI.md#use-cooked-images).
+Game authors specify source-pixel insets to keep frame corners and borders
+in proportion as controls resize. Authored labels and buttons wrap at word
+boundaries when each word fits. [Native checks](evidence/m2-ui-nine-slice.json)
+cover malformed metadata, cooked image bounds, narrow and wide layouts, and
+Vulkan pixel comparisons at 1× and 2× UI density on both laptop GPUs.
 
 Version 0.0.253 can [extract a rigid prop](ANIMATION_ASSETS.md#extract-a-rigid-item-from-a-skin)
 from a skinned model when each selected vertex is fully weighted to one joint.

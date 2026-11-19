@@ -128,7 +128,7 @@ UI_ENUM(Justify,{"start",Justify::start},{"center",Justify::center},{"end",Justi
 UI_ENUM(HitTest,{"capture",HitTest::capture},{"pass_through",HitTest::pass_through})
 UI_ENUM(Overflow,{"visible",Overflow::visible},{"hidden",Overflow::hidden},{"auto",Overflow::auto_scroll})
 UI_ENUM(TextAlign,{"left",TextAlign::left},{"center",TextAlign::center},{"right",TextAlign::right})
-UI_ENUM(ImageFit,{"contain",ImageFit::contain},{"stretch",ImageFit::stretch})
+UI_ENUM(ImageFit,{"contain",ImageFit::contain},{"stretch",ImageFit::stretch},{"nine_slice",ImageFit::nine_slice})
 #undef UI_ENUM
 template<class E>std::string enum_name(E value) {for(const auto& [key,item]:enum_names<E>())if(item==value)return key;throw std::runtime_error("Invalid UI layout/style enum.");}
 template<class E>E enumeration(const Json& j) {const auto value=string(j);for(const auto& [key,item]:enum_names<E>())if(value==key)return item;throw std::runtime_error("Unknown UI layout/style enum.");}
@@ -175,13 +175,28 @@ Style style(const Json& j) {
     read_optional(j,"color",value.color,string);read_optional(j,"background_color",value.background_color,string);read_optional(j,"border_color",value.border_color,string);
     read_optional(j,"font_size",value.font_size,number);read_optional(j,"border_width",value.border_width,number);read_optional(j,"border_radius",value.border_radius,number);read_optional(j,"text_align",value.text_align,enumeration<TextAlign>);
     read_optional(j,"image",value.image,[](const Json& image) {
-        optional_fields(image,{"asset","fit"});
+        optional_fields(image,{"asset","fit","slice_insets_px"});
         Image result;
         result.asset=at("asset",[&] {
             require(image.contains("asset"),"UI image needs a cooked asset identity.");
             return string(image.at("asset"));
         });
         read_optional(image,"fit",result.fit,enumeration<ImageFit>);
+        read_optional(image,"slice_insets_px",result.slice_insets_px,[](const Json& insets) {
+            type_check(insets.is_array(),"UI slice insets require four source pixel counts.",ValidationKind::array,insets);
+            require(insets.size()==4,"UI slice insets require four source pixel counts.");
+            std::array<std::uint32_t,4> pixels_by_side{};
+            for(std::size_t i=0;i<pixels_by_side.size();++i) {
+                pixels_by_side[i]=annotated([i]{return "/"+std::to_string(i);},[&] {
+                    const auto& value=insets[i];
+                    type_check(value.is_number_integer(),"UI slice inset must be an integer.",ValidationKind::integer,value);
+                    const auto pixels=number(value);
+                    require(pixels>=0 && pixels<max_image_side,"UI slice inset exceeds bounds.");
+                    return static_cast<std::uint32_t>(pixels);
+                },ValidationReason::out_of_range,ValidationKind::integer,ValidationKind::integer);
+            }
+            return pixels_by_side;
+        });
         return result;
     });
     read_optional(j,"hover",value.hover,color_state);read_optional(j,"focus",value.focus,color_state);read_optional(j,"pressed",value.pressed,color_state);read_optional(j,"disabled",value.disabled,color_state);return value;
@@ -193,6 +208,7 @@ Json style_json(const Style& value) {
     emit_optional(j,"image",value.image,[](const Image& image) {
         Json result={{"asset",image.asset}};
         if(image.fit)result["fit"]=enum_name(*image.fit);
+        if(image.slice_insets_px)result["slice_insets_px"]=*image.slice_insets_px;
         return result;
     });
     emit_optional(j,"hover",value.hover,color_state_json);emit_optional(j,"focus",value.focus,color_state_json);emit_optional(j,"pressed",value.pressed,color_state_json);emit_optional(j,"disabled",value.disabled,color_state_json);return j;
@@ -253,6 +269,17 @@ void validate_metadata(const Element& element) {
                     "UI image asset must be 64 lowercase hexadecimal digits.");
             },ValidationKind::string);
             if(s.image->fit)at("fit",[&]{(void)enum_name(*s.image->fit);});
+            at("slice_insets_px",[&] {
+                const auto& insets=s.image->slice_insets_px;
+                require(insets.has_value()==(s.image->fit==ImageFit::nine_slice),
+                    "UI slice insets are required with nine_slice and only allowed with that fit.");
+                if(insets) {
+                    require(std::any_of(insets->begin(),insets->end(),[](auto value){return value>0;}),
+                        "UI nine-slice needs at least one positive inset.");
+                    require(std::all_of(insets->begin(),insets->end(),[](auto value){return value<max_image_side;}),
+                        "UI slice inset exceeds bounds.");
+                }
+            },ValidationKind::array);
         });
         for(const auto& [key,state]:{std::pair{"hover",&s.hover},{"focus",&s.focus},{"pressed",&s.pressed},{"disabled",&s.disabled}})
             if(*state)at(key,[&]{validate_color_state(**state);});

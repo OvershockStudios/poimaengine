@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/ui_model.hpp"
 #include <nlohmann/json.hpp>
 namespace poima::ui_authoring_schema {
 using Json=nlohmann::json;
@@ -26,9 +27,16 @@ inline Json style() {
     properties["font_size"]=number(8,128);properties["border_width"]=number(0,32);
     properties["border_radius"]=number(0,128);
     properties["text_align"]={{"enum",{"left","center","right"}}};
-    properties["image"]=object({{"asset",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
-        {"fit",{{"enum",{"contain","stretch"}},{"default","contain"}}}},{"asset"});
-    properties["image"]["description"]="A standalone cooked sRGB image, drawn behind the content. Contain centers the full image; stretch fills the padding rectangle.";
+    auto& image=properties["image"];
+    image=object({{"asset",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
+        {"fit",{{"enum",{"contain","stretch","nine_slice"}},{"default","contain"}}},
+        {"slice_insets_px",{{"type","array"},{"minItems",4},{"maxItems",4},
+            {"items",{{"type","integer"},{"minimum",0},{"maximum",ui::max_image_side-1}}},
+            {"contains",{{"minimum",1}}},{"description","Source pixels in top, right, bottom, left order. Opposing insets must leave a positive center in the resolved image."}}}},{"asset"});
+    image["if"]={{"required",{"fit"}},{"properties",{{"fit",{{"const","nine_slice"}}}}}};
+    image["then"]={{"required",{"slice_insets_px"}}};
+    image["else"]={{"not",{{"required",{"slice_insets_px"}}}}};
+    image["description"]="Cooked sRGB image behind the control content. Contain centers the image; stretch fills the box; nine_slice preserves the edges and corners in dp.";
     for(const auto* state:{"hover","focus","pressed","disabled"})properties[state]=colors();
     return result;
 }

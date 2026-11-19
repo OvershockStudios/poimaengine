@@ -38,14 +38,16 @@ enum class Justify { start,center,end,space_between };
 enum class HitTest { capture,pass_through };
 enum class Overflow { visible,hidden,auto_scroll };
 enum class TextAlign { left,center,right };
-enum class ImageFit { contain,stretch };
+enum class ImageFit { contain,stretch,nine_slice };
 inline constexpr std::size_t max_images=32,max_image_bytes=16u*1024u*1024u;
+inline constexpr std::uint32_t max_image_side=4096;
 struct Image {
     std::string asset;
     std::optional<ImageFit> fit;
     // Resolved only when freezing a runtime or preparing a virtual viewport.
     // This is owned immutable content, never a serialized part of the style.
     std::shared_ptr<const TextureImage> texture;
+    std::optional<std::array<std::uint32_t,4>> slice_insets_px; // top, right, bottom, left
 };
 struct Layout {
     std::optional<Position> position;
