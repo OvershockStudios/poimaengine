@@ -1,0 +1,94 @@
+{
+  "format": "poima.evidence.ui-art-tint.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.269",
+  "schema_revision": 157,
+  "test": "tests/ui_nine_slice.py",
+  "scope": "Typed cooked-image color and opacity, shared assets and native Vulkan readbacks.",
+  "checks": [
+    "Discovery and frozen runtime metadata retain the optional tint. Invalid types and noncanonical colors are rejected atomically.",
+    "Sliced controls of different sizes, contained sprites, stretched sprites and three tint channels share one cooked dependency.",
+    "Vulkan readbacks verify channel multiplication, fully transparent and partial opacity, unchanged untinted pixels and whole-word wrapping."
+  ],
+  "linux": {
+    "style_fixture": {
+      "report": {
+        "path": "build/ui-art-tint-0.0.269/linux-slices-final-layout/report.json",
+        "sha256": "70799539b22453087ad9509ab02a214f136706e07e0c8d377793704617f439d5"
+      },
+      "executable_sha256": "dd43d5e8e5103e86e6ffe31daa964fc5820b078a2ba8b48641f55a7f1739dc0d",
+      "request_count": 27,
+      "requests": {
+        "path": "build/ui-art-tint-0.0.269/linux-slices-final-layout/rpc/stdin.ndjson",
+        "sha256": "11acb63ee9cadaf8ee054b9c8f6b987a1b5e88eb5fec868a2efea63e1258c5e7"
+      },
+      "replies": {
+        "path": "build/ui-art-tint-0.0.269/linux-slices-final-layout/rpc/stdout.ndjson",
+        "sha256": "54de83f8081cec19df6915c1f6e510305682df13833ae7995a326aef8dba1abe"
+      },
+      "captures": []
+    },
+    "legacy_cooked_image_fixture": {
+      "path": "build/ui-art-tint-0.0.269/linux-images/report.json",
+      "sha256": "ad12c25fd0a7f116248e743f389432e0f1c277af0ee50f9c4606c7560972a91c"
+    },
+    "ctest": {
+      "tests": [
+        "world_ui_contract",
+        "ui_authoring_contract",
+        "runtime_ui_contract",
+        "asset_references_contract"
+      ],
+      "log": {
+        "path": "build/ui-art-tint-0.0.269/linux-regressions.log",
+        "sha256": "4d080a0b8ff5d29964d8fb83d3601f99e3871edb82c60e268e7104e0fc4326fe"
+      }
+    }
+  },
+  "windows_vulkan_nvidia": {
+    "report": {
+      "path": "build/ui-art-tint-0.0.269/windows-slices-final/report.json",
+      "sha256": "d6403dde7122479d7c15ba41ab5a35f2bb7e61ee76dca204e50f0e409562f232"
+    },
+    "executable_sha256": "76e68fe781a38db1925b0e4e341b47d9cf4f116daa344bcbaf16d87fe19407b6",
+    "request_count": 29,
+    "requests": {
+      "path": "build/ui-art-tint-0.0.269/windows-slices-final/rpc/stdin.ndjson",
+      "sha256": "fa65957a12cd6e23650b409ae993358feace4ebfe935ebb9da92e0c5446f9581"
+    },
+    "replies": {
+      "path": "build/ui-art-tint-0.0.269/windows-slices-final/rpc/stdout.ndjson",
+      "sha256": "5ce1180a01383444551a01583b215e41461f504fc26d712a4fe53db38e8fb7a6"
+    },
+    "captures": [
+      {
+        "scale": 2,
+        "width": 960,
+        "height": 460,
+        "pixels_checked": 34,
+        "wrapped_text_matches_explicit_break": true,
+        "sha256": "ff581d42d1905bd4ae175eb74efee4c7ad6ff1b923ade0b6238b1c3eb0e1674b"
+      },
+      {
+        "scale": 1,
+        "width": 480,
+        "height": 270,
+        "pixels_checked": 34,
+        "wrapped_text_matches_explicit_break": true,
+        "sha256": "2c1344dde7a91c54f844df15a4e8a57677a8058b98d0a07d210d3dfca11a7d00"
+      }
+    ]
+  },
+  "first_windows_fixture": {
+    "passed": false,
+    "cause": "A new tinted label overlapped the right corner of an untinted reference. The assertion sampled the tinted foreground.",
+    "report": {
+      "path": "build/ui-art-tint-0.0.269/windows-slices/report.json",
+      "sha256": "7d07fedb90f25d5c9f2f86b1131e84096cc7413405151240559ed38f80276beb"
+    },
+    "readback": {
+      "path": "build/ui-art-tint-0.0.269/windows-slices/ui-sliced-2x.bmp",
+      "sha256": "2e5c34f4fe29a80f47dae8fb6ac018271f935b7bda11b30463bb38facff2e4a1"
+    }
+  }
+}

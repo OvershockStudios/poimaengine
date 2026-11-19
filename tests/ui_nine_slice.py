@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify nine-slice authoring, package validation and native Vulkan pixels."""
+"""Verify sliced and tinted UI art in authoring, layout and native Vulkan output."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -56,6 +56,7 @@ def verify(owner, args, native, output, camera, captures):
         image_schema = control['properties']['style']['properties']['image']
         assert 'nine_slice' in image_schema['properties']['fit']['enum']
         assert image_schema['then']['required'] == ['slice_insets_px']
+        assert image_schema['properties']['tint']['type'] == 'string'
 
     def put(number, x, width, image, height=54, y=32):
         return element(number, None, 'label', box(x, y, width, height),
@@ -68,8 +69,17 @@ def verify(owner, args, native, output, camera, captures):
         shapes.append(element(number, None, 'label', box(x, 164, 82, 55),
                               dict(background_color='#000000', color='#ffffff',
                                    border_width=0, font_size=20), text))
+    tinted = {**style, 'tint': '#ff00ff'}
+    shapes.extend([
+        put(17, 300, 60, tinted),
+        put(18, 370, 100, dict(asset=asset, fit='stretch', tint='#00ffff')),
+        put(19, 300, 60, dict(asset=asset, fit='contain', tint='#ffff00'), y=100),
+        put(20, 370, 100, dict(asset=asset, fit='stretch', tint='#ffffff00'), y=100),
+        put(21, 300, 60, dict(asset=asset, fit='stretch', tint='#ffffff80'), y=164),
+    ])
     for invalid in (dict(asset=asset, fit='nine_slice'), {**style, 'fit': 'stretch'},
                     dict(asset=asset, slice_insets_px=INSETS),
+                    *({**style, 'tint': tint} for tint in [True, '#FFFFFF', '#123', '#00ff00;']),
                     *({**style, 'slice_insets_px': insets} for insets in
                       ([0, 0, 0, 0], [True, 7, 8, 9], [6.5, 7, 8, 9], [6, 7, -1, 9],
                        [6, 7, 8], [6, 7, 8, 4096]))):
@@ -84,8 +94,10 @@ def verify(owner, args, native, output, camera, captures):
     assert owner.call('world.ui.list')['elements'][0]['element']['style']['image'] == style
     session = new_id()
     owner.call('runtime.start', dict(session_id=session, revision=3))
-    assert owner.call('runtime.ui.inspect', dict(session_id=session, tick=0))['elements'][0]['style']['image'] == style
-    for width, height, scale in [(720, 460, 2), (480, 270, 1)]:
+    inspected = owner.call('runtime.ui.inspect', dict(session_id=session, tick=0))['elements']
+    assert inspected[0]['style']['image'] == style
+    assert inspected[6]['style']['image'] == tinted
+    for width, height, scale in [(960, 460, 2), (480, 270, 1)]:
         view = owner.call('world.ui.layout', dict(revision=3, width=width, height=height, scale=scale))
         assert [row['id'] for row in view['controls']] == [shape['id'] for shape in shapes]
         for row, shape in zip(view['controls'], shapes):
@@ -115,6 +127,17 @@ def verify(owner, args, native, output, camera, captures):
         check(26, 102, COLORS[0])  # Corners contract when the center collapses.
         check(32, 108, COLORS[8])
         check(116, 102, COLORS[0])  # At this x a stretched image still shows its wide corner.
+        for row, dy in enumerate((2, 10, 50)):
+            for column, dx in enumerate((4, 12, 56)):
+                red, _, blue = COLORS[row*3 + column]
+                check(300 + dx, 32 + dy, (red, 0, blue))
+        red, green, blue = COLORS[4]
+        check(420, 59, (0, green, blue))
+        check(330, 127, (red, green, 0))
+        check(420, 127, (0, 0, 0))
+        # Center patch of the same sprite at 128/255 opacity over black,
+        # composited in linear light and then encoded for the capture.
+        check(330, 191, (79, 31, 94))
         wrapped = [row[24*scale:106*scale] for row in bitmap[164*scale:219*scale]]
         explicit = [row[124*scale:206*scale] for row in bitmap[164*scale:219*scale]]
         assert any(pixel != (0,0,0) for row in explicit for pixel in row)

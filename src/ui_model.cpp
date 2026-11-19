@@ -175,13 +175,14 @@ Style style(const Json& j) {
     read_optional(j,"color",value.color,string);read_optional(j,"background_color",value.background_color,string);read_optional(j,"border_color",value.border_color,string);
     read_optional(j,"font_size",value.font_size,number);read_optional(j,"border_width",value.border_width,number);read_optional(j,"border_radius",value.border_radius,number);read_optional(j,"text_align",value.text_align,enumeration<TextAlign>);
     read_optional(j,"image",value.image,[](const Json& image) {
-        optional_fields(image,{"asset","fit","slice_insets_px"});
+        optional_fields(image,{"asset","fit","slice_insets_px","tint"});
         Image result;
         result.asset=at("asset",[&] {
             require(image.contains("asset"),"UI image needs a cooked asset identity.");
             return string(image.at("asset"));
         });
         read_optional(image,"fit",result.fit,enumeration<ImageFit>);
+        read_optional(image,"tint",result.tint,string);
         read_optional(image,"slice_insets_px",result.slice_insets_px,[](const Json& insets) {
             type_check(insets.is_array(),"UI slice insets require four source pixel counts.",ValidationKind::array,insets);
             require(insets.size()==4,"UI slice insets require four source pixel counts.");
@@ -209,6 +210,7 @@ Json style_json(const Style& value) {
         Json result={{"asset",image.asset}};
         if(image.fit)result["fit"]=enum_name(*image.fit);
         if(image.slice_insets_px)result["slice_insets_px"]=*image.slice_insets_px;
+        if(image.tint)result["tint"]=*image.tint;
         return result;
     });
     emit_optional(j,"hover",value.hover,color_state_json);emit_optional(j,"focus",value.focus,color_state_json);emit_optional(j,"pressed",value.pressed,color_state_json);emit_optional(j,"disabled",value.disabled,color_state_json);return j;
@@ -269,6 +271,7 @@ void validate_metadata(const Element& element) {
                     "UI image asset must be 64 lowercase hexadecimal digits.");
             },ValidationKind::string);
             if(s.image->fit)at("fit",[&]{(void)enum_name(*s.image->fit);});
+            at("tint",[&]{validate_color(s.image->tint);},ValidationKind::string);
             at("slice_insets_px",[&] {
                 const auto& insets=s.image->slice_insets_px;
                 require(insets.has_value()==(s.image->fit==ImageFit::nine_slice),

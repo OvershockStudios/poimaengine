@@ -1,8 +1,13 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.268**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.269**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.269 adds [per-control tint for cooked UI artwork](GAME_UI.md#use-cooked-images).
+The same asset can serve different palettes and opacities in contained, stretched
+and nine-slice layouts. The typed style is available through authoring and
+runtime inspection. [Results](evidence/m2-ui-art-tint.json)
 
 Version 0.0.268 adds [final-tick arm clearance for pickups](ITEM_ATTACHMENTS.md#recheck-the-arm-after-movement).
 An obstacle can enter the arm's path after the preview and still block the

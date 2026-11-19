@@ -16,10 +16,12 @@ inline Json length(bool offset=false) {
         object({{"unit",{{"const","dp"}}},{"value",number(offset?-8192:0,8192)}},{"unit","value"}),
         object({{"unit",{{"const","percent"}}},{"value",number(offset?-100:0,100)}},{"unit","value"})})}};
 }
-inline Json colors() {
-    const Json color={{"type","string"},{"pattern","^#[0-9a-f]{6}([0-9a-f]{2})?$"},
+inline Json color() {
+    return {{"type","string"},{"pattern","^#[0-9a-f]{6}([0-9a-f]{2})?$"},
         {"oneOf",Json::array({Json{{"minLength",7},{"maxLength",7}},Json{{"minLength",9},{"maxLength",9}}})}};
-    auto result=object({{"color",color},{"background_color",color},{"border_color",color}});
+}
+inline Json colors() {
+    auto result=object({{"color",color()},{"background_color",color()},{"border_color",color()}});
     result["minProperties"]=1;return result;
 }
 inline Json style() {
@@ -30,6 +32,7 @@ inline Json style() {
     auto& image=properties["image"];
     image=object({{"asset",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},
         {"fit",{{"enum",{"contain","stretch","nine_slice"}},{"default","contain"}}},
+        {"tint",color()},
         {"slice_insets_px",{{"type","array"},{"minItems",4},{"maxItems",4},
             {"items",{{"type","integer"},{"minimum",0},{"maximum",ui::max_image_side-1}}},
             {"contains",{{"minimum",1}}},{"description","Source pixels in top, right, bottom, left order. Opposing insets must leave a positive center in the resolved image."}}}},{"asset"});

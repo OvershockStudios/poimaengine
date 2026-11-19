@@ -45,6 +45,7 @@ std::string authored_css(const ui::Element& e) {
         if(s.image) {
             const auto& image=*s.image;
             const auto path=std::string(ui_image_source_prefix)+image.asset;
+            if(image.tint)base+="image-color:"+*image.tint+";";
             if(image.slice_insets_px) {
                 check(image.texture && !image.texture->mips.empty(),"UI nine-slice image is not resolved.");
                 const auto& mip=image.texture->mips.front();

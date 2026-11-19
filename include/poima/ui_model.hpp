@@ -48,6 +48,7 @@ struct Image {
     // This is owned immutable content, never a serialized part of the style.
     std::shared_ptr<const TextureImage> texture;
     std::optional<std::array<std::uint32_t,4>> slice_insets_px; // top, right, bottom, left
+    std::optional<std::string> tint;
 };
 struct Layout {
     std::optional<Position> position;

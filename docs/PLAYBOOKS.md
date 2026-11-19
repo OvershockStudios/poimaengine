@@ -30,7 +30,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Audio and mixing | [Audio capture and playback](AUDIO.md) and [runtime sound events](AUDIO_EVENTS.md) | Listen to isolated cues and the full mix. Check repetition, spatial transitions, and the actual playback device for a device issue. |
 | Camera and staging | [Authored lenses](CAMERA_LENSES.md), [additive camera motion](CAMERA_POSES.md), and [camera observations](CAMERA_OBSERVATION.md) | Match input timing and camera framing. Check that camera dressing leaves player aim and control intact. |
 | Interactions | [Input actions](INPUT_ACTIONS.md) and [physics queries](PHYSICS_INTERACTIONS.md) | Confirm the same input both changes the intended object and gives legible feedback. Check overlap, interruption, and save continuation where required. |
-| Game UI | [Native UI authoring](GAME_UI.md) and [presented UI inspection](PLAYER_UI_OBSERVATION.md) | Verify the rendered layout, focus, clipping, and navigation on the relevant devices. |
+| Game UI | [Native UI authoring](GAME_UI.md) and [presented UI inspection](PLAYER_UI_OBSERVATION.md) | Check the creator's licensed artwork for a cohesive set of frames and icons. Verify the rendered layout, contrast, focus, clipping and navigation at the target resolutions and input modes. |
 | Effects and lighting | [Render diagnostics](RENDER_DIAGNOSTICS.md), then the supported effect or light guide | Capture the effect with its trigger visible. Check repeated execution, depth, readability and the cost at the relevant quality tier. |
 
 ## Start with a complete example

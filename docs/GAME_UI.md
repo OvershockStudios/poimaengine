@@ -172,6 +172,12 @@ dimensions, including for an empty label used as a decorative icon. The
 parent scissor clips the image along with the rest of the element. The control
 definition still supplies the hit region, text and action.
 
+Set `image.tint` to a lowercase `#rrggbb` or `#rrggbbaa` to multiply the
+sprite's color and optionally reduce its opacity. Tint applies to all three
+fits. Text and the control's background retain their own colors. White is
+neutral. White or grayscale artwork gives the most predictable recoloring.
+Multiple controls can use the same cooked image with different tints.
+
 Use `nine_slice` for textured frames, button faces and dialogue panels with
 artwork at the edges. Choose the cut lines where the edges and center can
 stretch independently.
@@ -180,7 +186,8 @@ stretch independently.
 {
   "asset": "<cooked image hash>",
   "fit": "nine_slice",
-  "slice_insets_px": [12, 16, 12, 16]
+  "slice_insets_px": [12, 16, 12, 16],
+  "tint": "#722f37"
 }
 ```
 
