@@ -121,9 +121,6 @@ The item bindings, revision and retry history stay at their pre-request values.
 Reuse the request ID after repairing a rejected request. Invalid sample
 selectors, subtree violations, and exceeded bounds return `-32602`.
 
-The surface probe option is exposed on the native service. Compiled gameplay
-supports the frame guard documented below.
-
 ## Transfer during compiled gameplay
 
 Declare `IItemAttachmentGame` on a `Game<TState>` and call these methods from
@@ -163,6 +160,27 @@ through the existing service table. The check uses the final item and
 receiving anchor after the tick's movement. A failed contact rolls back the
 whole step batch and returns the same measurements through `runtime.step`.
 
+For sampled grips, implement `IItemAttachmentSurfaceGame` and pass the
+surface probes to `TransferItem`. Use cooked indices and live drawables.
+
+```csharp
+var contact = new ItemAttachmentContact(itemFrame, receivingFrame, 0.015, 5);
+ReadOnlySpan<ItemSurfaceProbe> probes =
+[
+    new(new ItemSurfacePoint(handDrawable, fingertipVertex), itemDrawable, 0.005)
+];
+context.TransferItem(item, receivingHand, contact, probes);
+```
+
+Supply optional barycentric weights in `ItemSurfacePoint` to sample a
+triangle. Pass `TargetTriangles` in `ItemSurfaceProbe` to restrict the closest
+point search. The host copies the selectors during the call. It checks the
+final animated pose and proposed item graph using the same bounds as the
+immediate service. Compiled gameplay negotiates
+`item_attachment_surface_v1` through the existing 528-byte allocation with
+a 272-byte version 3 command. A miss returns the structured surface
+measurement through `runtime.step` and rolls back the whole step batch,
+including earlier transfers and staged saves.
 
 ## Observe and restore
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+using System.Buffers;
 using System.Runtime.InteropServices;
 namespace Poima;
 
@@ -7,6 +8,9 @@ public interface IItemAttachmentGame { }
 
 /// <summary>Opts into transfers that require the receiving grip to be aligned at the end of the tick.</summary>
 public interface IItemAttachmentContactGame : IItemAttachmentGame { }
+
+/// <summary>Opts into checked handoffs that also require surface contact at the end of the tick.</summary>
+public interface IItemAttachmentSurfaceGame : IItemAttachmentContactGame { }
 
 /// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
 public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
@@ -17,6 +21,13 @@ public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotat
 /// <summary>Corresponding calibrated frames on the original item and the receiving anchor.</summary>
 public readonly record struct ItemAttachmentContact(ItemGripFrame Item, ItemGripFrame Anchor,
     double PositionLimitM, double RotationLimitDegrees);
+
+/// <summary>A cooked vertex, or a triangle ordinal and barycentric weights, on a live drawable.</summary>
+public readonly record struct ItemSurfacePoint(EntityId Drawable, uint Index, Vector3d? Barycentric = null);
+
+/// <summary>A point that must reach the target drawable within DistanceLimitM.</summary>
+public readonly record struct ItemSurfaceProbe(ItemSurfacePoint Source, EntityId Target, double DistanceLimitM,
+    ReadOnlyMemory<uint> TargetTriangles = default);
 
 /// <summary>A committed binding. A null anchor holds the item in world space.</summary>
 public readonly record struct ItemAttachment(EntityId Item, EntityId? Anchor, ulong SampledTick, ulong StructureRevision);
@@ -54,6 +65,22 @@ public readonly record struct ItemSocketOffset(Vector3d Position, Quaterniond Ro
     public double PositionLimitM, RotationLimitDegrees;
 }
 
+[StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemSurfaceProbeV1
+{
+    public EntityId Source, Target;
+    public uint SourceIndex, SourceKind, TargetCount, Reserved;
+    public Vector3d Barycentric;
+    public double DistanceLimitM;
+    public uint* TargetTriangles;
+}
+
+[StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentSurfaceCommandV3
+{
+    public NativeItemAttachmentContactCommandV2 Contact;
+    public NativeItemSurfaceProbeV1* Probes;
+    public uint ProbeCount, Reserved;
+}
+
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentServicesV1
 {
     public NativePhysicalRecoveryServicesV1 Recovery;
@@ -71,6 +98,8 @@ internal static unsafe class ItemAttachmentServiceAbi
         NativeItemAttachmentStateV1 state=default;
         NativeItemAttachmentCommandV1 command=default;
         NativeItemAttachmentContactCommandV2 guarded=default;
+        NativeItemAttachmentSurfaceCommandV3 sampled=default;
+        NativeItemSurfaceProbeV1 probe=default;
         return PhysicalRecoveryServiceAbi.LayoutValid() && sizeof(NativeItemAttachmentServicesV1)==528 &&
             (byte*)&api.Recovery-(byte*)&api==0 && (byte*)&api.Get-(byte*)&api==512 && (byte*)&api.Set-(byte*)&api==520 &&
             sizeof(NativeItemAttachmentStateV1)==64 && (byte*)&state.Item-(byte*)&state==16 && (byte*)&state.Anchor-(byte*)&state==32 &&
@@ -81,7 +110,13 @@ internal static unsafe class ItemAttachmentServiceAbi
             sizeof(NativeItemAttachmentContactCommandV2)==256 && (byte*)&guarded.Command-(byte*)&guarded==0 &&
             (byte*)&guarded.ItemPosition-(byte*)&guarded==128 && (byte*)&guarded.ItemRotation-(byte*)&guarded==152 &&
             (byte*)&guarded.AnchorPosition-(byte*)&guarded==184 && (byte*)&guarded.AnchorRotation-(byte*)&guarded==208 &&
-            (byte*)&guarded.PositionLimitM-(byte*)&guarded==240 && (byte*)&guarded.RotationLimitDegrees-(byte*)&guarded==248;
+            (byte*)&guarded.PositionLimitM-(byte*)&guarded==240 && (byte*)&guarded.RotationLimitDegrees-(byte*)&guarded==248 &&
+            sizeof(NativeItemAttachmentSurfaceCommandV3)==272 && (byte*)&sampled.Contact-(byte*)&sampled==0 &&
+            (byte*)&sampled.Probes-(byte*)&sampled==256 && (byte*)&sampled.ProbeCount-(byte*)&sampled==264 &&
+            (byte*)&sampled.Reserved-(byte*)&sampled==268 && sizeof(NativeItemSurfaceProbeV1)==88 &&
+            (byte*)&probe.Target-(byte*)&probe==16 && (byte*)&probe.SourceIndex-(byte*)&probe==32 &&
+            (byte*)&probe.TargetCount-(byte*)&probe==40 && (byte*)&probe.Barycentric-(byte*)&probe==48 &&
+            (byte*)&probe.DistanceLimitM-(byte*)&probe==72 && (byte*)&probe.TargetTriangles-(byte*)&probe==80;
     }
 
     internal static NativeItemAttachmentServicesV1* Validate(NativeServices* services)
@@ -121,16 +156,70 @@ public readonly unsafe ref partial struct GameContext
     public void TransferItem(EntityId item, EntityId anchor, ItemAttachmentContact contact)
     {
         RequireFeature(GameplayRequiredFeatures.ItemAttachmentContact,nameof(IItemAttachmentContactGame));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        var command=ContactCommand(item,anchor,contact,2,256);
+        NativeError error=default;
+        Check(api->Set(services->Context,&command.Command,&error),&error);
+    }
+
+    /// <summary>Stage a checked handoff with 1..8 surface probes. The host owns the copied
+    /// selectors and checks them after solving the tick. A miss rolls back the step batch.</summary>
+    public void TransferItem(EntityId item, EntityId anchor, ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentSurface,nameof(IItemAttachmentSurfaceGame));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        var guarded=ContactCommand(item,anchor,contact,3,272);
+        if(probes.Length is <1 or >8)
+            throw new ArgumentException("Supply 1..8 item surface probes.",nameof(probes));
+
+        int count=0;
+        foreach(var probe in probes)
+        {
+            if(probe.Source.Drawable==default || probe.Target==default ||
+                !(probe.DistanceLimitM>=0 && probe.DistanceLimitM<=1e9) || probe.TargetTriangles.Length>4096)
+                throw new ArgumentException("Invalid item surface probe.",nameof(probes));
+            count+=probe.TargetTriangles.Length;
+        }
+        uint[]? triangles=count==0 ? null : ArrayPool<uint>.Shared.Rent(count);
+        try
+        {
+            NativeItemSurfaceProbeV1* selectors=stackalloc NativeItemSurfaceProbeV1[probes.Length];
+            fixed(uint* selected=triangles)
+            {
+                int offset=0;
+                for(int i=0;i<probes.Length;++i)
+                {
+                    var probe=probes[i];
+                    var selection=probe.TargetTriangles.Span;
+                    selection.CopyTo(new Span<uint>(selected+offset,selection.Length));
+                    selectors[i]=new(){Source=probe.Source.Drawable,Target=probe.Target,SourceIndex=probe.Source.Index,
+                        SourceKind=probe.Source.Barycentric.HasValue ? 1u : 0u, Barycentric=probe.Source.Barycentric.GetValueOrDefault(),
+                        TargetCount=(uint)selection.Length,TargetTriangles=selection.IsEmpty ? null : selected+offset,
+                        DistanceLimitM=probe.DistanceLimitM};
+                    offset+=selection.Length;
+                }
+                NativeItemAttachmentSurfaceCommandV3 command=new(){Contact=guarded,Probes=selectors,ProbeCount=(uint)probes.Length};
+                NativeError error=default;
+                Check(api->Set(services->Context,&command.Contact.Command,&error),&error);
+            }
+        }
+        finally
+        {
+            if(triangles!=null)ArrayPool<uint>.Shared.Return(triangles);
+        }
+    }
+
+    private static NativeItemAttachmentContactCommandV2 ContactCommand(EntityId item, EntityId anchor,
+        ItemAttachmentContact contact, uint version, uint bytes)
+    {
         if(item==default)throw new ArgumentException("Item identity is absent.",nameof(item));
         if(anchor==default)throw new ArgumentException("Anchor identity is absent.",nameof(anchor));
-        var api=ItemAttachmentServiceAbi.Validate(services);
-        NativeItemAttachmentContactCommandV2 command=new(){
-            Command=new(){Version=2,Bytes=256,Item=item,Anchor=anchor},
+        return new(){
+            Command=new(){Version=version,Bytes=bytes,Item=item,Anchor=anchor},
             ItemPosition=contact.Item.Position,ItemRotation=contact.Item.Rotation,
             AnchorPosition=contact.Anchor.Position,AnchorRotation=contact.Anchor.Rotation,
             PositionLimitM=contact.PositionLimitM,RotationLimitDegrees=contact.RotationLimitDegrees};
-        NativeError error=default;
-        Check(api->Set(services->Context,&command.Command,&error),&error);
     }
 
     /// <summary>Place the item at a complete socket offset after this tick moves the destination anchor.</summary>

@@ -74,4 +74,11 @@ class PhysicalRequirements(unittest.TestCase):
         self.assertEqual(self.read(contact),contact)
         for invalid in [dict(contact,services_bytes=544),dict(contact,features=['baseline_v7',guard])]:
             with self.assertRaises(ValueError):self.read(invalid)
+    def test_surface_contact_requires_frame_contact(self):
+        attachment,guard,surface='item_attachment_v1','item_attachment_contact_v1','item_attachment_surface_v1'
+        value=dict(self.baseline,services_bytes=528,features=['baseline_v7',attachment,guard,surface])
+        self.assertEqual(self.read(value),value)
+        for feature in (attachment,guard):
+            with self.subTest(feature=feature),self.assertRaises(ValueError):
+                self.read(dict(value,features=[name for name in value['features'] if name!=feature]))
 if __name__=='__main__':unittest.main()

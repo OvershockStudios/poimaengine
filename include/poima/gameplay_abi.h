@@ -615,6 +615,22 @@ typedef struct PoimaGameItemAttachmentCommandV2 {
     double item_position[3],item_rotation[4],anchor_position[3],anchor_rotation[4];
     double position_limit_m,rotation_limit_deg;
 } PoimaGameItemAttachmentCommandV2;
+/* item_attachment_surface_v1 accepts version 3 with 1..8 borrowed probes.
+ * source_kind selects Vertex0 (zero barycentric) or Triangle1. A zero
+ * target_count and null target_triangles select the whole target mesh.
+ * The host copies the arrays during attachment_set; pointers are valid only
+ * during that callback. The surface verdict uses the final proposed pose. */
+typedef struct PoimaGameItemSurfaceProbeV1 {
+    PoimaEntityId source,target;
+    uint32_t source_index,source_kind,target_count,reserved;
+    double barycentric[3],distance_limit_m;
+    const uint32_t* target_triangles;
+} PoimaGameItemSurfaceProbeV1;
+typedef struct PoimaGameItemAttachmentCommandV3 {
+    PoimaGameItemAttachmentCommandV2 contact;
+    const PoimaGameItemSurfaceProbeV1* probes;
+    uint32_t probe_count,reserved;
+} PoimaGameItemAttachmentCommandV3;
 typedef struct PoimaGameItemAttachmentServicesV1 {
     PoimaGamePhysicalRecoveryServicesV1 recovery;
     int32_t (POIMA_CALL *attachment_get)(void*,const PoimaEntityId*,PoimaGameItemAttachmentStateV1*,PoimaGameError*);
@@ -628,6 +644,13 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameItemSurfaceProbeV1)==88 && alignof(PoimaGameItemSurfaceProbeV1)==8 &&
+    offsetof(PoimaGameItemSurfaceProbeV1,target)==16 && offsetof(PoimaGameItemSurfaceProbeV1,source_index)==32 &&
+    offsetof(PoimaGameItemSurfaceProbeV1,target_count)==40 && offsetof(PoimaGameItemSurfaceProbeV1,barycentric)==48 &&
+    offsetof(PoimaGameItemSurfaceProbeV1,distance_limit_m)==72 && offsetof(PoimaGameItemSurfaceProbeV1,target_triangles)==80);
+static_assert(sizeof(PoimaGameItemAttachmentCommandV3)==272 && alignof(PoimaGameItemAttachmentCommandV3)==8 &&
+    offsetof(PoimaGameItemAttachmentCommandV3,contact)==0 && offsetof(PoimaGameItemAttachmentCommandV3,probes)==256 &&
+    offsetof(PoimaGameItemAttachmentCommandV3,probe_count)==264 && offsetof(PoimaGameItemAttachmentCommandV3,reserved)==268);
 static_assert(sizeof(PoimaGameItemAttachmentStateV1)==64 && alignof(PoimaGameItemAttachmentStateV1)==8 &&
     offsetof(PoimaGameItemAttachmentStateV1,entity)==16 && offsetof(PoimaGameItemAttachmentStateV1,anchor)==32 &&
     offsetof(PoimaGameItemAttachmentStateV1,sampled_tick)==48 && offsetof(PoimaGameItemAttachmentStateV1,structure_revision)==56);

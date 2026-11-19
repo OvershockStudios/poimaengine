@@ -157,6 +157,7 @@
         prepare_gameplay_player_preferences_boundary();
         try { runtime_->step(ticks,inputs,motions,sounds,animations,{},ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs); }
         catch(const RuntimeAttachmentContactRejected& error) {throw attachment_contact_error(error);}
+        catch(const RuntimeAttachmentSurfaceRejected& error) {throw attachment_surface_error(error);}
         catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
         // Publish only after the complete native batch succeeds, before a
         // queued Load can replace the Runtime that staged the preference.

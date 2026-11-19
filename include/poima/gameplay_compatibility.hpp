@@ -62,6 +62,7 @@ inline constexpr std::uint32_t physical_recovery_services_bytes=512;
 inline constexpr const char* item_attachment_feature="item_attachment_v1";
 inline constexpr std::uint32_t item_attachment_services_bytes=528;
 inline constexpr const char* item_attachment_contact_feature="item_attachment_contact_v1";
+inline constexpr const char* item_attachment_surface_feature="item_attachment_surface_v1";
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -97,6 +98,7 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=item_attachment_services_bytes;
     result.features.push_back(physical_recovery_feature);result.features.push_back(item_attachment_feature);
     result.features.push_back(item_attachment_contact_feature);
+    result.features.push_back(item_attachment_surface_feature);
     return result;
 }
 
@@ -184,6 +186,9 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(required.features.begin(),required.features.end(),item_attachment_contact_feature)!=required.features.end() &&
        std::find(required.features.begin(),required.features.end(),item_attachment_feature)==required.features.end())
         return "Gameplay item_attachment_contact_v1 also requires item_attachment_v1.";
+    if(std::find(required.features.begin(),required.features.end(),item_attachment_surface_feature)!=required.features.end() &&
+       std::find(required.features.begin(),required.features.end(),item_attachment_contact_feature)==required.features.end())
+        return "Gameplay item_attachment_surface_v1 also requires item_attachment_contact_v1.";
     if(required.services_bytes!=service_prefix_bytes(required))
         return "Gameplay must declare the 176-byte baseline or a named extension prefix through 528 bytes.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
@@ -252,9 +257,12 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(available.features.begin(),available.features.end(),item_attachment_contact_feature)!=available.features.end() &&
        std::find(available.features.begin(),available.features.end(),item_attachment_feature)==available.features.end())
         return "Runtime item_attachment_contact_v1 also requires item_attachment_v1.";
+    if(std::find(available.features.begin(),available.features.end(),item_attachment_surface_feature)!=available.features.end() &&
+       std::find(available.features.begin(),available.features.end(),item_attachment_contact_feature)==available.features.end())
+        return "Runtime item_attachment_surface_v1 also requires item_attachment_contact_v1.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature && feature!=item_attachment_contact_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature && feature!=item_attachment_contact_feature && feature!=item_attachment_surface_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

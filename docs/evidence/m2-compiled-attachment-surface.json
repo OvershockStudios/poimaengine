@@ -1,0 +1,301 @@
+{
+  "format": "poima.evidence.compiled-attachment-surface.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.256",
+  "schema_revision": 147,
+  "scope": "Compiled gameplay stages finger and triangle selectors for end-of-tick sampled transfers.",
+  "abi": {
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 3,
+    "command_bytes": 272,
+    "probe_bytes": 88,
+    "required_features": [
+      "baseline_v7",
+      "item_attachment_contact_v1",
+      "item_attachment_surface_v1",
+      "item_attachment_v1"
+    ]
+  },
+  "fixture": "tests/item_attachment_surface_gameplay.py",
+  "cases": [
+    "A real Tick stages an inclusive vertex probe with an explicit cooked target triangle and reuses its scratch selectors.",
+    "A subsequent Tick stages a barycentric surface point on the moving skin. Its miss matches a separate final-tick geometry query.",
+    "Full batch rollback retains the prior bytes and leaves the staged save uncommitted after the late miss.",
+    "The corrected transfer commits with its same-tick save. A cold load and continuation preserve complete checkpoint bytes.",
+    "An earlier engine with the same service extent rejects the new module by its named capability. An old frame-only compiled module still executes."
+  ],
+  "linux": {
+    "coreclr": {
+      "report": {
+        "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/report.json",
+        "bytes": 2029,
+        "sha256": "d4226cf3c67b4787a94bfc719dd8736084a94166fc35cead4791cec2d452b945"
+      },
+      "rpc_count": 42,
+      "engine_sha256": "afddaf996bb71fa29bdf9b15a64d365c3e82cff8e47bfcd46300e975ad99a94c",
+      "natural_exits": 3,
+      "complete_checkpoint_checks": 4,
+      "previous_host": {
+        "sha256": "30b1a4f86417164a6676d5bdd48b20a1052a9fb275d25907782f0c5627dc4ee8",
+        "rejection": {
+          "code": -32060,
+          "message": "C# gameplay: Gameplay host lacks item_attachment_surface_v1."
+        }
+      },
+      "mode": "coreclr",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/cold/requests.jsonl",
+            "bytes": 2306,
+            "sha256": "290bfa0fdb48364d96a60f66251ac4326aaa680f5c697bbd96383a1b05f0aa22"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/cold/responses.jsonl",
+            "bytes": 4818,
+            "sha256": "d09a1a4f08292ab75b2f204f612012a33669beb76cc49e7b009114ca824d58a7"
+          }
+        },
+        "previous-host": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/previous-host/requests.jsonl",
+            "bytes": 1496,
+            "sha256": "227927988b66d6b265640a13f92e2755cd98711489d90bc0379752979d844d1c"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/previous-host/responses.jsonl",
+            "bytes": 623,
+            "sha256": "9dbb06bd390f3f204685b84e4b3800a5355aa1e355a48e7d3f939c185c96dc4b"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/runtime/requests.jsonl",
+            "bytes": 11254,
+            "sha256": "0b4f56426d910de5b5c154923813e5f4528ecb5594c56a4e47b31eb7a9387575"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/linux-qualified/runtime/responses.jsonl",
+            "bytes": 445701,
+            "sha256": "4d3779e5d9e5f20d7ab04f9a746854aee59308253eca48f33ec98aa18f93bf75"
+          }
+        }
+      }
+    },
+    "retained_frame_only_coreclr": {
+      "report": {
+        "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/report.json",
+        "bytes": 2399,
+        "sha256": "5eaf7823f5a0d1041751b661b73e73300b952bee483f016fa7ad73d55243a701"
+      },
+      "rpc_count": 56,
+      "engine_sha256": "afddaf996bb71fa29bdf9b15a64d365c3e82cff8e47bfcd46300e975ad99a94c",
+      "natural_exits": 3,
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/cold/requests.jsonl",
+            "bytes": 1980,
+            "sha256": "2d75ecb7bfb249be29e0562c66ee4f23807a6d2c2bae12ea13b274f8dd9aeb5f"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/cold/responses.jsonl",
+            "bytes": 1581,
+            "sha256": "16bd49ed4c4631dc08a2c66e8a9713738d72ccf27434a734e6ab4580b7bfbb67"
+          }
+        },
+        "compiled": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/compiled/requests.jsonl",
+            "bytes": 4650,
+            "sha256": "0064dc19b6b0ea32130cb19ed2ea0f2ab5cd7b1738ddefaa155e8692beed7c41"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/compiled/responses.jsonl",
+            "bytes": 9542,
+            "sha256": "6c8c3929fd95f46888ee85a18fc90a9480d698eb7ef93f17284852c5aea8e6e3"
+          }
+        },
+        "direct": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/direct/requests.jsonl",
+            "bytes": 15164,
+            "sha256": "106a1830ac098772a0cfcf520001bd7524cffdb411834bcf76d0f3b1c0898b68"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-coreclr/direct/responses.jsonl",
+            "bytes": 437857,
+            "sha256": "2b1b4457869359a0b051a0f4dfd67d7dc8f2c9df73c90dd631caceb88ad29480"
+          }
+        }
+      }
+    },
+    "immediate_guard_regression": {
+      "report": {
+        "path": "build/attachment-surface-gameplay-0.0.256/immediate-linux/report.json",
+        "bytes": 2719,
+        "sha256": "0d328c73ee45aa9c0a121e793788f7cd14dfd4f3ff80f39b49162002e7b7ee90"
+      },
+      "rpc_count": 40,
+      "engine_sha256": "afddaf996bb71fa29bdf9b15a64d365c3e82cff8e47bfcd46300e975ad99a94c",
+      "natural_exits": 1,
+      "traces": {
+        "session": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/immediate-linux/session/requests.jsonl",
+            "bytes": 31363,
+            "sha256": "3922427acbe74be38f6a691bbc9536c4f696b4cd0dfd305c753f5e6b925e0a10"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/immediate-linux/session/responses.jsonl",
+            "bytes": 18219,
+            "sha256": "677aba786c2ae70f3afdfb2492c81bd5ed41812003264d1b09610601b6c7cce7"
+          }
+        }
+      }
+    },
+    "ctest": {
+      "path": "build/attachment-surface-gameplay-0.0.256/linux-ctest-qualified.xml",
+      "bytes": 4340,
+      "sha256": "5286a2b0eec41f0f765a3ad6121317c9613fd5d6de7d18312a92c1ad96847cc0"
+    }
+  },
+  "windows": {
+    "native_aot": {
+      "report": {
+        "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/report.json",
+        "bytes": 2057,
+        "sha256": "d3f3daa69be9a5468fe986ce2109f0634d3e367ec837bef3b9f2e0a38ce19d5f"
+      },
+      "rpc_count": 42,
+      "engine_sha256": "1e75aa2a19f1848d31b495bb600520a326525efb4bcc37758f4ef49705bb6a67",
+      "natural_exits": 3,
+      "complete_checkpoint_checks": 4,
+      "previous_host": {
+        "sha256": "6119c17afdeb6c980714160890d090fb38ee6351630fc3699734bcfd1adc16b3",
+        "rejection": {
+          "code": -32060,
+          "message": "Unknown required gameplay feature: item_attachment_surface_v1"
+        }
+      },
+      "mode": "native_aot",
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/cold/requests.jsonl",
+            "bytes": 2160,
+            "sha256": "6096da2dd29461df872acb947f85cb1925bdf4ba654881d9aad13e014781f3a5"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/cold/responses.jsonl",
+            "bytes": 4878,
+            "sha256": "37bbdb71e2fe4080e8d67910f01243aa586172b41a3f6e99fd445c9487cc9b8c"
+          }
+        },
+        "previous-host": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/previous-host/requests.jsonl",
+            "bytes": 1357,
+            "sha256": "8a0376bf0ace4f0ee79bd31168c2ab0005308a54dafbb0b126ff538df8fb5272"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/previous-host/responses.jsonl",
+            "bytes": 633,
+            "sha256": "0f493672c9c1791f33d48316ca3e17b1ddd2adb5952432358667fc2f82c3d237"
+          }
+        },
+        "runtime": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/runtime/requests.jsonl",
+            "bytes": 11145,
+            "sha256": "9750370b462a5952e0735beb5882cc3a9414dca08ddd59064368494d32d88fca"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified-final/runtime/responses.jsonl",
+            "bytes": 445914,
+            "sha256": "2f76c62b5bfea4e69d0e2733b01fa70182dcb56326cd60aa6e054c8b7d25070c"
+          }
+        }
+      }
+    },
+    "descriptor": {
+      "path": "build/attachment-surface-gameplay-0.0.256/windows-aot/native-gameplay.json",
+      "bytes": 5118,
+      "sha256": "8c8297d94a9f063b9d39add301c645b570d9beed727318d4a9bd41914171a83f"
+    },
+    "retained_frame_only_aot": {
+      "report": {
+        "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/report.json",
+        "bytes": 2387,
+        "sha256": "46cc5a741b4cf1f73b565337fb0a349a1f9562a42124c7ee1b360fdc1f73e191"
+      },
+      "rpc_count": 56,
+      "engine_sha256": "1e75aa2a19f1848d31b495bb600520a326525efb4bcc37758f4ef49705bb6a67",
+      "natural_exits": 3,
+      "traces": {
+        "cold": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/cold/requests.jsonl",
+            "bytes": 1815,
+            "sha256": "c605ad5d81cc71d3ed0344acfcff119c7f8927068adcae4b13b11a82c25de751"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/cold/responses.jsonl",
+            "bytes": 1578,
+            "sha256": "859893a5c788c215e9b7c5afda34d6dd2b86dd5361c051f282d777112996ca0b"
+          }
+        },
+        "compiled": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/compiled/requests.jsonl",
+            "bytes": 4492,
+            "sha256": "f7b5aa44ed4f58f754c31922723dce8def7eab3f74a46b8d911c568b73f35d7c"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/compiled/responses.jsonl",
+            "bytes": 9711,
+            "sha256": "da9b590f2c72db7016b13219a89f4d96893a02f105b734515f70c68a0724cb7e"
+          }
+        },
+        "direct": {
+          "requests": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/direct/requests.jsonl",
+            "bytes": 15159,
+            "sha256": "c31ecd98637955a84b5f311ff380b5662e8229128579bf1be62406fb27ca2789"
+          },
+          "responses": {
+            "path": "build/attachment-surface-gameplay-0.0.256/legacy-aot/direct/responses.jsonl",
+            "bytes": 437854,
+            "sha256": "ab9952c7727c35d16fc9e7b916e73132d0504b34a37ef986cc077326873d2f91"
+          }
+        }
+      }
+    },
+    "native_compatibility": {
+      "path": "build/attachment-surface-gameplay-0.0.256/windows-compatibility.log",
+      "bytes": 68,
+      "sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+    }
+  },
+  "corrected_qualification_attempt": {
+    "report": {
+      "path": "build/attachment-surface-gameplay-0.0.256/windows-qualified/report.json",
+      "bytes": 1028,
+      "sha256": "e5cc4b6837fdd4f2f1e9a066a7f8a3fd42852d2159038e6da1b4e8aced9567e4"
+    },
+    "cause": "The copied Windows comparison executable initially lacked its adjacent phonon.dll. The same executable started normally after restoring the dependency."
+  },
+  "build_policy": {
+    "metadata": {
+      "path": "build/attachment-surface-gameplay-0.0.256/metadata-policy.json",
+      "bytes": 463,
+      "sha256": "d412c10439969f1849456c8a4303e66e7a9ee1e7c0230b9c20ac174823daaf26"
+    },
+    "publisher": {
+      "path": "build/attachment-surface-gameplay-0.0.256/publish-policy.log",
+      "bytes": 106,
+      "sha256": "3fdfee80cb779d8c70847c14cd2fdaa5f3579d6629e3a8944565373c73c5f52b"
+    }
+  }
+}

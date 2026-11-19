@@ -1923,7 +1923,8 @@ struct Runtime::Impl {
                 commit_root_motion_intervals(root_intervals,tick+1);
                 ++tick;animation_locals(true);sync();physical_record_final();
                 if(!game_attachment_commands.empty()) {
-                    change_attachments(structure_revision,game_attachment_commands);
+                    try {change_attachments(structure_revision,game_attachment_commands);}
+                    catch(const std::invalid_argument& error) {throw std::runtime_error(error.what());}
                     game_attachment_commands.clear();
                 }
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();

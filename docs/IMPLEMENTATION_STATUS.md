@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.255**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.256**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.256 exposes [sampled grips to compiled gameplay](ITEM_ATTACHMENTS.md#transfer-during-compiled-gameplay).
+Tick callbacks stage fingertip probes with the receiving socket limits. The
+engine checks the final animated geometry, and a late miss rolls back all
+transfers and queued saves in the step batch. [Compiled checks](evidence/m2-compiled-attachment-surface.json)
+cover late rejection, corrected transfer, same-tick save and exact cold
+continuation.
 
 Version 0.0.255 adds [sampled surface guards](ITEM_ATTACHMENTS.md#require-contact-at-sampled-points)
 to immediate item handoffs. A checked transfer can require finger pads or
@@ -10,8 +17,7 @@ other selected mesh points to reach the item within explicit distances.
 The engine reads the proposed skin and rigid transforms before publishing
 the transfer. [Native checks](evidence/m2-item-attachment-surface.json)
 cover aligned frames with a missed grip, candidate-batch motion, and exact
-checkpoint preservation on rejection. The compiled gameplay guard uses
-frame alignment.
+checkpoint preservation on rejection.
 
 Version 0.0.254 adds [nine-slice game UI artwork](GAME_UI.md#use-cooked-images).
 Game authors specify source-pixel insets to keep frame corners and borders
