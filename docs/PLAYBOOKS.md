@@ -208,6 +208,10 @@ weight out of the grip layer as the fingers open. Recheck poses and render
 frames during an interruption and the return out of the action.
 [Measured example](evidence/m2-first-person-grip-motion.json)
 
+Use the [reach and pickup example](../examples/reach-pickup/README.md) to
+drive the same contact check from game input. Its compiled gameplay combines
+a timed reach, oriented IK, a finger layer and recoverable native pickup.
+
 ### Third person
 
 For third person, select a visible weight shift or contact to verify. Keep the

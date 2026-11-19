@@ -1,0 +1,106 @@
+{
+  "format": "poima.compiled-reach-pickup.v1",
+  "version": "0.0.264",
+  "scope": "A single released item on a stable support, one two-bone arm, and four explicitly calibrated contact vertices. Scripted semantic movement and action edges, private imported-rig fixed-tick captures, and exact save continuation. Manual device input, obstructions along the arm path and general target acquisition lie outside this verifier.",
+  "sources": {
+    "examples/reach-pickup/ReachPickupGame.cs": "3284c9a122e5e6e91a162269d3ee11f70de9bb8d4c232e2ca7c405e5faaba825",
+    "tests/item_reach_pickup.py": "08496ea26ae2db6e1bc9f6548c11e5b7d1f8a88f2a560385e7ab5dc2820f10d3"
+  },
+  "artifacts": {
+    "linux_coreclr_module_sha256": "0bd4b28bd7c36e6598a852b3492ce06a835645fff709773491a9d39845406264",
+    "windows_native_aot_descriptor_sha256": "3ea0e8d6b29ca3ec93c64af8c5513410a5c13669c891a6193792c3af2c592f54",
+    "windows_engine_sha256": "10338ca6cac023d72d121c3b5b3edf3f635356bd39329a10f9f97276b64d8628",
+    "linux_engine_sha256": "04606b6e8daab7f0d8e2355c23b6493bc02b4587ce45249ca22b5b9455024111"
+  },
+  "public_verifier": {
+    "linux_coreclr": {
+      "calls": 302,
+      "natural_native_exits": 2,
+      "exact_archive_pairs": 2,
+      "pickup_tick": 174,
+      "canceled_reaches": 1,
+      "contact_misses": 3,
+      "final_fingertip_gaps_m": [
+        2.7833528704240246e-16,
+        2.5066604164831255e-16,
+        1.1364755910069911e-16,
+        1.1236938283130691e-16
+      ]
+    },
+    "windows_native_aot": {
+      "calls": 302,
+      "natural_native_exits": 2,
+      "exact_archive_pairs": 2,
+      "pickup_tick": 174,
+      "canceled_reaches": 1,
+      "contact_misses": 3,
+      "final_fingertip_gaps_m": [
+        2.4912465244908755e-16,
+        2.498001805406602e-16,
+        1.2738115944464653e-16,
+        1.1107649934270853e-16
+      ]
+    }
+  },
+  "imported_rig": {
+    "linux_coreclr": {
+      "calls": 650,
+      "natural_native_exits": 2,
+      "exact_archive_pairs": 2,
+      "resting_body_speed_m_s": 0.0,
+      "resting_support_error_m": 5.0426463005237565e-08,
+      "canceled_reaches": 1,
+      "contact_misses": 1,
+      "pickup_tick": 212,
+      "approach_translation_m": 0.21104068960994482,
+      "largest_world_matrix_change_on_pickup": 2.220446049250313e-16,
+      "fingertip_gaps_at_pickup_m": [
+        0.0011155082233455312,
+        0.0035045139480903093,
+        0.0023928727002161744,
+        0.00043019396073119186
+      ],
+      "native_captures": 0
+    },
+    "windows_native_aot": {
+      "calls": 731,
+      "natural_native_exits": 2,
+      "exact_archive_pairs": 2,
+      "resting_body_speed_m_s": 0.0,
+      "resting_support_error_m": 5.0426463005237565e-08,
+      "canceled_reaches": 1,
+      "contact_misses": 1,
+      "pickup_tick": 212,
+      "approach_translation_m": 0.21104068960994482,
+      "largest_world_matrix_change_on_pickup": 2.220446049250313e-16,
+      "fingertip_gaps_at_pickup_m": [
+        0.001115508223345559,
+        0.0035045139480905886,
+        0.0023928727002161094,
+        0.00043019396073094927
+      ],
+      "native_captures": 81,
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    }
+  },
+  "linux_regressions": [
+    "grip_motion_review",
+    "authoring_core_conformance",
+    "authoring_contract_identity",
+    "save_upgrade_document_native",
+    "player_lens_native",
+    "runtime_viewmodel_clearance_native",
+    "mcp_contract",
+    "runtime_camera_draw_native",
+    "world_ui_contract",
+    "runtime_attachment_contract",
+    "item_attachment_pickup_contract",
+    "asset_references_contract"
+  ],
+  "private_video": {
+    "frames": 81,
+    "rate": 60,
+    "duration_seconds": 1.35,
+    "sha256": "38e1422847a85b0b071fa1b9c024ae252f776c4a1dbe47c8c93f09d4d86d2a08"
+  }
+}

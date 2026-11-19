@@ -381,6 +381,10 @@ epoch-7 528-byte service table. The
 checks a dynamic drop, contact rejection, collision retirement, and exact
 continuation after cold load.
 
+The compiled [reach and pickup example](../examples/reach-pickup/README.md)
+uses a released item's grip as an oriented IK target. It supports cancellation
+and retries contact as the controller moves into range.
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

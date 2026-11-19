@@ -80,5 +80,7 @@ __pycache__/
 
 /examples/projectile-range/bin/
 /examples/projectile-range/obj/
+/examples/reach-pickup/bin/
+/examples/reach-pickup/obj/
 /tests/Projectiles/bin/
 /tests/Projectiles/obj/

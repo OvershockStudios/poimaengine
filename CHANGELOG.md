@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.264
+
+- Add a compiled first-person reach example that supports cancellation and retries a pickup as a resting prop comes into reach.
+
 ## 0.0.263
 
 - Add a first-person grip review tool that joins committed motion and fingertip measurements across a take.

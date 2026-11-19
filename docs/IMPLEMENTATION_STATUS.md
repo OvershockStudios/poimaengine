@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.263**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.264**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.264 adds a compiled [reach and pickup example](../examples/reach-pickup/README.md)
+with input cancellation, oriented wrist motion and fingertip contact retries.
+The analytic verifier and a private imported-rig take exercise canceled
+reaches, native misses while moving into range, physics body retirement and
+fresh-host continuation. [Results](evidence/m2-reach-pickup.json)
 
 Version 0.0.263 adds a [per-tick review of first-person grips](PLAYBOOKS.md#review-a-grip-through-an-interrupted-action).
 The analyzer checks that pose and surface measurements came from the same
