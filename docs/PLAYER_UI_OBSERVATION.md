@@ -136,7 +136,7 @@ coverage, rounded clip masks or occlusion-area estimates. Text can overflow its
 own background unless its layout clips it. Interpret a rectangle with
 `right <= left` or `bottom <= top` as empty rather than inventing a positive area.
 
-## Agent recipe: screenshot and logical state
+## Capturing a HUD bug
 
 1. Read `player.inspect`, then call `player.ui.inspect` with its exact identity,
    generation and current session. While running, omit Tick/UI guards and read
@@ -148,27 +148,39 @@ own background unless its layout clips it. Interpret a rectangle with
    `limit: 256`. This supplies text, parents, authored styles and eligibility.
    Read `player.ui.inspect` with the same optional Tick/UI guards. Wait for a
    current presentation if `matches_current_owner` is false.
-4. Capture through `player.capture` at that exact paused Tick, or
-   `player.capture_current` without a Tick parameter. Use a fresh request ID,
-   new output path, exact player/control/session and applicable UI, structure
-   and material guards. These are separate capture operations; inspection
-   itself never captures or advances simulation.
-5. Inspect the image, capture receipt and displayed controls together. Match
-   session/Tick/UI tags before attributing the image to logical state. For an
-   exact renderer-frame association, also match displayed `frame_sequence` and
-   `submission_id` against `capture.render_diagnostics.scene_receipts.presented`.
-   Separate RPCs are not an atomic image/layout transaction: even a paused
-   host can present another frame or process focus/scroll input between them.
-   If frame identities differ, report the shared committed state boundary
-   without claiming those rectangles came from the exact captured frame.
-   Normal presentation can advance between reads; a different frame identity
-   alone does not mean capture failed.
+4. Call `player.capture` with the paused Tick, or `player.capture_current` to
+   let the host choose the current Tick. Supply `"include_ui_layout": true`, a
+   fresh request ID, a new BMP path and the player, control and session guards.
+   Include UI, structure or material revision guards when your edit depends on
+   them.
+5. Read `capture.ui_layout` alongside the BMP. Its `frame_sequence` and
+   `submission_id` match both `submitted` and `presented` in
+   `capture.render_diagnostics.scene_receipts`. The host obtains geometry
+   from that presentation’s immutable layout. A later `player.ui.inspect`
+   can observe a different frame even while paused.
 6. Make corrections through guarded operations. `runtime.ui.edit` supports live
    text, visibility, enabled and modal changes; authored layout/style changes
    require a new runtime's frozen definition. Follow the player/runtime restart
    lifecycle before observing that new definition. Trigger gameplay through the
    separate [compiled control API](GAME_UI.md#compiled-control-callbacks), not
    this read.
+
+The captured layout contains the same viewport, dimensions, scale,
+`layout_generation` and control rows described above. Each row's `bounds`
+and `clip` use viewport-local physical pixels. Add the viewport origin to
+their intersection to locate the corresponding region in the BMP. Session,
+Tick, UI revision and player generation identify the captured game state.
+`matches_current_owner` belongs to the live inspection operation.
+
+A scene without a logical HUD returns `"ui_layout": null` when requested. A
+HUD consisting only of panels has a layout with an empty `controls` array.
+Omitting `include_ui_layout` or supplying `false` preserves the ordinary
+capture response. Other JSON types are rejected. Replay the exact request
+while its receipt is retained to recover its original geometry after further
+edits, runtime replacement or player stop. Reusing the same ID with changed
+parameters returns `-32010`. The player shares 32 receipt slots across its
+commands. A successful reply retains only the returned HUD fields alongside
+the existing capture result. Read the BMP at its original path.
 
 The native document freezes observations after its layout update and before
 rendering. The retained immutable data owns its lifetime; reading it performs
@@ -195,6 +207,14 @@ accessibility qualification. See [implementation status](IMPLEMENTATION_STATUS.m
 for the recorded build and platform scope.
 
 ## Recorded qualification
+
+The [0.0.241 capture checks](evidence/m2-player-capture-ui.json) compare two
+presented HUD revisions at the same paused Tick in the retained Windows Native
+AOT game. The captures show an edited label and disabled button. More than
+12,000 changed pixels intersect the reported button region. Historical retries
+return the original frame geometry and BMPs after a runtime replacement and
+player stop. A separate empty-HUD run covers omitted, false and true layout
+requests. These checks use synthetic control activation on a single Windows GPU.
 
 The [0.0.132 record](evidence/m2-player-ui-observation.json) covers native Windows
 layout/lifetime tests, an AMD shared player with compiled controls and save/load,

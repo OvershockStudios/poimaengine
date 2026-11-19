@@ -241,6 +241,10 @@ def common_checks(client, second):
     check(first['session_scope'] == 'shared_headless', first)
     for name in ('player.start', 'player.inspect', 'player.control', 'player.capture'):
         check(name in first['methods'], name)
+    for method in ('player.capture', 'player.capture_current'):
+        parameter = first['methods'][method]['properties']['include_ui_layout']
+        check(parameter['type'] == 'boolean' and parameter['default'] is False and
+              'include_ui_layout' not in first['methods'][method]['required'], parameter)
     # Queue both real clients before reading either response. Their arrival and
     # host poll grouping are deliberately unspecified.
     client.send('world.inspect'); second.send('player.inspect')
@@ -386,6 +390,7 @@ def graphics_checks(client, second, world):
     check(captured['capture_written'] and captured['hardware'] and captured['nvrhi_errors'] == 0,
           initial_capture)
     check(captured['lens']['vertical_fov'] == 90 and captured['samples'] == 1, captured)
+    check('ui_layout' not in captured, 'Omitted layout option changed the capture shape')
     camera = client.call('runtime.entity', {'session_id': session, 'id': uid(101)})
     check(captured['camera_world'] == camera['world_matrix'], 'Captured a stale or foreign camera')
     check(client.call('runtime.entity', {'session_id': session, 'id': uid(100)}) == before_entity,
@@ -403,8 +408,13 @@ def graphics_checks(client, second, world):
                       'expected_control_revision': boundary['control_revision'],
                       'session_id': boundary['session_id'], 'tick': boundary['tick'],
                       'path': native(path)}
+        parameters['include_ui_layout'] = name == 'stepped'
         response = client.call('player.capture', parameters)
         frame = response['capture']
+        if name == 'stepped':
+            check('ui_layout' in frame and frame['ui_layout'] is None, 'A scene without a logical HUD reported a layout')
+        else:
+            check('ui_layout' not in frame, 'Explicit false changed the capture shape')
         check(frame['capture_written'] and frame['hardware'] and frame['nvrhi_errors'] == 0, frame)
         current_camera = client.call('runtime.entity', {'session_id': boundary['session_id'], 'id': uid(101)})
         check(frame['camera_world'] == current_camera['world_matrix'], 'Observation used stale camera at '+name)

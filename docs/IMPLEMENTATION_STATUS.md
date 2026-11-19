@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.240**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.241**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.241 adds [same-frame HUD layout to opted-in player captures](PLAYER_UI_OBSERVATION.md).
+Control bounds and clipping reference the exact presented frame and retain their
+identity on a capture retry. The [Windows Vulkan and Linux service checks](evidence/m2-player-capture-ui.json)
+cover legacy requests, scenes without HUDs, and two HUD revisions rendered at
+the same simulation tick. This reports control geometry and presentation state.
+Text ink, physical input and monitor timing require separate observations.
 
 Version 0.0.240 adds [landmark-based phase matching](ANIMATION_PHASE_SYNC.md)
 when replacing a looping base clip, masked layer clip or physical animation

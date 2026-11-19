@@ -122,20 +122,44 @@ def qualify(client, observer, args, record, world):
         check(result['readiness']['owner_paused'], 'Explicit pause not reflected in owner state')
         return result
 
+    capture_requests = {}
+
     def capture(label):
         boundary = state()
         owner = boundary['owner']
         check(owner['paused'] and owner['ready'], 'Capture requires a stable paused presentation')
         path = args.output/(label+'.bmp')
-        result = client.call('player.capture', {'player_id': player_id,
-            'request_id': uuid.uuid4().hex, 'expected_control_revision': owner['control_revision'],
-            'session_id': owner['current_session_id'], 'tick': owner['tick'],
-            'expected_ui_revision': owner['ui_revision'], 'path': shared.native(path)})
+        method = 'player.capture_current' if label == 'edited' else 'player.capture'
+        request = {'player_id': player_id, 'request_id': uuid.uuid4().hex,
+                   'expected_control_revision': owner['control_revision'], 'session_id': owner['current_session_id'],
+                   'expected_ui_revision': owner['ui_revision'], 'path': shared.native(path), 'include_ui_layout': True}
+        if method == 'player.capture':
+            request['tick'] = owner['tick']
+        client.reject(method, {**request, 'include_ui_layout': 1}, -32602)
+        check(not path.exists(), 'Malformed HUD request wrote a capture')
+        result = client.call(method, request)
+        capture_requests[label] = method, request
         frame = result['capture']
         check(result['tick'] == owner['tick'] and result['session_id'] == owner['current_session_id']
               and frame['ui_revision'] == owner['ui_revision'] and frame['camera'] == uid(101)
               and frame['hardware'] and frame['capture_written'] and frame['nvrhi_errors'] == 0,
               result)
+        layout = frame['ui_layout']
+        receipts = frame['render_diagnostics']['scene_receipts']
+        check(receipts['presented'] == receipts['submitted'] and
+              all(type(layout[k]) is int and layout[k] > 0 and layout[k] == receipts['presented'][k]
+                  for k in ('frame_sequence', 'submission_id')), 'HUD does not identify the captured submission')
+        check(layout['session_id'] == request['session_id'] and layout['tick'] == owner['tick'] and
+              layout['player_generation'] == owner['generation'] and layout['ui_revision'] == frame['ui_revision'] and
+              layout['viewport'] == [0, 0, frame['width'], frame['height']] and
+              [layout['width'], layout['height']] == [frame['width'], frame['height']], layout)
+        if method == 'player.capture_current':
+            check(result['captured_tick'] == layout['tick'], 'HUD and chosen Tick differ')
+        expected = {r['id']: r for r in boundary['ui']['elements'] if r['kind'] != 'panel'}
+        check(len(layout['controls']) == len(expected) and {c['id'] for c in layout['controls']} == set(expected) and
+              all(c['kind'] == expected[c['id']]['kind'] and c['enabled'] == expected[c['id']]['effective_enabled']
+                  for c in layout['controls']), 'Captured same-frame controls differ from paused game state')
+        client.reject(method, {**request, 'include_ui_layout': False}, -32010)
         camera = client.call('runtime.entity', {'session_id': owner['current_session_id'], 'id': uid(101)})
         check(frame['camera_world'] == camera['world_matrix'], 'Capture used a stale camera')
         after = state()
@@ -159,6 +183,22 @@ def qualify(client, observer, args, record, world):
     changed = [(x,y) for y,(left,right) in enumerate(zip(original,edited_pixels))
                for x,(a,b) in enumerate(zip(left,right)) if a != b]
     check(len(changed) > 20, 'Real compiled UI edit had no substantive visible result')
+    original_layout = record['captures']['original']['result']['capture']['ui_layout']
+    edited_layout = record['captures']['edited']['result']['capture']['ui_layout']
+    before_button, after_button = (next(c for c in layout['controls'] if c['id'] == uid(3))
+                                   for layout in (original_layout, edited_layout))
+    check(before_button['enabled'] and not after_button['enabled'] and
+          original_layout['tick'] == edited_layout['tick'] and
+          original_layout['frame_sequence'] < edited_layout['frame_sequence'] and
+          original_layout['ui_revision'] < edited_layout['ui_revision'],
+          'A same-Tick HUD edit must have a new presentation and UI revision')
+    # Count changed BMP pixels inside both reported button rectangles. Pixel
+    # centers use target coordinates; this fixture covers the whole viewport.
+    boxes = [c[key] for c in (before_button, after_button) for key in ('bounds', 'clip')]
+    in_button = sum(all(left <= x + .5 < right and top <= y + .5 < bottom
+                        for left, top, right, bottom in boxes) for x, y in changed)
+    check(in_button > 20, 'Edited button bounds do not explain the captured pixel change')
+    record['button_changed_pixels'] = in_button
     record['edit_pixels'] = {'changed_pixels': len(changed),
         'bounds': [min(x for x,y in changed), min(y for x,y in changed),
                    max(x for x,y in changed), max(y for x,y in changed)]}
@@ -238,6 +278,13 @@ def qualify(client, observer, args, record, world):
     terminal = shared.await_state(observer, lambda item: not item['active'], 'ui-player-stopped')
     check(terminal['state'] == 'finished' and terminal['report']['stop_reason'] == 'requested_stop', terminal)
     verify_readiness(terminal)
+    for label in ('original', 'edited'):
+        method, request = capture_requests[label]
+        entry = record['captures'][label]
+        check(client.call(method, request) == {**entry['result'], 'replayed': True},
+              'Capture retry after runtime replacement/stop lost the original HUD frame')
+        check(entry['image'] == shared.frame_signature(args.output/(label+'.bmp')),
+              'Historical retry rewrote the BMP')
     old_request, old_ack = pause_receipts[-1]
     historical = client.call('player.control', old_request)
     check(historical == {**old_ack, 'replayed': True}, 'Historical control readiness was recaptured')

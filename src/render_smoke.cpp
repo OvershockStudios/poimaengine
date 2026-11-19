@@ -3912,7 +3912,7 @@ struct PlayerWindow::Impl {
             const auto& shown=context.diagnostics.scene_presented;
             if(!shown || *shown!=*actual)return;
             presented.scene.frame_sequence=shown->frame_sequence;presented.scene.submission_id=shown->submission_id;
-            result.materials.present(std::move(presented));
+            if(!result.materials.present(std::move(presented)))return;
 #if POIMA_GAME_UI
             if(context.game_ui_observation) {
                 observed_ui.frame_sequence=shown->frame_sequence;observed_ui.submission_id=shown->submission_id;

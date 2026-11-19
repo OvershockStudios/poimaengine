@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.241
+
+- Return the presented HUD layout with opted-in player captures so agents can
+  relate rendered pixels to the control geometry of the same frame. Retained
+  capture retries return the original frame and layout after later edits.
+
 ## 0.0.240
 
 - Match the destination phase of looping animations at clip changes using

@@ -217,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 133}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 134}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -545,6 +545,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"session_id",id},{"tick",rev},{"expected_structure_revision",rev},{"expected_ui_revision",rev},
         {"path",{{"type","string"},{"minLength",1},{"description","New BMP output in an existing directory; captures the live player's graphics context without advancing simulation."}}}},
         {"player_id","request_id","expected_control_revision","session_id","tick","path"});
+    methods["player.capture"]["properties"]["include_ui_layout"]={{"type","boolean"},{"default",false},
+        {"description","Include capture.ui_layout from the frame copied to the BMP and presented, or null when it has no logical HUD. The layout contains viewport-local control rectangles, flags and the exact submission identity."}};
     methods["player.capture_current"]=methods["player.capture"];
     methods["player.capture_current"]["properties"].erase("tick");
     methods["player.capture_current"]["required"]={"player_id","request_id","expected_control_revision","session_id","path"};

@@ -1,0 +1,145 @@
+{
+  "format": "poima.evidence.player-capture-ui.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.241",
+  "world_schema": 134,
+  "windows": {
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "executable_sha256": "e5e22beab740dc827d9ba91514aead1c93d9c9997651b9fd6340b1255206ce0f",
+    "compiled_ui": {
+      "fixture": "poima.test.managed-ui",
+      "fixture_descriptor_sha256": "932ec0c112727952308795544312a810192c0c5d91c1ddf7ed20e890d209e81e",
+      "rpc_calls": 363,
+      "processes_exited_cleanly": 3,
+      "changed_pixels": 13158,
+      "changed_pixels_in_button_region": 12446,
+      "inspected_original_and_edited": true,
+      "historical_retries": [
+        "player.capture",
+        "player.capture_current"
+      ],
+      "captures": {
+        "original": {
+          "sha256": "e44a7f247d5052719b34d34e8bcf1cc2e3a8d4121b565ce86566b9265fd26d0d",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480,
+          "tick": 0,
+          "ui_revision": 0,
+          "layout_generation": 1,
+          "frame_sequence": 3,
+          "submission_id": 7,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "scale": 1.25,
+          "controls": 6
+        },
+        "edited": {
+          "sha256": "287802a0dcfcf98f1c03d82a3c2be9ed669f3f7767c50faf07f7b54a59fb75c0",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480,
+          "tick": 0,
+          "ui_revision": 1,
+          "layout_generation": 3,
+          "frame_sequence": 12,
+          "submission_id": 16,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "scale": 1.25,
+          "controls": 6
+        },
+        "saved": {
+          "sha256": "2d3dcc6c9b3006a9561b9faa3cf8d63bbfdd4964395e3fedbf20d4d4a758899d",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480,
+          "tick": 0,
+          "ui_revision": 2,
+          "layout_generation": 9,
+          "frame_sequence": 50,
+          "submission_id": 54,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "scale": 1.25,
+          "controls": 6
+        },
+        "restored": {
+          "sha256": "2d3dcc6c9b3006a9561b9faa3cf8d63bbfdd4964395e3fedbf20d4d4a758899d",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480,
+          "tick": 0,
+          "ui_revision": 2,
+          "layout_generation": 11,
+          "frame_sequence": 59,
+          "submission_id": 63,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "scale": 1.25,
+          "controls": 6
+        }
+      },
+      "report": {
+        "path": "build/player-capture-ui-0.0.241/windows-compiled-hud/evidence.json",
+        "bytes": 6819277,
+        "sha256": "946f23d9a11665af4aa79d4846be32c688ec930534b007a8c311f231580c157b"
+      }
+    },
+    "empty_ui": {
+      "rpc_calls": 159,
+      "processes_exited_cleanly": 4,
+      "scope": "Omitted and explicit false retain legacy result shape; requested layout is null without a logical HUD.",
+      "report": {
+        "path": "build/player-capture-ui-0.0.241/windows-no-hud/evidence.json",
+        "bytes": 3524397,
+        "sha256": "d45e2479c2c2b6ce854791ab2312e1b57d81faf4b937160f79a5b31d56e1b749"
+      }
+    },
+    "frozen_request_schema": {
+      "passed": true,
+      "profile": "source_world",
+      "report": {
+        "path": "build/player-capture-ui-0.0.241/windows-v1-schema/compatibility.json",
+        "bytes": 603,
+        "sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+      }
+    }
+  },
+  "linux": {
+    "executable_sha256": "e421127eeb2d9c52c437343f23844f0e574369b8375a83ce5020eb8fb8e9ff9d",
+    "rpc_calls": 16,
+    "processes_exited_cleanly": 4,
+    "scope": "Headless discovery and unavailable player protocol. First link did not find LLD on PATH. Existing pinned toolchain path corrected the environment; no source or test change.",
+    "original_link_log": {
+      "path": "build/player-capture-ui-0.0.241/linux-build.log",
+      "bytes": 10879,
+      "sha256": "0571271bb7bb6b3fccf1b1bd313732b873289f1cb06dcb504d1071e82ba9eda4"
+    },
+    "report": {
+      "path": "build/player-capture-ui-0.0.241/linux-service/evidence.json",
+      "bytes": 1349358,
+      "sha256": "598af95b7c4a06a39091496cc8b34733389c25b960897f344630a9e51a085de1"
+    }
+  },
+  "limits": [
+    "Single Windows GPU and a small retained compiled UI fixture.",
+    "No physical input, panel-only standalone fixture, monitor scanout, glyph-ink or game-scale performance qualification."
+  ]
+}

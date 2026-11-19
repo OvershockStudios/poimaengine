@@ -407,6 +407,23 @@
             {"audio_wall_ns",player_diagnostic_audio(a)},
             {"audio_counters_saturated",a.counters_saturated}};
     }
+    static Json player_ui_layout_json(const PlayerUiObservation& sample) {
+        require(sample.layout && sample.layout->projection && sample.layout->controls,
+            "Invalid retained player UI observation.",-32020);
+        const auto& layout=*sample.layout;
+        Json controls=Json::array();
+        for(const auto& row:*layout.controls) {
+            controls.push_back({{"id",row.id},{"kind",row.kind==UiElementKind::button?"button":"label"},
+                {"bounds",row.bounds},{"clip",row.clip},
+                {"font_size_px",row.font_size_px},{"visible",row.visible},{"enabled",row.enabled},
+                {"hittable",row.hittable},{"focused",row.focused}});
+        }
+        return {{"session_id",sample.session_id},{"tick",sample.tick},
+            {"ui_revision",layout.projection->revision},{"player_generation",sample.player_generation},
+            {"frame_sequence",sample.frame_sequence},{"submission_id",sample.submission_id},
+            {"layout_generation",layout.generation},{"viewport",sample.viewport},
+            {"width",layout.width},{"height",layout.height},{"scale",layout.scale},{"controls",std::move(controls)}};
+    }
     Json player_ui_info(const Json& params) const {
         fields(params,{"player_id","generation","session_id","tick","ui_revision"},
             {"player_id","generation","session_id"});
@@ -426,24 +443,11 @@
             {"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"ui_revision",runtime_->ui_model().revision()},
             {"displayed",nullptr}};
         if(!sample)return result;
-        require(sample->layout && sample->layout->projection && sample->layout->controls,"Invalid retained player UI observation.",-32020);
-        const auto& layout=*sample->layout;
-        Json controls=Json::array();
-        for(const auto& row:*layout.controls) {
-            controls.push_back({{"id",row.id},{"kind",row.kind==UiElementKind::button?"button":"label"},
-                {"bounds",row.bounds},{"clip",row.clip},
-                {"font_size_px",row.font_size_px},{"visible",row.visible},{"enabled",row.enabled},
-                {"hittable",row.hittable},{"focused",row.focused}});
-        }
-        const bool current=sample->session_id==runtime_id_ && sample->tick==runtime_->inspect().tick &&
-            sample->player_generation==player_generation_ && layout.projection==runtime_->ui_model().presentation() &&
+        auto displayed=player_ui_layout_json(*sample);
+        displayed["matches_current_owner"]=sample->session_id==runtime_id_ && sample->tick==runtime_->inspect().tick &&
+            sample->player_generation==player_generation_ && sample->layout->projection==runtime_->ui_model().presentation() &&
             player_owner_->window->ready();
-        result["displayed"]={{"session_id",sample->session_id},{"tick",sample->tick},
-            {"ui_revision",layout.projection->revision},{"player_generation",sample->player_generation},
-            {"frame_sequence",sample->frame_sequence},{"submission_id",sample->submission_id},
-            {"layout_generation",layout.generation},{"viewport",sample->viewport},
-            {"width",layout.width},{"height",layout.height},{"scale",layout.scale},
-            {"matches_current_owner",current},{"controls",std::move(controls)}};
+        result["displayed"]=std::move(displayed);
         return result;
     }
     Json player_diagnostics_info(const Json& params) const {
@@ -483,6 +487,9 @@
     struct PlayerReceipt {
         Json params,result;
         std::optional<RenderReport> capture;
+        // Held only until compact geometry is formatted. This keeps an allocation
+        // failure retryable after the exclusive BMP has already been written.
+        std::optional<PlayerUiObservation> pending_capture_ui;
         std::optional<PlayerReadiness> readiness;
         std::exception_ptr failure;
         bool committed=false,control=false;
@@ -490,12 +497,16 @@
         bool active=false,ready=false,paused=false;
         enum class State { initializing,running,paused,finished } state=State::initializing;
     };
-    Json player_receipt_json(const PlayerReceipt& receipt,bool replayed) const {
+    Json player_receipt_json(PlayerReceipt& receipt,bool replayed) const {
         require(receipt.committed,"Player command outcome is not terminal.",-32080);
         if(receipt.failure) {
             try {std::rethrow_exception(receipt.failure);}
             catch(const Error&) {throw;}
             catch(const std::exception& error) {throw Error(-32020,error.what());}
+        }
+        if(receipt.pending_capture_ui) {
+            receipt.result.at("capture").at("ui_layout")=player_ui_layout_json(*receipt.pending_capture_ui);
+            receipt.pending_capture_ui.reset();
         }
         auto result=receipt.result;result["replayed"]=replayed;
         if(receipt.control) {
@@ -718,16 +729,18 @@
         const bool capture_current=method=="player.capture_current";
         require(method=="player.capture" || capture_current,"Unknown player service method.",-32601);
         if(capture_current)
-            fields(params,{"player_id","request_id","expected_control_revision","session_id","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
+            fields(params,{"player_id","request_id","expected_control_revision","session_id","path","expected_structure_revision","expected_ui_revision","expected_material_revision","include_ui_layout"},
                 {"player_id","request_id","expected_control_revision","session_id","path"});
         else
-            fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision","expected_material_revision"},
+            fields(params,{"player_id","request_id","expected_control_revision","session_id","tick","path","expected_structure_revision","expected_ui_revision","expected_material_revision","include_ui_layout"},
                 {"player_id","request_id","expected_control_revision","session_id","tick","path"});
         identifier(params.at("player_id"));identifier(params.at("request_id"));revision(params.at("expected_control_revision"));
         identifier(params.at("session_id"));if(!capture_current)revision(params.at("tick"));
         if(params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
         if(params.contains("expected_ui_revision"))revision(params.at("expected_ui_revision"));
         if(params.contains("expected_material_revision"))revision(params.at("expected_material_revision"));
+        require(!params.contains("include_ui_layout") || params.at("include_ui_layout").is_boolean(),"include_ui_layout must be Boolean.");
+        const bool include_ui_layout=params.value("include_ui_layout",false);
         auto normalized=params;normalized["method"]=method;
         if(auto replay=player_retry(normalized))return *replay;
         player_control_guard(params);runtime_guard(params);
@@ -780,12 +793,43 @@
         if(frozen.lens_presentation() && frozen.lens_presentation()->enabled)prepared->result["capture"]["lens_presentation"]=
             player_lens_presentation_json(*frozen.lens_presentation());
         if(frozen.pose_presentation())prepared->result["capture"]["pose_presentation"]=player_pose_presentation_json(*frozen.pose_presentation());
+        if(include_ui_layout) {
+            prepared->result["capture"]["ui_layout"]=nullptr;
+            if(snapshot.logical_ui && !snapshot.logical_ui->elements.empty()) {
+                auto& sample=prepared->pending_capture_ui.emplace();
+                sample.session_id=runtime_id_;sample.tick=captured_tick;sample.player_generation=player_generation_;
+            }
+        }
         auto& receipt=publish_player_receipt(std::move(prepared));
         try {
             auto capture=player_owner_->window->capture(output,frozen);
             require(capture.available,capture.detail,-32003);
             require(capture.success && capture.capture_written,capture.detail,-32020);
             require(capture.diagnostics.scene_presented && same_renderer_snapshot(*capture.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Player capture receipt differs from its immutable snapshot.",-32020);
+            if(include_ui_layout) {
+                const auto& shown=*capture.diagnostics.scene_presented;
+                require(shown.frame_sequence && shown.submission_id && capture.diagnostics.scene_submitted &&
+                    shown==*capture.diagnostics.scene_submitted,"Capture has no matching submitted and presented frame.",-32020);
+                const auto& displayed=player_owner_->window->ui_observation();
+                require(displayed.has_value()==receipt.pending_capture_ui.has_value(),
+                    "Capture HUD layout presence differs from its frozen projection.",-32020);
+                if(displayed) {
+                    auto& sample=*receipt.pending_capture_ui;
+                    require(displayed->frame_sequence==shown.frame_sequence && displayed->submission_id==shown.submission_id &&
+                        displayed->session_id==sample.session_id && displayed->tick==sample.tick &&
+                        displayed->player_generation==sample.player_generation && displayed->layout && displayed->layout->controls &&
+                        displayed->layout->projection==snapshot.logical_ui && snapshot.logical_ui->revision==runtime_->ui_model().revision(),
+                        "Capture HUD layout differs from its presented frame or frozen projection.",-32020);
+                    const auto& v=displayed->viewport;
+                    require(v[0]>=0 && v[1]>=0 && v[2]>v[0] && v[3]>v[1] &&
+                        static_cast<std::uint32_t>(v[2])<=capture.width && static_cast<std::uint32_t>(v[3])<=capture.height &&
+                        displayed->layout->width==static_cast<std::uint32_t>(v[2]-v[0]) &&
+                        displayed->layout->height==static_cast<std::uint32_t>(v[3]-v[1]),
+                        "Presented HUD viewport differs from the captured target.",-32020);
+                    sample.frame_sequence=displayed->frame_sequence;sample.submission_id=displayed->submission_id;
+                    sample.viewport=v;sample.layout=displayed->layout;
+                }
+            }
             static_assert(std::is_nothrow_move_constructible_v<RenderReport>);
             receipt.capture.emplace(std::move(capture));
         }catch(...) {receipt.failure=std::current_exception();}
