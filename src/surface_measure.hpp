@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/animation.hpp"
+#include "poima/runtime_surface.hpp"
 #include "pose_frames.hpp"
 #include <limits>
 #include <optional>
@@ -9,7 +10,6 @@
 namespace poima::surface_measure {
 using pose_frames::Vector;
 using pose_frames::dot;
-inline constexpr std::size_t max_pairs=32,max_selected_triangles=4096,max_triangle_checks=32768;
 
 inline Vector subtract(const Vector& a,const Vector& b) {
     return {a[0]-b[0],a[1]-b[1],a[2]-b[2]};
@@ -86,5 +86,61 @@ inline Sample nearest(const Triangle& triangle,const Vector& query) {
         if(candidate.distance_squared<closest.distance_squared)closest=candidate;
     }
     return closest;
+}
+inline RuntimeSurfaceMeasurement measure(const RuntimeSurfaceProbe& probe,const SceneObject& source,
+    const SceneObject& target,std::size_t& triangle_checks) {
+    const auto target_count=target.mesh->indices.size()/3;
+    auto selected=probe.target_triangles;
+    if(selected.size()>max_surface_selected_triangles)
+        throw std::invalid_argument("Select between 1 and 4096 target triangles.");
+    std::sort(selected.begin(),selected.end());
+    if(!selected.empty() && selected.back()>=target_count)
+        throw std::invalid_argument("Triangle index is outside the cooked drawable.");
+    if(std::adjacent_find(selected.begin(),selected.end())!=selected.end())
+        throw std::invalid_argument("Target triangles must be unique.");
+    const auto count=selected.empty()?target_count:selected.size();
+    if(count==0 || count>max_surface_triangle_checks-triangle_checks)
+        throw std::invalid_argument("Surface measurement exceeds the 32768 target triangle budget.");
+    triangle_checks+=count;
+
+    RuntimeSurfaceMeasurement result;
+    if(probe.source_weights) {
+        if(probe.source_index>=source.mesh->indices.size()/3)
+            throw std::invalid_argument("Triangle index is outside the cooked drawable.");
+        auto weights=*probe.source_weights;
+        double sum=0;
+        for(const double weight:weights) {
+            if(!std::isfinite(weight) || weight<0 || weight>1)
+                throw std::invalid_argument("Barycentric weights must be within 0..1.");
+            sum+=weight;
+        }
+        if(std::abs(sum-1)>1e-8)
+            throw std::invalid_argument("Barycentric weights must sum to one within 1e-8.");
+        for(auto& weight:weights)weight/=sum;
+        const auto face=triangle(source,probe.source_index);
+        result.source_point=point(face,weights);
+        result.source_normal=face.normal;
+    } else {
+        if(probe.source_index>=source.mesh->vertices.size())
+            throw std::invalid_argument("Vertex index is outside the cooked drawable.");
+        result.source_point=world_vertex(source,static_cast<std::uint32_t>(probe.source_index));
+    }
+
+    Sample closest;
+    for(std::size_t i=0;i<count;++i) {
+        const auto index=selected.empty()?i:selected[i];
+        const auto face=triangle(target,index);
+        const auto candidate=nearest(face,result.source_point);
+        // Full and explicit searches visit ascending ordinals.
+        if(candidate.distance_squared<closest.distance_squared) {
+            closest=candidate;
+            result.target_triangle=index;
+            result.target_normal=face.normal;
+        }
+    }
+    result.target_point=closest.position;
+    result.target_weights=closest.weights;
+    result.distance_m=std::sqrt(closest.distance_squared);
+    return result;
 }
 }

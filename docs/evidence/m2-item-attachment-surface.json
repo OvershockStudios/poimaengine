@@ -1,0 +1,189 @@
+{
+  "format": "poima.evidence.item-attachment-surface.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.255",
+  "schema_revision": 146,
+  "scope": "Sampled geometry in immediate checked handoffs between live anchors, using proposed transforms and the same closest-surface solver as the committed read.",
+  "fixture": "tests/item_attachment_surface.py",
+  "qualified_cases": [
+    "Inclusive distance threshold and a later moving skinned triangle point.",
+    "A second command moves a source with committed distance zero to a proposed distance of 0.25 metres.",
+    "Full snapshots match around two failed batches. A rejected request ID can be repaired and the successful retry replays its receipt.",
+    "Reject a target outside the item subtree, a probe source inside that subtree, a source hidden from drawing, a target detached in the proposed graph and malformed or excessive selections.",
+    "Retain the existing frame-only gameplay callback and cold-load behavior."
+  ],
+  "linux": {
+    "sampled_guard": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux-published/report.json",
+        "bytes": 2710,
+        "sha256": "0fc8ca0b64a7e8d2369f2004e2d9e842e62e7dfd775ab914557e5df03a8611b7"
+      },
+      "rpc_count": 40,
+      "executable_sha256": "30b1a4f86417164a6676d5bdd48b20a1052a9fb275d25907782f0c5627dc4ee8",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/linux-published/session/requests.jsonl",
+        "bytes": 31327,
+        "sha256": "7fcee5c1f5d4b08ea2ac0eaf5513606b31462ec2fb3bfc3d6f1c4a0b8c414809"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/linux-published/session/responses.jsonl",
+        "bytes": 18210,
+        "sha256": "e092c8747c9258a80ef399b42f64b7f7483eeccd4e09b1eb6c46708095009252"
+      },
+      "atomic_checkpoint_comparisons": 2,
+      "owner_count": 1
+    },
+    "surface_query_regression": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux-read-published/report.json",
+        "bytes": 1991,
+        "sha256": "1150d47444ae54a9c33af7015e7dd0a2af3b4046c2238976fd261b3205414356"
+      },
+      "rpc_count": 38,
+      "executable_sha256": "30b1a4f86417164a6676d5bdd48b20a1052a9fb275d25907782f0c5627dc4ee8",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/linux-read-published/session/requests.jsonl",
+        "bytes": 24648,
+        "sha256": "109182ef126005217d8ea7ce07b2ec59d64f27033ce1b23b3ef2f4e7f6abef0f"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/linux-read-published/session/responses.jsonl",
+        "bytes": 26121,
+        "sha256": "07f92fe1bbcb28093b5427f418c84934ac5ad6153137b58fb71c66121528c273"
+      },
+      "owner_count": 1
+    },
+    "retained_compiled_contact_coreclr": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux-compiled-qualified/report.json",
+        "bytes": 2402,
+        "sha256": "3bc3b68e042208e28600cc629e38ebbaf534fa14ffee598bf3bf413c604a1a8d"
+      },
+      "rpc_count": 56,
+      "executable_sha256": "30b1a4f86417164a6676d5bdd48b20a1052a9fb275d25907782f0c5627dc4ee8",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/linux-compiled-qualified/direct/requests.jsonl",
+        "bytes": 15166,
+        "sha256": "b7bfdd8015762c5fc1de43092c1366d1a0e4973bcb32e70f97896fcc7e79caeb"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/linux-compiled-qualified/direct/responses.jsonl",
+        "bytes": 437735,
+        "sha256": "e7a38e0f696d764a38530f17451a6fd2bac22d6cc133119e6aa4c1ae1b834ba0"
+      },
+      "owner_count": 3
+    },
+    "selected_ctest": {
+      "path": "build/attachment-surface-0.0.255/linux-regressions-qualified.xml",
+      "bytes": 5156,
+      "sha256": "b1b7d4d901569bf9a6801d9d44a4b94ef573546e689e2a283fbc3414f8c8e5b9"
+    },
+    "mcp": {
+      "report.json": {
+        "path": "build/attachment-surface-0.0.255/mcp-qualified/report.json",
+        "bytes": 1321,
+        "sha256": "d98ec3a1cde90eceb1559cb1b5965d61cd4e7b1948e6bc10022173af362d6920"
+      },
+      "requests.jsonl": {
+        "path": "build/attachment-surface-0.0.255/mcp-qualified/requests.jsonl",
+        "bytes": 3577,
+        "sha256": "22a186382fcac72a49a88a710bd888e782e94bb900503661a4e4d00a115c4f2c"
+      },
+      "responses.jsonl": {
+        "path": "build/attachment-surface-0.0.255/mcp-qualified/responses.jsonl",
+        "bytes": 19182,
+        "sha256": "970ab60287f0b968c2b0cf673901f0f22eb88fd7d2bd6e57a81760745a11e859"
+      }
+    }
+  },
+  "windows": {
+    "sampled_guard": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/windows-published/report.json",
+        "bytes": 2712,
+        "sha256": "65e6c349da53c2665818dd4920f00cec804f2c5a54f638a4a893569189914a79"
+      },
+      "rpc_count": 40,
+      "executable_sha256": "6119c17afdeb6c980714160890d090fb38ee6351630fc3699734bcfd1adc16b3",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/windows-published/session/requests.jsonl",
+        "bytes": 31343,
+        "sha256": "4d2272dd9dc8bf4c0fa2a6946251bd91f9151bbd21f6ac6db59580aa416ac429"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/windows-published/session/responses.jsonl",
+        "bytes": 18214,
+        "sha256": "bce1f625e06024b4eb959d4c150a82d059a188af77055269753e472ada3a09cb"
+      },
+      "atomic_checkpoint_comparisons": 2,
+      "owner_count": 1
+    },
+    "surface_query_regression": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/windows-read-published/report.json",
+        "bytes": 1993,
+        "sha256": "13091eb1ddab9fdcc08faaebfb9fbf6cc2e6b17e35b4c249ffd7c9c90bf4e36e"
+      },
+      "rpc_count": 38,
+      "executable_sha256": "6119c17afdeb6c980714160890d090fb38ee6351630fc3699734bcfd1adc16b3",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/windows-read-published/session/requests.jsonl",
+        "bytes": 24664,
+        "sha256": "fcf80234bb9e91c0dbc2936f49989d8c608b7552ab275d0cd9a1a5a9de1f9d64"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/windows-read-published/session/responses.jsonl",
+        "bytes": 26125,
+        "sha256": "b9e84584225e0acc92c970e001acc007e004e63d61e81fef70f7977386d46c72"
+      },
+      "owner_count": 1
+    },
+    "retained_compiled_contact_native_aot": {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/windows-aot-qualified/report.json",
+        "bytes": 2455,
+        "sha256": "edb353a820bddfe96ee15086511efe995425810511f9d99df5c80795ed21f37e"
+      },
+      "rpc_count": 59,
+      "executable_sha256": "6119c17afdeb6c980714160890d090fb38ee6351630fc3699734bcfd1adc16b3",
+      "requests": {
+        "path": "build/attachment-surface-0.0.255/windows-aot-qualified/direct/requests.jsonl",
+        "bytes": 15870,
+        "sha256": "2532eacf60d199fea790dcc9aa6b8c05a4472c12300016d7fa6ef2d080ae44d6"
+      },
+      "responses": {
+        "path": "build/attachment-surface-0.0.255/windows-aot-qualified/direct/responses.jsonl",
+        "bytes": 455098,
+        "sha256": "38cb04ecff1ddc5e449072d2d2f1cd53f2360186cb16da36237d65cea2c4ba90"
+      },
+      "owner_count": 3
+    }
+  },
+  "corrected_qualification_attempts": [
+    {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux/report.json",
+        "bytes": 567,
+        "sha256": "2c7e33869d1b930aa222db7caa69e18a28636aeecb6ac635acfb06f1961a4d96"
+      },
+      "cause": "The fixture omitted the structure guard on a step after changing item ownership."
+    },
+    {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux-final/report.json",
+        "bytes": 573,
+        "sha256": "46e7bca0f877f442384a776870968ba985625d385a0acc136f299c472bffce53"
+      },
+      "cause": "The fixture omitted the required structure guard on a checkpoint after changing item ownership."
+    },
+    {
+      "report": {
+        "path": "build/attachment-surface-0.0.255/linux-regressions-final.xml",
+        "bytes": 5566,
+        "sha256": "7626494b76e3c75ee0b473aeefef19a882913f526e58b2ff22d44bb5208234ae"
+      },
+      "cause": "An intermediate attempt to preserve every bit of the pre-transfer matrix changed the binding observation after cold load. The final implementation uses the stored affine offset for both the guard candidate and publication."
+    }
+  ]
+}

@@ -6,6 +6,7 @@
 #include "poima/animation_layers.hpp"
 #include "poima/runtime_animation_controls.hpp"
 #include "poima/runtime_physical.hpp"
+#include "poima/runtime_surface.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
@@ -33,6 +34,7 @@ struct RuntimeAttachmentFrame {
 struct RuntimeAttachmentContact {
     RuntimeAttachmentFrame item,anchor;
     double position_limit_m,rotation_limit_deg;
+    std::vector<RuntimeSurfaceProbe> surface;
 };
 struct RuntimeAttachmentContactReport {
     std::string entity,anchor;
@@ -44,6 +46,18 @@ public:
     explicit RuntimeAttachmentContactRejected(RuntimeAttachmentContactReport report)
         : std::runtime_error("Receiving socket is outside the item attachment contact limits."),contact(std::move(report)) {}
     RuntimeAttachmentContactReport contact;
+};
+struct RuntimeAttachmentSurfaceReport {
+    std::string entity,anchor,source,target;
+    std::size_t probe_index=0;
+    RuntimeSurfaceMeasurement measurement;
+    double distance_limit_m=0;
+};
+class RuntimeAttachmentSurfaceRejected : public std::runtime_error {
+public:
+    explicit RuntimeAttachmentSurfaceRejected(RuntimeAttachmentSurfaceReport report)
+        : std::runtime_error("A surface probe is outside the item attachment contact limit."),contact(std::move(report)) {}
+    RuntimeAttachmentSurfaceReport contact;
 };
 enum class RuntimeAttachmentMode { KeepWorld, Snap, Reset };
 struct RuntimeAttachmentCommand {

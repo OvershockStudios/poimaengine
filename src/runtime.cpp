@@ -21,6 +21,7 @@
 #include "runtime_assertions.hpp"
 #include "runtime_hierarchy.hpp"
 #include "pose_frames.hpp"
+#include "surface_measure.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -1968,10 +1969,14 @@ struct Runtime::Impl {
         }
         return structure_results;
     }
-    SceneObject drawable(entt::entity object,const RuntimeMesh& mesh) const {
+    SceneObject drawable(entt::entity object,const RuntimeMesh& mesh,
+        const std::map<std::string,Matrix4>* proposed=nullptr) const {
         const auto& node=registry.get<Node>(object);
-        SceneObject result{node.id,node.world,mesh.albedo,mesh.mesh,mesh.material,mesh.textures,
-            animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return registry.get<Node>(find(id)).world; }),
+        const auto world=[&](const std::string& id)->const Matrix4& {
+            return proposed ? proposed->at(id) : registry.get<Node>(find(id)).world;
+        };
+        SceneObject result{node.id,proposed ? proposed->at(node.id) : node.world,mesh.albedo,mesh.mesh,mesh.material,mesh.textures,
+            animations->skin(node.id,world),
             1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
         return result;

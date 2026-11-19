@@ -77,6 +77,47 @@
         if(position>contact.position_limit_m || !rotation || *rotation>contact.rotation_limit_deg)
             throw RuntimeAttachmentContactRejected({node.id,binding.anchor,position,contact.position_limit_m,contact.rotation_limit_deg,rotation});
     }
+    bool attachment_contains(const AttachmentGraph* graph,const std::string& root,const std::string& id) const {
+        for(auto current=id;!current.empty();) {
+            if(current==root)return true;
+            const auto& node=registry.get<Node>(find(current));
+            current=transform_parent(node,attachment(graph,current));
+        }
+        return false;
+    }
+    void check_attachment_surfaces(const AttachmentGraph& candidate,const AttachmentContacts& contacts,
+        const std::map<std::string,Matrix4>& prepared) const {
+        std::map<std::string,SceneObject> drawables;
+        const auto mesh=[&](const std::string& id)->const SceneObject& {
+            if(const auto cached=drawables.find(id);cached!=drawables.end())return cached->second;
+            const auto entity=find(id);
+            const auto* geometry=registry.try_get<RuntimeMesh>(entity);
+            require(geometry && geometry->mesh && geometry->visible,"Select a visible indexed mesh drawable.");
+            return drawables.emplace(id,drawable(entity,*geometry,&prepared)).first->second;
+        };
+        std::size_t checks=0;
+        std::optional<RuntimeAttachmentSurfaceReport> missed;
+        for(const auto& [item,contact]:contacts) {
+            for(std::size_t i=0;i<contact->surface.size();++i) {
+                const auto& probe=contact->surface[i];
+                require(probe.distance_limit_m && *probe.distance_limit_m>=0 && *probe.distance_limit_m<=1e9,
+                    "Attachment surface probes require a limit within 0..1e9 metres.");
+                require(attachment_contains(attachment_graph.get(),item,probe.target) &&
+                    attachment_contains(&candidate,item,probe.target),
+                    "Attachment surface target must stay inside the item's effective subtree.");
+                require(!attachment_contains(attachment_graph.get(),item,probe.source) &&
+                    !attachment_contains(&candidate,item,probe.source),
+                    "Attachment surface source must stay outside the item's effective subtree.");
+                const auto& source=mesh(probe.source);
+                const auto& target=mesh(probe.target);
+                const auto result=surface_measure::measure(probe,source,target,checks);
+                if(result.distance_m>*probe.distance_limit_m && !missed)
+                    missed=RuntimeAttachmentSurfaceReport{item,candidate.bindings.at(item).anchor,
+                        probe.source,probe.target,i,result,*probe.distance_limit_m};
+            }
+        }
+        if(missed)throw RuntimeAttachmentSurfaceRejected(std::move(*missed));
+    }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
         const AttachmentContacts& contacts={}) {
         validate_attachment_graph(*graph,*topology);
@@ -104,6 +145,7 @@
                     "Attachment anchor could not preserve the current item matrix.");
             prepared.emplace(node.id,world);
         }
+        check_attachment_surfaces(*graph,contacts,prepared);
         // All validation and allocation is complete. There is no partial graph
         // when a later command or matrix fails, and the old cache keys are stale.
         for(const auto e:order) {
@@ -120,12 +162,17 @@
         if(attachment_graph)graph->bindings=attachment_graph->bindings;
         std::set<std::string> seen,keep;
         AttachmentContacts contacts;
+        std::size_t surface_pairs=0;
         for(const auto& command:commands) {
             (void)find(command.entity);
             require(seen.insert(command.entity).second,"Duplicate attachment item in one transaction.");
             if(command.contact) {
                 require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
                     "Attachment contact requires a live keep-world destination anchor.");
+                const auto count=command.contact->surface.size();
+                require(count<=max_attachment_surface_probes && count<=max_surface_pairs-surface_pairs,
+                    "Attachment contact supports up to 8 surface probes per item and 32 per batch.");
+                surface_pairs+=count;
                 contacts.emplace(command.entity,&*command.contact);
             }
             switch(command.mode) {

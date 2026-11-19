@@ -87,9 +87,10 @@ def configure(session, source, oracle, gpu):
     return revision, chain
 
 
-def save(session, saves, slot, owner, tick):
+def save(session, saves, slot, owner, tick, structure=None):
+    guard = {} if structure is None else dict(expected_structure_revision=structure)
     receipt = session.rpc('save.write', dict(request_id=id_request(), configuration_generation=1,
-        slot=slot, expected_generation=0, session_id=owner, expected_tick=tick, expected_gameplay_revision=0))
+        slot=slot, expected_generation=0, session_id=owner, expected_tick=tick, expected_gameplay_revision=0, **guard))
     folder = saves / ('slot-' + slot)
     current = json.loads((folder/'current.json').read_bytes())['payload']['current']
     assert re.fullmatch(r'p-[0-9a-f]{32}\.bin', current['file'])

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.255
+
+- Require sampled finger-to-item contact for a checked handoff when the grip specifies surface probes.
+
 ## 0.0.254
 
 - Preserve the corners and borders of game UI artwork when controls resize.

@@ -19,6 +19,12 @@
             {"rotation_error_deg",row.rotation_error_deg ? Json(*row.rotation_error_deg) : Json(nullptr)},
             {"rotation_limit_deg",row.rotation_limit_deg}});
     }
+    static Error attachment_surface_error(const RuntimeAttachmentSurfaceRejected& error) {
+        const auto& row=error.contact;
+        return Error(-32040,error.what(),{{"entity",row.entity},{"anchor",row.anchor},
+            {"probe_index",row.probe_index},{"distance_limit_m",row.distance_limit_m},
+            {"surface",surface_measurement_json(row.source,row.target,row.measurement,row.distance_limit_m)}});
+    }
     Json apply_runtime_attachments(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","expected_structure_revision","commands"},
             {"session_id","request_id","expected_tick","expected_structure_revision","commands"});
@@ -48,7 +54,7 @@
                 require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
                     "Attachment contact requires a live keep-world destination anchor.");
                 const auto& guard=row.at("contact");
-                fields(guard,{"item_offset","anchor_offset","position_limit_m","rotation_limit_deg"},
+                fields(guard,{"item_offset","anchor_offset","position_limit_m","rotation_limit_deg","surface"},
                     {"position_limit_m","rotation_limit_deg"});
                 auto offset=[&](const char* key)->RuntimeAttachmentFrame {
                     if(!guard.contains(key))return {};
@@ -62,8 +68,19 @@
                     require(value.is_number() && value>=0 && value<=maximum,std::string(key)+" is outside its numeric bounds.");
                     return value.get<double>();
                 };
-                command.contact=RuntimeAttachmentContact{offset("item_offset"),offset("anchor_offset"),
-                    bound("position_limit_m",1e9),bound("rotation_limit_deg",180)};
+                auto contact=RuntimeAttachmentContact{offset("item_offset"),offset("anchor_offset"),
+                    bound("position_limit_m",1e9),bound("rotation_limit_deg",180),{}};
+                if(guard.contains("surface")) {
+                    const auto& probes=guard.at("surface");
+                    require(probes.is_array() && !probes.empty() && probes.size()<=max_attachment_surface_probes,
+                        "Attachment contact accepts 1..8 surface probes.");
+                    for(const auto& pair:probes) {
+                        auto probe=parse_surface_probe(pair);
+                        require(probe.distance_limit_m.has_value(),"Attachment surface probes require distance_limit_m.");
+                        contact.surface.push_back(std::move(probe));
+                    }
+                }
+                command.contact=std::move(contact);
             }
             commands.push_back(std::move(command));
         }
@@ -82,6 +99,8 @@
         receipts.push_back({{"params",std::move(normalized)},{"result",result}});
         try {runtime_->change_attachments(expected,commands);}
         catch(const RuntimeAttachmentContactRejected& error) {throw attachment_contact_error(error);}
+        catch(const RuntimeAttachmentSurfaceRejected& error) {throw attachment_surface_error(error);}
+        catch(const std::invalid_argument& error) {throw Error(-32602,error.what());}
         catch(const std::runtime_error& error) {throw Error(-32602,error.what());}
         runtime_receipts_.swap(receipts);return result;
     }

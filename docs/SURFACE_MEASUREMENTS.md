@@ -64,6 +64,10 @@ of a mesh against another.
 
 ## Interpret the measurement
 
+Use [sampled attachment guards](ITEM_ATTACHMENTS.md#require-contact-at-sampled-points)
+to require these distances during a handoff. A guard measures the proposed
+batch pose before the transfer takes effect.
+
 Each row reports the sampled world-space source point and the closest target
 point with its triangle ordinal and barycentric coordinates. `world_delta_m`
 points from target to source. `distance_m` is its length. The optional

@@ -79,9 +79,50 @@ and angular error and limit in degrees. A sheared, reflected or degenerate
 basis produces a null angular error and rejects the transfer. The entire
 transaction retains its previous state on a miss.
 
-Use authored animation or IK to bring the hand to the grip. The guard checks
-frame alignment. To measure the hand's visible skin at the handle, use
-[surface measurements](SURFACE_MEASUREMENTS.md).
+Use authored animation or IK to bring the hand to the grip.
+
+### Require contact at sampled points
+
+Add `surface` to the contact guard to require one or more finger pads to
+reach the handle. Select cooked vertices or triangle points from the hand's
+drawable and choose the facing surface on the item. For a prop with a
+separate blade and handle, select the handle triangles explicitly.
+
+```json
+{
+  "position_limit_m": 0.015,
+  "rotation_limit_deg": 5,
+  "surface": [{
+    "source": {"entity": "a0000000000000000000000000000012", "vertex": 24},
+    "target": {"entity": "30000000000000000000000000000001", "triangles": [12, 13]},
+    "distance_limit_m": 0.005
+  }]
+}
+```
+
+The source and target are visible indexed drawables. The target must be
+the item or one of its effective descendants before and after the transfer.
+The source must stay outside that subtree. The solver evaluates the proposed
+world matrices and skin palettes after resolving every command in the batch.
+Each distance limit is inclusive. A guard accepts 1–8 probes, with up to 32
+probes and 32,768 target triangle checks across the whole batch. Explicit
+target selections support up to 4,096 distinct triangle ordinals per probe.
+Use [surface measurements](SURFACE_MEASUREMENTS.md) to calibrate the sample
+location and distance limit against committed poses.
+
+A distance miss returns `-32040` with the item and anchor IDs, zero-based
+`probe_index`, `distance_limit_m`, and a `surface` measurement in the same
+shape as a row from `runtime.surface.measure`. The measurement includes the
+proposed source and closest target points, distance, and winning triangle.
+The proposed affine transforms can change the rounding of a shared-edge
+witness. To reproduce the exact witness, read it from a separate replay of
+the applied candidate pose.
+The item bindings, revision and retry history stay at their pre-request values.
+Reuse the request ID after repairing a rejected request. Invalid sample
+selectors, subtree violations, and exceeded bounds return `-32602`.
+
+The surface probe option is exposed on the native service. Compiled gameplay
+supports the frame guard documented below.
 
 ## Transfer during compiled gameplay
 
@@ -178,3 +219,11 @@ check with actual C# gameplay.
 
 The [contact fixture](../tests/fixtures/item_attachment_contact/README.md)
 checks the direct and compiled guards and the optional original CC0 rig case.
+
+Run the sampled guard fixture to compare committed and proposed geometry,
+rejected batches, and corrected retries.
+
+```sh
+python3 tests/item_attachment_surface.py --binary build/linux-game/poima \
+  --output build/sampled-attachment-check
+```
