@@ -18,6 +18,21 @@ service prefix/features and cooked asset formats. A matching authoring contract
 does not establish that a gameplay artifact or renderer is compatible. Use
 the guide's recorded evidence and the actual installed capabilities together.
 
+## Choose a discipline
+
+Use [quality observation](QUALITY_OBSERVATION.md) to choose expected behavior,
+record correlated evidence, and identify a useful impossibility check.
+
+| Task | Start with | Check in the game |
+| --- | --- | --- |
+| Plan a game from a description | [Game brief interview](GAME_BRIEF.md) | Compare the first build with the creator’s agreed player experience and decisions. |
+| Character animation | [Character motion](#review-character-motion), then the relevant clip, IK, or physics guide | Static pose, contact, action timing, and the intended camera at normal speed. |
+| Audio and mixing | [Audio capture and playback](AUDIO.md) and [runtime sound events](AUDIO_EVENTS.md) | Listen to isolated cues and the full mix. Check repetition, spatial transitions, and the actual playback device for a device issue. |
+| Camera and staging | [Authored lenses](CAMERA_LENSES.md), [additive camera motion](CAMERA_POSES.md), and [camera observations](CAMERA_OBSERVATION.md) | Match input timing and camera framing. Check that camera dressing leaves player aim and control intact. |
+| Interactions | [Input actions](INPUT_ACTIONS.md) and [physics queries](PHYSICS_INTERACTIONS.md) | Confirm the same input both changes the intended object and gives legible feedback. Check overlap, interruption, and save continuation where required. |
+| Game UI | [Native UI authoring](GAME_UI.md) and [presented UI inspection](PLAYER_UI_OBSERVATION.md) | Verify the rendered layout, focus, clipping, and navigation on the relevant devices. |
+| Effects and lighting | [Render diagnostics](RENDER_DIAGNOSTICS.md), then the supported effect or light guide | Capture the effect with its trigger visible. Check repeated execution, depth, readability and the cost at the relevant quality tier. |
+
 ## Start with a complete example
 
 | Result | Guide | Prerequisites | Completion check |
@@ -116,6 +131,36 @@ and the relevant image, sound or gameplay outcome. Future terrain, FPS and
 other capability plans are in the [roadmap](ROADMAP.md); they are not runnable
 instructions. Codex and Claude skills will serve as compact entry points to
 qualified workflows under the [documentation standard](DOCUMENTATION.md).
+
+## Review character motion
+
+Use separate first-person and third-person checks when both perspectives matter.
+For a movement-quality pass, choose a licensed motion capture take or filmed
+performance with comparable intent, speed and load. Review the in-game take at
+normal speed for weight, anticipation, contact, follow-through and recovery.
+Then use slow playback and joint or contact readouts to locate defects. Compare
+both an isolated action and the transitions into and out of it.
+
+### First person
+
+In first person, verify the static rest and equipped poses before adding motion.
+Check the arm roots, wrist and palm transforms, hand-to-prop grip and viewmodel
+clearance from the player camera and from front, side and top. Then replay the
+action at normal speed, including interruption, recovery and camera motion.
+For a visible first-person body, inspect look-down views during standing,
+crouching, stepping and turning. Check leg placement against actual ground and
+keep the local camera clear of the head and overlapping foreground meshes.
+Use [camera poses](CAMERA_POSES.md) and [viewmodel clearance](VIEWMODEL_CLEARANCE.md)
+to inspect their separate engine controls.
+
+### Third person
+
+For third person, select a visible weight shift or contact to verify. Keep the
+same camera, clips and player inputs across takes. Compare the pose and movement
+through a start, turn, stop or action. For a gait change, use [phase matching](ANIMATION_PHASE_SYNC.md)
+and check the supporting foot, body travel and follow-through across the whole
+blend. Use [grounding observations](FOOT_PLANTING.md) for planted contacts and
+[physical pose diagnostics](PHYSICAL_POSE_DIAGNOSTICS.md) for joint-angle limits.
 
 
 ## Measure native frame cadence

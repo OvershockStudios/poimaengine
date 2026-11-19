@@ -161,8 +161,8 @@ class BlendContract(unittest.TestCase):
         return dict(session_id=self.session, request_id=uuid.uuid4().hex, expected_tick=self.tick,
                     ticks=ticks, animations=list(animations), **extra)
 
-    def step(self, ticks, animations=()):
-        result = self.good('runtime.step', **self.params(ticks, animations))
+    def step(self, ticks, animations=(), **extra):
+        result = self.good('runtime.step', **self.params(ticks, animations, **extra))
         self.tick += ticks
         self.assertEqual(result['tick'], self.tick)
         return result
@@ -190,6 +190,50 @@ class BlendContract(unittest.TestCase):
         blend = item['properties']['blend_ticks']
         self.assertEqual(blend['type'], 'integer')
         self.assertEqual((blend['minimum'], blend['maximum']), (0, 3600))
+
+    def test_phase_matching_maps_contact_intervals_and_preserves_retries(self):
+        self.prepare(two=True)
+        self.start()
+        destination = command(self.rig, clip=1, playing=False, blend_ticks=15,
+                              phase_sync=dict(source=[1.5, .5], destination=[.25, 1.75]))
+        self.step(1, [command(self.rig, time=1.75, playing=False)])
+        unrelated = uid(200)
+        before = self.entity()
+        for update, code in (
+            (dict(time=.25), -32602), (dict(loop=False), -32602), (dict(clip=None), -32602),
+            (dict(phase_sync=dict(source=[1.5, .5], destination=[.25, 2])), -32040),
+            (dict(phase_sync=dict(source=[1.5, 1.5], destination=[.25, 1.75])), -32040),
+            (dict(phase_sync=dict(source=[1.5, .5], destination=[.25])), -32602),
+            (dict(phase_sync=dict(source=[True, .5], destination=[.25, 1.75])), -32602),
+            (dict(phase_sync=dict(source=[1.5, .75, .25], destination=[0, .5, 1])), -32040),
+        ):
+            request = self.params(1, [command(unrelated, time=1.25)],
+                                  animation_phase_matches=[dict(destination, **update)])
+            self.error(self.call('runtime.step', **request), code)
+            self.assertEqual(self.entity(), before)
+            self.assertIsNone(self.animation(unrelated)['clip'])
+
+        self.error(self.call('runtime.step', **self.params(1, [destination])), -32602)
+        self.error(self.call('runtime.step', **self.params(1, [command(self.rig)],
+                        animation_phase_matches=[destination])), -32602)
+        request = self.params(15, animation_phase_matches=[destination])
+        result = self.good('runtime.step', **request)
+        self.tick += 15
+        self.assertEqual(result['tick'], self.tick)
+        self.assertEqual(self.animation()['time'], .625)
+        self.pose((1.375, 3, 0))
+        before = self.entity()
+        self.assertTrue(self.good('runtime.step', **request)['replayed'])
+        self.assertEqual(self.entity(), before)
+        changed = dict(destination, phase_sync=dict(source=[1.5, .5], destination=[.25, 1.5]))
+        self.error(self.call('runtime.step', **dict(request, animation_phase_matches=[changed])), -32010)
+
+        # Right contact in the second cycle interval maps across the destination seam.
+        self.step(1, [command(self.rig, time=1.25, playing=False)])
+        self.step(15, animation_phase_matches=[destination])
+        self.assertEqual(self.animation()['time'], .125)
+        self.pose((1.875, 3, 0))
+        self.assertEqual(self.world.read_bytes(), self.before)
 
     def test_rest_fade_missing_channels_rotation_and_exact_completion(self):
         self.prepare(baseline=transform((.25, 4, 0), (1.5, 1, 1)))

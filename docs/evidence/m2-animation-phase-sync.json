@@ -1,0 +1,266 @@
+{
+  "format": "poima.evidence.animation-phase-sync.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.240",
+  "world_schema": 133,
+  "scope": "One-shot looping clip phase matching on Linux native and Windows Vulkan. Imported Knight observations are model-space toe poses, not terrain contacts or broad motion-quality qualification.",
+  "asset": {
+    "name": "Knight.glb",
+    "license": "CC0-1.0",
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "source_pin": "docs/CHARACTER_LIBRARY.md#original-source",
+    "clips": [
+      "Walking_A",
+      "Running_A"
+    ]
+  },
+  "linux": {
+    "ctest_passes": [
+      "physical_pose_diagnostics_contract",
+      "runtime_animation_rate_native",
+      "runtime_animation_contract",
+      "runtime_animation_blend_contract",
+      "runtime_animation_layers_contract",
+      "runtime_animation_inertial_contract"
+    ],
+    "ctest_report": {
+      "path": "build/animation-phase-0.0.240/linux-compatible-ctest.xml",
+      "sha256": "ab420e86234a0d0d48aed625b6616b6459681791f40779dbc50a30c588e961b2"
+    },
+    "knight": {
+      "executable_sha256": "b802b885d376ec03bfc4fa82656bbca53f2124c1562fdef1831ddd640fe1a51c",
+      "gpu_index": null,
+      "rpc_calls": 158,
+      "natural_exit": true,
+      "blend_ticks_per_take": 12,
+      "takes": 4,
+      "selected_toe_matrix_checks": 48,
+      "maximum_matrix_component_error": 7.708852556298496e-09,
+      "summary": [
+        {
+          "side": "left",
+          "source_time": 0.11666666666666667,
+          "destination_time": 0.15,
+          "destination_toe_height": 0.014361920425682672,
+          "clip_zero_toe_height": 0.2860401559591843,
+          "first_five_ticks_lower_by": [
+            0.013378148458378078,
+            0.02739928792824435,
+            0.03976998203480123,
+            0.04047848336646244,
+            0.02042778456744493
+          ]
+        },
+        {
+          "side": "right",
+          "source_time": 0.65,
+          "destination_time": 0.55,
+          "destination_toe_height": 0.014362179596439543,
+          "clip_zero_toe_height": 0.32568520679221397,
+          "first_five_ticks_lower_by": [
+            -0.0001860395642854784,
+            0.00441642963248598,
+            0.012833415217203686,
+            0.01583318088922739,
+            0.013908156660058402
+          ]
+        }
+      ],
+      "captures": [],
+      "report": {
+        "path": "build/animation-phase-0.0.240/linux-knight-compatible/report.json",
+        "sha256": "477285556f1b7b86ccf0c1e20d711fab8ebbb28595e6836e20984bf1426451e4"
+      },
+      "stream_identities": [
+        {
+          "path": "build/animation-phase-0.0.240/linux-knight-compatible/session/requests.jsonl",
+          "sha256": "db45483d94f8c0959cd501cca7decc6d20569a6e7e26c810bf331fa9209e9bfb"
+        },
+        {
+          "path": "build/animation-phase-0.0.240/linux-knight-compatible/session/responses.jsonl",
+          "sha256": "813e7f1bde0a106c12010fae39653f4f5e6814de8ba94c79605e4f61ccc1edb2"
+        }
+      ]
+    },
+    "physical_target": {
+      "passed": true,
+      "rpc_count": 12,
+      "natural_closure": true,
+      "playback": {
+        "clip": 48,
+        "duration": 0.800000011920929,
+        "loop": true,
+        "playing": false,
+        "speed": 1.0,
+        "time": 0.55,
+        "transition": {
+          "duration_ticks": 12,
+          "elapsed_ticks": 1,
+          "source_clip": 72,
+          "source_frozen": false,
+          "source_loop": true,
+          "source_playing": false,
+          "source_speed": 1.0,
+          "source_time": 0.65,
+          "start_tick": 2,
+          "weight": 0.08333333333333333
+        }
+      },
+      "unchanged_hashes": [
+        "9580e5bb61d11f53e63ac03cc758fc871667b37bb8920bcc2d9f2c990959ec26",
+        "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "cd671ddfce82049607083cd4457396755435fdc24b0bb24f3dc88f38edeab613"
+      ],
+      "report": {
+        "path": "build/animation-phase-0.0.240/linux-physical-target-3/report.json",
+        "sha256": "91697ea7d8930ef077ccc8da15db96f9e5408cd626337c30df6b8843e96990ca"
+      }
+    },
+    "mcp_focused_discovery": {
+      "report_stream": {
+        "path": "build/animation-phase-0.0.240/linux-mcp-compatible/responses.jsonl",
+        "sha256": "b7696619fc30c8f9275223f442b68a0ed6096ec9e2249f6fc6108bc59a2e5522"
+      }
+    }
+  },
+  "windows": {
+    "native_checks": 775,
+    "complete_archive_operands": 205,
+    "native_log": {
+      "path": "build/animation-phase-0.0.240/windows-native-final.log",
+      "sha256": "8713d19aa1f53ee2d8f4c8d55d96249d0c0b93208102accfbedfe10ae19bd1ff"
+    },
+    "blend_service_tests": 8,
+    "blend_report": {
+      "path": "build/animation-phase-0.0.240/windows-blend-final.json",
+      "sha256": "3f83c7fc0fdf8d1c7e11cf2e8f45c2f96a8f8ab5cbfb25b5eb5e616468c9ab53"
+    },
+    "knight": {
+      "executable_sha256": "515f0dbf422b89fe1bd74e7b8490d652170510c733ea10ea3f129db5ac493e28",
+      "gpu_index": 1,
+      "rpc_calls": 166,
+      "natural_exit": true,
+      "blend_ticks_per_take": 12,
+      "takes": 4,
+      "selected_toe_matrix_checks": 48,
+      "maximum_matrix_component_error": 7.708852556298496e-09,
+      "summary": [
+        {
+          "side": "left",
+          "source_time": 0.11666666666666667,
+          "destination_time": 0.15,
+          "destination_toe_height": 0.014361920425682672,
+          "clip_zero_toe_height": 0.2860401559591843,
+          "first_five_ticks_lower_by": [
+            0.013378148458378078,
+            0.02739928792824435,
+            0.03976998203480123,
+            0.04047848336646244,
+            0.02042778456744493
+          ]
+        },
+        {
+          "side": "right",
+          "source_time": 0.65,
+          "destination_time": 0.55,
+          "destination_toe_height": 0.014362179596439543,
+          "clip_zero_toe_height": 0.32568520679221397,
+          "first_five_ticks_lower_by": [
+            -0.0001860395642854784,
+            0.00441642963248598,
+            0.012833415217203686,
+            0.01583318088922739,
+            0.013908156660058402
+          ]
+        }
+      ],
+      "captures": [
+        {
+          "filename": "left-clip_zero-04.bmp",
+          "sha256": "6b6a6a76901bfc49e4e87e19bc80342f28e8143d58169d31e8ef3786dc810ec4"
+        },
+        {
+          "filename": "left-clip_zero-08.bmp",
+          "sha256": "12e9174294be7cddd942840fcf458b7f58a259463b5af3d47b96162bd4a902cb"
+        },
+        {
+          "filename": "left-phase_markers-04.bmp",
+          "sha256": "9230878f4e0f7925a36fb39bab4d14fea973a84be32a1b22a20160e70fa60da5"
+        },
+        {
+          "filename": "left-phase_markers-08.bmp",
+          "sha256": "6ef2cb26490a17060a6327a68a6db647c357674a266c10a2462dacf3ac895537"
+        },
+        {
+          "filename": "right-clip_zero-04.bmp",
+          "sha256": "f674e982629fcf93b039a3073541d3d45d7a896b45cab4d196071714a02f5c9b"
+        },
+        {
+          "filename": "right-clip_zero-08.bmp",
+          "sha256": "49d76c3bc418f12fd89997b96312a81d02dc8af0cba1571b97c8b5a49e1d4429"
+        },
+        {
+          "filename": "right-phase_markers-04.bmp",
+          "sha256": "6a02f1f39f218f38fe517c7f058decda60a4ae0d61de48bf52a0b647335a68a8"
+        },
+        {
+          "filename": "right-phase_markers-08.bmp",
+          "sha256": "c51afc95a941ae082fa4c52d76ea2a3a2fdead6b407152be51b2125856cd34e9"
+        }
+      ],
+      "report": {
+        "path": "build/animation-phase-0.0.240/windows-knight-final/report.json",
+        "sha256": "28b84036d35abc44ee62c41471af29d7fc938194cdb0a0b72fed90d230741684"
+      },
+      "stream_identities": [
+        {
+          "path": "build/animation-phase-0.0.240/windows-knight-final/session/requests.jsonl",
+          "sha256": "0f548bea95b6d03339bb22f774e5cb5e7c4742e3c9b1b2df6e5bcf77f0aff06b"
+        },
+        {
+          "path": "build/animation-phase-0.0.240/windows-knight-final/session/responses.jsonl",
+          "sha256": "1513d665a455a659991b2b5edb00862f6de68ab0e797a7424e4e23376135ea52"
+        }
+      ],
+      "capture_size": [
+        960,
+        540
+      ],
+      "samples": 4,
+      "captures_match_visually_inspected_set": true
+    }
+  },
+  "frozen_request_schema": {
+    "profile": "source_world",
+    "passed": true,
+    "release": {
+      "id": "poima.runtime-game-session",
+      "version": 1,
+      "status": "stable",
+      "request_baseline_sha256": "4ae6111b780c2f365b09abd85c168eecd472bf9b339e5c9bc43778f96b1396bf",
+      "profile": "source_world",
+      "target": {
+        "arch": "x86_64",
+        "os": "Windows"
+      }
+    },
+    "report": {
+      "path": "build/animation-phase-0.0.240/windows-schema-compatible/compatibility.json",
+      "sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+    },
+    "first_candidate": {
+      "passed": false,
+      "findings": [
+        {
+          "path": "$.methods[\"runtime.step\"][\"properties\"][\"animations\"][\"items\"][\"oneOf\"]",
+          "reason": "Changed exclusive union lacks required stable object const discriminators."
+        }
+      ],
+      "report": {
+        "path": "build/animation-phase-0.0.240/windows-schema/compatibility.json",
+        "sha256": "b91b210495e9f723839a986d2b979f4707dab0269c552216569a92b987f9e356"
+      }
+    },
+    "resolution": "Kept the existing animations item schema and exposed the new typed rows in optional animation_phase_matches."
+  }
+}

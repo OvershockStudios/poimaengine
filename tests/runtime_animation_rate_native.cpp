@@ -241,6 +241,34 @@ void native_partition_rollback_and_cold() {
     auto replacement=full(2,60,AnimationTransitionMode::Inertial);step(a,1,{replacement});step(*cold,1,{replacement});
     for(unsigned n=0;n<4;++n) {step(a,15);step(*cold,15);same(a.save_snapshot(content),cold->save_snapshot(content),"Full native retimed/inertial future archive differs.");}
 }
+void native_phase_matching_cold_continuation() {
+    auto d=definition(true,true);
+    auto& rig=*d.entities.front().animation_rig;
+    rig.loop=true;
+    rig.time=6.5;
+    rig.layers.front().loop=true;
+    Runtime live(d),explicit_start(d);
+    step(live,15);step(explicit_start,15);
+    step(live,15,{}, {rate(2)});step(explicit_start,15,{}, {rate(2)});
+    // The effective retimed source is 7.25. Between source marks 6 and 2
+    // that is 1.25/4 of the interval. Map the same fraction to 0.5..1.5.
+    auto synced=full(3,48,AnimationTransitionMode::Inertial);
+    synced.time=0;synced.loop=true;
+    synced.phase_sync=AnimationPhaseSync{{6,2},{.5,1.5}};
+    auto seek=synced;seek.phase_sync.reset();seek.time=.8125;
+    // The layer has an independent clock at .75 and selects the second
+    // current interval when the leading landmark is after that sample.
+    auto layer=full(3,48);layer.time=0;layer.loop=true;layer.layer=1;layer.weight=.2;
+    layer.phase_sync=AnimationPhaseSync{{4,0},{1.5,.5}};
+    auto layer_seek=layer;layer_seek.phase_sync.reset();layer_seek.time=.6875;
+    step(live,12,{synced,layer});step(explicit_start,12,{seek,layer_seek});
+    const auto saved=live.save_snapshot(content);
+    same(saved,explicit_start.save_snapshot(content),"Marker selection and equivalent explicit seek produce different complete archives.");
+    auto cold=Runtime::from_snapshot(d,content,saved);
+    same(saved,cold->save_snapshot(content),"Marker-selected pose does not cold restore exactly.");
+    step(live,55);step(*cold,55);
+    same(live.save_snapshot(content),cold->save_snapshot(content),"Mid-transition cold continuation loses the marker-selected destination.");
+}
 }
 int main(int argc,char** argv) {
     try {
@@ -251,8 +279,10 @@ int main(int argc,char** argv) {
             {"clock_edges_and_atomic_admission",clock_edges_and_atomic_admission},{"masked_layers_and_target_conflicts",masked_layers_and_target_conflicts},
             {"root_interval_and_outgoing_replacement",root_interval_and_outgoing_replacement},{"nested_save_versions_and_strict_restore",nested_save_versions_and_strict_restore}};
         for(const auto& [name,test]:portable){test();std::cout<<"PASS "<<name<<'\n';}
-        if(Runtime::available()){native_partition_rollback_and_cold();std::cout<<"PASS native_partition_rollback_and_cold\n";}
-        else std::cout<<"SKIP native_partition_rollback_and_cold: simulation unavailable\n";
-        std::cout<<"Animation rate: "<<checks<<" checks, "<<archives<<" complete archive operands, 6 portable groups, "<<(Runtime::available()?1:0)<<" native groups.\n";return 0;
+        if(Runtime::available()){
+            native_partition_rollback_and_cold();std::cout<<"PASS native_partition_rollback_and_cold\n";
+            native_phase_matching_cold_continuation();std::cout<<"PASS native_phase_matching_cold_continuation\n";
+        } else std::cout<<"SKIP native Runtime groups: simulation unavailable\n";
+        std::cout<<"Animation rate: "<<checks<<" checks, "<<archives<<" complete archive operands, 6 portable groups, "<<(Runtime::available()?2:0)<<" native groups.\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

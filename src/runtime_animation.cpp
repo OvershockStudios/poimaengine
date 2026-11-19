@@ -97,6 +97,40 @@ RuntimeAnimationState effective_clock_state(const AnimationCommand& control,std:
     if(!rate)return clock_state(control,anchor,tick,durations);
     return clock_state(rate_control(control,rate),rate->anchor_tick,tick,durations);
 }
+double phase_distance(double from,double to,double duration) {
+    return to>=from ? to-from : (duration-from)+to;
+}
+std::array<double,max_animation_phase_markers+1> phase_offsets(std::span<const double> markers,double duration) {
+    std::array<double,max_animation_phase_markers+1> offsets{};
+    for(std::size_t i=0;i<markers.size();++i) {
+        check(std::isfinite(markers[i])&&markers[i]>=0&&markers[i]<duration,
+            "Animation phase markers must be within the selected clip's half-open duration.");
+        if(i==0)continue;
+        offsets[i]=phase_distance(markers.front(),markers[i],duration);
+        check(offsets[i]>offsets[i-1]&&offsets[i]<duration,
+            "Animation phase markers must be distinct and in forward cyclic order.");
+    }
+    offsets[markers.size()]=duration;
+    return offsets;
+}
+double synchronized_time(const RuntimeAnimationState& source,const AnimationCommand& target,double target_duration) {
+    const auto& sync=*target.phase_sync;
+    check(source.clip&&source.loop&&source.duration>0&&target.clip&&target.loop&&target_duration>0,
+        "Animation phase matching requires two positive-duration looping clips.");
+    check(target.time==0,"Animation phase matching requires time zero; landmarks select the start.");
+    const auto count=sync.source.size();
+    check(count>=2&&count<=max_animation_phase_markers&&sync.destination.size()==count,
+        "Animation phase matching requires two to eight paired markers.");
+    const auto from=phase_offsets(sync.source,source.duration);
+    const auto to=phase_offsets(sync.destination,target_duration);
+    const double distance=phase_distance(sync.source.front(),source.time,source.duration);
+    const auto end=std::upper_bound(from.begin(),from.begin()+count,distance)-from.begin();
+    const double fraction=(distance-from[end-1])/(from[end]-from[end-1]);
+    const double offset=std::lerp(to[end-1],to[end],fraction);
+    const double until_wrap=target_duration-sync.destination.front();
+    const double time=offset<until_wrap ? sync.destination.front()+offset : offset-until_wrap;
+    return time<target_duration ? time : 0;
+}
 double rate_phase(const AnimationCommand& control,std::uint64_t anchor,
     const std::optional<RuntimeAnimations::RateSegment>& rate,std::uint64_t tick,std::span<const double> durations) {
     const auto effective=rate_control(control,rate);const auto start=rate?rate->anchor_tick:anchor;
@@ -807,6 +841,13 @@ void RuntimeAnimations::validate_return_controls(std::size_t index,std::uint64_t
 }
 RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const {
         Clock next=previous;next.control=playback_control(command,membership_->rigs[index].clip_durations.size());next.anchor_tick=tick;next.transition.reset();next.rate.reset();
+        if(command.phase_sync) {
+            const auto& durations=membership_->rigs[index].clip_durations;
+            const auto source=effective_clock_state(previous.control,previous.anchor_tick,previous.rate,tick,durations);
+            next.control.time=synchronized_time(source,command,command.clip?durations[*command.clip]:0);
+            check(next.control.time<=1e9,"Animation phase matching produces a start beyond the authored seek bound.");
+            next.control.phase_sync.reset();
+        }
         next.inertial_ever_used=next.inertial_ever_used || command.transition_mode==AnimationTransitionMode::Inertial;
         if(command.blend_ticks>0) {
             Transition fade;fade.start_tick=tick;fade.duration_ticks=command.blend_ticks;

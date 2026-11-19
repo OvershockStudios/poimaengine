@@ -3187,12 +3187,33 @@ public:
         }
         return result;
     }
-    static std::vector<AnimationCommand> parse_animations(const Json& raw) {
+    static std::vector<AnimationCommand> parse_animations(const Json& raw,bool allow_phase_sync=false) {
         require(raw.is_array() && raw.size()<=64,"Animations must be an array of at most 64 complete playback commands.");
         std::vector<AnimationCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
         for(const auto& value:raw) {
-            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks"},{"entity","clip","time","speed","loop","playing"});
+            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks","phase_sync"},{"entity","clip","time","speed","loop","playing"});
             auto command=animation_value(value);command.entity=identifier(value.at("entity"));
+            if(value.contains("phase_sync")) {
+                require(allow_phase_sync,"Use animation_phase_matches for a phase-matched ordinary command.");
+                const auto& sync=value.at("phase_sync");
+                fields(sync,{"source","destination"},{"source","destination"});
+                const auto read_markers=[](const Json& markers) {
+                    require(markers.is_array()&&markers.size()>=2&&markers.size()<=max_animation_phase_markers,
+                        "Animation phase matching needs two to eight markers per clip.");
+                    std::vector<double> times;
+                    times.reserve(markers.size());
+                    for(const auto& marker:markers) {
+                        require(marker.is_number()&&std::isfinite(marker.get<double>())&&marker>=0,
+                            "Animation phase markers must be finite nonnegative seconds.");
+                        times.push_back(marker.get<double>());
+                    }
+                    return times;
+                };
+                command.phase_sync=AnimationPhaseSync{read_markers(sync.at("source")),read_markers(sync.at("destination"))};
+                require(command.phase_sync->source.size()==command.phase_sync->destination.size()&&
+                    command.clip&&command.loop&&command.time==0,
+                    "Animation phase matching needs paired markers and a looping destination clip at time zero.");
+            }
             if(value.contains("blend_ticks")) {
                 const auto ticks=revision(value.at("blend_ticks"));require(ticks<=3600,"Animation blend_ticks must be within 0..3600.");
                 command.blend_ticks=static_cast<std::uint32_t>(ticks);
@@ -3210,6 +3231,21 @@ public:
             require(seen.emplace(command.entity,command.layer.value_or(0)).second,"Duplicate animation command target.");result.push_back(std::move(command));
         }
         return result;
+    }
+    static void normalize_animation_receipts(Json& animations) {
+        if(!animations.is_array())return;
+        for(auto& command:animations)if(command.is_object()) {
+            if(!command.contains("blend_ticks"))command["blend_ticks"]=0;
+            // Validate integer fields before JSON receipt comparison, where 0 and 0.0 compare equal.
+            require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
+            if(command.contains("layer")) {
+                const auto layer=revision(command.at("layer"));require(layer>=1 && layer<=4,"Animation command layer must be1..4.");
+                if(!command.contains("weight_blend_ticks"))command["weight_blend_ticks"]=0;
+                require(revision(command.at("weight_blend_ticks"))<=3600,"Animation weight blend duration must be0..3600.");
+            }
+            if(!command.contains("transition_mode"))command["transition_mode"]="crossfade";
+            require(command.at("transition_mode").is_string() && (command.at("transition_mode")=="crossfade" || command.at("transition_mode")=="inertial"),"Animation transition_mode must be crossfade or inertial.");
+        }
     }
     static std::vector<AnimationRateCommand> parse_animation_rates(const Json& raw) {
         require(raw.is_array() && raw.size()<=64,"Animation rates must be an array of at most64 commands.");
@@ -3907,10 +3943,11 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
+            if(!normalized.contains("animation_phase_matches"))normalized["animation_phase_matches"]=Json::array();
             if(!normalized.contains("animation_rates"))normalized["animation_rates"]=Json::array();
             const auto animation_rates=parse_animation_rates(normalized.at("animation_rates"));
             if(!normalized.contains("ik"))normalized["ik"]=Json::array();
@@ -3934,19 +3971,8 @@ public:
                 if(!command.contains("space"))command["space"]="world";
                 if(!command.contains("weight"))command["weight"]=1;
             }
-            if(normalized["animations"].is_array())for(auto& command:normalized["animations"])if(command.is_object()) {
-                if(!command.contains("blend_ticks"))command["blend_ticks"]=0;
-                // JSON numeric equality treats 0 and 0.0 alike. Validate this
-                // integer field before receipt matching, including retries.
-                require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
-                if(command.contains("layer")) {
-                    const auto layer=revision(command.at("layer"));require(layer>=1 && layer<=4,"Animation command layer must be1..4.");
-                    if(!command.contains("weight_blend_ticks"))command["weight_blend_ticks"]=0;
-                    require(revision(command.at("weight_blend_ticks"))<=3600,"Animation weight blend duration must be0..3600.");
-                }
-                if(!command.contains("transition_mode"))command["transition_mode"]="crossfade";
-                require(command.at("transition_mode").is_string() && (command.at("transition_mode")=="crossfade" || command.at("transition_mode")=="inertial"),"Animation transition_mode must be crossfade or inertial.");
-            }
+            normalize_animation_receipts(normalized["animations"]);
+            normalize_animation_receipts(normalized["animation_phase_matches"]);
             const auto expected=revision(params.at("expected_tick"));
             const auto ticks=revision(params.at("ticks")); require(ticks>=1 && ticks<=600 && expected+ticks<=max_revision,"Runtime step must contain 1..600 ticks within the tick range.");
             const auto& raw=normalized.at("inputs"); require(raw.is_array() && raw.size()<=32,"Runtime inputs must be an array of at most 32 characters.");
@@ -3956,8 +3982,16 @@ public:
                 inputs.push_back(std::move(input));
             }
             const auto motions=parse_motions(normalized.at("motions"));const auto sounds=parse_sounds(normalized.at("sounds"));
-            const auto animations=parse_animations(normalized.at("animations"));
-            require(animations.size()+animation_rates.size()<=64,"Caller exceeds64 combined animation writes in one Tick.");
+            auto animations=parse_animations(normalized.at("animations"));
+            auto phase_matches=parse_animations(normalized.at("animation_phase_matches"),true);
+            require(animations.size()+animation_rates.size()+phase_matches.size()<=64,"Caller exceeds64 combined animation writes in one Tick.");
+            std::set<std::pair<std::string,std::optional<std::uint32_t>>> playback_targets;
+            for(const auto& command:animations)playback_targets.emplace(command.entity,command.layer);
+            for(auto& command:phase_matches) {
+                require(command.phase_sync.has_value(),"A phase-matched animation command needs phase_sync landmarks.");
+                require(playback_targets.emplace(command.entity,command.layer).second,"Duplicate animation command target.");
+                animations.push_back(std::move(command));
+            }
             for(const auto& rate:animation_rates)
                 require(std::none_of(animations.begin(),animations.end(),[&](const auto& command) {
                     return command.entity==rate.entity && command.layer==rate.layer;

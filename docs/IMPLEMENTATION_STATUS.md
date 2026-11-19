@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-17 for **0.0.239**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.240**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.240 adds [landmark-based phase matching](ANIMATION_PHASE_SYNC.md)
+when replacing a looping base clip, masked layer clip or physical animation
+target. It uses the committed outgoing clock and saves the resolved destination
+time through the existing transition format. The
+[Windows and Linux qualification](evidence/m2-animation-phase-sync.json)
+compares 48 selected toe poses per platform against the original Knight glTF
+curves. Eight Windows Vulkan captures show the same four blend takes. The
+Windows frozen v1 request comparison passes. Continuous phase matching,
+gait-dependent physical support and a compiled C# marker command remain
+separate work.
 
 Version 0.0.239 adds a [read-only joint-limit query](PHYSICAL_POSE_DIAGNOSTICS.md)
 for an authored physical rig. Agents can select a cooked rest pose or a clip

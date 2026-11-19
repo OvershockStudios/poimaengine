@@ -169,6 +169,20 @@ foreground geometry after interpolation against current physics. Complete
 broader weapon lowering/IK and smooth release, with animation and rendering
 policies independent of the world camera.
 
+Target the quality of well-directed motion capture for character movement.
+Qualify first-person and third-person animation as separate player experiences.
+First person needs authored rest and equipped hand transforms, stable grips,
+readable action/camera motion and visible legs. The local camera should see the
+legs follow the same stance, gait and contacts as the world body as the player
+looks down, turns, steps or crouches. Keep the world body’s silhouette, shadows,
+and interactions coherent while allowing separate framing of hands and equipment.
+Third-person checks additionally cover support transitions, pelvis and torso
+weight shifts, joint motion, clothing and equipment follow-through at gameplay
+distance. Use licensed capture or performance reference for comparable starts,
+stops, turns and actions. Review the playable takes at normal speed and measure
+contact, grip and timing where they expose defects. Apply the same quality bar
+to imported clips, procedural motion and their combinations.
+
 Add hierarchical spawning, prefab composition, variants and inspectable
 override origins. Projects need pinned packages, dependency queries, incremental
 imports/cooking, material instances and reproducible reuse between games.
@@ -226,6 +240,11 @@ Terrain tools add curated stamps, splines, modular meshes and constraint-aware
 placement with repeatable recipes. Movement colliders and precise weapon
 queries have separate policies, including real apertures and explicit coverage
 masks where visible fence/cutout openings must remain shoot-through.
+Representative terrain should include grounded stones and trees, with a bounded
+set of movable props that leave credible contacts with soil and rock. Verify
+surface-specific footprint behavior on snow and sand and its persistence across
+streaming or saves. Test shadow/contact lighting, small wind and particle motion,
+and effects from the normal player camera as well as close to the ground.
 
 Provide compiled CPU/GPU VFX authoring, previews, simulation/bounds/overdraw
 inspection and gameplay event integration. Extend native audio with buses,
@@ -251,6 +270,9 @@ without losing accounted water quantities.
 Storms, lightning, precipitation, wind and seasons share world state with water,
 audio and surfaces. Longer-term effects must reach crops, resources and travel;
 accelerated time must preserve accumulated effects.
+Qualify creek and river margins with biome-appropriate sediment, wetness,
+vegetation, algae, ambient fauna and local variation. LOD and visibility changes
+need stable visual representations while preserving actual nearby interactions.
 
 **Dependencies:** time ownership, saved environment state, physics, rendering
 and audio. **Exit:** a coastal/river scene plus independent conservation tests
@@ -278,10 +300,33 @@ active/offscreen promotion checks under a declared population budget.
 
 Finish agent access to hierarchy, components, animation, VFX, UI and world
 systems, with focused queries, diagnostics, observations and low-volume results.
+Give different agent clients one engine-owned workflow for a game brief,
+guarded edits, playtests, evidence and build export. Track checkpoints,
+interrupted jobs and verified results across provider sessions. Use the existing
+[agent client boundary](AGENT_CLIENTS.md) for model access and conversation.
+Start new creators with an adaptive [game brief interview](GAME_BRIEF.md).
+Accept descriptions and visual references, ask short rounds of follow-up
+questions, record delegated choices, and agree on the game before building it.
 The desktop editor uses the same core operations. Close selection, camera,
 docking, Inspector/Project/Hierarchy, context navigation/locking, console,
-profiler, gizmo and Play-edit retention workflows. Add the agreed wine identity
-and simple/advanced workspaces with external agent clients.
+profiler, gizmo and Play-edit retention workflows. Keep the wine identity and
+make chat the quickest entry into an ordinary project. A project launcher can
+open a selected installed coding agent, its CLI, or the Poima editor from the
+same project directory. Interactive prompts, approvals and account handling
+remain with the provider or the explicitly configured adapter.
+
+Let developers register a different editor executable as a project preference.
+An alternate editor may provide its own viewport, tools and layout. Run the same
+authoring, revision guard and playback scenarios through another editor client
+before calling the interface portable. Opening an editor should join the existing
+authoritative project session when possible. Editor preferences belong to their
+frontend. The engine retains ownership of the game and exported content.
+
+Offer a read-only project view for people directing an agent from chat. Show the
+latest game or scene view, relevant authored changes and completed test outcomes
+with the observation tick or frame. Let people refer to a visible moment in
+chat, with the shared project as context. The full editor remains available for
+direct edits. The view should work across agent providers and editor choices.
 
 Player UX includes HUDs, inventories, menus, diegetic screens, typed bindings,
 controller focus, rebinding, haptics and portable graphics/audio/input settings.
@@ -379,6 +424,12 @@ policy, documentation and reproducible artifacts. Research continues afterward,
 and any explicitly deferred requirements keep their named milestones.
 
 ## Rules across every segment
+
+Give coding agents enough [correlated observation and validation](QUALITY_OBSERVATION.md)
+to diagnose a reproducible failure from an authored request through runtime,
+player presentation and export. Include bounded logs and relevant numeric,
+visual and audio evidence. Where a subsystem owns an invariant or an authored
+constraint, make violations inspectable and provide a way to reproduce them.
 
 - Every capability includes documentation, shared authoring/discovery,
   diagnostics, appropriate compiled gameplay access and meaningful tests.

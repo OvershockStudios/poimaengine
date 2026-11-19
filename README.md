@@ -46,7 +46,9 @@ Production graphics and animation, water and weather, and the rest of the Window
 2. **Make a project.** With Poima on your path, run `poima project create MyGame --name "My Game"`.
 3. **Open the `MyGame` folder in Codex or Claude Code.** [Connect Poima once](docs/AGENT_CLIENTS.md#connect-a-project), then describe what you want to play. You can use the desktop client or launch the coding agent from that folder.
 
-> Make a small 3D puzzle room with three switches that unlock a door. Playtest the solution and tell me what you checked.
+> I want to make a mystery game in a snowy village. Ask me a few questions at a time and help me decide what the player should do before you build it.
+
+Share images or sketches if they help describe the idea. The [game brief guide](docs/GAME_BRIEF.md) shows how to plan a first game through chat.
 
 Open the same project in the [Poima editor](docs/DESKTOP_EDITOR.md#build-and-launch) whenever you want to inspect, edit, or play it yourself. To edit together live, connect your agent to the [shared session](docs/SHARED_SESSIONS.md). You can also work directly in the editor.
 

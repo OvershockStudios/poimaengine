@@ -217,7 +217,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 132}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 133}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -415,6 +415,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto animation_command=animation_fields;animation_command["entity"]=id;
     animation_command["blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
     animation_command["transition_mode"]={{"enum",{"crossfade","inertial"}},{"default","crossfade"}};
+    const Json phase_markers={{"type","array"},{"minItems",2},{"maxItems",max_animation_phase_markers},{"items",{{"type","number"},{"minimum",0}}}};
+    auto phase_sync=object_schema({{"source",phase_markers},{"destination",phase_markers}},{"source","destination"});
+    phase_sync["description"]="Pairs clip landmarks in seconds, such as left and right foot contacts. Requires equal-length arrays in cyclic order, positive-duration looping clips, and destination time zero. Resolves the destination start at the committed command tick.";
     auto layer_command=animation_command;layer_command["layer"]={{"type","integer"},{"minimum",1},{"maximum",4}};
     layer_command["weight"]=unit;layer_command["weight_blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
     // Keep the existing common properties/required projection discoverable.
@@ -425,6 +428,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         object_schema(animation_command,{"entity","clip","time","speed","loop","playing"}),
         object_schema(layer_command,{"entity","layer","clip","time","speed","loop","playing","weight"})});
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},{"items",animation_item}};
+    // Keep the released ordinary-animation union byte-identical. This is a
+    // separately discoverable optional request field within the same step.
+    auto phase_base=animation_command;phase_base["phase_sync"]=phase_sync;
+    auto phase_layer=layer_command;phase_layer["phase_sync"]=phase_sync;
+    auto phase_item=object_schema(phase_layer,{"entity","clip","time","speed","loop","playing","phase_sync"});
+    phase_item["oneOf"]=Json::array({
+        object_schema(phase_base,{"entity","clip","time","speed","loop","playing","phase_sync"}),
+        object_schema(phase_layer,{"entity","layer","clip","time","speed","loop","playing","weight","phase_sync"})});
+    methods["runtime.step"]["properties"]["animation_phase_matches"]={{"type","array"},{"maxItems",64},{"items",phase_item}};
     auto ik_command=ik_fields;ik_command["entity"]=id;
     methods["runtime.step"]["properties"]["ik"]={{"type","array"},{"maxItems",64},{"items",object_schema(ik_command,{"entity","slot","target","pole"})}};
     auto lens_command=object_schema({{"entity",id},{"world",lens},{"viewmodel",lens}},{"entity"});
@@ -446,8 +458,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"target_rotation",pose_vector(4,1.000001)},{"strength",unit}},{"joint","target_rotation","strength"});
     const auto physical_source=object_schema({{"joint",{{"type","string"},{"minLength",1},{"maxLength",64},{"pattern","^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"}}},
         {"source",{{"enum",{"manual","animation"}}}},{"strength",unit}},{"joint","source","strength"});
-    auto target_base_fields=animation_command;target_base_fields.erase("entity");
-    auto target_layer_fields=layer_command;target_layer_fields.erase("entity");
+    auto target_base_fields=phase_base;target_base_fields.erase("entity");
+    auto target_layer_fields=phase_layer;target_layer_fields.erase("entity");
     auto physical_animation=object_schema(target_layer_fields,{"clip","time","speed","loop","playing"});
     physical_animation["oneOf"]=Json::array({
         object_schema(target_base_fields,{"clip","time","speed","loop","playing"}),

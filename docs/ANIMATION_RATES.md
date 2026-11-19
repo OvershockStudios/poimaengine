@@ -9,6 +9,8 @@ and remain unchanged.
 Complete `animations` commands still replace playback. Use those to change a
 clip, seek, resume a stopped clip or start a different transition. Rate commands
 change only speed; they do not synchronize phases, fit strides or lock feet.
+A separate [phase matching option](ANIMATION_PHASE_SYNC.md) can choose the new
+start time when replacing a looping clip.
 A deliberate rate discontinuity can change velocity even though the pose at
 the command boundary remains continuous.
 

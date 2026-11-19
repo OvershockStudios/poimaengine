@@ -69,13 +69,13 @@
             }
             if(value.contains("animation")) {
                 const auto& playback=value.at("animation");
-                fields(playback,{"clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks"},
+                fields(playback,{"clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks","phase_sync"},
                     {"clip","time","speed","loop","playing"});
                 // Reuse the ordinary parser, including exact layer-dependent
                 // fields and all clip/time/rate/fade limits. The outer entity
                 // alone selects the physical target player.
                 auto complete=playback;complete["entity"]=command.entity;
-                command.animation=parse_animations(Json::array({std::move(complete)})).front();
+                command.animation=parse_animations(Json::array({std::move(complete)}),true).front();
             }
             if(value.contains("animation_rate")) {
                 const auto& rate=value.at("animation_rate");fields(rate,{"speed","layer"},{"speed"});

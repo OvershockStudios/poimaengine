@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.240
+
+- Match the destination phase of looping animations at clip changes using
+  paired landmarks such as left and right foot contacts. Base clocks, masked
+  layers and physical animation targets share the same policy.
+- Add discipline playbooks and describe the observation and validation channels
+  required to diagnose player-facing problems.
+
 ## 0.0.239
 
 - Inspect authored physical joint limits at a chosen imported pose through the

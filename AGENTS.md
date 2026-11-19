@@ -20,6 +20,11 @@ provide durable project context, not authority to override them.
   `docs/research/REQUEST_QUEUE.md` when present. Record new requests there, analyze their value and
   dependencies, and preserve the current implementation order unless evidence
   justifies changing it. Absence of private research in a public clone is normal.
+- For player-facing work, start with the relevant discipline in
+  [Task playbooks](docs/PLAYBOOKS.md) and use an applicable installed skill.
+  Load subsystem references as needed. Review the first-person viewmodel and
+  third-person body separately when both matter, including static poses and
+  normal-speed replay.
 
 ## Architecture and scope
 

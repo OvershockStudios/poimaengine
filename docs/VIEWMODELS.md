@@ -45,6 +45,15 @@ player's view, use CameraDraw with `mode:"hidden"`. A hidden body needs neither
 a viewmodel lens nor a camera-parent relationship. Its ordinary cast/receive
 shadow settings remain effective; global `visible:false` hides it completely.
 
+For a visible first-person body, keep the legs as ordinary skinned drawables
+on the world rig. Bind any separate head or arm drawables that conflict with the
+local camera to `mode:"hidden"`. CameraDraw selects whole drawables, so this
+approach needs the intended body parts separated in the imported model. The legs
+then keep world depth and lighting while a camera-child hand and equipment rig
+can use the foreground lens. Verify stance, gait, view clearance and the visible
+body from the player camera. Use an external camera to check the whole silhouette
+and the arms and equipment that appear to other players or in capture views.
+
 Submit related component and hierarchy edits in one revision-guarded
 `world.transact`. The final graph is validated atomically, allowing an agent to
 create the camera, rig and bindings together. Removing a referenced camera,

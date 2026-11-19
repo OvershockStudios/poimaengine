@@ -9,6 +9,11 @@
 
 namespace poima {
 enum class AnimationTransitionMode : std::uint32_t { Crossfade=0, Inertial=1 };
+inline constexpr std::size_t max_animation_phase_markers=8;
+struct AnimationPhaseSync {
+    std::vector<double> source;
+    std::vector<double> destination;
+};
 struct AnimationCommand {
     std::string entity;
     std::optional<std::uint32_t> clip;
@@ -20,6 +25,8 @@ struct AnimationCommand {
     std::optional<std::uint32_t> layer={};
     double weight=1;
     std::uint32_t weight_blend_ticks=0;
+    // Corresponding landmarks in cyclic order. Resolved at the command boundary.
+    std::optional<AnimationPhaseSync> phase_sync={};
 };
 // Change only the destination clock's rate, preserving its current phase and
 // active transition. Null selects the base; 1..4 selects a configured layer.
