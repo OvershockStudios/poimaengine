@@ -59,4 +59,12 @@ class PhysicalRequirements(unittest.TestCase):
             value=dict(recovery,features=recovery['features']+added)
             self.assertEqual(self.read(value),value)
         with self.assertRaises(ValueError):self.read(dict(recovery,features=recovery['features']+['physical_rig_animation_v1']))
+    def test_item_attachment_named_independent_prefix(self):
+        attachment=dict(self.baseline,services_bytes=528,features=['baseline_v7','item_attachment_v1'])
+        self.assertEqual(self.read(attachment),attachment)
+        combined=dict(attachment,features=attachment['features']+['physical_rig_v1','physical_recovery_v1'])
+        self.assertEqual(self.read(combined),combined)
+        for invalid in [dict(attachment,services_bytes=512),dict(attachment,features=['baseline_v7']),
+                        dict(attachment,features=attachment['features']+['physical_recovery_v1'])]:
+            with self.assertRaises(ValueError):self.read(invalid)
 if __name__=='__main__':unittest.main()

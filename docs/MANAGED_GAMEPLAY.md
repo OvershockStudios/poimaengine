@@ -633,3 +633,11 @@ writes to that rig in the same tick. It preserves the first returned pose and
 then blends into animation; it does not balance or stand up a fallen character.
 The [compiled fixture](../tests/managed_physical_recovery_gameplay/README.md)
 exercises actual requests, rejection, movement and complete save continuation.
+
+## Item attachments
+
+Implement `IItemAttachmentGame` to read committed bindings and stage rigid
+item handoffs in `Tick`. `TransferItem`, `SnapItem` and `ResetItemAttachment`
+commit after native movement. The appended `item_attachment_v1` capability
+requires the 528-byte epoch-7 prefix and has no other optional dependencies.
+[Timing, limits and save behavior](ITEM_ATTACHMENTS.md#transfer-during-compiled-gameplay)

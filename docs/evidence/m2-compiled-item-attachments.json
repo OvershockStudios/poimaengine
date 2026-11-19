@@ -1,0 +1,149 @@
+{
+  "version": "0.0.251",
+  "schema_revision": 142,
+  "status": "passed",
+  "scope": "Real compiled gameplay in a two-anchor animated fixture with a rigid item and child. Retains authored world, complete checkpoint bytes, and Vulkan renders when recorded.",
+  "service": {
+    "epoch": 7,
+    "feature": "item_attachment_v1",
+    "required_bytes": 528,
+    "command_bytes": 128,
+    "state_bytes": 64
+  },
+  "fixture": "tests/item_attachment_gameplay.py",
+  "fixture_sha256": "db4248485979306bf7987faccbc4905d4ba339ac070d9bb5443a09ea7f76f7c2",
+  "gameplay_source_sha256": "ae6b6de6e4f07b2a6944cdb926ca53671da20ccaf4d0df395e66e433d33986cb",
+  "linux_x86_64_coreclr": {
+    "engine_sha256": "47459c5739d3a72a7589490179aa973c1841286501be5a4d34de8d2c7721a5a7",
+    "compiled_artifact_sha256": "edce091b4b8cdfa1a670d5ccde569eb444aee60511619f877d5bc3019d5a4488",
+    "report_sha256": "f51a7919f57c69a259835b1ae65a646727caba0a38c9a18569dd9950a71ac805",
+    "native_calls": 78,
+    "natural_process_exits": 4,
+    "equal_complete_checkpoints": {
+      "ready/restored-ready": {
+        "bytes": 11743,
+        "sha256": "2eb0425ea37c762ad08ead57c72abcd348a02c3b1b0de005c68172657913cb2b"
+      },
+      "handoff/handoff-auto": {
+        "bytes": 11768,
+        "sha256": "e684f68ac9f6439ca3452d229657907da3fbf72a688107dfe2bdd2750ae6194e"
+      },
+      "cycle-before/cycle-after": {
+        "bytes": 11768,
+        "sha256": "aa264a9462ccbdc00cf57fec26427fe57a20912de42e9e726fc5ca7806765fcb"
+      },
+      "failed-batch-before/failed-batch-after": {
+        "bytes": 11768,
+        "sha256": "83f2c3acc91f93501f8b6b317c96b82e2d4e8de936b80bc96391106f26336179"
+      },
+      "pin/pin-auto": {
+        "bytes": 11728,
+        "sha256": "0c3d390788af70bc1f86cc4dfe8c6524d61e02fd147665713a90b4cf77590162"
+      },
+      "handoff/cold-handoff": {
+        "bytes": 11768,
+        "sha256": "e684f68ac9f6439ca3452d229657907da3fbf72a688107dfe2bdd2750ae6194e"
+      },
+      "advanced/cold-advanced": {
+        "bytes": 11768,
+        "sha256": "7494d3cab67bb849fa3d3069edf6e3379ab05442916357c76128dd93727a6805"
+      }
+    }
+  },
+  "windows_x86_64_coreclr": {
+    "engine_sha256": "824df8fc4ef1538796408be9757bdb3053466e0d7724c03f0c24e4d4c690ea5b",
+    "compiled_artifact_sha256": "edce091b4b8cdfa1a670d5ccde569eb444aee60511619f877d5bc3019d5a4488",
+    "report_sha256": "7512c266fdfaf6d075a29154406842dfdfd3ea7eff467775976340a285be8904",
+    "native_calls": 82,
+    "natural_process_exits": 4,
+    "equal_complete_checkpoints": {
+      "ready/restored-ready": {
+        "bytes": 11743,
+        "sha256": "ac6d2f5c4b684c3cfc35fdbbc93a3c65887de98db9b81cacac974d5eb3aa0152"
+      },
+      "handoff/handoff-auto": {
+        "bytes": 11768,
+        "sha256": "0b6bd2fa44a50d4f4449fda6d381bbfbb41a53666478b8f2d247c49679e3e29e"
+      },
+      "cycle-before/cycle-after": {
+        "bytes": 11768,
+        "sha256": "0250a55314ea1a5c078c28c42ee51d3ea5598d2b0fa91f16914d2915f6d3eee1"
+      },
+      "failed-batch-before/failed-batch-after": {
+        "bytes": 11768,
+        "sha256": "485aee31c9f29cc25b5b35469e63659486ebf2042f3d6ea3dff82f35f572b017"
+      },
+      "pin/pin-auto": {
+        "bytes": 11728,
+        "sha256": "621c1f1c53ada9e6c09f691673cce68235a0e96046f9fe5f798c1030d26cebdf"
+      },
+      "handoff/cold-handoff": {
+        "bytes": 11768,
+        "sha256": "0b6bd2fa44a50d4f4449fda6d381bbfbb41a53666478b8f2d247c49679e3e29e"
+      },
+      "advanced/cold-advanced": {
+        "bytes": 11768,
+        "sha256": "8c52dce599f786c984ac883e12dfb4052899714438ae097a55e26925133b00f3"
+      }
+    },
+    "offscreen_vulkan_frames_sha256": {
+      "uninterrupted_donor": "be2a4353f35ab0c36434aae3473c6805dcd90e3956312613579e4e51822f45b0",
+      "handoff": "be2a4353f35ab0c36434aae3473c6805dcd90e3956312613579e4e51822f45b0",
+      "following": "4016fda089f611611e8912bd4a0fc2f20e1c4b57d174885e7e2a9a10fcd8af34",
+      "cold_following": "4016fda089f611611e8912bd4a0fc2f20e1c4b57d174885e7e2a9a10fcd8af34"
+    }
+  },
+  "linux_regressions": [
+    "gameplay_compatibility_policy",
+    "gameplay_player_preferences_native",
+    "mcp_contract",
+    "world_ui_contract",
+    "physical_gameplay_abi_native",
+    "physical_gameplay_publish_requirements",
+    "runtime_save_contract",
+    "runtime_attachment_contract",
+    "asset_references_contract"
+  ],
+  "windows_x86_64_native_aot": {
+    "engine_sha256": "824df8fc4ef1538796408be9757bdb3053466e0d7724c03f0c24e4d4c690ea5b",
+    "compiled_artifact_sha256": "714f69ddd6eaf5ec8c1fc8017b95b8ca09a47b8ea0fbb98cdca5c9f86af0715f",
+    "report_sha256": "91581ce51678f28a566883d2ec0f7e1aaf102e61ea2f80b5a08a59468111a34f",
+    "native_calls": 73,
+    "natural_process_exits": 3,
+    "equal_complete_checkpoints": {
+      "ready/restored-ready": {
+        "bytes": 11746,
+        "sha256": "adde384e30cfa6fe237a3f9575ddcb353481e467917749dd54500bdfe62bde6d"
+      },
+      "handoff/handoff-auto": {
+        "bytes": 11771,
+        "sha256": "9bcb29fd34d43caf7e9c2213e1b3320e4967e05b2f26983cd3d4e938d5e077ad"
+      },
+      "cycle-before/cycle-after": {
+        "bytes": 11771,
+        "sha256": "27941014359d4d79a93f5e8e09063daebf83283e86ef24029011fde1ac903f79"
+      },
+      "failed-batch-before/failed-batch-after": {
+        "bytes": 11771,
+        "sha256": "14604a7ac348128a4828a4e11a67b42f34d6b624e7e6037a7136652f2fde846c"
+      },
+      "pin/pin-auto": {
+        "bytes": 11731,
+        "sha256": "772846f1cbb3fa87928ac1501308368c93eafbac1d49dac67effd702f3663dab"
+      },
+      "handoff/cold-handoff": {
+        "bytes": 11771,
+        "sha256": "9bcb29fd34d43caf7e9c2213e1b3320e4967e05b2f26983cd3d4e938d5e077ad"
+      },
+      "advanced/cold-advanced": {
+        "bytes": 11771,
+        "sha256": "e960be08bcf986f330b999a76004f206316da885e13f3165ec88c511a4d5cf8f"
+      }
+    },
+    "module_library_sha256": "bef0b3be32b3ea4fb1bc362df9cb8a4ef344e9e9a7eeddbdfc5df0efc36086b7"
+  },
+  "windows_regressions": [
+    "gameplay_compatibility_policy",
+    "physical_gameplay_abi_native"
+  ]
+}

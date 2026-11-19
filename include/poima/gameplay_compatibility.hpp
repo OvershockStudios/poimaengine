@@ -59,6 +59,8 @@ inline constexpr const char* physical_rig_animation_feature="physical_rig_animat
 inline constexpr std::uint32_t physical_rig_animation_services_bytes=496;
 inline constexpr const char* physical_recovery_feature="physical_recovery_v1";
 inline constexpr std::uint32_t physical_recovery_services_bytes=512;
+inline constexpr const char* item_attachment_feature="item_attachment_v1";
+inline constexpr std::uint32_t item_attachment_services_bytes=528;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -91,7 +93,8 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.services_bytes=physical_rig_services_bytes;result.features.push_back(physical_rig_feature);
     result.services_bytes=physical_rig_drive_services_bytes;result.features.push_back(physical_rig_drive_feature);
     result.services_bytes=physical_rig_animation_services_bytes;result.features.push_back(physical_rig_animation_feature);
-    result.services_bytes=physical_recovery_services_bytes;result.features.push_back(physical_recovery_feature);
+    result.services_bytes=item_attachment_services_bytes;
+    result.features.push_back(physical_recovery_feature);result.features.push_back(item_attachment_feature);
     return result;
 }
 
@@ -108,6 +111,39 @@ inline PoimaGameServices baseline_view(const PoimaGameServices& provided) {
     std::memcpy(&view,&provided,services_bytes);
     view.bytes=services_bytes;
     return view;
+}
+
+inline std::uint32_t service_prefix_bytes(const Contract& contract) {
+    struct Extension {const char* feature; std::uint32_t bytes;};
+    constexpr Extension extensions[]={
+        {animation_feature,animation_services_bytes},
+        {animation_layers_feature,animation_layers_services_bytes},
+        {character_input_feature,character_services_bytes},
+        {navigation_feature,navigation_services_bytes},
+        {instances_feature,instances_services_bytes},
+        {player_preferences_feature,player_preferences_services_bytes},
+        {input_actions_feature,input_actions_services_bytes},
+        {hit_regions_feature,hit_regions_services_bytes},
+        {two_bone_ik_feature,two_bone_ik_services_bytes},
+        {root_motion_feature,root_motion_services_bytes},
+        {camera_lens_feature,camera_lens_services_bytes},
+        {character_stance_feature,character_stance_services_bytes},
+        {two_bone_ik_orientation_feature,two_bone_ik_orientation_services_bytes},
+        {grounding_control_feature,grounding_control_services_bytes},
+        {animation_rate_feature,animation_rate_services_bytes},
+        {camera_pose_feature,camera_pose_services_bytes},
+        {capsule_cast_feature,capsule_cast_services_bytes},
+        {physical_rig_feature,physical_rig_services_bytes},
+        {physical_rig_drive_feature,physical_rig_drive_services_bytes},
+        {physical_rig_animation_feature,physical_rig_animation_services_bytes},
+        {physical_recovery_feature,physical_recovery_services_bytes},
+        {item_attachment_feature,item_attachment_services_bytes},
+    };
+    auto bytes=services_bytes;
+    for(const auto& extension:extensions)
+        if(std::find(contract.features.begin(),contract.features.end(),extension.feature)!=contract.features.end())
+            bytes=extension.bytes;
+    return bytes;
 }
 
 // One policy for artifact inspection, runtime selection and package validation.
@@ -128,15 +164,6 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     // Availability may grow, but an opaque extent is not an opt-in capability.
     const bool animation_required=std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end();
     const bool layers_required=std::find(required.features.begin(),required.features.end(),animation_layers_feature)!=required.features.end();
-    const bool character_required=std::find(required.features.begin(),required.features.end(),character_input_feature)!=required.features.end();
-    const bool navigation_required=std::find(required.features.begin(),required.features.end(),navigation_feature)!=required.features.end();
-    const bool instances_required=std::find(required.features.begin(),required.features.end(),instances_feature)!=required.features.end();
-    const bool preferences_required=std::find(required.features.begin(),required.features.end(),player_preferences_feature)!=required.features.end();
-    const bool actions_required=std::find(required.features.begin(),required.features.end(),input_actions_feature)!=required.features.end();
-    const bool regions_required=std::find(required.features.begin(),required.features.end(),hit_regions_feature)!=required.features.end();
-    const bool stance_required=std::find(required.features.begin(),required.features.end(),character_stance_feature)!=required.features.end();
-    const bool lens_required=std::find(required.features.begin(),required.features.end(),camera_lens_feature)!=required.features.end();
-    const bool root_required=std::find(required.features.begin(),required.features.end(),root_motion_feature)!=required.features.end();
     const bool ik_required=std::find(required.features.begin(),required.features.end(),two_bone_ik_feature)!=required.features.end();
     const bool ik_orientation_required=std::find(required.features.begin(),required.features.end(),two_bone_ik_orientation_feature)!=required.features.end();
     const bool grounding_required=std::find(required.features.begin(),required.features.end(),grounding_control_feature)!=required.features.end();
@@ -144,8 +171,6 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     const bool target_required=std::find(required.features.begin(),required.features.end(),physical_rig_animation_feature)!=required.features.end();
     const bool drive_required=std::find(required.features.begin(),required.features.end(),physical_rig_drive_feature)!=required.features.end();
     const bool physical_required=std::find(required.features.begin(),required.features.end(),physical_rig_feature)!=required.features.end();
-    const bool capsule_required=std::find(required.features.begin(),required.features.end(),capsule_cast_feature)!=required.features.end();
-    const bool pose_required=std::find(required.features.begin(),required.features.end(),camera_pose_feature)!=required.features.end();
     const bool rate_required=std::find(required.features.begin(),required.features.end(),animation_rate_feature)!=required.features.end();
     if(recovery_required && !physical_required)return "Gameplay physical_recovery_v1 also requires physical_rig_v1.";
     if(target_required && (!drive_required || !physical_required))return "Gameplay physical_rig_animation_v1 also requires physical_rig_drive_v1 and physical_rig_v1.";
@@ -154,8 +179,8 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(grounding_required && !ik_orientation_required)return "Gameplay animation_grounding_control_v1 also requires animation_ik_end_orientation_v1.";
     if(ik_orientation_required && !ik_required)return "Gameplay animation_ik_end_orientation_v1 also requires animation_ik_v1.";
     if(layers_required && !animation_required)return "Gameplay animation_layers_v1 also requires animation_inertial_v1.";
-    if(required.services_bytes!=(recovery_required ? physical_recovery_services_bytes : target_required ? physical_rig_animation_services_bytes : drive_required ? physical_rig_drive_services_bytes : physical_required ? physical_rig_services_bytes : capsule_required ? capsule_cast_services_bytes : pose_required ? camera_pose_services_bytes : rate_required ? animation_rate_services_bytes : grounding_required ? grounding_control_services_bytes : ik_orientation_required ? two_bone_ik_orientation_services_bytes : stance_required ? character_stance_services_bytes : lens_required ? camera_lens_services_bytes : root_required ? root_motion_services_bytes : ik_required ? two_bone_ik_services_bytes : regions_required ? hit_regions_services_bytes : actions_required ? input_actions_services_bytes : preferences_required ? player_preferences_services_bytes : instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
-        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232/256/264/272/288/304/320/336/352/368/376/392/400/424/448/496/512-byte extensions.";
+    if(required.services_bytes!=service_prefix_bytes(required))
+        return "Gameplay must declare the 176-byte baseline or a named extension prefix through 528 bytes.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -216,9 +241,12 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         if(available.services_bytes<physical_recovery_services_bytes)return "Runtime physical_recovery_v1 requires a 512-byte service allocation.";
         if(std::find(available.features.begin(),available.features.end(),physical_rig_feature)==available.features.end())return "Runtime physical_recovery_v1 also requires physical_rig_v1.";
     }
+    if(std::find(available.features.begin(),available.features.end(),item_attachment_feature)!=available.features.end() &&
+       available.services_bytes<item_attachment_services_bytes)
+        return "Runtime item_attachment_v1 requires a 528-byte service allocation.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

@@ -49,6 +49,38 @@ as its anchor changes. Use a snapped calibrated offset when an insertion
 needs a specific socket pose. [Frame comparisons](POSE_FRAME_COMPARISON.md) ·
 [Surface measurements](SURFACE_MEASUREMENTS.md)
 
+## Transfer during compiled gameplay
+
+Declare `IItemAttachmentGame` on a `Game<TState>` and call these methods from
+`Tick`. The game can choose the receiving anchor from live entities or an ID
+reserved earlier in the same tick. Reads require a live entity.
+
+```csharp
+var current = context.GetItemAttachment(item);
+if (current?.Anchor != receivingHand)
+    context.TransferItem(item, receivingHand);
+```
+
+`TransferItem(item, null)` holds the item at the world pose it reaches this
+tick. `SnapItem(item, anchor, offset)` uses a complete `ItemSocketOffset`.
+`ResetItemAttachment(item)` returns a bound item to its authored parent and
+local transform. `GetItemAttachment` returns null for an unbound item. A
+present binding with a null `Anchor` denotes a world-held item.
+
+The read describes the committed state entering `Tick`, even after staging a
+write. The engine moves and solves the current anchors first, then commits
+all attachment writes together as one structure revision. The next tick sees
+the new binding. A cycle, invalid transform or other rejected simulation work
+rolls back the entire step batch, including an earlier tick's transfers and
+staged save intents. A save requested in a successful handoff tick contains
+the committed binding. Reset or transfer any existing binding before
+removing its item or anchor on a later tick.
+
+Gameplay can attempt up to 64 writes and 1,024 reads per tick. Each item may
+appear once in the write batch. `world.describe` lists the `item_attachment_v1`
+feature and the 528-byte epoch-7 prefix under `gameplay_item_attachments`.
+Existing compiled modules retain their negotiated prefixes.
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally
@@ -78,9 +110,8 @@ hit regions, skinned meshes, emitters, cameras, lights and other independent
 native pose owners use their own systems. A world-held item stays fixed until
 another command. Transfer preserves the drawable's authored viewmodel
 membership. A physical release or visibility change requires an explicit
-gameplay operation. Drive these transfers through the native runtime API or
-the shared authoring service. A compiled gameplay binding and interpolation
-of the receiving hand remain separate work.
+gameplay operation. Use animation or IK to bring the receiving hand to the
+anchor before transferring the item.
 
 Stale tick and structure guards return `-32009`. Absent or mismatched sessions
 return `-32030`. Invalid payloads or graph changes return `-32602`. Retained
@@ -98,3 +129,7 @@ Use `--windows-interop` for a Windows executable launched from WSL.
 On a Windows Vulkan build, add `--gpu` with the adapter index to capture
 both sides of the transfer and the resumed item motion. The test verifies
 the full checkpoint before and after rejected batches and cold continuation.
+
+The [compiled fixture](../tests/managed_item_attachment_gameplay/README.md)
+adds same-tick save requests, late batch failure, and an unmarked consumer
+check with actual C# gameplay.

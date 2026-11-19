@@ -63,9 +63,18 @@ void policy() {
     if(poima::runtime_navigation_available())legacy400.features.push_back(navigation_feature);
     check(compatibility_error(baseline,legacy400).empty(),"Explicit old400 host fixture is invalid.");
 
+    auto attachment=baseline;attachment.services_bytes=528;attachment.features.push_back(item_attachment_feature);
+    check(compatibility_error(attachment,capable).empty(),"Attachment unexpectedly requires another optional service.");
+    auto old_attachment_host=capable;old_attachment_host.services_bytes=512;
+    std::erase(old_attachment_host.features,std::string(item_attachment_feature));
+    check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
+    auto wrong_attachment=attachment;wrong_attachment.services_bytes=512;
+    check(!compatibility_error(wrong_attachment,capable).empty() && !compatibility_error(baseline,wrong_attachment).empty(),
+        "Attachment prefix was accepted without both its name and extent.");
     check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
     check(physical_rig_animation_services_bytes==496u,"Frozen physical animation extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==physical_recovery_services_bytes && capable.services_bytes==512u &&
+    check(capable.services_version==7 && capable.services_bytes==item_attachment_services_bytes && capable.services_bytes==528u &&
+        std::find(capable.features.begin(),capable.features.end(),item_attachment_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_recovery_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_rig_drive_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_rig_animation_feature)!=capable.features.end() &&
@@ -302,7 +311,7 @@ void policy() {
     check(!compatibility_error(physical,legacy400).empty(),"Old400 host granted physical424 requirement.");
     auto lying400=legacy400;lying400.features.push_back(physical_rig_feature);
     check(!compatibility_error(baseline,lying400).empty(),"400-byte host advertised unallocated physical callbacks.");
-    auto future_physical=capable;future_physical.services_bytes=432;future_physical.features.push_back("future_available_v1");
+    auto future_physical=old_attachment_host;future_physical.services_bytes=432;future_physical.features.push_back("future_available_v1");
     check(!compatibility_error(physical,future_physical).empty(),"432-byte host advertised unallocated drive callbacks.");
     std::erase(future_physical.features,std::string(physical_rig_drive_feature));
     check(!compatibility_error(physical,future_physical).empty(),"432-byte host advertised unallocated physical animation callbacks.");

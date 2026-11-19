@@ -128,14 +128,14 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
     const auto invalid=gameplay_abi::compatibility_error(gameplay_abi::Contract{},offered);
     if(!invalid.empty())throw std::runtime_error("Offered gameplay availability is invalid: "+invalid);
 }
-template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+template<class F>void with_prefix_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::physical_recovery_feature)!=required.features.end()) {
         auto extended=gameplay_abi::physical_recovery_view(required,provided);
         callback(&gameplay_abi::physical_rig_drive_baseline(extended.animation.drive));return;
@@ -652,6 +652,27 @@ template<class F>void with_service_view(const gameplay_abi::Contract& required,c
     check(extended.animation_get_extended && extended.animation_set_extended,"Gameplay animation extension callback is absent.");
     callback(&extended.baseline);
 }
+template<class F>void with_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,const PoimaGameServices& provided,F&& callback) {
+    if(!has_attachments) {
+        with_prefix_service_view(prefix,provided,callback);
+        return;
+    }
+    check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameItemAttachmentServicesV1),
+        "Gameplay requires services epoch 7 and the 528-byte item attachment extension.");
+    PoimaGameItemAttachmentServicesV1 view{};
+    std::memcpy(&view,&provided,sizeof(view));
+    check(view.attachment_get && view.attachment_set,"Gameplay item attachment callback is absent.");
+    // Reuse the older callback projection. Gaps between its negotiated
+    // prefix and the attachment tail remain zero, with no inferred rights.
+    view.recovery={};
+    with_prefix_service_view(prefix,provided,[&](const PoimaGameServices* services) {
+        check(services->bytes<=sizeof(view.recovery),"Projected gameplay services exceed the attachment prefix.");
+        std::memcpy(&view.recovery,services,services->bytes);
+    });
+    auto& baseline=gameplay_abi::physical_rig_drive_baseline(view.recovery.animation.drive);
+    baseline.bytes=sizeof(view);
+    callback(&baseline);
+}
 #if POIMA_MANAGED_GAMEPLAY
 struct Host {
     component_entry_point_fn entry=nullptr;
@@ -857,7 +878,8 @@ struct Gameplay::Impl {
     std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
-    gameplay_abi::Contract requirements;
+    gameplay_abi::Contract requirements,prefix_requirements;
+    bool has_attachments=false;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
         for(const auto& [offset,is_float]:floating_fields)
@@ -908,6 +930,10 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
         impl_->requirements=parse_gameplay_service_contract(impl_->manifest.at("requirements").dump());impl_->manifest.erase("requirements");
     }
     require_compatible(impl_->requirements,host_available);
+    impl_->prefix_requirements=impl_->requirements;
+    auto& prefix=impl_->prefix_requirements;
+    impl_->has_attachments=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_feature))!=0;
+    prefix.services_bytes=gameplay_abi::service_prefix_bytes(prefix);
     if(config.native_aot) {
         require_compatible(impl_->requirements,offered);
         impl_->diagnostics=impl_->manifest.at("diagnostics");impl_->manifest.erase("diagnostics");
@@ -1011,12 +1037,12 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
     return apply_values(metadata,storage,values).dump();
 }
 void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
-    with_service_view(impl_->requirements,services,[&](const PoimaGameServices* view) {
+    with_service_view(impl_->prefix_requirements,impl_->has_attachments,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
-    with_service_view(impl_->requirements,services,[&](const PoimaGameServices* view) {
+    with_service_view(impl_->prefix_requirements,impl_->has_attachments,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }

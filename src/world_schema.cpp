@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 141}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 142}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -272,6 +272,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
     result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
+    result["gameplay_item_attachments"]={{"feature","item_attachment_v1"},{"services_abi",7},{"services_bytes",528},
+        {"command_bytes",128},{"state_bytes",64},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},
+        {"reads","Committed attachment before the current tick's movement."},
+        {"writes","Tick-only. Apply after final animation and physics, before committing the tick and servicing gameplay saves."}};
     result["gameplay_camera_poses"]={{"feature","camera_pose_v1"},{"services_abi",7},{"services_bytes",392},
         {"command_bytes",144},{"state_bytes",272},{"reads_per_tick",256},{"combined_writes_per_tick",64},
         {"translation_metres_per_axis",10},{"quaternion_norm_tolerance",1e-5},{"viewmodel_presence","frozen"},

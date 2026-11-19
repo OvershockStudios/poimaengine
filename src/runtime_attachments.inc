@@ -87,7 +87,6 @@
         require(expected==structure_revision && structure_revision<9007199254740991ULL,
             "Attachment structure revision is stale or exhausted.");
         require(!commands.empty() && commands.size()<=max_runtime_attachments,"Submit 1..64 attachment commands.");
-        require(!save_queue.pending(),"Resolve pending gameplay save intent before transferring attachments.");
         auto graph=std::make_shared<AttachmentGraph>();
         if(attachment_graph)graph->bindings=attachment_graph->bindings;
         std::set<std::string> seen,keep;
