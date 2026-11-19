@@ -66,7 +66,7 @@ def recover(game, expected):
     game.expect_prompt('Reach blocked')
 
 
-def reject_invalid_witness(game, final):
+def reject_invalid_witness(game, final, *, field='interval', value=5, message='snapshot integer'):
     original = game.saves/'slot-blocked'
     invalid = game.saves/'slot-invalid-witness'
     shutil.copytree(original,invalid)
@@ -74,7 +74,7 @@ def reject_invalid_witness(game, final):
     document = json.loads(manifest.read_text())
     path = invalid/document['payload']['current']['file']
     raw = path.read_text()
-    raw = replace_member(raw,('snapshot','payload','attachment_outcomes','outcomes',0,'interval'),5)
+    raw = replace_member(raw,('snapshot','payload','attachment_outcomes','outcomes',0,field),value)
     raw = replace_member(raw,('snapshot','sha256'),raw_digest(raw,('snapshot','payload')))
     changed = raw.encode('utf-8')
     path.write_bytes(changed)
@@ -93,7 +93,7 @@ def reject_invalid_witness(game, final):
         expected_session_id=game.id,expected_tick=game.tick,expected_gameplay_revision=game.game_revision,
         expected_structure_revision=game.structure,expected_component_revision=component_revision,
         expected_ui_revision=ui_revision,expected_control_sequence=0,gameplay=game.config),error=-32070)
-    assert 'snapshot integer' in rejected['message'],rejected
+    assert message in rejected['message'],rejected
     assert game.save('after-invalid-load') == final
     return rejected
 

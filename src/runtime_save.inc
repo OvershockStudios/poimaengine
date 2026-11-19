@@ -25,7 +25,7 @@ std::string save_text(const SaveJson& v,std::size_t bound=256,bool empty=false) 
 }
 std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const SaveJson& data,std::uint64_t tick) {
     save_fields(data,{"version","tick","outcomes"});
-    const auto version=save_integer(data.at("version"),2);
+    const auto version=save_integer(data.at("version"),3);
     require(version>=1 && tick>0 && save_integer(data.at("tick"))==tick,
         "Saved attachment outcomes must match the committed tick.");
     const auto& rows=data.at("outcomes");
@@ -43,7 +43,7 @@ std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const Sa
         return number;
     };
     std::map<std::string,RuntimeAttachmentOutcome> result;
-    bool has_blocked_reach=false;
+    unsigned witness_version=1;
     for(const auto& row:rows) {
         const auto id=entity(row.at("entity")),anchor=entity(row.at("anchor"));
         require(id!=anchor && (result.empty() || result.rbegin()->first<id),
@@ -71,16 +71,28 @@ std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const Sa
             require(depth>.001f,"Saved release obstruction must exceed the clearance threshold.");
             outcome.detail=RuntimeAttachmentReleaseBlocked{entity(row.at("obstacle")),depth};
         } else if(status=="reach_blocked") {
-            save_fields(row,{"entity","anchor","status","obstacle","segment","interval","fraction","penetration_m"});
+            using Pose=RuntimeAttachmentReachBlocked::Pose;
+            auto pose=Pose::Unchanged;
+            if(row.contains("pose")) {
+                save_fields(row,{"entity","anchor","status","obstacle","segment","interval","fraction","penetration_m","pose"});
+                const auto name=save_text(row.at("pose"),10);
+                if(name=="previous")pose=Pose::Previous;
+                else if(name=="animation")pose=Pose::Animation;
+                else if(name=="unresolved")pose=Pose::Unresolved;
+                else throw std::runtime_error("Invalid saved arm fallback pose.");
+                witness_version=3;
+            } else {
+                save_fields(row,{"entity","anchor","status","obstacle","segment","interval","fraction","penetration_m"});
+                witness_version=std::max(witness_version,2u);
+            }
             const auto segment=save_integer(row.at("segment"),2);
             const auto interval=save_integer(row.at("interval"),ik_clearance_intervals);
             const auto fraction=magnitude(row.at("fraction"),1);
             const auto depth=magnitude(row.at("penetration_m"),1e6);
-            require(version==2 && segment>0 && interval>0 && (fraction==0 || depth==0),
+            require(segment>0 && interval>0 && (fraction==0 || depth==0),
                 "Invalid saved arm clearance witness.");
             outcome.detail=RuntimeAttachmentReachBlocked{entity(row.at("obstacle")),
-                static_cast<std::uint32_t>(segment),static_cast<std::uint32_t>(interval),fraction,depth};
-            has_blocked_reach=true;
+                static_cast<std::uint32_t>(segment),static_cast<std::uint32_t>(interval),fraction,depth,pose};
         } else {
             save_fields(row,{"entity","anchor","status"});
             require(status=="transferred" || status=="released","Unknown saved attachment outcome.");
@@ -88,7 +100,7 @@ std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const Sa
         }
         result.emplace(id,std::move(outcome));
     }
-    require((version==2)==has_blocked_reach,"Saved attachment outcome version differs from its witness types.");
+    require(version==witness_version,"Saved attachment outcome version differs from its witness types.");
     return result;
 }
 template<std::size_t N>std::array<double,N> save_vector(const SaveJson& v,double bound) {
@@ -267,10 +279,11 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         payload["attachments"]={{"version",1},{"bindings",std::move(bindings)}};
     }
     if(s.attachment_outcomes) {
-        const bool blocked=std::any_of(s.attachment_outcomes->begin(),s.attachment_outcomes->end(),
-            [](const auto& row){return std::holds_alternative<RuntimeAttachmentReachBlocked>(row.second.detail);});
-        payload["attachment_outcomes"]={{"version",blocked ? 2 : 1},{"tick",s.tick},
-            {"outcomes",attachment_outcome_rows(*s.attachment_outcomes)}};
+        auto rows=attachment_outcome_rows(*s.attachment_outcomes);
+        unsigned version=1;
+        for(const auto& row:rows)if(row["status"]=="reach_blocked")
+            version=std::max(version,row.contains("pose") ? 3u : 2u);
+        payload["attachment_outcomes"]={{"version",version},{"tick",s.tick},{"outcomes",std::move(rows)}};
     }
     SaveJson cameras=SaveJson::array();
     for(const auto e:s.topology->order)if(const auto* camera=s.registry.try_get<RuntimeCamera>(e)) {

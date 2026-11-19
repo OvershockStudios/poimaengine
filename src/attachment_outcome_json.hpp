@@ -25,6 +25,13 @@ inline nlohmann::json attachment_outcome_rows(const std::map<std::string,Runtime
             row["status"]="reach_blocked";
             row["obstacle"]=reach->obstacle;row["segment"]=reach->segment;row["interval"]=reach->interval;
             row["fraction"]=reach->fraction;row["penetration_m"]=reach->penetration_m;
+            using Pose=RuntimeAttachmentReachBlocked::Pose;
+            switch(reach->pose) {
+                case Pose::Unchanged:break;
+                case Pose::Previous:row["pose"]="previous";break;
+                case Pose::Animation:row["pose"]="animation";break;
+                case Pose::Unresolved:row["pose"]="unresolved";break;
+            }
         } else row["status"]=std::holds_alternative<RuntimeAttachmentReleased>(outcome.detail) ? "released" : "transferred";
         rows.push_back(std::move(row));
     }

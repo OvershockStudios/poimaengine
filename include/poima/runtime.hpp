@@ -87,9 +87,11 @@ struct RuntimeAttachmentReleaseBlocked {
     double penetration_m;
 };
 struct RuntimeAttachmentReachBlocked {
+    enum class Pose { Unchanged, Previous, Animation, Unresolved };
     std::string obstacle;
     std::uint32_t segment,interval;
     double fraction,penetration_m;
+    Pose pose=Pose::Unchanged;
 };
 class RuntimeAttachmentReleaseRejected : public std::runtime_error {
 public:

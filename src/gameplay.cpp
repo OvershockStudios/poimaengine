@@ -128,7 +128,7 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature || feature==gameplay_abi::item_attachment_release_feature || feature==gameplay_abi::item_attachment_pickup_feature || feature==gameplay_abi::item_attachment_aim_feature || feature==gameplay_abi::ik_clearance_feature || feature==gameplay_abi::item_pickup_clearance_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature || feature==gameplay_abi::item_attachment_release_feature || feature==gameplay_abi::item_attachment_pickup_feature || feature==gameplay_abi::item_attachment_aim_feature || feature==gameplay_abi::ik_clearance_feature || feature==gameplay_abi::item_pickup_clearance_feature || feature==gameplay_abi::item_pickup_pose_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -881,7 +881,7 @@ struct Gameplay::Impl {
     gameplay_abi::Contract requirements,prefix_requirements;
     bool has_attachments=false,has_attachment_contact=false,has_attachment_surface=false,has_attachment_recovery=false,has_attachment_release=false,has_attachment_pickup=false,has_attachment_aim=false;
     bool has_ik_clearance=false;
-    bool has_item_pickup_clearance=false;
+    bool has_item_pickup_clearance=false,has_item_pickup_pose=false;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
         for(const auto& [offset,is_float]:floating_fields)
@@ -943,6 +943,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     impl_->has_attachment_aim=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_aim_feature))!=0;
     impl_->has_ik_clearance=std::erase(prefix.features,std::string(gameplay_abi::ik_clearance_feature))!=0;
     impl_->has_item_pickup_clearance=std::erase(prefix.features,std::string(gameplay_abi::item_pickup_clearance_feature))!=0;
+    impl_->has_item_pickup_pose=std::erase(prefix.features,std::string(gameplay_abi::item_pickup_pose_feature))!=0;
     prefix.services_bytes=gameplay_abi::service_prefix_bytes(prefix);
     if(config.native_aot) {
         require_compatible(impl_->requirements,offered);
@@ -1014,6 +1015,7 @@ bool Gameplay::requires_item_attachment_pickup() const {return impl_->has_attach
 bool Gameplay::requires_item_attachment_aim() const {return impl_->has_attachment_aim;}
 bool Gameplay::requires_ik_clearance() const {return impl_->has_ik_clearance;}
 bool Gameplay::requires_item_pickup_clearance() const {return impl_->has_item_pickup_clearance;}
+bool Gameplay::requires_item_pickup_pose() const {return impl_->has_item_pickup_pose;}
 void Gameplay::validate_services(const gameplay_abi::Contract& available) const {require_compatible(impl_->requirements,available);}
 const std::vector<components::Schema>& Gameplay::component_schemas() const { return impl_->component_schemas; }
 std::vector<std::uint64_t>& Gameplay::state() { return impl_->storage; }

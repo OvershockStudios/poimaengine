@@ -6,6 +6,9 @@ namespace Poima;
 /// <summary>Declares final-tick arm clearance checks on attempted pickups.</summary>
 public interface IItemPickupClearanceGame : IItemAttachmentPickupGame { }
 
+/// <summary>Declares same-tick arm pose fallback when a sampled pickup is obstructed.</summary>
+public interface IItemPickupPoseGame : IItemPickupClearanceGame { }
+
 /// <summary>World-space capsule radii for the live manual chain at the receiving hand.</summary>
 public readonly record struct ItemPickupClearance(EntityId Rig,uint Slot,double UpperRadius,double LowerRadius);
 public readonly record struct ItemPickupBlocker(EntityId Item,EntityId Hand,ulong SampledTick,IkClearanceBlocker Blocker);
@@ -49,11 +52,26 @@ public readonly unsafe ref partial struct GameContext
         ReadOnlySpan<ItemSurfaceProbe> probes,ItemPickupClearance clearance)
     {
         RequireFeature(GameplayRequiredFeatures.ItemPickupClearance,nameof(IItemPickupClearanceGame));
+        ValidatePickupClearance(clearance);
+        StageSampledTransfer(item,hand,contact,probes,7,clearance);
+    }
+
+    /// <summary>On final obstruction, try the prior arm controls and then the incoming animation pose.
+    /// The pickup is still refused and the committed arm can be read through the usual IK state.</summary>
+    public void AttemptItemPickupWithPoseFallback(EntityId item,EntityId hand,ItemAttachmentContact contact,
+        ReadOnlySpan<ItemSurfaceProbe> probes,ItemPickupClearance clearance)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemPickupPose,nameof(IItemPickupPoseGame));
+        ValidatePickupClearance(clearance);
+        StageSampledTransfer(item,hand,contact,probes,8,clearance);
+    }
+
+    private static void ValidatePickupClearance(ItemPickupClearance clearance)
+    {
         if(clearance.Rig==default || clearance.Slot is <1 or >8 ||
             !double.IsFinite(clearance.UpperRadius) || clearance.UpperRadius is <.001 or >1 ||
             !double.IsFinite(clearance.LowerRadius) || clearance.LowerRadius is <.001 or >1)
             throw new ArgumentException("Supply a live manual IK chain and two radii of .001..1 metres.",nameof(clearance));
-        StageSampledTransfer(item,hand,contact,probes,7,clearance);
     }
 
     /// <summary>Read a pickup blocked by the arm corridor on the committed callback-entry tick.</summary>

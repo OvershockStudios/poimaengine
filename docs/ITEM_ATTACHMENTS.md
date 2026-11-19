@@ -458,6 +458,36 @@ attachment getter (88 bytes). A checkpoint containing the new result uses
 attachment outcome version 2. Previous outcome encodings remain readable.
 [Verification](evidence/m2-final-pickup-clearance.json)
 
+### Choose a fallback arm pose on the blocked tick
+
+Declare `IItemPickupPoseGame` and call
+`AttemptItemPickupWithPoseFallback(item, hand, contact, probes, arm)`.
+When valid contact is refused by final arm clearance, the engine tries the arm
+controls from callback entry against the current animation and final colliders.
+If those capsules overlap, it tries the current animation with manual IK off.
+An accepted fallback updates the committed joint transforms and the cached IK
+state before observation or rendering. Other slots and the finger layer keep
+their committed controls.
+
+The `reach_blocked` receipt adds a `pose` field. `previous` means the prior
+controls passed the endpoint check. `animation` means the current animation
+passed with manual IK disabled. `unresolved` means both options overlapped and
+the attempted pose was retained. In all three cases the prop stays with its
+release proxy. Read the existing pickup blocker and the committed IK state on
+the next Tick to start gameplay recovery.
+
+The opt-in requires a dedicated manual slot for the attempt and an animated
+rig without physical ownership or recorded procedural grounding. It reserves
+12 capsule queries from the shared Tick budget. The two fallback candidates
+are checked at their endpoints against the final colliders. This does not
+plan a continuous retraction path or test fingertips or skin against obstacles.
+
+`item_attachment_pickup_pose_v1` requires `item_attachment_pickup_clearance_v1`.
+It uses pickup command version 8 with the same 312-byte record and 528-byte
+service table. Version 7 remains available. Outcome encoding version 3
+includes the pose receipt. Earlier outcome encodings remain readable.
+[Verification](evidence/m2-pickup-pose-fallback.json)
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

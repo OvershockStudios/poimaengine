@@ -1,0 +1,338 @@
+{
+  "engine_version": "0.0.270",
+  "schema_revision": 158,
+  "fixture": "tests/pickup_pose_fallback.py",
+  "scope": [
+    "Reproduce a one-tick obstacle in the same Carry Props scene with the 0.0.269 host and retained version 7 gameplay.",
+    "Compare current joint positions with the independently evaluated incoming animation and actual committed physics.",
+    "Check a clear prior pose and the unresolved outcome when both alternatives intersect the wall. Confirm the saved choices after fresh-process restore.",
+    "Compare blocking and recovery images through native Windows Vulkan, using diagnostic sleeves and joint markers attached to the live rig. The observations cover committed boundaries, with continuous retraction and imported skin collision separate."
+  ],
+  "contract": {
+    "feature": "item_attachment_pickup_pose_v1",
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 8,
+    "command_bytes": 312,
+    "pose_witness_version": 3
+  },
+  "linux_coreclr": {
+    "report": {
+      "path": "build/pickup-pose-0.0.270/linux-observed/report.json",
+      "sha256": "eb6f45b91fa09d905adb74a4e675c58e0ad5765b8bbb4ff1bc46e9fce72d6a6a"
+    },
+    "native_replies": 395,
+    "natural_owner_exits": 9,
+    "blocked_tick": 171,
+    "pickup_tick": 200,
+    "witness": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "fraction": 0.0,
+      "interval": 1,
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.03865951672196388,
+      "pose": "animation",
+      "segment": 1,
+      "status": "reach_blocked"
+    },
+    "current_elbow_m": [
+      0.0,
+      1.1523883092630225,
+      -0.45894192332851913
+    ],
+    "previous_host_elbow_m": [
+      0.09353436822754087,
+      1.0908525761614014,
+      -0.4359428461195862
+    ],
+    "elbow_separation_m": 0.11429909028746295,
+    "previous_host_overlap_m": 0.040010008960962296,
+    "prior_pose_weight": 0.9803240740740741,
+    "unresolved_pose_weight": 1.0,
+    "old_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks item_attachment_pickup_pose_v1."
+    },
+    "invalid_pose_restore": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "whole_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "bytes": 32498,
+        "sha256": "82db22aa5937d99b95ab3d3ee7b938e4f6294e3f62adb3cf8f7dd4f2c5457c3d"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 28045,
+        "sha256": "9ced455fcc6e9f9607e7201cd339abdcea8abeadbeffdc8f002e61d6dda9d73b"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "bytes": 28045,
+        "sha256": "9ced455fcc6e9f9607e7201cd339abdcea8abeadbeffdc8f002e61d6dda9d73b"
+      },
+      {
+        "slots": [
+          "legacy-blocked",
+          "legacy-restored"
+        ],
+        "bytes": 32806,
+        "sha256": "a552159a9047f9a4b5a19a46ada9bb5556f63c13af97bd29af2410eb3169f66a"
+      },
+      {
+        "slots": [
+          "previous",
+          "previous-cold"
+        ],
+        "bytes": 32847,
+        "sha256": "09ffa99cf87c697e5b9f41dcc00f8b4525ade9c91375eff3d093070b3bb4eecf"
+      },
+      {
+        "slots": [
+          "unresolved",
+          "unresolved-cold"
+        ],
+        "bytes": 32827,
+        "sha256": "794eff34fc6e1f77ac2260aa101e56e03ab06fb65d9b4746bd3a5ec8b767d2c3"
+      }
+    ],
+    "captures": {},
+    "source_images": {
+      "runtime": {
+        "path": "build/linux-game/poima",
+        "sha256": "02c063a7b888f0f403718fe82405408e9781176d52e6dd47c089af1572af7806"
+      },
+      "gameplay": {
+        "path": "build/pickup-pose-0.0.270/game/Poima.CarryPropsGame.dll",
+        "sha256": "952034102d519dc7f62a28b88f1f94dfe06c040fbec7f057b9c41863fa205a23"
+      },
+      "previous": {
+        "path": "build/pickup-pose-0.0.270/previous-linux/poima",
+        "sha256": "dd43d5e8e5103e86e6ffe31daa964fc5820b078a2ba8b48641f55a7f1739dc0d"
+      },
+      "retained_gameplay": {
+        "path": "build/final-pickup-clearance-0.0.268/game/Poima.CarryPropsGame.dll",
+        "sha256": "b45f4dec4bbc5b923d5c01168b0bcbd8a9e2774c0c5a70c64c93f4e38a573f66"
+      }
+    }
+  },
+  "windows_native_aot": {
+    "report": {
+      "path": "build/pickup-pose-0.0.270/windows-side/report.json",
+      "sha256": "8101cdae7d0ec3590be5b55b7b2a55d395268f25aa9962dea30235be4bda3c81"
+    },
+    "native_replies": 401,
+    "natural_owner_exits": 9,
+    "blocked_tick": 171,
+    "pickup_tick": 200,
+    "witness": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "fraction": 0.0,
+      "interval": 1,
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.03865951672196388,
+      "pose": "animation",
+      "segment": 1,
+      "status": "reach_blocked"
+    },
+    "current_elbow_m": [
+      0.0,
+      1.1523883092630225,
+      -0.45894192332851913
+    ],
+    "previous_host_elbow_m": [
+      0.09353436822754083,
+      1.0908525761614014,
+      -0.4359428461195862
+    ],
+    "elbow_separation_m": 0.11429909028746292,
+    "previous_host_overlap_m": 0.040010008960962296,
+    "prior_pose_weight": 0.9803240740740741,
+    "unresolved_pose_weight": 1.0,
+    "old_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: item_attachment_pickup_pose_v1"
+    },
+    "invalid_pose_restore": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "whole_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "bytes": 32501,
+        "sha256": "c2436f3d2d662b67ac528ce8a7067b08cf06777d635dbcc8ccc50cfc00f60508"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 28045,
+        "sha256": "54b0f44c2246971781e6a7c418513dba69f38f54e19e450072732d330eb371e7"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "bytes": 28045,
+        "sha256": "54b0f44c2246971781e6a7c418513dba69f38f54e19e450072732d330eb371e7"
+      },
+      {
+        "slots": [
+          "legacy-blocked",
+          "legacy-restored"
+        ],
+        "bytes": 32809,
+        "sha256": "e1d18e5066d343f72fbf64ed4fe7f41cd3ce358888a29bec73839ee03d3b0c10"
+      },
+      {
+        "slots": [
+          "previous",
+          "previous-cold"
+        ],
+        "bytes": 32854,
+        "sha256": "c8181c9336e92c0f12763f39743dd711d36c7a924df70e8c864e1e38a2a95378"
+      },
+      {
+        "slots": [
+          "unresolved",
+          "unresolved-cold"
+        ],
+        "bytes": 32830,
+        "sha256": "d6d6c5de985670002102848e86cb398acffb4e660d8bcae4a35a24215446238c"
+      }
+    ],
+    "captures": {
+      "blocked": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "fd5237b831d282d7a46b90bd8d53248236b3d03d8403a3894eb77b50a26f1cfb",
+        "extent": [
+          640,
+          360
+        ]
+      },
+      "recovered": {
+        "tick": 208,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "37be3f4e88a884a2eb6ecf93f65fb32a7d6f5961cdb02894478ae65728caf2ed",
+        "extent": [
+          640,
+          360
+        ]
+      },
+      "legacy": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "b4b26b80f554c0e6d6ff1e7e0996270526e21d3bd98bbe5445d0b38244032dc9",
+        "extent": [
+          640,
+          360
+        ]
+      }
+    },
+    "source_images": {
+      "runtime": {
+        "path": "build/windows-runtime/bin/poima.exe",
+        "sha256": "1b1015da1513a9604f4e3de5b39d5dce129b228f56f1fa2f3eb6bc9d13b36618"
+      },
+      "gameplay": {
+        "path": "build/pickup-pose-0.0.270/windows-aot/Poima.NativeGame.dll",
+        "sha256": "444d281d6d523df90fb2a2aff0d119ee353d6d8bc239e1deaf3bc9f40e7578cb"
+      },
+      "previous": {
+        "path": "build/pickup-pose-0.0.270/previous-windows/poima.exe",
+        "sha256": "76e68fe781a38db1925b0e4e341b47d9cf4f116daa344bcbaf16d87fe19407b6"
+      },
+      "retained_gameplay": {
+        "path": "build/final-pickup-clearance-0.0.268/windows-aot/Poima.NativeGame.dll",
+        "sha256": "b11e1f719b25c1a0697b874b705b4cff581bf56bcf57c6f82b093d3754398e41"
+      }
+    }
+  },
+  "linux_mcp": {
+    "passed": true,
+    "native_replies": 7,
+    "exact_archive_pairs": 1,
+    "restored_native_witness": true,
+    "stale_structure_code": -32009
+  },
+  "retained_0_0_266_release_blocked": {
+    "linux": {
+      "report": {
+        "path": "build/pickup-pose-0.0.270/linux-v1/report.json",
+        "sha256": "86886daee512da232617a890176712e3ef10c6fd2021e6efddaa3d60b6544310"
+      },
+      "passed": true,
+      "native_replies": 98,
+      "exact_archive_pairs": 2,
+      "saved_witness_version": 1,
+      "continued_tick": 355,
+      "original_blocked_sha256": "235f56058c613bee50319e047feb37a9235715f5ed829df0f618a4ce4f0e0104",
+      "original_final_sha256": "51d97ac45d607570da3a84263f39f7d70c612a9bfb020c9e990d55ae1ec94096"
+    },
+    "windows": {
+      "report": {
+        "path": "build/pickup-pose-0.0.270/windows-v1/report.json",
+        "sha256": "46438385e4c59a8f55afff6df382be701abc494c590511faf8bfd5191b771408"
+      },
+      "passed": true,
+      "native_replies": 98,
+      "exact_archive_pairs": 2,
+      "saved_witness_version": 1,
+      "continued_tick": 355,
+      "original_blocked_sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba",
+      "original_final_sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f"
+    }
+  },
+  "first_windows_render": {
+    "report": {
+      "path": "build/pickup-pose-0.0.270/windows-final/report.json",
+      "sha256": "15e4a54a179224559250cf94d4717f2a57bfbb13c83ce9342c4b304ff89aa59c"
+    },
+    "frames_identical": true,
+    "reason": "The original contact-panel fixture did not show the moving arm in the selected camera. The final fixture adds a side camera and live rig markers."
+  },
+  "linux_ctest": {
+    "report": {
+      "path": "build/pickup-pose-0.0.270/linux-regressions.xml",
+      "sha256": "9c8ce0bfb369330f8bfaf418737ab003a4a333c3e6a33d5ae3b22f7d6587d985"
+    },
+    "tests": [
+      "gameplay_compatibility_policy",
+      "native_gameplay_publish_requirements",
+      "world_ui_contract",
+      "runtime_joint_pose_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ]
+  },
+  "first_linux_build": {
+    "passed": false,
+    "reason": "Compatibility test local name collided with an existing variable.",
+    "log": {
+      "path": "build/pickup-pose-0.0.270/linux-build.log",
+      "sha256": "6c14fbb6184c3b66dbeef7aba79c69a5679f48a2fe4e31d9f38f51e1eaa6a0d3"
+    }
+  }
+}

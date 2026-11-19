@@ -147,13 +147,13 @@ def pickup(game):
     return int(state['PickupTick'])
 
 
-def capture(game, args, name):
+def capture(game, args, name, camera=CAMERA):
     if args.gpu is None:
         return None
     path = args.output / (name + '.bmp')
     revision, _ = game.ui()
     frame = game.call('runtime.capture', tick=game.tick, structure_revision=game.structure,
-        ui_revision=revision, camera=CAMERA, path=native.native(path), width=640, height=360,
+        ui_revision=revision, camera=camera, path=native.native(path), width=640, height=360,
         samples=1, gpu=args.gpu)
     assert frame['capture_written'] and frame['hardware'] and frame['nvrhi_errors'] == 0
     return dict(tick=frame['tick'], gpu=frame['gpu'], sha256=sha(path))

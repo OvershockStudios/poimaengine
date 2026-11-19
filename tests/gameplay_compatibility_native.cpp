@@ -83,11 +83,13 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(item_attachment_pickup_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_aim_feature));
     std::erase(old_attachment_host.features,std::string(item_pickup_clearance_feature));
+    std::erase(old_attachment_host.features,std::string(item_pickup_pose_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
     std::erase(before_pickup.features,std::string(item_pickup_clearance_feature));
+    std::erase(before_pickup.features,std::string(item_pickup_pose_feature));
     auto before_release=before_pickup;std::erase(before_release.features,std::string(item_attachment_release_feature));
     auto release=attachment;release.features.push_back(item_attachment_release_feature);
     check(compatibility_error(release,capable).empty() && compatibility_error(attachment,before_release).empty() &&
@@ -110,9 +112,16 @@ void policy() {
     check(compatibility_error(pickup,capable).empty() && compatibility_error(recovery,before_pickup).empty() &&
         !compatibility_error(pickup,before_pickup).empty(),"Pickup must negotiate version 6 at the same extent.");
     auto final_pickup=pickup;final_pickup.features.push_back(item_pickup_clearance_feature);
-    auto before_final=capable;std::erase(before_final.features,std::string(item_pickup_clearance_feature));
+    auto before_pose=capable;std::erase(before_pose.features,std::string(item_pickup_pose_feature));
+    auto before_final=before_pose;std::erase(before_final.features,std::string(item_pickup_clearance_feature));
     check(compatibility_error(final_pickup,capable).empty() && compatibility_error(pickup,before_final).empty() &&
         !compatibility_error(final_pickup,before_final).empty(),"Final pickup clearance requires its own feature at the same extent.");
+    auto pickup_pose=final_pickup;pickup_pose.features.push_back(item_pickup_pose_feature);
+    check(compatibility_error(pickup_pose,capable).empty() && compatibility_error(final_pickup,before_pose).empty() &&
+        !compatibility_error(pickup_pose,before_pose).empty(),"Pickup pose fallback requires its own feature at the same extent.");
+    auto pose_without_clearance=pickup_pose;std::erase(pose_without_clearance.features,std::string(item_pickup_clearance_feature));
+    check(!compatibility_error(pose_without_clearance,capable).empty() &&
+        !compatibility_error(baseline,pose_without_clearance).empty(),"Pickup pose fallback requires final clearance.");
     std::erase(final_pickup.features,std::string(item_attachment_pickup_feature));
     check(!compatibility_error(final_pickup,capable).empty() &&
         !compatibility_error(baseline,final_pickup).empty(),"Final pickup clearance requires sampled pickup support.");

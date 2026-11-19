@@ -1054,38 +1054,53 @@ std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& ent
     }
     return {};
 }
+std::pair<std::size_t,std::size_t> RuntimeAnimations::manual_ik_slot(const std::string& entity,std::uint32_t slot) const {
+    const auto found=membership_->indices.find(entity);
+    check(found!=membership_->indices.end(),"IK clearance requires a live animation rig.");
+    const auto& rig=membership_->rigs[found->second];
+    const auto chain=std::find_if(rig.ik.begin(),rig.ik.end(),[slot](const auto& value){return value.slot==slot;});
+    check(chain!=rig.ik.end() && !chain->grounding,"IK clearance requires a configured manual slot.");
+    return {found->second,static_cast<std::size_t>(chain-rig.ik.begin())};
+}
 RuntimeAnimations::IkChainPreview RuntimeAnimations::preview_ik_chain(const RuntimeIkCommand& goal,
     std::uint64_t tick,const Matrix4& wrapper) const {
-    const auto found=membership_->indices.find(goal.entity);
-    check(found!=membership_->indices.end(),"IK clearance requires a live animation rig.");
-    const auto index=found->second;
+    const auto [index,slot]=manual_ik_slot(goal.entity,goal.slot);
     const auto& rig=membership_->rigs[index];
-    const auto chain=std::find_if(rig.ik.begin(),rig.ik.end(),[&](const auto& slot){return slot.slot==goal.slot;});
-    check(chain!=rig.ik.end() && !chain->grounding,"IK clearance requires a configured manual slot.");
+    const auto& chain=rig.ik[slot];
     check(!procedural_suspended(goal.entity) && !physical_return_active(goal.entity,tick),
         "IK clearance requires fully animated ownership.");
-    ik::validate_control(*chain,goal);
     auto pose=composed(index,clocks_[index],layers_[index],tick);
     strip_root(index,pose);
     // Validated solved branches are disjoint, with target anchors outside all
     // solved branches. Other slots cannot change the selected three points.
-    (void)ik::solve(rig.model_parents,pose,*chain,goal,wrapper);
     IkChainPreview result;
-    const std::array nodes{chain->root,chain->middle,chain->end};
+    result.state=ik::solve(rig.model_parents,pose,chain,goal,wrapper);
+    const std::array nodes{chain.root,chain.middle,chain.end};
     for(std::size_t i=0;i<nodes.size();++i) {
         result.entities[i]=rig.nodes.at(nodes[i]);
+        const auto& local=pose.local.at(nodes[i]);
+        result.locals[i]={local.position,local.rotation,local.scale};
         const auto point=multiply(wrapper,pose.world.at(nodes[i]));
         result.candidate[i]={point[12],point[13],point[14]};
     }
     return result;
 }
 std::array<std::string,3> RuntimeAnimations::manual_ik_nodes(const std::string& entity,std::uint32_t slot) const {
-    const auto found=membership_->indices.find(entity);
-    check(found!=membership_->indices.end(),"Arm clearance requires a live animation rig.");
-    const auto& rig=membership_->rigs[found->second];
-    const auto chain=std::find_if(rig.ik.begin(),rig.ik.end(),[slot](const auto& value){return value.slot==slot;});
-    check(chain!=rig.ik.end() && !chain->grounding,"Arm clearance requires a configured manual IK slot.");
-    return {rig.nodes.at(chain->root),rig.nodes.at(chain->middle),rig.nodes.at(chain->end)};
+    const auto [index,position]=manual_ik_slot(entity,slot);
+    const auto& rig=membership_->rigs[index];
+    const auto& chain=rig.ik[position];
+    return {rig.nodes.at(chain.root),rig.nodes.at(chain.middle),rig.nodes.at(chain.end)};
+}
+RuntimeIkCommand RuntimeAnimations::pickup_fallback_control(const std::string& entity,std::uint32_t slot) const {
+    const auto [index,position]=manual_ik_slot(entity,slot);
+    check(!membership_->rigs[index].procedural_grounding,
+        "Pickup pose fallback requires an animation rig without recorded procedural grounding.");
+    return ik_[index][position];
+}
+void RuntimeAnimations::publish_pickup_fallback(const RuntimeIkCommand& goal,RuntimeIkState state) {
+    const auto [index,position]=manual_ik_slot(goal.entity,goal.slot);
+    ik_[index][position]=goal;
+    ik_states_[index][position]=std::move(state);
 }
 void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
     for(const auto& command:commands)check(!return_owns_controls(command.entity),"Physical return owns IK requests during its finite blend.");

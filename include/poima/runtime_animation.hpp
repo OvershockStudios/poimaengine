@@ -225,6 +225,7 @@ private:
     std::vector<RuntimeAnimationPose> sample_impl(std::uint64_t tick,
         const std::function<const Matrix4&(const std::string&)>& wrapper_world,
         const grounding::Query&,const grounding::SupportQuery&,const ProceduralSupportQuery&);
+    std::pair<std::size_t,std::size_t> manual_ik_slot(const std::string&,std::uint32_t) const;
 public:
     // No executor retains the independent serial reference path.
     explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
@@ -284,9 +285,13 @@ public:
     struct IkChainPreview {
         std::array<std::string,3> entities;
         std::array<std::array<double,3>,3> candidate;
+        std::array<RuntimeTransform,3> locals;
+        RuntimeIkState state;
     };
     IkChainPreview preview_ik_chain(const RuntimeIkCommand&,std::uint64_t,const Matrix4&) const;
     std::array<std::string,3> manual_ik_nodes(const std::string& entity,std::uint32_t slot) const;
+    RuntimeIkCommand pickup_fallback_control(const std::string&,std::uint32_t) const;
+    void publish_pickup_fallback(const RuntimeIkCommand&,RuntimeIkState);
     void apply_ik(const std::vector<RuntimeIkCommand>& commands);
     bool has_root_motion() const noexcept;
     std::optional<RuntimeRootMotionState> root_motion_state(const std::string& entity) const;

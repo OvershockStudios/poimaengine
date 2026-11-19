@@ -1,8 +1,13 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.269**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.270**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.270 adds [same-tick arm fallback for guarded pickups](ITEM_ATTACHMENTS.md#choose-a-fallback-arm-pose-on-the-blocked-tick).
+The Carry Props fixture uses committed joint transforms and native capsule
+checks to verify which fallback reached the blocked tick, then resumes from
+an exact save and retries the pickup. [Results](evidence/m2-pickup-pose-fallback.json)
 
 Version 0.0.269 adds [per-control tint for cooked UI artwork](GAME_UI.md#use-cooked-images).
 The same asset can serve different palettes and opacities in contained, stretched

@@ -55,6 +55,15 @@ controller in the stopped authored world. Use the same rig, finger layer,
 receiving socket and [calibrated grip settings](../reach-pickup/README.md#author-the-interaction)
 as the basic reach example.
 
+Use `Poima.Examples.PoseFallbackCarryPropsGame` on a 0.0.270 host to try
+same-tick arm fallback after a late obstacle. The controller reads the
+published IK weight before retracting and retries normally after the route
+clears. Run `tests/pickup_pose_fallback.py` with the selected module and the
+same runtime paths as above. On Windows, add `--gpu` to capture the blocked
+tick and recovery from the same side camera, with sleeves and joint markers
+attached to the live rig. The verifier can also take an older host
+and its original final-clearance module to reproduce the clipping.
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

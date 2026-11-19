@@ -14,6 +14,7 @@
         std::array<std::string,3> joints;
         std::array<double,2> radii;
         std::array<std::array<double,3>,3> start;
+        std::optional<RuntimeIkCommand> fallback;
     };
     struct PickupClearanceRejected {
         RuntimeAttachmentReachBlocked detail;
@@ -153,22 +154,50 @@
         }
         if(missed)throw RuntimeAttachmentSurfaceRejected(std::move(*missed));
     }
-    void check_pickup_clearance(const std::string& item,const std::string& holder,const StagedPickupClearance& guard) const {
-        require(animations->manual_ik_nodes(guard.rig,guard.slot)==guard.joints &&
-            attachment_contains(attachment_graph.get(),guard.joints.back(),holder),
-            "Pickup clearance must match the receiving hand's live manual chain.");
+    std::vector<std::string> pickup_clearance_exclusions(const std::string& item,const std::string& rig) const {
         const auto* dropped=attachment(attachment_graph.get(),item);
         require(dropped && dropped->released,"Pickup clearance requires a live release proxy.");
         std::vector<std::string> ignore{dropped->anchor};
-        for(auto id=guard.rig;!id.empty();id=registry.get<Node>(find(id)).parent) {
+        for(auto id=rig;!id.empty();id=registry.get<Node>(find(id)).parent) {
             if(registry.any_of<Body,Controller>(find(id))) {
                 if(id!=dropped->anchor)ignore.push_back(id);
                 break;
             }
         }
+        return ignore;
+    }
+    void check_pickup_clearance(const std::string& item,const std::string& holder,const StagedPickupClearance& guard) const {
+        require(animations->manual_ik_nodes(guard.rig,guard.slot)==guard.joints &&
+            attachment_contains(attachment_graph.get(),guard.joints.back(),holder),
+            "Pickup clearance must match the receiving hand's live manual chain.");
+        const auto ignore=pickup_clearance_exclusions(item,guard.rig);
         if(auto hit=sweep_chain(guard.start,read_chain_points(guard.joints),guard.radii,ignore))
             throw PickupClearanceRejected{{std::move(hit->hit.entity),hit->segment,hit->interval,
                 hit->hit.fraction,hit->hit.penetration_depth}};
+    }
+    RuntimeAttachmentReachBlocked::Pose resolve_pickup_pose(const std::string& item,const StagedPickupClearance& guard) {
+        using Pose=RuntimeAttachmentReachBlocked::Pose;
+        const auto ignore=pickup_clearance_exclusions(item,guard.rig);
+        const auto& wrapper=registry.get<Node>(find(guard.rig)).world;
+        const auto commit_if_clear=[&](const RuntimeIkCommand& control) {
+            auto preview=animations->preview_ik_chain(control,tick,wrapper);
+            if(sweep_chain(preview.candidate,preview.candidate,guard.radii,ignore))return false;
+            // Publish only the three validated, disjoint local joints. Other
+            // rig clocks and cached physics/grounding samples already committed.
+            animations->publish_pickup_fallback(control,std::move(preview.state));
+            for(std::size_t i=0;i<preview.entities.size();++i)
+                registry.get<Node>(find(preview.entities[i])).local=preview.locals[i];
+            world_matrices();
+            return true;
+        };
+        auto control=guard.fallback.value();
+        if(commit_if_clear(control))return Pose::Previous;
+        // Disabled controls already sampled the unmodified incoming pose.
+        if(!control.enabled)return Pose::Unresolved;
+        control.enabled=false;
+        control.weight=0;
+        control.end_orientation.reset();
+        return commit_if_clear(control) ? Pose::Animation : Pose::Unresolved;
     }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
         const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false,

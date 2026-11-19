@@ -33,7 +33,9 @@
                         outcome.detail=RuntimeAttachmentSurfaceMiss{row.probe_index,row.measurement.target_triangle,
                             row.measurement.distance_m,row.distance_limit_m};
                     } catch(const PickupClearanceRejected& blocked) {
-                        outcome.detail=blocked.detail;
+                        auto detail=blocked.detail;
+                        if(guard->second.fallback)detail.pose=resolve_pickup_pose(command.entity,guard->second);
+                        outcome.detail=std::move(detail);
                     }
                     outcomes.emplace(command.entity,std::move(outcome));
                 }
@@ -121,7 +123,9 @@
         PoimaGameItemPickupClearanceV7 request;
         std::memcpy(&request,source,sizeof(request));
         require(request.reserved==0 && request.slot>=1 && request.slot<=8,"Invalid pickup clearance slot or reserved field.");
-        constexpr auto casts=2*ik_clearance_intervals;
+        const bool with_fallback=source->version==8;
+        require(!with_fallback || game->requires_item_pickup_pose(),"Gameplay must declare item_attachment_pickup_pose_v1.");
+        const auto casts=2*ik_clearance_intervals+(with_fallback ? 4u : 0u);
         require(game_capsule_query_attempts<=capsule_query_tick_budget-casts,"Gameplay exceeded the capsule query budget.");
         const auto rig=gameplay_id(request.rig);
         (void)find(rig);
@@ -132,7 +136,13 @@
         require(attachment_contains(attachment_graph.get(),joints.back(),command.anchor),
             "Pickup clearance must match the receiving hand's live manual chain.");
         const auto start=read_chain_points(joints);
-        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start});
+        require(std::none_of(game_pickup_checks.begin(),game_pickup_checks.end(),[&](const auto& row) {
+            const auto& prior=row.second;
+            return prior.rig==rig && prior.slot==request.slot && (with_fallback || prior.fallback);
+        }),"Pickup pose fallback requires an exclusive arm slot for this Tick.");
+        std::optional<RuntimeIkCommand> fallback;
+        if(with_fallback)fallback=animations->pickup_fallback_control(rig,request.slot);
+        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start,std::move(fallback)});
         game_capsule_query_attempts+=casts;
     }
 
@@ -276,7 +286,7 @@
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
                 ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3)) ||
-                (source->version==7 && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
+                ((source->version==7 || source->version==8) && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
                 source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;
@@ -322,18 +332,18 @@
                     std::memcpy(&sampled,source,sizeof(sampled));
                     contact.surface=self.game_surface_probes(sampled);
                 }
-                if(source->version==6 || source->version==7) {
+                if(source->version>=6) {
                     require(self.game->requires_item_attachment_pickup(),
                         "Gameplay must declare item_attachment_pickup_v1 to stage a pickup.");
                     command.mode=RuntimeAttachmentMode::Pickup;
                 }
-                command.recover_miss=source->version==4 || source->version==6 || source->version==7;
+                command.recover_miss=source->version==4 || source->version>=6;
                 require(!command.recover_miss || self.game->requires_item_attachment_recovery(),
                     "Gameplay must declare item_attachment_recovery_v1 to stage a recoverable transfer.");
                 command.contact=std::move(contact);
             }
             self.require_unique_game_attachment(command.entity);
-            if(source->version==7)self.stage_game_pickup_clearance(command,source);
+            if(source->version>=7)self.stage_game_pickup_clearance(command,source);
             self.game_attachment_commands.push_back(std::move(command));
         });
     }

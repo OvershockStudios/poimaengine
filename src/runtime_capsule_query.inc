@@ -99,9 +99,10 @@
             for(const auto& point:*points)for(double coordinate:point)
                 require(std::isfinite(coordinate) && std::abs(coordinate)<=1e6,
                     "IK clearance joint points must remain within +/-1000km.");
-        for(std::uint32_t interval=0;interval<ik_clearance_intervals;++interval) {
-            const auto start=static_cast<double>(interval)/ik_clearance_intervals;
-            const auto end=static_cast<double>(interval+1)/ik_clearance_intervals;
+        const auto intervals=current==candidate ? 1u : ik_clearance_intervals;
+        for(std::uint32_t interval=0;interval<intervals;++interval) {
+            const auto start=static_cast<double>(interval)/intervals;
+            const auto end=static_cast<double>(interval+1)/intervals;
             for(std::uint32_t segment=0;segment<radii.size();++segment) {
                 CapsuleCastRequest cast;
                 cast.ignore=ignore;
