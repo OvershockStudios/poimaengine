@@ -89,6 +89,15 @@ independently. Calibrate the rig under the player body and mark its foreground
 drawables with [scene-anchored CameraDraw](../../docs/VIEWMODELS.md#anchor-a-viewmodel-to-the-scene).
 Keep the camera in `CarryPropSettings.Camera` for aim queries.
 
+Use `Poima.Examples.ArcingApproachCarryPropsGame` to bring the wrist over the
+prop as the hand opens, then descend toward the authored grip. The sample
+raises the target in world Y by up to 12 cm, with the crest at 30% of
+`AimTicks`. The lift returns smoothly to zero at the contact attempt. Arm
+clearance, fingertip contact and the blocked return use the existing native
+checks and staged recovery. Tune the curve for your rig and props. Run the
+steering verifier with `--arcing-approach` on the 0.0.274 host.
+[Imported-rig results](../../docs/evidence/m2-arcing-pickup-approach.json)
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

@@ -16,7 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
-internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback, StagedRecovery }
+internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback, StagedRecovery, ArcingApproach }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -94,6 +94,12 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                 candidate.Weight=Ease(progress);
                 candidate.Opening=Ease(Math.Min(progress/.35,(1-progress)/.35));
                 ReadTarget(ref candidate,context.Get(state.Item).Transform);
+                if(guard==ReachGuard.ArcingApproach)
+                {
+                    const double crest=.30;
+                    double arch=Math.Min(progress/crest,(1-progress)/(1-crest));
+                    candidate.TargetY+=.12*Ease(arch);
+                }
                 if(!TryApplyPose(candidate,context,guard!=ReachGuard.None))
                 {
                     ++state.Cancellations;
@@ -133,7 +139,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             candidate.Weight=remaining*state.ReturnWeight;
             candidate.Opening=remaining*state.ReturnOpening;
             bool blocked=state.Phase==BlockedReturning;
-            double wristDelay=blocked && guard==ReachGuard.StagedRecovery ? state.ReturnTicks*.5 : 0;
+            double wristDelay=blocked && guard>=ReachGuard.StagedRecovery ? state.ReturnTicks*.5 : 0;
             double wristRemaining=ReturnInfluence(candidate.TicksInPhase,state.ReturnTicks,wristDelay);
             IkEndOrientationGoal? wrist=null;
             if(guard>=ReachGuard.BlendedFallback && blocked && wristRemaining>0 &&

@@ -15,13 +15,14 @@ from final_pickup_clearance import close_in_one_tick, last_reach_sample, recover
 from ik_clearance import finish, load
 from item_attachment_release import payload
 from item_attachment_surface_gameplay import configuration, parameters
-from item_reach_pickup import RIG, WALL
+from item_reach_pickup import ITEM, RIG, WALL
 from pickup_pose_blend import FEATURES as BLEND_FEATURES, GAME as BLEND_GAME
 from pickup_pose_fallback import SIDE_CAMERA, add_pose_observation, arm, blocked, stationary_hits
 import world_physical_contract as native
 
 GAME = 'Poima.Examples.SteeredFallbackCarryPropsGame'
 STAGED_GAME = 'Poima.Examples.StagedRecoveryCarryPropsGame'
+ARCING_GAME = 'Poima.Examples.ArcingApproachCarryPropsGame'
 FEATURE = 'item_attachment_pickup_steering_v1'
 FEATURES = BLEND_FEATURES | {FEATURE}
 
@@ -30,8 +31,16 @@ def wrist_target(game):
     return game.call('runtime.ik', tick=game.tick, entity=RIG, slot=1)['state']['target']
 
 
-def insert_wall(game, offset=(.035,.012,0)):
+def insert_wall(game, offset=(.035,.012,0), *, arcing=False):
     body, _ = last_reach_sample(game)
+    if arcing:
+        state = game.state()
+        progress = state['TicksInPhase']/state['AimTicks']
+        item = game.matrix(ITEM)
+        grip_y = item[13] + sum(item[1+4*i]*state['Grip'+axis] for i,axis in enumerate('XYZ'))
+        arch = min(progress/.30, (1-progress)/.70)
+        lift = .12*arch*arch*(3-2*arch)
+        assert lift > 0 and math.isclose(wrist_target(game)[1], grip_y+lift, abs_tol=1e-7)
     before = arm(game, body)
     elbow, wrist = before['points'][1:]
     wall = [a+.7*(b-a)+delta for a,b,delta in zip(elbow,wrist,offset)]
@@ -110,7 +119,13 @@ def verify(args):
     native.ARGS = args
     native.MAX_CALLS = 750
     native.DEADLINE = time.monotonic()+280
-    config = configuration(args,STAGED_GAME if args.staged_recovery else GAME,FEATURES)
+    game_type = GAME
+    if args.arcing_approach:
+        game_type = ARCING_GAME
+    elif args.staged_recovery:
+        game_type = STAGED_GAME
+    staged = args.staged_recovery or args.arcing_approach
+    config = configuration(args,game_type,FEATURES)
     manifest = args.descriptor.with_name('game.poima-components.json') if args.descriptor else args.manifest
     saves = args.output/'saves'
     saves.mkdir()
@@ -124,7 +139,7 @@ def verify(args):
             revision = add_pose_observation(owner,revision)
             world = owner.world
             game = CarryRun(owner,revision,saves,config,bool(args.descriptor))
-            body, before, wall = insert_wall(game)
+            body, before, wall = insert_wall(game,arcing=args.arcing_approach)
             outcome = blocked(game,body)
             assert outcome['pose']=='steered',outcome
             published = arm(game,body)
@@ -141,7 +156,7 @@ def verify(args):
             assert [game.state()['Target'+axis] for axis in 'XYZ']==target
             clear = [1.5,wall[1],wall[2]]
             wrist_start = published['end_orientation']['weight']
-            rest_tick = verify_staged_return(game,clear,wrist_start) if args.staged_recovery else None
+            rest_tick = verify_staged_return(game,clear,wrist_start) if staged else None
             retry = finish(game,clear)
             game.call('runtime.entity',error=-32004,tick=game.tick,structure_revision=3,id=body)
             final = game.save('final')
@@ -152,7 +167,7 @@ def verify(args):
             game.restore('blocked',*boundary)
             assert game.save('cold-blocked')==archive and arm(game,body)==published
             recover(game,outcome)
-            if args.staged_recovery:
+            if staged:
                 assert verify_staged_return(game,clear,wrist_start)==rest_tick
             assert finish(game,clear)==retry and game.save('cold-final')==final
         retained = retained_run(args,world,revision,config,boundary[0]) if args.previous_binary else None
@@ -164,7 +179,7 @@ def verify(args):
         alternate_saves.mkdir()
         with closing(native.Session(args.output/'alternate',world=world)) as owner:
             game=CarryRun(owner,revision,alternate_saves,config,bool(args.descriptor))
-            alternate_body,_,_=insert_wall(game,offset=(.004,.04,0))
+            alternate_body,_,_=insert_wall(game,offset=(.004,.04,0),arcing=args.arcing_approach)
             alternate=blocked(game,alternate_body)
             assert alternate['pose']=='blended',alternate
             assert stationary_hits(game,arm(game,alternate_body)['points'],alternate_body)==[None,None]
@@ -186,7 +201,9 @@ if __name__=='__main__':
     parser.add_argument('--comparison-assembly',type=Path)
     parser.add_argument('--comparison-bridge',type=Path)
     parser.add_argument('--gpu',type=int)
-    parser.add_argument('--staged-recovery',action='store_true')
+    approach = parser.add_mutually_exclusive_group()
+    approach.add_argument('--staged-recovery',action='store_true')
+    approach.add_argument('--arcing-approach',action='store_true')
     args=parser.parse_args()
     if not args.descriptor and not args.manifest:
         parser.error('Supply --manifest with the CoreCLR gameplay paths.')

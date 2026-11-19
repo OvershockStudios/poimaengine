@@ -200,3 +200,13 @@ public sealed class StagedRecoveryCarryPropsGame : Game<ReachPickupState>,
     public override void Tick(ref ReachPickupState state, GameContext context) =>
         CarryPropsGame.Update(ref state,context,ReachGuard.StagedRecovery);
 }
+
+[GameModule("poima.example.arcing-approach-carry-props")]
+public sealed class ArcingApproachCarryPropsGame : Game<ReachPickupState>,
+    IIkClearanceGame, IItemAttachmentAimGame, IItemPickupSteeringGame, IItemAttachmentReleaseGame,
+    ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        CarryPropsGame.Update(ref state,context,ReachGuard.ArcingApproach);
+}

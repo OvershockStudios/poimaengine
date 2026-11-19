@@ -1,0 +1,201 @@
+{
+  "engine_version": "0.0.274",
+  "control_commit": "c41a8d1",
+  "sample_entry_point": "Poima.Examples.ArcingApproachCarryPropsGame",
+  "scope": "One imported rig and prop support in a matched late-block, re-aim, and retry sequence. Four selected skinned fingertip pad points tested against the same support box at integer simulation ticks.",
+  "wrist_target_curve": {
+    "maximum_lift_m": 0.12,
+    "crest_at_approach_fraction": 0.3,
+    "axis": "world Y"
+  },
+  "qualification": {
+    "linux_coreclr": {
+      "normalized_matching_step_requests": 90,
+      "analytic": {
+        "calls": 339,
+        "exact_archive_pairs": 3,
+        "blocked_tick": 171,
+        "retry_tick": 213,
+        "staged_rest_tick": 185
+      },
+      "imported": {
+        "native_replies": 698,
+        "exact_archive_pairs": 4,
+        "cold_restore_ticks": [
+          188,
+          229
+        ],
+        "all_sessions_exited_naturally": true,
+        "blocked_recovery_overlap_ticks": [
+          188,
+          189,
+          190,
+          191,
+          192,
+          193
+        ],
+        "ready_reaim_overlap_ticks": [],
+        "active_retry": {
+          "ticks": [
+            223,
+            239
+          ],
+          "control_overlap_ticks": [
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231,
+            232,
+            233,
+            234,
+            235,
+            236,
+            237
+          ],
+          "control_peak_penetration_m": 0.027431564365909065,
+          "arcing_overlap_ticks": [],
+          "arcing_minimum_clearance_m": 0.0014967352274508974,
+          "elbow_peak_step_m": {
+            "control": 0.0065512864772689595,
+            "arcing": 0.01438371618490373
+          },
+          "wrist_peak_step_m": {
+            "control": 0.0035935598380718134,
+            "arcing": 0.009716351280644553
+          }
+        },
+        "pickup": {
+          "tick": 240,
+          "gaps_m": [
+            0.0009122742896413168,
+            0.003234648260524882,
+            0.0021632884448829323,
+            0.0005902280612386094
+          ]
+        },
+        "native_vulkan_readbacks": []
+      }
+    },
+    "windows_native_aot": {
+      "normalized_matching_step_requests": 90,
+      "analytic": {
+        "calls": 339,
+        "exact_archive_pairs": 3,
+        "blocked_tick": 171,
+        "retry_tick": 213,
+        "staged_rest_tick": 185
+      },
+      "imported": {
+        "native_replies": 712,
+        "exact_archive_pairs": 4,
+        "cold_restore_ticks": [
+          188,
+          229
+        ],
+        "all_sessions_exited_naturally": true,
+        "blocked_recovery_overlap_ticks": [
+          188,
+          189,
+          190,
+          191,
+          192,
+          193
+        ],
+        "ready_reaim_overlap_ticks": [],
+        "active_retry": {
+          "ticks": [
+            223,
+            239
+          ],
+          "control_overlap_ticks": [
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231,
+            232,
+            233,
+            234,
+            235,
+            236,
+            237
+          ],
+          "control_peak_penetration_m": 0.02743156350658956,
+          "arcing_overlap_ticks": [],
+          "arcing_minimum_clearance_m": 0.0014967352274502313,
+          "elbow_peak_step_m": {
+            "control": 0.006551286003630273,
+            "arcing": 0.014383710702310004
+          },
+          "wrist_peak_step_m": {
+            "control": 0.0035935597438255694,
+            "arcing": 0.009716351280644289
+          }
+        },
+        "pickup": {
+          "tick": 240,
+          "gaps_m": [
+            0.0009122742896416068,
+            0.0032346482605249897,
+            0.002163288444883178,
+            0.0005902280612385789
+          ]
+        },
+        "native_vulkan_readbacks": [
+          {
+            "tick": 188,
+            "digest": "6c76c89a8b4c2a5cdf739c0f3519d7b89788c98a65af85113bfcaf006333da5a",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 194,
+            "digest": "023bd024668ace800469749ac3e2d089ea02e889ecf6dc28616152213960d00a",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 222,
+            "digest": "ebe6028e698d9030945330810469d05164cf2f4d05accdff4895f8e1372d4100",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 229,
+            "digest": "6759b2b151973572f3a982935bccd8b0456aabdb0d97c73e19784bda0e04003d",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 231,
+            "digest": "dcea27b1daf44cbdff53169c4a80f399ed07976b021e4c933af6e0179ba56d80",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 239,
+            "digest": "7ff50772c51b7d17d6406bcdee5db7d31c3ce2337a0d296d0ac0dd7075d8caed",
+            "selected_draws": 1,
+            "shared_depth": true
+          },
+          {
+            "tick": 240,
+            "digest": "26b269dcbcb3254dfca00f6d806a72cdd66d542e91c9026c7b9c60d07c6eee45",
+            "selected_draws": 3,
+            "shared_depth": true
+          }
+        ]
+      }
+    }
+  },
+  "limits": [
+    "The late blocker still produces six integer-tick samples with fingertip overlap during the blocked recovery.",
+    "The higher wrist path increases peak elbow and wrist travel per tick in this sequence.",
+    "Four selected points at integer ticks do not establish clearance for the full hand mesh, its continuous motion, or other supports."
+  ]
+}

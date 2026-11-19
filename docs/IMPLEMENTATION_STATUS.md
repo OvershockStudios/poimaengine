@@ -12,6 +12,12 @@ clear during an 11° idle re-aim that previously produced up to 40 mm of
 overlap. The later active reach still produces some overlap and completes
 the pickup on the same tick. [Results](evidence/m2-scene-anchored-viewmodels.json)
 
+The [Carry Props arcing approach](../examples/carry-props/README.md#adapt-the-interaction)
+adds an authored gameplay curve that lifts the wrist target while the hand
+opens. Four sampled fingertips stayed clear during the imported retry.
+The initial late-block pose still produces overlap.
+[Results](evidence/m2-arcing-pickup-approach.json)
+
 Version 0.0.273 adds [committed pose clearance](POSE_CLEARANCE.md). Agents can
 check up to sixteen joint or local-offset capsules in one guarded read. The
 query reports starting and committed overlaps independently and can check a
