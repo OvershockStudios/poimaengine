@@ -1,0 +1,183 @@
+{
+  "host_engine_version": "0.0.273",
+  "game_module": "Poima.Examples.StagedRecoveryCarryPropsGame",
+  "verifier": "tests/pickup_pose_steering.py --staged-recovery",
+  "analytic_linux_coreclr": {
+    "calls": 333,
+    "exact_archive_pairs": 3,
+    "blocked_tick": 171,
+    "staged_rest_tick": 185,
+    "retry_tick": 213
+  },
+  "analytic_windows_native_aot": {
+    "calls": 333,
+    "exact_archive_pairs": 3,
+    "blocked_tick": 171,
+    "staged_rest_tick": 185,
+    "retry_tick": 213
+  },
+  "retained_imported_linux_coreclr": {
+    "matched_step_requests": 90,
+    "matched_pose_reads_through_block": 22,
+    "native_replies": 789,
+    "before_native_replies": 959,
+    "sampled_ticks": [
+      183,
+      239
+    ],
+    "skinned_pad_count": 4,
+    "hand_capsule_count": 12,
+    "arm_capsule_count": 2,
+    "recovery": {
+      "sampled_pad_overlap_ticks_before": 12,
+      "sampled_pad_overlap_ticks_after": 6,
+      "peak_sampled_pad_overlap_before": {
+        "tick": 194,
+        "depth_m": 0.02087107171197019,
+        "samples_inside": 1
+      },
+      "peak_sampled_pad_overlap_after": {
+        "tick": 188,
+        "depth_m": 0.008909801245966707,
+        "samples_inside": 2
+      },
+      "peak_hand_capsule_overlap_before": {
+        "tick": 196,
+        "depth_m": 0.05150226131081581
+      },
+      "peak_hand_capsule_overlap_after": {
+        "tick": 206,
+        "depth_m": 0.03476715832948685
+      },
+      "staged_max_elbow_or_wrist_step_after_block_m": 0.00727006912453098,
+      "maximum_step_space": "relative to camera translation during the measured fixed-camera return",
+      "peak_wrist_rotation_degrees_before": {
+        "tick": 196,
+        "value": 7.968568641696828
+      },
+      "peak_wrist_rotation_degrees_after": {
+        "tick": 202,
+        "value": 7.929631110172945
+      },
+      "blocked_tick": 188,
+      "sample_clear_before": 200,
+      "sample_clear_after": 194,
+      "wrist_only_tick": 202,
+      "idle_tick": 209
+    },
+    "later_approach": {
+      "unchanged": true,
+      "sampled_overlap_ticks": 22,
+      "peak": {
+        "tick": 222,
+        "depth_m": 0.04006395186400887,
+        "samples_inside": 4
+      },
+      "pickup_retry_tick": 240
+    },
+    "cold_archive_pairs": 4,
+    "rendered_fixed_tick_comparison": []
+  },
+  "retained_imported_windows_native_aot": {
+    "matched_step_requests": 90,
+    "matched_pose_reads_through_block": 22,
+    "native_replies": 837,
+    "before_native_replies": 1047,
+    "sampled_ticks": [
+      183,
+      239
+    ],
+    "skinned_pad_count": 4,
+    "hand_capsule_count": 12,
+    "arm_capsule_count": 2,
+    "recovery": {
+      "sampled_pad_overlap_ticks_before": 12,
+      "sampled_pad_overlap_ticks_after": 6,
+      "peak_sampled_pad_overlap_before": {
+        "tick": 194,
+        "depth_m": 0.020871068573557548,
+        "samples_inside": 1
+      },
+      "peak_sampled_pad_overlap_after": {
+        "tick": 188,
+        "depth_m": 0.00890979729729243,
+        "samples_inside": 2
+      },
+      "peak_hand_capsule_overlap_before": {
+        "tick": 196,
+        "depth_m": 0.05150159075856209
+      },
+      "peak_hand_capsule_overlap_after": {
+        "tick": 206,
+        "depth_m": 0.03476715832948685
+      },
+      "staged_max_elbow_or_wrist_step_after_block_m": 0.007270068729448531,
+      "maximum_step_space": "relative to camera translation during the measured fixed-camera return",
+      "peak_wrist_rotation_degrees_before": {
+        "tick": 196,
+        "value": 7.968568634723964
+      },
+      "peak_wrist_rotation_degrees_after": {
+        "tick": 202,
+        "value": 7.929631109676162
+      },
+      "blocked_tick": 188,
+      "sample_clear_before": 200,
+      "sample_clear_after": 194,
+      "wrist_only_tick": 202,
+      "idle_tick": 209
+    },
+    "later_approach": {
+      "unchanged": true,
+      "sampled_overlap_ticks": 22,
+      "peak": {
+        "tick": 222,
+        "depth_m": 0.04006395186400887,
+        "samples_inside": 4
+      },
+      "pickup_retry_tick": 240
+    },
+    "cold_archive_pairs": 4,
+    "rendered_fixed_tick_comparison": [
+      183,
+      184,
+      185,
+      186,
+      187,
+      188,
+      189,
+      190,
+      191,
+      192,
+      193,
+      194,
+      195,
+      196,
+      197,
+      198,
+      199,
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      209
+    ]
+  },
+  "rebuilt_legacy_linux_coreclr": {
+    "native_replies": 267,
+    "exact_archive_pairs": 3,
+    "same_blocked_pose_and_pickup_tick": true
+  },
+  "comparison_video": {
+    "native_windows_vulkan": true,
+    "paired_frames": 27,
+    "decoded_frames": 27,
+    "encoding_fps": 60
+  },
+  "scope": "The new sample delays wrist relaxation during blocked recovery. Comparisons cover selected skinned points inside a static support box and conservative hand proxy capsules. The original blocked pose and later approach still produce overlaps. Fixed-tick image pairs do not measure interactive frame cadence."
+}

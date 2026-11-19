@@ -21,6 +21,7 @@ from pickup_pose_fallback import SIDE_CAMERA, add_pose_observation, arm, blocked
 import world_physical_contract as native
 
 GAME = 'Poima.Examples.SteeredFallbackCarryPropsGame'
+STAGED_GAME = 'Poima.Examples.StagedRecoveryCarryPropsGame'
 FEATURE = 'item_attachment_pickup_steering_v1'
 FEATURES = BLEND_FEATURES | {FEATURE}
 
@@ -42,6 +43,26 @@ def maximum_step(before, after):
     a, b = before['points'], after['points']
     return max(math.dist([x-o for x,o in zip(a[i],a[0])], [x-o for x,o in zip(b[i],b[0])])
                for i in (1,2))
+
+
+def verify_staged_return(game, clear, wrist_start):
+    game.move_wall(clear)
+    duration = game.state()['ReturnTicks']
+    saw_wrist_only = False
+    for _ in range(math.ceil(duration*1.5)+2):
+        state = game.state()
+        pose = game.call('runtime.ik', tick=game.tick, entity=RIG, slot=1,
+                         include_end_orientation=True)['state']
+        if state['TicksInPhase']==duration:
+            assert state['Phase']==8 and pose['enabled'] and pose['weight']==0, (state, pose)
+            assert math.isclose(pose['end_orientation']['weight'], wrist_start*.5, abs_tol=1e-12), pose
+            saw_wrist_only = True
+        if state['Phase']==0:
+            assert saw_wrist_only and state['TicksInPhase']==math.ceil(duration*1.5), state
+            assert not pose['enabled'] and pose['end_orientation'] is None, pose
+            return game.tick
+        game.run_ticks(1)
+    raise AssertionError('Staged return did not finish after the obstacle cleared.')
 
 
 def retained_run(args, world, revision, current_config, tick):
@@ -89,7 +110,7 @@ def verify(args):
     native.ARGS = args
     native.MAX_CALLS = 750
     native.DEADLINE = time.monotonic()+280
-    config = configuration(args,GAME,FEATURES)
+    config = configuration(args,STAGED_GAME if args.staged_recovery else GAME,FEATURES)
     manifest = args.descriptor.with_name('game.poima-components.json') if args.descriptor else args.manifest
     saves = args.output/'saves'
     saves.mkdir()
@@ -119,6 +140,8 @@ def verify(args):
             recover(game,outcome)
             assert [game.state()['Target'+axis] for axis in 'XYZ']==target
             clear = [1.5,wall[1],wall[2]]
+            wrist_start = published['end_orientation']['weight']
+            rest_tick = verify_staged_return(game,clear,wrist_start) if args.staged_recovery else None
             retry = finish(game,clear)
             game.call('runtime.entity',error=-32004,tick=game.tick,structure_revision=3,id=body)
             final = game.save('final')
@@ -129,6 +152,8 @@ def verify(args):
             game.restore('blocked',*boundary)
             assert game.save('cold-blocked')==archive and arm(game,body)==published
             recover(game,outcome)
+            if args.staged_recovery:
+                assert verify_staged_return(game,clear,wrist_start)==rest_tick
             assert finish(game,clear)==retry and game.save('cold-final')==final
         retained = retained_run(args,world,revision,config,boundary[0]) if args.previous_binary else None
         selected_step = maximum_step(before,published)
@@ -144,7 +169,7 @@ def verify(args):
             assert alternate['pose']=='blended',alternate
             assert stationary_hits(game,arm(game,alternate_body)['points'],alternate_body)==[None,None]
         report.update(passed=True,outcome=outcome,published=published,blocked_tick=boundary[0],
-                      retry_tick=retry,selected_step_m=selected_step,retained=retained,
+                      retry_tick=retry,staged_rest_tick=rest_tick,selected_step_m=selected_step,retained=retained,
                       invalid_pose=invalid,capture=frame,alternate=alternate,exact_archive_pairs=3+bool(retained))
     finally:
         report.update(calls=len(native.REPORT['calls']),owners=native.REPORT['owners'])
@@ -161,6 +186,7 @@ if __name__=='__main__':
     parser.add_argument('--comparison-assembly',type=Path)
     parser.add_argument('--comparison-bridge',type=Path)
     parser.add_argument('--gpu',type=int)
+    parser.add_argument('--staged-recovery',action='store_true')
     args=parser.parse_args()
     if not args.descriptor and not args.manifest:
         parser.error('Supply --manifest with the CoreCLR gameplay paths.')

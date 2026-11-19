@@ -12,6 +12,12 @@ The imported reach replay found finger contact with the prop's support during
 recovery even though the steered forearm cleared the late obstruction.
 [Results](evidence/m2-pose-clearance.json)
 
+The [staged Carry Props recovery](../examples/carry-props/README.md#adapt-the-interaction)
+holds the wrist while positional IK begins to fade. The imported take clears
+the sampled pads six ticks sooner during the blocked return. The initial
+blocked-pose overlap and clipping during the later approach still occur.
+[Results](evidence/m2-staged-pickup-recovery.json)
+
 Version 0.0.272 adds [contact-guided pickup fallback](ITEM_ATTACHMENTS.md#steer-a-blocked-reach-away-from-contact).
 In the matched imported rig, the elbow step fell from 55 mm to 14 mm
 while the wrist held its rotation. The measured wrist translation changed

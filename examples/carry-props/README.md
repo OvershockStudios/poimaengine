@@ -75,6 +75,15 @@ contact-guided wrist target offsets. Run `tests/pickup_pose_steering.py`
 with the selected module. The comparison artifact selects
 `Poima.Examples.BlendedFallbackCarryPropsGame`.
 
+Use `Poima.Examples.StagedRecoveryCarryPropsGame` to preserve the wrist's
+orientation while a blocked arm begins to retract. Positional IK fades over
+`ReturnTicks`. The wrist starts its own fade half that duration later, so
+the game releases the wrist after the position has returned to the base
+animation. A refused arm-corridor probe holds both fades at the last
+committed sample. Use the original grip calibration and run the steering
+verifier above with `--staged-recovery`. This uses the 0.0.273 host.
+[Imported rig and save/restore results](../../docs/evidence/m2-staged-pickup-recovery.json)
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

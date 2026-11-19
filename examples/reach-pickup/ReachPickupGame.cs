@@ -16,7 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
-internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback }
+internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback, StagedRecovery }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -42,7 +42,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                 context.GetTwoBoneIkOrientation(state.Rig,1) is { } committed)
             {
                 state.Weight=committed.Point.Enabled ? committed.Point.Weight : 0;
-                if(guard==ReachGuard.SteeredFallback)
+                if(guard>=ReachGuard.SteeredFallback)
                 {
                     var target=committed.Point.Target;
                     (state.TargetX,state.TargetY,state.TargetZ)=(target.X,target.Y,target.Z);
@@ -109,7 +109,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                         Probe(state,state.Vertex1),Probe(state,state.Vertex2),
                         Probe(state,state.Vertex3),Probe(state,state.Vertex4)
                     ];
-                    if(guard==ReachGuard.SteeredFallback)
+                    if(guard>=ReachGuard.SteeredFallback)
                         context.AttemptItemPickupWithSteeredFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
                     else if(guard==ReachGuard.BlendedFallback)
                         context.AttemptItemPickupWithBlendedFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
@@ -128,23 +128,30 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
         if(state.Phase is Returning or BlockedReturning)
         {
             var candidate=state;
-            double remaining=1-Ease(Math.Min(1.0,(double)++candidate.TicksInPhase/state.ReturnTicks));
+            ++candidate.TicksInPhase;
+            double remaining=ReturnInfluence(candidate.TicksInPhase,state.ReturnTicks);
             candidate.Weight=remaining*state.ReturnWeight;
             candidate.Opening=remaining*state.ReturnOpening;
+            bool blocked=state.Phase==BlockedReturning;
+            double wristDelay=blocked && guard==ReachGuard.StagedRecovery ? state.ReturnTicks*.5 : 0;
+            double wristRemaining=ReturnInfluence(candidate.TicksInPhase,state.ReturnTicks,wristDelay);
             IkEndOrientationGoal? wrist=null;
-            if(guard>=ReachGuard.BlendedFallback && state.Phase==BlockedReturning && remaining>0 &&
+            if(guard>=ReachGuard.BlendedFallback && blocked && wristRemaining>0 &&
                 context.GetTwoBoneIkOrientation(state.Rig,1)?.EndOrientation is { } held)
             {
-                // Advance from the last committed wrist sample, including after
-                // save/restore or a return tick rejected by the clearance probe.
-                double previousRemaining=1-Ease((double)state.TicksInPhase/state.ReturnTicks);
-                wrist=held.Goal with { Weight=held.Goal.Weight*remaining/previousRemaining };
+                // Continue from the committed wrist weight after restores or a rejected return tick.
+                double previousRemaining=ReturnInfluence(state.TicksInPhase,state.ReturnTicks,wristDelay);
+                wrist=held.Goal with { Weight=held.Goal.Weight*wristRemaining/previousRemaining };
             }
             if(!TryApplyPose(candidate,context,guard!=ReachGuard.None,wrist))return;
-            if(remaining==0)candidate.Phase=state.PickupTick==0 ? Idle : Held;
+            if(remaining==0 && (wristRemaining==0 || !wrist.HasValue))
+                candidate.Phase=state.PickupTick==0 ? Idle : Held;
             state=candidate;
         }
     }
+
+    private static double ReturnInfluence(int elapsed,int duration,double delay=0) =>
+        1-Ease(Math.Clamp((elapsed-delay)/duration,0,1));
 
     internal static EntityId? AimedItem(in ReachPickupState state,GameContext context,EntityId aimCamera)
     {
