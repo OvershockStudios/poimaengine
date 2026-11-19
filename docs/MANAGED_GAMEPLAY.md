@@ -641,3 +641,7 @@ item handoffs in `Tick`. `TransferItem`, `SnapItem` and `ResetItemAttachment`
 commit after native movement. The appended `item_attachment_v1` capability
 requires the 528-byte epoch-7 prefix and has no other optional dependencies.
 [Timing, limits and save behavior](ITEM_ATTACHMENTS.md#transfer-during-compiled-gameplay)
+
+`IItemAttachmentContactGame` adds the guarded `TransferItem` overload. It
+keeps the 528-byte prefix and negotiates the named contact command separately.
+[Grip calibration and rejection diagnostics](ITEM_ATTACHMENTS.md#require-grip-alignment)

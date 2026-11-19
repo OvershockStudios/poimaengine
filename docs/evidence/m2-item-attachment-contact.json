@@ -1,0 +1,340 @@
+{
+  "version": "0.0.252",
+  "schema_revision": 143,
+  "status": "passed",
+  "scope": "Moving rigid attachment fixture and independently calibrated imported Knight wrist and item frames. Frame alignment is separate from skinned surface contact.",
+  "gameplay": {
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 2,
+    "command_bytes": 256
+  },
+  "drivers": {
+    "item_attachment_contact.py": "4b3c501bc8669a68da4bc58bc90f1617e4cc24eefdd79143ed959cbed8a2e16b",
+    "imported_attachment_contact.py": "29e6237e9622a6271a78707ee275772182ab9bcd4323ec7a0f21b19c0f1d197d"
+  },
+  "linux_coreclr": {
+    "calls": 56,
+    "report_sha256": "4aaaa1a85b6da44260d714ba919249794c7df40c5dc641a74700457d2be0ef5f",
+    "natural_process_exits": 3,
+    "engine_sha256": "19d0291d9f982d76e267aee7b1909319cc1634972e34d4650a619d05e7487e05",
+    "pre_tick_position_error_m": 0.016666666666666607,
+    "position_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.050000000000000044,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "rotation_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 14.999999999999998,
+      "rotation_limit_deg": 0.1
+    },
+    "late_tick_miss": {
+      "anchor": "83f30686e4a2fad14dcc2bb989187d20",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.9315167195587268,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 55.0,
+      "rotation_limit_deg": 0.1
+    },
+    "proposed_anchor_miss": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.077032961426901,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "unavailable_rotation": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": null,
+      "rotation_limit_deg": 180.0
+    },
+    "equal_complete_checkpoints": {
+      "before/after-misses": {
+        "bytes": 10304,
+        "sha256": "da5eb886ed2b985259644ceaa8f219a275c2e61e64ec8371ca62ba273d1c9192"
+      },
+      "before-atomic/after-atomic": {
+        "bytes": 10646,
+        "sha256": "f98c456b03e8184a4fb5aa1ac6ab1e53b05cdfe2dc402a73321d84e74e1249fa"
+      },
+      "failed-before/failed-after": {
+        "bytes": 11172,
+        "sha256": "ede907360cb3b4ef46fe2c7e66450841c0130604098579799038f45508784939"
+      },
+      "transferred/contact-auto": {
+        "bytes": 11563,
+        "sha256": "4deea9f91dc30a71633fb2e4febf1c5dcae4d6a0e5a47ff9442b590a23bb5654"
+      },
+      "transferred/restored": {
+        "bytes": 11563,
+        "sha256": "4deea9f91dc30a71633fb2e4febf1c5dcae4d6a0e5a47ff9442b590a23bb5654"
+      },
+      "continuation/restored-continuation": {
+        "bytes": 11566,
+        "sha256": "442dc9143b17ef2ca609a7984938ecc73d1b13a82cfe5756e113198a60ba54a9"
+      }
+    }
+  },
+  "windows_coreclr": {
+    "calls": 59,
+    "report_sha256": "b647c49ba0b74562fffa22c675f9aa33c18d99dd834bf07cdd9cfa4d62ab57b1",
+    "natural_process_exits": 3,
+    "engine_sha256": "23a986f6b575e69388d93ca4fc8eba83524578d8a819d6dec9c27f6b813e1f89",
+    "pre_tick_position_error_m": 0.016666666666666607,
+    "position_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.050000000000000044,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "rotation_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 15.000000000000002,
+      "rotation_limit_deg": 0.1
+    },
+    "late_tick_miss": {
+      "anchor": "83f30686e4a2fad14dcc2bb989187d20",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.9315167195587264,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 55.0,
+      "rotation_limit_deg": 0.1
+    },
+    "proposed_anchor_miss": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.077032961426901,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "unavailable_rotation": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": null,
+      "rotation_limit_deg": 180.0
+    },
+    "equal_complete_checkpoints": {
+      "before/after-misses": {
+        "bytes": 10304,
+        "sha256": "47b738980b2d80f63462a7fbd531bebee507d0167d1b8a66360cab23f5475d5f"
+      },
+      "before-atomic/after-atomic": {
+        "bytes": 10646,
+        "sha256": "22443f437401cbc7317febe25646f43242458043e2f583242e15b6994d6f101b"
+      },
+      "failed-before/failed-after": {
+        "bytes": 11172,
+        "sha256": "8e859f367404a5c1539c79cb0cd7bb2b8969dd751b2e543f052566ae9c7f494c"
+      },
+      "transferred/contact-auto": {
+        "bytes": 11563,
+        "sha256": "832b2e107198c8b8e66bd514671a0fcf79b721ca439710354679987ad6e23fb9"
+      },
+      "transferred/restored": {
+        "bytes": 11563,
+        "sha256": "832b2e107198c8b8e66bd514671a0fcf79b721ca439710354679987ad6e23fb9"
+      },
+      "continuation/restored-continuation": {
+        "bytes": 11566,
+        "sha256": "9002b477a936c33ed93cad3ac4a6f0cabdbfbf82027ee6b2394c30527252b531"
+      }
+    },
+    "equal_vulkan_frame_sha256": "1c8b40525c5648ee0a6dfce283830f44764df886cb91d415e1025af017a7ad08"
+  },
+  "windows_native_aot": {
+    "calls": 56,
+    "report_sha256": "2d4b5292259c29e0c098272a8d5d0134cb24f4eaaec27f90953d95bf941315bf",
+    "natural_process_exits": 3,
+    "engine_sha256": "23a986f6b575e69388d93ca4fc8eba83524578d8a819d6dec9c27f6b813e1f89",
+    "pre_tick_position_error_m": 0.016666666666666607,
+    "position_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.050000000000000044,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "rotation_miss": {
+      "anchor": "8b58d84756645d5b74b785086f1323d1",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 15.000000000000002,
+      "rotation_limit_deg": 0.1
+    },
+    "late_tick_miss": {
+      "anchor": "83f30686e4a2fad14dcc2bb989187d20",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.9315167195587264,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 55.0,
+      "rotation_limit_deg": 0.1
+    },
+    "proposed_anchor_miss": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 1.077032961426901,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": 0.0,
+      "rotation_limit_deg": 0.1
+    },
+    "unavailable_rotation": {
+      "anchor": "00000000000000000000000000000022",
+      "entity": "00000000000000000000000000000020",
+      "position_error_m": 0.0,
+      "position_limit_m": 0.002,
+      "rotation_error_deg": null,
+      "rotation_limit_deg": 180.0
+    },
+    "equal_complete_checkpoints": {
+      "before/after-misses": {
+        "bytes": 10304,
+        "sha256": "b0877b7165463cb5deb1e7b52de627e411e0173bf05a148eec47e757b82ab25c"
+      },
+      "before-atomic/after-atomic": {
+        "bytes": 10646,
+        "sha256": "62556f45d889c9cff8de044a4642ee41ffae45e7bc856c1b2a9254ad8caddd14"
+      },
+      "failed-before/failed-after": {
+        "bytes": 11175,
+        "sha256": "20947c9f7af6987b65bae6776009b6e7c5959814c88db24c6e2f17a4df949142"
+      },
+      "transferred/contact-auto": {
+        "bytes": 11566,
+        "sha256": "02e926186b26ced0dde1a388fb3f9c920c2a91b386352b478fad959303532786"
+      },
+      "transferred/restored": {
+        "bytes": 11566,
+        "sha256": "02e926186b26ced0dde1a388fb3f9c920c2a91b386352b478fad959303532786"
+      },
+      "continuation/restored-continuation": {
+        "bytes": 11569,
+        "sha256": "c080f8d308d3b2a96e57589cf1f9f422cf1e24fc61c9b9934b89649ebb118cb4"
+      }
+    },
+    "library_sha256": "748b2eaa1be021ee02e5e5fd75a5f2b9062c8c4f5db02c8082085d9a9b9d3907",
+    "descriptor_sha256": "91e880f2d35f50ac9a271cb116c27ce7ec3c72f37de18338b2d23fe51b4d51b7"
+  },
+  "linux_imported": {
+    "calls": 18,
+    "report_sha256": "7bbc7b8c3bb031bd9ed81b269ee676f91b99e12fb01b936fb2dbb9033a2fdb66",
+    "natural_process_exits": 1,
+    "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "rejected": {
+      "anchor": "23687821b677b8b5d91e9038ce9b729a",
+      "entity": "4f823bf25f450f4f7fcf898c64ccbddb",
+      "position_error_m": 0.19280469643511045,
+      "position_limit_m": 0.015,
+      "rotation_error_deg": 31.151328225212087,
+      "rotation_limit_deg": 5.0
+    },
+    "accepted": {
+      "tick": 13,
+      "position_error_m": 8.478724969697804e-09,
+      "rotation_error_deg": 9.969358235636246e-06
+    },
+    "following": {
+      "tick": 23,
+      "position_error_m": 8.478726343113275e-09,
+      "rotation_error_deg": 9.969361871053433e-06
+    }
+  },
+  "windows_imported": {
+    "calls": 24,
+    "report_sha256": "9b5822f6a54653494d98aba011e04bf7fd7a6502a71adcbd6139276b6f7b60ae",
+    "natural_process_exits": 1,
+    "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "rejected": {
+      "anchor": "23687821b677b8b5d91e9038ce9b729a",
+      "entity": "4f823bf25f450f4f7fcf898c64ccbddb",
+      "position_error_m": 0.19280469643511045,
+      "position_limit_m": 0.015,
+      "rotation_error_deg": 31.151328225212087,
+      "rotation_limit_deg": 5.0
+    },
+    "accepted": {
+      "tick": 13,
+      "position_error_m": 8.478724969697804e-09,
+      "rotation_error_deg": 9.96935823685839e-06
+    },
+    "following": {
+      "tick": 23,
+      "position_error_m": 8.478726343113275e-09,
+      "rotation_error_deg": 9.969361866255708e-06
+    },
+    "render_sha256": {
+      "aligned": {
+        "front": "b8884b995275bc13be5c0b86da1bd7e6252edef33aea6daa015f82ff39c9e6d0",
+        "overhead": "ca7f8388bcddbc614dbe32238d4e2dbc22be591119f2af9630bd0df019ad704b"
+      },
+      "handoff": {
+        "front": "b8884b995275bc13be5c0b86da1bd7e6252edef33aea6daa015f82ff39c9e6d0",
+        "overhead": "ca7f8388bcddbc614dbe32238d4e2dbc22be591119f2af9630bd0df019ad704b"
+      },
+      "following": {
+        "front": "f91f996e6ef8fb0549a859655d6d0b3bcb5a4259949545ed82aa854662834501",
+        "overhead": "023a93095415cf797c378010814673ccbfd239fe2390e2f4af2aed07ffc01ae9"
+      }
+    }
+  },
+  "retained_0_0_251_coreclr": {
+    "calls": 78,
+    "report_sha256": "e0687c8886a006a3118c13f8db7ff442cfcdf00a78cae2a696b6c658272cbf22",
+    "natural_process_exits": 4
+  },
+  "older_host_rejection": {
+    "version": "0.0.251",
+    "report_sha256": "4de54364f4cdd62806076b4384a4f16b72de7f918ceff1046606675e514057ae"
+  },
+  "linux_regressions": [
+    "gameplay_compatibility_policy",
+    "gameplay_player_preferences_native",
+    "mcp_contract",
+    "world_ui_contract",
+    "physical_gameplay_abi_native",
+    "physical_gameplay_publish_requirements",
+    "runtime_save_contract",
+    "runtime_attachment_contract",
+    "asset_references_contract"
+  ],
+  "windows_regressions": [
+    "gameplay_compatibility_policy",
+    "physical_gameplay_abi_native"
+  ],
+  "linux_mcp": {
+    "report_sha256": "6187a67d1f43ef96e217b50ae6a0aeccbf742d4563b332398d863de403e813d5",
+    "replies": 7,
+    "diagnostic": {
+      "code": -32040,
+      "data": {
+        "anchor": "8b58d84756645d5b74b785086f1323d1",
+        "entity": "00000000000000000000000000000020",
+        "position_error_m": 0.30000000000000004,
+        "position_limit_m": 0.002,
+        "rotation_error_deg": 0.0,
+        "rotation_limit_deg": 0.1
+      },
+      "message": "Receiving socket is outside the item attachment contact limits."
+    }
+  }
+}

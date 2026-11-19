@@ -51,7 +51,34 @@
         }
         graph.order=sorted_hierarchy(scene,&graph);
     }
-    void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={}) {
+    using AttachmentContacts=std::map<std::string,const RuntimeAttachmentContact*>;
+
+    static Matrix4 attachment_contact_frame(const Matrix4& base,const RuntimeAttachmentFrame& offset) {
+        for(const double x:offset.position)
+            require(std::isfinite(x) && std::abs(x)<=1e9,"Attachment contact offset position must be finite and bounded.");
+        const auto& q=offset.rotation;
+        const double norm=std::hypot(std::hypot(q[0],q[1]),std::hypot(q[2],q[3]));
+        require(std::abs(norm*norm-1)<=1e-6,"Attachment contact offset rotation must be a normalized XYZW quaternion.");
+        auto frame=multiply(base,local_matrix(offset.position,offset.rotation,{1,1,1}));
+        validate_attachment_world(frame);
+        return frame;
+    }
+    static void check_attachment_contact(const Node& node,const RuntimeAttachmentBinding& binding,
+        const Matrix4& anchor,const RuntimeAttachmentContact& contact) {
+        require(contact.position_limit_m>=0 && contact.position_limit_m<=1e9 &&
+            contact.rotation_limit_deg>=0 && contact.rotation_limit_deg<=180,"Invalid attachment contact limits.");
+        const auto item_frame=attachment_contact_frame(node.world,contact.item);
+        const auto anchor_frame=attachment_contact_frame(anchor,contact.anchor);
+        const auto item_axes=pose_frames::axes(item_frame),anchor_axes=pose_frames::axes(anchor_frame);
+        const auto position=std::hypot(item_frame[12]-anchor_frame[12],item_frame[13]-anchor_frame[13],item_frame[14]-anchor_frame[14]);
+        std::optional<double> rotation;
+        if(item_axes.basis==pose_frames::Basis::regular && anchor_axes.basis==pose_frames::Basis::regular)
+            rotation=pose_frames::rotation_error(item_axes,anchor_axes);
+        if(position>contact.position_limit_m || !rotation || *rotation>contact.rotation_limit_deg)
+            throw RuntimeAttachmentContactRejected({node.id,binding.anchor,position,contact.position_limit_m,contact.rotation_limit_deg,rotation});
+    }
+    void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
+        const AttachmentContacts& contacts={}) {
         validate_attachment_graph(*graph,*topology);
         const auto& order=graph->bindings.empty() ? topology->hierarchy : graph->order;
         std::map<std::string,Matrix4> prepared;
@@ -62,6 +89,8 @@
             const auto& parent=transform_parent(node,binding);
             const auto* anchor=parent.empty() ? nullptr : &prepared.at(parent);
             if(binding && keep.contains(node.id)) {
+                if(const auto found=contacts.find(node.id);found!=contacts.end())
+                    check_attachment_contact(node,*binding,*anchor,*found->second);
                 binding->offset=anchor ? multiply(inverse_affine(*anchor),node.world) : node.world;
                 validate_attachment_offset(binding->offset);
             }
@@ -90,9 +119,15 @@
         auto graph=std::make_shared<AttachmentGraph>();
         if(attachment_graph)graph->bindings=attachment_graph->bindings;
         std::set<std::string> seen,keep;
+        AttachmentContacts contacts;
         for(const auto& command:commands) {
             (void)find(command.entity);
             require(seen.insert(command.entity).second,"Duplicate attachment item in one transaction.");
+            if(command.contact) {
+                require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
+                    "Attachment contact requires a live keep-world destination anchor.");
+                contacts.emplace(command.entity,&*command.contact);
+            }
             switch(command.mode) {
                 case RuntimeAttachmentMode::Reset:
                     require(command.anchor.empty() && !command.offset,"Reset accepts only the item identity.");
@@ -116,6 +151,6 @@
                 default: throw std::runtime_error("Unknown attachment transfer mode.");
             }
         }
-        publish_attachment_transforms(std::move(graph),keep);
+        publish_attachment_transforms(std::move(graph),keep,contacts);
         ++structure_revision;
     }

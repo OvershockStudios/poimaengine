@@ -67,7 +67,16 @@ void policy() {
     check(compatibility_error(attachment,capable).empty(),"Attachment unexpectedly requires another optional service.");
     auto old_attachment_host=capable;old_attachment_host.services_bytes=512;
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
+    std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     check(!compatibility_error(attachment,old_attachment_host).empty(),"Old host accepted attachment requirements.");
+    auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
+    check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
+    auto original_attachment=capable;std::erase(original_attachment.features,std::string(item_attachment_contact_feature));
+    check(compatibility_error(attachment,original_attachment).empty() && !compatibility_error(contact,original_attachment).empty(),
+        "Old attachment host advertised a version-2 command it cannot accept.");
+    auto contact_without_dependency=contact;std::erase(contact_without_dependency.features,std::string(item_attachment_feature));
+    check(!compatibility_error(contact_without_dependency,capable).empty() &&
+        !compatibility_error(baseline,contact_without_dependency).empty(),"Guard admitted without the base attachment capability.");
     auto wrong_attachment=attachment;wrong_attachment.services_bytes=512;
     check(!compatibility_error(wrong_attachment,capable).empty() && !compatibility_error(baseline,wrong_attachment).empty(),
         "Attachment prefix was accepted without both its name and extent.");

@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 
 namespace poima {
@@ -25,11 +26,31 @@ struct RuntimeTransform {
     std::array<double,4> rotation{0,0,0,1};
     std::array<double,3> scale{1,1,1};
 };
+struct RuntimeAttachmentFrame {
+    std::array<double,3> position{0,0,0};
+    std::array<double,4> rotation{0,0,0,1};
+};
+struct RuntimeAttachmentContact {
+    RuntimeAttachmentFrame item,anchor;
+    double position_limit_m,rotation_limit_deg;
+};
+struct RuntimeAttachmentContactReport {
+    std::string entity,anchor;
+    double position_error_m,position_limit_m,rotation_limit_deg;
+    std::optional<double> rotation_error_deg;
+};
+class RuntimeAttachmentContactRejected : public std::runtime_error {
+public:
+    explicit RuntimeAttachmentContactRejected(RuntimeAttachmentContactReport report)
+        : std::runtime_error("Receiving socket is outside the item attachment contact limits."),contact(std::move(report)) {}
+    RuntimeAttachmentContactReport contact;
+};
 enum class RuntimeAttachmentMode { KeepWorld, Snap, Reset };
 struct RuntimeAttachmentCommand {
     std::string entity,anchor;
     RuntimeAttachmentMode mode=RuntimeAttachmentMode::KeepWorld;
     std::optional<RuntimeTransform> offset;
+    std::optional<RuntimeAttachmentContact> contact=std::nullopt;
 };
 struct RuntimeAttachmentBinding {
     std::string anchor;

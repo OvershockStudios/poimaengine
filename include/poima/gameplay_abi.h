@@ -606,6 +606,15 @@ typedef struct PoimaGameItemAttachmentCommandV1 {
     uint32_t mode,reserved;
     double position[3],rotation[4],scale[3];
 } PoimaGameItemAttachmentCommandV1;
+/* item_attachment_contact_v1 additionally accepts version 2, 256 bytes,
+ * with the KeepWorld mode and a live anchor. The two offsets are rigid. Both
+ * limits are inclusive. A gap or unavailable angular comparison rejects the
+ * batch after final movement. The callback and table allocation are unchanged. */
+typedef struct PoimaGameItemAttachmentCommandV2 {
+    PoimaGameItemAttachmentCommandV1 command;
+    double item_position[3],item_rotation[4],anchor_position[3],anchor_rotation[4];
+    double position_limit_m,rotation_limit_deg;
+} PoimaGameItemAttachmentCommandV2;
 typedef struct PoimaGameItemAttachmentServicesV1 {
     PoimaGamePhysicalRecoveryServicesV1 recovery;
     int32_t (POIMA_CALL *attachment_get)(void*,const PoimaEntityId*,PoimaGameItemAttachmentStateV1*,PoimaGameError*);
@@ -626,6 +635,11 @@ static_assert(sizeof(PoimaGameItemAttachmentCommandV1)==128 && alignof(PoimaGame
     offsetof(PoimaGameItemAttachmentCommandV1,entity)==8 && offsetof(PoimaGameItemAttachmentCommandV1,anchor)==24 &&
     offsetof(PoimaGameItemAttachmentCommandV1,mode)==40 && offsetof(PoimaGameItemAttachmentCommandV1,position)==48 &&
     offsetof(PoimaGameItemAttachmentCommandV1,rotation)==72 && offsetof(PoimaGameItemAttachmentCommandV1,scale)==104);
+static_assert(sizeof(PoimaGameItemAttachmentCommandV2)==256 && alignof(PoimaGameItemAttachmentCommandV2)==8 &&
+    offsetof(PoimaGameItemAttachmentCommandV2,command)==0 && offsetof(PoimaGameItemAttachmentCommandV2,item_position)==128 &&
+    offsetof(PoimaGameItemAttachmentCommandV2,item_rotation)==152 && offsetof(PoimaGameItemAttachmentCommandV2,anchor_position)==184 &&
+    offsetof(PoimaGameItemAttachmentCommandV2,anchor_rotation)==208 && offsetof(PoimaGameItemAttachmentCommandV2,position_limit_m)==240 &&
+    offsetof(PoimaGameItemAttachmentCommandV2,rotation_limit_deg)==248);
 static_assert(sizeof(PoimaGameItemAttachmentServicesV1)==528 && alignof(PoimaGameItemAttachmentServicesV1)==8 &&
     offsetof(PoimaGameItemAttachmentServicesV1,recovery)==0 && offsetof(PoimaGameItemAttachmentServicesV1,attachment_get)==512 &&
     offsetof(PoimaGameItemAttachmentServicesV1,attachment_set)==520);

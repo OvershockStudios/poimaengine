@@ -49,6 +49,38 @@ as its anchor changes. Use a snapped calibrated offset when an insertion
 needs a specific socket pose. [Frame comparisons](POSE_FRAME_COMPARISON.md) ·
 [Surface measurements](SURFACE_MEASUREMENTS.md)
 
+## Require grip alignment
+
+A keep-world transfer to a live anchor can include a contact guard. Provide
+the calibrated contact frame on the item and the receiving socket frame.
+Omit either offset to use that entity's origin and axes. Set both position
+and rotation limits for the intended grip.
+
+```json
+{
+  "entity": "30000000000000000000000000000001",
+  "mode": "keep_world",
+  "anchor": "30000000000000000000000000000002",
+  "contact": {
+    "item_offset": {"position": [0.04, 0.01, 0], "rotation": [0, 0, 0, 1]},
+    "position_limit_m": 0.015,
+    "rotation_limit_deg": 5
+  }
+}
+```
+
+The guard compares the two composed world frames before publishing the new
+binding. If another command moves the receiver in the same transaction,
+the guard uses its proposed pose. Both limits are inclusive. A miss returns
+`-32040` with the item and anchor IDs, position error and limit in metres,
+and angular error and limit in degrees. A sheared, reflected or degenerate
+basis produces a null angular error and rejects the transfer. The entire
+transaction retains its previous state on a miss.
+
+Use authored animation or IK to bring the hand to the grip. The guard checks
+frame alignment. To measure the hand's visible skin at the handle, use
+[surface measurements](SURFACE_MEASUREMENTS.md).
+
 ## Transfer during compiled gameplay
 
 Declare `IItemAttachmentGame` on a `Game<TState>` and call these methods from
@@ -80,6 +112,14 @@ Gameplay can attempt up to 64 writes and 1,024 reads per tick. Each item may
 appear once in the write batch. `world.describe` lists the `item_attachment_v1`
 feature and the 528-byte epoch-7 prefix under `gameplay_item_attachments`.
 Existing compiled modules retain their negotiated prefixes.
+
+For a checked handoff, implement `IItemAttachmentContactGame` and call
+`TransferItem(item, anchor, contact)` with an `ItemAttachmentContact`. This
+selects `item_attachment_contact_v1` and the 256-byte version 2 command
+through the existing service table. The check uses the final item and
+receiving anchor after the tick's movement. A failed contact rolls back the
+whole step batch and returns the same measurements through `runtime.step`.
+
 
 ## Observe and restore
 
@@ -133,3 +173,6 @@ the full checkpoint before and after rejected batches and cold continuation.
 The [compiled fixture](../tests/managed_item_attachment_gameplay/README.md)
 adds same-tick save requests, late batch failure, and an unmarked consumer
 check with actual C# gameplay.
+
+The [contact fixture](../tests/fixtures/item_attachment_contact/README.md)
+checks the direct and compiled guards and the optional original CC0 rig case.

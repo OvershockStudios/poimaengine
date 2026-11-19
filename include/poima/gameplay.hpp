@@ -46,6 +46,7 @@ public:
     // Passive on-query process-global CLR/lifetime observations; never collects.
     std::string memory_snapshot() const;
     const std::vector<components::Schema>& component_schemas() const;
+    bool requires_item_attachment_contact() const;
     void validate_services(const gameplay_abi::Contract& available) const;
     void edit(const std::string& values);
     // Cached field offsets; no JSON/reflection/allocation on success. Null IDs

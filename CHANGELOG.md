@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.252
+
+- Guard rigid handoffs with calibrated item and receiving socket alignment.
+
 ## 0.0.251
 
 - Let compiled gameplay stage rigid item transfers as part of a simulation tick.

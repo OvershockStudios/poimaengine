@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.251**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.252**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.252 adds [grip alignment limits](ITEM_ATTACHMENTS.md#require-grip-alignment)
+to live immediate and compiled keep-world handoffs. A miss supplies position
+and angle diagnostics and preserves the batch state. The
+[contact checks](evidence/m2-item-attachment-contact.json) include a moving
+receiver, checkpoint equality and an imported original character rig.
 
 Version 0.0.251 lets compiled gameplay [transfer rigid items](ITEM_ATTACHMENTS.md#transfer-during-compiled-gameplay)
 after the final animation and physics updates in a tick. The receiver takes

@@ -20,6 +20,7 @@
 #include "runtime_hit_regions.hpp"
 #include "runtime_assertions.hpp"
 #include "runtime_hierarchy.hpp"
+#include "pose_frames.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>

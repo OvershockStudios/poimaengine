@@ -31,7 +31,8 @@
             auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_attachment_attempts<max_runtime_attachments,"Gameplay exceeded 64 item attachment attempts.");
             ++self.game_attachment_attempts;
-            require(source && source->version==1 && source->bytes==sizeof(*source) && source->reserved==0 && source->mode<=2,
+            require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
+                (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2))) && source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;
             command.entity=gameplay_id(source->entity);
@@ -55,6 +56,21 @@
                     "Keep-world and reset require zero item attachment offset fields.");
                 command.mode=source->mode==0 ? RuntimeAttachmentMode::KeepWorld : RuntimeAttachmentMode::Reset;
                 require(command.mode!=RuntimeAttachmentMode::Reset || command.anchor.empty(),"Reset requires a zero item attachment anchor.");
+            }
+            if(source->version==2) {
+                require(self.game && self.game->requires_item_attachment_contact(),
+                    "Gameplay must declare item_attachment_contact_v1 to stage a guarded transfer.");
+                require(command.mode==RuntimeAttachmentMode::KeepWorld && !command.anchor.empty(),
+                    "Attachment contact requires a live keep-world destination anchor.");
+                PoimaGameItemAttachmentCommandV2 guarded;
+                std::memcpy(&guarded,source,sizeof(guarded));
+                RuntimeAttachmentContact contact{};
+                std::copy_n(guarded.item_position,3,contact.item.position.begin());
+                std::copy_n(guarded.item_rotation,4,contact.item.rotation.begin());
+                std::copy_n(guarded.anchor_position,3,contact.anchor.position.begin());
+                std::copy_n(guarded.anchor_rotation,4,contact.anchor.rotation.begin());
+                contact.position_limit_m=guarded.position_limit_m;contact.rotation_limit_deg=guarded.rotation_limit_deg;
+                command.contact=contact;
             }
             require(std::none_of(self.game_attachment_commands.begin(),self.game_attachment_commands.end(),
                 [&](const auto& prior){return prior.entity==command.entity;}),"Duplicate gameplay item attachment command in one Tick.");

@@ -5,6 +5,19 @@ namespace Poima;
 /// <summary>Opts into Tick-only rigid item transfers and committed attachment reads.</summary>
 public interface IItemAttachmentGame { }
 
+/// <summary>Opts into transfers that require the receiving grip to be aligned at the end of the tick.</summary>
+public interface IItemAttachmentContactGame : IItemAttachmentGame { }
+
+/// <summary>A local contact frame in metres with a normalized XYZW rotation.</summary>
+public readonly record struct ItemGripFrame(Vector3d Position, Quaterniond Rotation)
+{
+    public static ItemGripFrame Identity => new(default,Quaterniond.Identity);
+}
+
+/// <summary>Corresponding calibrated frames on the original item and the receiving anchor.</summary>
+public readonly record struct ItemAttachmentContact(ItemGripFrame Item, ItemGripFrame Anchor,
+    double PositionLimitM, double RotationLimitDegrees);
+
 /// <summary>A committed binding. A null anchor holds the item in world space.</summary>
 public readonly record struct ItemAttachment(EntityId Item, EntityId? Anchor, ulong SampledTick, ulong StructureRevision);
 
@@ -31,6 +44,16 @@ public readonly record struct ItemSocketOffset(Vector3d Position, Quaterniond Ro
     public Vector3d Scale;
 }
 
+[StructLayout(LayoutKind.Sequential)] internal struct NativeItemAttachmentContactCommandV2
+{
+    public NativeItemAttachmentCommandV1 Command;
+    public Vector3d ItemPosition;
+    public Quaterniond ItemRotation;
+    public Vector3d AnchorPosition;
+    public Quaterniond AnchorRotation;
+    public double PositionLimitM, RotationLimitDegrees;
+}
+
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeItemAttachmentServicesV1
 {
     public NativePhysicalRecoveryServicesV1 Recovery;
@@ -47,13 +70,18 @@ internal static unsafe class ItemAttachmentServiceAbi
         NativeItemAttachmentServicesV1 api=default;
         NativeItemAttachmentStateV1 state=default;
         NativeItemAttachmentCommandV1 command=default;
+        NativeItemAttachmentContactCommandV2 guarded=default;
         return PhysicalRecoveryServiceAbi.LayoutValid() && sizeof(NativeItemAttachmentServicesV1)==528 &&
             (byte*)&api.Recovery-(byte*)&api==0 && (byte*)&api.Get-(byte*)&api==512 && (byte*)&api.Set-(byte*)&api==520 &&
             sizeof(NativeItemAttachmentStateV1)==64 && (byte*)&state.Item-(byte*)&state==16 && (byte*)&state.Anchor-(byte*)&state==32 &&
             (byte*)&state.SampledTick-(byte*)&state==48 && (byte*)&state.StructureRevision-(byte*)&state==56 &&
             sizeof(NativeItemAttachmentCommandV1)==128 && (byte*)&command.Item-(byte*)&command==8 && (byte*)&command.Anchor-(byte*)&command==24 &&
             (byte*)&command.Mode-(byte*)&command==40 && (byte*)&command.Position-(byte*)&command==48 &&
-            (byte*)&command.Rotation-(byte*)&command==72 && (byte*)&command.Scale-(byte*)&command==104;
+            (byte*)&command.Rotation-(byte*)&command==72 && (byte*)&command.Scale-(byte*)&command==104 &&
+            sizeof(NativeItemAttachmentContactCommandV2)==256 && (byte*)&guarded.Command-(byte*)&guarded==0 &&
+            (byte*)&guarded.ItemPosition-(byte*)&guarded==128 && (byte*)&guarded.ItemRotation-(byte*)&guarded==152 &&
+            (byte*)&guarded.AnchorPosition-(byte*)&guarded==184 && (byte*)&guarded.AnchorRotation-(byte*)&guarded==208 &&
+            (byte*)&guarded.PositionLimitM-(byte*)&guarded==240 && (byte*)&guarded.RotationLimitDegrees-(byte*)&guarded==248;
     }
 
     internal static NativeItemAttachmentServicesV1* Validate(NativeServices* services)
@@ -87,6 +115,23 @@ public readonly unsafe ref partial struct GameContext
 
     /// <summary>Transfer without a pose jump after this tick moves the current holder. Null pins to world space.</summary>
     public void TransferItem(EntityId item, EntityId? anchor) => StageItemAttachment(item,anchor,0,default);
+
+    /// <summary>Commit only if both contact limits hold after this tick's movement.
+    /// A rejected contact rolls back the simulation step batch.</summary>
+    public void TransferItem(EntityId item, EntityId anchor, ItemAttachmentContact contact)
+    {
+        RequireFeature(GameplayRequiredFeatures.ItemAttachmentContact,nameof(IItemAttachmentContactGame));
+        if(item==default)throw new ArgumentException("Item identity is absent.",nameof(item));
+        if(anchor==default)throw new ArgumentException("Anchor identity is absent.",nameof(anchor));
+        var api=ItemAttachmentServiceAbi.Validate(services);
+        NativeItemAttachmentContactCommandV2 command=new(){
+            Command=new(){Version=2,Bytes=256,Item=item,Anchor=anchor},
+            ItemPosition=contact.Item.Position,ItemRotation=contact.Item.Rotation,
+            AnchorPosition=contact.Anchor.Position,AnchorRotation=contact.Anchor.Rotation,
+            PositionLimitM=contact.PositionLimitM,RotationLimitDegrees=contact.RotationLimitDegrees};
+        NativeError error=default;
+        Check(api->Set(services->Context,&command.Command,&error),&error);
+    }
 
     /// <summary>Place the item at a complete socket offset after this tick moves the destination anchor.</summary>
     public void SnapItem(EntityId item, EntityId anchor, ItemSocketOffset offset)

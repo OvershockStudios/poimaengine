@@ -67,4 +67,11 @@ class PhysicalRequirements(unittest.TestCase):
         for invalid in [dict(attachment,services_bytes=512),dict(attachment,features=['baseline_v7']),
                         dict(attachment,features=attachment['features']+['physical_recovery_v1'])]:
             with self.assertRaises(ValueError):self.read(invalid)
+    def test_attachment_contact_uses_existing_extent_and_requires_attachment(self):
+        guard='item_attachment_contact_v1'
+        attachment='item_attachment_v1'
+        contact=dict(self.baseline,services_bytes=528,features=['baseline_v7',attachment,guard])
+        self.assertEqual(self.read(contact),contact)
+        for invalid in [dict(contact,services_bytes=544),dict(contact,features=['baseline_v7',guard])]:
+            with self.assertRaises(ValueError):self.read(invalid)
 if __name__=='__main__':unittest.main()
