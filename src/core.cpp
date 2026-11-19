@@ -69,14 +69,14 @@ constexpr std::array operations{
         "{}", "[]"},
     Operation{"doctor", "Inspect this host, optionally enumerating Vulkan devices.", "[--graphics] [--require-hardware]",
         R"({"graphics":{"type":"boolean","default":false},"require_hardware":{"type":"boolean","default":false,"description":"Implies graphics. Require an enumerated discrete/integrated Vulkan 1.3 device with a graphics queue; this is not renderer qualification."}})", "[]"},
-    Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "<path.json> [--development-profiles file.json]",
-        R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."},"development_profiles":{"type":"string","minLength":1,"description":"Host-owned trusted build profile file; no RPC can configure tools."}})", "[\"path\"]"},
-    Operation{"serve", "Host one authoritative world for same-user local clients.", "<world.json> --endpoint <name> [--development-profiles file.json]",
-        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"development_profiles":{"type":"string","minLength":1}})", "[\"world\",\"endpoint\"]"},
+    Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "(<path.json> | --project <project-manifest>) [--development-profiles file.json]",
+        R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."},"project":{"type":"string","minLength":1,"description":"An existing project manifest with a valid entry world."},"development_profiles":{"type":"string","minLength":1,"description":"Host-owned trusted build profile file; no RPC can configure tools."}})", "[]"},
+    Operation{"serve", "Host one authoritative world for same-user local clients.", "(<world.json> | --project <project-manifest>) --endpoint <name> [--development-profiles file.json]",
+        R"({"world":{"type":"string","minLength":1},"project":{"type":"string","minLength":1,"description":"An existing project manifest with a valid entry world."},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"development_profiles":{"type":"string","minLength":1}})", "[\"endpoint\"]"},
     Operation{"connect", "Bridge newline-delimited JSON-RPC to a running local world/editor host.", "<endpoint> [--timeout-ms N]",
         R"({"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000}})", "[\"endpoint\"]"},
-    Operation{"mcp", "Expose native authoring tools over MCP stdio; choose one world or existing endpoint.", "--world <world.json> [--development-profiles file.json] | --endpoint <name> [--timeout-ms N]",
-        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000},"development_profiles":{"type":"string","minLength":1}})", "[]"},
+    Operation{"mcp", "Expose native authoring tools over MCP stdio; choose a project, world or existing endpoint.", "(--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | --endpoint <name> [--timeout-ms N]",
+        R"({"world":{"type":"string","minLength":1},"project":{"type":"string","minLength":1,"description":"An existing project manifest with a valid entry world."},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000},"development_profiles":{"type":"string","minLength":1}})", "[]"},
     Operation{"project", "Create or inspect projects, adopt verified native gameplay, or export a native game bundle.", "create <directory> --name <name> | inspect <project-manifest> | adopt-gameplay <project-manifest> --artifact <descriptor.json> --request <request.json> | build <project-manifest> --output <new-directory> --runtime <installed-runtime>",
         R"({"action":{"enum":["create","inspect","adopt-gameplay","build"]},"path":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"output":{"type":"string","minLength":1},"runtime":{"type":"string","minLength":1},"artifact":{"type":"string","minLength":1},"request":{"type":"string","minLength":1,"description":"Regular JSON file, at most 64 KiB, with request_id, expected_project_sha256, expected_artifact_sha256 and optional typed values."}})", "[\"action\",\"path\"]"},
     Operation{"game", "Verify a portable game bundle, launch its native player or host its runtime for agents without modifying packaged content.", "inspect <game.json> | stdio <game.json> [--save-root external-directory] [--save-write-mode synchronous|background] | serve <game.json> --endpoint <name> [--save-root external-directory] [--save-write-mode synchronous|background] | run <game.json> [--gpu N] [--frames N | --replay segments.json] [--capture external.bmp] [--report external.json] [--default-save-root true|false] [--save-root external-directory] [--save-write-mode synchronous|background] [--width N] [--height N] [--samples 1|4] [--viewmodel-samples 1|2|4|8] [--frames-in-flight 1|2] [--settings-profile external.poima-settings.json] [--settings-revision N] [--settings-overrides JSON]",
@@ -213,7 +213,13 @@ Reply schema(std::string_view command) {
         ",\"type\":\"object\",\"additionalProperties\":false,\"properties\":" +
         std::string(found->properties) + ",\"required\":" + std::string(found->required) +
         (command=="game" ? R"(,"allOf":[{"if":{"required":["default_save_root"]},"then":{"properties":{"action":{"const":"run"}}}},{"if":{"required":["save_write_mode"]},"then":{"anyOf":[{"required":["save_root"]},{"required":["default_save_root"],"properties":{"action":{"const":"run"},"default_save_root":{"const":true}}}]}}])" : "") +
-        (command=="mcp" ? R"(,"oneOf":[{"required":["world"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},{"required":["endpoint"],"not":{"anyOf":[{"required":["world"]},{"required":["development_profiles"]}]}}])" : "") + "}");
+        (command=="world" ? R"(,"oneOf":[{"required":["path"]},{"required":["project"]}])" : "") +
+        (command=="serve" ? R"(,"oneOf":[{"required":["world"]},{"required":["project"]}])" : "") +
+        (command=="mcp" ? R"(,"oneOf":[
+            {"required":["world"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},
+            {"required":["project"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},
+            {"required":["endpoint"],"not":{"anyOf":[{"required":["world"]},{"required":["project"]},{"required":["development_profiles"]}]}}
+        ])" : "") + "}");
 }
 
 Reply version() { return envelope("version", build_info()); }

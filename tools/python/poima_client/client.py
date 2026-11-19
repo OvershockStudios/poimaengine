@@ -34,7 +34,7 @@ def _integer_bound(value, lower, upper, name):
         raise ValueError("{} must be an integer from {} to {}".format(name, lower, upper))
 
 
-def _game_path(value, name):
+def _text_path(value, name):
     try:
         path = os.fspath(value)
     except TypeError as error:
@@ -88,23 +88,23 @@ class WorldClient:
         self._cleanup_error = None
 
     @classmethod
-    def open(cls, binary, world_path, *, development_profiles=None, cwd=None,
+    def open(cls, binary, world_path=None, *, project=None, development_profiles=None, cwd=None,
              validate_responses=True, **transport_options):
-        """Launch ``binary world world_path`` with explicit paths and no shell.
+        """Launch a world writer with an explicit world path or project manifest.
 
-        ``development_profiles`` selects a native development profile file;
-        omission preserves the ordinary world command. Paths use the executable's
-        platform conventions and are not resolved or translated. Startup errors
-        may surface on the first request; no discovery or retry is implicit.
+        ``project`` selects the native ``world --project`` entry point.
+        ``development_profiles`` selects a native development profile file.
+        Paths use the executable's platform conventions without resolution
+        or translation. Startup errors may surface on the first request.
         """
         if not isinstance(validate_responses, bool):
             raise ValueError("validate_responses must be a boolean")
-        return cls.open_command([os.fspath(binary)], world_path,
+        return cls.open_command([os.fspath(binary)], world_path, project=project,
                                 development_profiles=development_profiles, cwd=cwd,
                                 validate_responses=validate_responses, **transport_options)
 
     @classmethod
-    def open_command(cls, argv_prefix, world_path, *, development_profiles=None,
+    def open_command(cls, argv_prefix, world_path=None, *, project=None, development_profiles=None,
                      cwd=None, validate_responses=True, **transport_options):
         """Append a world command to an explicit executable/wrapper argv prefix.
 
@@ -113,7 +113,8 @@ class WorldClient:
         not establish process ownership or a sandbox. Use the caller's admitted
         owned execution route where required; this helper launches no shell.
 
-        Profile paths must be nonempty text paths without NUL or a leading ``--``.
+        Supply exactly one world path or project manifest. Project and profile
+        paths must be nonempty text paths without NUL or a leading ``--``.
         Use an explicit ``./--name`` string for such a filename. The native host
         reads the profile; the client does not open it or change path resolution.
         Invalid profile/prefix inputs reject before process or trace creation.
@@ -125,6 +126,8 @@ class WorldClient:
         command = list(argv_prefix)
         if any(not isinstance(value, str) or "\0" in value for value in command) or not command[0]:
             raise ValueError("argv_prefix entries must be strings without NUL, with a nonempty executable")
+        if (world_path is None) == (project is None):
+            raise ValueError("Specify exactly one world_path or project")
         profiles = None
         if development_profiles is not None:
             try:
@@ -134,7 +137,10 @@ class WorldClient:
             if (not isinstance(profiles, str) or not profiles or "\0" in profiles or
                     profiles.startswith("--")):
                 raise ValueError("development_profiles must be a nonempty text path without NUL or a leading --")
-        command.extend(["world", os.fspath(world_path)])
+        if project is None:
+            command.extend(["world", os.fspath(world_path)])
+        else:
+            command.extend(["world", "--project", _text_path(project, "project")])
         if profiles is not None:
             command.extend(["--development-profiles", profiles])
         transport = JsonRpcProcess(command, cwd=cwd, **transport_options)
@@ -182,8 +188,8 @@ class WorldClient:
         command = list(argv_prefix)
         if any(not isinstance(value, str) or "\0" in value for value in command) or not command[0]:
             raise ValueError("argv_prefix entries must be strings without NUL, with a nonempty executable")
-        game = _game_path(game_path, "game_path")
-        root = None if save_root is None else _game_path(save_root, "save_root")
+        game = _text_path(game_path, "game_path")
+        root = None if save_root is None else _text_path(save_root, "save_root")
         if save_write_mode is not None:
             if not isinstance(save_write_mode, str) or save_write_mode not in ("synchronous", "background"):
                 raise ValueError("save_write_mode must be synchronous or background")

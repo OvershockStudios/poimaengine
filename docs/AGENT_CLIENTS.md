@@ -21,14 +21,18 @@ physical-device qualification; rendered evidence is separate.
 
 ## Connect a project
 
-Use an absolute engine executable path and a world path whose parent directory exists. For a standalone world, the MCP process owns its writer lock. To work alongside an editor or headless host, use its endpoint instead; see [MCP](MCP.md) and [shared sessions](SHARED_SESSIONS.md). A Windows host requires a Windows Poima executable.
+Use absolute paths to the engine executable and the project's manifest. With
+Poima 0.0.278 or later, `mcp --project` opens the entry world and owns its
+writer lock. To work alongside an open editor or shared headless host,
+connect to its endpoint. A Windows host requires a Windows Poima executable.
+[MCP launch options](MCP.md#launch) · [Shared sessions](SHARED_SESSIONS.md)
 
 Codex accepts a stdio server in its MCP configuration:
 
 ```toml
 [mcp_servers.poima]
 command = "/absolute/path/to/poima"
-args = ["mcp", "--world", "/absolute/project/world.json"]
+args = ["mcp", "--project", "/absolute/project/project.poimaproject"]
 required = true
 ```
 
@@ -49,7 +53,7 @@ Claude Code accepts a server definition in a JSON configuration file:
     "poima": {
       "type": "stdio",
       "command": "C:/absolute/path/poima.exe",
-      "args": ["mcp", "--world", "C:/absolute/project/world.json"]
+      "args": ["mcp", "--project", "C:/absolute/project/project.poimaproject"]
     }
   }
 }

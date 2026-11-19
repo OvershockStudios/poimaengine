@@ -8,6 +8,11 @@ The [Python automation client](PYTHON_CLIENT.md) provides bounded stdio/endpoint
 transport, revision-guarded helpers, pinned query pagination and candidate core
 response checks. Generic calls retain access to the discovered native API.
 
+Open an existing project's entry world using `poima world --project
+<project-manifest>`. Relative entry paths resolve from the manifest directory.
+The command validates the project before opening its writer.
+[Project format](PROJECTS.md#create-and-inspect)
+
 ## Source inspection
 
 `asset.source.inspect` reads original glTF/GLB/FBX nodes, skins and animation

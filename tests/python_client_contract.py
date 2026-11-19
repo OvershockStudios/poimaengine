@@ -616,6 +616,21 @@ class OpenClientContract(unittest.TestCase):
                 WorldClient.open(Path('engine'), Path('world space.json'), **options)
                 factory.assert_called_once_with(['engine', 'world', 'world space.json'], cwd=None)
 
+    def test_project_manifest_with_literal_owned_prefix_and_profile(self):
+        project = Path('nested project') / 'Named.poimaproject'
+        with self.patch_transport(return_value=ScriptedTransport()) as factory:
+            WorldClient.open_command(('wrapper', '--'), project=project, development_profiles='native.json')
+            factory.assert_called_once_with(['wrapper', '--', 'world', '--project', os.fspath(project),
+                '--development-profiles', 'native.json'], cwd=None)
+
+    def test_ambiguous_or_invalid_project_never_launches(self):
+        for options in ({}, {'world_path': 'world.json', 'project': 'project.json'},
+                        {'project': b'project.json'}, {'project': '--endpoint'}, {'project': 'bad\0path'}):
+            with self.subTest(options=options), self.patch_transport() as factory:
+                with self.assertRaises(ValueError):
+                    WorldClient.open('engine', **options)
+                factory.assert_not_called()
+
     def test_profile_text_pathlike_and_optionlike_filenames_stay_literal(self):
         class TextPath:
             def __fspath__(self):
@@ -763,6 +778,22 @@ class NativeContract(unittest.TestCase):
                 self.assertIsNone(caught.exception.request_id)
                 self.assertFalse(client.closed)
                 self.assertEqual(client.inspect()['revision'], 0)
+
+    def test_open_project_starts_a_native_authoring_session(self):
+        with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:
+            root = Path(tmp) / 'Source project'
+            create = subprocess.run([BINARY, 'project', 'create', str(root), '--name', 'Python project'],
+                                    capture_output=True, check=True, timeout=30)
+            manifest = Path(json.loads(create.stdout)['result']['manifest'])
+            original = manifest.read_bytes()
+            world = root / json.loads(original)['entry']['world']
+            revision = json.loads(world.read_bytes())['revision']
+            with WorldClient.open(BINARY, project=manifest, cwd=tmp) as client:
+                self.assertEqual(client.inspect()['revision'], revision)
+                edit = client.transact([{'op': 'entity.create', 'id': A, 'name': 'From Python'}], revision)
+                self.assertEqual(edit['revision'], revision + 1)
+            self.assertEqual(manifest.read_bytes(), original)
+            self.assertEqual(json.loads(world.read_bytes())['revision'], revision + 1)
 
     def test_legacy_receipt_still_replays_without_invented_history(self):
         with tempfile.TemporaryDirectory(dir=SCRATCH) as tmp:

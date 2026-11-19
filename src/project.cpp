@@ -571,6 +571,7 @@ it directly. The creator can edit these instructions.
     });
 }
 Reply inspect_project(const std::string& manifest) { return operation("project.inspect",[&]{return project_summary(project(manifest));}); }
+std::string project_world_path(const std::string& manifest) { return text(project(manifest).world); }
 Reply adopt_project_gameplay(const std::string& manifest,const std::string& artifact_descriptor,const std::string& request_json) {
     try {return {0,result_reply("project.gameplay.adopt",adoption_apply(manifest,artifact_descriptor,request_json)).dump()};}
     catch(const std::exception& error) {

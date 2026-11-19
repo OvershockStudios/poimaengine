@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.277**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.278**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.278 opens an entry world by manifest from
+[`mcp --project`](MCP.md#launch), the headless CLI and the Python client.
+On Windows and Linux, MCP checks cover nested worlds, existing manifests,
+writer exclusion and shared-host detachment. A relocated Collection Room
+project opened by manifest on Windows, loaded its Native AOT module, and
+completed its objective again after reopening a checkpoint in a fresh
+MCP process. [Headless results](evidence/m2-project-host-startup.json)
 
 Version 0.0.277 creates [`.poimaproject` manifests](PROJECTS.md#create-and-inspect).
 The Windows preview opened a renamed `.poimaproject` and a legacy

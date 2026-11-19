@@ -46,6 +46,17 @@ with WorldClient.open(binary, world) as engine:
 Startup errors can surface on the first call; there is no implicit handshake or
 discovery request. Context-manager exit closes and reaps the owned CLI process.
 
+To edit an existing project with Poima 0.0.278 or later, pass its manifest as
+`project`. Poima validates the project and opens the declared entry world.
+
+```python
+with WorldClient.open(binary, project=Path("MyGame/project.poimaproject")) as engine:
+    print(engine.inspect())
+```
+
+Supply either the world path or the `project` keyword. `open_command`
+accepts the same keyword when an explicit wrapper prefix is required.
+
 ### Open with development profiles or an owned command prefix
 
 Pass a [development profile file](DEVELOPMENT_PROFILES.md) explicitly:
@@ -56,7 +67,7 @@ with WorldClient.open(binary, world,
     print(engine.discover())
 ```
 
-The client emits `--development-profiles` once after the world path. `None`
+The client emits `--development-profiles` once after the world or project path. `None`
 preserves the original command. A profile is a nonempty text path or path-like
 object returning text, without NUL or a leading `--`. A filename beginning
 with `--` can use an explicit `./--profiles.json` string. Paths remain literal

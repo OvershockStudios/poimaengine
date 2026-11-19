@@ -6,6 +6,8 @@
 namespace poima {
 Reply create_project(const std::string& directory,const std::string& name);
 Reply inspect_project(const std::string& manifest);
+// Resolve the entry world only after validating the existing project.
+std::string project_world_path(const std::string& manifest);
 // Copies a verified native artifact and atomically adopts it into an existing
 // project. Durable request receipts support deliberate exact retry/recovery;
 // no gameplay module is executed and no live world/runtime is changed.

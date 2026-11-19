@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.278
+
+- Open a project's entry world by passing its manifest to `mcp --project`, `world --project`, or `serve --project`.
+- Open a project manifest with the Python client's `project` argument.
+
 ## 0.0.277
 
 - Create projects with a `.poimaproject` manifest. Open it directly by passing its path to the editor.

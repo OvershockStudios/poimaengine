@@ -60,6 +60,12 @@ The entry IDs must identify a `CharacterController` and `Camera`. The controller
 
 Edit the source world using the [world service](WORLD_SERVICE.md), [shared sessions](SHARED_SESSIONS.md), or the existing native authoring API. Project inspection reads the committed source files; it does not publish unapplied Inspector drafts.
 
+Pass the manifest directly to `poima mcp --project`, `poima world --project`,
+or `poima serve --project ... --endpoint <name>` to author the entry world.
+Use the editor's endpoint if it already owns that world. These commands open
+an authoring session. Runtime and compiled gameplay start through the usual
+explicit service operations. [Connect an agent](AGENT_CLIENTS.md#connect-a-project)
+
 ## Attach compiled gameplay
 
 [Native gameplay adoption](PROJECT_GAMEPLAY_ADOPTION.md) verifies and copies a

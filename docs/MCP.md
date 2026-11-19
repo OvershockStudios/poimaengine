@@ -6,19 +6,26 @@ Linux native protocol tests pass. Real subprocess authoring/persistence tests an
 
 ## Launch
 
-For a standalone world, configure the MCP client to launch the engine executable with these arguments:
+For a standalone project, configure the MCP client to launch the engine
+executable with its manifest path:
 
 ```text
-poima mcp --world /absolute/project/world.json
+poima mcp --project /absolute/project/project.poimaproject
 ```
 
-The parent directory must exist. This process owns the world's writer lock until EOF or process exit. To work alongside an already running editor or headless host, attach to its named endpoint instead:
+`--project` validates the existing project and resolves the entry world
+relative to its manifest. It accepts legacy `project.json` files. Use
+`--world /absolute/project/world.json` to work directly on a world, including
+during project repair. Either standalone mode owns the world's writer lock
+until EOF or process exit and supports `--development-profiles file.json`.
+To work alongside a running editor or shared headless host, attach to its
+named endpoint:
 
 ```text
 poima mcp --endpoint poima-desktop --timeout-ms 30000
 ```
 
-World and endpoint modes are mutually exclusive. The endpoint timeout accepts 100–600000 milliseconds and applies to connection establishment and each native exchange. Endpoint mode detaches when MCP stdin closes; it does not stop the host. Windows and Linux endpoints are separate: a Windows editor requires the Windows engine executable. See [shared sessions](SHARED_SESSIONS.md).
+Choose one target per MCP process. The endpoint timeout accepts 100–600000 milliseconds and applies to connection establishment and each native exchange. Endpoint mode detaches when MCP stdin closes and leaves the host running. Use the Windows engine executable to connect to a Windows editor, including from WSL. See [shared sessions](SHARED_SESSIONS.md).
 
 Startup failures and diagnostics go to stderr. Stdout contains only MCP messages. This is a trusted local authoring interface with the engine process's file access; it is not an isolation boundary for untrusted code. Configure permissions in the agent client as appropriate for the project.
 

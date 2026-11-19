@@ -29,6 +29,10 @@ For a headless host:
 ./build/headless/poima connect example
 ```
 
+To host the entry world of an existing Poima project, run
+`poima serve --project /path/to/project.poimaproject --endpoint example`.
+Clients can connect using the same endpoint name.
+
 `host.shutdown` closes a headless host. `session.close` is rejected in shared sessions with `-32080`; close stdin to detach a client. The editor owns its window lifetime and does not expose `host.shutdown`. Direct `poima world` remains a standalone owner whose EOF closes the session. A second standalone writer cannot open a world already owned by a host/editor.
 
 Windows and Linux endpoints are separate OS facilities. From WSL, use the Windows `poima.exe connect` to reach a Windows editor, with Windows paths in operation parameters. Native Linux `poima connect` reaches a native Linux host.

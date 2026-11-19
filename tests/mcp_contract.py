@@ -27,10 +27,16 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path=None, endpoint=None):
-        target = ['--endpoint', endpoint] if endpoint else ['--world', native(path)]
+    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None):
+        if endpoint:
+            target = ['--endpoint', endpoint]
+        elif project:
+            target = ['--project', native(project)]
+        else:
+            target = ['--world', native(path)]
         self.process = subprocess.Popen([BINARY, 'mcp', *target], stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', bufsize=1)
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                        encoding='utf-8', bufsize=1, cwd=cwd)
         self.lines = queue.Queue()
         self.errors = []
         def read():
@@ -112,6 +118,78 @@ class McpContract(unittest.TestCase):
         self.clients.append(client)
         client.initialize()
         return client
+
+    def create_project(self):
+        root = Path(self.temp.name) / 'My project'
+        created = subprocess.run([BINARY, 'project', 'create', native(root), '--name', 'MCP project'],
+                                 capture_output=True, text=True, encoding='utf-8', timeout=30)
+        self.assertEqual(created.returncode, 0, created.stdout + created.stderr)
+        manifest = root / Path(json.loads(created.stdout)['result']['manifest']).name
+        spec = json.loads(manifest.read_bytes())
+        levels = root / 'Levels'
+        levels.mkdir()
+        world = levels / 'room.json'
+        (root / spec['entry']['world']).rename(world)
+        spec['entry']['world'] = world.relative_to(root).as_posix()
+        named = manifest.rename(root / 'Game Lab.poimaproject')
+        named.write_text(json.dumps(spec), encoding='utf-8')
+        return named, world
+
+    def test_project_mcp_edits_entry_world_and_reopens_legacy_manifest(self):
+        manifest, world = self.create_project()
+        source = manifest.read_bytes()
+        revision = json.loads(world.read_bytes())['revision']
+        client = Client(project=manifest, cwd=self.temp.name)
+        self.clients.append(client)
+        client.initialize()
+        self.assertEqual(client.world('world.inspect')['revision'], revision)
+        transaction = {'request_id': uuid.uuid4().hex, 'base_revision': revision,
+                       'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Via project'}]}
+        self.assertEqual(client.world('world.transact', transaction)['revision'], revision + 1)
+        self.assertTrue(client.world('world.transact', transaction)['replayed'])
+        refused = subprocess.run([BINARY, 'mcp', '--project', native(manifest)], input='',
+                                 capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertEqual(refused.stdout, '')
+        self.assertTrue(refused.stderr)
+        client.close()
+        self.assertEqual(manifest.read_bytes(), source)
+        self.assertEqual(json.loads(world.read_bytes())['revision'], revision + 1)
+        self.assertFalse((Path(self.temp.name) / world.name).exists())
+
+        legacy = manifest.rename(manifest.with_name('project.json'))
+        client = Client(project=legacy)
+        self.clients.append(client)
+        client.initialize()
+        self.assertEqual(client.world('world.inspect')['revision'], revision + 1)
+        client.close()
+        request = {'jsonrpc': '2.0', 'id': 1, 'method': 'world.inspect'}
+        direct = subprocess.run([BINARY, 'world', '--project', native(legacy)],
+                                input=json.dumps(request)+'\n', capture_output=True, text=True, timeout=30)
+        self.assertEqual(direct.returncode, 0, direct.stdout + direct.stderr)
+        self.assertEqual(json.loads(direct.stdout)['result']['revision'], revision + 1)
+
+    def test_project_mcp_rejects_bad_targets_without_protocol_output(self):
+        manifest, world = self.create_project()
+        source = manifest.read_bytes()
+        bad_spec = json.loads(source)
+        bad_spec['entry']['world'] = '../outside.json'
+        manifest.write_text(json.dumps(bad_spec), encoding='utf-8')
+        for target in (manifest, manifest.with_name('missing.poimaproject'), world):
+            with self.subTest(target=target.name):
+                result = subprocess.run([BINARY, 'mcp', '--project', native(target)], input='',
+                                        capture_output=True, text=True, timeout=30)
+                self.assertEqual(result.returncode, 4)
+                self.assertEqual(result.stdout, '')
+                self.assertTrue(result.stderr)
+        manifest.write_bytes(source)
+        world.unlink()
+        result = subprocess.run([BINARY, 'mcp', '--project', native(manifest)], input='',
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 4)
+        self.assertEqual(result.stdout, '')
+        self.assertFalse(world.exists(), 'A missing project entry must not open an empty world')
+        self.assertFalse(list(manifest.parent.rglob('*.lock')))
 
     def test_authoring_receipts_conflicts_undo_and_eof_persistence(self):
         client = self.client()
@@ -301,8 +379,15 @@ class McpContract(unittest.TestCase):
         self.assertEqual({path: digest(path) for path in source_hashes}, source_hashes)
 
     def test_shared_endpoint_receipts_conflicts_and_detach(self):
+        self.check_shared_endpoint([native(self.path)], self.path, 0)
+
+    def test_project_shared_endpoint_receipts_conflicts_and_detach(self):
+        manifest, world = self.create_project()
+        self.check_shared_endpoint(['--project', native(manifest)], world, json.loads(world.read_bytes())['revision'])
+
+    def check_shared_endpoint(self, target, world, revision):
         endpoint = 'mcp-' + uuid.uuid4().hex
-        host = subprocess.Popen([BINARY, 'serve', native(self.path), '--endpoint', endpoint],
+        host = subprocess.Popen([BINARY, 'serve', *target, '--endpoint', endpoint],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         def direct(method, params=None, timeout=3000):
             request = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params or {}}
@@ -323,9 +408,9 @@ class McpContract(unittest.TestCase):
             catalog = client.tool('poima_discover')
             self.assertEqual(catalog['session_scope'], 'shared_headless')
             self.assertNotIn('session.close', catalog['methods'])
-            transaction = {'request_id': uuid.uuid4().hex, 'base_revision': 0,
+            transaction = {'request_id': uuid.uuid4().hex, 'base_revision': revision,
                            'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Shared MCP entity'}]}
-            self.assertEqual(client.world('world.transact', transaction)['revision'], 1)
+            self.assertEqual(client.world('world.transact', transaction)['revision'], revision + 1)
             receipt = direct('world.transact', transaction)
             self.assertEqual(receipt.returncode, 0, receipt.stderr)
             self.assertTrue(json.loads(receipt.stdout)['result']['replayed'])
@@ -335,8 +420,8 @@ class McpContract(unittest.TestCase):
             self.assertIsNone(host.poll(), 'MCP detach shut down the host')
             state = direct('world.inspect')
             self.assertEqual(state.returncode, 0, state.stderr)
-            self.assertEqual(json.loads(state.stdout)['result']['revision'], 1)
-            self.assertEqual(json.loads(self.path.read_text())['revision'], 1)
+            self.assertEqual(json.loads(state.stdout)['result']['revision'], revision + 1)
+            self.assertEqual(json.loads(world.read_text())['revision'], revision + 1)
         finally:
             if client is not None:
                 client.close()
@@ -349,6 +434,7 @@ class McpContract(unittest.TestCase):
                         host.kill()
                         host.wait(timeout=5)
             host.communicate()
+        self.assertEqual(host.returncode, 0)
 
     def test_writer_exclusion_and_startup_stdout_cleanliness(self):
         client = self.client()

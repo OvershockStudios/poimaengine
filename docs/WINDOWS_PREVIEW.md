@@ -22,9 +22,10 @@ toolchain prerequisites. [Gameplay tools](https://github.com/OvershockStudios/po
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable
-with arguments `mcp --world <full path to world.json>`. If the launcher
-opened the project in the editor, use `mcp --endpoint poima-<project_id>`
-with the ID from the project manifest.
+with arguments `mcp --project <full path to project.poimaproject>` in Poima
+0.0.278 or later. Earlier previews accept `mcp --world <full path to world.json>`.
+If the project is open in the editor, use `mcp --endpoint poima-<project_id>`
+with the ID from its manifest.
 [Client setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#connect-a-project)
 
 New projects include instructions for the agent to ask you about your game

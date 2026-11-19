@@ -32,14 +32,14 @@ int run_mcp_cli(int argc,char** argv) {
     // Startup and usage failures must not put the ordinary CLI envelope on
     // MCP stdout. Only the established protocol session writes that stream.
     const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
-    if(argc!=4 && argc!=6)return usage("Use: mcp --world <world.json> [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N].");
+    if(argc!=4 && argc!=6)return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N].");
     const std::string_view kind=argv[2],value=argv[3];
-    if(value.empty() || value.starts_with("--"))return usage("Missing MCP world path or endpoint.");
+    if(value.empty() || value.starts_with("--"))return usage("Missing MCP project path, world path or endpoint.");
     unsigned timeout=30000;
     std::string profiles;
-    if(kind=="--world") {
+    if(kind=="--world" || kind=="--project") {
         if(argc==6) {
-            if(std::string_view(argv[4])!="--development-profiles" || !*argv[5] || std::string_view(argv[5]).starts_with("--"))return usage("MCP world mode accepts only --development-profiles file.json.");
+            if(std::string_view(argv[4])!="--development-profiles" || !*argv[5] || std::string_view(argv[5]).starts_with("--"))return usage("Standalone MCP accepts only --development-profiles file.json after the target.");
             profiles=argv[5];
         }
     } else if(kind=="--endpoint") {
@@ -50,9 +50,11 @@ int run_mcp_cli(int argc,char** argv) {
             if(std::string_view(argv[4])!="--timeout-ms" || parsed.ec!=std::errc{} || parsed.ptr!=number.data()+number.size() || timeout<100 || timeout>600000)
                 return usage("MCP connection timeout must be 100..600000 milliseconds.");
         }
-    } else return usage("Choose exactly one MCP world path or endpoint.");
+    } else return usage("Choose exactly one MCP project path, world path or endpoint.");
     try {
-        return kind=="--world" ? poima::run_mcp_world(std::string(value),profiles) : poima::run_mcp_connected(std::string(value),timeout);
+        if(kind=="--endpoint")return poima::run_mcp_connected(std::string(value),timeout);
+        const auto path=kind=="--project" ? poima::project_world_path(std::string(value)):std::string(value);
+        return poima::run_mcp_world(path,profiles);
     } catch(const std::exception& error) {
         std::cerr<<"Poima MCP session failed: "<<error.what()<<'\n';return 4;
     }
@@ -183,26 +185,26 @@ poima::Reply run(int argc, char** argv) {
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
         return poima::run_game(options);
     }
-    if(command=="serve") {
-        if((argc!=5 && argc!=7) || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--") || std::string_view(argv[3])!="--endpoint" || !endpoint_name(argv[4]))
-            return poima::usage_error("Use: serve <world.json> --endpoint <name> [--development-profiles file.json].");
+    if(command=="serve" || command=="world") {
+        const bool shared=command=="serve";
+        const bool manifest=argc>2 && std::string_view(argv[2])=="--project";
+        const int target=manifest ? 3:2;
+        const int options=target+(shared ? 3:1);
+        if((argc!=options && argc!=options+2) || !*argv[target] || std::string_view(argv[target]).starts_with("--") ||
+            (shared && (std::string_view(argv[target+1])!="--endpoint" || !endpoint_name(argv[target+2]))))
+            return poima::usage_error(shared
+                ? "Use: serve (<world.json> | --project <project-manifest>) --endpoint <name> [--development-profiles file.json]."
+                : "Use: world (<world.json> | --project <project-manifest>) [--development-profiles file.json].");
         std::string profiles;
-        if(argc==7) {
-            if(std::string_view(argv[5])!="--development-profiles")return poima::usage_error("Unknown serve option. Use --development-profiles <file.json>.");
-            if(!*argv[6] || std::string_view(argv[6]).starts_with("--"))return poima::usage_error("Missing path for --development-profiles.");
-            profiles=argv[6];
+        if(argc>options) {
+            if(std::string_view(argv[options])!="--development-profiles")
+                return poima::usage_error("Unknown "+std::string(command)+" option. Use --development-profiles <file.json>.");
+            if(!*argv[options+1] || std::string_view(argv[options+1]).starts_with("--"))return poima::usage_error("Missing path for --development-profiles.");
+            profiles=argv[options+1];
         }
-        return {poima::run_shared_world(argv[2],argv[4],profiles),{}};
-    }
-    if(command=="world") {
-        if((argc!=3 && argc!=5) || !*argv[2] || std::string_view(argv[2]).starts_with("--"))return poima::usage_error("Use: world <world.json> [--development-profiles file.json].");
-        std::string profiles;
-        if(argc==5) {
-            if(std::string_view(argv[3])!="--development-profiles")return poima::usage_error("Unknown world option. Use --development-profiles <file.json>.");
-            if(!*argv[4] || std::string_view(argv[4]).starts_with("--"))return poima::usage_error("Missing path for --development-profiles.");
-            profiles=argv[4];
-        }
-        return {poima::run_world_session(argv[2],profiles),{}};
+        const auto path=manifest ? poima::project_world_path(argv[target]):std::string(argv[target]);
+        if(shared)return {poima::run_shared_world(path,argv[target+2],profiles),{}};
+        return {poima::run_world_session(path,profiles),{}};
     }
     if(command=="connect") {
         if((argc!=3 && argc!=5) || !endpoint_name(argv[2]))return poima::usage_error("Use: connect <endpoint> [--timeout-ms N].");

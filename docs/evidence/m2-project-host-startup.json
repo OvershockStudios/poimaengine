@@ -1,0 +1,39 @@
+{
+  "engine_version": "0.0.278",
+  "scope": "Native headless CLI and Python client. MCP requests came from the test driver.",
+  "linux": {
+    "cli_and_project_regression_suites_passed": 4,
+    "mcp_contract_tests_passed": 11,
+    "python_client_contract_passed": true,
+    "cli_sha256": "937a12133ecd612f5a8669beba06e54d327ea7eb801fe0100d58695e96d7b082"
+  },
+  "windows": {
+    "mcp_contract_tests_passed": 11,
+    "cli_sha256": "25d69b6a42a6958836deb3d1d3d8e3aef34e644693c06984d7db0164d79b3369"
+  },
+  "collection_room": {
+    "platform": "Windows x64",
+    "backend": "native_aot",
+    "manifest": "Collection Room.poimaproject",
+    "manifest_sha256": "99106fe155b4bcbeeb96496b7eb332e826e4accc1e86c8e13cbec8d74a333d29",
+    "native_gameplay_descriptor_sha256": "5ffa3071f93b09c17c4cd648937c212b447338262dbfc21a36bb5c96b072ff66",
+    "launch_target": "mcp --project",
+    "owners": {
+      "first-owner": {
+        "queries": 74,
+        "replies": 73,
+        "exit_code": 0
+      },
+      "fresh-owner": {
+        "queries": 38,
+        "replies": 37,
+        "exit_code": 0
+      }
+    },
+    "restored_tick": 3,
+    "fresh_final_tick": 245,
+    "fresh_collected": 3,
+    "authored_source_inventory_unchanged": true,
+    "initial_driver_attempt": "Stopped after requesting backend from the compact gameplay result. The host exited naturally. The next run requested the full result."
+  }
+}

@@ -17,7 +17,7 @@ A one-minute gameplay showcase built and playtested with Codex in Poima.
 
 1. [Build and install Poima](docs/BUILD.md).
 2. Run `poima project create MyGame --name "My Game"`.
-3. Open `MyGame` in Codex or Claude Code and [connect Poima](docs/AGENT_CLIENTS.md#connect-a-project).
+3. Open `MyGame` in Codex or Claude Code and [connect its `project.poimaproject`](docs/AGENT_CLIENTS.md#connect-a-project).
 
 Describe your idea and attach any sketches or references. New projects guide
 the agent to ask a few questions at a time before building. [Plan your first game](docs/GAME_BRIEF.md)
