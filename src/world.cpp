@@ -9,6 +9,7 @@
 #include "poima/runtime.hpp"
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
+#include "pose_frames.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
@@ -3503,6 +3504,7 @@ public:
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"component_revision",runtime_->component_revision()},{"structure_revision",runtime_->structure_revision()}};
     }
 #include "world_observe.inc"
+#include "world_pose_frames.inc"
 #include "world_physical.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
@@ -3680,6 +3682,7 @@ public:
     }
     Json runtime_dispatch(const std::string& method,const Json& params) {
         if(method=="runtime.observe")return observe_runtime(params);
+        if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));

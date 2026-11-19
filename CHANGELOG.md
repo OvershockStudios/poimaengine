@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.244
+
+- Compare committed hand, item and attachment frames at a guarded runtime
+  tick. Get positional and angular errors against optional tolerances for
+  multiple grips in one read.
+
 ## 0.0.243
 
 - Bind cooked images to native game UI panels, labels and buttons. The same

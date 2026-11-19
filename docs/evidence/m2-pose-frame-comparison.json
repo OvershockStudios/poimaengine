@@ -1,0 +1,263 @@
+{
+  "format": "poima.evidence.pose-frame-comparison.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.244",
+  "schema_revision": 136,
+  "source": {
+    "asset": "Knight.glb",
+    "license": "CC0-1.0",
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "source_pin": "docs/CHARACTER_LIBRARY.md#original-source"
+  },
+  "linux": {
+    "executable_sha256": "1ebcfbd840775d53e5eaaa3fe832fc50240fecb1a2399d44e82a70c27dc0b04e",
+    "rpc_count": 28,
+    "analytic": {
+      "six_analytic_pairs": true,
+      "positive_nonuniform_scale": true,
+      "small_and_half_turn": true,
+      "sheared_basis_removes_angle": true,
+      "same_tick_structure_guard": true,
+      "readonly_rejects": 8
+    },
+    "rig": [
+      {
+        "tick": 1,
+        "clip": "Idle",
+        "seconds": 0.1,
+        "independent_matrix_error": 1.7529003248917263e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.428061247443714e-07,
+        "aligned_m": 1.7731153974649716e-09,
+        "aligned_degrees": 7.765026077791789e-19,
+        "perturbed_m": 0.03499995717779671,
+        "perturbed_degrees": 19.999999999992774,
+        "captures": []
+      },
+      {
+        "tick": 2,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0,
+        "independent_matrix_error": 1.753082817801399e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.486454992189151e-07,
+        "aligned_m": 1.7731153837155004e-09,
+        "aligned_degrees": 7.951386703716646e-16,
+        "perturbed_m": 0.03499995704715181,
+        "perturbed_degrees": 19.99999999999282,
+        "captures": []
+      },
+      {
+        "tick": 3,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0.2,
+        "independent_matrix_error": 1.4797713054903738e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.246078658876093e-07,
+        "aligned_m": 1.7731151941102349e-09,
+        "aligned_degrees": 4.444960296192259e-16,
+        "perturbed_m": 0.03499995895423333,
+        "perturbed_degrees": 19.999999999999712,
+        "captures": []
+      },
+      {
+        "tick": 4,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0.45,
+        "independent_matrix_error": 2.938778355648236e-09,
+        "nominal_basis": "sheared",
+        "independent_axis_dot": 1.535891677473944e-06,
+        "aligned_m": 1.7731155168357174e-09,
+        "aligned_degrees": null,
+        "perturbed_m": 0.034999959496925165,
+        "perturbed_degrees": null,
+        "captures": []
+      }
+    ],
+    "gpu": null,
+    "clean_exit": true,
+    "report": {
+      "path": "build/pose-frames-0.0.244/linux-release/report.json",
+      "bytes": 2423,
+      "sha256": "5c0b53ab269d22e7525d88e9977e1ebdaedf8c543c0eaa562080ff381359a3c6"
+    },
+    "rpc_streams": [
+      {
+        "path": "build/pose-frames-0.0.244/linux-release/session/requests.jsonl",
+        "bytes": 27330,
+        "sha256": "f463b860412ec514982710ae1d139ea9eafd57653b33ee47437a0f8162e016bd"
+      },
+      {
+        "path": "build/pose-frames-0.0.244/linux-release/session/responses.jsonl",
+        "bytes": 46502,
+        "sha256": "623a8e332f7c024c5f57b473276f523c27ca2c129e042a9deca67508b423de23"
+      }
+    ],
+    "ctest_suites": [
+      "world_ui_contract",
+      "runtime_animation_contract",
+      "runtime_animation_blend_contract",
+      "runtime_animation_layers_contract",
+      "asset_references_contract",
+      "runtime_observe_contract",
+      "python_runtime_observation_native"
+    ],
+    "ctest_reports": [
+      {
+        "path": "build/pose-frames-0.0.244/linux-ctest.xml",
+        "bytes": 6385,
+        "sha256": "a874186726bf3918970ffa112eb113926affce5b337ca8a03bc2160c9f82b07f"
+      },
+      {
+        "path": "build/pose-frames-0.0.244/linux-observation.xml",
+        "bytes": 2087,
+        "sha256": "af1b3209671f422f6f184bcade85e85961a8053d41a70313326968edefc42c46"
+      }
+    ],
+    "mcp_discovery_and_guarded_read": {
+      "passed": true,
+      "stream": {
+        "path": "build/pose-frames-0.0.244/linux-mcp/responses.jsonl",
+        "bytes": 10617,
+        "sha256": "b5025567671b9666fd32fb0d178902f4aef4e6b1e9e933a5084f15910ae91e5c"
+      }
+    }
+  },
+  "windows": {
+    "executable_sha256": "60183a268a416e02c00f5f68ad1631a42c2902c81b8201eaace30e82c9b6b1ff",
+    "rpc_count": 32,
+    "analytic": {
+      "six_analytic_pairs": true,
+      "positive_nonuniform_scale": true,
+      "small_and_half_turn": true,
+      "sheared_basis_removes_angle": true,
+      "same_tick_structure_guard": true,
+      "readonly_rejects": 8
+    },
+    "rig": [
+      {
+        "tick": 1,
+        "clip": "Idle",
+        "seconds": 0.1,
+        "independent_matrix_error": 1.7529003248917263e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.428061247443714e-07,
+        "aligned_m": 1.7731153974649716e-09,
+        "aligned_degrees": 0.0,
+        "perturbed_m": 0.03499995717779671,
+        "perturbed_degrees": 19.999999999992774,
+        "captures": []
+      },
+      {
+        "tick": 2,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0,
+        "independent_matrix_error": 1.753082817801399e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.486454992189151e-07,
+        "aligned_m": 1.7731153837155006e-09,
+        "aligned_degrees": 7.951386703716646e-16,
+        "perturbed_m": 0.03499995704715181,
+        "perturbed_degrees": 19.99999999999282,
+        "captures": [
+          {
+            "filename": "front-2.bmp",
+            "sha256": "bd2fa61438d3796e856b39e4c5be695e676294da458d3a768908ebf14a25c555"
+          },
+          {
+            "filename": "overhead-2.bmp",
+            "sha256": "7f0da08225524c741b642ba1ffd2d968ddd8eda45e210d69f10f3faeed5e8fd9"
+          }
+        ]
+      },
+      {
+        "tick": 3,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0.2,
+        "independent_matrix_error": 1.4797713054903738e-09,
+        "nominal_basis": "regular",
+        "independent_axis_dot": 6.246078658876093e-07,
+        "aligned_m": 1.773115194110235e-09,
+        "aligned_degrees": 1.6392203624658516e-15,
+        "perturbed_m": 0.03499995895423332,
+        "perturbed_degrees": 19.999999999999712,
+        "captures": []
+      },
+      {
+        "tick": 4,
+        "clip": "1H_Melee_Attack_Chop",
+        "seconds": 0.45,
+        "independent_matrix_error": 2.938778355648236e-09,
+        "nominal_basis": "sheared",
+        "independent_axis_dot": 1.535891677473944e-06,
+        "aligned_m": 1.7731155168357176e-09,
+        "aligned_degrees": null,
+        "perturbed_m": 0.034999959496925165,
+        "perturbed_degrees": null,
+        "captures": [
+          {
+            "filename": "front-4.bmp",
+            "sha256": "4a05c075e0be92a6b5da8989049649a8b16f21bd7c3321055dbe64d49a9c4587"
+          },
+          {
+            "filename": "overhead-4.bmp",
+            "sha256": "e4220427524293788a6339b4c077555cb9a05286ba677dfb202953b7a09725f5"
+          }
+        ]
+      }
+    ],
+    "gpu": 1,
+    "clean_exit": true,
+    "report": {
+      "path": "build/pose-frames-0.0.244/windows-1/report.json",
+      "bytes": 2996,
+      "sha256": "b799cd3f4af6e2d29dc863586343275103bee9c7a97f26f8741c260f0f409705"
+    },
+    "rpc_streams": [
+      {
+        "path": "build/pose-frames-0.0.244/windows-1/session/requests.jsonl",
+        "bytes": 29582,
+        "sha256": "e69cd2f2562bb2e40a021d08412d3b5a7ee2cd6cae543c44a0dc67dbcb73d1f5"
+      },
+      {
+        "path": "build/pose-frames-0.0.244/windows-1/session/responses.jsonl",
+        "bytes": 75525,
+        "sha256": "a516a01c6bd38011ab44c14e731381b2ee95e8a7f908ecbf4f47b00036a7ffa7"
+      }
+    ],
+    "vulkan_capture_extent": [
+      960,
+      540
+    ],
+    "samples": 4,
+    "captured_views": [
+      "front",
+      "overhead"
+    ],
+    "captures_visually_reviewed": true,
+    "request_contract": {
+      "path": "build/pose-frames-0.0.244/windows-schema/request-check.json",
+      "bytes": 603,
+      "sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca"
+    }
+  },
+  "earlier_fixture_assumption": {
+    "passed": false,
+    "reason": "First runner assumed all original sampled frames supplied a rigid orientation. At the fourth pose the original normalized column dot exceeds 1e-6. Independent GLB evaluation confirmed the shear. Final runner checks unavailable angle separately from the measured position.",
+    "report": {
+      "path": "build/pose-frames-0.0.244/linux-1/report.json",
+      "bytes": 742,
+      "sha256": "9bf410419d1b1a97aba231404684887bd8c21a8cd1659a4b4ec4ab37ba5acca3"
+    },
+    "response_stream": {
+      "path": "build/pose-frames-0.0.244/linux-1/session/responses.jsonl",
+      "bytes": 46385,
+      "sha256": "9ee43e8a7de4466c90aec89a7a3259109b82e125ce160fede57701886c578778"
+    }
+  },
+  "limits": [
+    "The four sampled poses do not qualify a continuous animation take.",
+    "Limits compare frame origins and bases. Contact of skinned geometry requires separate inspection.",
+    "No physical input, window scanout or rig-authoring qualification."
+  ]
+}

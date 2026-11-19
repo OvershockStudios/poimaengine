@@ -18,6 +18,8 @@ not advance a tick, invoke gameplay callbacks, change values, service saves,
 render, or retain a snapshot or observation cache. Gameplay values and logical UI
 contents remain available through `runtime.gameplay.inspect` and
 `runtime.ui.inspect`; this operation returns their revision tokens only.
+For distances and angular errors between grip or attachment frames, use
+[`runtime.pose.compare`](POSE_FRAME_COMPARISON.md) at the same tick.
 
 ## Select entities and component fields
 

@@ -2,6 +2,7 @@
 #include "world_schema.hpp"
 #include "poima/runtime.hpp"
 #include "physical_rig_json.hpp"
+#include "pose_frames.hpp"
 #include "poima/scene.hpp"
 #include "input_profile_store.hpp"
 #include "player_settings_store.hpp"
@@ -218,7 +219,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 135}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 136}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -443,6 +444,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto lens_command=object_schema({{"entity",id},{"world",lens},{"viewmodel",lens}},{"entity"});
     lens_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});
     const auto pose_vector=[](unsigned count,double bound) {return Json{{"type","array"},{"minItems",count},{"maxItems",count},{"items",{{"type","number"},{"minimum",-bound},{"maximum",bound}}}};};
+    const auto frame_offset=object_schema({{"position",pose_vector(3,1e9)},{"rotation",pose_vector(4,1.000001)}},{"position","rotation"});
+    const auto observed_frame=object_schema({{"entity",id},{"offset",frame_offset}},{"entity"});
+    const auto frame_pair=object_schema({{"source",observed_frame},{"target",observed_frame},
+        {"position_limit_m",{{"type","number"},{"minimum",0},{"maximum",1e9}}},
+        {"rotation_limit_deg",{{"type","number"},{"minimum",0},{"maximum",180}}}},{"source","target"});
+    methods["runtime.pose.compare"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
+        {"pairs",{{"type","array"},{"minItems",1},{"maxItems",pose_frames::max_pairs},{"items",frame_pair}}}},
+        {"session_id","tick","pairs"});
+    methods["runtime.pose.compare"]["description"]="Compare committed entity frames with optional rigid local offsets at an exact runtime tick. Reports origin displacement in metres and shortest angular error in degrees for proper orthogonal bases. Shear, reflection or degeneracy suppress angular results. Optional limits are caller-selected. Read-only, outside runtime-game-session v1.";
     const auto camera_pose=object_schema({{"position",pose_vector(3,10)},{"rotation",pose_vector(4,1.00001)}},{"position","rotation"});
     auto pose_command=object_schema({{"entity",id},{"world",camera_pose},{"viewmodel",camera_pose}},{"entity"});
     pose_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});

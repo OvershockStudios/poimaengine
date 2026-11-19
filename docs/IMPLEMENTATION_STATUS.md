@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.243**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.244**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.244 adds [guarded pose-frame comparisons](POSE_FRAME_COMPARISON.md).
+Agents can measure hand-to-item position and rotation at one committed tick.
+The [Linux and Windows checks](evidence/m2-pose-frame-comparison.json) use
+analytical fixtures and the original animated Knight. The imported poses
+include one sheared basis, which retains the measured positional error and
+returns an unavailable angular error. This tool observes committed transforms.
+Skinned surface contact and presentation interpolation need their own checks.
 
 Version 0.0.243 binds [cooked artwork to game UI](GAME_UI.md#use-cooked-images).
 Panel, label and button styles can contain or stretch a standalone sRGB image.
