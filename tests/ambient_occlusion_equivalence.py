@@ -151,13 +151,13 @@ def generated_quad(normal=(0, 0, 1), positions=None):
     return glb(doc, bytes(data))
 
 
-def cases():
+def cases(rotated_camera=False):
     contact = generated_quad((-1, 0, 0), [(.6, -100, 0), (.6, 100, 0),
                                                        (.6, 100, 2), (.6, -100, 2)])
     ordinary = generated_quad()
     x_rotation = lambda degrees: [math.sin(math.radians(degrees) / 2), 0, 0,
                                   math.cos(math.radians(degrees) / 2)]
-    return [
+    specs = [
         dict(name='plane', geometry=[('plane', ordinary, pose(scale=(100, 100, 1)))],
              settings=[('low', .01)]),
         dict(name='corner', geometry=[('plane', ordinary, pose(scale=(100, 100, 1))),
@@ -174,6 +174,14 @@ def cases():
         dict(name='background-edges', geometry=[('bounded-plane', ordinary, pose(scale=(.5, .5, 1)))],
              settings=[('high', .01)]),
     ]
+    if rotated_camera:
+        yaw, pitch = math.radians(26) / 2, math.radians(-13) / 2
+        rotation = (math.cos(yaw)*math.sin(pitch), math.sin(yaw)*math.cos(pitch),
+                    -math.sin(yaw)*math.sin(pitch), math.cos(yaw)*math.cos(pitch))
+        corner = specs[1]
+        specs.append(dict(name='rotated-corner', geometry=corner['geometry'], settings=[('medium', 1.25)],
+                          camera_position=(2.1, 1.3, 4), camera_rotation=rotation))
+    return specs
 
 
 def normalized_world(path):
@@ -331,6 +339,9 @@ def fixture_oracles(name, observed, enabled, quality, radius):
         sample = lookup[(160, 120)]
         need(sample['surface_valid'] and .1 < sample['ambient_visibility'] < .99 and
              sample['raw_ambient_visibility'] < .99, 'Contact fixture did not exercise nontrivial AO.')
+    if name == 'rotated-corner' and enabled:
+        need(any(sample['surface_valid'] and sample['ambient_visibility'] < .99 for sample in observed),
+             'The rotated camera did not observe the contact shadow.')
     if name == 'sloped-grazing':
         for x, expected in ((80, (0, -.5, math.sqrt(.75))), (240, (0, -math.sin(math.radians(78)), math.cos(math.radians(78))))):
             sample = lookup[(x, 120)]
@@ -355,6 +366,8 @@ def main():
     parser.add_argument('--workload-world', type=Path)
     parser.add_argument('--odd-extent', action='store_true',
                         help='Compare the corner at 323 by 243 pixels to exercise partial workgroups.')
+    parser.add_argument('--rotated-camera', action='store_true',
+                        help='Compare a translated contact-corner camera with pitch and yaw.')
     args = parser.parse_args()
     need(os.name == 'nt', 'Use native Windows Python for this hardware cohort.')
     binary = args.binary.resolve(strict=True)
@@ -385,7 +398,7 @@ def main():
         need(len(reference['captures_by_label']) == len(reference['captures']), 'Duplicate reference labels.')
         for fixture in reference['fixtures']:
             name = fixture['name']
-            need(isinstance(name, str) and name in {spec['name'] for spec in cases()} |
+            need(isinstance(name, str) and name in {spec['name'] for spec in cases(args.rotated_camera)} |
                  {'workload-initial', 'workload-interior'}, 'Unexpected reference fixture name.')
             world = directory / name / 'world.json'
             need(sha(world) == fixture['world_sha256'] and normalized_world(world) == fixture['normalized_world_sha256'] and
@@ -398,7 +411,7 @@ def main():
     output.mkdir(parents=True)
     active, completed, workload_original = None, False, None
     try:
-        specs = cases()
+        specs = cases(args.rotated_camera)
         if args.workload_world:
             base = args.workload_world.resolve(strict=True)
             store = Path(str(base) + '.assets')
@@ -407,7 +420,8 @@ def main():
             record['workload_input'] = dict(world_sha256=workload_original['world_sha256'], assets=workload_original['assets'])
             specs += [dict(name='workload-initial', workload=base, camera_position=[-4, 1.6, 7], settings=[('medium', 1)]),
                       dict(name='workload-interior', workload=base, camera_position=[3.2, 1.6, 3], settings=[('medium', 1)])]
-        expected_count = 19 + (6 if workload_original else 0) + (2 if args.odd_extent else 0)
+        expected_count = (19 + (6 if workload_original else 0) + (2 if args.odd_extent else 0)
+                          + (3 if args.rotated_camera else 0))
         if reference is not None:
             need(reference.get('workload_input') == record.get('workload_input') and len(reference['captures']) == expected_count,
                  'Reference workload closure or expected capture set differs.')
@@ -427,7 +441,8 @@ def main():
             active = Owner(binary, world, record, name)
             active.initialize()
             camera_position = spec.get('camera_position', [0, 0, 4])
-            operations = create(camera, 'AO equivalence camera', pose(camera_position)) + [component(camera, 'Camera',
+            camera_rotation = spec.get('camera_rotation', (0, 0, 0, 1))
+            operations = create(camera, 'AO equivalence camera', pose(camera_position, camera_rotation)) + [component(camera, 'Camera',
                 dict(vertical_fov=60, near=.1, far=100))]
             if 'workload' not in spec:
                 operations += create(uid(2), 'Ambient environment', pose()) + [component(uid(2), 'LightingEnvironment',

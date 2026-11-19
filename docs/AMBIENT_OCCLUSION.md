@@ -4,6 +4,29 @@ Poima's experimental spatial GTAO path estimates local ambient visibility from t
 
 **Bounded integration checks pass on both development-laptop GPUs.** Linux API and render-schedule contracts pass. Windows hardware capture, reconstruction lifecycle and UI tests pass on AMD Radeon integrated graphics and the NVIDIA RTX 4070 Laptop GPU with Vulkan synchronization validation. General visual quality, temporal behavior and performance remain unqualified. The default forward renderer retains exact pixel matches across 16 saved reference captures per device. This feature is disabled by default. [Evidence](evidence/m2-ambient-occlusion.json).
 
+## Camera-space horizon sampling — 0.0.280
+
+Camera-space reconstruction removes repeated transforms from horizon
+sampling. All 60 Windows Vulkan capture pairs pass the existing image and
+visibility budgets, including the translated and rotated contact views.
+Fifty-one pairs match byte-for-byte. The maximum differences are one RGB
+channel level and 0.00048828125 visibility.
+
+Each fixed Performance Yard view ran four 48-frame samples in reference,
+candidate, candidate, reference order. Mean horizon GPU time across the
+two samples per build was:
+
+| GPU | Entry view, 0.0.279 → 0.0.280 | Interior view, 0.0.279 → 0.0.280 |
+| --- | ---: | ---: |
+| AMD Radeon integrated | 5.703 → 5.462 ms | 5.414 → 5.256 ms |
+| RTX 4070 Laptop | 0.875 → 0.723 ms | 0.799 → 0.662 ms |
+
+In the separate moving 1080p background runs, AMD total GPU p95 was 25.22 ms
+for the candidate and 24.44–25.44 ms across two reference runs. RTX total
+GPU p95 rounded to 6.88 ms for both builds. The fixed-view gains establish
+the pass's cost in those views. The foreground Alpha gate remains open.
+[Paired captures and timings](evidence/m2-ao-view-space-280.json)
+
 ## Shared spatial filter — 0.0.279
 
 Sharing the 3×3 stencil inputs across a workgroup preserves all 54 bitmap
@@ -131,6 +154,11 @@ Render diagnostics include the effective `ambient_occlusion` options, `ambient_o
 
 Two compute passes run between opaque surface rendering and deferred lighting. The first reconstructs positions and integrates visible horizon intervals. The second uses a 3×3 filter with geometric-normal and plane-distance rejection. The estimator uses geometric normals, rather than normal-map detail, to avoid treating shading detail as occluding geometry.
 
+The horizon pass reconstructs depth samples in the camera's right, up and
+forward basis. It rotates the center's geometric normal once and uses the
+basis handedness for the cross products that define the slice directions.
+Neighbor positions use depth and the projected pixel ray directly.
+
 The spatial filter reconstructs samples into a shared 10×10 tile for each
 8×8 workgroup. The extra border provides all eight neighbors for pixels
 at the workgroup edges. Each tile entry stores position, normal, raw visibility
@@ -160,3 +188,5 @@ The GPU fixtures pass under Vulkan synchronization validation on both devices: 1
 Add `--odd-extent` to both equivalence runs to capture the contact corner at
 323×243. This checks the partial workgroups at both image edges in the shaded
 and visibility views, using the same image and probe thresholds.
+`--rotated-camera` adds captures from a translated, pitched and yawed
+camera that still observes the contact occlusion.

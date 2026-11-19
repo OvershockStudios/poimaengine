@@ -11,18 +11,13 @@ float3 ao_normal(float2 oct) {
     if(n.z<0)n.xy=(1-abs(n.yx))*float2(n.x>=0 ? 1 : -1,n.y>=0 ? 1 : -1);
     return normalize(n);
 }
-bool ao_load(int2 p,uint2 extent,bool decode_normal,out float3 world,out float3 normal) {
-    world=0;normal=0;
+bool ao_load_position(int2 p,uint2 extent,out float3 position) {
+    position=0;
     const float2 pixel=float2(p)+.5;
     if(any(p<0) || any(p>=int2(extent)) || any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw))return false;
     const float flags_value=ao_surface.Load(int3(p,0)).w;
     const float d=ao_depth.Load(int3(p,0));
     if(!isfinite(flags_value) || (((uint)round(flags_value)&9u)!=9u) || !isfinite(d) || d<0 || d>=1)return false;
-    if(decode_normal) {
-        const float2 oct=ao_correspondence.Load(int3(p,0)).zw;
-        if(!all(isfinite(oct)))return false;
-        normal=ao_normal(oct);
-    }
     // Horizon samples only use the position. This renderer-owned RGBA32
     // correspondence texture is cleared to zero and its normal coordinates
     // are written only by encode_normal, which guarantees finite [-1,1] oct.
@@ -31,8 +26,8 @@ bool ao_load(int2 p,uint2 extent,bool decode_normal,out float3 world,out float3 
     // restore neighbor normal validation before their buffers are admitted.
     const float z=cluster_depth.z/((1-d)+d*(cluster_depth.z/cluster_depth.w));
     const float2 uv=(pixel-cluster_viewport.xy-temporal_jitter.xy)/cluster_viewport.zw;
-    world=camera.xyz+z*(temporal_forward.xyz+(uv.x*2-1)*temporal_right.w*temporal_right.xyz+(1-uv.y*2)*temporal_up.w*temporal_up.xyz);
-    return all(isfinite(world)) && all(isfinite(normal));
+    position=float3(z*(uv.x*2-1)*temporal_right.w,z*(1-uv.y*2)*temporal_up.w,z);
+    return all(isfinite(position));
 }
 // Primitive on the positive-theta half of (a cos(theta)+b sin(theta))*|sin(theta)|.
 float ao_primitive(float theta,float a,float b) {
@@ -62,29 +57,38 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     uint width,height;ao_output.GetDimensions(width,height);
     if(any(id.xy>=uint2(width,height)))return;
     ao_output[id.xy]=1;
-    float3 world,normal;
-    if(!ao_load(int2(id.xy),uint2(width,height),true,world,normal))return;
-    const float3 to_camera=camera.xyz-world;
+    float3 position;
+    if(!ao_load_position(int2(id.xy),uint2(width,height),position) || position.z<=0)return;
+    const float2 oct=ao_correspondence.Load(int3(id.xy,0)).zw;
+    if(!all(isfinite(oct)))return;
+    const float3 world_normal=ao_normal(oct);
+    // Deferred rendering requires a rigid camera. Rotate the center normal
+    // once into the positive-forward basis used by every horizon sample.
+    const float3 normal=float3(dot(world_normal,temporal_right.xyz),
+        dot(world_normal,temporal_up.xyz),dot(world_normal,temporal_forward.xyz));
+    if(!all(isfinite(normal)))return;
+    const float3 to_camera=-position;
     const float distance_squared=dot(to_camera,to_camera);
     if(!isfinite(distance_squared) || distance_squared<1e-12)return;
     const float3 v=to_camera*rsqrt(distance_squared);
-    float3 axis=cross(v,temporal_up.xyz);
-    if(dot(axis,axis)<1e-10)axis=cross(v,temporal_right.xyz);
+    // Cross products pick up the basis determinant. A normal camera uses
+    // a left-handed right/up/forward basis, while a reflected basis flips it.
+    const float handedness=dot(cross(temporal_right.xyz,temporal_up.xyz),temporal_forward.xyz)<0 ? -1 : 1;
+    float3 axis=handedness*float3(-v.z,0,v.x);
+    if(dot(axis,axis)<1e-10)axis=handedness*float3(0,v.z,-v.y);
     axis=normalize(axis);
-    const float3 second=cross(v,axis);
-    const float3 relative=world-camera.xyz;
-    const float z=dot(relative,temporal_forward.xyz);
-    if(z<=0)return;
-    const float view_x=dot(relative,temporal_right.xyz)/z,view_y=dot(relative,temporal_up.xyz)/z;
+    const float3 second=handedness*cross(v,axis);
+    const float z=position.z;
+    const float2 slope=position.xy/z;
+    const float2 projection_scale=cluster_viewport.zw/(2*float2(temporal_right.w,-temporal_up.w)*z);
+    const float a=dot(normal,v);
     const uint slices=(uint)ao_settings.z,steps=(uint)ao_settings.w;
     float visible=0,total=0;
     [loop] for(uint slice=0;slice<slices;++slice) {
         const float angle=ao_pi*(slice+.5)/slices;
         const float3 tangent=cos(angle)*axis+sin(angle)*second;
-        const float dz=dot(tangent,temporal_forward.xyz);
-        const float2 derivative=float2((dot(tangent,temporal_right.xyz)-view_x*dz)*cluster_viewport.z/(2*temporal_right.w*z),
-            -(dot(tangent,temporal_up.xyz)-view_y*dz)*cluster_viewport.w/(2*temporal_up.w*z));
-        const float a=dot(normal,v),b=dot(normal,tangent);
+        const float2 derivative=(tangent.xy-slope*tangent.z)*projection_scale;
+        const float b=dot(normal,tangent);
         // Fade toward the geometric plane's unoccluded hemisphere, not the
         // back-view direction (-1). The latter erases real nearby occluders
         // before they reach the positive-cosine integration interval.
@@ -105,9 +109,9 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
                 if(!all(isfinite(candidate)) || any(candidate<0) || any(candidate>=float2(width,height)))continue;
                 const int2 p=int2(floor(candidate));
                 if(all(p==int2(id.xy)))continue;
-                float3 sample_world,sample_normal;
-                if(!ao_load(p,uint2(width,height),false,sample_world,sample_normal))continue;
-                const float3 delta=sample_world-world;
+                float3 sample_position;
+                if(!ao_load_position(p,uint2(width,height),sample_position))continue;
+                const float3 delta=sample_position-position;
                 const float distance=length(delta);
                 if(distance<=1e-6 || distance>=ao_settings.x)continue;
                 const float cosine=clamp((dot(delta,v)-ao_settings.y)/distance,-1,1);

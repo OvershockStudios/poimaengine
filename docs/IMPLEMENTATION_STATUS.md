@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.279**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.280**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.280 evaluates [AO horizons in camera space](AMBIENT_OCCLUSION.md#camera-space-horizon-sampling--00280).
+Sixty paired captures on AMD and NVIDIA pass the existing visual budgets.
+In repeated fixed-camera runs on both GPUs, mean horizon-pass timings fall
+for each Performance Yard view. Moving background GPU p95 remains within
+the observed range of the reference runs. [Results](evidence/m2-ao-view-space-280.json)
 
 Version 0.0.279 shares reconstructed samples in the [Vulkan ambient
 occlusion filter](AMBIENT_OCCLUSION.md#shared-spatial-filter--00279).

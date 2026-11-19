@@ -1,0 +1,237 @@
+{
+  "engine_version": "0.0.280",
+  "reference_version": "0.0.279",
+  "scope": "Paired native Windows Vulkan captures and sequential background Performance Yard samples on one laptop.",
+  "shader_sha256": "40255f9f5b4aba72fdd2075a55623ea6485f8ca405724d8706924e406da36103",
+  "equivalence_harness_sha256": "97d5c39bf803c760986c5e116fd27a233d6c5d5a8a395dc43c0a3229941448c6",
+  "performance_harness_sha256": "61177ae237df0284753e1af88593340daeca0d61dde138d69e9b324d460feff7",
+  "background_reference": "m2-ao-filter-tiles-279.json",
+  "fixed_view_trace_sha256": "611614f0918fbd2feb52c377188719fa69f0f00da76192cab6d5173bf35901da",
+  "width": 1920,
+  "height": 1080,
+  "warmup_seconds": 30,
+  "measurement_seconds": 60,
+  "cases": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "paired_captures": {
+        "gpu_name": "AMD Radeon(TM) Graphics",
+        "reference_binary_sha256": "3d625f0381e16a875e62bb828a53f6c18c6dc0126dc8fc9043c7aefa21db9c91",
+        "candidate_binary_sha256": "943bb41fd6e4d3a0b15c1ff462a19c77c33ebf6e8ca0780f9ed7bdb102f29a94",
+        "reference_evidence_sha256": "2481ef04523a3fd6ea10b7335f1f138ff00c220c59ced8b1dab1c25cb5f03a2a",
+        "candidate_evidence_sha256": "80b284cf7f245bc6d5ca2e450a2eec725fd86d4634fbf08c2f060314ef14dafc",
+        "pairs": 30,
+        "partial_workgroup_pairs": 2,
+        "rotated_camera_pairs": 3,
+        "exact_bitmap_pairs": 26,
+        "max_rgb8_difference": 1,
+        "max_ao_visibility_difference": 0
+      },
+      "background_reference": {
+        "ao_horizon": {
+          "count": 2807,
+          "mean_ns": 5683958.653366583,
+          "p50_ns": 5952960,
+          "p95_ns": 8252380,
+          "p99_ns": 9489560
+        },
+        "total_gpu": {
+          "count": 2807,
+          "mean_ns": 18403176.79016744,
+          "p50_ns": 18856800,
+          "p95_ns": 24435940,
+          "p99_ns": 25940020
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 25093700,
+        "ticks_per_second": 60.00550090428624,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "native_report_sha256": "ca252f89bdaf81f666b60856e6c63b40ef188ea641632f60a29b06cc8bfe64ec",
+        "native_frames_sha256": "25e99ee48c142c91746a990dda4c144a0f7dee69b77e6d981062c5b1ee00e663"
+      },
+      "background_candidate": {
+        "ao_horizon": {
+          "count": 2757,
+          "mean_ns": 5560192.375770765,
+          "p50_ns": 5911060,
+          "p95_ns": 8317320,
+          "p99_ns": 9708880
+        },
+        "total_gpu": {
+          "count": 2757,
+          "mean_ns": 18750993.46753718,
+          "p50_ns": 19305500,
+          "p95_ns": 25224150,
+          "p99_ns": 27053910
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 26019100,
+        "ticks_per_second": 60.001791122614534,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "native_report_sha256": "c68675435f47f1b56451635d3af5fdd55a00dde0ce7f1e2065d621cd82d14f1f",
+        "native_frames_sha256": "03a0ea4448433c0b15f21554b692ed1232041bfc2f2e1e05a04cf1a3311c50c2"
+      },
+      "fixed_view_repeats": [
+        {
+          "view": "workload-initial",
+          "sample_order": [
+            "reference",
+            "candidate",
+            "candidate",
+            "reference"
+          ],
+          "horizon_mean_ms": [
+            5.688287291666666,
+            5.447511666666666,
+            5.476639375,
+            5.718100625000001
+          ]
+        },
+        {
+          "view": "workload-interior",
+          "sample_order": [
+            "reference",
+            "candidate",
+            "candidate",
+            "reference"
+          ],
+          "horizon_mean_ms": [
+            5.3204024999999975,
+            5.23690125,
+            5.274496666666667,
+            5.507659999999999
+          ]
+        }
+      ],
+      "background_reference_repeat": {
+        "ao_horizon": {
+          "count": 2731,
+          "mean_ns": 6294419.5715855,
+          "p50_ns": 6671160,
+          "p95_ns": 9206160,
+          "p99_ns": 10255800
+        },
+        "total_gpu": {
+          "count": 2731,
+          "mean_ns": 19151906.444525816,
+          "p50_ns": 19813030,
+          "p95_ns": 25438120,
+          "p99_ns": 26564490
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 26182900,
+        "ticks_per_second": 60.0076685799934,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "native_report_sha256": "2205a13b14a3a1024c432b052427ac380a6f303afbc93a877b1745379d11ad56",
+        "native_frames_sha256": "2301bae88d9f90b7a41e385280395da168f6e5f5e4904cc71a41fdb13a9273ea"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "paired_captures": {
+        "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "reference_binary_sha256": "3d625f0381e16a875e62bb828a53f6c18c6dc0126dc8fc9043c7aefa21db9c91",
+        "candidate_binary_sha256": "943bb41fd6e4d3a0b15c1ff462a19c77c33ebf6e8ca0780f9ed7bdb102f29a94",
+        "reference_evidence_sha256": "9ac19f63847f99c4cb168701e6ecb9d311287fadf72f859524378503bd45efb8",
+        "candidate_evidence_sha256": "9b2bc327c6dca5d3035bd7bde8fac96cc33ebabb91a93866fe3bd7b6723c108a",
+        "pairs": 30,
+        "partial_workgroup_pairs": 2,
+        "rotated_camera_pairs": 3,
+        "exact_bitmap_pairs": 25,
+        "max_rgb8_difference": 1,
+        "max_ao_visibility_difference": 0.00048828125
+      },
+      "background_reference": {
+        "ao_horizon": {
+          "count": 3016,
+          "mean_ns": 1553028.75331565,
+          "p50_ns": 1581056,
+          "p95_ns": 1822720,
+          "p99_ns": 2132992
+        },
+        "total_gpu": {
+          "count": 3016,
+          "mean_ns": 5655051.692307692,
+          "p50_ns": 5768960,
+          "p95_ns": 6882112,
+          "p99_ns": 7239008
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 22420000,
+        "ticks_per_second": 60.01000556824507,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "native_report_sha256": "f2ae708db5c1a74ff2b3cdc11c9f2bd6255e3a84f4067c7739cc9969c08c3cb0",
+        "native_frames_sha256": "312e61a95e66e2098d4bf0cfb182962c7afb1637b9a98ef4eb5e84771f4fb8ca"
+      },
+      "background_candidate": {
+        "ao_horizon": {
+          "count": 3016,
+          "mean_ns": 1547048.7427055703,
+          "p50_ns": 1619968,
+          "p95_ns": 1814528,
+          "p99_ns": 2103296
+        },
+        "total_gpu": {
+          "count": 3016,
+          "mean_ns": 5762918.206896552,
+          "p50_ns": 6145536,
+          "p95_ns": 6876096,
+          "p99_ns": 7195456
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 22568400,
+        "ticks_per_second": 60.002532106854915,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "native_report_sha256": "d030296c65460856d9014ece3f31d9f87e9e84157eba2c066b625924f1cbd9ba",
+        "native_frames_sha256": "37123bde0bc7ed4e9040135c0e0e8a474616bb28d72fc429f7677b4414acec04"
+      },
+      "fixed_view_repeats": [
+        {
+          "view": "workload-initial",
+          "sample_order": [
+            "reference",
+            "candidate",
+            "candidate",
+            "reference"
+          ],
+          "horizon_mean_ms": [
+            0.9947093333333328,
+            0.7249919999999999,
+            0.7210026666666663,
+            0.7549226666666672
+          ]
+        },
+        {
+          "view": "workload-interior",
+          "sample_order": [
+            "reference",
+            "candidate",
+            "candidate",
+            "reference"
+          ],
+          "horizon_mean_ms": [
+            0.6895786666666665,
+            0.659242666666667,
+            0.6642773333333336,
+            0.9077333333333332
+          ]
+        }
+      ]
+    }
+  ]
+}
