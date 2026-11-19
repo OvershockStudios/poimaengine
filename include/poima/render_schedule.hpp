@@ -138,12 +138,12 @@ struct Schedule {
             if(!settings.scene || resource(frame.color).samples!=1 || resource(frame.normal).samples!=1)fail("scene products require single-sample scene rendering");
             if(resource(frame.normal).kind!=Kind::texture || resource(frame.normal).format!=Format::rgba16_float || resource(frame.depth).format!=Format::depth32)fail("invalid scene product format");
             if(!(resource(frame.normal).supported&use_bit(Use::sampled)) || !(resource(frame.depth).supported&use_bit(Use::sampled)))fail("scene products must be shader readable");
-        } else if(frame.normal!=none)fail("normal attachment without scene products");
+        } else if(frame.normal!=none || frame.motion!=none || frame.motion_valid!=none)fail("output attachments without scene products");
         if(settings.deferred) {
-            if(!settings.scene || !settings.products || frame.color!=frame.hdr)fail("deferred opaque requires single-sample scene products");
+            if(!settings.scene || frame.color!=frame.hdr)fail("deferred opaque requires a single-sample scene");
             std::unordered_set<ResourceId> distinct={frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.shadow,frame.swapchain};
             const ResourceId targets[]={frame.material_base,frame.material_surface,frame.material_correspondence};
-            const Format formats[]={Format::rgba16_float,Format::rgba16_float,Format::rgba32_float};
+            const Format formats[]={Format::rgba16_float,Format::rgba16_float,settings.products ? Format::rgba32_float : Format::rg32_float};
             const auto& hdr=resource(frame.hdr);
             if(hdr.kind!=Kind::texture || hdr.samples!=1 || hdr.format!=Format::rgba16_float)fail("invalid deferred HDR target");
             for(std::size_t i=0;i<3;++i) {
@@ -151,12 +151,13 @@ struct Schedule {
                 if(!distinct.insert(targets[i]).second || r.kind!=Kind::texture || r.samples!=1 || r.format!=formats[i] || r.width!=hdr.width || r.height!=hdr.height)fail("invalid deferred material target");
             }
             for(const auto id:{frame.depth,frame.normal,frame.motion,frame.motion_valid}) {
+                if(id==none)continue;
                 const auto& r=resource(id);
                 if(r.samples!=1 || r.width!=hdr.width || r.height!=hdr.height)fail("deferred output extent mismatch");
             }
         }
         if(settings.ambient_occlusion) {
-            if(!settings.deferred || !settings.scene || !settings.products || resource(frame.hdr).samples!=1)fail("ambient occlusion requires single-sample deferred scene products");
+            if(!settings.deferred || !settings.scene || resource(frame.hdr).samples!=1)fail("ambient occlusion requires a single-sample deferred scene");
             required(frame.ao_raw);required(frame.ao_filtered);required(frame.ao_constants);
             std::unordered_set<ResourceId> distinct={frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.shadow,frame.swapchain,frame.material_base,frame.material_surface,frame.material_correspondence,
                 frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.frame,frame.objects,frame.lights,frame.counts,frame.indices,frame.cluster_readback,frame.skin_errors,frame.skin_readback,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,frame.editor_vertices,frame.editor_indices};
@@ -283,7 +284,8 @@ struct Schedule {
                 for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,frame.shadow})if(!has(id,Use::sampled))fail("missing deferred lighting input");
                 if(!has(frame.frame,Use::constant) || (frame.lights!=none && !has(frame.lights,Use::storage_read)) || !has(frame.hdr,Use::image_read_write))fail("missing deferred lighting state");
                 if(settings.clustered && (!has(frame.counts,Use::storage_read) || !has(frame.indices,Use::storage_read)))fail("missing deferred cluster inputs");
-                for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::image_write))fail("missing deferred product output");
+                if(settings.products)for(const auto id:{frame.normal,frame.motion,frame.motion_valid})
+                    if(!has(id,Use::image_write))fail("missing deferred product output");
                 if(std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.hdr;})!=1)fail("deferred HDR cannot alias another access");
                 std::unordered_set<ResourceId> accessed;
                 for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
@@ -453,7 +455,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
         add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
         if(settings.clustered) {add(lighting,f.counts,Use::storage_read);add(lighting,f.indices,Use::storage_read);}
         add(lighting,f.hdr,Use::image_read_write);
-        for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
+        if(settings.products)for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
     if(settings.reconstruction) {

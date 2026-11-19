@@ -1,0 +1,307 @@
+{
+  "engine_version": "0.0.281",
+  "reference_version": "0.0.280",
+  "scope": "Native Windows Vulkan captures and one sequential 60-second nonfocusable Performance Yard run per build and adapter.",
+  "runtime_hashes": {
+    "cmake/render_smoke.cmake": "cc0130bc9197a3659a5c3bb18f5d5213f355538ff1a511dbfd13bc0e3da6e3dd",
+    "src/render_smoke.cpp": "678619f6aa99cca6631799f9f406c558c3639eb512297f9f6f66fa39f39a6162",
+    "include/poima/render_schedule.hpp": "1036be5baa3fd28ac78003a21a35a4eccaa9502ff94b89ab71a2cd280e5b1e11",
+    "shaders/scene.hlsl": "d1c07b3dec7b3d2c8e7f1a407b3f8e79c7e0fac76c9885dc5df0da9c68bce050",
+    "shaders/deferred_lighting.hlsl": "49a4233c5f4bb3bc71d5cc0618a753018ca381f52e9c05beefe5a0e81ef5ed8f",
+    "shaders/ambient_occlusion.hlsl": "06e97993835bda561624422df3df0970a75510d675c1f16e7c47e588131e0589",
+    "shaders/ambient_occlusion_filter.hlsl": "129ed9441064f04745910ad7f53412ae9401126d7624eb81403246d45dbbc136",
+    "tests/scene_products_capture.py": "4c67a6eee95aa3fcc99610eee0a552d717329e08f7101933f9bdfc371f67b72d",
+    "tests/ambient_occlusion_equivalence.py": "97d5c39bf803c760986c5e116fd27a233d6c5d5a8a395dc43c0a3229941448c6",
+    "tests/performance_yard.py": "61177ae237df0284753e1af88593340daeca0d61dde138d69e9b324d460feff7",
+    "tests/reconstruction_native.cpp": "28f90ba0a2356910ec9e6e9a97caef8e163530a77733b312e98b5b49f345f0ff",
+    "tests/render_schedule.cpp": "a05954367aa3b2f8b460db19c16ecce1965843c8806d0130b34f4270bacfa03f"
+  },
+  "schedule": "Production render schedule: 359 valid variants, 757 rejected contract mutations.",
+  "workload": {
+    "world_sha256": "2624dc6724f60ae4bb315f4ad7e645a36eebd3d35fa78527b1bd9441bf51ea8d",
+    "descriptor_sha256": "e521c05c9cdc907c09cbe6bc9a7ecd11eec8c16ca695bd8fd4dcd7e419e2d3a9",
+    "size": [
+      1920,
+      1080
+    ],
+    "warmup_seconds": 30,
+    "duration_seconds": 60
+  },
+  "initial_fixture_failure": {
+    "error": "Deferred preview base exceeds half-float storage.",
+    "sha256": "1e19d6489205edf673b0aba0aa3c52ab93c63d12efbb215670153a77e7d8ce42",
+    "resolution": "Value-initialize the previously indeterminate fixture albedo. Keep the original fixture oracles."
+  },
+  "adapters": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "reference_binary_sha256": "943bb41fd6e4d3a0b15c1ff462a19c77c33ebf6e8ca0780f9ed7bdb102f29a94",
+      "candidate_binary_sha256": "54b0b561ffbf11ca9e57074358d6c0132b59b9dda65847ad7a80e5254619e3ef",
+      "reference": {
+        "sample_count": 2757,
+        "gpu_timings": {
+          "total": {
+            "mean_ns": 18750993.46753718,
+            "p95_ns": 25224150,
+            "p99_ns": 27053910
+          },
+          "opaque": {
+            "mean_ns": 4777289.633659775,
+            "p95_ns": 7321760,
+            "p99_ns": 8083240
+          },
+          "deferred_lighting": {
+            "mean_ns": 5924128.61080885,
+            "p95_ns": 7575250,
+            "p99_ns": 8014760
+          },
+          "ambient_occlusion": {
+            "mean_ns": 5560192.375770765,
+            "p95_ns": 8317320,
+            "p99_ns": 9708880
+          },
+          "ambient_occlusion_filter": {
+            "mean_ns": 1001964.4396082698,
+            "p95_ns": 1350080,
+            "p99_ns": 1612480
+          }
+        },
+        "logical_image_bytes": {
+          "material": 66355200,
+          "normal": 16588800,
+          "motion": 18662400
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 26019100,
+        "ticks_per_second": 60.001791122614534,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "initial_tick": 1,
+        "initial_image_sha256": "a301b5a4086af80e17bc4145922502af2fcda44315e2dfdb020773e06ed01095",
+        "native_report_sha256": "c68675435f47f1b56451635d3af5fdd55a00dde0ce7f1e2065d621cd82d14f1f",
+        "frames_sha256": "03a0ea4448433c0b15f21554b692ed1232041bfc2f2e1e05a04cf1a3311c50c2",
+        "memory_sha256": "f9fe3685d1eeea9d4a71a0ee8a549f4a75a2b1c42c83777a3fc2266c8fd906a0"
+      },
+      "candidate": {
+        "sample_count": 2945,
+        "gpu_timings": {
+          "total": {
+            "mean_ns": 16019212.879456706,
+            "p95_ns": 21747990,
+            "p99_ns": 23853380
+          },
+          "opaque": {
+            "mean_ns": 3073221.0831918507,
+            "p95_ns": 4935320,
+            "p99_ns": 5632040
+          },
+          "deferred_lighting": {
+            "mean_ns": 5654234.753820034,
+            "p95_ns": 7365610,
+            "p99_ns": 8022660
+          },
+          "ambient_occlusion": {
+            "mean_ns": 5000426.061120544,
+            "p95_ns": 7082920,
+            "p99_ns": 7897870
+          },
+          "ambient_occlusion_filter": {
+            "mean_ns": 766804.6315789474,
+            "p95_ns": 851520,
+            "p99_ns": 888800
+          }
+        },
+        "logical_image_bytes": {
+          "material": 49766400,
+          "normal": 0,
+          "motion": 0
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 22960700,
+        "ticks_per_second": 60.011190445501214,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "initial_tick": 1,
+        "initial_image_sha256": "a301b5a4086af80e17bc4145922502af2fcda44315e2dfdb020773e06ed01095",
+        "native_report_sha256": "1ba74acb1913144cd067777d733878ed977e2223a08e270c8add08313aad36f4",
+        "frames_sha256": "1deb632c90229c7c27440508b856c673ca5198a2492a3325983982be015e33e7",
+        "memory_sha256": "8f893e8396d5311c95a900521b436f882515cd17e2d8e6bb5b4d967557dc9957"
+      },
+      "inspection": {
+        "comparisons": 30,
+        "exact_bitmaps": 30,
+        "max_rgb8_difference": 0,
+        "max_ao_probe_difference": 0,
+        "reference_evidence_sha256": "90aebe357a6197531a449ea9bf3ba524c4e160d9e700614def388f15e0492e34",
+        "candidate_evidence_sha256": "d797e15603e7f2cfb6749a085ae480c3fc085118f4cedf6f22e1170f33aadd27"
+      },
+      "replay": {
+        "exact_color_pairs": 2,
+        "debug_views": 2,
+        "evidence_sha256": "d5bf42c200393026766de5cac2ab304516d853f5d85e707be14cc079ef9df929"
+      },
+      "native_fixtures": {
+        "deferred": {
+          "captures": 16,
+          "sha256": "07a351e110b7b30f77da3163ce3c5050c9d6d4313a1f28ff0408e70a385be395"
+        },
+        "motion": {
+          "captures": 80,
+          "sha256": "8f514751ad7a90fbefbe23becc6f7f75af962d2eb8a124f4a3c48dd625a4dc55"
+        },
+        "fsr": {
+          "captures": 100,
+          "sha256": "2372ee6b37d142ea8e868fafd9067811e9b14bc276c9612a6e1604d5cab2eb55"
+        }
+      },
+      "validation": {
+        "sync_validation_replays": 2,
+        "exact_color_pairs": 2,
+        "reference_errors": 4,
+        "candidate_errors": 0,
+        "layer_sha256": "2acc317ef880f73a9862f23a964694c03f531b866fab6d70f1412fcbae60caac",
+        "reference_report_sha256": "3f3503d50a1255183726fa49d144304abee4837c0e7fb9f4e1538b17fce3ed61",
+        "candidate_report_sha256": "0ea5f4eae993113f56613c48bcb9d4dd84d2e339669a43a92d38b0270f0805a7"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "reference_binary_sha256": "943bb41fd6e4d3a0b15c1ff462a19c77c33ebf6e8ca0780f9ed7bdb102f29a94",
+      "candidate_binary_sha256": "54b0b561ffbf11ca9e57074358d6c0132b59b9dda65847ad7a80e5254619e3ef",
+      "reference": {
+        "sample_count": 3016,
+        "gpu_timings": {
+          "total": {
+            "mean_ns": 5762918.206896552,
+            "p95_ns": 6876096,
+            "p99_ns": 7195456
+          },
+          "opaque": {
+            "mean_ns": 1053590.0689655172,
+            "p95_ns": 1565696,
+            "p99_ns": 1654784
+          },
+          "deferred_lighting": {
+            "mean_ns": 2044841.421750663,
+            "p95_ns": 2521088,
+            "p99_ns": 2594816
+          },
+          "ambient_occlusion": {
+            "mean_ns": 1547048.7427055703,
+            "p95_ns": 1814528,
+            "p99_ns": 2103296
+          },
+          "ambient_occlusion_filter": {
+            "mean_ns": 292564.8806366048,
+            "p95_ns": 353280,
+            "p99_ns": 397312
+          }
+        },
+        "logical_image_bytes": {
+          "material": 66355200,
+          "normal": 16588800,
+          "motion": 18662400
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 22568400,
+        "ticks_per_second": 60.002532106854915,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "initial_tick": 1,
+        "initial_image_sha256": "6a9f585113006d106b8fce579c82cb04656c49497479d2258454baea026684c0",
+        "native_report_sha256": "d030296c65460856d9014ece3f31d9f87e9e84157eba2c066b625924f1cbd9ba",
+        "frames_sha256": "37123bde0bc7ed4e9040135c0e0e8a474616bb28d72fc429f7677b4414acec04",
+        "memory_sha256": "ab5636e746658a3c5100ee04183db1ec749562262635b7e9049683d99015226b"
+      },
+      "candidate": {
+        "sample_count": 3005,
+        "gpu_timings": {
+          "total": {
+            "mean_ns": 5454704.708153078,
+            "p95_ns": 6760448,
+            "p99_ns": 7498400
+          },
+          "opaque": {
+            "mean_ns": 805343.1161397671,
+            "p95_ns": 1162240,
+            "p99_ns": 1520640
+          },
+          "deferred_lighting": {
+            "mean_ns": 2144102.9963394343,
+            "p95_ns": 2831360,
+            "p99_ns": 2961408
+          },
+          "ambient_occlusion": {
+            "mean_ns": 1458182.8153078202,
+            "p95_ns": 1818624,
+            "p99_ns": 2004992
+          },
+          "ambient_occlusion_filter": {
+            "mean_ns": 260569.3231281198,
+            "p95_ns": 316416,
+            "p99_ns": 348160
+          }
+        },
+        "logical_image_bytes": {
+          "material": 49766400,
+          "normal": 0,
+          "motion": 0
+        },
+        "laps": 3,
+        "present_interval_p95_ns": 22363600,
+        "ticks_per_second": 60.00058550571356,
+        "owner_exit_codes": [
+          0,
+          0
+        ],
+        "initial_tick": 1,
+        "initial_image_sha256": "6a9f585113006d106b8fce579c82cb04656c49497479d2258454baea026684c0",
+        "native_report_sha256": "5f88c4ab2c41738af1f1177e5061009ad77499231d7ea0b8b8a97f8c38101d3c",
+        "frames_sha256": "6f96bbda862df85f62e50c42ba620ee12b41351c5b95dea000042809bf1a2354",
+        "memory_sha256": "26293239646691d0ae81c610e8692fe6de417f7964721ab536c868829b101cc9"
+      },
+      "inspection": {
+        "comparisons": 30,
+        "exact_bitmaps": 30,
+        "max_rgb8_difference": 0,
+        "max_ao_probe_difference": 0,
+        "reference_evidence_sha256": "27a353a3997775f1d7429afd88f58caa4d1290a30e6b4c943b9351d4ff053b15",
+        "candidate_evidence_sha256": "bbf3d811e1a09fd8e9102aa8cd4c3d9ad8db060eee3dd5567d06036619f0e1c9"
+      },
+      "replay": {
+        "exact_color_pairs": 2,
+        "debug_views": 2,
+        "evidence_sha256": "51448574459f1e066899f5a4b04b3d99aa99d4f9347f2620775096be9b3e4384"
+      },
+      "native_fixtures": {
+        "deferred": {
+          "captures": 16,
+          "sha256": "25ac3e395ae1f2f100a1c141a7964c4646c29ec56451115305e140d8866f898a"
+        },
+        "motion": {
+          "captures": 80,
+          "sha256": "471faca999411abb47b30ea8fa0bd3d919a2240fbf21a5d90323c713f6b1a4db"
+        },
+        "fsr": {
+          "captures": 100,
+          "sha256": "0cf84687367ecdfe6f740a93e34a8a60c555c57ff755f548a138c6c09953c113"
+        }
+      },
+      "validation": {
+        "sync_validation_replays": 2,
+        "exact_color_pairs": 2,
+        "reference_errors": 4,
+        "candidate_errors": 0,
+        "layer_sha256": "2acc317ef880f73a9862f23a964694c03f531b866fab6d70f1412fcbae60caac",
+        "reference_report_sha256": "823c8b4780d807d10fcceecce586dc0cae037ba1786001e007ed271913b7e8ec",
+        "candidate_report_sha256": "b9caca97c055d96ab31e15f6808e925a5522cb8d63ae614de6d6457ccd74519c"
+      }
+    }
+  ]
+}

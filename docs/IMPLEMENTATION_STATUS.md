@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.280**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.281**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.281 [reduces deferred color playback storage](DEFERRED_RENDERING.md#storage-and-execution).
+At 1920×1080 it uses 49.4 MiB less logical texture payload when playback has no
+scene-product probe or reconstruction requests. Debug views, probes and FSR
+continue to use the full layout. Both adapters match all 60 paired capture
+images and pass compact playback with Vulkan synchronization validation.
+The timed background workload records total GPU p95 of 21.75 ms on integrated
+AMD and 6.76 ms on RTX 4070 Laptop. [Results](evidence/m2-deferred-color-281.json)
 
 Version 0.0.280 evaluates [AO horizons in camera space](AMBIENT_OCCLUSION.md#camera-space-horizon-sampling--00280).
 Sixty paired captures on AMD and NVIDIA pass the existing visual budgets.

@@ -18,17 +18,17 @@ Native clients set `RenderOptions::deferred` and `samples = 1`. There is no desk
 
 ## Storage and execution
 
-Opaque rasterization writes base color/metallic, octahedrally encoded shading normal/occlusion/flags, emission/roughness, and motion/geometric normal. A compute pass reconstructs world position from depth, evaluates shared lighting, and writes HDR radiance. Background pixels retain the clear or procedural sky. Geometric normals remain distinct from shading normals for shadow bias.
+Opaque rasterization writes base color/metallic, octahedrally encoded shading normal/occlusion/flags, emission/roughness, and octahedrally encoded geometric normals. A compute pass reconstructs world position from depth, evaluates shared lighting, and writes HDR radiance. Background pixels retain the clear or procedural sky. GTAO and shadow bias use geometric normals at the same precision in both storage layouts.
 
-The compute pass also writes the existing expanded normal, motion and validity products used by inspection and reconstruction. Exposure, output conversion and game UI composition follow lighting; optional FSR reconstruction consumes HDR and the expanded products before output composition.
+Ordinary color playback without numeric scene-product probes or FSR skips previous-position raster inputs and the expanded normal, motion and validity attachments. Color screenshots are still available during that playback. Standalone captures, diagnostic playback, playback with probes and FSR use the full layout. In the full layout, opaque rasterization also writes motion and the compute pass expands the normal, motion and validity products before inspection or reconstruction. Exposure, output conversion and game UI composition follow lighting.
 
-Additional material buffers cost **32 bytes per render pixel**, excluding the reused HDR image, depth and existing expanded products. At 1920×1080 that is 66,355,200 bytes, about 63.3 MiB. Reconstruction uses its internal render extent for these buffers. This is logical image payload, not measured total VRAM consumption. Expanded products are currently allocated even when no inspection or reconstruction requests them.
+Additional material buffers cost **24 bytes per render pixel** for ordinary color playback and **32 bytes** for the full layout. The expanded products of the full layout use another **17 bytes per pixel**. At 1920×1080 ordinary color playback uses **51,840,000 fewer logical image bytes** (49.4 MiB). These counts exclude reused HDR and depth, and measure texel payload. Reconstruction uses its internal render extent for the full layout.
 
 ## Diagnostics and limits
 
-`render_diagnostics.lighting_path` identifies the actual path. `deferred_buffer_bytes` reports the additional material storage. `deferred_lighting_gpu` measures the lighting dispatch where GPU timestamps are available; it is contained within the existing post interval and must not be added to that interval a second time.
+`render_diagnostics.lighting_path` identifies the actual path. `deferred_buffer_bytes` reports the additional material storage. Check `scene_products.available` and `scene_products.motion_available` for expanded outputs. In ordinary deferred color playback both flags are false, their byte counts are zero and `history_reset_reason` is `products_unavailable`. `deferred_lighting_gpu` measures the lighting dispatch where GPU timestamps are available. It is contained within the existing post interval.
 
-The path requires a rigid camera transform and supported storage-image formats. Authored color/emission values that exceed half-float storage range are rejected. It supports neither deferred MSAA nor a new transparency pipeline. Forward rendering remains available for comparison and supported MSAA workflows.
+The path requires a rigid camera transform and supported storage-image formats. Scene rendering enables Vulkan's `shaderDemoteToHelperInvocation` for fragment alpha cutouts and selects a device that exposes it. Authored color and emission values must fit the half-float storage range. Deferred rendering uses one sample per pixel. Forward rendering supports MSAA.
 
 Tests cover separate concerns: analytic radiance and forward comparisons; render-graph resource contracts; reconstruction lifecycle; UI composition; lighting/shadows; skinning and motion. Passing one concern does not qualify the others. Published implementation status and evidence, rather than the existence of a fixture, determine which workflows have been qualified.
 
@@ -45,3 +45,33 @@ poima-scene-motion-test.exe OUTPUT_PREFIX GPU_INDEX deferred
 The Python suites `lighting_capture.py`, `shadow_capture.py`, `clustered_lighting_capture.py`, `sky_capture.py` and `gpu_skinning_capture.py` accept the engine executable followed by `--output DIRECTORY --gpu GPU_INDEX --lighting-path deferred`. `reconstruction_ui_capture.py` takes the UI fixture executable instead. Use Windows Python for native Windows paths, or the suites' `--windows-interop` option from WSL.
 
 Enable the installed Khronos validation layer and synchronization validation when reproducing GPU qualification. Preserve stdout, stderr and generated evidence; a successful image comparison does not excuse a validation error. Run each suite separately on each device and verify its reported GPU name. Headless contract tests and `poima-render-schedule-test` provide separate CPU-side checks.
+
+Run `tests/scene_products_capture.py POIMA --output DIRECTORY --gpu GPU_INDEX --deferred-player-color` to compare replayed color pixels with and without numerical probes, including both GTAO settings. It also checks the available products and bytes, valid surface and motion samples, and the shading-normal debug view.
+
+## Color playback qualification — 0.0.281
+
+The [qualification record](evidence/m2-deferred-color-281.json) covers Windows
+Vulkan on the AMD integrated GPU and RTX 4070 Laptop GPU. It combines standalone
+inspection captures, replays with and without numeric probes, native motion
+and FSR lifecycle checks, and the Performance Yard workload. All 60 paired
+inspection captures match byte-for-byte, including partial workgroups and
+rotated cameras. Each adapter also matches its unprobed and probed color
+replays with GTAO enabled and disabled. Separate
+323×243 replay checks use Khronos synchronization validation with GTAO enabled
+and disabled. Both reference adapters report the missing shader-demotion
+feature and the candidate enables it. The validation replays match the
+reference images exactly.
+
+The performance comparison uses sequential nonfocusable 1080p game runs with
+medium GTAO, 30 seconds of warm-up and 60 measured seconds. GPU durations
+measure submitted work on the graphics queue. The focused Alpha workload and
+GPU residency have separate acceptance checks.
+
+| Adapter | Opaque p95, 0.0.280 → 0.0.281 | Total GPU p95, 0.0.280 → 0.0.281 |
+| --- | --- | --- |
+| AMD Radeon integrated | 7.322 → 4.935 ms | 25.224 → 21.748 ms |
+| RTX 4070 Laptop | 1.566 → 1.162 ms | 6.876 → 6.760 ms |
+
+Both builds complete three laps at about 60 simulation ticks per second
+on each adapter. The initial paused screenshots in the background runs
+match their references exactly.

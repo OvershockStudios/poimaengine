@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.281
+
+- Use narrower deferred render targets and skip motion outputs during ordinary color gameplay without temporal reconstruction.
+- Enable Vulkan fragment demotion for scene and shadow shaders with alpha cutouts.
+
 ## 0.0.280
 
 - Reconstruct and evaluate ambient occlusion horizons in camera space.

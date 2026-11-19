@@ -29,7 +29,7 @@ struct Fixture {
                 f.resources[f.hdr].format=Format::rgba16_float;
                 f.material_base=add(Kind::texture,Lifetime::shared);f.resources[f.material_base].format=Format::rgba16_float;
                 f.material_surface=add(Kind::texture,Lifetime::shared);f.resources[f.material_surface].format=Format::rgba16_float;
-                f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=Format::rgba32_float;
+                f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=s.products ? Format::rgba32_float : Format::rg32_float;
             }
             if(s.ambient_occlusion) {
                 f.ao_raw=add(Kind::texture,Lifetime::shared);f.resources[f.ao_raw].format=Format::r16_float;
@@ -461,6 +461,29 @@ void deferred_contracts(){
     rejects("temporal preparation without deferred lighting",[&]{upscale.validate();});
 }
 
+void deferred_color_contracts(){
+    for(bool ao:{false,true}) {
+        auto settings=rich();settings.deferred=true;settings.ambient_occlusion=ao;
+        Fixture fixture(settings,1,true);
+        fixture.f.camera_draws.front().previous_vertices=none;
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& lighting=pass(plan,PassId::deferred_lighting).accesses;
+        check(std::none_of(lighting.begin(),lighting.end(),[](const Access& access){return access.use==Use::image_write;}),
+              "Deferred color lighting writes an expanded product");
+        auto invalid=plan;
+        invalid.frame.resources[invalid.frame.material_correspondence].format=Format::rgba32_float;
+        rejects("deferred color normal format",[&]{invalid.validate();});
+        invalid=plan;invalid.frame.motion=invalid.frame.material_correspondence;
+        rejects("deferred color with an unexpected motion role",[&]{invalid.validate();});
+        invalid=plan;invalid.settings.products_debug=true;
+        rejects("deferred color cannot serve a diagnostic view",[&]{invalid.validate();});
+        invalid=plan;invalid.settings.reconstruction=true;
+        rejects("deferred color cannot supply temporal inputs",[&]{invalid.validate();});
+        invalid=plan;invalid.frame.probe_points={{0,0}};
+        rejects("deferred color cannot supply product probes",[&]{invalid.validate();});
+    }
+}
+
 void ambient_occlusion_contracts(){
     for(bool debug:{false,true})for(bool sky:{false,true})for(bool skin:{false,true})for(bool clustered:{false,true}) {
         auto settings=rich();settings.products=settings.deferred=settings.ambient_occlusion=true;
@@ -572,4 +595,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

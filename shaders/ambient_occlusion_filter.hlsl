@@ -23,7 +23,7 @@ bool ao_load(int2 p,uint2 extent,out float3 world,out float3 normal) {
     if(any(p<0) || any(p>=int2(extent)) || any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw))return false;
     const float flags_value=ao_surface.Load(int3(p,0)).w,d=ao_depth.Load(int3(p,0));
     if(!isfinite(flags_value) || (((uint)round(flags_value)&9u)!=9u) || !isfinite(d) || d<0 || d>=1)return false;
-    const float2 oct=ao_correspondence.Load(int3(p,0)).zw;
+    const float2 oct=ao_correspondence.Load(int3(p,0)).xy;
     if(!all(isfinite(oct)))return false;
     normal=ao_normal(oct);
     const float z=cluster_depth.z/((1-d)+d*(cluster_depth.z/cluster_depth.w));

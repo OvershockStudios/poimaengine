@@ -24,7 +24,7 @@ Use the actual revision and camera ID from the project. Change the view to `shad
 
 ## Products and display conventions
 
-At one sample, scene rendering produces depth and shading normals even when the selected view is `color`. Ordinary multisampled color rendering retains its existing path; this milestone does not define multisample depth/normal products or a surface-aware resolve.
+At one sample, standalone captures provide depth and shading normals even when the selected view is `color`. Ordinary deferred color playback skips the expanded products when numeric probes and temporal reconstruction are both omitted. Select a debug view or request probes at playback launch to obtain them. Multisampled color rendering provides the resolved color image.
 
 | Product | Internal representation | Debug display |
 | --- | --- | --- |

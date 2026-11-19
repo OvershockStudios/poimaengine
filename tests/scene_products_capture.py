@@ -19,7 +19,9 @@ def component(n,kind,value):return {'op':'component.set','id':uid(n) if isinstan
 def normal_rgb(normal):return tuple(round((x*.5+.5)*255) for x in normal)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('binary',type=Path);p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--reference-binary',type=Path);p.add_argument('--gpu',type=int,default=0);p.add_argument('--windows-interop',action='store_true');a=p.parse_args()
+    p.add_argument('--reference-binary',type=Path);p.add_argument('--gpu',type=int,default=0);p.add_argument('--windows-interop',action='store_true')
+    p.add_argument('--deferred-player-color',action='store_true', help='Compare deferred color play with and without requested products')
+    a=p.parse_args()
     check(not sys.flags.optimize,'Shared BMP reader requires assertions')
     run=a.output.resolve()/uuid.uuid4().hex;run.mkdir(parents=True);world=run/'world.json';revision=0
     report={'passed':False,'runs':[],'checks':{},'images':{},'gpu_index':a.gpu,
@@ -127,6 +129,46 @@ def main():
             played=image(name,rows[1],view);reference=image(name+'-reference',rows[2],view)
             check(played==reference,'Continuous diagnostic player differs from isolated same-state capture')
             probe(name+'_analytic',played,(51,51,51) if view=='depth' else normal_rgb((0,0,1)))
+        if a.deferred_player_color:
+            for mode in ('none','gtao'):
+                def play_color(label, index, view='color', probes=()):
+                    name=f'deferred-{mode}-{label}'
+                    session=uid(index)
+                    _,params=request(name,view,'runtime.capture',{'session_id':session})
+                    params.update(request_id=uuid.uuid4().hex,expected_tick=0,controller=uid(20),mode='replay',
+                                  sequence=[{'ticks':3}],audio=False,lighting_path='deferred',
+                                  ambient_occlusion={'mode':mode},scene_product_probes=list(probes))
+                    _,result=batch([('runtime.start',{'session_id':session,'revision':revision}),('runtime.play',params)])
+                    check(result['tick']==3 and result['frames_presented']==4,'Deferred replay did not present three ticks')
+                    diag=result['render_diagnostics']
+                    check(diag['lighting_path']=='deferred' and diag['ambient_occlusion']['mode']==mode,diag)
+                    check(result['gpu']==report['gpu_name'] and result['capture_written'] and
+                          result['hardware'] and result['nvrhi_errors']==0,result)
+                    return name,result
+
+                base=920 if mode=='none' else 930
+                lean_name,lean=play_color('color',base)
+                observed_name,observed=play_color('probed-color',base+1,probes=({'x':160,'y':120},{'x':5,'y':5}))
+                observed_image=image(observed_name,observed,'color')
+                lean_path=run/(lean_name+'.bmp')
+                check(pixels(lean_path)==observed_image,'Deferred color differs when observation products are requested')
+                lean_diag=lean['render_diagnostics']
+                lean_products=lean_diag['scene_products']
+                check(not lean_products['available'] and not lean_products['motion_available'] and
+                      lean_products['normal_buffer_bytes']==lean_products['motion_buffer_bytes']==0 and
+                      lean_products['history_reset_reason']=='products_unavailable',lean_products)
+                check(lean_diag['deferred_buffer_bytes']==320*240*24,lean_diag['deferred_buffer_bytes'])
+                full_diag=observed['render_diagnostics']
+                full_products=full_diag['scene_products']
+                surface,sky=full_products['probes']
+                check(full_diag['deferred_buffer_bytes']==320*240*32 and full_products['history_valid'] and
+                      full_products['motion_available'] and full_products['motion_buffer_bytes']==320*240*9,full_products)
+                check(surface['surface_valid'] and surface['motion_valid'] and surface['shading_normal']==[0,0,1] and
+                      surface['motion']==[0,0] and not sky['surface_valid'] and not sky['motion_valid'],(surface,sky))
+                debug_name,debug=play_color('normal',base+2,'shading_normal')
+                probe(debug_name,image(debug_name,debug,'shading_normal'),normal_rgb((0,0,1)))
+                report['images'][lean_name]={'sha256':hashlib.sha256(lean_path.read_bytes()).hexdigest(),'report':lean}
+                report['checks'][f'deferred_{mode}_color_equal_with_probes']=True
         edit([component(1,'Transform',transform((.5,1,5)))])
         prior=None
         for time in (0,1):

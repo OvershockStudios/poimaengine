@@ -36,8 +36,12 @@
 #include "poima/scene_ps.hpp"
 #include "poima/scene_deferred_vs.hpp"
 #include "poima/scene_deferred_ps.hpp"
+#include "poima/scene_deferred_color_vs.hpp"
+#include "poima/scene_deferred_color_ps.hpp"
 #include "poima/deferred_lighting_cs.hpp"
 #include "poima/deferred_lighting_ao_cs.hpp"
+#include "poima/deferred_lighting_color_cs.hpp"
+#include "poima/deferred_lighting_color_ao_cs.hpp"
 #include "poima/ambient_occlusion_cs.hpp"
 #include "poima/ambient_occlusion_filter_cs.hpp"
 #include "poima/scene_output_ao_ps.hpp"
@@ -380,6 +384,10 @@ struct Context {
     nvrhi::TextureHandle multisample_color;
     nvrhi::TextureHandle scene_hdr,scene_normal,scene_motion,scene_motion_valid;
     bool deferred=false;
+    bool scene_products_enabled=false;
+    unsigned deferred_material_bytes_per_pixel() const {
+        return deferred ? (scene_products_enabled ? 32u : 24u) : 0u;
+    }
     nvrhi::TextureHandle material_base,material_surface,material_correspondence;
     nvrhi::ShaderHandle deferred_cs;
     nvrhi::BindingLayoutHandle deferred_layout;
@@ -668,6 +676,9 @@ struct Context {
         require(reconstruction_mode>=ReconstructionMode::none && reconstruction_mode<=ReconstructionMode::fsr3_performance,"Invalid reconstruction mode.");
         require(reconstruction_mode==ReconstructionMode::none || (scene && options.samples==1 && scene_debug_view==SceneDebugView::color),"FSR reconstruction requires a single-sample color scene.");
         samples = scene ? options.samples : 1;
+        const bool color_only_player=deferred && player && !editor && scene_debug_view==SceneDebugView::color &&
+            product_probes.empty() && reconstruction_mode==ReconstructionMode::none;
+        scene_products_enabled=scene && samples==1 && !color_only_player;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
         viewmodel_samples=options.viewmodel_samples;
         require(viewmodel_samples==1 || viewmodel_samples==2 || viewmodel_samples==4 || viewmodel_samples==8,"Foreground samples must be 1, 2, 4 or 8.");
@@ -725,6 +736,7 @@ struct Context {
             features.pNext = &features12;
             candidate.getFeatures2(&features,dispatch);
             if (!features12.timelineSemaphore || !features13.synchronization2 || !features13.dynamicRendering) continue;
+            if (scene && !features13.shaderDemoteToHelperInvocation) continue;
             const auto queues = candidate.getQueueFamilyProperties(dispatch);
             for (std::uint32_t family = 0; family < queues.size(); ++family) {
                 if (reconstruction_mode!=ReconstructionMode::none && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
@@ -740,12 +752,14 @@ struct Context {
                 break;
             }
         }
-        require(static_cast<bool>(physical), "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Software devices require --allow-software.");
+        require(static_cast<bool>(physical), "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Scene shaders also require shaderDemoteToHelperInvocation. Software devices require --allow-software.");
         const float priority = 1.0f;
         vk::DeviceQueueCreateInfo queue_info({}, queue_family, 1, &priority);
         vk::PhysicalDeviceVulkan13Features enabled13;
         enabled13.synchronization2 = true;
         enabled13.dynamicRendering = true;
+        // DXC emits DemoteToHelperInvocation for scene and shadow alpha tests.
+        enabled13.shaderDemoteToHelperInvocation = scene != nullptr;
         vk::PhysicalDeviceVulkan12Features enabled12;
         enabled12.timelineSemaphore = true;
         enabled12.pNext = &enabled13;
@@ -832,8 +846,22 @@ struct Context {
         require(create_swapchain(options),"The initial window has an empty rendering extent.");
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        vertex_shader = scene ? (deferred ? create_embedded_shader(checked,vs_desc,poima_scene_deferred_vs) : samples==1 ? create_embedded_shader(checked,vs_desc,poima_scene_products_vs) : create_embedded_shader(checked,vs_desc,poima_scene_vs)) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
-        pixel_shader = scene ? (deferred ? create_embedded_shader(checked,ps_desc,poima_scene_deferred_ps) : samples==1 ? create_embedded_shader(checked,ps_desc,poima_scene_products_ps) : create_embedded_shader(checked,ps_desc,poima_scene_ps)) : create_embedded_shader(checked,ps_desc,poima_smoke_ps);
+        if(deferred && !scene_products_enabled) {
+            vertex_shader=create_embedded_shader(checked,vs_desc,poima_scene_deferred_color_vs);
+            pixel_shader=create_embedded_shader(checked,ps_desc,poima_scene_deferred_color_ps);
+        } else if(deferred) {
+            vertex_shader=create_embedded_shader(checked,vs_desc,poima_scene_deferred_vs);
+            pixel_shader=create_embedded_shader(checked,ps_desc,poima_scene_deferred_ps);
+        } else if(scene_products_enabled) {
+            vertex_shader=create_embedded_shader(checked,vs_desc,poima_scene_products_vs);
+            pixel_shader=create_embedded_shader(checked,ps_desc,poima_scene_products_ps);
+        } else if(scene) {
+            vertex_shader=create_embedded_shader(checked,vs_desc,poima_scene_vs);
+            pixel_shader=create_embedded_shader(checked,ps_desc,poima_scene_ps);
+        } else {
+            vertex_shader=create_embedded_shader(checked,vs_desc,poima_smoke_vs);
+            pixel_shader=create_embedded_shader(checked,ps_desc,poima_smoke_ps);
+        }
         require(vertex_shader && pixel_shader, "Compiled SPIR-V shader creation failed.");
         nvrhi::GraphicsPipelineDesc pipeline_desc;
         pipeline_desc.VS = vertex_shader;
@@ -847,7 +875,7 @@ struct Context {
                 nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(32).setElementStride(sizeof(Vertex))};
-            if(samples==1)attributes.push_back(nvrhi::VertexAttributeDesc().setName("PREVIOUS_POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)).setBufferIndex(1));
+            if(scene_products_enabled)attributes.push_back(nvrhi::VertexAttributeDesc().setName("PREVIOUS_POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)).setBufferIndex(1));
             input_layout = checked->createInputLayout(attributes.data(),static_cast<std::uint32_t>(attributes.size()),vertex_shader);
             require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
@@ -1004,13 +1032,13 @@ struct Context {
         // Pipeline values are exact local selectors of the two immutable pipeline
         // handles in each pass, never truncated pointers or hashed identities.
         std::vector<render_batches::Candidate> candidates;candidates.reserve(draws.size());
-        for(const auto& draw:draws)candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,key(draw,draw.bindings.Get(),samples==1,draw.cull ? 1u : 0u)});
+        for(const auto& draw:draws)candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,key(draw,draw.bindings.Get(),scene_products_enabled,draw.cull ? 1u : 0u)});
         camera_batch_plan=render_batches::plan(candidates,diagnostics.draw_instancing);
         shadow_batch_plans.reserve(shadow_plan.size());
         for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
             candidates.clear();
             for(const auto& draw:draws)candidates.push_back({draw.object_index,(draw.shadow_mask & (1u<<layer))!=0,
-                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadow_bindings.Get(),samples==1,draw.masked_shadow_bindings ? 1u : 0u)});
+                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadow_bindings.Get(),scene_products_enabled,draw.masked_shadow_bindings ? 1u : 0u)});
             shadow_batch_plans.push_back(render_batches::plan(candidates,diagnostics.draw_instancing));
         }
         candidates.clear();candidates.reserve(viewmodel_draws.size());
@@ -1228,13 +1256,13 @@ struct Context {
             nvrhi::GraphicsState state;state.pipeline=shadow_pipeline;state.framebuffer=shadow_framebuffers.at(layer);state.bindings.push_back(shadow_bindings);
             const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
             state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
-            if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
+            if(scene_products_enabled)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
             for(const auto& batch:shadow_batch_plans.at(layer)) {
                 const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.masked_shadow_bindings ? masked_shadow_pipeline : shadow_pipeline;
                 state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : shadow_bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
-                if(samples==1)state.vertexBuffers[1].buffer=draw.previous_vertices;
+                if(scene_products_enabled)state.vertexBuffers[1].buffer=draw.previous_vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
                 commands->setPushConstants(&indices,sizeof(indices));
@@ -1633,12 +1661,20 @@ struct Context {
             auto desc=hdr;desc.format=pixel_format;desc.isUAV=false;desc.debugName=name;
             auto image=checked->createTexture(desc);require(bool(image),"Deferred material allocation failed.");return image;
         };
-        for(auto storage_format:{vk::Format::eR16G16B16A16Sfloat,vk::Format::eR32G32Sfloat,vk::Format::eR8Unorm})
+        auto require_storage=[&](vk::Format storage_format) {
             require(bool(physical.getFormatProperties(storage_format,dispatch).optimalTilingFeatures&vk::FormatFeatureFlagBits::eStorageImage),"Deferred output storage format is unavailable.");
+        };
+        require_storage(vk::Format::eR16G16B16A16Sfloat);
+        if(scene_products_enabled) {
+            require_storage(vk::Format::eR32G32Sfloat);
+            require_storage(vk::Format::eR8Unorm);
+        }
         material_base=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Deferred base and metallic");
         material_surface=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Deferred normal, occlusion and flags");
-        material_correspondence=allocate(nvrhi::Format::RGBA32_FLOAT,vk::Format::eR32G32B32A32Sfloat,"Deferred motion and geometric normal");
-        diagnostics.deferred_buffer_bytes=std::uint64_t(hdr.width)*hdr.height*32;
+        material_correspondence=scene_products_enabled
+            ? allocate(nvrhi::Format::RGBA32_FLOAT,vk::Format::eR32G32B32A32Sfloat,"Deferred geometric normal and motion")
+            : allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,"Deferred geometric normal");
+        diagnostics.deferred_buffer_bytes=std::uint64_t(hdr.width)*hdr.height*deferred_material_bytes_per_pixel();
         ao_bindings={};
         if(ao_enabled) {
             const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|vk::FormatFeatureFlagBits::eTransferSrc;
@@ -1687,9 +1723,15 @@ struct Context {
     void prepare_deferred_lighting() {
         if(!deferred)return;
         if(!deferred_layout) {
-            deferred_cs=ao_enabled ? create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_deferred_lighting_ao_cs) : create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_deferred_lighting_cs);
+            const auto compute=nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
+            if(scene_products_enabled)
+                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_cs);
+            else
+                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_color_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_color_cs);
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
-            for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
+            for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
+            layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(0));
+            if(scene_products_enabled)for(std::uint32_t i=1;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             for(std::uint32_t i=6;i<=8;++i)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(i));
             for(std::uint32_t i=10;i<=12;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
@@ -1707,7 +1749,8 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_SRV(2,material_correspondence)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,depth))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices))
-            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
+            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr));
+        if(scene_products_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
             .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
         if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,ao_filtered));
         bind_environment(desc);
@@ -1835,7 +1878,7 @@ struct Context {
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
             const auto pixels=std::uint64_t(extent.width)*extent.height;
-            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(samples==1 ? 17u : 0u)+(deferred ? 32u : 0u)+(ao_enabled ? 4u : 0u));
+            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u));
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
@@ -2357,10 +2400,11 @@ struct Context {
         if (scene) {
             // Scene radiance and MSAA resolve stay linear until the output pass.
             // Limit these new transient attachments independently of staging.
-            const auto hdr_bytes=std::uint64_t(extent.width)*extent.height*8u*(samples>1 ? samples+1u : 1u);
-            const auto normal_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*8u : 0u;
-            const auto motion_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*9u : 0u;
-            require(hdr_bytes+normal_bytes+motion_bytes+(deferred ? std::uint64_t(extent.width)*extent.height*32 : 0)+(ao_enabled ? std::uint64_t(extent.width)*extent.height*4 : 0)<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
+            const auto pixels=std::uint64_t(extent.width)*extent.height;
+            const auto hdr_bytes=pixels*8u*(samples>1 ? samples+1u : 1u);
+            const auto normal_bytes=scene_products_enabled ? pixels*8u : 0u;
+            const auto motion_bytes=scene_products_enabled ? pixels*9u : 0u;
+            require(hdr_bytes+normal_bytes+motion_bytes+pixels*(deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
             const auto hdr_format=vk::Format::eR16G16B16A16Sfloat;
             const auto properties=physical.getFormatProperties(hdr_format,dispatch).optimalTilingFeatures;
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
@@ -2379,10 +2423,11 @@ struct Context {
             scene_desc.initialState=nvrhi::ResourceStates::ShaderResource;scene_desc.keepInitialState=true;
             scene_desc.debugName="Resolved linear HDR scene";
             scene_hdr=checked->createTexture(scene_desc);require(bool(scene_hdr),"HDR scene target creation failed.");
-            if(samples==1) {
+            if(deferred || scene_products_enabled)
+                require(physical.getProperties(dispatch).limits.maxColorAttachments>=4,"Deferred or scene product rendering requires four color attachments.");
+            if(scene_products_enabled) {
                 scene_desc.debugName="World shading normal and surface validity";
                 scene_normal=checked->createTexture(scene_desc);require(bool(scene_normal),"Scene shading normal target creation failed.");
-                require(physical.getProperties(dispatch).limits.maxColorAttachments>=4,"Scene motion products require four color attachments.");
                 for(const auto product_format:{vk::Format::eR32G32Sfloat,vk::Format::eR8Unorm}) {
                     const auto flags=physical.getFormatProperties(product_format,dispatch).optimalTilingFeatures;
                     require((flags&needed)==needed,"Selected GPU lacks sampled/color/transfer motion product formats.");
@@ -2395,6 +2440,8 @@ struct Context {
                 scene_motion_valid=checked->createTexture(scene_desc);
                 require(scene_motion && scene_motion_valid,"Motion product allocation failed.");
                 scene_desc.format=nvrhi::Format::RGBA16_FLOAT;
+            }
+            if(samples==1) {
                 const auto depth_properties=physical.getFormatProperties(vk::Format::eD32Sfloat,dispatch).optimalTilingFeatures;
                 require(bool(depth_properties&vk::FormatFeatureFlagBits::eSampledImage),"Selected GPU lacks sampled D32 scene depth support.");
             }
@@ -3265,14 +3312,14 @@ struct Context {
     void render_opaque(std::uint32_t index) {
         nvrhi::GraphicsState state;state.pipeline=pipeline;state.framebuffer=framebuffers[index];
         state.viewport.addViewportAndScissorRect(raster_viewport());
-        if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(1));state.bindings.push_back(bindings);}
+        if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));if(scene_products_enabled)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(1));state.bindings.push_back(bindings);}
         commands->setGraphicsState(state);
         if(scene) {
             for(const auto& batch:camera_batch_plan) {
                 const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
-                if(samples==1)state.vertexBuffers[1].buffer=draw.previous_vertices;
+                if(scene_products_enabled)state.vertexBuffers[1].buffer=draw.previous_vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));

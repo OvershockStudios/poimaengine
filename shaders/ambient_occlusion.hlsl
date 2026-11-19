@@ -59,7 +59,7 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     ao_output[id.xy]=1;
     float3 position;
     if(!ao_load_position(int2(id.xy),uint2(width,height),position) || position.z<=0)return;
-    const float2 oct=ao_correspondence.Load(int3(id.xy,0)).zw;
+    const float2 oct=ao_correspondence.Load(int3(id.xy,0)).xy;
     if(!all(isfinite(oct)))return;
     const float3 world_normal=ao_normal(oct);
     // Deferred rendering requires a rigid camera. Rotate the center normal

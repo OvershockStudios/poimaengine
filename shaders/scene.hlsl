@@ -124,11 +124,20 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
 }
 
 #if POIMA_SCENE_DEFERRED
-struct ScenePixel {float4 base_metallic : SV_Target0;float4 surface : SV_Target1;float4 emission_roughness : SV_Target2;float4 correspondence : SV_Target3;};
+struct ScenePixel {
+    float4 base_metallic : SV_Target0;
+    float4 surface : SV_Target1;
+    float4 emission_roughness : SV_Target2;
+#if POIMA_SCENE_PRODUCTS
+    float4 correspondence : SV_Target3;
+#else
+    float2 geometric_normal : SV_Target3;
+#endif
+};
 #elif POIMA_SCENE_PRODUCTS
 struct ScenePixel {float4 color : SV_Target0;float4 shading_normal : SV_Target1;float2 motion : SV_Target2;float motion_valid : SV_Target3;};
 #endif
-#if POIMA_SCENE_PRODUCTS
+#if POIMA_SCENE_PRODUCTS || POIMA_SCENE_DEFERRED
 ScenePixel pixel_main(VertexOutput input, bool front : SV_IsFrontFace) {
 #else
 float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
@@ -138,9 +147,11 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     // color, depth, normal, correspondence or G-buffer value is written.
     test_material_alpha(input.uv,input.object_index);
     const float3 n=material.normal;
+#if POIMA_SCENE_PRODUCTS || POIMA_SCENE_DEFERRED
+    const bool normal_valid=all(isfinite(n)) && dot(n,n)>1e-20;
+#endif
 #if POIMA_SCENE_PRODUCTS
     float2 motion=0;float motion_valid=0;
-    const bool normal_valid=all(isfinite(n)) && dot(n,n)>1e-20;
     if(normal_valid && input.motion_valid!=0 && all(isfinite(input.previous_clip)) && input.previous_clip.w>0 && all(isfinite(input.current_clip)) && input.current_clip.w>0) {
         const float2 previous_ndc=input.previous_clip.xy/input.previous_clip.w;
         const float2 previous_uv=float2(previous_ndc.x*.5+.5,.5-previous_ndc.y*.5);
@@ -155,10 +166,15 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     ScenePixel result;
     result.base_metallic=float4(material.base,material.metallic);
     // Presence and valid shading normal are distinct: bad geometry must not become sky.
-    const uint flags=1u | (material.legacy ? 2u : 0u) | (motion_valid>.5 ? 4u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
+    uint flags=1u | (material.legacy ? 2u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
+#if POIMA_SCENE_PRODUCTS
+    flags|=motion_valid>.5 ? 4u : 0u;
+    result.correspondence=float4(encode_normal(material.geometric_normal),motion);
+#else
+    result.geometric_normal=encode_normal(material.geometric_normal);
+#endif
     result.surface=float4(encode_normal(n),material.occlusion,float(flags));
     result.emission_roughness=float4(material.emission,material.roughness);
-    result.correspondence=float4(motion,encode_normal(material.geometric_normal));
     return result;
 #else
     const float3 color=shade_surface(material,input.world_position,input.position.xy);

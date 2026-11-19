@@ -8,9 +8,11 @@ Texture2D<float> indirect_visibility : register(t4);
 #endif
 Texture2D<float> scene_depth : register(t3);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> scene_hdr : register(u0);
+#if POIMA_SCENE_PRODUCTS
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> shading_normal : register(u1);
 [[vk::image_format("rg32f")]] RWTexture2D<float2> surface_motion : register(u2);
 [[vk::image_format("r8")]] RWTexture2D<float> motion_valid : register(u3);
+#endif
 [numthreads(8,8,1)]
 void compute_main(uint3 id : SV_DispatchThreadID) {
     uint width,height;scene_hdr.GetDimensions(width,height);
@@ -21,7 +23,10 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     const uint flags=(uint)round(surface.w);
     if((flags&1u)==0) {
         // Clear/sky radiance is already initialized; only geometry has products.
-        shading_normal[id.xy]=0;surface_motion[id.xy]=0;motion_valid[id.xy]=0;return;
+#if POIMA_SCENE_PRODUCTS
+        shading_normal[id.xy]=0;surface_motion[id.xy]=0;motion_valid[id.xy]=0;
+#endif
+        return;
     }
     const float4 base=material_buffer.Load(int3(id.xy,0));
     const float4 correspondence=correspondence_buffer.Load(int3(id.xy,0));
@@ -31,7 +36,7 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     material.base=base.rgb;material.metallic=base.a;
     const bool normal_is_valid=(flags&8u)!=0;
     material.normal=normal_is_valid ? decode_normal(surface.xy) : float3(0,0,0);material.occlusion=surface.z;
-    material.geometric_normal=normal_is_valid ? decode_normal(correspondence.zw) : float3(0,0,0);
+    material.geometric_normal=normal_is_valid ? decode_normal(correspondence.xy) : float3(0,0,0);
     material.emission=emission.rgb;material.roughness=emission.a;material.legacy=(flags&2u)!=0;material.receive_shadows=(flags&16u)==0;
     const float depth=scene_depth.Load(int3(id.xy,0));
     const float near_plane=cluster_depth.z,far_plane=cluster_depth.w;
@@ -45,6 +50,8 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     visibility=indirect_visibility.Load(int3(id.xy,0));
 #endif
     scene_hdr[id.xy]=float4(shade_surface(material,world,pixel,visibility),1);
+#if POIMA_SCENE_PRODUCTS
     shading_normal[id.xy]=float4(material.normal,normal_is_valid ? 1 : 0);
-    surface_motion[id.xy]=correspondence.xy;motion_valid[id.xy]=normal_is_valid && (flags&4u)!=0 ? 1 : 0;
+    surface_motion[id.xy]=correspondence.zw;motion_valid[id.xy]=normal_is_valid && (flags&4u)!=0 ? 1 : 0;
+#endif
 }

@@ -38,7 +38,7 @@ SceneSnapshot scene(){
     SceneSnapshot s;s.world_id="reconstruction-world";s.camera_id="camera";s.presentation_source_id=new_presentation_source_id();
     s.camera_world=local_matrix({0,0,4},{0,0,0,1},{1,1,1});s.vertical_fov=60;s.near_plane=.1;s.far_plane=100;
     s.lighting.preview=false;s.lighting.environment.ambient={0,0,0};
-    SceneObject o;o.entity_id="constant-radiance";o.world=identity_matrix();o.mesh=mesh;o.material=mesh->material;o.incarnation=1;s.objects.push_back(o);return s;
+    SceneObject o{};o.entity_id="constant-radiance";o.world=identity_matrix();o.mesh=mesh;o.material=mesh->material;o.incarnation=1;s.objects.push_back(o);return s;
 }
 void close_to(float actual,float expected,float tolerance,const char* why){check(std::isfinite(actual)&&std::abs(actual-expected)<=tolerance,why);}
 }
