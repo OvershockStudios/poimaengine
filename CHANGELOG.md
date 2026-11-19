@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.283
+
+- Connect the installed Antigravity CLI to Poima's desktop chat over ACP.
+- Route Antigravity's project tools to the same native world as the Game preview.
+
 ## 0.0.282
 
 - Add a Windows creator workspace with Codex chat and native game preview in the same project session.

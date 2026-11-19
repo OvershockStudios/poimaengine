@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.282**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.283**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.283 adds [Antigravity to desktop chat](AGENT_CLIENTS.md#antigravity-in-poima).
+The Windows creator test connects the installed Antigravity CLI 1.5.13,
+approves one read-only tool call, and compares the returned world ID and
+revision against the project on disk. The same run exercises Codex reconnect,
+Vulkan preview, close and reopen. [Results](evidence/m2-antigravity-283.json)
 
 Version 0.0.282 adds the [Windows creator workspace](DESKTOP_EDITOR.md#creator-workspace).
 The launcher creates and reopens local projects, and the workspace puts Codex

@@ -1,0 +1,74 @@
+{
+  "engine_version": "0.0.283",
+  "scope": "Windows creator workspace, signed-in Antigravity CLI, and an isolated project. One read-only ACP turn and scoped launcher/preview checks.",
+  "antigravity_cli_version": "1.5.13",
+  "antigravity_cli_sha512": "6b80a17a2bc34a969ed9ba31500a8201b0b4aad3e7fe061374022d161fec8bd7de49b6dc069a6ac67a90632e8671bbe860a7e94309bc5adbc536d27a75a86b58",
+  "test_sha256": "ae8938df901d09b39922e852ba474393270f7a236cca49627c06e80314d29b63",
+  "native_desktop": {
+    "passed": true,
+    "input": "Windows UI Automation and an owned WM_CLOSE message",
+    "editor_sha256": "1b2be1b81c912a39a12f69b537a7ea48f0ea00f62a895a9144e5a938a1fbc4e0",
+    "frontend_sha256": "73c2429740db2c4b761f62902a821af1653dfa0741961854737b41480e6d3aab",
+    "cli_sha256": "0879f4436d25ed870659cdecfd0cdf3bcdd96a4b13d03fb2d5d8bd351912b8d1",
+    "bridge_sha256": "feca149b9b2a50545c989ce845e9b1bd1e6f07c926f6fc47028cda796cb7e144",
+    "codex_connection_requested": true,
+    "antigravity_turn_requested": true,
+    "checks": {
+      "created": {
+        "id": "0bdeb8b4a57fa917ab11f3cff60ac4da",
+        "revision": 1
+      },
+      "first_preview": {
+        "session": "ab96e41382ea4c32ae2d63ad0e2dc714",
+        "tick": 2,
+        "frames": 1,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "stopped": true,
+      "antigravity_ready": true,
+      "antigravity_permissions": [
+        "world.inspect"
+      ],
+      "antigravity_read": {
+        "world_id": "65512b3f1b61848b9f357a39bac8542c",
+        "revision": 1
+      },
+      "antigravity_disconnected": true,
+      "codex_ready": true,
+      "codex_disconnected": true,
+      "codex_reconnected": true,
+      "closed_exit_code": 0,
+      "reopened_preview": {
+        "session": "eb88b7d4f3a84ca687864b615892261d",
+        "tick": 15,
+        "frames": 5,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "closed_during_play_exit_code": 0
+    }
+  },
+  "transport_fixture": {
+    "kind": "synthetic ACP peer alongside the existing RPC contract tests",
+    "passed": true,
+    "logs_sha256": "e233b9654b0cd38113b27bf1b2d46292f82b6fc1a14ae7c31c54ff6fd341a44e"
+  },
+  "recovered_failures": [
+    {
+      "cause": "The prompt response could be handled before the final text notification reached the UI, inserting the turn separator inside the world ID.",
+      "resolution": "Wait for delivered text and tool notifications before marking the prompt complete."
+    },
+    {
+      "cause": "The Windows test tried to observe an internal status label through an unavailable UI Automation peer.",
+      "resolution": "Use the Send control's ready state and verify the complete response exactly."
+    }
+  ],
+  "limits": [
+    "The actual Antigravity turn read world.inspect with user-scoped UI approval and preserved world and manifest hashes.",
+    "Antigravity authoring, resume, cancellation completion and standalone client setup were not exercised.",
+    "The Codex checks cover connect and reconnect without a model turn."
+  ]
+}

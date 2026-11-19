@@ -51,6 +51,6 @@ intended experience. After play, ask focused follow-up questions where the
 creator’s feedback changes a decision. The same project can be opened in the
 editor whenever direct editing would help.
 
-The interview can be run by a coding agent today. Interactive question cards,
-shared review and an integrated project launcher are planned interfaces for the
-same workflow.
+The [Windows creator workspace](DESKTOP_EDITOR.md#creator-workspace) runs
+the interview in chat. Use numbered choices until interactive question cards
+are available in the selected client.

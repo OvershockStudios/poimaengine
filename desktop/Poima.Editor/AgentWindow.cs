@@ -11,13 +11,15 @@ using System.Text.Json.Nodes;
 
 namespace Poima.Editor;
 
-/// <summary>First chat client over the shared engine endpoint; never calls NativeHost from a worker.</summary>
+/// <summary>Chat client over the shared engine endpoint; never calls NativeHost from a worker.</summary>
 internal sealed class AgentChat : UserControl
 {
     private readonly string projectRoot, endpoint;
     private readonly bool creator;
     private readonly CancellationTokenSource lifetime = new();
+    private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity" }, SelectedIndex = 0 };
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
+    private readonly TextBox agyExecutable = Field("Antigravity CLI executable", FindAntigravity());
     private readonly TextBox engine = Field("Poima executable", Path.Combine(AppContext.BaseDirectory, "poima.exe"));
     private readonly TextBox thread = Field("Conversation ID (empty starts a new conversation)", "");
     private readonly TextBox model = Field("Model (empty uses the CLI's advertised default)", "");
@@ -28,30 +30,35 @@ internal sealed class AgentChat : UserControl
     private readonly StackPanel approvals = new() { Spacing = 6 };
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
-    private CodexSession? session;
+    private IAgentSession? session;
     private string? activeTurn, unusedConversation;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
-    private bool submitting, closing, connecting, ready;
+    private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
+    private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
+    private bool submitting, closing, connecting, ready, cancelRequested;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
+    private bool UsesAntigravity => provider.SelectedIndex == 1;
+    private string ProviderName => UsesAntigravity ? "Antigravity" : "Codex";
     public AgentChat(string projectRoot, string endpoint, bool creator = false)
     {
         this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = creator ? 14 : 12;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"), Margin = new Thickness(14), RowSpacing = 8 };
-        prompt.PlaceholderText = creator ? "Describe the game you want to make…" : "Ask Codex about this project…";
+        prompt.PlaceholderText = creator ? "Describe the game you want to make…" : "Ask about this project…";
         var setup = new StackPanel { Spacing = 6 };
+        AutomationProperties.SetName(provider, "Agent provider");
         if (creator)
         {
             executable.Text = FindCodex();
-            connect.Content = "Connect Codex";
             allowEdits.IsChecked = false;
             allowEdits.Content = "Allow Poima tools without asking";
             ToolTip.SetTip(allowEdits, "Pre-approve Codex calls to Poima's world tools for this connection.");
             setup.Children.Add(new TextBlock { Text = "Game conversation", FontSize = 20, FontWeight = FontWeight.SemiBold });
-            setup.Children.Add(new TextBlock { Text = "Connect with your Codex sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
+            setup.Children.Add(new TextBlock { Text = "Connect with your agent’s sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
+            setup.Children.Add(provider);
             var settings = new StackPanel { Spacing = 6 };
-            settings.Children.Add(executable); settings.Children.Add(model); settings.Children.Add(thread);
+            settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(model); settings.Children.Add(thread);
             var options = new Expander { Header = "Connection settings", Content = settings };
             AutomationProperties.SetName(options, "Connection settings");
             setup.Children.Add(options);
@@ -62,9 +69,13 @@ internal sealed class AgentChat : UserControl
         }
         else
         {
-            setup.Children.Add(new TextBlock { Text = "Build with Codex", FontSize = 20 });
-            setup.Children.Add(new TextBlock { Text = "Uses your installed Codex login. Changes reach the same world as the editor.", TextWrapping = TextWrapping.Wrap });
-            setup.Children.Add(executable); setup.Children.Add(engine); setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits); setup.Children.Add(connect);
+            setup.Children.Add(new TextBlock { Text = "Build with an agent", FontSize = 20 });
+            setup.Children.Add(new TextBlock { Text = "Uses your installed agent’s login. Changes reach the same world as the editor.", TextWrapping = TextWrapping.Wrap });
+            setup.Children.Add(provider); setup.Children.Add(executable); setup.Children.Add(agyExecutable); setup.Children.Add(engine);
+            setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits);
+            var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            connection.Children.Add(connect); connection.Children.Add(disconnect);
+            setup.Children.Add(connection);
         }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
         Grid.SetRow(transcript, 2); root.Children.Add(transcript);
@@ -85,6 +96,22 @@ internal sealed class AgentChat : UserControl
         };
         send.Click += async (_, _) => await Send();
         stop.Click += async (_, _) => await Stop();
+        provider.SelectionChanged += (_, _) => UpdateProvider();
+        UpdateProvider();
+    }
+
+    private void UpdateProvider()
+    {
+        executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = !UsesAntigravity;
+        agyExecutable.IsVisible = UsesAntigravity;
+        connect.Content = "Connect " + ProviderName;
+    }
+
+    private static string FindAntigravity()
+    {
+        var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "agy", "bin", "agy.exe");
+        return File.Exists(installed) ? installed : "agy.exe";
     }
 
     private static string FindCodex()
@@ -124,12 +151,12 @@ internal sealed class AgentChat : UserControl
     }
     private void Controls()
     {
-        var live = ready && session?.ThreadId is not null && !closing;
+        var live = ready && session?.ConversationId is not null && !closing;
         send.IsEnabled = live && activeTurn is null && !submitting;
-        stop.IsEnabled = live && activeTurn is not null;
+        stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
         disconnect.IsEnabled = live && !Busy;
-        executable.IsEnabled = engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
+        provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
         allowEdits.IsEnabled = connect.IsEnabled;
     }
@@ -137,34 +164,24 @@ internal sealed class AgentChat : UserControl
     {
         connecting = true; Controls();
         status.Text = "Connecting…";
-        CodexSession? current = null;
+        IAgentSession? current = null;
         using var startup = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         startup.CancelAfter(TimeSpan.FromSeconds(60));
         try
         {
-            current = await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "", endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true);
+            current = UsesAntigravity
+                ? await AcpSession.ConnectAsync(agyExecutable.Text ?? "", engine.Text ?? "", endpoint, projectRoot, startup.Token)
+                : await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "", endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true);
             session = current;
             if (closing) { await current.DisposeAsync(); return; }
             _ = ReadEvents(current);
-            var catalog = await current.ListModelsAsync(startup.Token);
-            var available = (catalog?["data"] as JsonArray ?? throw new IOException("Codex returned no model catalog."))
-                .OfType<JsonObject>().Where(item => item["hidden"]?.GetValue<bool>() != true).ToArray();
-            var chosen = string.IsNullOrWhiteSpace(model.Text)
-                ? available.FirstOrDefault(item => item["isDefault"]?.GetValue<bool>() == true)?["model"]?.GetValue<string>()
-                : model.Text.Trim();
-            if (string.IsNullOrWhiteSpace(chosen) || !available.Any(item => item["model"]?.GetValue<string>() == chosen))
-                throw new InvalidOperationException("Choose a model offered by this Codex CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
-            model.Text = chosen;
-            ToolTip.SetTip(model, "Models offered by this CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
-            var requested = thread.Text?.Trim();
-            // Codex assigns an ID before the first turn persists the conversation.
-            // Only resume an existing ID once it may have a saved history.
-            var resume = string.IsNullOrEmpty(requested) || requested == unusedConversation ? null : requested;
-            var id = await current.OpenAsync(resume, startup.Token, chosen);
+            if (current is AcpSession acp) await acp.OpenAsync(startup.Token);
+            else await OpenCodex((CodexSession)current, startup.Token);
             if (!ReferenceEquals(session, current)) throw new IOException("Connection ended while opening the conversation.");
-            unusedConversation = resume is null ? id : null;
-            thread.Text = id; ready = true;
-            status.Text = creator ? "Connected to Codex." : "Connected · copy the conversation ID above to reopen this conversation later.";
+            if (current is AcpSession && !string.IsNullOrEmpty(transcript.Text))
+                Append("\nNew Antigravity conversation\n");
+            ready = true;
+            status.Text = "Connected to " + ProviderName + ".";
             Controls();
         }
         catch (Exception error)
@@ -175,15 +192,50 @@ internal sealed class AgentChat : UserControl
         }
         finally { connecting = false; Controls(); }
     }
+
+    private async Task OpenCodex(CodexSession current, CancellationToken cancellation)
+    {
+        var catalog = await current.ListModelsAsync(cancellation);
+        var available = (catalog?["data"] as JsonArray ?? throw new IOException("Codex returned no model catalog."))
+            .OfType<JsonObject>().Where(item => item["hidden"]?.GetValue<bool>() != true).ToArray();
+        var chosen = string.IsNullOrWhiteSpace(model.Text)
+            ? available.FirstOrDefault(item => item["isDefault"]?.GetValue<bool>() == true)?["model"]?.GetValue<string>()
+            : model.Text.Trim();
+        if (string.IsNullOrWhiteSpace(chosen) || !available.Any(item => item["model"]?.GetValue<string>() == chosen))
+            throw new InvalidOperationException("Choose a model offered by this Codex CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
+        model.Text = chosen;
+        ToolTip.SetTip(model, "Models offered by this CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
+        var requested = thread.Text?.Trim();
+        // An unused conversation does not yet have provider history to resume.
+        var resume = string.IsNullOrEmpty(requested) || requested == unusedConversation ? null : requested;
+        var id = await current.OpenAsync(resume, cancellation, chosen);
+        unusedConversation = resume is null ? id : null;
+        thread.Text = id;
+    }
     private async Task Send()
     {
         if (!ready || session is not { } current || activeTurn is not null || submitting || string.IsNullOrWhiteSpace(prompt.Text)) return;
         completed.Clear();
-        var text = prompt.Text; submitting = true; Controls();
-        Append("\nYou: " + text + "\n\nCodex: "); prompt.Text = ""; status.Text = "Working…";
+        var text = prompt.Text; submitting = true; cancelRequested = false; Controls();
+        Append("\nYou: " + text + "\n\n" + ProviderName + ": "); prompt.Text = ""; status.Text = "Working…";
         try
         {
-            var id = await current.SendAsync(text, lifetime.Token);
+            if (current is AcpSession acp)
+            {
+                var reason = await acp.PromptAsync(text, lifetime.Token);
+                if (ReferenceEquals(session, current))
+                {
+                    status.Text = reason switch
+                    {
+                        "end_turn" => "Turn completed",
+                        "cancelled" => "Turn cancelled",
+                        _ => "Antigravity ended the turn: " + reason
+                    };
+                    Append("\n");
+                }
+                return;
+            }
+            var id = await ((CodexSession)current).SendAsync(text, lifetime.Token);
             if (ReferenceEquals(session, current))
             {
                 unusedConversation = null;
@@ -197,30 +249,53 @@ internal sealed class AgentChat : UserControl
                 status.Text = error.Message;
                 if (error is AgentExchangeException { OutcomeUnknown: true })
                 {
-                    unusedConversation = null;
+                    if (current is CodexSession) unusedConversation = null;
                     await Retire(current, error.Message);
                 }
             }
         }
-        finally { if (ReferenceEquals(session, current)) submitting = false; Controls(); }
+        finally
+        {
+            if (ReferenceEquals(session, current))
+            {
+                submitting = false;
+                if (current is AcpSession) ClearApprovals();
+            }
+            Controls();
+        }
     }
     private async Task Stop()
     {
-        if (session is not { } current || activeTurn is not { } id) return;
-        stop.IsEnabled = false;
+        if (session is not { } current || !stop.IsEnabled) return;
+        var id = activeTurn;
+        cancelRequested = true; Controls();
         try
         {
-            await current.InterruptAsync(id, lifetime.Token);
-            if (ReferenceEquals(session, current) && activeTurn == id) status.Text = "Stop requested; waiting for the turn to finish. Existing edits remain.";
+            if (current is AcpSession acp)
+            {
+                var pending = acpPermissions.Values.ToArray();
+                ClearApprovals();
+                await acp.CancelAsync(lifetime.Token);
+                foreach (var request in pending) await Reply(current, request, PermissionOutcome(null));
+            }
+            else await ((CodexSession)current).InterruptAsync(id!, lifetime.Token);
+            if (ReferenceEquals(session, current) && (current is AcpSession ? submitting : activeTurn == id))
+                status.Text = "Stop requested. Waiting for the turn to finish. Existing edits remain.";
         }
-        catch (Exception error) { status.Text = error.Message; Controls(); }
+        catch (Exception error)
+        {
+            if (ReferenceEquals(session, current)) { cancelRequested = false; status.Text = error.Message; Controls(); }
+        }
     }
-    private async Task ReadEvents(CodexSession current)
+    private async Task ReadEvents(IAgentSession current)
     {
         try
         {
             await foreach (var message in current.Events.ReadAllAsync(lifetime.Token).ConfigureAwait(false))
+            {
                 await Dispatcher.UIThread.InvokeAsync(() => Handle(current, message));
+                if (current is AcpSession acp) acp.AcknowledgeEvent();
+            }
         }
         catch (Exception error)
         {
@@ -231,50 +306,42 @@ internal sealed class AgentChat : UserControl
             });
         }
     }
-    private async Task Retire(CodexSession current, string message)
+    private async Task Retire(IAgentSession current, string message)
     {
         if (!ReferenceEquals(session, current)) return;
-        session = null; ready = false; activeTurn = null; submitting = false;
-        approvals.Children.Clear(); status.Text = message;
+        session = null; ready = false; activeTurn = null; submitting = false; cancelRequested = false;
+        ClearApprovals(); status.Text = message;
         var pending = retiringTask = DisposeSession(current);
         Controls();
         await pending;
         Controls();
     }
-    private async Task DisposeSession(CodexSession current)
+    private async Task DisposeSession(IAgentSession current)
     {
         try { await current.DisposeAsync(); }
         catch (Exception error) { if (!closing) status.Text = "Agent shutdown failed: " + error.Message; }
     }
-    private void Handle(CodexSession current, JsonObject message)
+    private void Handle(IAgentSession current, JsonObject message)
     {
         if (closing || !ReferenceEquals(session, current)) return;
         var method = message["method"]?.GetValue<string>() ?? "";
         var parameters = message["params"] as JsonObject;
+        if (current is AcpSession)
+        {
+            HandleAntigravity(current, method, parameters, message["id"]);
+            return;
+        }
         if (message["id"] is JsonNode requestId)
         {
             if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" && approvals.Children.Count < 16)
             {
-                var card = new StackPanel { Spacing = 4 };
-                card.Children.Add(new TextBlock { Text = method + "\n" + parameters?.ToJsonString(), TextWrapping = TextWrapping.Wrap });
-                var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-                foreach (var decision in new[] { "accept", "decline" })
-                {
-                    var button = new Button { Content = decision == "accept" ? "Approve once" : "Decline" };
-                    button.Click += async (_, _) =>
-                    {
-                        card.IsEnabled = false;
-                        try { await current.ReplyAsync(requestId, new JsonObject { ["decision"] = decision }, lifetime.Token); approvals.Children.Remove(card); }
-                        catch (Exception error) { status.Text = error.Message; }
-                    };
-                    buttons.Children.Add(button);
-                }
-                card.Children.Add(buttons); approvals.Children.Add(card);
+                ShowApproval(current, requestId, method + "\n" + parameters?.ToJsonString(),
+                    new JsonObject { ["decision"] = "accept" }, new JsonObject { ["decision"] = "decline" });
             }
             else _ = RejectUnsupported(current, requestId, method);
             return;
         }
-        if (parameters?["threadId"]?.GetValue<string>() != current.ThreadId) return;
+        if (parameters?["threadId"]?.GetValue<string>() != current.ConversationId) return;
         if (method == "item/agentMessage/delta") Append(parameters?["delta"]?.GetValue<string>() ?? "");
         else if (method == "turn/started") { activeTurn = parameters?["turn"]?["id"]?.GetValue<string>(); Controls(); }
         else if (method == "turn/completed")
@@ -287,7 +354,110 @@ internal sealed class AgentChat : UserControl
         }
         else if (method == "error") status.Text = parameters?.ToJsonString();
     }
-    private async Task RejectUnsupported(CodexSession current, JsonNode id, string method)
+    private void HandleAntigravity(IAgentSession current, string method, JsonObject? parameters, JsonNode? id)
+    {
+        var matches = current.ConversationId is { } conversation && parameters?["sessionId"]?.GetValue<string>() == conversation;
+        if (id is not null)
+        {
+            if (method != "session/request_permission")
+            {
+                _ = RejectUnsupported(current, id, method);
+                return;
+            }
+            var options = (parameters?["options"] as JsonArray)?.OfType<JsonObject>() ?? [];
+            string? Option(string kind) => options.FirstOrDefault(option => option["kind"]?.GetValue<string>() == kind)?["optionId"]?.GetValue<string>();
+            var allow = Option("allow_once");
+            var deny = PermissionOutcome(Option("reject_once"));
+            if (matches && submitting && !cancelRequested && approvals.Children.Count < 16 && !string.IsNullOrEmpty(allow))
+            {
+                var detail = DescribeAcpTool(parameters?["toolCall"] as JsonObject);
+                if (detail is { Length: > 0 and <= 16384 })
+                    ShowApproval(current, id, detail, PermissionOutcome(allow), deny);
+                else
+                {
+                    status.Text = "Antigravity requested permission without reviewable tool details.";
+                    _ = Reply(current, id, deny);
+                }
+            }
+            else _ = Reply(current, id, matches && submitting && !cancelRequested ? deny : PermissionOutcome(null));
+        }
+        else if (matches && method == "session/update" && parameters?["update"] is JsonObject update)
+        {
+            var kind = update["sessionUpdate"]?.GetValue<string>();
+            if (kind == "agent_message_chunk" &&
+                update["content"] is JsonObject content && content["type"]?.GetValue<string>() == "text")
+                Append(content["text"]?.GetValue<string>() ?? "");
+            else if (kind is "tool_call" or "tool_call_update" && submitting &&
+                update["toolCallId"]?.GetValue<string>() is { } toolId)
+            {
+                if (update["status"]?.GetValue<string>() is "completed" or "failed") acpToolDetails.Remove(toolId);
+                else if (acpToolDetails.Count < 128 && DescribeAcpTool(update) is { Length: > 0 and <= 16384 } detail)
+                    acpToolDetails[toolId] = detail;
+            }
+        }
+    }
+
+    private string DescribeAcpTool(JsonObject? tool)
+    {
+        if (tool is null) return "";
+        var detail = string.Join("\n", new[]
+        {
+            tool["title"]?.GetValue<string>(),
+            tool["rawInput"]?.ToJsonString(),
+            tool["locations"]?.ToJsonString(),
+            tool["content"]?.ToJsonString()
+        }.Where(text => !string.IsNullOrWhiteSpace(text)));
+        var previous = tool["toolCallId"]?.GetValue<string>() is { } id ? acpToolDetails.GetValueOrDefault(id) : null;
+        if (string.IsNullOrEmpty(previous) || detail.Contains(previous, StringComparison.Ordinal)) return detail;
+        if (previous.Contains(detail, StringComparison.Ordinal)) return previous;
+        return previous + "\n" + detail;
+    }
+
+    private static JsonObject PermissionOutcome(string? option) => new()
+    {
+        ["outcome"] = option is null ? new JsonObject { ["outcome"] = "cancelled" }
+            : new JsonObject { ["outcome"] = "selected", ["optionId"] = option }
+    };
+
+    private void ShowApproval(IAgentSession current, JsonNode id, string message, JsonObject allow, JsonObject deny)
+    {
+        var card = new StackPanel { Spacing = 4 };
+        var details = new TextBox { Text = message, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 130 };
+        AutomationProperties.SetName(details, "Agent approval details");
+        card.Children.Add(details);
+        if (current is AcpSession) acpPermissions.Add(card, id);
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        foreach (var (label, reply) in new[] { ("Approve once", allow), ("Decline", deny) })
+        {
+            var button = new Button { Content = label };
+            button.Click += async (_, _) =>
+            {
+                if (!ReferenceEquals(session, current) || closing || !card.IsEnabled || current is AcpSession && cancelRequested) return;
+                card.IsEnabled = false;
+                acpPermissions.Remove(card);
+                await Reply(current, id, reply);
+                approvals.Children.Remove(card);
+            };
+            buttons.Children.Add(button);
+        }
+        card.Children.Add(buttons); approvals.Children.Add(card);
+    }
+
+    private void ClearApprovals()
+    {
+        foreach (var child in approvals.Children) child.IsEnabled = false;
+        approvals.Children.Clear();
+        acpPermissions.Clear();
+        acpToolDetails.Clear();
+    }
+
+    private async Task Reply(IAgentSession current, JsonNode id, JsonObject reply)
+    {
+        try { await current.ReplyAsync(id, reply, lifetime.Token); }
+        catch (Exception error) { if (!closing && ReferenceEquals(session, current)) status.Text = error.Message; }
+    }
+
+    private async Task RejectUnsupported(IAgentSession current, JsonNode id, string method)
     {
         try { await current.RejectAsync(id, "This Poima client does not yet support " + method, lifetime.Token); status.Text = "Unsupported request declined: " + method; }
         catch (Exception error) { if (!closing) status.Text = error.Message; }
@@ -296,7 +466,7 @@ internal sealed class AgentChat : UserControl
     {
         ["ready"] = ready, ["connecting"] = connecting, ["send_enabled"] = send.IsEnabled,
         ["stop_enabled"] = stop.IsEnabled, ["connect_enabled"] = connect.IsEnabled,
-        ["thread_id"] = session?.ThreadId, ["turn_id"] = activeTurn,
+        ["thread_id"] = session?.ConversationId, ["turn_id"] = activeTurn,
         ["status"] = status.Text, ["transcript"] = transcript.Text,
         ["approvals"] = approvals.Children.Count
     };

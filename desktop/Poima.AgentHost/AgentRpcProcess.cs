@@ -29,6 +29,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
 {
     public const int MaximumFrameCharacters = 16 * 1024 * 1024;
     private readonly Process process;
+    private readonly bool requireJsonRpcVersion;
     private readonly CancellationTokenSource lifetime = new();
     private readonly SemaphoreSlim writer = new(1, 1);
     private readonly object stateLock = new();
@@ -40,15 +41,19 @@ public sealed class AgentRpcProcess : IAsyncDisposable
     private readonly StringBuilder diagnostics = new();
     private readonly Task readerTask, errorTask, exitTask;
     private long nextId;
+    private long emittedEvents, handledEvents, deliveryTarget;
+    private TaskCompletionSource? delivery;
     private bool terminal;
     private Task? disposal;
     public ChannelReader<JsonObject> Events => events.Reader;
     public string DiagnosticTail { get { lock (diagnostics) return diagnostics.ToString(); } }
 
-    public AgentRpcProcess(string executable, IEnumerable<string> arguments, string workingDirectory)
+    public AgentRpcProcess(string executable, IEnumerable<string> arguments, string workingDirectory,
+        bool requireJsonRpcVersion = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executable);
         if (!Directory.Exists(workingDirectory)) throw new DirectoryNotFoundException(workingDirectory);
+        this.requireJsonRpcVersion = requireJsonRpcVersion;
         var info = new ProcessStartInfo(executable)
         {
             WorkingDirectory = Path.GetFullPath(workingDirectory), UseShellExecute = false,
@@ -117,6 +122,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
 
     private async Task WriteAsync(JsonObject message, Action? beginning, CancellationToken cancellation)
     {
+        if (requireJsonRpcVersion) message["jsonrpc"] = "2.0";
         var text = message.ToJsonString();
         if (text.Length > MaximumFrameCharacters) throw new ArgumentException("Agent request exceeds the frame limit.");
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, lifetime.Token);
@@ -141,6 +147,36 @@ public sealed class AgentRpcProcess : IAsyncDisposable
     }
 
     private static bool ValidId(JsonNode? value) => value is JsonValue id && (id.TryGetValue<string>(out _) || id.TryGetValue<long>(out _));
+
+    // ACP delivers prompt text as notifications before the prompt response.
+    // Await the UI consumer before presenting that response as a finished turn.
+    internal async Task WaitForEventDeliveryAsync(CancellationToken cancellation)
+    {
+        TaskCompletionSource fence;
+        lock (stateLock)
+        {
+            var target = Interlocked.Read(ref emittedEvents);
+            if (handledEvents >= target) return;
+            deliveryTarget = target;
+            fence = delivery = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, lifetime.Token);
+        try { await fence.Task.WaitAsync(linked.Token); }
+        finally
+        {
+            lock (stateLock)
+                if (ReferenceEquals(delivery, fence)) delivery = null;
+        }
+    }
+
+    internal void AcknowledgeEvent()
+    {
+        lock (stateLock)
+        {
+            handledEvents++;
+            if (handledEvents >= deliveryTarget) delivery?.TrySetResult();
+        }
+    }
 
     private async Task ReadMessagesAsync()
     {
@@ -180,7 +216,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
     {
         var message = JsonNode.Parse(line, documentOptions: new() { MaxDepth = 64 }) as JsonObject
             ?? throw new InvalidDataException("Agent frame must be an object.");
-        if (message.TryGetPropertyValue("jsonrpc", out var version) && version?.GetValue<string>() != "2.0")
+        if ((message.TryGetPropertyValue("jsonrpc", out var version) || requireJsonRpcVersion) && version?.GetValue<string>() != "2.0")
             throw new InvalidDataException("Unsupported JSON-RPC version.");
         if (message.ContainsKey("method"))
         {
@@ -188,6 +224,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
                 || message.ContainsKey("result") || message.ContainsKey("error")
                 || (message.ContainsKey("id") && !ValidId(message["id"])))
                 throw new InvalidDataException("Invalid agent request or notification.");
+            if (requireJsonRpcVersion) Interlocked.Increment(ref emittedEvents);
             if (!events.Writer.TryWrite(message))
                 throw new InvalidDataException("Agent event buffer is full; consume events continuously.");
             return Task.CompletedTask;

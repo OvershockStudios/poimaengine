@@ -10,12 +10,13 @@ namespace Poima.AgentHost;
 /// renders streamed items and explicitly answers server approval requests.
 /// Returned turn IDs acknowledge submission, not completion or engine rollback.
 /// </summary>
-public sealed class CodexSession : IAsyncDisposable
+public sealed class CodexSession : IAgentSession
 {
     private readonly AgentRpcProcess rpc;
     private readonly string directory;
     private readonly SemaphoreSlim opening = new(1, 1);
     public string? ThreadId { get; private set; }
+    string? IAgentSession.ConversationId => ThreadId;
     public ChannelReader<JsonObject> Events => rpc.Events;
     public string DiagnosticTail => rpc.DiagnosticTail;
 

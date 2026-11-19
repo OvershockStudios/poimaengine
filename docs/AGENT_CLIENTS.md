@@ -1,6 +1,6 @@
-# Codex and Claude Code
+# Connect a coding agent
 
-Poima's native MCP server can be used by the official Codex and Claude Code CLIs. The engine remains the authority for schemas, revisions, edits, receipts and runtime state. The clients supply the agent and their own authentication; Poima does not store provider credentials.
+Poima's native MCP server works with Codex, Claude Code and Antigravity. The engine remains the authority for schemas, revisions, edits, receipts and runtime state. The clients supply the agent and their own authentication.
 
 Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation or cancellation; the separate desktop check below covers one embedded chat edit. A separate simple rendered-observation exercise also passes for both clients; see below. [Evidence](evidence/m2-agent-authoring.json).
 
@@ -60,6 +60,39 @@ Claude Code accepts a server definition in a JSON configuration file:
 ```
 
 Launch the official CLI with `--mcp-config PATH`. For an isolated test, `--strict-mcp-config` restricts servers to that configuration, and `--allowedTools mcp__poima__poima_discover,mcp__poima__poima_call` pre-authorizes Poima's tools. These options do not sign the user in; use the provider's normal authentication flow separately. Use an executable built for the platform running it, especially when switching between WSL and Windows.
+
+## Antigravity in Poima
+
+Install the Antigravity CLI and sign in by running `agy` in a terminal. Use
+a version with `agy acp` (1.5.0 or newer). In the Windows creator or full
+editor’s Agent panel, select **Antigravity**, then **Connect Antigravity**.
+Use **Connection settings** in the creator to specify `agy.exe` when it is
+outside the default installer location or PATH.
+[Google's installation and ACP setup](https://antigravity.google/docs/ide/extensions/acp)
+
+Poima runs the installed client with your project as its working directory
+and supplies an MCP connection to the open native world. The chat streams
+text, displays once-only tool approval choices, and can request cancellation.
+Antigravity uses its own credentials, model and permission settings. It starts
+a new conversation each time you connect. [ACP v1](https://agentclientprotocol.com/protocol/v1/session-setup)
+
+To use the standalone Antigravity App, IDE or CLI, add a server to the
+project's `.agents/mcp_config.json`.
+
+```json
+{
+  "mcpServers": {
+    "poima": {
+      "command": "C:/absolute/path/poima.exe",
+      "args": ["mcp", "--project", "C:/absolute/project/project.poimaproject"]
+    }
+  }
+}
+```
+
+Use `--project` with a closed project or `--endpoint` with a running Poima
+owner. The CLI's `/mcp` panel shows connection status.
+[Antigravity MCP configuration](https://antigravity.google/docs/mcp/)
 
 ## Authoring exercise
 

@@ -119,7 +119,7 @@ internal sealed class CreatorWindow : Window
             // playtest. The native guarded startup pins the inspected revision.
             var current = await ProjectFiles.Open(project.Manifest);
             if (closing) return;
-            if (chat.Busy) throw new InvalidOperationException("Wait for Codex to finish its turn, then try Play again.");
+            if (chat.Busy) throw new InvalidOperationException("Wait for the agent to finish its turn, then try Play again.");
             if (current.World != project.World || current.Endpoint != project.Endpoint)
                 throw new InvalidOperationException("The project entry changed. Reopen the project to play it.");
             host.RefreshState();

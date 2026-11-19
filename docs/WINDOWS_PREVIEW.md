@@ -23,8 +23,8 @@ toolchain prerequisites. [Gameplay tools](https://github.com/OvershockStudios/po
 
 ## Connect an agent
 
-In the creator workspace, use **Connect Codex** with an installed and signed-in
-Codex CLI. You can also connect from a separate client.
+In the creator workspace, select **Codex** or **Antigravity** and connect the
+installed, signed-in CLI. You can also connect from a separate client.
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable

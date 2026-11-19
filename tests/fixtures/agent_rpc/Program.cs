@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Poima.AgentHost;
 
 if (args.Length > 0 && args[0] == "--codex") { await CodexIntegration.RunAsync(args); return; }
+if (args is ["acp"]) { await AcpContract.RunPeerAsync(); return; }
 
 if (args.Length > 0 && args[0] == "peer")
 {
@@ -116,3 +117,4 @@ foreach (var disposeDuringWrite in new[] { false, true })
     catch (ArgumentException) { } // The OS has already removed the exited child.
 }
 Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, approval IDs, cancellation, late replies, diagnostics, EOF, malformed/oversized frames, event overflow, partial-write shutdown and concurrent disposal.");
+await AcpContract.VerifyAsync(token);

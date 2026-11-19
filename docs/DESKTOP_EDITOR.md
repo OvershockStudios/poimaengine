@@ -65,11 +65,12 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
 1. Open the launcher, enter a name, and choose **Create project**. The default
    location is **Documents → Poima Projects**. The launcher lists projects in
    that folder on subsequent starts.
-2. Choose **Connect Codex** to use an installed, signed-in Codex CLI. If the
-   launcher can't find it, set its executable in **Connection settings**.
-   Describe your game to begin the [brief](GAME_BRIEF.md). **Allow Poima tools
-   without asking** pre-approves Codex calls to the world tools for this
-   connection, including edits. Disconnect and reconnect to change this setting.
+2. Select **Codex** or **Antigravity** and connect an installed, signed-in CLI.
+   If Poima can't find it, set its executable in **Connection settings**.
+   Describe your game to begin the [brief](GAME_BRIEF.md). Codex's **Allow
+   Poima tools without asking** pre-approves calls to the world tools, including
+   edits, for this connection. Antigravity uses its own permission settings
+   and displays requests for approval in the chat. [Agent setup](AGENT_CLIENTS.md#antigravity-in-poima)
 3. Choose **Play** when the agent turn finishes. Play uses the project's
    current saved entry, camera, input profile and audio setting. Click the game
    to control it and press Esc to release the mouse. Choose **Stop** before
@@ -90,7 +91,8 @@ If you disconnect before the first message, reconnect starts a fresh conversatio
 
 Run the launcher and preview regression in an interactive Windows session
 with a current desktop package. Add `-WithCodex` to exercise connection and
-reconnection through an installed Codex client.
+reconnection through an installed Codex client. Supply `-Antigravity PATH`
+for one read-only MCP turn with a signed-in `agy.exe`.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tests\creator_workspace.ps1 `

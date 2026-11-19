@@ -3,10 +3,12 @@
 # UI Automation addresses only windows owned by this run. No file picker,
 # physical input or pre-existing project is used. -WithCodex opens a local
 # Codex connection with the installed client and submits no model turn.
+# -Antigravity launches the supplied agy.exe and sends one bounded MCP prompt.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
-    [switch]$WithCodex
+    [switch]$WithCodex,
+    [string]$Antigravity
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,6 +40,7 @@ $report = [ordered]@{
     cli_sha256 = (Get-FileHash -LiteralPath $cli).Hash.ToLowerInvariant()
     bridge_sha256 = (Get-FileHash -LiteralPath (Join-Path $package 'poima_desktop.dll')).Hash.ToLowerInvariant()
     codex_connection_requested = [bool]$WithCodex
+    antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
     checks = [ordered]@{}
 }
 
@@ -72,6 +75,82 @@ function Find-Control($Label, [switch]$Enabled) {
 function Invoke-Control($Label) {
     $control = Wait-For $Label { Find-Control $Label -Enabled }
     $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+}
+
+function Get-ControlText($Label) {
+    $control = Wait-For $Label { Find-Control $Label }
+    return $control.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+}
+
+function Set-ControlText($Label, $Value) {
+    $control = Wait-For $Label { Find-Control $Label -Enabled }
+    $control.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
+}
+
+function Select-Antigravity {
+    $selector = Wait-For 'the agent selector' { Find-Control 'Agent provider' -Enabled }
+    $selector.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    $condition = [System.Windows.Automation.AndCondition]::new(
+        [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::NameProperty, 'Antigravity'),
+        [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $owner.Id))
+    $option = Wait-For 'the Antigravity option' {
+        [System.Windows.Automation.AutomationElement]::RootElement.FindFirst(
+            [System.Windows.Automation.TreeScope]::Descendants, $condition)
+    }
+    $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
+    $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    Set-ControlText 'Antigravity CLI executable' (Resolve-Path -LiteralPath $Antigravity).Path
+    $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
+}
+
+function Exercise-Antigravity($Project) {
+    $world = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $manifest) $Project.entry.world) -Raw | ConvertFrom-Json
+    Select-Antigravity
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the connected Antigravity conversation' { Find-Control 'Agent Send' -Enabled } 65
+    $report.checks.antigravity_ready = $true
+    Set-ControlText 'Agent prompt' ('Use the Poima MCP tools to call only world.inspect and read the world ID and revision. ' +
+        'Do not write files, edit the world, run commands, or use other tools. ' +
+        'Reply with one line containing POIMA_WORLD=<world_id>/<revision> using the values you read, with no markdown.')
+    Invoke-Control 'Agent Send'
+    $null = Wait-For 'the submitted Antigravity prompt' {
+        (Find-Control 'Agent Stop' -Enabled) -or (Get-ControlText 'Agent transcript') -match '(?m)^You:'
+    }
+    $report.checks.antigravity_permissions = @()
+    $null = Wait-For 'the completed Antigravity MCP read' {
+        $card = Find-Control 'Approve once' -Enabled
+        if ($card) {
+            $details = Get-ControlText 'Agent approval details'
+            $details | Add-Content -LiteralPath (Join-Path $run 'permission-details.txt')
+            if ($details -notmatch 'world\.inspect' -or $details -notmatch 'poima[_/ :.-]+call') {
+                Invoke-Control 'Decline'
+                throw 'Antigravity requested a tool outside the expected test operation.'
+            }
+            $report.checks.antigravity_permissions += 'world.inspect'
+            $card.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        }
+        $transcript = Get-ControlText 'Agent transcript'
+        $transcript | Set-Content -LiteralPath (Join-Path $run 'antigravity-transcript.txt') -Encoding UTF8
+        if (Find-Control 'Agent Send' -Enabled) {
+            $match = [regex]::Match($transcript, '(?m)^Antigravity:\s*POIMA_WORLD=([0-9a-f]+)/([0-9]+)\s*$')
+            if (!$match.Success -or $match.Groups[1].Value -cne $world.world_id -or
+                [long]$match.Groups[2].Value -ne $Project.revision) {
+                throw 'Antigravity returned the wrong world identity or revision.'
+            }
+            return $true
+        }
+    } 120
+    $report.checks.antigravity_read = [ordered]@{ world_id = $world.world_id; revision = $Project.revision }
+    $current = Inspect-Project
+    if ($current.world_sha256 -ne $Project.world_sha256 -or $current.manifest_sha256 -ne $Project.manifest_sha256) {
+        throw 'The read-only ACP test changed the project.'
+    }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the retired Antigravity connection' { Find-Control 'Agent Connect' -Enabled }
+    $report.checks.antigravity_disconnected = $true
 }
 
 function Start-Launcher($Phase) {
@@ -142,6 +221,7 @@ try {
         $state = Inspect-Desktop
         !$state.runtime.active -and !$state.views.game.attached
     })
+    if ($Antigravity) { Exercise-Antigravity $project }
     if ($WithCodex) {
         Invoke-Control 'Agent Connect'
         $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65

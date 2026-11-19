@@ -16,14 +16,17 @@ A one-minute gameplay showcase built and playtested with Codex in Poima.
 
 ## Get started
 
-1. [Build and install Poima](docs/BUILD.md).
-2. Run `poima project create MyGame --name "My Game"`.
-3. Open `MyGame` in Codex or Claude Code and [connect its `project.poimaproject`](docs/AGENT_CLIENTS.md#connect-a-project).
+1. [Set up Poima for Windows](docs/DESKTOP_EDITOR.md#build-and-launch) and open `Poima.Editor.exe`.
+2. Name your game and select **Create project**. Choose **Codex** or **Antigravity** to connect an installed agent.
+3. Describe your idea, agree on a short game brief, and press **Play** to try the project.
 
-Describe your idea and attach any sketches or references. New projects guide
-the agent to ask a few questions at a time before building. [Plan your first game](docs/GAME_BRIEF.md)
+Describe your idea in your own words. New projects guide the agent to ask a
+few questions at a time before building. [Plan your first game](docs/GAME_BRIEF.md)
 
 > I want to make a mystery game in a snowy village where the lamps go out every night.
+
+For terminal or headless use, [install the CLI](docs/BUILD.md), run
+`poima project create MyGame`, and [connect an agent](docs/AGENT_CLIENTS.md#connect-a-project).
 
 ## Current status
 
