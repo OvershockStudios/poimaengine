@@ -19,11 +19,10 @@ A one-minute gameplay showcase built and playtested with Codex in Poima.
 2. Run `poima project create MyGame --name "My Game"`.
 3. Open `MyGame` in Codex or Claude Code and [connect Poima](docs/AGENT_CLIENTS.md#connect-a-project).
 
-Start with an idea and attach any sketches or references. Ask the agent to help
-you decide what the player does before building. [Plan your first game](docs/GAME_BRIEF.md)
+Describe your idea and attach any sketches or references. New projects guide
+the agent to ask a few questions at a time before building. [Plan your first game](docs/GAME_BRIEF.md)
 
-> I want to make a mystery game in a snowy village. Ask me a few questions at a
-> time and help me figure out what the player should do.
+> I want to make a mystery game in a snowy village where the lamps go out every night.
 
 ## Current status
 

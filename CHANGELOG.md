@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.242
+
+- Start newly created projects with an editable game-brief guide for coding
+  agents. The guide asks for short rounds of questions about the creator's
+  idea and references before authoring begins.
+
 ## 0.0.241
 
 - Return the presented HUD layout with opted-in player captures so agents can

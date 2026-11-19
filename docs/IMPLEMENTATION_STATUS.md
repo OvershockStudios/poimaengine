@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.241**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.242**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.242 includes an editable [first-game interview guide](GAME_BRIEF.md)
+in new projects. A fresh Codex CLI session follows the guide over three turns,
+including an image reference and a delegated camera choice. The
+[project brief checks](evidence/m2-project-brief.json) track the unchanged project
+files and separate provider behavior from scaffold and export verification.
 
 Version 0.0.241 adds [same-frame HUD layout to opted-in player captures](PLAYER_UI_OBSERVATION.md).
 Control bounds and clipping reference the exact presented frame and retain their

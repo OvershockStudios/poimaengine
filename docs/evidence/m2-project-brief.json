@@ -1,0 +1,137 @@
+{
+  "format": "poima.evidence.project-brief.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.242",
+  "scope": "Project scaffold and export checks plus an observed single Codex CLI planning session.",
+  "project_contracts": {
+    "windows": {
+      "tests": 14,
+      "skipped": 0,
+      "executable_sha256": "1eeb2379f60935f9dab9e8e1f87a16a134dfb21be4eac8d1049ef34268e27eae",
+      "report": {
+        "path": "build/project-brief-0.0.242/windows-project-matching-export.json",
+        "bytes": 81645,
+        "sha256": "990228b5e1503b4903e3af8ef6ce6953314448bd086986c0904fd7c9dcd9f9b2"
+      }
+    },
+    "linux": {
+      "tests": 14,
+      "skipped": 0,
+      "executable_sha256": "e7c1cd5f6ab672abf85e86c7074356a6cfefb8c74e16bb262a2ef57813dd80b3",
+      "report": {
+        "path": "build/project-brief-0.0.242/linux-project-matching-export.json",
+        "bytes": 80863,
+        "sha256": "09b8e622943e37d66c17b492fc52056b3f77ae2fefe68b43d904d191aabd9de1"
+      }
+    },
+    "installed_windows_runtime": {
+      "path": "build/project-brief-0.0.242/installed-windows-runtime/runtime.json",
+      "bytes": 1114,
+      "sha256": "26c5e93fd6bdbebcf3aba19cd1e159d45c4af634ca45c75680374ca2630b01b4"
+    },
+    "first_export_fixture": {
+      "passed": false,
+      "reason": "Runtime engine version must exactly match the exporting engine.",
+      "wrong_runtime": "0.0.235",
+      "report": {
+        "path": "build/project-brief-0.0.242/linux-project-with-export.json",
+        "bytes": 49270,
+        "sha256": "879fb4e3665da928619a7d290719545777946153dc86af1fb97c129fb0581232"
+      }
+    },
+    "exclusion": "Both hosts export via the matching installed Windows runtime. Project agent guides are absent from the validated binary bundle."
+  },
+  "codex_cli": {
+    "workflow": "Fresh CLI session and two resumed turns, using an isolated project and read-only sandbox. Plain chat, with an image on turn 2.",
+    "image": {
+      "source": "https://www.youtube.com/watch?v=OjqWUCXsNX8",
+      "asset": {
+        "path": "build/project-brief-0.0.242/winter-village-reference.jpg",
+        "bytes": 106126,
+        "sha256": "0f3e3fbd0b1714716734b2174886e899527d32e88eb6295be1062bbcf0d4df17"
+      }
+    },
+    "responses": [
+      {
+        "turn": 1,
+        "observation": "Offered three approaches to the new game in one question, with a free answer and delegation option.",
+        "provider_reported_usage": {
+          "input_tokens": 28479,
+          "cached_input_tokens": 25088,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 216,
+          "reasoning_output_tokens": 0
+        },
+        "response": {
+          "path": "build/project-brief-0.0.242/codex-wave-1.md",
+          "bytes": 625,
+          "sha256": "789f5eb32db8e178804b45064e923166bff60c45e5a2c838c110f0f3a139f751"
+        },
+        "events": {
+          "path": "build/project-brief-0.0.242/codex-wave-1.jsonl",
+          "bytes": 3595,
+          "sha256": "806ce52bc1b676596ea09c7547f99b409ddbbf27b3bea09fbed78466431757d9"
+        }
+      },
+      {
+        "turn": 2,
+        "observation": "Kept the quiet mystery and delegated camera, picked lighting and mood from the attached image, then asked two follow-up questions.",
+        "provider_reported_usage": {
+          "input_tokens": 47379,
+          "cached_input_tokens": 39552,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 445,
+          "reasoning_output_tokens": 0
+        },
+        "response": {
+          "path": "build/project-brief-0.0.242/codex-wave-2.md",
+          "bytes": 1002,
+          "sha256": "4d4477f4e60e663450ef5e303ce9ff61b9521320fcdccc3004e3b6a43123dc59"
+        },
+        "events": {
+          "path": "build/project-brief-0.0.242/codex-wave-2.jsonl",
+          "bytes": 1352,
+          "sha256": "3523f2451d735b37107b64b3e719c583a050c1b2d2033b00d561b9f074787020"
+        }
+      },
+      {
+        "turn": 3,
+        "observation": "Summarized the agreed experience and a small first playable, identified runtime verification work, and waited for approval.",
+        "provider_reported_usage": {
+          "input_tokens": 128579,
+          "cached_input_tokens": 107648,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 1148,
+          "reasoning_output_tokens": 0
+        },
+        "response": {
+          "path": "build/project-brief-0.0.242/codex-wave-3.md",
+          "bytes": 2294,
+          "sha256": "d91d178f3ac0ab8cba067cc888f64b41d031045ba3b4a3e81a5aabde05afbe0b"
+        },
+        "events": {
+          "path": "build/project-brief-0.0.242/codex-wave-3.jsonl",
+          "bytes": 10199,
+          "sha256": "7096475133a7c096c56772c5a3d1874727b081dad2584d3301b581f9c7898c71"
+        }
+      }
+    ],
+    "unchanged_project_files": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "project.json",
+      "settings/default.poima-input.json",
+      "world.json"
+    ],
+    "file_check": {
+      "path": "build/project-brief-0.0.242/codex-project-after.log",
+      "bytes": 186,
+      "sha256": "2d352c6a0bfe0e71f2697e9bf13b1ed9cd62a852b5db8a1e66fe99e93397e19a"
+    }
+  },
+  "limits": [
+    "The Codex planning run covers one game brief. It does not include gameplay authoring, time-to-game, or token-efficiency qualification.",
+    "Claude project document syntax was verified against its provider documentation. No live Claude run or interactive choice controls were tested.",
+    "Export verifies inventory and inspection. This run did not activate an installed editor or play a shipped game."
+  ]
+}

@@ -8,6 +8,9 @@ how it should look or feel. Say which part of an image matters to you, such as
 its colors, camera, level layout or atmosphere. Use the agent’s planning mode
 when available.
 
+New projects made with `poima project create` include these instructions for
+the agent. You can change them in the project’s `AGENTS.md`.
+
 > Help me plan this game first. Ask a few multiple-choice questions at a time,
 > adapt the next questions to my answers, and show me the game brief before you
 > build anything. I’d like to be able to leave some choices to you.

@@ -540,6 +540,28 @@ Reply create_project(const std::string& directory,const std::string& name) {
         fs::remove(stage.path/"world.json.lock");fs::create_directory(stage.path/"settings");const auto profile=stage.path/"settings/default.poima-input.json";
         input_profiles::transact(profile,{{"request_id",new_id()},{"expected_revision",0},{"profile",input_profiles::profile_json(default_gamepad_input_profile())},{"preview",false}});fs::remove(fs::path(profile).concat(".lock"));
         Json spec={{"format","poima.project"},{"version",1},{"project_id",project_id},{"name",name},{"entry",{{"world","world.json"},{"camera",camera},{"controller",controller}}},{"input_profile","settings/default.poima-input.json"},{"audio",false}};
+        exclusive_write(stage.path/"AGENTS.md",R"(# Make a game with Poima
+
+For a new game idea, help the creator agree on a game brief before changing
+the project. Use planning mode if available. Start with the experience the
+creator describes and any images or sketches they share. Ask what matters in
+the references when it could change the game.
+
+Ask one to three questions at a time. Offer concrete choices with a short
+explanation of each, a free-text answer, and a way to delegate a decision.
+Use the chat's question controls if available or a numbered list otherwise.
+Use the answers to decide the next questions. Start with what the player does
+and what the game should feel like. Follow with controls, challenge, setting,
+progress, accessibility, and other details that matter to this idea. Explain
+any conflicts with earlier answers and leave resolved choices alone.
+
+Check Poima's available features before promising how the game will work.
+Summarize the decisions, open questions, and what counts as a first playable.
+Get agreement on the brief before building. If the creator already gives an
+approved brief or explicitly asks you to implement a defined change, work from
+it directly. The creator can edit these instructions.
+)");
+        exclusive_write(stage.path/"CLAUDE.md","@AGENTS.md\n");
         exclusive_write(stage.path/"project.json",spec.dump(2)+"\n");project(text(stage.path/"project.json"));stage.publish();return Json{{"manifest",text(stage.destination/"project.json")},{"directory",text(stage.destination)},{"publication",stage.publication},{"publication_attempts",stage.publication_attempts},{"publication_wait_ms",stage.publication_wait_ms},{"name",name},{"project_id",project_id}};
     });
 }

@@ -13,6 +13,13 @@ The parent directory must already exist. Creation requires a new directory, incl
 ./build/headless/poima project inspect build/MyRoom/project.json
 ```
 
+New projects contain an editable `AGENTS.md` and a `CLAUDE.md` that imports
+it. They guide the installed coding agent through the
+[game brief interview](GAME_BRIEF.md) before authoring a new game.
+They can be changed or removed by the project owner. They are not required for
+project inspection, editing, saves or export, and are not included in a shipped
+game.
+
 The starter contains `project.json`, `world.json`, and `settings/default.poima-input.json`. Its world has a solid floor, a capsule character, a child camera, and an Environment with a procedural sky and shadow-casting directional Sun. New starters explicitly use 1024-pixel shadow maps, fractional PCF filtering, and
 Sun shadows with 80-metre coverage, depth bias 0.0001 and normal bias 0.005 metres.
 These starter choices do not rewrite existing worlds: an omitted authored filter

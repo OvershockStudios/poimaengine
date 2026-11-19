@@ -80,6 +80,10 @@ class ProjectContract(unittest.TestCase):
         doc = self.document
         self.assertIn(self.created['publication'], ('atomic_directory', 'manifest_last'))
         self.assertFalse((self.project/'.poima-incomplete').exists(), 'Successful creation retained an incomplete marker.')
+        agent_guide = (self.project/'AGENTS.md').read_text(encoding='utf-8')
+        self.assertIn('agree on a game brief before changing', agent_guide)
+        self.assertIn('Use the answers to decide the next questions.', agent_guide)
+        self.assertEqual((self.project/'CLAUDE.md').read_text(encoding='utf-8'), '@AGENTS.md\n')
         self.assertEqual((doc['format'], doc['version'], doc['name']), ('poima.project', 1, 'Portable room'))
         self.assertRegex(doc['project_id'], '^[0-9a-f]{32}$')
         self.assertFalse(Path(doc['entry']['world']).is_absolute())
@@ -101,6 +105,14 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])
         self.assertFalse(list(self.project.rglob('*.lock')), 'Starter/inspection unexpectedly created a lock sidecar.')
+
+    def test_agent_guides_are_editable_and_optional(self):
+        guide = self.project/'AGENTS.md'
+        guide.write_text('# Game decisions\n\nThe brief is approved.\n', encoding='utf-8')
+        self.inspect()
+        guide.unlink()
+        (self.project/'CLAUDE.md').unlink()
+        self.inspect()
 
     def test_incomplete_project_is_rejected_without_repair(self):
         marker = self.project/'.poima-incomplete'
@@ -275,6 +287,7 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(game_document['version'], 1, 'Projects without gameplay retain v1 bundles.')
         self.assertNotIn('gameplay', game_document)
         bundle = tree(destination)
+        self.assertFalse(any(Path(path).name in ('AGENTS.md', 'CLAUDE.md') for path in bundle))
         inspected = self.run_cli('game', 'inspect', native(game))
         self.assertEqual(inspected['project_id'], self.document['project_id'])
         self.assertEqual(tree(destination), bundle)
