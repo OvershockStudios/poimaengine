@@ -147,6 +147,7 @@ Quat canonical_quaternion(Quat value);
 // hinge-X and hard-limit bounds as neutral_rotation. Returns canonical XYZW;
 // never projects a hinge rotation or clamps a target to a limit. Does not
 // require drive permission: the runtime separately owns that admission.
+Quat validate_target(const Limits& limits,Quat target);
 Quat validate_target(const Joint& joint,Quat target);
 Pose canonical_pose(Pose value);
 Quat conjugate(Quat value);

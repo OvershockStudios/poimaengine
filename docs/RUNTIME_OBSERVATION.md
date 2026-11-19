@@ -20,6 +20,8 @@ contents remain available through `runtime.gameplay.inspect` and
 `runtime.ui.inspect`; this operation returns their revision tokens only.
 For distances and angular errors between grip or attachment frames, use
 [`runtime.pose.compare`](POSE_FRAME_COMPARISON.md) at the same tick.
+For constraints on final joint rotations, use
+[`runtime.pose.joints`](JOINT_POSE_CHECKS.md).
 
 ## Select entities and component fields
 

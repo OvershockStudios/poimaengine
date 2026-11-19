@@ -1,0 +1,49 @@
+{
+  "version": "0.0.248",
+  "status": "passed",
+  "scope": "Guarded rigid rotation diagnostics for selected committed animation nodes. Fixture bounds are explicitly authored. No automatic limit enforcement or anatomical calibration claims.",
+  "fixture": "tests/runtime_joint_pose.py",
+  "linux_x86_64": {
+    "engine_sha256": "4bd2a862f3714bc3cefe90d1d2ac1a1c4fad765f4b9f4b2aa9f9a6988d51bdf9",
+    "report_sha256": "89d98595f806c487c0ffe28dbfd866128405ba4ee2aa7b82b6c4744012b07c12",
+    "native_rpc_calls": 36,
+    "natural_exit": true,
+    "composite_twist_degrees": 55.00000091664657,
+    "composite_fit_degrees": 10.000000916646886,
+    "ik_joint_outside": true,
+    "complete_save_bytes_equal_around_reads": true
+  },
+  "windows_x86_64": {
+    "engine_sha256": "bdf02bb082340e29ad208fc34b2d70c852998b17c6ea2e7a49fd575fca87c3a8",
+    "report_sha256": "a2b68ac384f32f952fde21bd21ce295cf21b82101181a0bff058f3613f6f7262",
+    "native_rpc_calls": 36,
+    "natural_exit": true,
+    "composite_twist_degrees": 55.00000091664657,
+    "composite_fit_degrees": 10.00000091664689,
+    "ik_joint_outside": true,
+    "complete_save_bytes_equal_around_reads": true,
+    "selected_authoring_request_check_sha256": "2bc35316c0636e0724f69ff463348bcd7129eb200995245c84452532f140e27d",
+    "selected_session_request_check_sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca",
+    "physical_target_native": "passed"
+  },
+  "linux_regressions": [
+    "physical_pose_diagnostics_contract",
+    "mcp_contract",
+    "physical_target_native",
+    "world_ui_contract",
+    "animation_contract",
+    "runtime_animation_layers_contract",
+    "runtime_joint_pose_contract",
+    "asset_references_contract"
+  ],
+  "linux_surface_recheck": {
+    "native_rpc_calls": 38,
+    "report_sha256": "b3162cb3265e23364b20b76a77eaade59fb4ba51769e4fadcf056f616509714c"
+  },
+  "linux_mcp": {
+    "requests": 6,
+    "replies": 5,
+    "natural_exit_code": 0,
+    "report_sha256": "807efd3cdd9d343eeb779ab5ef3e23448072d4f3382bdd4e0fc3b1c7ad8b59ed"
+  }
+}

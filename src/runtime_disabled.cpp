@@ -35,6 +35,7 @@ std::vector<std::string> Runtime::camera_ids() const { throw std::runtime_error(
 const RuntimeDefinition& Runtime::live_definition() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeSummary Runtime::inspect() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeEntityState Runtime::entity(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+std::optional<RuntimeJointPose> Runtime::joint_pose(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::save_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::validate_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
 std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,const std::optional<GameplayConfig>&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }

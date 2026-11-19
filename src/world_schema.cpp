@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 139}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 140}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -457,6 +457,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pairs",{{"type","array"},{"minItems",1},{"maxItems",pose_frames::max_pairs},{"items",frame_pair}}}},
         {"session_id","tick","pairs"});
     methods["runtime.pose.compare"]["description"]="Compare committed entity frames with optional rigid local offsets at an exact runtime tick. Reports origin displacement in metres and shortest angular error in degrees for proper orthogonal bases. Shear, reflection or degeneracy suppress angular results. Optional limits are caller-selected. Read-only, outside runtime-game-session v1.";
+    const auto joint_check=object_schema({{"node",{{"type","integer"},{"minimum",0},{"maximum",physical_rig::max_node}}},
+        {"limits",physical_rig::joint_limits_schema()},{"limit_frame",pose_vector(4,1.000001)},
+        {"reference_rotation",pose_vector(4,1.000001)}},{"node","limits"});
+    methods["runtime.pose.joints"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},{"rig",id},
+        {"joints",{{"type","array"},{"minItems",1},{"maxItems",max_joint_pose_checks},{"items",joint_check}}}},
+        {"session_id","tick","rig","joints"});
+    methods["runtime.pose.joints"]["description"]="Check final committed rig-node local rotations against explicit hinge or swing/twist limits in radians. Defaults to the frozen authored local reference and identity limit frame. Returns signed twist, swing, per-joint status and a read-only fit when the chart is well defined. Model node indices must be distinct. Outside runtime-game-session v1.";
     const auto source_vertex=object_schema({{"entity",id},{"vertex",rev}},{"entity","vertex"});
     const auto source_face=object_schema({{"entity",id},{"triangle",rev},
         {"barycentric",vector(unit,3)}},{"entity","triangle","barycentric"});

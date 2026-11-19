@@ -33,7 +33,13 @@ A successful fit returns its joint-space quaternion, correction angle and flags.
 
 ## Scope and recovery
 
-The operation samples model rest or a single source clip over cooked rest locals. Use separate checks for live animation blends, instance transform edits, grounded IK, collisions, anchor separation, scale-policy admission and recovery support. A diagnostic fit describes the correction a fitted-target policy would make. Applying it to gameplay requires separate authoring and explicit runtime control.
+The operation samples model rest or a single source clip over cooked rest locals.
+Use [committed joint angle checks](JOINT_POSE_CHECKS.md) to inspect live
+animation blends and procedural pose changes against explicit per-node limits.
+Collision, anchor separation, scale-policy admission and recovery support have
+their own checks. A diagnostic fit describes the correction a fitted-target
+policy would make. Applying it to gameplay requires separate authoring and
+explicit runtime control.
 
 Read-only inspection leaves the scene, source clip and calibrated frames intact. A stale revision returns `-32009`. Read the current world and repeat against the intended revision. A missing entity returns `-32004`. An unsuitable entity, malformed time or invalid clip selection returns `-32602`. Cooked asset read or sampling failures return `-32050`.
 

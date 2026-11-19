@@ -50,7 +50,9 @@ Json shape_json(const Shape& value) {
         else return {{"kind","capsule"},{"radius",item.radius},{"half_height",item.half_height}};
     },value);
 }
-Limits limits(const Json& value) {
+} // namespace
+
+Limits parse_joint_limits(const Json& value) {
     need(value.is_object() && value.contains("kind"),"PhysicalRig joint limits need a kind.");
     const auto kind=text(value.at("kind"));
     if(kind=="hinge") {fields(value,{"kind","minimum","maximum"});return Hinge{number(value.at("minimum")),number(value.at("maximum"))};}
@@ -58,6 +60,8 @@ Limits limits(const Json& value) {
     fields(value,{"kind","swing_y","swing_z","twist_min","twist_max"});
     return SwingTwist{number(value.at("swing_y")),number(value.at("swing_z")),number(value.at("twist_min")),number(value.at("twist_max"))};
 }
+
+namespace {
 Json limits_json(const Limits& value) {
     return std::visit([](const auto& item)->Json {
         using T=std::decay_t<decltype(item)>;
@@ -156,7 +160,7 @@ Configuration parse_configuration(const nlohmann::json& value) {
     for(const auto& entry:joints) {
         fields(entry,{"name","parent","child","parent_frame","child_frame","limits","neutral_rotation","rest_stiffness","rest_damping","soft_limit_stiffness","soft_limit_zone","max_torque","friction_torque"},{"drive"});
         Joint joint;joint.name=text(entry.at("name"));joint.parent=text(entry.at("parent"));joint.child=text(entry.at("child"));
-        joint.parent_frame=pose(entry.at("parent_frame"));joint.child_frame=pose(entry.at("child_frame"));joint.limits=limits(entry.at("limits"));joint.neutral_rotation=vector<4>(entry.at("neutral_rotation"));
+        joint.parent_frame=pose(entry.at("parent_frame"));joint.child_frame=pose(entry.at("child_frame"));joint.limits=parse_joint_limits(entry.at("limits"));joint.neutral_rotation=vector<4>(entry.at("neutral_rotation"));
         joint.rest_stiffness=number(entry.at("rest_stiffness"));joint.rest_damping=number(entry.at("rest_damping"));joint.soft_limit_stiffness=number(entry.at("soft_limit_stiffness"));
         joint.soft_limit_zone=number(entry.at("soft_limit_zone"));joint.max_torque=number(entry.at("max_torque"));joint.friction_torque=number(entry.at("friction_torque"));
         if(entry.contains("drive")) {
@@ -201,6 +205,12 @@ nlohmann::json configuration_json(const Configuration& value) {
     return result;
 }
 
+Json joint_limits_schema() {
+    return {{"oneOf",Json::array({object({{"kind",{{"const","hinge"}}},{"minimum",range(-max_joint_angle,0)},{"maximum",range(0,max_joint_angle)}}),
+        object({{"kind",{{"const","swing_twist"}}},{"swing_y",range(min_moving_angle,max_joint_angle)},{"swing_z",range(min_moving_angle,max_joint_angle)},
+            {"twist_min",range(-max_joint_angle,0)},{"twist_max",range(0,max_joint_angle)}})})}};
+}
+
 nlohmann::json configuration_schema() {
     const Json name={{"type","string"},{"minLength",1},{"maxLength",64},{"pattern","^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"}};
     const auto position=array(range(-max_frame_position,max_frame_position),3),rotation=array(range(-1-unit_tolerance,1+unit_tolerance),4);
@@ -208,12 +218,9 @@ nlohmann::json configuration_schema() {
     const Json shapes={{"oneOf",Json::array({object({{"kind",{{"const","box"}}},{"half_extents",array(range(min_dimension,max_dimension),3)}}),
         object({{"kind",{{"const","sphere"}}},{"radius",range(min_dimension,max_dimension)}}),
         object({{"kind",{{"const","capsule"}}},{"radius",range(min_dimension,max_dimension)},{"half_height",range(0,max_dimension)}})})}};
-    const Json joint_limits={{"oneOf",Json::array({object({{"kind",{{"const","hinge"}}},{"minimum",range(-max_joint_angle,0)},{"maximum",range(0,max_joint_angle)}}),
-        object({{"kind",{{"const","swing_twist"}}},{"swing_y",range(min_moving_angle,max_joint_angle)},{"swing_z",range(min_moving_angle,max_joint_angle)},
-            {"twist_min",range(-max_joint_angle,0)},{"twist_max",range(0,max_joint_angle)}})})}};
     const auto part=object({{"name",name},{"node",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"body_in_bone",frame},{"shape",shapes},
         {"mass",range(min_mass,max_mass)},{"friction",range(0,2)},{"restitution",range(0,1)},{"linear_damping",range(0,10)},{"angular_damping",range(0,10)}});
-    auto joint=object({{"name",name},{"parent",name},{"child",name},{"parent_frame",frame},{"child_frame",frame},{"limits",joint_limits},{"neutral_rotation",rotation},
+    auto joint=object({{"name",name},{"parent",name},{"child",name},{"parent_frame",frame},{"child_frame",frame},{"limits",joint_limits_schema()},{"neutral_rotation",rotation},
         {"rest_stiffness",range(0,max_stiffness)},{"rest_damping",range(0,max_damping)},{"soft_limit_stiffness",range(0,max_stiffness)},
         {"soft_limit_zone",range(.001,.5)},{"max_torque",range(0,physical_rig::max_torque)},{"friction_torque",range(0,physical_rig::max_torque)}});
     auto drive_stiffness=range(0,max_stiffness),drive_torque=range(0,physical_rig::max_torque);

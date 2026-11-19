@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.248
+
+- Check committed joint angles against calibrated hinge and swing/twist
+  limits after animation, layers and procedural pose updates.
+
 ## 0.0.247
 
 - Measure the gap from a vertex or surface point to committed rigid or skinned

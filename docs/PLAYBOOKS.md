@@ -155,7 +155,10 @@ and finger positions in item space. Then sample the visible finger pad against
 the chosen handle triangles at the same tick. Keep the sampled surface point
 fixed when comparing a grip before and after adjustment. [Surface measurements](SURFACE_MEASUREMENTS.md)
 Check the fingers for clipping and the elbow
-for flips as the hand lets go, reaches and regrips. Use a complete reload and a
+for flips as the hand lets go, reaches and regrips. Check the final mixed joint
+rotations against the equipped pose and calibrated hinge or swing/twist limits.
+[Committed joint angles](JOINT_POSE_CHECKS.md)
+Use a complete reload and a
 bow draw and release as separate checks when qualifying these capabilities.
 For a visible first-person body, inspect look-down views during standing,
 crouching, stepping and turning. Check leg placement against actual ground and

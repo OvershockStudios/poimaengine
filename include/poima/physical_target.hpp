@@ -27,6 +27,7 @@ struct TargetFit {
 // continuity at their edges. Derivatives jump at geometric limit boundaries.
 // No target velocity or temporal filter is supplied.
 TargetFit fit_target(const Joint& joint,Quat requested,TargetLimitPolicy policy);
+TargetFit fit_target(const Limits& limits,Quat requested,TargetLimitPolicy policy);
 
 // Convert logical WORLD bone rotations to calibrated relative joint rotation:
 // inverse(parent_bone * parent.body_in_bone * joint.parent_frame) *

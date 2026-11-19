@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.247**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.248**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.248 adds [committed joint angle checks](JOINT_POSE_CHECKS.md).
+Agents can evaluate a rig node's final local rotation against a supplied
+hinge or swing/twist range. Each row reports the fit or explains why it is
+indeterminate. The [native fixture](evidence/m2-joint-pose-checks.json) detects
+an over-limit additive blend and a joint changed by IK, with byte-identical
+saves around diagnostics. Limits require rig-specific calibration. The query
+leaves animation and gameplay untouched.
 
 Version 0.0.247 adds [committed surface measurements](SURFACE_MEASUREMENTS.md).
 Agents can look up cooked triangles and measure from a posed vertex or triangle

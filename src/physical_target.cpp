@@ -43,16 +43,20 @@ void project_ellipse(double& y,double& z,double a,double b) {
 } // namespace
 
 TargetFit fit_target(const Joint& joint,Quat requested,TargetLimitPolicy policy) {
+    return fit_target(joint.limits,requested,policy);
+}
+
+TargetFit fit_target(const Limits& angular_limits,Quat requested,TargetLimitPolicy policy) {
     require(policy==TargetLimitPolicy::Strict||policy==TargetLimitPolicy::Fit,"Unknown physical target limit policy.");
     TargetFit result;
     if(policy==TargetLimitPolicy::Strict) {
-        result.requested=result.target=validate_target(joint,requested);
+        result.requested=result.target=validate_target(angular_limits,requested);
         result.chart_condition=std::hypot(result.requested[0],result.requested[3]);
         return result;
     }
     // Identity belongs to every admitted hard-limit interval/cone. This calls
     // the authoritative existing limit admission without changing manual APIs.
-    (void)validate_target(joint,{0,0,0,1});
+    (void)validate_target(angular_limits,{0,0,0,1});
     result.requested=canonical_quaternion(requested);
     auto c=chart(result.requested);result.chart_condition=c.condition;
     bool admitted=false;
@@ -78,11 +82,11 @@ TargetFit fit_target(const Joint& joint,Quat requested,TargetLimitPolicy policy)
                 project_ellipse(c.y,c.z,a,b);result.swing_clamped=true;
             }
         }
-    },joint.limits);
+    },angular_limits);
     if(admitted) {
         // Pass the original argument, avoiding a second normalization of an
         // already canonical value. This result exactly matches Strict.
-        result.requested=result.target=validate_target(joint,requested);
+        result.requested=result.target=validate_target(angular_limits,requested);
         return result;
     }
     result.twist_clamped=c.twist<lo||c.twist>hi;
@@ -91,7 +95,7 @@ TargetFit fit_target(const Joint& joint,Quat requested,TargetLimitPolicy policy)
     require(square>0&&std::isfinite(square),"Physical target fitting produced an unresolved swing coordinate.");
     const Quat swing{0,c.y,c.z,std::sqrt(square)};
     const Quat twist{std::sin(c.twist/2),0,0,std::cos(c.twist/2)};
-    result.target=validate_target(joint,multiply(swing,twist));
+    result.target=validate_target(angular_limits,multiply(swing,twist));
     const auto delta=multiply(result.target,conjugate(result.requested));
     result.correction_radians=2*std::atan2(std::hypot(delta[0],delta[1],delta[2]),std::abs(delta[3]));
     require(std::isfinite(result.correction_radians),"Physical target correction is nonfinite.");

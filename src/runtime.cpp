@@ -2156,6 +2156,13 @@ bool Runtime::is_player_controller(const std::string& id) const {
     return controller && !controller->settings.camera.empty();
 }
 RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->topology->order.size(),impl_->topology->body_names.size(),impl_->topology->characters.size()}; }
+std::optional<RuntimeJointPose> Runtime::joint_pose(const std::string& rig,std::uint32_t node) const {
+    (void)impl_->find(rig);
+    const auto reference=impl_->animations->node_reference(rig,node);
+    if(!reference)return {};
+    const auto& current=impl_->registry.get<Node>(impl_->find(reference->entity));
+    return RuntimeJointPose{current.id,current.parent,reference->local,current.local};
+}
 RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id);
     RuntimeEntityState result; result.id=id; result.world=impl_->observation_world(id);result.local=impl_->observation_local(id);result.animation=impl_->animations->state(id,impl_->tick,true);

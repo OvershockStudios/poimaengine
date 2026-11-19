@@ -2050,6 +2050,14 @@ void RuntimeAnimations::load_target_state(const std::string& text,std::uint64_t 
     clocks_.swap(candidate->clocks_);layers_.swap(candidate->layers_);
 }
 #include "runtime_animation_procedural.inc"
+std::optional<RuntimeAnimationPose> RuntimeAnimations::node_reference(const std::string& entity,std::uint32_t node) const {
+    const auto found=membership_->indices.find(entity);
+    if(found==membership_->indices.end())return {};
+    const auto& rig=membership_->rigs[found->second];
+    if(node>=rig.nodes.size())return {};
+    const auto& pose=rig.baseline[node];
+    return RuntimeAnimationPose{rig.nodes[node],{pose.position,pose.rotation,pose.scale}};
+}
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {
     const auto found=membership_->skins.find(entity);if(found==membership_->skins.end())return {};
     const auto& binding=found->second;const auto& rig=membership_->rigs[membership_->indices.at(binding.rig)];const auto& source=rig.model->skins[std::size_t(rig.model->nodes[binding.node].skin)];

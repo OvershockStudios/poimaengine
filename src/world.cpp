@@ -10,6 +10,7 @@
 #include "poima/runtime.hpp"
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
+#include "poima/physical_target.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "poima/runtime_ik.hpp"
@@ -3632,6 +3633,7 @@ public:
     }
 #include "world_observe.inc"
 #include "world_pose_frames.inc"
+#include "world_joint_pose.inc"
 #include "world_surface_measure.inc"
 #include "world_physical.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
@@ -3811,6 +3813,7 @@ public:
     Json runtime_dispatch(const std::string& method,const Json& params) {
         if(method=="runtime.observe")return observe_runtime(params);
         if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
+        if(method=="runtime.pose.joints")return check_runtime_joint_pose(params);
         if(method=="runtime.surface.measure")return measure_runtime_surfaces(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).

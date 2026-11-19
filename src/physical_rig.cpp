@@ -158,8 +158,8 @@ void validate(const DriveProfile& drive) {
         range(drive.damping,0,max_damping)&&range(drive.max_torque,0,max_torque)&&drive.max_torque>0,
         "Physical drive needs positive stiffness/torque and nonnegative damping within finite bounds.");
 }
-Quat validate_target(const Joint& joint,Quat target) {
-    limits(joint.limits);target=canonical_quaternion(target);const auto c=coordinates(target,true);
+Quat validate_target(const Limits& angular_limits,Quat target) {
+    limits(angular_limits);target=canonical_quaternion(target);const auto c=coordinates(target,true);
     std::visit([&](const auto& l) {
         using T=std::decay_t<decltype(l)>;
         if constexpr(std::is_same_v<T,Hinge>)require(std::abs(target[1])<=1e-8&&std::abs(target[2])<=1e-8&&c.twist>=l.minimum-1e-10&&c.twist<=l.maximum+1e-10,"Hinge drive target must be an in-range X rotation.");
@@ -167,9 +167,10 @@ Quat validate_target(const Joint& joint,Quat target) {
             const double y=c.swing_y/std::sin(l.swing_y/2),z=c.swing_z/std::sin(l.swing_z/2);
             require(y*y+z*z<=1+1e-10&&c.twist>=l.twist_min-1e-10&&c.twist<=l.twist_max+1e-10,"Drive target is outside the hard swing/twist limits.");
         }
-    },joint.limits);
+    },angular_limits);
     return target;
 }
+Quat validate_target(const Joint& joint,Quat target) { return validate_target(joint.limits,target); }
 void validate(const Joint& j) {
     require(name(j.name)&&name(j.parent)&&name(j.child)&&j.parent!=j.child,"Physical joint names/part references are invalid.");
     local_pose(j.parent_frame);local_pose(j.child_frame);limits(j.limits);const auto neutral=canonical_quaternion(j.neutral_rotation);

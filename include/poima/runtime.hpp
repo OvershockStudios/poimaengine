@@ -250,6 +250,11 @@ struct RuntimeAnimationRig {
     std::optional<RuntimeRootMotionDefinition> root_motion;
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
+struct RuntimeJointPose {
+    std::string entity,parent;
+    RuntimeTransform reference,committed;
+};
+inline constexpr std::size_t max_joint_pose_checks=64;
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
 enum class HitRegionShape { Sphere, Box, Capsule };
 struct RuntimeHitRegion {
@@ -502,6 +507,7 @@ public:
     const RuntimeDefinition& live_definition() const;
 
     RuntimeEntityState entity(const std::string& id) const;
+    std::optional<RuntimeJointPose> joint_pose(const std::string& rig,std::uint32_t node) const;
     // Portable, bounded logical checkpoint. The trusted host supplies the SHA-256
     // of the complete frozen authored content, including referenced assets.
     // Loading stages a separate world; it never modifies an existing Runtime.

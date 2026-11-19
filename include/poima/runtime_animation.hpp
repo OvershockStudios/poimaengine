@@ -320,5 +320,6 @@ public:
     Checkpoint checkpoint() const { return {clocks_,layers_,membership_,ik_,ik_states_,roots_,grounding_restore_pending_,grounding_controls_,grounding_controls_pending_,procedural_finals_,procedural_terminals_,procedural_grounding_inputs_,physical_returns_}; }
     void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers);ik_.swap(checkpoint.ik);ik_states_.swap(checkpoint.ik_states);roots_.swap(checkpoint.roots);std::swap(grounding_restore_pending_,checkpoint.grounding_restore_pending);grounding_controls_.swap(checkpoint.grounding_controls);std::swap(grounding_controls_pending_,checkpoint.grounding_controls_pending);procedural_finals_.swap(checkpoint.procedural_finals);procedural_terminals_.swap(checkpoint.procedural_terminals);procedural_grounding_inputs_.swap(checkpoint.procedural_grounding_inputs);physical_returns_.swap(checkpoint.physical_returns); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
+    std::optional<RuntimeAnimationPose> node_reference(const std::string& rig,std::uint32_t node) const;
 };
 }
