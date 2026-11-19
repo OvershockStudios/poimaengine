@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.263
+
+- Add a first-person grip review tool that joins committed motion and fingertip measurements across a take.
+
 ## 0.0.262
 
 - Let physically framed first-person hands and held props share world depth during pickups and releases.

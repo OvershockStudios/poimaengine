@@ -1,0 +1,351 @@
+{
+  "format": "poima.first-person-grip-motion.v1",
+  "tool_source_version": "0.0.263",
+  "native_capture_build": "0.0.262",
+  "scope": "Private single imported arm and opaque prop in a diagnostic room, with native capsule movement, semantic look, a fixed-tick interrupted cut and a momentum-preserving physics drop. Reported contacts use four selected skin vertices; independent authored meshes, broader anatomy and interactive presentation cadence require separate qualification.",
+  "tool": "scripts/review_grip_motion.py",
+  "tool_sha256": "a51801deded6ee5fa320e4ed3dc0652c62e3980ca73a4a93066291ace189a979",
+  "hold_ticks": [
+    8,
+    58
+  ],
+  "cut_start_tick": 27,
+  "interruption_tick": 38,
+  "release_tick": 58,
+  "empty_hand_lowering_tick": 76,
+  "contact_limit_mm": 5,
+  "analysis_notes": "Baseline and corrected takes use the same base arm animations and input schedule. The correction applies a masked closed-finger pose before the additive finger adjustments and fades it after the release. A separate control switches the same base poses without an inertial transition.",
+  "derivative_video": {
+    "width": 800,
+    "height": 450,
+    "decoded_frames": 106,
+    "frames_per_second": 60,
+    "duration_seconds": 1.7666666666666666,
+    "source": "One native readback per successful fixed tick",
+    "sha256": "258c4ed70b7173a15a09a102bfa8993c1298e1b189cfbad698f9f35d42bec3e9"
+  },
+  "cohorts": {
+    "linux-animated": {
+      "rpc_count": 524,
+      "native_captures": 0,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311116,
+        1.087203576601397,
+        0.3830518733737035
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 35,
+          "distance_mm": 5.9472600880008315
+        },
+        "ticks_outside_contact_limit": [
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39
+        ],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      }
+    },
+    "linux-finger-priority": {
+      "rpc_count": 524,
+      "native_captures": 0,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311116,
+        1.087203576601397,
+        0.3830518733737035
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 39,
+          "distance_mm": 2.3094937647144107
+        },
+        "ticks_outside_contact_limit": [],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      }
+    },
+    "linux-cut": {
+      "rpc_count": 524,
+      "native_captures": 0,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311116,
+        1.087203576601397,
+        0.3830518733737035
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 37,
+          "distance_mm": 2.309493366061405
+        },
+        "ticks_outside_contact_limit": [],
+        "peak_hand_step": {
+          "tick": 28,
+          "distance_mm": 92.71298666265022
+        },
+        "peak_hand_rotation": {
+          "tick": 38,
+          "degrees": 33.85392488632916
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 33.85392488632916,
+        "maximum_item_frame_drift_mm": 1.4393256511461804e-13
+      }
+    },
+    "linux-lowered": {
+      "rpc_count": 524,
+      "native_captures": 0,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311116,
+        1.087203576601397,
+        0.3830518733737035
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 39,
+          "distance_mm": 2.3094937647144107
+        },
+        "ticks_outside_contact_limit": [],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      }
+    },
+    "windows-animated": {
+      "rpc_count": 630,
+      "native_captures": 106,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311012,
+        1.0872035766016144,
+        0.38305187337382846
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 35,
+          "distance_mm": 5.947260088000872
+        },
+        "ticks_outside_contact_limit": [
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39
+        ],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      },
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    },
+    "windows-finger-priority": {
+      "rpc_count": 630,
+      "native_captures": 106,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311012,
+        1.0872035766016144,
+        0.38305187337382846
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 39,
+          "distance_mm": 2.3094937647146248
+        },
+        "ticks_outside_contact_limit": [],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      },
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    },
+    "windows-lowered": {
+      "rpc_count": 630,
+      "native_captures": 106,
+      "pose_samples": 106,
+      "original_four_fingertips_at_release_mm": [
+        2.3094925404816946,
+        0.6339037275311012,
+        1.0872035766016144,
+        0.38305187337382846
+      ],
+      "release_linear_velocity_m_s": [
+        0.1075137728455855,
+        -0.167657925653093,
+        -1.3436709823937854
+      ],
+      "release_angular_velocity_rad_s": [
+        -0.005212415070107126,
+        -0.2827435023813403,
+        -0.0308996392038973
+      ],
+      "exact_archive_pairs": 3,
+      "measurements": {
+        "worst_contact": {
+          "tick": 39,
+          "distance_mm": 2.3094937647146248
+        },
+        "ticks_outside_contact_limit": [],
+        "peak_hand_step": {
+          "tick": 29,
+          "distance_mm": 89.61964409749079
+        },
+        "peak_hand_rotation": {
+          "tick": 29,
+          "degrees": 16.489642078207385
+        },
+        "camera_travel_m": 1.1136809044116263,
+        "interruption_step_degrees": 11.012405592541981,
+        "maximum_item_frame_drift_mm": 1.4418111671202252e-13
+      },
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    }
+  },
+  "0.0.263_candidate_replay": {
+    "windows_engine_sha256": "45edff21c3cb60b3e3e7d374c992cb1c9d25ba99fa114633a46abef28337d762",
+    "requests": 630,
+    "exact_images": 106,
+    "exact_pose_samples": 106,
+    "exact_archives": 6,
+    "linux_tests": [
+      "grip_motion_review",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "save_upgrade_document_native",
+      "player_lens_native",
+      "runtime_viewmodel_clearance_native",
+      "mcp_contract",
+      "runtime_camera_draw_native",
+      "world_ui_contract",
+      "runtime_attachment_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ]
+  }
+}

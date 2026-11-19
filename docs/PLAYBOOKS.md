@@ -173,6 +173,41 @@ keep the local camera clear of the head and overlapping foreground meshes.
 Use [camera poses](CAMERA_POSES.md) and [viewmodel clearance](VIEWMODEL_CLEARANCE.md)
 to inspect their separate engine controls.
 
+#### Review a grip through an interrupted action
+
+Record `runtime.observe` with `entity_fields: ["world_matrix"]` for the
+camera, hand and item drawable on every committed tick of the held phase.
+Record `runtime.surface.measure` on those same ticks with the same source
+vertices and target drawable or triangle set. Supply the exact session, tick
+and structure revision to both reads. Retain the paired native JSONL
+requests and responses. Use one complete pair per tick in the phase you
+intend to measure. A tick with complete measurements both before and after
+a transfer has two valid revisions, so the analyzer reports it as ambiguous.
+
+```sh
+python3 scripts/review_grip_motion.py requests.jsonl responses.jsonl \
+  --session "$SESSION" --camera "$CAMERA" --hand "$HAND" \
+  --item "$CONTACT_DRAWABLE" --finger-drawable "$SKIN" \
+  --first 8 --last 58 --contact-mm 5 > grip-review.json
+```
+
+The report lists every selected fingertip distance, the peak translation and
+shortest rotation between consecutive hand poses in camera space, and drift
+of the item drawable's frame relative to the hand. Give it the contact limit
+calibrated for the actual prop. The tool rejects incomplete intervals,
+ambiguous revisions and changing probes. Valid observations outside the
+limit appear in the report for the caller to evaluate. Review a capture at
+one frame per fixed tick alongside this committed-pose report to see visual
+effects from presentation poses, clipping and depth.
+
+When a base action displaces the fingers during a hold, sample the calibrated
+grip into an override layer on the finger joints. Place any additive grip
+adjustments after the override. Keep shoulder, elbow and wrist motion in the
+base action. Release the prop at the committed contact tick and start taking
+weight out of the grip layer as the fingers open. Recheck poses and render
+frames during an interruption and the return out of the action.
+[Measured example](evidence/m2-first-person-grip-motion.json)
+
 ### Third person
 
 For third person, select a visible weight shift or contact to verify. Keep the

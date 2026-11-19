@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.262**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.263**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.263 adds a [per-tick review of first-person grips](PLAYBOOKS.md#review-a-grip-through-an-interrupted-action).
+The analyzer checks that pose and surface measurements came from the same
+native observation boundary and reports camera-relative hand motion and grip
+drift. A private imported-rig test reduced the worst sampled fingertip gap
+from 5.95 mm to 2.31 mm during movement and an interrupted action.
+[Results](evidence/m2-first-person-grip-motion.json)
 
 Version 0.0.262 supports [shared world depth for first-person viewmodels](VIEWMODELS.md#share-depth-with-the-world).
 Close props and walls can occlude the hands using the world's projection and
