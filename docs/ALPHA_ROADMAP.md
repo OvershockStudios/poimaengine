@@ -287,7 +287,9 @@ it does not close the thirty-minute mixed-reliability or wider performance gate.
 4. Qualify representative performance, reliability, physical input and
    editor interaction for the supported workloads.
 5. Validate fresh installation, the first-time creator journey and standalone
-   export using the candidate release artifacts.
+   export using the candidate release artifacts. Include a prebuilt Windows
+   launcher that installs a tagged engine package and checks its selected
+   release channel for updates. Complete this test without building Poima.
 
 Independent source/test/review work can run in parallel. Heavy native builds
 and GPU qualification are scheduled to fit the development laptop. Findings

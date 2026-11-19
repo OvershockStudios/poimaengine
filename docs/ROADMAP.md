@@ -360,6 +360,15 @@ open a selected installed coding agent, its CLI, or the Poima editor from the
 same project directory. Interactive prompts, approvals and account handling
 remain with the provider or the explicitly configured adapter.
 
+Ship a ready-to-run Windows launcher in GitHub Releases. Let creators
+choose an install directory and a stable or preview build channel.
+Resolve the selected channel to a published version tag and download its
+matching engine package when that tag changes. Verify the package inventory
+in a staging directory before activating it. Keep the last working version
+available if installation fails, and let an existing project keep its chosen
+engine version. Qualify first install, no-change checks, channel changes,
+interrupted downloads and rollback on Windows without a source checkout.
+
 Let developers register a different editor executable as a project preference.
 An alternate editor may provide its own viewport, tools and layout. Run the same
 authoring, revision guard and playback scenarios through another editor client
