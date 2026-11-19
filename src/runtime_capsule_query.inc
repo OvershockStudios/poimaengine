@@ -79,7 +79,6 @@
         physics.GetNarrowPhaseQuery().CastShape(cast,cast_settings,base,sweep,{}, {},filter);
         return sweep.hit;
     }
-    using ChainPoints=std::array<std::array<double,3>,3>;
     static void validate_chain_radii(const std::array<double,2>& radii) {
         for(double radius:radii)
             require(std::isfinite(radius) && radius>=.001 && radius<=1.,

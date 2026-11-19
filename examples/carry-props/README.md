@@ -70,6 +70,11 @@ return. Run `tests/pickup_pose_blend.py` with the selected module and the
 same runtime paths as above. Its comparison artifact selects
 `Poima.Examples.PoseFallbackCarryPropsGame`.
 
+Use `Poima.Examples.SteeredFallbackCarryPropsGame` on a 0.0.272 host for
+contact-guided wrist target offsets. Run `tests/pickup_pose_steering.py`
+with the selected module. The comparison artifact selects
+`Poima.Examples.BlendedFallbackCarryPropsGame`.
+
 | Field | Configuration |
 | --- | --- |
 | `Camera` | Controller's aim camera. The hand rig can have a different rotation and offset. |

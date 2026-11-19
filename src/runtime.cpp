@@ -184,6 +184,7 @@ struct Runtime::Impl {
     // One immutable live membership root. Retired native owners must remain in
     // the separate ownership inventory until their batch commits.
     std::shared_ptr<const Topology> topology;
+    using ChainPoints=std::array<std::array<double,3>,3>;
 #include "runtime_attachments.inc"
     #include "runtime_attachment_services.inc"
     std::vector<entt::entity> owned_entities;

@@ -1,0 +1,224 @@
+{
+  "engine_version": "0.0.272",
+  "schema_revision": 160,
+  "verifier": "tests/pickup_pose_steering.py",
+  "scope": "Two candidate wrist offsets from a measured final-pose contact normal. The engine chooses the clear pose with the smallest maximum shoulder-relative joint displacement among tested candidates. The imported comparison matches normalized runtime.step inputs with 0.0.271.",
+  "contract": {
+    "feature": "item_attachment_pickup_steering_v1",
+    "command_version": 10,
+    "command_bytes": 312,
+    "services_bytes": 528,
+    "max_steered_poses": 2,
+    "reserved_capsule_queries": 24,
+    "witness_version": 5
+  },
+  "analytic_coreclr": {
+    "native_replies": 329,
+    "natural_owner_exits": 6,
+    "blocked_tick": 171,
+    "successful_retry_tick": 200,
+    "selected_result": "steered",
+    "second_obstacle_result": "blended",
+    "exact_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "sha256": "9c2ded70fafd3c8ca101f360aff049a01bccd0fdb3ab3b6b60df42bfbb4eaa96"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "sha256": "bf5c2bdbdb62ba5b89f507d8d6c69af598bddfee671d1d94f3ebfa484c8b84c6"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "sha256": "bf5c2bdbdb62ba5b89f507d8d6c69af598bddfee671d1d94f3ebfa484c8b84c6"
+      },
+      {
+        "slots": [
+          "retained",
+          "retained-restored"
+        ],
+        "sha256": "4dc1f0cf3087ecc90e167b4ebf6908e4f0502f357d7b6825fad4b76b0865574d"
+      }
+    ],
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks item_attachment_pickup_steering_v1."
+    },
+    "invalid_pose_rejection": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "selected_shoulder_relative_step_m": 0.037282931638718306,
+    "previous_host_step_m": 0.07392354304456876,
+    "captures": {}
+  },
+  "analytic_windows_native_aot": {
+    "native_replies": 333,
+    "natural_owner_exits": 6,
+    "blocked_tick": 171,
+    "successful_retry_tick": 200,
+    "selected_result": "steered",
+    "second_obstacle_result": "blended",
+    "exact_archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "sha256": "aef2005627eea81e5ddd1ef411fc7604865595a1f92456e33421f83ff84b976b"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "sha256": "a81cfb920ad67252effb2ea11fa0271c00114088772c242d0b0c89db7eea65de"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "sha256": "a81cfb920ad67252effb2ea11fa0271c00114088772c242d0b0c89db7eea65de"
+      },
+      {
+        "slots": [
+          "retained",
+          "retained-restored"
+        ],
+        "sha256": "16969bebf3c1d3e77dcb9ebec4f262879d7ecb91ed1738f8bf13cfc346778b7a"
+      }
+    ],
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: item_attachment_pickup_steering_v1"
+    },
+    "invalid_pose_rejection": {
+      "code": -32070,
+      "message": "Invalid saved arm fallback pose."
+    },
+    "selected_shoulder_relative_step_m": 0.037282931638718174,
+    "previous_host_step_m": 0.07392354304456876,
+    "captures": {
+      "steered": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "5c9c500b348728c8f159e77b5b24b985239f51ad020806fb24daea5af8ab53f2"
+      },
+      "retained": {
+        "tick": 171,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "d5e7ea9c0e123598ea675c4c195320b2e9529a04e01239512a43983977277381"
+      }
+    }
+  },
+  "imported_coreclr": {
+    "native_replies": 931,
+    "exact_whole_archive_pairs": 2,
+    "identical_normalized_runtime_steps": 90,
+    "blocked_tick": 188,
+    "pickup_tick": 240,
+    "retained_positional_weight": 1.0,
+    "retained_wrist_weight": 1.0,
+    "peak_wrist_step_after_deg": 7.968568641696828,
+    "before": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 55.22556337947777,
+      "wrist_step_mm": 23.954978171433826,
+      "wrist_step_degrees": 0.0
+    },
+    "after": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 13.727452557787164,
+      "wrist_step_mm": 25.08945517152911,
+      "wrist_step_degrees": 0.0
+    },
+    "fingertips_mm": [
+      0.9122699911955192,
+      3.234643305384149,
+      2.1632849586761216,
+      0.5902301725048309
+    ],
+    "native_capture_frames": 0
+  },
+  "imported_windows_native_aot": {
+    "native_replies": 1107,
+    "exact_whole_archive_pairs": 2,
+    "identical_normalized_runtime_steps": 90,
+    "blocked_tick": 188,
+    "pickup_tick": 240,
+    "retained_positional_weight": 1.0,
+    "retained_wrist_weight": 1.0,
+    "peak_wrist_step_after_deg": 7.968568634723964,
+    "before": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 55.225559473283,
+      "wrist_step_mm": 23.954978520974887,
+      "wrist_step_degrees": 0.0
+    },
+    "after": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 13.727450190936349,
+      "wrist_step_mm": 25.08945105750433,
+      "wrist_step_degrees": 0.0
+    },
+    "fingertips_mm": [
+      0.9122699911954115,
+      3.234643305384044,
+      2.1632849586761216,
+      0.5902301725045807
+    ],
+    "native_capture_frames": 88
+  },
+  "imported_native_vulkan": {
+    "extent": [
+      800,
+      450
+    ],
+    "frames": 88,
+    "encoded_rate": 60,
+    "sha256": "2b0118ed6d3f67dfd61ee9fd793ff6163f91fe33aa7affb9cffc27eac02a9d91"
+  },
+  "qualification": {
+    "linux_ctest": [
+      "grip_motion_review",
+      "native_gameplay_publish_requirements",
+      "world_ui_contract",
+      "runtime_joint_pose_contract",
+      "runtime_attachment_contract",
+      "item_attachment_release_contract",
+      "item_attachment_pickup_contract",
+      "asset_references_contract"
+    ],
+    "linux_native_compatibility": true,
+    "linux_mcp": {
+      "passed": true,
+      "native_replies": 7,
+      "exact_archive_pairs": 1,
+      "restored_native_witness": true,
+      "stale_structure_code": -32009
+    }
+  },
+  "initial_analytic_geometry": {
+    "passed": false,
+    "reason": "The first obstacle left a closer blended candidate. The final verifier also checks this geometry as a separate selection case."
+  },
+  "initial_windows_comparison": {
+    "passed": false,
+    "reason": "A re-solve of the retained pose differed by one rounding unit, causing the motion sweep to report a contact. The final comparison checks the exact committed endpoints independently on both hosts."
+  },
+  "limits": "The matched data cover one imported rig and two conservative arm capsules on committed ticks. Hand and skin clearance, continuously changing blockers and general motion quality require separate evidence."
+}

@@ -25,7 +25,7 @@ std::string save_text(const SaveJson& v,std::size_t bound=256,bool empty=false) 
 }
 std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const SaveJson& data,std::uint64_t tick) {
     save_fields(data,{"version","tick","outcomes"});
-    const auto version=save_integer(data.at("version"),4);
+    const auto version=save_integer(data.at("version"),5);
     require(version>=1 && tick>0 && save_integer(data.at("tick"))==tick,
         "Saved attachment outcomes must match the committed tick.");
     const auto& rows=data.at("outcomes");
@@ -80,8 +80,9 @@ std::map<std::string,RuntimeAttachmentOutcome> read_attachment_outcomes(const Sa
                 else if(name=="animation")pose=Pose::Animation;
                 else if(name=="unresolved")pose=Pose::Unresolved;
                 else if(name=="blended")pose=Pose::Blended;
+                else if(name=="steered")pose=Pose::Steered;
                 else throw std::runtime_error("Invalid saved arm fallback pose.");
-                witness_version=std::max(witness_version,pose==Pose::Blended ? 4u : 3u);
+                witness_version=std::max(witness_version,pose==Pose::Steered ? 5u : pose==Pose::Blended ? 4u : 3u);
             } else {
                 save_fields(row,{"entity","anchor","status","obstacle","segment","interval","fraction","penetration_m"});
                 witness_version=std::max(witness_version,2u);
@@ -282,8 +283,10 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     if(s.attachment_outcomes) {
         auto rows=attachment_outcome_rows(*s.attachment_outcomes);
         unsigned version=1;
-        for(const auto& row:rows)if(row["status"]=="reach_blocked")
-            version=std::max(version,row.value("pose","")=="blended" ? 4u : row.contains("pose") ? 3u : 2u);
+        for(const auto& row:rows)if(row["status"]=="reach_blocked") {
+            const auto pose=row.value("pose","");
+            version=std::max(version,pose=="steered" ? 5u : pose=="blended" ? 4u : row.contains("pose") ? 3u : 2u);
+        }
         payload["attachment_outcomes"]={{"version",version},{"tick",s.tick},{"outcomes",std::move(rows)}};
     }
     SaveJson cameras=SaveJson::array();

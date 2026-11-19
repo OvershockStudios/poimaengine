@@ -513,6 +513,30 @@ The capsule checks cover the published arm segments. Finger and skin
 collision and continuous retraction paths require separate checks.
 [Verification](evidence/m2-pickup-pose-blend.json)
 
+### Steer a blocked reach away from contact
+
+Declare `IItemPickupSteeringGame` and call
+`AttemptItemPickupWithSteeredFallback(item, hand, contact, probes, arm)`.
+The runtime tries up to two small wrist target offsets along the contact
+normal of the blocked preceding pose. Each candidate keeps the preceding
+wrist orientation goal. It passes the same endpoint capsule checks as the
+blended candidates. The runtime selects the candidate with the smallest
+maximum displacement across the elbow and wrist, measured relative to the
+shoulder. A tie keeps the blended fallback.
+
+A selected offset produces the `steered` pose receipt. The example starts
+its return from the published IK target and eases the wrist orientation
+through recovery. A later pickup still has to pass the sampled grip checks.
+Node-relative target slots and contacts without a normal use the prior
+fallback search.
+
+`item_attachment_pickup_steering_v1` requires `item_attachment_pickup_blend_v1`.
+Command version 10 uses the same 312-byte record and 528-byte service table.
+It reserves 24 query attempts from the shared Tick capsule budget. Saves
+containing a `steered` result use attachment outcome version 5 and retain
+the chosen target and pose. Clearance covers endpoint capsules on that tick.
+[Verification](evidence/m2-pickup-pose-steering.json)
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally

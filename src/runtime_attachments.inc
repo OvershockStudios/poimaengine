@@ -13,11 +13,13 @@
         std::uint32_t slot;
         std::array<std::string,3> joints;
         std::array<double,2> radii;
-        std::array<std::array<double,3>,3> start;
+        ChainPoints start;
         std::optional<RuntimeIkCommand> fallback;
         bool blend=false;
+        bool steer=false;
     };
     static constexpr unsigned pickup_blend_samples=4;
+    static constexpr unsigned pickup_steer_samples=2;
     struct PickupClearanceRejected {
         RuntimeAttachmentReachBlocked detail;
     };
@@ -177,6 +179,35 @@
             throw PickupClearanceRejected{{std::move(hit->hit.entity),hit->segment,hit->interval,
                 hit->hit.fraction,hit->hit.penetration_depth}};
     }
+    static double pickup_pose_step(const ChainPoints& prior,const ChainPoints& candidate) {
+        double step=0;
+        for(std::size_t joint=1;joint<candidate.size();++joint) {
+            std::array<double,3> delta{};
+            for(std::size_t axis=0;axis<delta.size();++axis)
+                delta[axis]=(candidate[joint][axis]-candidate[0][axis])-(prior[joint][axis]-prior[0][axis]);
+            step=std::max(step,std::hypot(delta[0],delta[1],delta[2]));
+        }
+        return step;
+    }
+    static std::optional<std::array<double,3>> pickup_steering_offset(const ChainPoints& points,
+        const RuntimeIkClearanceBlocker& blocker,double radius) {
+        if(!blocker.hit.normal)return std::nullopt;
+        double arm_length=0,lever=0;
+        for(std::size_t i=0;i<3;++i) {
+            const auto axis=points[2][i]-points[0][i];
+            arm_length+=axis*axis;
+            lever+=(blocker.hit.point_on_query[i]-points[0][i])*axis;
+        }
+        if(arm_length<1e-12)return std::nullopt;
+        // A contact near the shoulder responds less to a wrist displacement.
+        // Bound this estimate and let the following native casts decide.
+        const auto margin=std::max(.001,.1*radius);
+        const auto shift=(blocker.hit.penetration_depth+margin)/std::clamp(lever/arm_length,.25,1.);
+        const auto metres=std::min(shift,.14*std::sqrt(arm_length));
+        auto offset=*blocker.hit.normal;
+        for(auto& coordinate:offset)coordinate*=metres;
+        return offset;
+    }
     RuntimeAttachmentReachBlocked::Pose resolve_pickup_pose(const std::string& item,const StagedPickupClearance& guard) {
         using Pose=RuntimeAttachmentReachBlocked::Pose;
         const auto ignore=pickup_clearance_exclusions(item,guard.rig);
@@ -196,7 +227,9 @@
             return pose;
         };
         const auto& previous=guard.fallback.value();
-        if(auto pose=clear_pose(previous))return commit(previous,std::move(*pose),Pose::Previous);
+        auto prior_pose=animations->preview_ik_chain(previous,tick,wrapper);
+        const auto prior_hit=sweep_chain(prior_pose.candidate,prior_pose.candidate,guard.radii,ignore);
+        if(!prior_hit)return commit(previous,std::move(prior_pose),Pose::Previous);
         // Disabled controls already sampled the unmodified incoming pose.
         if(!previous.enabled)return Pose::Unresolved;
         auto neutral=previous;
@@ -221,8 +254,36 @@
                 } else upper=probe.weight;
             }
         }
+        auto kind=control.enabled ? Pose::Blended : Pose::Animation;
+        if(guard.steer && previous.weight>0 && !animations->ik_state(guard.rig,guard.slot)->target_node) {
+            if(auto offset=pickup_steering_offset(prior_pose.candidate,*prior_hit,guard.radii[prior_hit->segment-1])) {
+                if(previous.space==IkSpace::Rig) {
+                    const auto inverse=inverse_affine(wrapper);
+                    const auto world_offset=*offset;
+                    for(std::size_t i=0;i<3;++i)
+                        (*offset)[i]=inverse[i]*world_offset[0]+inverse[4+i]*world_offset[1]+inverse[8+i]*world_offset[2];
+                }
+                auto best_step=best ? pickup_pose_step(guard.start,best->candidate) : std::numeric_limits<double>::infinity();
+                for(unsigned i=0;i<pickup_steer_samples;++i) {
+                    auto probe=previous;
+                    const double multiplier=1.+.5*i;
+                    for(std::size_t axis=0;axis<3;++axis)probe.target[axis]+=(*offset)[axis]*multiplier;
+                    if(std::any_of(probe.target.begin(),probe.target.end(),[](double x){return !std::isfinite(x) || std::abs(x)>1e6;}))
+                        continue;
+                    if(auto pose=clear_pose(probe)) {
+                        const auto step=pickup_pose_step(guard.start,pose->candidate);
+                        if(step<best_step) {
+                            best_step=step;
+                            control=probe;
+                            best=std::move(pose);
+                            kind=Pose::Steered;
+                        }
+                    }
+                }
+            }
+        }
         if(!best)return Pose::Unresolved;
-        return commit(control,std::move(*best),control.enabled ? Pose::Blended : Pose::Animation);
+        return commit(control,std::move(*best),kind);
     }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
         const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false,

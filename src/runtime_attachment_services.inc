@@ -124,10 +124,13 @@
         std::memcpy(&request,source,sizeof(request));
         require(request.reserved==0 && request.slot>=1 && request.slot<=8,"Invalid pickup clearance slot or reserved field.");
         const bool with_fallback=source->version>=8;
-        const bool blend=source->version==9;
+        const bool blend=source->version>=9;
+        const bool steer=source->version==10;
         require(!with_fallback || game->requires_item_pickup_pose(),"Gameplay must declare item_attachment_pickup_pose_v1.");
         require(!blend || game->requires_item_pickup_blend(),"Gameplay must declare item_attachment_pickup_blend_v1.");
-        const auto casts=2*ik_clearance_intervals+(with_fallback ? 4u : 0u)+(blend ? 2*pickup_blend_samples : 0u);
+        require(!steer || game->requires_item_pickup_steering(),"Gameplay must declare item_attachment_pickup_steering_v1.");
+        const auto casts=2*ik_clearance_intervals+(with_fallback ? 4u : 0u)+
+            (blend ? 2*pickup_blend_samples : 0u)+(steer ? 2*pickup_steer_samples : 0u);
         require(game_capsule_query_attempts<=capsule_query_tick_budget-casts,"Gameplay exceeded the capsule query budget.");
         const auto rig=gameplay_id(request.rig);
         (void)find(rig);
@@ -144,7 +147,7 @@
         }),"Pickup pose fallback requires an exclusive arm slot for this Tick.");
         std::optional<RuntimeIkCommand> fallback;
         if(with_fallback)fallback=animations->pickup_fallback_control(rig,request.slot);
-        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start,std::move(fallback),blend});
+        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start,std::move(fallback),blend,steer});
         game_capsule_query_attempts+=casts;
     }
 
@@ -288,7 +291,7 @@
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
                 ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3)) ||
-                ((source->version>=7 && source->version<=9) && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
+                ((source->version>=7 && source->version<=10) && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
                 source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;

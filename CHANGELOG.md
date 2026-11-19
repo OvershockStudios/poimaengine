@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.272
+
+- Steer a blocked pickup away from the measured contact and select the clear fallback that moves the arm least.
+
 ## 0.0.271
 
 - Search intermediate arm poses on blocked pickups and ease wrist rotation independently during recovery.

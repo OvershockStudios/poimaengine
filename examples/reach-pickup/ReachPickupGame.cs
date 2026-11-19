@@ -16,7 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
-internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback }
+internal enum ReachGuard { None, Preview, Pickup, PoseFallback, BlendedFallback, SteeredFallback }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -32,15 +32,22 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default,
         ReachGuard guard=ReachGuard.None)
     {
-        if(state.PendingTick!=0 && guard is (ReachGuard.Pickup or ReachGuard.PoseFallback or ReachGuard.BlendedFallback) &&
+        if(state.PendingTick!=0 && guard>=ReachGuard.Pickup &&
             context.GetItemPickupBlocker(state.Item) is { } block &&
             block.SampledTick==(ulong)state.PendingTick)
         {
             state.PendingTick=0;
             ++state.Cancellations;
-            if(guard is (ReachGuard.PoseFallback or ReachGuard.BlendedFallback) &&
+            if(guard>=ReachGuard.PoseFallback &&
                 context.GetTwoBoneIkOrientation(state.Rig,1) is { } committed)
+            {
                 state.Weight=committed.Point.Enabled ? committed.Point.Weight : 0;
+                if(guard==ReachGuard.SteeredFallback)
+                {
+                    var target=committed.Point.Target;
+                    (state.TargetX,state.TargetY,state.TargetZ)=(target.X,target.Y,target.Z);
+                }
+            }
             BeginReturn(ref state,blocked:true);
         }
         else if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
@@ -102,7 +109,9 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                         Probe(state,state.Vertex1),Probe(state,state.Vertex2),
                         Probe(state,state.Vertex3),Probe(state,state.Vertex4)
                     ];
-                    if(guard==ReachGuard.BlendedFallback)
+                    if(guard==ReachGuard.SteeredFallback)
+                        context.AttemptItemPickupWithSteeredFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
+                    else if(guard==ReachGuard.BlendedFallback)
                         context.AttemptItemPickupWithBlendedFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
                     else if(guard==ReachGuard.PoseFallback)
                         context.AttemptItemPickupWithPoseFallback(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
@@ -123,7 +132,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             candidate.Weight=remaining*state.ReturnWeight;
             candidate.Opening=remaining*state.ReturnOpening;
             IkEndOrientationGoal? wrist=null;
-            if(guard==ReachGuard.BlendedFallback && state.Phase==BlockedReturning && remaining>0 &&
+            if(guard>=ReachGuard.BlendedFallback && state.Phase==BlockedReturning && remaining>0 &&
                 context.GetTwoBoneIkOrientation(state.Rig,1)?.EndOrientation is { } held)
             {
                 // Advance from the last committed wrist sample, including after

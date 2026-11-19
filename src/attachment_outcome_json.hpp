@@ -32,6 +32,7 @@ inline nlohmann::json attachment_outcome_rows(const std::map<std::string,Runtime
                 case Pose::Animation:row["pose"]="animation";break;
                 case Pose::Unresolved:row["pose"]="unresolved";break;
                 case Pose::Blended:row["pose"]="blended";break;
+                case Pose::Steered:row["pose"]="steered";break;
             }
         } else row["status"]=std::holds_alternative<RuntimeAttachmentReleased>(outcome.detail) ? "released" : "transferred";
         rows.push_back(std::move(row));
