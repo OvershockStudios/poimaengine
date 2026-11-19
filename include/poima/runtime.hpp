@@ -86,6 +86,11 @@ struct RuntimeAttachmentReleaseBlocked {
     std::string obstacle;
     double penetration_m;
 };
+struct RuntimeAttachmentReachBlocked {
+    std::string obstacle;
+    std::uint32_t segment,interval;
+    double fraction,penetration_m;
+};
 class RuntimeAttachmentReleaseRejected : public std::runtime_error {
 public:
     RuntimeAttachmentReleaseRejected(std::string current_holder,RuntimeAttachmentReleaseBlocked obstruction)
@@ -97,7 +102,7 @@ public:
 struct RuntimeAttachmentOutcome {
     std::string anchor;
     std::variant<std::monostate,RuntimeAttachmentFrameMiss,RuntimeAttachmentSurfaceMiss,
-        RuntimeAttachmentReleased,RuntimeAttachmentReleaseBlocked> detail;
+        RuntimeAttachmentReleased,RuntimeAttachmentReleaseBlocked,RuntimeAttachmentReachBlocked> detail;
 };
 inline constexpr std::size_t max_runtime_attachments=64;
 struct RuntimeAttachmentRelease {

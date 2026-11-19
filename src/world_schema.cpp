@@ -225,7 +225,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 155}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 156}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -282,6 +282,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"recovery_command_version",4},{"outcome_bytes",120},{"release_feature","item_attachment_release_v1"},
         {"release_command_version",5},{"release_command_bytes",152},{"release_outcome_version",3},{"release_outcome_bytes",80},
         {"pickup_feature","item_attachment_pickup_v1"},{"pickup_command_version",6},{"pickup_command_bytes",272},
+        {"pickup_clearance_feature","item_attachment_pickup_clearance_v1"},{"pickup_clearance_command_version",7},
+        {"pickup_clearance_command_bytes",312},{"pickup_clearance_outcome_version",5},{"pickup_clearance_outcome_bytes",88},
         {"aim_feature","item_attachment_aim_v1"},{"aim_query_version",4},{"aim_query_bytes",208},
         {"max_surface_probes",max_attachment_surface_probes},{"reads_per_tick",1024},{"writes_per_tick",max_runtime_attachments},
         {"reads","Committed attachment before the current tick's movement."},
@@ -494,7 +496,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     aim["description"]="Trace the nearest physical collider at a committed tick and structure revision. Read the collider and its released item if the hit is that item's active proxy. Outside runtime-game-session v1.";
     methods["runtime.attachment.aim"]=std::move(aim);
     methods["runtime.attachment.outcomes"]=methods["runtime.attachment.inspect"];
-    methods["runtime.attachment.outcomes"]["description"]="Read committed grip and release outcomes from the exact tick. A release reports the generated body as anchor. A blocked release reports the unchanged holder as anchor, an obstacle entity and penetration in metres. Outside runtime-game-session v1.";
+    methods["runtime.attachment.outcomes"]["description"]="Read committed grip and release outcomes from the exact tick. A release reports the generated body as anchor. A blocked release reports the unchanged holder as anchor, an obstacle entity and penetration in metres. A reach_blocked pickup reports the attempted hand, the obstacle, segment, interval, fraction and penetration in metres. The item stays released. Outside runtime-game-session v1.";
     const auto source_vertex=object_schema({{"entity",id},{"vertex",rev}},{"entity","vertex"});
     const auto source_face=object_schema({{"entity",id},{"triangle",rev},
         {"barycentric",vector(unit,3)}},{"entity","triangle","barycentric"});

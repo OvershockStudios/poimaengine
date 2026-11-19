@@ -1,0 +1,261 @@
+{
+  "engine_version": "0.0.268",
+  "schema_revision": 156,
+  "fixture": "tests/final_pickup_clearance.py",
+  "scope": [
+    "A duration-one kinematic motion puts a blocker beside the eye ray on the same tick the hand reaches its calibrated grip.",
+    "A retained preview-only game transfers the prop. Final pickup clearance prevents that transfer and keeps the proxy live.",
+    "The witness survives a fresh native process. A checksum-valid malformed witness fails restore and the running state stays exact.",
+    "This gates ownership at the end of physics. Skin deformation, other movement during the tick, and pose correction are outside this approval check."
+  ],
+  "contract": {
+    "feature": "item_attachment_pickup_clearance_v1",
+    "services_epoch": 7,
+    "services_bytes": 528,
+    "command_version": 7,
+    "command_bytes": 312,
+    "observation_version": 5,
+    "observation_bytes": 88,
+    "blocked_witness_version": 2
+  },
+  "linux_coreclr": {
+    "passed": true,
+    "calls": 233,
+    "exact_archive_pairs": 3,
+    "blocked": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "fraction": 0.0,
+      "interval": 1,
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.03865951672196388,
+      "segment": 1,
+      "status": "reach_blocked"
+    },
+    "blocked_tick": 171,
+    "successful_tick": 200,
+    "invalid_saved_witness_rejection": {
+      "code": -32070,
+      "message": "Runtime snapshot integer is out of range."
+    },
+    "previous_game": {
+      "tick": 171,
+      "outcome": {
+        "anchor": "f0d970a586098386a0ca52f8d29e959b",
+        "entity": "00000000000000000000000000000017",
+        "status": "transferred"
+      }
+    },
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "C# gameplay: Gameplay host lacks item_attachment_pickup_clearance_v1."
+    },
+    "captures": {
+      "blocked": null,
+      "recovered": null
+    },
+    "archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "bytes": 30225,
+        "sha256": "c0d094ae69a0d85c4b1198951db5952803ce611de80544798fa0e4807bf84f12"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 25468,
+        "sha256": "dedf884b76fe881df5bcc481c2548e684ac0b3db37e7c49b7bbbd0f832796af2"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "bytes": 25468,
+        "sha256": "dedf884b76fe881df5bcc481c2548e684ac0b3db37e7c49b7bbbd0f832796af2"
+      }
+    ],
+    "source_hashes": {
+      "runtime_sha256": "5e351be9b64d373b48e8ed3409eeb78ee266a1a5fcc019be72eb8dab61bfd06e",
+      "gameplay_sha256": "b45f4dec4bbc5b923d5c01168b0bcbd8a9e2774c0c5a70c64c93f4e38a573f66",
+      "previous_runtime_sha256": "ce24de7e464591d9f1c6e9d8861a8f7ee67bdb13cba0011ca6acefc38f29e19b",
+      "previous_gameplay_sha256": "ad226aa557f25cbea9b69876214f1876bfb58f7e2d98e0809fd3a758c29abe31"
+    },
+    "native_replies_by_owner": {
+      "warm": 122,
+      "cold": 78,
+      "comparison": 30,
+      "previous": 3
+    }
+  },
+  "windows_native_aot": {
+    "passed": true,
+    "calls": 237,
+    "exact_archive_pairs": 3,
+    "blocked": {
+      "anchor": "f0d970a586098386a0ca52f8d29e959b",
+      "entity": "00000000000000000000000000000017",
+      "fraction": 0.0,
+      "interval": 1,
+      "obstacle": "0000000000000000000000000000001d",
+      "penetration_m": 0.03865951672196388,
+      "segment": 1,
+      "status": "reach_blocked"
+    },
+    "blocked_tick": 171,
+    "successful_tick": 200,
+    "invalid_saved_witness_rejection": {
+      "code": -32070,
+      "message": "Runtime snapshot integer is out of range."
+    },
+    "previous_game": {
+      "tick": 171,
+      "outcome": {
+        "anchor": "f0d970a586098386a0ca52f8d29e959b",
+        "entity": "00000000000000000000000000000017",
+        "status": "transferred"
+      }
+    },
+    "previous_host_rejection": {
+      "code": -32060,
+      "message": "Unknown required gameplay feature: item_attachment_pickup_clearance_v1"
+    },
+    "captures": {
+      "blocked": {
+        "tick": 172,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "f026cab581614f8962f80c4403db31b4331049b40efa2ae1a3eb7c15463bcda4",
+        "extent": [
+          640,
+          360
+        ]
+      },
+      "recovered": {
+        "tick": 208,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "0aad1aa4998b7b4b67feec0b5e8b67a6943f3de2d00847b98a115d8644e898f1",
+        "extent": [
+          640,
+          360
+        ]
+      }
+    },
+    "archive_pairs": [
+      {
+        "slots": [
+          "blocked",
+          "cold-blocked"
+        ],
+        "bytes": 30228,
+        "sha256": "51ae1c44061621028e01e0059f1fe9f67d94230b37e975300be90e12af139727"
+      },
+      {
+        "slots": [
+          "final",
+          "cold-final"
+        ],
+        "bytes": 25468,
+        "sha256": "64e57da2a51b1d4bf9a2e6ef206a6a7fafdd32b7f97df1de7ce2ced43afc3586"
+      },
+      {
+        "slots": [
+          "final",
+          "after-invalid-load"
+        ],
+        "bytes": 25468,
+        "sha256": "64e57da2a51b1d4bf9a2e6ef206a6a7fafdd32b7f97df1de7ce2ced43afc3586"
+      }
+    ],
+    "source_hashes": {
+      "runtime_sha256": "44aba01a9ed47d51023c4ece877acc7558446892d1b29c0b00c8123399ad5151",
+      "gameplay_sha256": "b11e1f719b25c1a0697b874b705b4cff581bf56bcf57c6f82b093d3754398e41",
+      "previous_runtime_sha256": "6160dbc8ef635cfbd86b3a340523c63c6b8f486c43b966c5cdea3a0b676a9e7b",
+      "previous_gameplay_sha256": "f5d5b8c560e5884f7501f1c933af7cf0fae4a7be5a89ec2f0c057fb34d281a1a"
+    },
+    "native_replies_by_owner": {
+      "warm": 126,
+      "cold": 78,
+      "comparison": 30,
+      "previous": 3
+    }
+  },
+  "linux_mcp": {
+    "passed": true,
+    "native_replies": 7,
+    "exact_archive_pairs": 1,
+    "restored_native_witness": true,
+    "stale_structure_code": -32009
+  },
+  "retained_0_0_266_release_blocked_archives": {
+    "linux": {
+      "passed": true,
+      "native_replies": 98,
+      "exact_archive_pairs": 2,
+      "saved_witness_version": 1,
+      "continued_tick": 355,
+      "original_blocked_sha256": "235f56058c613bee50319e047feb37a9235715f5ed829df0f618a4ce4f0e0104",
+      "original_final_sha256": "51d97ac45d607570da3a84263f39f7d70c612a9bfb020c9e990d55ae1ec94096",
+      "archive_pairs": [
+        {
+          "slots": [
+            "blocked",
+            "restored-old"
+          ],
+          "bytes": 25678,
+          "sha256": "235f56058c613bee50319e047feb37a9235715f5ed829df0f618a4ce4f0e0104"
+        },
+        {
+          "slots": [
+            "final",
+            "continued-old"
+          ],
+          "bytes": 25378,
+          "sha256": "51d97ac45d607570da3a84263f39f7d70c612a9bfb020c9e990d55ae1ec94096"
+        }
+      ]
+    },
+    "windows": {
+      "passed": true,
+      "native_replies": 98,
+      "exact_archive_pairs": 2,
+      "saved_witness_version": 1,
+      "continued_tick": 355,
+      "original_blocked_sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba",
+      "original_final_sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f",
+      "archive_pairs": [
+        {
+          "slots": [
+            "blocked",
+            "restored-old"
+          ],
+          "bytes": 25716,
+          "sha256": "4da0a043a0d14ab0fd1b7b085d47bd1ff335315a4eaf09a898cec5719dcf7eba"
+        },
+        {
+          "slots": [
+            "final",
+            "continued-old"
+          ],
+          "bytes": 25380,
+          "sha256": "4866f90ea0f9e0b1b0203eddacdd760dee6392afb1475f1acac76f09aa43c89f"
+        }
+      ]
+    }
+  },
+  "linux_regressions": [
+    "gameplay_compatibility_policy",
+    "runtime_capsule_cast_native",
+    "runtime_two_bone_ik_native",
+    "world_ui_contract",
+    "runtime_save_contract",
+    "runtime_attachment_contract",
+    "item_attachment_release_contract",
+    "item_attachment_pickup_contract",
+    "asset_references_contract"
+  ]
+}

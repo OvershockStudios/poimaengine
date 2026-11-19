@@ -643,6 +643,22 @@ typedef struct PoimaGameItemAttachmentCommandV3 {
     const PoimaGameItemSurfaceProbeV1* probes;
     uint32_t probe_count,reserved;
 } PoimaGameItemAttachmentCommandV3;
+/* item_attachment_pickup_clearance_v1 extends attachment_set version 7.
+ * The arm uses a live manual IK chain ending at the receiving hand. */
+typedef struct PoimaGameItemPickupClearanceV7 {
+    PoimaGameItemAttachmentCommandV3 sampled;
+    PoimaEntityId rig;
+    double radii[2];
+    uint32_t slot,reserved;
+} PoimaGameItemPickupClearanceV7;
+/* attachment_get version 5 returns a blocked pickup witness, with segment
+ * zero when there was no such result at the callback-entry tick. */
+typedef struct PoimaGameItemPickupBlockerV5 {
+    uint32_t version,bytes,segment,interval;
+    PoimaEntityId item,anchor,obstacle;
+    uint64_t sampled_tick;
+    double fraction,penetration_m;
+} PoimaGameItemPickupBlockerV5;
 /* item_attachment_recovery_v1 accepts the same command layout at version 4.
  * attachment_get accepts version 2 for receipt readback from the input tick.
  * status is Absent0, Transferred1, FrameMiss2 or SurfaceMiss3. */
@@ -715,6 +731,12 @@ static_assert(sizeof(PoimaGameItemSurfaceProbeV1)==88 && alignof(PoimaGameItemSu
 static_assert(sizeof(PoimaGameItemAttachmentCommandV3)==272 && alignof(PoimaGameItemAttachmentCommandV3)==8 &&
     offsetof(PoimaGameItemAttachmentCommandV3,contact)==0 && offsetof(PoimaGameItemAttachmentCommandV3,probes)==256 &&
     offsetof(PoimaGameItemAttachmentCommandV3,probe_count)==264 && offsetof(PoimaGameItemAttachmentCommandV3,reserved)==268);
+static_assert(sizeof(PoimaGameItemPickupClearanceV7)==312 && alignof(PoimaGameItemPickupClearanceV7)==8 &&
+    offsetof(PoimaGameItemPickupClearanceV7,rig)==272 && offsetof(PoimaGameItemPickupClearanceV7,radii)==288 &&
+    offsetof(PoimaGameItemPickupClearanceV7,slot)==304);
+static_assert(sizeof(PoimaGameItemPickupBlockerV5)==88 && alignof(PoimaGameItemPickupBlockerV5)==8 &&
+    offsetof(PoimaGameItemPickupBlockerV5,item)==16 && offsetof(PoimaGameItemPickupBlockerV5,obstacle)==48 &&
+    offsetof(PoimaGameItemPickupBlockerV5,sampled_tick)==64 && offsetof(PoimaGameItemPickupBlockerV5,penetration_m)==80);
 static_assert(sizeof(PoimaGameItemAttachmentStateV1)==64 && alignof(PoimaGameItemAttachmentStateV1)==8 &&
     offsetof(PoimaGameItemAttachmentStateV1,entity)==16 && offsetof(PoimaGameItemAttachmentStateV1,anchor)==32 &&
     offsetof(PoimaGameItemAttachmentStateV1,sampled_tick)==48 && offsetof(PoimaGameItemAttachmentStateV1,structure_revision)==56);

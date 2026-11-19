@@ -1079,6 +1079,14 @@ RuntimeAnimations::IkChainPreview RuntimeAnimations::preview_ik_chain(const Runt
     }
     return result;
 }
+std::array<std::string,3> RuntimeAnimations::manual_ik_nodes(const std::string& entity,std::uint32_t slot) const {
+    const auto found=membership_->indices.find(entity);
+    check(found!=membership_->indices.end(),"Arm clearance requires a live animation rig.");
+    const auto& rig=membership_->rigs[found->second];
+    const auto chain=std::find_if(rig.ik.begin(),rig.ik.end(),[slot](const auto& value){return value.slot==slot;});
+    check(chain!=rig.ik.end() && !chain->grounding,"Arm clearance requires a configured manual IK slot.");
+    return {rig.nodes.at(chain->root),rig.nodes.at(chain->middle),rig.nodes.at(chain->end)};
+}
 void RuntimeAnimations::apply_ik(const std::vector<RuntimeIkCommand>& commands) {
     for(const auto& command:commands)check(!return_owns_controls(command.entity),"Physical return owns IK requests during its finite blend.");
     check(commands.size()<=64,"IK command budget is 64 per tick.");if(commands.empty())return;auto candidate=ik_;std::set<std::pair<std::string,std::uint32_t>> seen;

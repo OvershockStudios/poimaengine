@@ -90,3 +90,19 @@ the native pose, tests both arm segments and loads a save taken during the
 blocked reach. The same item can be picked up after the obstacle moves.
 With Windows Vulkan, `--gpu` captures the blocked and recovered states.
 [IK clearance](../../docs/TWO_BONE_IK.md#probe-a-reach-for-obstacles)
+
+## Recheck before picking up
+
+Publish `Poima.Examples.FinalClearanceCarryPropsGame` to add the arm check
+inside the pickup transaction. The preview still filters each reach
+pose. When an obstacle moves into the arm after the final preview, the
+pickup keeps its release body and reports the blocker. The hand begins
+its return when gameplay reads the result.
+
+Run `tests/final_pickup_clearance.py` with the same build paths. It moves
+the wall on the exact pickup tick, saves and restores the refusal, then
+verifies that another attempt succeeds once the wall clears. To compare
+with the 0.0.267 behavior, supply `--previous-binary` and either the old
+Windows `--comparison-descriptor` or the matching Linux
+`--comparison-assembly` and `--comparison-bridge`.
+[Pickup clearance contract](../../docs/ITEM_ATTACHMENTS.md#recheck-the-arm-after-movement)

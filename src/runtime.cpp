@@ -2015,7 +2015,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_attachment_commands.clear();game_release_commands.clear();
+            game_attachment_commands.clear();game_release_commands.clear();game_pickup_checks.clear();
             clear_controller_preview();deferred_controller_inputs.clear();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));

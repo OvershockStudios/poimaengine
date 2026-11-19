@@ -360,10 +360,10 @@ public readonly unsafe ref partial struct GameContext
     }
 
     private void StageSampledTransfer(EntityId item, EntityId anchor, ItemAttachmentContact contact,
-        ReadOnlySpan<ItemSurfaceProbe> probes, uint version)
+        ReadOnlySpan<ItemSurfaceProbe> probes, uint version,ItemPickupClearance? clearance=null)
     {
         var api=ItemAttachmentServiceAbi.Validate(services);
-        var guarded=ContactCommand(item,anchor,contact,version,272);
+        var guarded=ContactCommand(item,anchor,contact,version,clearance.HasValue ? 312u : 272u);
         if(probes.Length is <1 or >8)
             throw new ArgumentException("Supply 1..8 item surface probes.",nameof(probes));
 
@@ -395,7 +395,13 @@ public readonly unsafe ref partial struct GameContext
                 }
                 NativeItemAttachmentSurfaceCommandV3 command=new(){Contact=guarded,Probes=selectors,ProbeCount=(uint)probes.Length};
                 NativeError error=default;
-                Check(api->Set(services->Context,&command.Contact.Command,&error),&error);
+                if(clearance is { } arm)
+                {
+                    NativeItemPickupClearanceV7 checkedPickup=new(){Sampled=command,Rig=arm.Rig,
+                        UpperRadius=arm.UpperRadius,LowerRadius=arm.LowerRadius,Slot=arm.Slot};
+                    Check(api->Set(services->Context,&checkedPickup.Sampled.Contact.Command,&error),&error);
+                }
+                else Check(api->Set(services->Context,&command.Contact.Command,&error),&error);
             }
         }
         finally

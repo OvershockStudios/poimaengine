@@ -2,6 +2,7 @@
 // Included in Runtime::Impl.
     std::vector<RuntimeAttachmentCommand> game_attachment_commands;
     std::vector<RuntimeAttachmentRelease> game_release_commands;
+    std::map<std::string,StagedPickupClearance> game_pickup_checks;
     std::size_t game_attachment_reads=0,game_attachment_attempts=0;
 
     void finish_game_attachments() {
@@ -20,7 +21,9 @@
                 if(!strict.empty())change_attachments(structure_revision,strict,&checks);
                 for(const auto& command:game_attachment_commands)if(command.recover_miss) {
                     RuntimeAttachmentOutcome outcome{command.anchor,{}};
-                    try {change_attachments(structure_revision,{&command,1},&checks,true);}
+                    const auto guard=game_pickup_checks.find(command.entity);
+                    try {change_attachments(structure_revision,{&command,1},&checks,true,
+                        guard==game_pickup_checks.end() ? nullptr : &guard->second);}
                     catch(const RuntimeAttachmentContactRejected& error) {
                         const auto& row=error.contact;
                         outcome.detail=RuntimeAttachmentFrameMiss{row.position_error_m,row.position_limit_m,
@@ -29,6 +32,8 @@
                         const auto& row=error.contact;
                         outcome.detail=RuntimeAttachmentSurfaceMiss{row.probe_index,row.measurement.target_triangle,
                             row.measurement.distance_m,row.distance_limit_m};
+                    } catch(const PickupClearanceRejected& blocked) {
+                        outcome.detail=blocked.detail;
                     }
                     outcomes.emplace(command.entity,std::move(outcome));
                 }
@@ -45,6 +50,7 @@
         } catch(const std::invalid_argument& error) {throw std::runtime_error(error.what());}
         game_attachment_commands.clear();
         game_release_commands.clear();
+        game_pickup_checks.clear();
     }
 
     void get_game_attachment_outcome(const PoimaEntityId& entity,PoimaGameItemAttachmentStateV1* output) const {
@@ -92,6 +98,42 @@
             }
         }
         std::memcpy(output,&result,sizeof(result));
+    }
+    void get_game_pickup_blocker(const PoimaEntityId& item,PoimaGameItemAttachmentStateV1* output) const {
+        std::uint32_t header[4];
+        std::memcpy(header,output,sizeof(header));
+        require(game && game->requires_item_pickup_clearance() && header[1]==sizeof(PoimaGameItemPickupBlockerV5) &&
+            header[2]==0 && header[3]==0,"Invalid pickup obstruction query or missing clearance feature.");
+        PoimaGameItemPickupBlockerV5 result{};
+        result.version=5;result.bytes=sizeof(result);result.item=item;result.sampled_tick=tick;
+        if(attachment_outcomes) {
+            const auto found=attachment_outcomes->find(gameplay_id(item));
+            if(found!=attachment_outcomes->end())if(const auto* blocked=std::get_if<RuntimeAttachmentReachBlocked>(&found->second.detail)) {
+                result.anchor=gameplay_id(found->second.anchor);result.obstacle=gameplay_id(blocked->obstacle);
+                result.segment=blocked->segment;result.interval=blocked->interval;
+                result.fraction=blocked->fraction;result.penetration_m=blocked->penetration_m;
+            }
+        }
+        std::memcpy(output,&result,sizeof(result));
+    }
+    void stage_game_pickup_clearance(const RuntimeAttachmentCommand& command,const PoimaGameItemAttachmentCommandV1* source) {
+        require(game && game->requires_item_pickup_clearance(),"Gameplay must declare item_attachment_pickup_clearance_v1.");
+        PoimaGameItemPickupClearanceV7 request;
+        std::memcpy(&request,source,sizeof(request));
+        require(request.reserved==0 && request.slot>=1 && request.slot<=8,"Invalid pickup clearance slot or reserved field.");
+        constexpr auto casts=2*ik_clearance_intervals;
+        require(game_capsule_query_attempts<=capsule_query_tick_budget-casts,"Gameplay exceeded the capsule query budget.");
+        const auto rig=gameplay_id(request.rig);
+        (void)find(rig);
+        require(!topology->definitions.at(rig).physical_rig,"Pickup clearance supports animated rigs without a physical pose owner.");
+        const std::array radii{request.radii[0],request.radii[1]};
+        validate_chain_radii(radii);
+        const auto joints=animations->manual_ik_nodes(rig,request.slot);
+        require(attachment_contains(attachment_graph.get(),joints.back(),command.anchor),
+            "Pickup clearance must match the receiving hand's live manual chain.");
+        const auto start=read_chain_points(joints);
+        game_pickup_checks.emplace(command.entity,StagedPickupClearance{rig,request.slot,joints,radii,start});
+        game_capsule_query_attempts+=casts;
     }
 
     void require_unique_game_attachment(const std::string& item) const {
@@ -202,6 +244,10 @@
                 self.get_game_release_outcome(*entity,output);
                 return;
             }
+            if(entity && output && output->version==5) {
+                self.get_game_pickup_blocker(*entity,output);
+                return;
+            }
             require(entity && output && output->version==1 && output->bytes==sizeof(*output) &&
                 output->present==0 && output->reserved==0,"Invalid item attachment query header.");
             const auto id=gameplay_id(*entity);
@@ -229,7 +275,8 @@
             }
             require(source && ((source->version==1 && source->bytes==sizeof(*source)) ||
                 (source->version==2 && source->bytes==sizeof(PoimaGameItemAttachmentCommandV2)) ||
-                ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3))) &&
+                ((source->version==3 || source->version==4 || source->version==6) && source->bytes==sizeof(PoimaGameItemAttachmentCommandV3)) ||
+                (source->version==7 && source->bytes==sizeof(PoimaGameItemPickupClearanceV7))) &&
                 source->reserved==0 && source->mode<=2,
                 "Invalid item attachment command header.");
             RuntimeAttachmentCommand command;
@@ -275,17 +322,18 @@
                     std::memcpy(&sampled,source,sizeof(sampled));
                     contact.surface=self.game_surface_probes(sampled);
                 }
-                if(source->version==6) {
+                if(source->version==6 || source->version==7) {
                     require(self.game->requires_item_attachment_pickup(),
                         "Gameplay must declare item_attachment_pickup_v1 to stage a pickup.");
                     command.mode=RuntimeAttachmentMode::Pickup;
                 }
-                command.recover_miss=source->version==4 || source->version==6;
+                command.recover_miss=source->version==4 || source->version==6 || source->version==7;
                 require(!command.recover_miss || self.game->requires_item_attachment_recovery(),
                     "Gameplay must declare item_attachment_recovery_v1 to stage a recoverable transfer.");
                 command.contact=std::move(contact);
             }
             self.require_unique_game_attachment(command.entity);
+            if(source->version==7)self.stage_game_pickup_clearance(command,source);
             self.game_attachment_commands.push_back(std::move(command));
         });
     }

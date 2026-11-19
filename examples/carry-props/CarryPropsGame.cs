@@ -31,9 +31,9 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
 
     public override void Initialize(ref ReachPickupState state) { }
 
-    public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
+    public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,ReachGuard.None);
 
-    internal static void Update(ref ReachPickupState state, GameContext context, bool checkClearance)
+    internal static void Update(ref ReachPickupState state, GameContext context, ReachGuard guard)
     {
         var settings=context.Get<CarryPropSettings>(state.Actor);
         if(settings.Camera==default || settings.Template==default ||
@@ -86,7 +86,7 @@ public sealed class CarryPropsGame : Game<ReachPickupState>,
                 Recover(ref state,context,settings.RecoverTicks);
                 break;
             default:
-                ReachPickupGame.Update(ref state,context,true,settings.Camera,checkClearance);
+                ReachPickupGame.Update(ref state,context,true,settings.Camera,guard);
                 break;
         }
 
@@ -148,5 +148,15 @@ public sealed class ClearanceCarryPropsGame : Game<ReachPickupState>,
 {
     public override void Initialize(ref ReachPickupState state) { }
     public override void Tick(ref ReachPickupState state, GameContext context) =>
-        CarryPropsGame.Update(ref state,context,true);
+        CarryPropsGame.Update(ref state,context,ReachGuard.Preview);
+}
+
+[GameModule("poima.example.final-clearance-carry-props")]
+public sealed class FinalClearanceCarryPropsGame : Game<ReachPickupState>,
+    IIkClearanceGame, IItemAttachmentAimGame, IItemPickupClearanceGame, IItemAttachmentReleaseGame,
+    ITwoBoneIkOrientationGame, IMaskedAnimationGame, IInputActionsGame
+{
+    public override void Initialize(ref ReachPickupState state) { }
+    public override void Tick(ref ReachPickupState state, GameContext context) =>
+        CarryPropsGame.Update(ref state,context,ReachGuard.Pickup);
 }

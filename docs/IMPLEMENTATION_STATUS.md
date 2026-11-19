@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.267**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.268**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.268 adds [final-tick arm clearance for pickups](ITEM_ATTACHMENTS.md#recheck-the-arm-after-movement).
+An obstacle can enter the arm's path after the preview and still block the
+transfer. The released body stays live and the refusal can be read from a
+checkpoint. The Carry Props verifier reproduces the earlier transfer and
+checks the new refusal, restoration and successful retry on the same route.
+[Results](evidence/m2-final-pickup-clearance.json)
 
 Version 0.0.267 adds a [two-bone clearance probe](TWO_BONE_IK.md#probe-a-reach-for-obstacles)
 to the world service and compiled gameplay. It solves the proposed pose

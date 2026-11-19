@@ -8,6 +8,16 @@
     std::shared_ptr<const AttachmentGraph> attachment_graph;
     using AttachmentOutcomes=std::map<std::string,RuntimeAttachmentOutcome>;
     std::shared_ptr<const AttachmentOutcomes> attachment_outcomes;
+    struct StagedPickupClearance {
+        std::string rig;
+        std::uint32_t slot;
+        std::array<std::string,3> joints;
+        std::array<double,2> radii;
+        std::array<std::array<double,3>,3> start;
+    };
+    struct PickupClearanceRejected {
+        RuntimeAttachmentReachBlocked detail;
+    };
 
     static const RuntimeAttachmentBinding* attachment(const AttachmentGraph* graph,const std::string& id) {
         if(!graph)return nullptr;
@@ -143,8 +153,26 @@
         }
         if(missed)throw RuntimeAttachmentSurfaceRejected(std::move(*missed));
     }
+    void check_pickup_clearance(const std::string& item,const std::string& holder,const StagedPickupClearance& guard) const {
+        require(animations->manual_ik_nodes(guard.rig,guard.slot)==guard.joints &&
+            attachment_contains(attachment_graph.get(),guard.joints.back(),holder),
+            "Pickup clearance must match the receiving hand's live manual chain.");
+        const auto* dropped=attachment(attachment_graph.get(),item);
+        require(dropped && dropped->released,"Pickup clearance requires a live release proxy.");
+        std::vector<std::string> ignore{dropped->anchor};
+        for(auto id=guard.rig;!id.empty();id=registry.get<Node>(find(id)).parent) {
+            if(registry.any_of<Body,Controller>(find(id))) {
+                if(id!=dropped->anchor)ignore.push_back(id);
+                break;
+            }
+        }
+        if(auto hit=sweep_chain(guard.start,read_chain_points(guard.joints),guard.radii,ignore))
+            throw PickupClearanceRejected{{std::move(hit->hit.entity),hit->segment,hit->interval,
+                hit->hit.fraction,hit->hit.penetration_depth}};
+    }
     void publish_attachment_transforms(std::shared_ptr<AttachmentGraph> graph,const std::set<std::string>& keep={},
-        const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false) {
+        const AttachmentContacts& contacts={},std::size_t* tick_checks=nullptr,bool recover_miss=false,
+        const StagedPickupClearance* clearance=nullptr) {
         validate_attachment_graph(*graph,*topology);
         const auto& order=graph->bindings.empty() ? topology->hierarchy : graph->order;
         std::map<std::string,Matrix4> prepared;
@@ -178,6 +206,10 @@
         try {check_attachment_surfaces(*graph,contacts,prepared,tick_checks ? *tick_checks : own_checks);}
         catch(const RuntimeAttachmentSurfaceRejected&) {if(!frame_miss)throw;}
         if(frame_miss)throw RuntimeAttachmentContactRejected(std::move(*frame_miss));
+        if(clearance) {
+            const auto& item=contacts.begin()->first;
+            check_pickup_clearance(item,graph->bindings.at(item).anchor,*clearance);
+        }
         // All validation and allocation is complete. There is no partial graph
         // when a later command or matrix fails, and the old cache keys are stale.
         for(const auto e:order) {
@@ -187,10 +219,12 @@
         attachment_graph=graph->bindings.empty() ? nullptr : std::move(graph);
     }
     RuntimeStructureResult change_attachments(std::uint64_t expected,std::span<const RuntimeAttachmentCommand> commands,
-        std::size_t* tick_checks=nullptr,bool recover_miss=false) {
+        std::size_t* tick_checks=nullptr,bool recover_miss=false,const StagedPickupClearance* clearance=nullptr) {
         require(expected==structure_revision && structure_revision<9007199254740991ULL,
             "Attachment structure revision is stale or exhausted.");
         require(!commands.empty() && commands.size()<=max_runtime_attachments,"Submit 1..64 attachment commands.");
+        require(!clearance || (commands.size()==1 && commands.front().mode==RuntimeAttachmentMode::Pickup),
+            "Arm clearance applies to one staged pickup.");
         auto graph=std::make_shared<AttachmentGraph>();
         if(attachment_graph)graph->bindings=attachment_graph->bindings;
         std::set<std::string> seen,keep;
@@ -243,7 +277,7 @@
                 default: throw std::runtime_error("Unknown attachment transfer mode.");
             }
         }
-        publish_attachment_transforms(std::move(graph),keep,contacts,tick_checks,recover_miss);
+        publish_attachment_transforms(std::move(graph),keep,contacts,tick_checks,recover_miss,clearance);
         if(retired_bodies.empty())return {++structure_revision,{}};
         // The enclosing owner transaction retains the original graph and live
         // physics until topology retirement and strong-reference checks succeed.

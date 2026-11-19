@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.268
+
+- Check the arm against final physics before transferring a guarded pickup, and retain the obstruction in saves made on that tick.
+
 ## 0.0.267
 
 - Probe a proposed two-bone reach for physical obstructions and stop blocked reaches in the Carry Props example.

@@ -79,37 +79,38 @@
         physics.GetNarrowPhaseQuery().CastShape(cast,cast_settings,base,sweep,{}, {},filter);
         return sweep.hit;
     }
-    RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const {
-        const auto& goal=request.goal;
-        const auto rig=find(goal.entity);
-        require(!topology->definitions.at(goal.entity).physical_rig,
-            "IK clearance supports animated rigs without a physical pose owner.");
-        for(double radius:request.radii)
+    using ChainPoints=std::array<std::array<double,3>,3>;
+    static void validate_chain_radii(const std::array<double,2>& radii) {
+        for(double radius:radii)
             require(std::isfinite(radius) && radius>=.001 && radius<=1.,
                 "IK clearance radii must be .001..1 metres.");
-        const auto preview=animations->preview_ik_chain(goal,tick,registry.get<Node>(rig).world);
-        RuntimeIkClearance result;
-        result.candidate=preview.candidate;
-        for(std::size_t i=0;i<result.current.size();++i) {
-            const auto& world=registry.get<Node>(find(preview.entities[i])).world;
-            result.current[i]={world[12],world[13],world[14]};
-            for(std::size_t k=0;k<3;++k)
-                require(std::isfinite(result.current[i][k]) && std::abs(result.current[i][k])<=1e6 &&
-                    std::isfinite(result.candidate[i][k]) && std::abs(result.candidate[i][k])<=1e6,
-                    "IK clearance joint points must remain within +/-1000km.");
+    }
+    ChainPoints read_chain_points(const std::array<std::string,3>& nodes) const {
+        ChainPoints points;
+        for(std::size_t i=0;i<points.size();++i) {
+            const auto& world=registry.get<Node>(find(nodes[i])).world;
+            points[i]={world[12],world[13],world[14]};
         }
+        return points;
+    }
+    std::optional<RuntimeIkClearanceBlocker> sweep_chain(const ChainPoints& current,const ChainPoints& candidate,
+        const std::array<double,2>& radii,const std::vector<std::string>& ignore) const {
+        for(const auto* points:{&current,&candidate})
+            for(const auto& point:*points)for(double coordinate:point)
+                require(std::isfinite(coordinate) && std::abs(coordinate)<=1e6,
+                    "IK clearance joint points must remain within +/-1000km.");
         for(std::uint32_t interval=0;interval<ik_clearance_intervals;++interval) {
             const auto start=static_cast<double>(interval)/ik_clearance_intervals;
             const auto end=static_cast<double>(interval+1)/ik_clearance_intervals;
-            for(std::uint32_t segment=0;segment<request.radii.size();++segment) {
+            for(std::uint32_t segment=0;segment<radii.size();++segment) {
                 CapsuleCastRequest cast;
-                cast.ignore=request.ignore;
+                cast.ignore=ignore;
                 std::array<double,3> axis{},delta{},deviation{};
                 for(std::size_t k=0;k<3;++k) {
-                    const double a=std::lerp(result.current[segment][k],result.candidate[segment][k],start);
-                    const double b=std::lerp(result.current[segment+1][k],result.candidate[segment+1][k],start);
-                    const double da=std::lerp(result.current[segment][k],result.candidate[segment][k],end)-a;
-                    const double db=std::lerp(result.current[segment+1][k],result.candidate[segment+1][k],end)-b;
+                    const double a=std::lerp(current[segment][k],candidate[segment][k],start);
+                    const double b=std::lerp(current[segment+1][k],candidate[segment+1][k],start);
+                    const double da=std::lerp(current[segment][k],candidate[segment][k],end)-a;
+                    const double db=std::lerp(current[segment+1][k],candidate[segment+1][k],end)-b;
                     cast.position[k]=std::midpoint(a,b);
                     axis[k]=b-a;
                     delta[k]=std::midpoint(da,db);
@@ -120,7 +121,7 @@
                 // A capsule following the midpoint with the starting axis
                 // covers linear endpoint travel when expanded by the largest
                 // difference between either endpoint and the midpoint motion.
-                cast.radius=request.radii[segment]+length(deviation)+capsule_query_collision_tolerance;
+                cast.radius=radii[segment]+length(deviation)+capsule_query_collision_tolerance;
                 cast.distance=length(delta);
                 if(cast.half_height>0) {
                     const auto direction=JPH::Vec3(static_cast<float>(axis[0]/(2*cast.half_height)),
@@ -130,13 +131,21 @@
                 }
                 if(cast.distance>0)
                     for(std::size_t k=0;k<3;++k)cast.direction[k]=delta[k]/cast.distance;
-                if(auto hit=capsule_cast(cast)) {
-                    result.blocker=RuntimeIkClearanceBlocker{segment+1,interval+1,std::move(*hit)};
-                    return result;
-                }
+                if(auto hit=capsule_cast(cast))
+                    return RuntimeIkClearanceBlocker{segment+1,interval+1,std::move(*hit)};
             }
         }
-        return result;
+        return std::nullopt;
+    }
+    RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const {
+        const auto& goal=request.goal;
+        const auto rig=find(goal.entity);
+        require(!topology->definitions.at(goal.entity).physical_rig,
+            "IK clearance supports animated rigs without a physical pose owner.");
+        validate_chain_radii(request.radii);
+        const auto preview=animations->preview_ik_chain(goal,tick,registry.get<Node>(rig).world);
+        auto current=read_chain_points(preview.entities);
+        return {current,preview.candidate,sweep_chain(current,preview.candidate,request.radii,request.ignore)};
     }
     static int32_t POIMA_CALL cast_capsule_gameplay(void* context,const PoimaGameCapsuleCastRequestV1* source,
         PoimaGameCapsuleCastResultV1* output,PoimaGameError* error) {

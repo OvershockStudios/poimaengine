@@ -16,6 +16,7 @@ public struct ReachPickupState
     public double Weight, Opening, ReturnWeight, ReturnOpening;
     public double TargetX, TargetY, TargetZ, TargetQx, TargetQy, TargetQz, TargetQw;
 }
+internal enum ReachGuard { None, Preview, Pickup }
 
 [GameModule("poima.example.reach-pickup")]
 public sealed class ReachPickupGame : Game<ReachPickupState>,
@@ -29,9 +30,16 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
     public override void Tick(ref ReachPickupState state, GameContext context) => Update(ref state,context,false);
 
     internal static void Update(ref ReachPickupState state, GameContext context, bool aim, EntityId aimCamera=default,
-        bool checkClearance=false)
+        ReachGuard guard=ReachGuard.None)
     {
-        if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
+        if(state.PendingTick!=0 && guard==ReachGuard.Pickup && context.GetItemPickupBlocker(state.Item) is { } block &&
+            block.SampledTick==(ulong)state.PendingTick)
+        {
+            state.PendingTick=0;
+            ++state.Cancellations;
+            BeginReturn(ref state,blocked:true);
+        }
+        else if(state.PendingTick!=0 && context.GetItemTransferOutcome(state.Item) is { } outcome &&
             outcome.SampledTick==(ulong)state.PendingTick)
         {
             state.PendingTick=0;
@@ -75,7 +83,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                 candidate.Weight=Ease(progress);
                 candidate.Opening=Ease(Math.Min(progress/.35,(1-progress)/.35));
                 ReadTarget(ref candidate,context.Get(state.Item).Transform);
-                if(!TryApplyPose(candidate,context,checkClearance))
+                if(!TryApplyPose(candidate,context,guard!=ReachGuard.None))
                 {
                     ++state.Cancellations;
                     BeginReturn(ref state,blocked:true);
@@ -85,12 +93,15 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
                 if(progress==1)
                 {
                     var itemFrame=Grip(state);
-                    var guard=new ItemAttachmentContact(itemFrame,ItemGripFrame.Identity,state.FrameLimit,state.AngleLimit);
+                    var contact=new ItemAttachmentContact(itemFrame,ItemGripFrame.Identity,state.FrameLimit,state.AngleLimit);
                     ItemSurfaceProbe[] probes=[
                         Probe(state,state.Vertex1),Probe(state,state.Vertex2),
                         Probe(state,state.Vertex3),Probe(state,state.Vertex4)
                     ];
-                    context.AttemptItemPickup(state.Item,state.Hand,guard,probes);
+                    if(guard==ReachGuard.Pickup)
+                        context.AttemptItemPickup(state.Item,state.Hand,contact,probes,new(state.Rig,1,.02,.02));
+                    else
+                        context.AttemptItemPickup(state.Item,state.Hand,contact,probes);
                     ++state.Attempts;
                     state.PendingTick=checked((long)context.Tick+1);
                 }
@@ -103,7 +114,7 @@ public sealed class ReachPickupGame : Game<ReachPickupState>,
             double remaining=1-Ease(Math.Min(1.0,(double)++candidate.TicksInPhase/state.ReturnTicks));
             candidate.Weight=remaining*state.ReturnWeight;
             candidate.Opening=remaining*state.ReturnOpening;
-            if(!TryApplyPose(candidate,context,checkClearance))return;
+            if(!TryApplyPose(candidate,context,guard!=ReachGuard.None))return;
             if(remaining==0)candidate.Phase=state.PickupTick==0 ? Idle : Held;
             state=candidate;
         }

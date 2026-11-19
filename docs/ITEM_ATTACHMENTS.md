@@ -415,6 +415,49 @@ The [Carry Props example](../examples/carry-props/README.md) combines that
 reach with a timed grip opening, blocked-release recovery and repeated use
 in a standalone game.
 
+### Recheck the arm after movement
+
+For pickups that must account for a moving player or obstacle, declare
+`IItemPickupClearanceGame` and supply a manual arm chain with two calibrated
+world-space radii:
+
+```csharp
+var arm = new ItemPickupClearance(rig, 1, 0.04, 0.03);
+context.AttemptItemPickup(item, receivingHand, contact, probes, arm);
+```
+
+The engine records the root, elbow and wrist positions at the callback.
+After physics and the final hand solve, it validates the sampled frame
+and fingertips. Before changing ownership, it also checks the arm between
+the recorded and final points against that tick's final colliders. The
+receiving anchor must be the selected chain's end node or its descendant.
+The released item's own proxy and the rig's first physical ancestor are
+excluded. The capsules reserve eight queries from the shared Tick budget.
+The [IK probe](TWO_BONE_IK.md#probe-a-reach-for-obstacles) uses the same
+four-interval swept geometry.
+
+A blocked pickup advances the tick and leaves the prop with its release
+proxy. `runtime.attachment.outcomes` reports `reach_blocked` with the intended
+receiving anchor, obstacle, upper/lower segment, interval, fraction and
+penetration in metres. In compiled gameplay, use
+`GetItemPickupBlocker(item)` on the next Tick to read that witness.
+Use `GetItemTransferOutcome(item)` for a successful transfer or a sampled
+contact miss. The reach witness is saved with the blocked tick and expires
+from the live outcome query after the next step.
+
+This check controls pickup ownership. The hand pose for that tick has
+already been solved, so the game can retract or adjust it once the blocker
+is observed. The geometric check sweeps the two sampled arm segments
+against final colliders. Continuous obstacle motion and finger or skin
+deformation clearance are separate.
+
+The named feature `item_attachment_pickup_clearance_v1` requires
+`item_attachment_pickup_v1` and uses the existing 528-byte epoch-7 table.
+It adds version 7 of the pickup command (312 bytes) and version 5 of the
+attachment getter (88 bytes). A checkpoint containing the new result uses
+attachment outcome version 2. Previous outcome encodings remain readable.
+[Verification](evidence/m2-final-pickup-clearance.json)
+
 ## Observe and restore
 
 Query `runtime.attachment.inspect` with `session_id`, `tick`, and optionally
