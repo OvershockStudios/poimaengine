@@ -278,8 +278,21 @@ surface-specific footprint behavior on snow and sand and its persistence across
 streaming or saves. Test shadow/contact lighting, small wind and particle motion,
 and effects from the normal player camera as well as close to the ground.
 
-Provide compiled CPU/GPU VFX authoring, previews, simulation/bounds/overdraw
-inspection and gameplay event integration. Extend native audio with buses,
+Provide compiled CPU/GPU VFX authoring through the editor and native service.
+Choose attachment, spawn space, simulation space and render alignment per
+emitter. Support effects that follow an entity or bone, detached particles
+that keep moving in world space, and camera-relative presentation. Make
+velocity inheritance, detachment and lifetime explicit.
+
+Compose sprite, mesh and ribbon particles with decals, material changes,
+geometry deformation, lights, volumes and camera effects. Give each stage
+authored curves, event inputs, collision settings, quality tiers and fixed-seed
+preview. Expose bounds, live counts, overdraw, per-effect cost and the
+gameplay events that produced a visible result. Inspect how each effect behaves
+when its source moves, changes detail level, streams out, or returns from a save.
+Keep persistent surface changes in saved world state so they can outlive an emitter.
+
+Extend native audio with buses,
 ducking, snapshots, streaming music, voice management and propagation:
 occlusion, reflections, diffraction, reverberation, direction/elevation,
 distant delay and indoor/underwater transitions.
