@@ -59,6 +59,8 @@ std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string&) c
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest&) const {throw std::runtime_error("Simulation is not built.");}
+std::vector<RuntimePoseSegmentClearance> Runtime::pose_clearance(std::span<const RuntimePoseClearanceSegment>,
+    const std::vector<std::string>&) const {throw std::runtime_error("Simulation is not built.");}
 ReleasedItemAim Runtime::aim_released_item(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }

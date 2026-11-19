@@ -232,6 +232,15 @@ camera travel per tick and both arm segment lengths. The item outcome is
 included at the exact tick it was recorded. A clearance result alone cannot
 measure the size of the pose change. Use the measurements and fixed-tick
 frames together to review what the player sees.
+Use [pose clearance](POSE_CLEARANCE.md) with calibrated shoulder, forearm,
+palm or finger segments to distinguish endpoint overlap from a conservative
+obstruction between clear poses. Record one batch of clearance observations
+per tick and submit the committed points from the prior reply with the same
+segment definitions. Add `--clearance` to the command above to include each
+blocking segment and obstacle, its contact phase, and penetration in
+millimetres. The review rejects missing samples, changed segment definitions or
+a previous pose that differs from the preceding reply. Use one uninterrupted
+structure revision per clearance review.
 [Measured imported rig](evidence/m2-imported-pickup-motion.json)
 
 ### Third person

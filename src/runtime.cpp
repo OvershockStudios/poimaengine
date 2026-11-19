@@ -2438,6 +2438,8 @@ ReleasedItemAim Runtime::aim_released_item(const RuntimeRay& query) const {
 }
 std::optional<CapsuleCastHit> Runtime::capsule_cast(const CapsuleCastRequest& request) const {return impl_->capsule_cast(request);}
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest& request) const {return impl_->ik_clearance(request);}
+std::vector<RuntimePoseSegmentClearance> Runtime::pose_clearance(std::span<const RuntimePoseClearanceSegment> segments,
+    const std::vector<std::string>& ignore) const {return impl_->pose_clearance(segments,ignore);}
 std::optional<RuntimeHitResult> Runtime::hit_test(const RuntimeRay& query) const {
     std::set<std::string> proxies;
     for(const auto& [id,definition]:impl_->topology->definitions) {

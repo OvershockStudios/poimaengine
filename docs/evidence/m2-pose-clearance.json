@@ -1,0 +1,149 @@
+{
+  "engine_version": "0.0.273",
+  "schema_revision": 161,
+  "method": "runtime.pose.clearance",
+  "public_verifier": "tests/runtime_pose_clearance.py",
+  "scope": "Read-only committed capsule endpoints and conservative linear paths against current colliders. The retained imported take is a separate check using selected proxies and four sampled skinned vertices against authored static box bounds.",
+  "analytic_linux": {
+    "engine_sha256": "49c30b0f76655766ab4456519cc1217b2cd61af40d27c089a085837d1e0fc11e",
+    "rpc_count": 24,
+    "path_fraction": 0.3916499763727188,
+    "interval": 2,
+    "all_statuses": [
+      "endpoint_only",
+      "blocked_sweep",
+      "clear",
+      "blocked_endpoint",
+      "blocked_endpoint"
+    ],
+    "endpoint_penetration_m": 0.06499987840652466,
+    "exact_archive_pair": true,
+    "rejected_requests": 11
+  },
+  "analytic_windows": {
+    "engine_sha256": "f67de2dcceca1495e00bc37cb95167a1b7fd55755d3ae841c3ff0f63c22510fc",
+    "rpc_count": 24,
+    "path_fraction": 0.3916499763727188,
+    "interval": 2,
+    "all_statuses": [
+      "endpoint_only",
+      "blocked_sweep",
+      "clear",
+      "blocked_endpoint",
+      "blocked_endpoint"
+    ],
+    "endpoint_penetration_m": 0.06499987840652466,
+    "exact_archive_pair": true,
+    "rejected_requests": 11
+  },
+  "retained_imported_linux_coreclr": {
+    "matching_steps": 90,
+    "imported_pose_world_matrices": 88,
+    "equal_saves": [
+      "resting",
+      "blocked",
+      "completed"
+    ],
+    "status_counts": {
+      "endpoint_only": 14,
+      "clear": 211,
+      "blocked_endpoint": 82,
+      "blocked_sweep": 1
+    },
+    "rpc_count": 854,
+    "swept_samples": 21,
+    "total_samples": 22,
+    "arm_segments": 2,
+    "finger_segments": 12,
+    "blocked_tick": 188,
+    "previous_forearm_overlap_m": 0.015743711963295937,
+    "committed_forearm_overlap": false,
+    "committed_finger_overlaps_on_blocked_tick": 5,
+    "max_finger_capsule_overlap_on_blocked_tick_m": 0.01416254136711359,
+    "peak_finger_capsule_overlap": {
+      "tick": 196,
+      "depth_m": 0.05150226131081581
+    },
+    "skinned_pad_vertices": 4,
+    "pad_ticks_inside_static_box_bounds": [
+      188,
+      199
+    ],
+    "peak_skinned_pad_vertex_inside_box_bounds": {
+      "tick": 194,
+      "depth_m": 0.02087107171197019,
+      "samples_inside": 1
+    },
+    "exact_retained_vulkan_frames": []
+  },
+  "retained_imported_windows_native_aot": {
+    "matching_steps": 90,
+    "imported_pose_world_matrices": 88,
+    "equal_saves": [
+      "resting",
+      "blocked",
+      "completed"
+    ],
+    "status_counts": {
+      "endpoint_only": 14,
+      "clear": 211,
+      "blocked_endpoint": 82,
+      "blocked_sweep": 1
+    },
+    "rpc_count": 946,
+    "swept_samples": 21,
+    "total_samples": 22,
+    "arm_segments": 2,
+    "finger_segments": 12,
+    "blocked_tick": 188,
+    "previous_forearm_overlap_m": 0.015743710100650787,
+    "committed_forearm_overlap": false,
+    "committed_finger_overlaps_on_blocked_tick": 5,
+    "max_finger_capsule_overlap_on_blocked_tick_m": 0.01416254136711359,
+    "peak_finger_capsule_overlap": {
+      "tick": 196,
+      "depth_m": 0.05150159075856209
+    },
+    "skinned_pad_vertices": 4,
+    "pad_ticks_inside_static_box_bounds": [
+      188,
+      199
+    ],
+    "peak_skinned_pad_vertex_inside_box_bounds": {
+      "tick": 194,
+      "depth_m": 0.020871068573557548,
+      "samples_inside": 1
+    },
+    "exact_retained_vulkan_frames": [
+      187,
+      188,
+      189,
+      204
+    ]
+  },
+  "native_linux_mcp": {
+    "passed": true,
+    "native_replies": 7,
+    "restored_sweep": true,
+    "stale_structure_code": -32009,
+    "exact_archive_pairs": 1
+  },
+  "linux_ctest": [
+    "world_ui_contract",
+    "runtime_animation_contract",
+    "runtime_animation_blend_contract",
+    "runtime_animation_layers_contract",
+    "runtime_joint_pose_contract",
+    "runtime_pose_clearance_contract",
+    "runtime_attachment_contract",
+    "item_attachment_release_contract",
+    "item_attachment_pickup_contract",
+    "mesh_collision_contract",
+    "asset_references_contract",
+    "grip_motion_review",
+    "authoring_api_compatibility",
+    "authoring_response_compatibility",
+    "runtime_observe_contract",
+    "runtime_save_contract"
+  ]
+}

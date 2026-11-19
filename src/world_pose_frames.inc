@@ -1,5 +1,74 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included in World.
+    Json check_runtime_pose_clearance(const Json& params) const {
+        require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
+        fields(params,{"session_id","tick","structure_revision","segments","ignore"},
+            {"session_id","tick","structure_revision","segments"});
+        runtime_guard(params);
+        structure_read_guard(params);
+        const auto tick=runtime_->inspect().tick;
+        require(revision(params.at("tick"))==tick,"Runtime tick conflict.",-32009);
+        const auto& raw=params.at("segments");
+        require(raw.is_array() && !raw.empty() && raw.size()<=max_pose_clearance_segments,
+            "Check between 1 and 16 pose clearance segments.");
+        std::vector<RuntimePoseClearanceSegment> segments;
+        segments.reserve(raw.size());
+        std::set<std::string> referenced;
+        for(const auto& request:raw) {
+            fields(request,{"endpoints","radius","previous"},{"endpoints","radius"});
+            const auto& endpoints=request.at("endpoints");
+            require(endpoints.is_array() && endpoints.size()==2,"Expected two pose segment endpoints.");
+            require(request.at("radius").is_number(),"Pose clearance radius must be numeric.");
+            RuntimePoseClearanceSegment segment;
+            segment.radius=request.at("radius").get<double>();
+            for(std::size_t i=0;i<segment.entities.size();++i) {
+                const auto& endpoint=endpoints.at(i);
+                fields(endpoint,{"entity","point"},{"entity"});
+                segment.entities[i]=identifier(endpoint.at("entity"));
+                referenced.insert(segment.entities[i]);
+                if(endpoint.contains("point"))segment.local_points[i]=query_vector(endpoint.at("point"));
+            }
+            if(request.contains("previous")) {
+                const auto& previous=request.at("previous");
+                require(previous.is_array() && previous.size()==2,"Expected two previous world points.");
+                segment.previous=PoseSegmentPoints{query_vector(previous.at(0)),query_vector(previous.at(1))};
+            }
+            segments.push_back(std::move(segment));
+        }
+        std::vector<std::string> ignore;
+        if(params.contains("ignore")) {
+            const auto& ids=params.at("ignore");
+            require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
+            for(const auto& id:ids) {
+                ignore.push_back(identifier(id));
+                referenced.insert(ignore.back());
+            }
+        }
+        for(const auto& id:referenced)
+            try {(void)runtime_->entity(id);}
+            catch(const std::runtime_error& error) {throw Error(-32004,error.what());}
+        auto results=Json::array();
+        try {
+            const auto checks=runtime_->pose_clearance(segments,ignore);
+            for(std::size_t i=0;i<checks.size();++i) {
+                const auto& check=checks[i];
+                Json sweep=nullptr;
+                if(check.sweep_blocker)
+                    sweep={{"interval",check.sweep_blocker->interval},{"hit",capsule_cast_hit_json(check.sweep_blocker->hit)}};
+                const char* status="endpoint_only";
+                if(check.previous_hit || check.committed_hit)status="blocked_endpoint";
+                else if(check.sweep_blocker)status="blocked_sweep";
+                else if(segments[i].previous)status="clear";
+                results.push_back({{"committed",check.committed},
+                    {"previous_hit",capsule_cast_hit_json(check.previous_hit)},
+                    {"committed_hit",capsule_cast_hit_json(check.committed_hit)},
+                    {"sweep_blocker",std::move(sweep)},{"status",status}});
+            }
+        }catch(const std::runtime_error& error) {throw Error(-32602,error.what());}
+        catch(const std::invalid_argument& error) {throw Error(-32602,error.what());}
+        return {{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
+            {"segments",std::move(results)}};
+    }
     Json compare_runtime_pose_frames(const Json& params) const {
         require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
         fields(params,{"session_id","tick","structure_revision","pairs"},{"session_id","tick","pairs"});

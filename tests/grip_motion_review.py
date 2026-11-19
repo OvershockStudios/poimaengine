@@ -49,13 +49,15 @@ def samples():
 
 
 class GripReview(unittest.TestCase):
-    def run_cli(self, requests, responses, *, reach=False):
+    def run_cli(self, requests, responses, *, reach=False, clearance=False):
         with TemporaryDirectory() as temporary:
             inputs = [Path(temporary) / name for name in ("requests.jsonl", "responses.jsonl")]
             for path, messages in zip(inputs, (requests, responses)):
                 path.write_text("".join(json.dumps(row) + "\n" for row in messages), encoding="utf-8")
             options = (["--reach", "--shoulder", SHOULDER, "--elbow", ELBOW] if reach else
                        ["--finger-drawable", SKIN, "--contact-mm", "5"])
+            if clearance:
+                options.append("--clearance")
             return subprocess.run([sys.executable, str(ROOT / "scripts/review_grip_motion.py"), *map(str, inputs),
                 "--session", SESSION, "--camera", CAMERA, "--hand", HAND, "--item", ITEM,
                 "--first", "12", "--last", "14", *options], text=True, capture_output=True, timeout=15)
@@ -130,6 +132,46 @@ class GripReview(unittest.TestCase):
         attempt = self.run_cli(requests, responses, reach=True)
         self.assertNotEqual(attempt.returncode, 0)
         self.assertIn("pickup outcome observations at ticks [13]", attempt.stderr)
+
+    def clearance_samples(self):
+        requests, responses = self.reach_samples()
+        previous = None
+        for tick in range(12, 15):
+            guard = dict(session_id=SESSION, tick=tick, structure_revision=3)
+            selector = dict(endpoints=[dict(entity=ELBOW), dict(entity=HAND)], radius=.02)
+            points = [[0, .2, 0], [0, 0, 0]]
+            row = dict(committed=points, previous_hit=None, committed_hit=None, sweep_blocker=None)
+            if previous is not None:
+                selector["previous"] = previous
+            row["status"] = "endpoint_only" if previous is None else "clear"
+            if tick == 13:
+                points = row["committed"] = [[1, .2, 0], [1, 0, 0]]
+                row.update(status="blocked_sweep", sweep_blocker=dict(interval=2,
+                    hit=dict(entity=ITEM, fraction=.6, penetration_depth=0)))
+            if tick == 14:
+                row.update(status="blocked_endpoint", committed_hit=dict(entity=ITEM, penetration_depth=.003))
+            number = len(requests) + 1
+            requests.append(dict(jsonrpc="2.0", id=number, method="runtime.pose.clearance",
+                                 params=dict(guard, segments=[selector])))
+            responses.append(dict(jsonrpc="2.0", id=number, result=dict(guard, segments=[row])))
+            previous = points
+        return requests, responses
+
+    def test_reach_joins_guarded_pose_clearance(self):
+        attempt = self.run_cli(*self.clearance_samples(), reach=True, clearance=True)
+        self.assertEqual(attempt.returncode, 0, attempt.stderr)
+        first, between, final = json.loads(attempt.stdout)["clearance"]["samples"]
+        self.assertEqual(first["statuses"], ["endpoint_only"])
+        self.assertEqual(between["blockers"], [dict(segment=1, phase="sweep", obstacle=ITEM,
+            interval=2, interval_fraction=.6, penetration_mm=0)])
+        self.assertEqual(final["blockers"], [dict(segment=1, phase="committed", obstacle=ITEM, penetration_mm=3)])
+
+    def test_reach_clearance_rejects_a_different_previous_pose(self):
+        requests, responses = self.clearance_samples()
+        requests[-1]["params"]["segments"][0]["previous"] = [[0, .2, 0], [0, 0, 0]]
+        attempt = self.run_cli(requests, responses, reach=True, clearance=True)
+        self.assertNotEqual(attempt.returncode, 0)
+        self.assertIn("preceding committed points at tick 14", attempt.stderr)
 
 
 if __name__ == "__main__":

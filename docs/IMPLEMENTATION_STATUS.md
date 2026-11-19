@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.272**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.273**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.273 adds [committed pose clearance](POSE_CLEARANCE.md). Agents can
+check up to sixteen joint or local-offset capsules in one guarded read. The
+query reports starting and committed overlaps independently and can check a
+conservative linear sweep between clear poses against the current colliders.
+The imported reach replay found finger contact with the prop's support during
+recovery even though the steered forearm cleared the late obstruction.
+[Results](evidence/m2-pose-clearance.json)
 
 Version 0.0.272 adds [contact-guided pickup fallback](ITEM_ATTACHMENTS.md#steer-a-blocked-reach-away-from-contact).
 In the matched imported rig, the elbow step fell from 55 mm to 14 mm

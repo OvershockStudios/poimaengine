@@ -92,50 +92,97 @@
         }
         return points;
     }
+    static void validate_clearance_points(std::span<const std::array<double,3>> points) {
+        for(const auto& point:points)for(double coordinate:point)
+            require(std::isfinite(coordinate) && std::abs(coordinate)<=1e6,
+                "Clearance points must remain within +/-1000km.");
+    }
+    std::optional<CapsuleCastHit> cast_pose_segment(const PoseSegmentPoints& from,const PoseSegmentPoints& to,
+        double radius,const std::vector<std::string>& ignore,double start,double end,bool sweep) const {
+        CapsuleCastRequest cast;
+        cast.ignore=ignore;
+        std::array<double,3> axis{},delta{},deviation{};
+        for(std::size_t k=0;k<3;++k) {
+            const double a=std::lerp(from[0][k],to[0][k],start);
+            const double b=std::lerp(from[1][k],to[1][k],start);
+            const double da=std::lerp(from[0][k],to[0][k],end)-a;
+            const double db=std::lerp(from[1][k],to[1][k],end)-b;
+            cast.position[k]=std::midpoint(a,b);
+            axis[k]=b-a;
+            delta[k]=std::midpoint(da,db);
+            deviation[k]=(db-da)*.5;
+        }
+        const auto length=[](const auto& v){return std::hypot(v[0],v[1],v[2]);};
+        cast.half_height=length(axis)*.5;
+        // A capsule following the midpoint with the starting axis
+        // covers linear endpoint travel when expanded by the largest
+        // difference between either endpoint and the midpoint motion.
+        cast.radius=radius+(sweep ? length(deviation)+capsule_query_collision_tolerance : 0.);
+        cast.distance=length(delta);
+        if(cast.half_height>0) {
+            const auto direction=JPH::Vec3(static_cast<float>(axis[0]/(2*cast.half_height)),
+                static_cast<float>(axis[1]/(2*cast.half_height)),static_cast<float>(axis[2]/(2*cast.half_height)));
+            const auto rotation=JPH::Quat::sFromTo(JPH::Vec3::sAxisY(),direction);
+            cast.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
+        }
+        if(cast.distance>0)
+            for(std::size_t k=0;k<3;++k)cast.direction[k]=delta[k]/cast.distance;
+        return capsule_cast(cast);
+    }
     std::optional<RuntimeIkClearanceBlocker> sweep_chain(const ChainPoints& current,const ChainPoints& candidate,
         const std::array<double,2>& radii,const std::vector<std::string>& ignore) const {
-        for(const auto* points:{&current,&candidate})
-            for(const auto& point:*points)for(double coordinate:point)
-                require(std::isfinite(coordinate) && std::abs(coordinate)<=1e6,
-                    "IK clearance joint points must remain within +/-1000km.");
+        validate_clearance_points(current);
+        validate_clearance_points(candidate);
         const auto intervals=current==candidate ? 1u : ik_clearance_intervals;
         for(std::uint32_t interval=0;interval<intervals;++interval) {
             const auto start=static_cast<double>(interval)/intervals;
             const auto end=static_cast<double>(interval+1)/intervals;
-            for(std::uint32_t segment=0;segment<radii.size();++segment) {
-                CapsuleCastRequest cast;
-                cast.ignore=ignore;
-                std::array<double,3> axis{},delta{},deviation{};
-                for(std::size_t k=0;k<3;++k) {
-                    const double a=std::lerp(current[segment][k],candidate[segment][k],start);
-                    const double b=std::lerp(current[segment+1][k],candidate[segment+1][k],start);
-                    const double da=std::lerp(current[segment][k],candidate[segment][k],end)-a;
-                    const double db=std::lerp(current[segment+1][k],candidate[segment+1][k],end)-b;
-                    cast.position[k]=std::midpoint(a,b);
-                    axis[k]=b-a;
-                    delta[k]=std::midpoint(da,db);
-                    deviation[k]=(db-da)*.5;
-                }
-                const auto length=[](const auto& v){return std::hypot(v[0],v[1],v[2]);};
-                cast.half_height=length(axis)*.5;
-                // A capsule following the midpoint with the starting axis
-                // covers linear endpoint travel when expanded by the largest
-                // difference between either endpoint and the midpoint motion.
-                cast.radius=radii[segment]+length(deviation)+capsule_query_collision_tolerance;
-                cast.distance=length(delta);
-                if(cast.half_height>0) {
-                    const auto direction=JPH::Vec3(static_cast<float>(axis[0]/(2*cast.half_height)),
-                        static_cast<float>(axis[1]/(2*cast.half_height)),static_cast<float>(axis[2]/(2*cast.half_height)));
-                    const auto rotation=JPH::Quat::sFromTo(JPH::Vec3::sAxisY(),direction);
-                    cast.rotation={rotation.GetX(),rotation.GetY(),rotation.GetZ(),rotation.GetW()};
-                }
-                if(cast.distance>0)
-                    for(std::size_t k=0;k<3;++k)cast.direction[k]=delta[k]/cast.distance;
-                if(auto hit=capsule_cast(cast))
+            for(std::uint32_t segment=0;segment<radii.size();++segment)
+                if(auto hit=cast_pose_segment({current[segment],current[segment+1]},
+                    {candidate[segment],candidate[segment+1]},radii[segment],ignore,start,end,true))
                     return RuntimeIkClearanceBlocker{segment+1,interval+1,std::move(*hit)};
-            }
         }
         return std::nullopt;
+    }
+    std::vector<RuntimePoseSegmentClearance> pose_clearance(std::span<const RuntimePoseClearanceSegment> segments,
+        const std::vector<std::string>& ignore) const {
+        require(!segments.empty() && segments.size()<=max_pose_clearance_segments,
+            "Check between 1 and 16 pose clearance segments.");
+        std::vector<RuntimePoseSegmentClearance> results;
+        results.reserve(segments.size());
+        for(const auto& segment:segments) {
+            require(std::isfinite(segment.radius) && segment.radius>=.001 && segment.radius<=1.,
+                "Pose clearance radius must be .001..1 metres.");
+            validate_clearance_points(segment.local_points);
+            RuntimePoseSegmentClearance result;
+            for(std::size_t end=0;end<segment.entities.size();++end) {
+                const auto& world=registry.get<Node>(find(segment.entities[end])).world;
+                const auto& point=segment.local_points[end];
+                for(std::size_t axis=0;axis<3;++axis)
+                    result.committed[end][axis]=world[12+axis]+
+                        world[axis]*point[0]+world[4+axis]*point[1]+world[8+axis]*point[2];
+            }
+            validate_clearance_points(result.committed);
+            result.committed_hit=cast_pose_segment(result.committed,result.committed,segment.radius,ignore,0,1,false);
+            if(segment.previous) {
+                const auto& from=*segment.previous;
+                validate_clearance_points(from);
+                result.previous_hit=from==result.committed ? result.committed_hit :
+                    cast_pose_segment(from,from,segment.radius,ignore,0,1,false);
+                if(!result.previous_hit && !result.committed_hit && from!=result.committed)
+                    for(std::uint32_t interval=0;interval<ik_clearance_intervals;++interval) {
+                        const double start=static_cast<double>(interval)/ik_clearance_intervals;
+                        const double end=static_cast<double>(interval+1)/ik_clearance_intervals;
+                        if(auto hit=cast_pose_segment(from,result.committed,segment.radius,ignore,start,end,true)) {
+                            result.sweep_blocker=RuntimeIkClearanceBlocker{
+                                static_cast<std::uint32_t>(results.size()+1),interval+1,std::move(*hit)};
+                            break;
+                        }
+                    }
+            }
+            results.push_back(std::move(result));
+        }
+        return results;
     }
     RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const {
         const auto& goal=request.goal;

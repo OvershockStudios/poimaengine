@@ -211,6 +211,61 @@ def reach_report(args, joined):
                 item=args.item, peaks=peaks, samples=rows)
 
 
+def read_clearance(args, joined):
+    samples = {}
+    for line, request, result in guarded_results(args, {"runtime.pose.clearance"}):
+        params = request["params"]
+        guard = (params["tick"], params["structure_revision"])
+        selected = params["segments"], params.get("ignore", []), result["segments"]
+        if samples.setdefault(guard, selected) != selected:
+            raise ValueError(f"Conflicting clearance sample on line {line}.")
+
+    rows = []
+    baseline = previous = None
+    previous_structure = None
+    for tick, (guard, _, _) in joined.items():
+        if guard not in samples:
+            raise ValueError(f"No matched clearance observation at tick {tick}.")
+        selectors, ignore, observed = samples[guard]
+        definitions = [{key: row[key] for key in ("endpoints", "radius")} for row in selectors]
+        if baseline is None:
+            baseline = definitions, ignore
+        if baseline != (definitions, ignore) or not 1 <= len(observed) == len(definitions) <= 16:
+            raise ValueError(f"Clearance segment definitions changed or are invalid at tick {tick}.")
+        if previous_structure is not None:
+            if previous_structure != guard[1]:
+                raise ValueError(f"Clearance review crosses a structure revision at tick {tick}.")
+            if [row.get("previous") for row in selectors] != previous:
+                raise ValueError(f"Clearance does not use the preceding committed points at tick {tick}.")
+        blockers = []
+        statuses = []
+        for index, (selector, row) in enumerate(zip(selectors, observed), 1):
+            sweep = row["sweep_blocker"]
+            start, end = row["previous_hit"], row["committed_hit"]
+            expected = "clear" if "previous" in selector else "endpoint_only"
+            if start or end:
+                expected = "blocked_endpoint"
+            elif sweep:
+                expected = "blocked_sweep"
+            if row["status"] != expected or ((start or sweep) and "previous" not in selector) or (sweep and (start or end)):
+                raise ValueError(f"Inconsistent clearance status at tick {tick}, segment {index}.")
+            statuses.append(expected)
+            for phase, hit in (("previous", start), ("committed", end), ("sweep", sweep["hit"] if sweep else None)):
+                if hit is None:
+                    continue
+                depth = hit["penetration_depth"]
+                if type(depth) not in (int, float) or not math.isfinite(depth) or depth < 0:
+                    raise ValueError(f"Invalid clearance depth at tick {tick}, segment {index}.")
+                contact = dict(segment=index, phase=phase, obstacle=hit["entity"], penetration_mm=depth * 1000)
+                if phase == "sweep":
+                    contact.update(interval=sweep["interval"], interval_fraction=hit["fraction"])
+                blockers.append(contact)
+        rows.append(dict(tick=tick, statuses=statuses, blockers=blockers))
+        previous = [row["committed"] for row in observed]
+        previous_structure = guard[1]
+    return dict(segments=baseline[0], ignore=baseline[1], samples=rows)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("requests", type=Path)
@@ -219,6 +274,7 @@ def main():
         parser.add_argument("--" + field, required=True)
     parser.add_argument("--finger-drawable")
     parser.add_argument("--reach", action="store_true", help="Pair an arm's pose with same-tick pickup outcomes.")
+    parser.add_argument("--clearance", action="store_true", help="Join pose-clearance segment observations to a reach.")
     parser.add_argument("--shoulder")
     parser.add_argument("--elbow")
     parser.add_argument("--first", type=int, required=True)
@@ -229,6 +285,8 @@ def main():
         parser.error("Reach review accepts arm observations and pickup outcomes.")
     if not args.reach and (args.shoulder is not None or args.elbow is not None):
         parser.error("Shoulder and elbow require --reach.")
+    if args.clearance and not args.reach:
+        parser.error("--clearance requires --reach.")
     selected = (args.shoulder, args.elbow) if args.reach else (args.finger_drawable,)
     identities = (args.session, args.camera, args.hand, args.item, *selected)
     if any(identity is None or re.fullmatch("[0-9a-f]{32}", identity) is None for identity in identities):
@@ -240,7 +298,13 @@ def main():
     if not args.reach and (args.contact_mm is None or not math.isfinite(args.contact_mm) or args.contact_mm <= 0):
         parser.error("Supply a positive finite contact limit.")
     try:
-        result = reach_report(args, read_reach(args)) if args.reach else report(args, read_take(args))
+        if args.reach:
+            joined = read_reach(args)
+            result = reach_report(args, joined)
+            if args.clearance:
+                result["clearance"] = read_clearance(args, joined)
+        else:
+            result = report(args, read_take(args))
     except (AttributeError, KeyError, TypeError, ValueError, OSError) as error:
         parser.error(str(error))
     print(json.dumps(result, indent=2, allow_nan=False))

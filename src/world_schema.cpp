@@ -225,7 +225,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 160}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 161}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -490,6 +490,17 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"joints",{{"type","array"},{"minItems",1},{"maxItems",max_joint_pose_checks},{"items",joint_check}}}},
         {"session_id","tick","rig","joints"});
     methods["runtime.pose.joints"]["description"]="Check final committed rig-node local rotations against explicit hinge or swing/twist limits in radians. Defaults to the frozen authored local reference and identity limit frame. Returns signed twist, swing, per-joint status and a read-only fit when the chart is well defined. Model node indices must be distinct. Outside runtime-game-session v1.";
+    const auto pose_point=pose_vector(3,1e6);
+    const auto two=[](const Json& items){return Json{{"type","array"},{"minItems",2},{"maxItems",2},{"items",items}};};
+    const auto pose_endpoint=object_schema({{"entity",id},{"point",pose_point}},{"entity"});
+    const auto pose_segment=object_schema({{"endpoints",two(pose_endpoint)},
+        {"radius",{{"type","number"},{"minimum",.001},{"maximum",1}}},
+        {"previous",two(pose_point)}},{"endpoints","radius"});
+    methods["runtime.pose.clearance"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
+        {"segments",{{"type","array"},{"minItems",1},{"maxItems",max_pose_clearance_segments},{"items",pose_segment}}},
+        {"ignore",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",id}}}},
+        {"session_id","tick","structure_revision","segments"});
+    methods["runtime.pose.clearance"]["description"]="Check committed joint or offset-point capsules against current colliders. With two caller-supplied previous world points per segment, test both endpoints, then their conservative four-interval linear sweep if both are clear. Radii are world metres. Does not predict articulated paths or moving obstacles. Read-only, outside runtime-game-session v1.";
     methods["runtime.attachment.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev}},
         {"session_id","tick"});
     methods["runtime.attachment.inspect"]["description"]="Read active rigid item attachment anchors and affine matrices at an exact committed tick. Outside runtime-game-session v1.";

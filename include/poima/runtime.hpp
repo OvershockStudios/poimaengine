@@ -307,6 +307,19 @@ struct RuntimeIkClearance {
     std::optional<RuntimeIkClearanceBlocker> blocker;
 };
 inline constexpr std::uint32_t ik_clearance_intervals=4;
+inline constexpr std::size_t max_pose_clearance_segments=16;
+using PoseSegmentPoints=std::array<std::array<double,3>,2>;
+struct RuntimePoseClearanceSegment {
+    std::array<std::string,2> entities;
+    PoseSegmentPoints local_points{};
+    double radius=0;
+    std::optional<PoseSegmentPoints> previous;
+};
+struct RuntimePoseSegmentClearance {
+    PoseSegmentPoints committed{};
+    std::optional<CapsuleCastHit> previous_hit,committed_hit;
+    std::optional<RuntimeIkClearanceBlocker> sweep_blocker;
+};
 struct RuntimeIkMetricState {
     // Opt-in worst errors of the incoming and final published model poses.
     bool evaluated=false;
@@ -690,6 +703,8 @@ public:
     // Precise fixed-orientation physical capsule query; no state mutation.
     std::optional<CapsuleCastHit> capsule_cast(const CapsuleCastRequest& request) const;
     RuntimeIkClearance ik_clearance(const RuntimeIkClearanceRequest& request) const;
+    std::vector<RuntimePoseSegmentClearance> pose_clearance(std::span<const RuntimePoseClearanceSegment> segments,
+        const std::vector<std::string>& ignore) const;
     std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;
     // Immutable bound mesh, live capsule foot start; no state/time mutation.
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;

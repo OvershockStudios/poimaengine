@@ -3836,6 +3836,7 @@ public:
         if(method=="runtime.observe")return observe_runtime(params);
         if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
         if(method=="runtime.pose.joints")return check_runtime_joint_pose(params);
+        if(method=="runtime.pose.clearance")return check_runtime_pose_clearance(params);
         if(method=="runtime.surface.measure")return measure_runtime_surfaces(params);
         if(method=="runtime.attachment.inspect")return inspect_runtime_attachments(params);
         if(method=="runtime.attachment.outcomes")return inspect_attachment_outcomes(params);

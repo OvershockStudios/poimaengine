@@ -21,7 +21,9 @@ contents remain available through `runtime.gameplay.inspect` and
 For distances and angular errors between grip or attachment frames, use
 [`runtime.pose.compare`](POSE_FRAME_COMPARISON.md) at the same tick.
 For constraints on final joint rotations, use
-[`runtime.pose.joints`](JOINT_POSE_CHECKS.md).
+[`runtime.pose.joints`](JOINT_POSE_CHECKS.md). For capsule
+contacts at a pose or between selected poses, use
+[`runtime.pose.clearance`](POSE_CLEARANCE.md).
 For a held item's current anchor, query [the attachment binding](ITEM_ATTACHMENTS.md)
 at the same tick and structure revision.
 
