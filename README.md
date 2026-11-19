@@ -26,9 +26,10 @@ the agent to ask a few questions at a time before building. [Plan your first gam
 
 ## Current status
 
-Poima is in pre-alpha. Graphics and the desktop editor target Windows, with
-headless authoring and simulation on Linux. Four small agent-built games passed
-independent gameplay, save continuation, and standalone Windows checks.
+Poima is in pre-alpha. The CLI supports headless authoring and playtesting on
+Windows and Linux. The Vulkan player and desktop editor run on Windows.
+Four small agent-built games passed independent gameplay, save continuation,
+and standalone Windows checks.
 [Implementation status](docs/IMPLEMENTATION_STATUS.md) · [Alpha gates](docs/ALPHA_ROADMAP.md)
 
 [Editor](docs/DESKTOP_EDITOR.md) · [Examples](#examples) · [Documentation](docs/PLAYBOOKS.md) · [Roadmap](docs/ROADMAP.md) · [Changelog](CHANGELOG.md)
