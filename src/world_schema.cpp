@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 138}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 139}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -457,6 +457,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pairs",{{"type","array"},{"minItems",1},{"maxItems",pose_frames::max_pairs},{"items",frame_pair}}}},
         {"session_id","tick","pairs"});
     methods["runtime.pose.compare"]["description"]="Compare committed entity frames with optional rigid local offsets at an exact runtime tick. Reports origin displacement in metres and shortest angular error in degrees for proper orthogonal bases. Shear, reflection or degeneracy suppress angular results. Optional limits are caller-selected. Read-only, outside runtime-game-session v1.";
+    const auto source_vertex=object_schema({{"entity",id},{"vertex",rev}},{"entity","vertex"});
+    const auto source_face=object_schema({{"entity",id},{"triangle",rev},
+        {"barycentric",vector(unit,3)}},{"entity","triangle","barycentric"});
+    const auto target_faces=object_schema({{"entity",id},
+        {"triangles",{{"type","array"},{"minItems",1},{"maxItems",4096},{"uniqueItems",true},{"items",rev}}}},{"entity"});
+    const auto surface_pair=object_schema({{"source",{{"oneOf",Json::array({source_vertex,source_face})}}},
+        {"target",target_faces},{"distance_limit_m",{{"type","number"},{"minimum",0},{"maximum",1e9}}}},
+        {"source","target"});
+    methods["runtime.surface.measure"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
+        {"pairs",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",surface_pair}}}},
+        {"session_id","tick","pairs"});
+    methods["runtime.surface.measure"]["description"]="Measure selected points against the closest rigid or skinned indexed triangles in committed world space. Supply a cooked vertex index or a triangle ordinal and three weights that sum to one. Omit target triangles to scan the whole target. Maximum 32768 target triangle checks per request. Returns closest point, unsigned distance, winding normals, signed normal offset and an optional distance verdict. Geometry precedes camera-specific effects. Read-only, outside runtime-game-session v1.";
     const auto camera_pose=object_schema({{"position",pose_vector(3,10)},{"rotation",pose_vector(4,1.00001)}},{"position","rotation"});
     auto pose_command=object_schema({{"entity",id},{"world",camera_pose},{"viewmodel",camera_pose}},{"entity"});
     pose_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});
@@ -803,6 +815,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.animation.author"]=object_schema({{"asset",asset_id},
         {"clips",{{"type","array"},{"minItems",1},{"maxItems",8},{"items",authored_clip}}}},{"asset","clips"});
     methods["asset.animation.author"]["description"]="Append 1..8 joint-local rotation clips to an immutable cooked model and return a new model hash with clip indices. Keys use unit XYZW in the joint's parent frame, or an explicit unit hinge axis and signed degree offsets from model rest. Hinge interval width is at most 179.9 degrees. Times must strictly increase after float32 encoding, at most 4096 total keys. Track nodes and new clip names must be unique in their scope. No world edit occurs.";
+    methods["asset.mesh.triangles"]=object_schema({{"asset",asset_id},{"primitive",model_index},{"offset",rev},{"limit",page_limit}},
+        {"asset","primitive"});
+    methods["asset.mesh.triangles"]["description"]="Page zero-based triangle ordinals and the three cooked vertex indices in winding order for one immutable model primitive. Read-only, outside authoring-core v1.";
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});
     methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
     methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});

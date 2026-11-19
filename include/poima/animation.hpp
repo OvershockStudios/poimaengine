@@ -35,6 +35,9 @@ public:
 };
 ModelPose sample_model(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop);
 std::vector<Matrix4> skin_palette(const ModelAsset& model,const ModelPose& pose,std::uint32_t node);
+// Selective CPU position sample in drawable-local coordinates. Uses the
+// supplied snapshot palette without deforming other vertices or attributes.
+std::array<double,3> posed_mesh_vertex(const SceneObject& drawable,std::uint32_t vertex);
 // CPU reference for agent inspection/offline preview and future GPU comparison.
 // This does not select CPU skinning as the production character renderer.
 std::shared_ptr<const MeshAsset> deform_mesh(const MeshAsset& mesh,std::span<const Matrix4> palette);

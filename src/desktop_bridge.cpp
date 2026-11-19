@@ -113,17 +113,6 @@ std::optional<std::pair<double,double>> ray_bounds(const Bounds& bounds,const Po
     }
     if(low>high)return {};return std::pair{low,high};
 }
-Point mesh_position(const SceneObject& object,std::uint32_t index) {
-    const auto& mesh=*object.mesh;const auto& position=mesh.vertices.at(index).position;
-    const Point p{position[0],position[1],position[2]};if(!object.skin)return p;
-    Point result{};const auto& influence=mesh.influences.at(index);
-    for(std::size_t i=0;i<4;++i) {
-        if(influence.weights[i]==0)continue;
-        const auto posed=transformed(object.skin->palette.at(influence.joints[i]),p,1);
-        for(std::size_t axis=0;axis<3;++axis)result[axis]+=influence.weights[i]*posed[axis];
-    }
-    return result;
-}
 std::optional<double> hit_object(const SceneObject& object,const Point& origin,const Point& ray,double near_distance,double far_distance,bool preview) {
     const auto inverse=inverse_affine(object.world);const auto o=transformed(inverse,origin,1),d=transformed(inverse,ray,0);
     const auto interval=ray_bounds(local_bounds(object),o,d);
@@ -136,7 +125,7 @@ std::optional<double> hit_object(const SceneObject& object,const Point& origin,c
     std::optional<double> nearest;
     const auto& indices=object.mesh->indices;
     for(std::size_t i=0;i+2<indices.size();i+=3) {
-        const auto a=mesh_position(object,indices[i]),b=mesh_position(object,indices[i+1]),c=mesh_position(object,indices[i+2]);
+        const auto a=posed_mesh_vertex(object,indices[i]),b=posed_mesh_vertex(object,indices[i+1]),c=posed_mesh_vertex(object,indices[i+2]);
         const auto e1=subtract(b,a),e2=subtract(c,a),p=cross(d,e2);const double determinant=dot(e1,p);
         // Relative degeneracy tolerance also supports very small/large models.
         const double tolerance=32*std::numeric_limits<double>::epsilon()*std::sqrt(dot(e1,e1)*dot(p,p));

@@ -1,0 +1,53 @@
+{
+  "version": "0.0.247",
+  "status": "passed",
+  "scope": "Native sampled surface geometry, cooked triangle discovery and exact committed guards. Camera presentation, whole-surface intersection and anatomical contact limits are separate scopes.",
+  "fixture": "tests/runtime_surface_measure.py",
+  "linux_x86_64": {
+    "engine_sha256": "86fab50ae85da24322bd42722470dd26e8ccd22955c46e2b3c5766c2f5f3fc7c",
+    "report_sha256": "53e2e0ef70be2ab7dd5a8c34ed1a7abdb418ac3c7b794dd6e814e7c680bd6171",
+    "native_rpc_calls": 38,
+    "natural_exit": true,
+    "complete_save_bytes_equal_around_reads": true,
+    "stale_structure_rejected": true,
+    "lowest_triangle_wins_ties": true,
+    "weighted_surface_distance_m": 0.3482097069296032,
+    "collapsed_surface_distance_m": 0.125,
+    "collapsed_surface_normal": null
+  },
+  "windows_x86_64": {
+    "engine_sha256": "9f9804e3e1014eceb7aa6e62aba88ba2b1b62b5d0ab9a84411eb1add5f60dbe3",
+    "report_sha256": "8f9cd15a6b659495e89f723d303d271a6716a540952cb5e172c6c765482be09e",
+    "native_rpc_calls": 38,
+    "natural_exit": true,
+    "complete_save_bytes_equal_around_reads": true,
+    "stale_structure_rejected": true,
+    "lowest_triangle_wins_ties": true,
+    "weighted_surface_distance_m": 0.3482097069296032,
+    "collapsed_surface_distance_m": 0.125,
+    "collapsed_surface_normal": null,
+    "selected_authoring_request_check_sha256": "2bc35316c0636e0724f69ff463348bcd7129eb200995245c84452532f140e27d",
+    "selected_session_request_check_sha256": "48deef94fed477432d4bfd1c451a8f53aaa18cf0bcf393412976334b1e7d05ca",
+    "camera_draw_native_checks": 9
+  },
+  "linux_regressions": [
+    "model_source_fingerprint_protocol",
+    "mcp_contract",
+    "runtime_hit_regions_native",
+    "runtime_camera_draw_native",
+    "world_ui_contract",
+    "animation_contract",
+    "runtime_animation_layers_contract",
+    "asset_references_contract"
+  ],
+  "linux_mcp": {
+    "requests": 6,
+    "replies": 5,
+    "natural_exit_code": 0,
+    "report_sha256": "807efd3cdd9d343eeb779ab5ef3e23448072d4f3382bdd4e0fc3b1c7ad8b59ed"
+  },
+  "linux_authored_rotation_recheck": {
+    "native_rpc_calls": 71,
+    "report_sha256": "14d1c86fb7081515aebfa84d4b29fb1d1495622f9ea3b2338403932cab7e3b11"
+  }
+}

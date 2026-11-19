@@ -250,6 +250,22 @@ std::vector<Matrix4> skin_palette(const ModelAsset& model,const ModelPose& pose,
     for(std::size_t i=0;i<skin.joints.size();++i)result.push_back(multiply(multiply(inverse,pose.world[skin.joints[i]]),skin.inverse_bind[i]));
     return result;
 }
+std::array<double,3> posed_mesh_vertex(const SceneObject& drawable,std::uint32_t vertex) {
+    check(bool(drawable.mesh),"Vertex sampling requires an indexed mesh.");
+    const auto& mesh=*drawable.mesh;const auto& position=mesh.vertices.at(vertex).position;
+    const std::array<double,3> point{position[0],position[1],position[2]};
+    if(!drawable.skin)return point;
+    std::array<double,3> result{};
+    const auto& influence=mesh.influences.at(vertex);
+    for(std::size_t i=0;i<4;++i) {
+        if(influence.weights[i]==0)continue;
+        const auto& matrix=drawable.skin->palette.at(influence.joints[i]);
+        for(std::size_t axis=0;axis<3;++axis)
+            result[axis]+=influence.weights[i]*(matrix[axis]*point[0]+matrix[4+axis]*point[1]+
+                matrix[8+axis]*point[2]+matrix[12+axis]);
+    }
+    return result;
+}
 std::shared_ptr<const MeshAsset> deform_mesh(const MeshAsset& mesh,std::span<const Matrix4> palette) {
     check(mesh.influences.size()==mesh.vertices.size() && !mesh.influences.empty(),"CPU deformation requires skin influences.");auto result=std::make_shared<MeshAsset>(mesh);result->influences.clear();
     for(std::size_t i=0;i<mesh.vertices.size();++i) {

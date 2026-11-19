@@ -151,7 +151,10 @@ action at normal speed, including interruption, recovery and camera motion.
 For a multi-step grip, record which hand or socket owns the item and where each
 hand should touch it at each phase. Use [frame comparisons](POSE_FRAME_COMPARISON.md)
 to compare requested and achieved wrist, palm
-and finger positions in item space. Check the fingers for clipping and the elbow
+and finger positions in item space. Then sample the visible finger pad against
+the chosen handle triangles at the same tick. Keep the sampled surface point
+fixed when comparing a grip before and after adjustment. [Surface measurements](SURFACE_MEASUREMENTS.md)
+Check the fingers for clipping and the elbow
 for flips as the hand lets go, reaches and regrips. Use a complete reload and a
 bow draw and release as separate checks when qualifying these capabilities.
 For a visible first-person body, inspect look-down views during standing,

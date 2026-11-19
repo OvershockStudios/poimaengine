@@ -75,6 +75,9 @@ overhead or side view when useful. Viewmodel offsets, camera interpolation and
 device presentation have their own observation paths. This read performs no
 simulation steps, solver changes or render work.
 
+For a fingertip or palm patch on the actual skinned geometry, measure the gap
+against the item triangles at the same tick. [Surface measurements](SURFACE_MEASUREMENTS.md)
+
 Malformed parameters return `-32602`. An unknown entity returns `-32004`.
 A stale tick or structure revision returns `-32009`. An absent runtime or
 mismatched session ID returns `-32030`. Composition outside numerical range returns

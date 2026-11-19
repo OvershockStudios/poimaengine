@@ -81,6 +81,7 @@ SceneLighting Runtime::lighting() const { throw std::runtime_error("Simulation i
 std::optional<RuntimeCameraPoseState> Runtime::camera_pose(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeCameraLensState> Runtime::camera_lens(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeCameraState Runtime::camera_state(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+std::optional<SceneObject> Runtime::indexed_drawable(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot() const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&,const RuntimeCameraPose&,const std::optional<RuntimeCameraPose>&) const { throw std::runtime_error("Simulation is not built."); }

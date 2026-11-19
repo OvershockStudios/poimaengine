@@ -596,6 +596,9 @@ public:
     AudioSnapshot audio_snapshot(const std::string& listener) const;
     SceneLighting lighting() const;
     RuntimeCameraState camera_state(const std::string& camera) const;
+    // One visible indexed drawable in committed world space, before
+    // camera-specific presentation. Unknown entity throws out_of_range.
+    std::optional<SceneObject> indexed_drawable(const std::string& id) const;
     // Live geometry/lighting, independent of an authored camera entity.
     SceneSnapshot snapshot() const;
     SceneSnapshot snapshot(const std::string& camera) const;

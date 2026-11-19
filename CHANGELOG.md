@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.247
+
+- Measure the gap from a vertex or surface point to committed rigid or skinned
+  mesh triangles. Inspect cooked topology and replay grip checks without a GPU.
+
 ## 0.0.246
 
 - Author joint-local rotation clips directly on cooked models. Grip and

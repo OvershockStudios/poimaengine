@@ -68,7 +68,7 @@ def configure(session):
     original_packages = inventory(package_folder)
     discovery = session.rpc('world.describe', dict(view='method', name='asset.animation.author'))
     schema = discovery['methods']['asset.animation.author']
-    assert discovery['schema_revision'] == 138
+    assert discovery['schema_revision'] >= 138
     assert schema['properties']['clips']['maxItems'] == 8
     assert len(schema['properties']['clips']['items']['properties']['tracks']['items']['oneOf']) == 2
     status_before = session.rpc('world.history')

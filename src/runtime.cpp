@@ -1943,6 +1943,14 @@ struct Runtime::Impl {
         }
         return structure_results;
     }
+    SceneObject drawable(entt::entity object,const RuntimeMesh& mesh) const {
+        const auto& node=registry.get<Node>(object);
+        SceneObject result{node.id,node.world,mesh.albedo,mesh.mesh,mesh.material,mesh.textures,
+            animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return registry.get<Node>(find(id)).world; }),
+            1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
+        if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
+        return result;
+    }
 };
 
 #include "runtime_save.inc"
@@ -2415,15 +2423,18 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     return result;
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
+std::optional<SceneObject> Runtime::indexed_drawable(const std::string& id) const {
+    const auto found=impl_->topology->identities.find(id);
+    if(found==impl_->topology->identities.end())throw std::out_of_range("Runtime entity does not exist.");
+    const auto* mesh=impl_->registry.try_get<RuntimeMesh>(found->second);
+    if(!mesh || !mesh->mesh || !mesh->visible)return {};
+    return impl_->drawable(found->second,*mesh);
+}
 SceneSnapshot Runtime::snapshot() const {
     SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;result.material_revision=impl_->material_revision;result.presentation_generation=impl_->material_revision;
-    for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
-        const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
-            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1,mesh->cast_shadows,mesh->receive_shadows,true,
-            impl_->topology->definitions.at(node.id).camera_draw});
-        auto& appended=result.objects.back();
-        if(appended.camera_draw && appended.camera_draw->mode==CameraDrawMode::Viewmodel)appended.cast_shadows=false;
-    }
+    for(auto object:impl_->topology->order)
+        if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object);mesh && mesh->visible)
+            result.objects.push_back(impl_->drawable(object,*mesh));
     return result;
 }
 #include "runtime_camera_pose_snapshot.inc"

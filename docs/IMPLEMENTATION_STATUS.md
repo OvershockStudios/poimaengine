@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.246**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.247**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.247 adds [committed surface measurements](SURFACE_MEASUREMENTS.md).
+Agents can look up cooked triangles and measure from a posed vertex or triangle
+point to the nearest point on a selected rigid or skinned surface. Reads are
+guarded by session and tick and use geometry before camera-specific offsets.
+The [Linux, Windows and MCP checks](evidence/m2-surface-measurement.json) cover
+weighted skinning, reversed and collapsed faces, query bounds and exact save
+equality around reads. These are point samples. Whole-hand intersection and
+automatic contact correction remain separate work.
 
 Version 0.0.246 adds [authored joint rotation clips](ANIMATION_ASSETS.md#author-joint-rotation-clips).
 Static poses, hinge keys and multi-axis quaternion keys append to a new cooked

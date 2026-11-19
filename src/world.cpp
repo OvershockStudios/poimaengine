@@ -11,6 +11,7 @@
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
 #include "pose_frames.hpp"
+#include "surface_measure.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
 #include "poima/ui_model.hpp"
@@ -2505,6 +2506,27 @@ public:
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
         if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
         if(method=="asset.source.inspect")return source_model_inspection(params);
+        if(method=="asset.mesh.triangles") {
+            fields(params,{"asset","primitive","offset","limit"},{"asset","primitive"});
+            require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid model asset ID.");
+            const auto primitive=revision(params.at("primitive"));
+            const auto offset=params.contains("offset")?revision(params.at("offset")):0;
+            const auto limit=params.contains("limit")?revision(params.at("limit")):64;
+            require(limit>=1 && limit<=64,"Triangle page limit must be 1..64.");
+            try {
+                const auto loaded=read_model_asset(asset_directory(),params.at("asset"));
+                require(primitive<loaded.model->primitives.size(),"Primitive index is outside the cooked model.");
+                const auto& indices=loaded.model->primitives[primitive]->indices;
+                const auto total=indices.size()/3;
+                const auto end=std::min<std::uint64_t>(total,offset+limit);
+                auto items=Json::array();
+                for(auto i=offset;i<end;++i)
+                    items.push_back({{"index",i},{"vertices",{indices[3*i],indices[3*i+1],indices[3*i+2]}}});
+                return {{"asset",loaded.id},{"primitive",primitive},{"total",total},{"items",std::move(items)},
+                    {"next_offset",end<total?Json(end):Json(nullptr)}};
+            } catch(const Error&) {throw;}
+            catch(const std::exception& error) {throw Error(-32050,error.what());}
+        }
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
@@ -3610,6 +3632,7 @@ public:
     }
 #include "world_observe.inc"
 #include "world_pose_frames.inc"
+#include "world_surface_measure.inc"
 #include "world_physical.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
@@ -3788,6 +3811,7 @@ public:
     Json runtime_dispatch(const std::string& method,const Json& params) {
         if(method=="runtime.observe")return observe_runtime(params);
         if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
+        if(method=="runtime.surface.measure")return measure_runtime_surfaces(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
