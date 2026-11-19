@@ -1,0 +1,68 @@
+{
+  "engine_version": "0.0.282",
+  "scope": "Portable Windows desktop package on the development laptop. Windows UI Automation operates an isolated launcher and creator project.",
+  "test_sha256": "decb814e84cfa53dbd4a507ad1cef19bbd64b6d24cfe38c1f80e34d417cc4599",
+  "creator": {
+    "passed": true,
+    "input": "Windows UI Automation and an owned WM_CLOSE message",
+    "editor_sha256": "ad0ee3183547d27ff49f34a811e3f7844866a63d9fafc04ab94aa104c0efe508",
+    "frontend_sha256": "3fd437c1d0a5e75e3937904cc84495dbd6a4d3b37793786de6c360d4b6746c95",
+    "cli_sha256": "cde7634e14be1f8e86ba2b39dbd686abfb4b0b5151787a979af4ba9999064938",
+    "bridge_sha256": "0fec48d5dcc7b3a2a39c397334ff12931a5c0be3737cef3629279691b77a4dca",
+    "codex_connection_requested": true,
+    "checks": {
+      "created": {
+        "id": "96440fb49c449dbcb83938e4b8fd67fd",
+        "revision": 1
+      },
+      "first_preview": {
+        "session": "ceab255b0b634c8b809d3a5fbce2d218",
+        "tick": 1,
+        "frames": 1,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "stopped": true,
+      "codex_ready": true,
+      "codex_disconnected": true,
+      "codex_reconnected": true,
+      "closed_exit_code": 0,
+      "reopened_preview": {
+        "session": "823f45282dc0467dbb781f137217559c",
+        "tick": 1,
+        "frames": 1,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "closed_during_play_exit_code": 0
+    }
+  },
+  "direct_full_editor": {
+    "passed": true,
+    "revision": 1,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "scene_frames_presented": 16,
+    "nvrhi_errors": 0,
+    "exit_code": 0
+  },
+  "recovered_failures": [
+    {
+      "cause": "Refreshing the PowerShell process after exit lost its exit code.",
+      "resolution": "Retain its process handle and read the exit code before refreshing."
+    },
+    {
+      "cause": "Closing during play let deferred Game view teardown read a stale desktop state and reset UI on a closing host.",
+      "resolution": "Refresh the native close state before detaching the Game view."
+    },
+    {
+      "cause": "Codex thread/resume returned no rollout found for a newly opened conversation without a turn.",
+      "resolution": "Reconnect with a new conversation when the previous connection never submitted a turn."
+    }
+  ],
+  "limits": [
+    "The installed Codex client was connected, disconnected and reconnected. The test submits no model turns.",
+    "Physical controls, fresh installation, gameplay compilation and export from the workspace are outside this check."
+  ]
+}

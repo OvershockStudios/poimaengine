@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.282
+
+- Add a Windows creator workspace with Codex chat and native game preview in the same project session.
+- Create projects in a default folder and reopen them directly from the launcher.
+
 ## 0.0.281
 
 - Use narrower deferred render targets and skip motion outputs during ordinary color gameplay without temporal reconstruction.

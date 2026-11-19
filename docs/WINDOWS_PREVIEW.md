@@ -5,8 +5,11 @@ Vulkan graphics driver. Open `Poima.Editor.exe`.
 
 - **Play Collection Room** opens the bundled game. Use WASD and the mouse
   to move and aim, E to collect the three green cells, and Esc to exit.
-- **Create project** uses the project name and a folder you choose.
-- **Open project** loads a `.poimaproject` or an existing `project.json`.
+- **Create project** starts with a name in **Documents → Poima Projects**.
+- **Open selected project** reopens a project from that folder.
+  **Open project from disk…** accepts a `.poimaproject` or an existing `project.json`.
+- The [creator workspace](DESKTOP_EDITOR.md#creator-workspace) puts game chat
+  beside Play and Stop. Choose **Open in the full editor** for Scene and Inspector.
 
 You can also open a project directly from PowerShell.
 
@@ -19,6 +22,9 @@ a separate .NET runtime. Gameplay development and export have their own
 toolchain prerequisites. [Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
 
 ## Connect an agent
+
+In the creator workspace, use **Connect Codex** with an installed and signed-in
+Codex CLI. You can also connect from a separate client.
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable

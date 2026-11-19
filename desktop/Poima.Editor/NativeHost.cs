@@ -30,7 +30,8 @@ public sealed class NativeHost : IDisposable
         WorldPath = Path.GetFullPath(world); Endpoint = endpoint;
         handle = Native.Create(WorldPath, endpoint, gpu, samples);
         if (handle == IntPtr.Zero) throw new InvalidOperationException(Error());
-        State = Read(Native.Poll(handle));
+        try { State = Read(Native.Poll(handle)); }
+        catch { Native.Destroy(handle); handle = IntPtr.Zero; throw; }
     }
     private string Error() => Marshal.PtrToStringUTF8(Native.Error(handle)) ?? "Native desktop bridge failed.";
     private JsonObject Read(IntPtr pointer)

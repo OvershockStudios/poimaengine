@@ -27,16 +27,19 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-            if (Program.Options is { } options) OpenEditor(desktop, options);
+            if (Program.CreatorProject is { } project) desktop.MainWindow = new CreatorWindow(project, Program.Options!);
+            else if (Program.Options is { } options) OpenEditor(desktop, options);
             else
             {
-                var launcher = new LauncherWindow(project =>
+                var launcher = new LauncherWindow((selected, advanced) =>
                 {
                     var previous = desktop.MainWindow!;
-                    OpenEditor(desktop, LaunchOptions.Parse([project.World], project));
+                    var launch = LaunchOptions.Parse([selected.World], selected);
+                    if (advanced) OpenEditor(desktop, launch);
+                    else desktop.MainWindow = new CreatorWindow(selected, launch);
                     desktop.MainWindow!.Show();
                     previous.Close();
-                });
+                }, Program.ProjectsDirectory);
                 desktop.MainWindow = launcher;
             }
         }

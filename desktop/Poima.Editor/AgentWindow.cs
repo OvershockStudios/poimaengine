@@ -12,9 +12,10 @@ using System.Text.Json.Nodes;
 namespace Poima.Editor;
 
 /// <summary>First chat client over the shared engine endpoint; never calls NativeHost from a worker.</summary>
-public sealed class AgentWindow : Window
+internal sealed class AgentChat : UserControl
 {
     private readonly string projectRoot, endpoint;
+    private readonly bool creator;
     private readonly CancellationTokenSource lifetime = new();
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
     private readonly TextBox engine = Field("Poima executable", Path.Combine(AppContext.BaseDirectory, "poima.exe"));
@@ -25,23 +26,46 @@ public sealed class AgentWindow : Window
     private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel approvals = new() { Spacing = 6 };
-    private readonly Button connect = new() { Content = "Connect" }, send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
+    private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
+        send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
     private CodexSession? session;
-    private string? activeTurn;
+    private string? activeTurn, unusedConversation;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready;
-    public AgentWindow(string projectRoot, string endpoint)
+    private Task? connectingTask, closingTask, retiringTask;
+    public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
+    public AgentChat(string projectRoot, string endpoint, bool creator = false)
     {
-        this.projectRoot = projectRoot; this.endpoint = endpoint;
-        Title = "Agent — Poima"; Width = 760; Height = 760; MinWidth = 440; MinHeight = 480;
-        FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = 12;
-        Background = EditorTheme.Brush("#222327");
-        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
+        FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = creator ? 14 : 12;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"), Margin = new Thickness(14), RowSpacing = 8 };
+        prompt.PlaceholderText = creator ? "Describe the game you want to make…" : "Ask Codex about this project…";
         var setup = new StackPanel { Spacing = 6 };
-        setup.Children.Add(new TextBlock { Text = "Build with Codex", FontSize = 20 });
-        setup.Children.Add(new TextBlock { Text = "Uses your installed Codex login. Changes reach the same world as the editor.", TextWrapping = TextWrapping.Wrap });
-        setup.Children.Add(executable); setup.Children.Add(engine); setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits); setup.Children.Add(connect);
+        if (creator)
+        {
+            executable.Text = FindCodex();
+            connect.Content = "Connect Codex";
+            allowEdits.IsChecked = false;
+            allowEdits.Content = "Allow Poima tools without asking";
+            ToolTip.SetTip(allowEdits, "Pre-approve Codex calls to Poima's world tools for this connection.");
+            setup.Children.Add(new TextBlock { Text = "Game conversation", FontSize = 20, FontWeight = FontWeight.SemiBold });
+            setup.Children.Add(new TextBlock { Text = "Connect with your Codex sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
+            var settings = new StackPanel { Spacing = 6 };
+            settings.Children.Add(executable); settings.Children.Add(model); settings.Children.Add(thread);
+            var options = new Expander { Header = "Connection settings", Content = settings };
+            AutomationProperties.SetName(options, "Connection settings");
+            setup.Children.Add(options);
+            setup.Children.Add(allowEdits);
+            var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            connection.Children.Add(connect); connection.Children.Add(disconnect);
+            setup.Children.Add(connection);
+        }
+        else
+        {
+            setup.Children.Add(new TextBlock { Text = "Build with Codex", FontSize = 20 });
+            setup.Children.Add(new TextBlock { Text = "Uses your installed Codex login. Changes reach the same world as the editor.", TextWrapping = TextWrapping.Wrap });
+            setup.Children.Add(executable); setup.Children.Add(engine); setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits); setup.Children.Add(connect);
+        }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
         Grid.SetRow(transcript, 2); root.Children.Add(transcript);
         var approvalScroll = new ScrollViewer { Content = approvals, MaxHeight = 200 };
@@ -52,12 +76,40 @@ public sealed class AgentWindow : Window
         Content = root;
         AutomationProperties.SetName(prompt, "Agent prompt"); AutomationProperties.SetName(transcript, "Agent transcript");
         AutomationProperties.SetName(connect, "Agent Connect"); AutomationProperties.SetName(send, "Agent Send"); AutomationProperties.SetName(stop, "Agent Stop");
+        AutomationProperties.SetName(disconnect, "Agent Disconnect"); AutomationProperties.SetName(status, "Agent status");
         AutomationProperties.SetName(allowEdits, "Agent allow world edits");
-        connect.Click += async (_, _) => await Connect();
+        connect.Click += async (_, _) => await (connectingTask = Connect());
+        disconnect.Click += async (_, _) =>
+        {
+            if (session is { } current && !Busy) await Retire(current, "Disconnected.");
+        };
         send.Click += async (_, _) => await Send();
         stop.Click += async (_, _) => await Stop();
-        Closing += (_, _) => { closing = true; lifetime.Cancel(); };
-        Closed += async (_, _) => { if (session is { } current) await DisposeSession(current); };
+    }
+
+    private static string FindCodex()
+    {
+        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenAI", "Codex", "bin");
+        try
+        {
+            if (Directory.Exists(root))
+                return new DirectoryInfo(root).EnumerateDirectories().Take(32)
+                    .OrderByDescending(item => item.LastWriteTimeUtc)
+                    .Select(item => Path.Combine(item.FullName, "codex.exe"))
+                    .FirstOrDefault(File.Exists) ?? "codex.exe";
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+        return "codex.exe";
+    }
+
+    public Task CloseAsync() => closingTask ??= CloseCoreAsync();
+    private async Task CloseCoreAsync()
+    {
+        closing = true; Controls(); lifetime.Cancel();
+        if (connectingTask is not null) await connectingTask;
+        if (session is { } current) await DisposeSession(current);
+        if (retiringTask is not null) await retiringTask;
     }
     private static TextBox Field(string name, string value)
     {
@@ -75,7 +127,8 @@ public sealed class AgentWindow : Window
         var live = ready && session?.ThreadId is not null && !closing;
         send.IsEnabled = live && activeTurn is null && !submitting;
         stop.IsEnabled = live && activeTurn is not null;
-        connect.IsEnabled = !connecting && session is null && !closing;
+        connect.IsEnabled = !Busy && session is null && !closing;
+        disconnect.IsEnabled = live && !Busy;
         executable.IsEnabled = engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
         allowEdits.IsEnabled = connect.IsEnabled;
@@ -103,10 +156,15 @@ public sealed class AgentWindow : Window
                 throw new InvalidOperationException("Choose a model offered by this Codex CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
             model.Text = chosen;
             ToolTip.SetTip(model, "Models offered by this CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
-            var id = await current.OpenAsync(string.IsNullOrWhiteSpace(thread.Text) ? null : thread.Text.Trim(), startup.Token, chosen);
+            var requested = thread.Text?.Trim();
+            // Codex assigns an ID before the first turn persists the conversation.
+            // Only resume an existing ID once it may have a saved history.
+            var resume = string.IsNullOrEmpty(requested) || requested == unusedConversation ? null : requested;
+            var id = await current.OpenAsync(resume, startup.Token, chosen);
             if (!ReferenceEquals(session, current)) throw new IOException("Connection ended while opening the conversation.");
+            unusedConversation = resume is null ? id : null;
             thread.Text = id; ready = true;
-            status.Text = "Connected · copy the conversation ID above to reopen this conversation later.";
+            status.Text = creator ? "Connected to Codex." : "Connected · copy the conversation ID above to reopen this conversation later.";
             Controls();
         }
         catch (Exception error)
@@ -126,14 +184,22 @@ public sealed class AgentWindow : Window
         try
         {
             var id = await current.SendAsync(text, lifetime.Token);
-            if (ReferenceEquals(session, current) && !completed.Contains(id)) activeTurn = id;
+            if (ReferenceEquals(session, current))
+            {
+                unusedConversation = null;
+                if (!completed.Contains(id)) activeTurn = id;
+            }
         }
         catch (Exception error)
         {
             if (ReferenceEquals(session, current))
             {
                 status.Text = error.Message;
-                if (error is AgentExchangeException { OutcomeUnknown: true }) LoseConnection(current, error.Message);
+                if (error is AgentExchangeException { OutcomeUnknown: true })
+                {
+                    unusedConversation = null;
+                    await Retire(current, error.Message);
+                }
             }
         }
         finally { if (ReferenceEquals(session, current)) submitting = false; Controls(); }
@@ -161,16 +227,19 @@ public sealed class AgentWindow : Window
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (!closing && ReferenceEquals(session, current))
-                    LoseConnection(current, "Connection ended: " + error.Message);
+                    _ = Retire(current, "Connection ended: " + error.Message);
             });
         }
     }
-    private void LoseConnection(CodexSession current, string message)
+    private async Task Retire(CodexSession current, string message)
     {
         if (!ReferenceEquals(session, current)) return;
         session = null; ready = false; activeTurn = null; submitting = false;
-        approvals.Children.Clear(); status.Text = message; Controls();
-        _ = DisposeSession(current);
+        approvals.Children.Clear(); status.Text = message;
+        var pending = retiringTask = DisposeSession(current);
+        Controls();
+        await pending;
+        Controls();
     }
     private async Task DisposeSession(CodexSession current)
     {
@@ -231,6 +300,22 @@ public sealed class AgentWindow : Window
         ["status"] = status.Text, ["transcript"] = transcript.Text,
         ["approvals"] = approvals.Children.Count
     };
+}
+
+public sealed class AgentWindow : Window
+{
+    private readonly AgentChat chat;
+    private readonly string projectRoot;
+    public AgentWindow(string projectRoot, string endpoint)
+    {
+        this.projectRoot = projectRoot;
+        Title = "Agent — Poima"; Width = 760; Height = 760; MinWidth = 440; MinHeight = 480;
+        Background = EditorTheme.Brush("#222327");
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Content = chat = new AgentChat(projectRoot, endpoint);
+        Closing += async (_, _) => await chat.CloseAsync();
+    }
+    internal JsonObject InspectForQualification() => chat.InspectForQualification();
     internal JsonObject RenderForQualification(string destination)
     {
         if (Program.Options.Script is null || !IsVisible || !IsMeasureValid || !IsArrangeValid)

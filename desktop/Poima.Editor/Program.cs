@@ -54,13 +54,24 @@ internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uin
 internal static class Program
 {
     public static LaunchOptions? Options { get; private set; }
+    internal static ProjectLocation? CreatorProject { get; private set; }
+    internal static string? ProjectsDirectory { get; private set; }
     [STAThread]
     public static int Main(string[] args)
     {
         try
         {
             if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("This desktop prototype currently targets Windows.");
-            Options = args.Length == 0 ? null : LaunchOptions.Parse(args);
+            if (args is ["--projects", var folder])
+                ProjectsDirectory = Path.GetFullPath(folder);
+            else if (args.Length >= 2 && args[0] == "--creator")
+            {
+                CreatorProject = ProjectFiles.Open(args[1]).GetAwaiter().GetResult();
+                Options = LaunchOptions.Parse(args[1..], CreatorProject);
+                if (Options.Script is not null || Options.Report is not null || Options.Frames != 0 || Options.Layout is not null)
+                    throw new ArgumentException("Creator startup accepts --endpoint, --gpu, --samples and --software-ui.");
+            }
+            else if (args.Length != 0) Options = LaunchOptions.Parse(args);
             return AppBuilder.Configure<App>().UsePlatformDetect()
                 .With(new Win32PlatformOptions { RenderingMode = [Options?.SoftwareUi == true ? Win32RenderingMode.Software : Win32RenderingMode.Vulkan] })
                 .LogToTrace().StartWithClassicDesktopLifetime(args);

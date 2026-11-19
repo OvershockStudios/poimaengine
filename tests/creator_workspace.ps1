@@ -1,0 +1,186 @@
+# SPDX-License-Identifier: Apache-2.0
+# Run in the interactive Windows session against a portable desktop directory.
+# UI Automation addresses only windows owned by this run. No file picker,
+# physical input or pre-existing project is used. -WithCodex opens a local
+# Codex connection with the installed client and submits no model turn.
+param(
+    [Parameter(Mandatory = $true)][string]$Editor,
+    [Parameter(Mandatory = $true)][string]$Output,
+    [switch]$WithCodex
+)
+
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class CreatorTestWindow {
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
+}
+'@
+
+$exe = (Resolve-Path -LiteralPath $Editor).Path
+$package = Split-Path -Parent $exe
+$cli = Join-Path $package 'poima.exe'
+$run = Join-Path ([System.IO.Path]::GetFullPath($Output)) ([guid]::NewGuid().ToString('N'))
+$projects = Join-Path $run 'projects'
+$name = 'Creator Workspace'
+$manifest = Join-Path (Join-Path $projects $name) 'project.poimaproject'
+New-Item -ItemType Directory -Path $projects | Out-Null
+$owner = $null
+$window = $null
+$report = [ordered]@{
+    passed = $false
+    input = 'Windows UI Automation and an owned WM_CLOSE message'
+    editor_sha256 = (Get-FileHash -LiteralPath $exe).Hash.ToLowerInvariant()
+    frontend_sha256 = (Get-FileHash -LiteralPath (Join-Path $package 'Poima.Editor.dll')).Hash.ToLowerInvariant()
+    cli_sha256 = (Get-FileHash -LiteralPath $cli).Hash.ToLowerInvariant()
+    bridge_sha256 = (Get-FileHash -LiteralPath (Join-Path $package 'poima_desktop.dll')).Hash.ToLowerInvariant()
+    codex_connection_requested = [bool]$WithCodex
+    checks = [ordered]@{}
+}
+
+function Wait-For($Label, [scriptblock]$Probe, [int]$Timeout = 30) {
+    $watch = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($watch.Elapsed.TotalSeconds -lt $Timeout) {
+        if ($owner.HasExited) { throw "Poima exited while waiting for $Label." }
+        $result = & $Probe
+        if ($result) { return $result }
+        Start-Sleep -Milliseconds 100
+    }
+    throw "Timed out waiting for $Label."
+}
+
+function Find-Window($Title) {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $owner.Id)
+    $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+        [System.Windows.Automation.TreeScope]::Children, $condition)
+    foreach ($candidate in $windows) {
+        if ($candidate.Current.Name -like $Title) { return $candidate }
+    }
+}
+
+function Find-Control($Label, [switch]$Enabled) {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::NameProperty, $Label)
+    $control = $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if ($control -and (!$Enabled -or $control.Current.IsEnabled)) { return $control }
+}
+
+function Invoke-Control($Label) {
+    $control = Wait-For $Label { Find-Control $Label -Enabled }
+    $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+}
+
+function Start-Launcher($Phase) {
+    $process = Start-Process -FilePath $exe -ArgumentList "--projects `"$projects`"" -WorkingDirectory $package -PassThru `
+        -RedirectStandardOutput (Join-Path $run "$Phase.stdout.txt") `
+        -RedirectStandardError (Join-Path $run "$Phase.stderr.txt")
+    $null = $process.Handle
+    return $process
+}
+
+function Close-Owner {
+    $handle = [IntPtr]$window.Current.NativeWindowHandle
+    if (![CreatorTestWindow]::PostMessage($handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)) {
+        throw 'Could not close the test window.'
+    }
+    if (!$owner.WaitForExit(20000)) { throw 'The creator owner failed to retire.' }
+    if ($owner.ExitCode -ne 0) { throw "The creator owner exited with $($owner.ExitCode)." }
+}
+
+function Inspect-Project {
+    $response = & $cli project inspect $manifest | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or !$response.result) { throw 'The project could not be inspected.' }
+    return $response.result
+}
+
+function Inspect-Desktop {
+    $request = '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}'
+    $reply = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or !$reply.result) { throw 'The shared owner could not be inspected.' }
+    return $reply.result
+}
+
+function Play-Preview($Revision) {
+    Invoke-Control 'Play project'
+    $state = Wait-For 'a presented Game frame' {
+        $candidate = Inspect-Desktop
+        if ($candidate.runtime.active -and $candidate.views.game.presented_tick -gt 0) { $candidate }
+    }
+    $view = $state.views.game
+    if ($state.runtime.authored_revision -ne $Revision -or !$view.attached -or $state.views.scene.attached -or
+        $view.frames_presented -lt 1 -or !$view.render.success -or !$view.render.hardware -or $view.render.nvrhi_errors -ne 0) {
+        throw 'The reported Game frame failed the native preview checks.'
+    }
+    return [ordered]@{
+        session = $state.runtime.session_id
+        tick = $view.presented_tick
+        frames = $view.frames_presented
+        revision = $state.runtime.authored_revision
+        gpu = $view.render.gpu
+        validation_errors = $view.render.nvrhi_errors
+    }
+}
+
+try {
+    $owner = Start-Launcher 'create'
+    $window = Wait-For 'the launcher window' { Find-Window 'Poima' }
+    $field = Wait-For 'Project name' { Find-Control 'Project name' -Enabled }
+    $field.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($name)
+    Invoke-Control 'Create project'
+    $window = Wait-For 'the creator window' { Find-Window "$name*Poima Creator" }
+    $project = Inspect-Project
+    $endpoint = 'poima-' + $project.project_id
+    $report.checks.created = [ordered]@{ id = $project.project_id; revision = $project.revision }
+
+    $report.checks.first_preview = Play-Preview $project.revision
+    Invoke-Control 'Stop preview'
+    $report.checks.stopped = [bool](Wait-For 'the stopped Game preview' {
+        $state = Inspect-Desktop
+        !$state.runtime.active -and !$state.views.game.attached
+    })
+    if ($WithCodex) {
+        Invoke-Control 'Agent Connect'
+        $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
+        $report.checks.codex_ready = $true
+        Invoke-Control 'Agent Disconnect'
+        $null = Wait-For 'the retired Codex connection' { Find-Control 'Agent Connect' -Enabled }
+        $report.checks.codex_disconnected = $true
+        Invoke-Control 'Agent Connect'
+        $null = Wait-For 'the reconnected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
+        $report.checks.codex_reconnected = $true
+    }
+    Close-Owner
+    $report.checks.closed_exit_code = $owner.ExitCode
+
+    $owner = Start-Launcher 'reopen'
+    $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
+    Invoke-Control 'Open selected project'
+    $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
+    $reopened = Inspect-Project
+    if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
+        throw 'Project identity or authoring revision changed after reopen.'
+    }
+    $report.checks.reopened_preview = Play-Preview $reopened.revision
+    if ($report.checks.reopened_preview.session -eq $report.checks.first_preview.session) {
+        throw 'Reopening reused the retired play session.'
+    }
+    Close-Owner
+    $report.checks.closed_during_play_exit_code = $owner.ExitCode
+    $report.passed = $true
+}
+catch {
+    $report.error = $_.ToString()
+    throw
+}
+finally {
+    if ($owner -and !$owner.HasExited) {
+        $report.forced_cleanup = $true
+        Stop-Process -Id $owner.Id
+    }
+    $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'report.json') -Encoding UTF8
+    Write-Output $run
+}

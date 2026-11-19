@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.281**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.282**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.282 adds the [Windows creator workspace](DESKTOP_EDITOR.md#creator-workspace).
+The launcher creates and reopens local projects, and the workspace puts Codex
+chat beside an on-demand Game view. Windows UI Automation exercises creation,
+Vulkan presentation, Stop, reopening the same project and closing during play.
+The installed Codex client connects and reconnects before a first prompt.
+The direct full-editor route also opens the project and presents Scene frames.
+Build verification, recovery and standalone export through the workspace
+remain Alpha gates. [Results](evidence/m2-creator-workspace-282.json)
 
 Version 0.0.281 [reduces deferred color playback storage](DEFERRED_RENDERING.md#storage-and-execution).
 At 1920×1080 it uses 49.4 MiB less logical texture payload when playback has no

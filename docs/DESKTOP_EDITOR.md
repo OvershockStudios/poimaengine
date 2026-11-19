@@ -31,8 +31,8 @@ portable failure models and actual installed native consumption; GUI publication
 and clean-machine qualification remain separate.
 
 After packaging, open **`Poima.Editor.exe`** without arguments to open the
-launcher. Pass a `.poimaproject` or legacy `project.json` path to open a
-project directly. Both routes use the endpoint `poima-<project_id>`.
+launcher. Pass a `.poimaproject` or legacy `project.json` path to open the
+full editor directly. Both routes use the endpoint `poima-<project_id>`.
 The [Windows preview](WINDOWS_PREVIEW.md) adds a playable sample to the launcher.
 
 ```powershell
@@ -59,6 +59,43 @@ The retained frontend now uses embedded Inter Regular/SemiBold at 12 DIP, with c
 The world's parent directory must exist. An empty world can be opened; successful authoring edits persist through the native service. Close another writer/editor that owns that world before opening it here. The published application includes its .NET runtime and does not require a separately installed .NET runtime to start; clean-machine distribution qualification is still pending.
 
 Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a distinct `--endpoint name` for each desktop process. The default UI configuration requests **Vulkan only**, with no automatic graphics fallback. `--software-ui` explicitly uses software rendering for desktop controls; the Scene and Game viewports still require Vulkan. The native GPU selector does not select Avalonia's UI graphics device.
+
+## Creator workspace
+
+1. Open the launcher, enter a name, and choose **Create project**. The default
+   location is **Documents → Poima Projects**. The launcher lists projects in
+   that folder on subsequent starts.
+2. Choose **Connect Codex** to use an installed, signed-in Codex CLI. If the
+   launcher can't find it, set its executable in **Connection settings**.
+   Describe your game to begin the [brief](GAME_BRIEF.md). **Allow Poima tools
+   without asking** pre-approves Codex calls to the world tools for this
+   connection, including edits. Disconnect and reconnect to change this setting.
+3. Choose **Play** when the agent turn finishes. Play uses the project's
+   current saved entry, camera, input profile and audio setting. Click the game
+   to control it and press Esc to release the mouse. Choose **Stop** before
+   playing the next revision.
+
+Select **Open in the full editor** in the launcher to use the same project with
+the Scene and Inspector panels. Close the current workspace before reopening
+the project in a different window. To open the creator directly, use
+`Poima.Editor.exe --creator <path-to-project>`. To point the launcher at a
+different local project directory, use `Poima.Editor.exe --projects <directory>`.
+
+The creator can preview an adopted Native AOT module and a configured desktop
+gameplay launch profile. It does not compile gameplay when you press Play.
+Use the full editor's gameplay controls for managed reload. Closing a creator
+session retires its local provider connection. After sending a message, save
+the conversation ID from **Connection settings** to resume it after reopening.
+If you disconnect before the first message, reconnect starts a fresh conversation.
+
+Run the launcher and preview regression in an interactive Windows session
+with a current desktop package. Add `-WithCodex` to exercise connection and
+reconnection through an installed Codex client.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tests\creator_workspace.ps1 `
+  -Editor build\desktop-win-x64\Poima.Editor.exe -Output build\creator-check
+```
 
 ## C# gameplay iteration
 
