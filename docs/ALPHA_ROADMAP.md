@@ -270,7 +270,7 @@ may change the order when they expose a shared dependency or blocker.
 
 Advanced lighting and graphics, production VFX and cinematics, comprehensive
 water/weather/seasons, persistent surface simulation, richer deterministic
-NPC worlds, advanced 2D, browser rendering, multiplayer and console backends
+NPC worlds, browser rendering, multiplayer and console backends
 remain engine requirements. They continue through later milestones; Alpha 1
 does not imply their completion. Console qualification needs the platform SDKs
 and development hardware.

@@ -35,8 +35,8 @@ provide durable project context, not authority to override them.
 - C# gameplay uses CoreCLR during development and qualified Native AOT shipping
   paths. Keep fast iteration, explicit ownership, bounded state and typed
   contracts. Do not infer complete compatibility from an ABI version alone.
-- Windows single-player 3D is the 1.0 target. Browser deployment follows at 1.1;
-  advanced 2D at 1.2. Native Linux graphics, multiplayer and current-generation
+- Windows single-player 3D is the 1.0 target. Browser deployment follows at 1.1.
+  Native Linux graphics, multiplayer and current-generation
   consoles follow later, with their boundaries designed in advance. Linux
   headless authoring is a current target. Licensed console access is required
   before actual console implementation and qualification.

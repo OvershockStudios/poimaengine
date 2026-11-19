@@ -118,6 +118,6 @@ The [documentation standard](DOCUMENTATION.md) defines human manuals, API
 reference, task playbooks and skills as complementary release deliverables.
 
 The separate full character creator remains planned after the imported-character
-pipeline. Browser deployment targets 1.1.0 and advanced 2D 1.2.0; Linux graphics,
+pipeline. Browser deployment targets 1.1.0. Linux graphics,
 multiplayer and consoles follow later, with their architectural boundaries
 preserved before 1.0.
