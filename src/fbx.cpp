@@ -305,7 +305,9 @@ struct Converter {
     std::size_t vertices=0,indices=0,joints=0,color_values=0,color_indices=0;
     std::set<const ufbx_mesh*> neutral_color_meshes;
     std::map<const ufbx_node*,std::uint32_t> nodes;
-    explicit Converter(const ufbx_scene& s,ModelAsset& m,const std::filesystem::path& root,std::size_t bytes,FbxNormalConvention normals):scene(s),model(m),images{root,m,normals,bytes,0,{},{},{}} {}
+    bool geometry_only;
+    explicit Converter(const ufbx_scene& s,ModelAsset& m,const std::filesystem::path& root,std::size_t bytes,
+        FbxNormalConvention normals,bool geometry):scene(s),model(m),images{root,m,normals,bytes,0,{},{},{}},geometry_only(geometry) {}
     void hierarchy() {
         require(scene.nodes.count>0 && scene.nodes.count<=10000,"FBX exceeds 10,000 hierarchy nodes.");
         for(std::size_t i=0;i<scene.nodes.count;++i)nodes.emplace(scene.nodes.data[i],static_cast<std::uint32_t>(i));
@@ -381,7 +383,8 @@ struct Converter {
                 }
             }
             for(auto& [slot,mesh]:parts) {
-                material(*mesh,source,node.materials.count ? node.materials.data[slot] : nullptr,images,model,node,slot);
+                const auto* surface=geometry_only || !node.materials.count ? nullptr : node.materials.data[slot];
+                material(*mesh,source,surface,images,model,node,slot);
                 if(mesh->has_uv) {
                     tangent_fallback_count+=generate_tangents(*mesh,true);
                 }
@@ -434,7 +437,7 @@ struct Converter {
     }
 };
 }
-std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source,FbxNormalConvention normals) {
+std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source,FbxNormalConvention normals,bool geometry_only) {
     require(normals==FbxNormalConvention::opengl || normals==FbxNormalConvention::directx,"Unknown FBX normal-map convention.");
     std::error_code error;const auto path=std::filesystem::weakly_canonical(source,error);require(!error,"FBX source path is unavailable.");const auto bytes=read_file(path,source_budget);
     ufbx_load_opts options{};options.temp_allocator=allocator();options.result_allocator=allocator();options.file_format=UFBX_FILE_FORMAT_FBX;options.strict=true;options.force_single_thread_ascii_parsing=true;
@@ -456,7 +459,10 @@ std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source
     require(!scene->metadata.has_warning[UFBX_WARNING_DUPLICATE_OBJECT_ID],"FBX duplicate object identifiers are unsupported.");
     require(!scene->metadata.has_warning[UFBX_WARNING_INDEX_CLAMPED],"FBX repaired out-of-range indices are unsupported.");
     require(!scene->constraints.count && !scene->nurbs_curves.count && !scene->nurbs_surfaces.count,"FBX constraints/NURBS are unsupported.");
-    auto result=std::make_shared<ModelAsset>();Converter converter(*scene,*result,path.parent_path(),bytes.size(),normals);converter.hierarchy();converter.geometry();converter.animations();
+    auto result=std::make_shared<ModelAsset>();
+    Converter converter(*scene,*result,path.parent_path(),bytes.size(),normals,geometry_only);
+    converter.hierarchy();converter.geometry();converter.animations();
+    if(geometry_only)result->diagnostics.push_back("FBX geometry-only import uses neutral materials and leaves source textures unbound.");
     if(converter.tangent_fallback_count)result->diagnostics.push_back("FBX collapsed UVs: generated orthogonal fallback for "+
         std::to_string(converter.tangent_fallback_count)+" triangle corners without a normal map; no normal-map tangent fidelity is implied.");
     if(scene->lights.count || scene->cameras.count)result->diagnostics.push_back("FBX cameras/lights are not imported; their hierarchy nodes are retained.");

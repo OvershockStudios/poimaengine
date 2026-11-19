@@ -14,7 +14,7 @@ import shutil
 import sys
 import unittest
 import uuid
-from fbx_fixture import write_fixtures
+from fbx_fixture import textured, write_fixtures
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools/python'))
@@ -153,6 +153,35 @@ class FbxContract(unittest.TestCase):
         self.assertNotIn('2' * 32, json.loads(self.world.read_text())['entities'])
         self.call('world.redo', dict(request_id=uuid.uuid4().hex, base_revision=undo['revision']))
         self.assertEqual(json.loads(self.world.read_text())['entities'], entities)
+
+    def test_geometry_only_preserves_rig_without_resolving_external_texture(self):
+        source = self.fixtures / 'external_path.fbx'
+        source.write_text(textured(color='Z:/private/atlas.png', skin=True, takes=('Move',)), encoding='utf-8')
+        path = native(source)
+        before = self.state()
+        packages = self.package_tree()
+        self.call('asset.import', dict(source=path), error=-32050)
+        self.call('asset.import', dict(source=path, fbx_geometry_only=False), error=-32050)
+        self.call('asset.import', dict(source=path, fbx_geometry_only='true'), error=-32602)
+        self.assertEqual(self.package_tree(), packages)
+
+        settings = dict(source=path, fbx_geometry_only=True)
+        inspected = self.call('asset.source.inspect', settings)
+        imported = self.call('asset.import', dict(settings, expected_model_sha256=inspected['model_sha256']))
+        self.assertEqual((imported['skins'], imported['animations'], imported['images']), (1, 1, 0))
+        self.assertTrue(any('geometry-only' in message for message in imported['diagnostics']))
+        asset = imported['asset']
+        primitives = self.call('asset.inspect', dict(asset=asset, section='primitives'))
+        self.assertEqual(len(primitives['items']), 1)
+        self.assertTrue(primitives['items'][0]['has_uv'])
+        self.assertTrue(primitives['items'][0]['skinned'])
+        self.assertTrue(all(value is None for value in primitives['items'][0]['textures'].values()))
+        self.assertEqual(self.call('asset.import', settings)['asset'], asset)
+        self.assertEqual(self.state(), before)
+        self.close()
+        source.unlink()
+        self.open()
+        self.assertEqual(self.call('asset.inspect', dict(asset=asset, section='primitives')), primitives)
 
     def test_clip_selection_renaming_and_normal_convention(self):
         before = self.state()

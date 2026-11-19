@@ -401,9 +401,11 @@ public sealed class EditorModel : IDisposable
         SceneChanging?.Invoke();
         Host.Call(redo ? "world.redo" : "world.undo", new() { ["request_id"] = NewId(), ["base_revision"] = Revision }); Refresh();
     }
-    public JsonObject Import(string path)
+    public JsonObject Import(string path, bool geometryOnly = false)
     {
-        var result = Host.Call("asset.import", new() { ["source"] = path });
+        var request = new JsonObject { ["source"] = path };
+        if (geometryOnly) request["fbx_geometry_only"] = true;
+        var result = Host.Call("asset.import", request);
         Note($"Imported {System.IO.Path.GetFileName(path)} — {result["nodes"]} nodes, {result["triangles"]} triangles.");
         return result;
     }

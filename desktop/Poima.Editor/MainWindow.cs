@@ -335,7 +335,13 @@ public sealed partial class MainWindow : Window
         MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => Run(action); return item; }
         return new Menu { Background = EditorTheme.Brush("#222327"), ItemsSource = new[]
         {
-            new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Runtime saves…", ShowSaves), Item("Refresh", Model.Refresh), Item("Close", Close) } },
+            new MenuItem { Header = "_File", ItemsSource = new[] {
+                Item("Import model…", () => _ = PickModel()),
+                Item("Import FBX geometry…", () => _ = PickModel(geometryOnly: true)),
+                Item("Import color image…", () => _ = PickMedia("Import color image", "sRGB image", "asset.image.import", "srgb", "*.png", "*.jpg", "*.jpeg")),
+                Item("Import data image…", () => _ = PickMedia("Import data image", "Linear image", "asset.image.import", "linear", "*.png", "*.jpg", "*.jpeg")),
+                Item("Import WAV…", () => _ = PickMedia("Import WAV audio", "WAV audio", "asset.audio.import", null, "*.wav")),
+                Item("Runtime saves…", ShowSaves), Item("Refresh", Model.Refresh), Item("Close", Close) } },
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")), Item("Environment and Sky", () => Model.Create("Environment")) } },
             new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Agent", ShowAgent), Item("Profiler", ShowProfiler), Item("Audio", ShowAudio), Item("Saves", ShowSaves), Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout), Item("Scene and Game layout", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
@@ -1008,20 +1014,42 @@ public sealed partial class MainWindow : Window
         }
         Draw();
     }
-    private async System.Threading.Tasks.Task PickModel()
+    private async System.Threading.Tasks.Task PickModel(bool geometryOnly = false)
     {
         try
         {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Import glTF model", AllowMultiple = false, FileTypeFilter = new[] { new FilePickerFileType("glTF model") { Patterns = new[] { "*.gltf", "*.glb" } } } });
-            if (files.Count == 0) return;
-            var path = files[0].TryGetLocalPath(); if (path is null) throw new InvalidOperationException("Import needs a local file.");
-            ImportModel(path);
+            var path = geometryOnly ? await ChooseAsset("Import FBX geometry", "FBX model", "*.fbx")
+                : await ChooseAsset("Import model", "3D models", "*.gltf", "*.glb", "*.fbx");
+            if (path != null) ImportModel(path, geometryOnly);
         }
         catch (Exception e) { Model.Note(e.Message); }
     }
-    private void ImportModel(string path)
+    private async System.Threading.Tasks.Task<string?> ChooseAsset(string title, string type, params string[] patterns)
     {
-        var imported = Model.Import(path); assetNames[imported["asset"]!.GetValue<string>()] = System.IO.Path.GetFileNameWithoutExtension(path);
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title, AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType(type) { Patterns = patterns }]
+        });
+        return files.Count == 0 ? null : files[0].TryGetLocalPath() ??
+            throw new InvalidOperationException("Import needs a local file.");
+    }
+    private async System.Threading.Tasks.Task PickMedia(string title, string type, string method, string? colorSpace, params string[] patterns)
+    {
+        try
+        {
+            var path = await ChooseAsset(title, type, patterns);
+            if (path == null) return;
+            var request = new JsonObject { ["source"] = path };
+            if (colorSpace != null) request["color_space"] = colorSpace;
+            var imported = Model.Host.Call(method, request);
+            Model.Note($"{System.IO.Path.GetFileName(path)} imported. Asset ID {imported["asset"]}");
+        }
+        catch (Exception e) { Model.Note(e.Message); }
+    }
+    private void ImportModel(string path, bool geometryOnly = false)
+    {
+        var imported = Model.Import(path, geometryOnly); assetNames[imported["asset"]!.GetValue<string>()] = System.IO.Path.GetFileNameWithoutExtension(path);
         Model.Note("Model is available in the world asset store. Select its .pmodel file to inspect or instantiate it.");
     }
     private sealed record FileEntry(string Path, string Name, string Type, bool Directory);
@@ -1063,9 +1091,13 @@ public sealed partial class MainWindow : Window
                     description.Text = $"{modelName}  ·  {metadata["nodes"]} nodes  ·  {metadata["triangles"]} triangles  ·  {metadata["animations"]} clips";
                     instantiate.IsVisible = true;
                 });
-            else if (item.Type == "glTF model") description.Text += "  ·  Double-click to import";
+            else if (item.Type == "glTF model" || item.Type == "FBX model") description.Text += "  ·  Double-click to import";
         }
-        void Open(FileEntry item) { if (item.Directory) { current = item.Path; Refresh(); } else if (item.Type == "glTF model") { Run(() => ImportModel(item.Path)); Refresh(); } }
+        void Open(FileEntry item)
+        {
+            if (item.Directory) { current = item.Path; Refresh(); }
+            else if (item.Type == "glTF model" || item.Type == "FBX model") { Run(() => ImportModel(item.Path)); Refresh(); }
+        }
         void Refresh()
         {
             try
@@ -1080,7 +1112,8 @@ public sealed partial class MainWindow : Window
                         var directory = Directory.Exists(path); var extension = System.IO.Path.GetExtension(path).ToLowerInvariant();
                         var name = System.IO.Path.GetFileName(path);
                         if (extension == ".pmodel") name = assetNames.GetValueOrDefault(System.IO.Path.GetFileNameWithoutExtension(path), "Model · " + name[..Math.Min(8, name.Length)]);
-                        return new FileEntry(path, name, directory ? "Folder" : extension is ".glb" or ".gltf" ? "glTF model" : extension.TrimStart('.'), directory);
+                        var kind = extension switch { ".glb" or ".gltf" => "glTF model", ".fbx" => "FBX model", _ => extension.TrimStart('.') };
+                        return new FileEntry(path, name, directory ? "Folder" : kind, directory);
                     }).Where(item => string.IsNullOrEmpty(search.Text) || item.Name.Contains(search.Text, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(x => x.Directory).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Take(1024).ToList();
                 if (grid)

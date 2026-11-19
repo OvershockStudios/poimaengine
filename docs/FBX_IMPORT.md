@@ -21,6 +21,22 @@ diagnostics. Import does not change the authored revision. Use
 editable instance, then the [runtime animation API](RUNTIME_ANIMATION.md) for
 playback.
 
+### Import geometry with neutral materials
+
+Add `"fbx_geometry_only": true` to `asset.import` when you want to assign
+materials yourself. It keeps the FBX hierarchy, mesh slots, UVs, skins, and
+animation takes within the existing import profile. The engine gives each
+primitive a neutral matte material and leaves its source textures unbound.
+It does not look up either relative or absolute texture paths from the FBX.
+Import your images separately and [assign them to the
+material](MATERIAL_AUTHORING.md#override-texture-slots).
+
+Use the same option on `asset.source.inspect` if you want its model
+fingerprint to guard the geometry-only import. The option defaults to
+`false` and applies to the FBX base source. Animation donors retain the
+standard dependency and material checks. The desktop File menu exposes
+**Import FBX geometry…**.
+
 ## Compose separate clips
 
 Add up to 32 animation sources to the base import:

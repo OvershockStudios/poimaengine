@@ -49,5 +49,6 @@ private:
 };
 // Restricted normalized FBX conversion. Geometryless animation donors are
 // allowed here; ordinary cooked-model publication still requires geometry.
-std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source,FbxNormalConvention normals=FbxNormalConvention::opengl);
+std::shared_ptr<const ModelAsset> import_fbx(const std::filesystem::path& source,
+    FbxNormalConvention normals=FbxNormalConvention::opengl,bool geometry_only=false);
 }

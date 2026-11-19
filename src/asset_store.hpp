@@ -61,7 +61,7 @@ inline LoadedModel store_cooked_model(const std::filesystem::path& directory,con
 }
 inline LoadedModel store_model_asset(const std::filesystem::path& directory,const std::filesystem::path& source,
     const std::vector<ModelAnimationSource>& animations={},std::optional<FbxNormalConvention> normal_map={},
-    std::optional<std::string> expected_model_sha256={}) {
+    std::optional<std::string> expected_model_sha256={},bool fbx_geometry_only=false) {
     validate_model_source_fingerprint(expected_model_sha256);
     for(const auto& file:animations)validate_model_source_fingerprint(file.expected_model_sha256);
     // Bound the selected top-level files before retaining multiple parsed models.
@@ -74,7 +74,7 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
     };
     count_source(source);for(const auto& file:animations)count_source(file.source);
     const auto convention=normal_map.value_or(FbxNormalConvention::opengl);
-    auto imported=import_model(source,convention);
+    auto imported=import_model(source,convention,fbx_geometry_only);
     if(normal_map && imported.importer.empty())throw std::runtime_error("fbx_normal_map applies only to FBX base sources; glTF normal maps use their own fixed convention.");
     if(expected_model_sha256)(void)verify_model_source_fingerprint(*imported.model,
         *expected_model_sha256,ModelSourceRole::base);

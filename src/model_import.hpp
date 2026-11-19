@@ -103,7 +103,8 @@ public:
 private:
     AnimationCompositionReport report_;
 };
-ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention=FbxNormalConvention::opengl);
+ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention=FbxNormalConvention::opengl,
+    bool fbx_geometry_only=false);
 ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention,const ModelAsset* base=nullptr);
 // Explicit, same-topology change of reference coordinate frames. Does not
 // alter base rest geometry or inverse binds, adapt proportions, or infer poses.

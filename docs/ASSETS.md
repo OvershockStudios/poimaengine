@@ -7,6 +7,57 @@ opacity factors and cutoff through authoring, cooked reopening and rendering.
 Nondefault alpha semantics use cooked model version 5; legacy opaque encodings
 remain unchanged. Raster cutouts do not modify collision geometry.
 
+## Bring assets from an existing library
+
+Choose the source files you want to use and keep any referenced buffers and
+textures with them. Use the **File** menu in the Windows editor to import a
+model, color image, data image, or WAV clip. The Project browser can inspect
+and instantiate cooked models. The Console reports the imported image or
+audio asset ID. [Desktop controls](DESKTOP_EDITOR.md#current-authoring-controls)
+
+The native world service also accepts the following source files on Windows
+and Linux. You can send these requests yourself or use them from a connected
+agent. Relative paths are resolved from the world file's directory.
+
+| Source | Import | Inspect |
+| --- | --- | --- |
+| glTF, GLB or supported FBX | `asset.import` | `asset.inspect` |
+| PNG or JPEG | `asset.image.import` with `color_space` | `asset.image.inspect` |
+| Supported WAV | `asset.audio.import` | `asset.audio.inspect` |
+
+Use the returned identifier to instantiate a model, [assign an image to a
+material](MATERIAL_AUTHORING.md), or [author an audio
+emitter](AUDIO.md#import-and-author). Check the [FBX import
+profile](FBX_IMPORT.md#supported-import-profile) for geometry, dependencies
+and animation limits. Audio import expects mono 48 kHz PCM16 or float32 WAV
+clips up to 60 seconds. Export an appropriately formatted copy if needed.
+
+### Use a Unity Asset Store library
+
+1. Create a blank project in Unity Hub. In Unity's Package Manager, open
+   **My Assets**, select an asset your project is licensed to use, then
+   **Download** and **Import**. Confirm the package's own terms allow use
+   in another engine. [Unity download instructions](https://support.unity.com/hc/en-us/articles/210112873-How-do-I-download-an-asset) · [Unity cross-engine licensing](https://support.unity.com/hc/en-us/articles/34387186019988-Can-I-use-assets-from-the-Asset-Store-with-other-engines)
+2. Find the original FBX, glTF/GLB, image or WAV files under the staging
+   project's `Assets` folder. Copy the files you want to a local art
+   source folder for your Poima project. Keep any referenced files and their
+   required relative paths. For example, copy the FBX of a crate and the
+   texture atlas assigned to it in Unity.
+3. Import the selected files in Poima using the table above. If an FBX has
+   missing textures, absolute paths, or an unsupported material, choose
+   **File → Import FBX geometry…** or pass `"fbx_geometry_only": true` to
+   `asset.import`. Inspect and instantiate the cooked model. Assign the
+   imported textures to the resulting material slots in Poima. Use sRGB for
+   base color and linear for normal or numeric data maps.
+
+The handoff reads standard source files from disk. Unity scenes, prefabs,
+materials, scripts, and editor extensions require their original Unity
+environment. Keep licensed source files and cooked copies private unless
+your terms allow redistribution. Unity's terms also address use of Asset
+Store content as AI model input. Use locally imported asset IDs and supported
+metadata for agent placement, and check the terms before supplying assets to
+a model. [Unity Asset Store Terms and EULA](https://unity.com/legal/as-terms)
+
 ## Import, inspect and instantiate
 
 To render the original eight-sphere material example from the repository root in Windows PowerShell:

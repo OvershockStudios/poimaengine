@@ -115,10 +115,14 @@ std::shared_ptr<const ModelAsset> transfer_rotations(const ModelAsset& base,cons
     const ModelPose& source_reference,const ModelPose& target_reference,
     const AnimationRotationRetarget& policy,const std::vector<std::string>& provenance);
 }
-ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention) {
+ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention,bool fbx_geometry_only) {
     auto extension=source.extension().string();
     for(auto& c:extension)if(c>='A' && c<='Z')c=static_cast<char>(c-'A'+'a');
-    if(extension==".fbx")return {import_fbx(source,convention),std::string("ufbx-0.23.1/poima-fbx-1/normal-")+(convention==FbxNormalConvention::opengl ? "opengl" : "directx")};
+    if(extension==".fbx") {
+        const auto profile=fbx_geometry_only ? "geometry-only" : (convention==FbxNormalConvention::opengl ? "normal-opengl" : "normal-directx");
+        return {import_fbx(source,convention,fbx_geometry_only),std::string("ufbx-0.23.1/poima-fbx-1/")+profile};
+    }
+    if(fbx_geometry_only)throw std::invalid_argument("fbx_geometry_only requires an FBX source.");
     // Preserve the original content-based glTF parser, including files whose
     // user-chosen name has no standard extension. FBX dispatch is explicit.
     return {import_gltf(source),{}};

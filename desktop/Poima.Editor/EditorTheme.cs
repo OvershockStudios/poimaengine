@@ -66,7 +66,7 @@ public static class EditorIcons
     }
     public static string FileKind(string extension) => extension.ToLowerInvariant() switch
     {
-        ".gltf" or ".glb" or ".pmodel" => "cube",
+        ".gltf" or ".glb" or ".fbx" or ".pmodel" => "cube",
         ".png" or ".jpg" or ".jpeg" or ".pimage" => "image",
         ".wav" or ".paudio" => "audio",
         ".cs" or ".cpp" or ".hpp" => "code",

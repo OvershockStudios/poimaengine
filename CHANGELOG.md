@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.276
+
+- Import FBX geometry with neutral materials and assign locally selected textures.
+- Import local models, color and data images, and WAV clips from the editor.
+- Open or create a project from the desktop launcher.
+- Package a portable Windows preview with a standalone Collection Room sample.
+
 ## 0.0.275
 
 - Check posed grip samples for physical overlap when selecting a fallback after a blocked pickup.

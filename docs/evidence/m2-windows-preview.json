@@ -1,0 +1,66 @@
+{
+  "engine_version": "0.0.276",
+  "schema_revision": 163,
+  "archive": {
+    "version": "0.0.276",
+    "sha256": "bac30aefc517846a7e6e62cd1456a0d979c2c8d28b5ffe2d6713edc7a5039908",
+    "bytes": 128293368,
+    "file_count": 443,
+    "debug_symbol_files": 0
+  },
+  "host": "Windows x64, existing development laptop",
+  "launcher": {
+    "normal_start_and_exit": true,
+    "bundled_game_started_from_button": true,
+    "bundled_game_exit_code": 0,
+    "required_buttons_found": 3,
+    "sdk_paths_removed_for_launch_check": true
+  },
+  "editor": {
+    "direct_world_launch": true,
+    "project_created_by_packaged_cli": true,
+    "presented_frames": 10,
+    "revision": 1,
+    "vulkan_ui": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU"
+  },
+  "mcp": {
+    "replies": 3,
+    "initialization_and_discovery": true,
+    "authored_world_read": true
+  },
+  "standalone_replay": {
+    "title": "Collection Room",
+    "backend": "native_aot",
+    "tick": 245,
+    "frames_presented": 246,
+    "collected": 3,
+    "hardware": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "nvrhi_errors": 0,
+    "final_capture_sha256": "2b0485877da50af106f9abb6af1aebd61f5907109e4093b41589e954c42ed32a",
+    "export_source_project_moved": true,
+    "working_directory_outside_extracted_folder": true
+  },
+  "fbx_contract": {
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  },
+  "unity_handoff": {
+    "staging_editor": "6000.4.12f1",
+    "standard_import_rejected_absolute_texture_path": true,
+    "geometry_triangles": 240,
+    "image_binding_verified": true,
+    "wav_original_pcm_bits": 24,
+    "wav_converted_to_pcm_bits": 16,
+    "sample_rate": 48000,
+    "source_independent_reopen": true
+  },
+  "limits": [
+    "Native file-picker automation did not complete project selection. The direct editor launch and sample launch have separate results.",
+    "Distribution checks use a fresh extraction and an independent working directory on the development laptop.",
+    "The public Unity workflow is qualified for the specific staged source files and the documented import profiles."
+  ]
+}

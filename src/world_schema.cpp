@@ -229,7 +229,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 162}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 163}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -778,6 +778,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"expected_model_sha256",asset_id},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"fbx_geometry_only",{{"type","boolean"},{"default",false},{"description","Use neutral materials for the FBX base source without resolving its textures. Geometry, material face slots, rigs and takes are retained. Animation donors keep their standard import policy."}}},
         {"fbx_profile_diagnostics",{{"type","boolean"},{"default",false}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
     methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Optional expected_model_sha256 guards the original parsed base model against asset.source.inspect.model_sha256 before composition. Animation paths append all named takes; objects select a take by index and optionally rename it. A donor object's optional expected_model_sha256 guards its entire original parsed model before selection or conversion. Fingerprints are not raw-file or composed-package hashes. Exact hierarchy/rest-frame matching by default; mutually exclusive frame_transfer and retarget policies provide explicit reference-frame or quaternion-chain conversion. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
@@ -832,6 +833,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     auto source_inspect=object_schema({{"source",{{"type","string"},{"minLength",1},{"maxLength",4096}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"fbx_geometry_only",{{"type","boolean"},{"default",false},{"description","Inspect the FBX with neutral materials. Use the same setting when guarding import with the returned fingerprint."}}},
         {"fbx_profile_diagnostics",{{"type","boolean"},{"default",false}}},
         {"section",{{"enum",{"summary","nodes","skins","animations","skin_joints","animation_channels"}},{"default","summary"}}},
         {"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",64}}},

@@ -2426,8 +2426,9 @@ public:
             {"donor_index",!inspection && diagnostic.donor_index ? Json(*diagnostic.donor_index) : Json(nullptr)}});
     }
     Json source_model_inspection(const Json& params) const {
-        fields(params,{"source","fbx_normal_map","fbx_profile_diagnostics","section","offset","limit","pose","expected_model_sha256","skin","clip"},{"source"});
+        fields(params,{"source","fbx_normal_map","fbx_geometry_only","fbx_profile_diagnostics","section","offset","limit","pose","expected_model_sha256","skin","clip"},{"source"});
         require(!params.contains("fbx_profile_diagnostics") || params.at("fbx_profile_diagnostics").is_boolean(),"fbx_profile_diagnostics must be Boolean.");
+        require(!params.contains("fbx_geometry_only") || params.at("fbx_geometry_only").is_boolean(),"fbx_geometry_only must be Boolean.");
         const auto& path=params.at("source");
         require(path.is_string(),"Source inspection requires a path.");const auto text=path.get<std::string>();
         require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid source inspection path.");
@@ -2466,7 +2467,7 @@ public:
         try {
             auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
             if(fs::file_size(source)>128*1024*1024)throw std::runtime_error("Source inspection exceeds the 128 MiB source budget.");
-            const auto imported=import_model(source,convention);const auto& model=*imported.model;
+            const auto imported=import_model(source,convention,params.value("fbx_geometry_only",false));const auto& model=*imported.model;
             if(params.contains("fbx_normal_map") && imported.importer.empty())throw std::runtime_error("fbx_normal_map applies only to FBX sources.");
             validate_animation_data(model);const auto retained=retained_model_import_bytes(model);
             const auto fingerprint=content_hash(encode_model(model));
@@ -2557,8 +2558,9 @@ public:
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
-                fields(params,{"source","animations","fbx_normal_map","fbx_profile_diagnostics","expected_model_sha256"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                fields(params,{"source","animations","fbx_normal_map","fbx_geometry_only","fbx_profile_diagnostics","expected_model_sha256"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
                 require(!params.contains("fbx_profile_diagnostics") || params.at("fbx_profile_diagnostics").is_boolean(),"fbx_profile_diagnostics must be Boolean.");
+                require(!params.contains("fbx_geometry_only") || params.at("fbx_geometry_only").is_boolean(),"fbx_geometry_only must be Boolean.");
                 std::optional<std::string> expected_model;
                 if(params.contains("expected_model_sha256")) {
                     const auto& value=params.at("expected_model_sha256");
@@ -2599,7 +2601,7 @@ public:
                         selected.source=std::move(path);animations.push_back(std::move(selected));
                     }
                 }
-                loaded=store_model_asset(asset_directory(),source,animations,normal_map,expected_model);
+                loaded=store_model_asset(asset_directory(),source,animations,normal_map,expected_model,params.value("fbx_geometry_only",false));
             } else if(method=="asset.inspect") {
                 fields(params,{"asset","section","offset","limit"},{"asset"});
                 require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");

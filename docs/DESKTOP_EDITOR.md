@@ -30,7 +30,19 @@ The [install and staging checks](evidence/m2-desktop-native-install.json) cover
 portable failure models and actual installed native consumption; GUI publication
 and clean-machine qualification remain separate.
 
-After packaging, double-click **`launch-editor.cmd`** (or `launch-desktop.cmd`) from Windows. It opens `projects/desktop-sandbox/world.json` with endpoint `poima-desktop`; the optional first argument selects another world. The launcher waits for the GUI and does not build it automatically. To launch directly:
+After packaging, open **`Poima.Editor.exe`** without arguments to create or
+open a project. A project opened this way uses the endpoint
+`poima-<project_id>` from its manifest. The [Windows preview](WINDOWS_PREVIEW.md)
+also adds a playable sample to this window.
+
+To assemble the preview from a packaged editor and a Windows x64
+Collection Room export at the same engine version, run
+`python scripts/package_windows_preview.py --desktop EDITOR_DIR --sample GAME_BUNDLE --output NEW.zip`.
+[Preview qualification](evidence/m2-windows-preview.json)
+
+From a source checkout, **`launch-editor.cmd`** (or `launch-desktop.cmd`) opens
+`projects/desktop-sandbox/world.json` with endpoint `poima-desktop`. Its
+optional first argument selects another world. To open a world directly:
 
 ```text
 build\desktop-win-x64\Poima.Editor.exe projects\desktop-sandbox\world.json --endpoint poima-desktop
@@ -80,7 +92,18 @@ These selection changes create no authored revision or undo entry. The
 [selection checks](evidence/m2-editor-selection-reconciliation.json) distinguish
 managed model tests, native bridge checks and displayed/physical interaction.
 
-The Project browser starts at the nearest ancestor containing `project.json`, within 16 levels, or otherwise the world directory. It supports lazy folder expansion, folder search, list/grid views, glTF/GLB import, cooked model inspection and instantiation. File-type icons are not rendered thumbnails. Storage sidecars, symlinks/reparse points and build/cache/version-control folders are excluded; each folder lists at most 1,024 entries and expands at most 256 subfolders. Imported display names are session-local; unnamed cooked assets use shortened hashes. Drag-and-drop import and production-scale indexing remain unfinished.
+The Project browser starts at the nearest ancestor containing `project.json`,
+within 16 levels, or otherwise the world directory. It supports lazy folder
+expansion, folder search, list/grid views, glTF/GLB and FBX import, and cooked
+model inspection and instantiation. The File menu also imports FBX geometry,
+PNG/JPEG color and data images, and WAV clips. The Console reports imported
+image and audio asset IDs. [Asset workflows](ASSETS.md#bring-assets-from-an-existing-library)
+
+File-type icons represent asset types. Storage sidecars, symlinks/reparse
+points and build/cache/version-control folders are excluded. Each folder
+lists at most 1,024 entries and expands at most 256 subfolders. Imported
+display names are session-local. Unnamed cooked assets use shortened hashes.
+Drag-and-drop import and production-scale indexing remain unfinished.
 
 **Play** starts the native simulation; **Pause/Resume** controls its clock, and **Step** advances one fixed tick while paused. **Stop** discards runtime changes and preserves authoring. Local authoring operations require stopping the runtime. External core operations retain their existing behavior, including a runtime's frozen authored baseline. Runtime updates refresh transport state without rebuilding the Hierarchy or Inspector every tick.
 

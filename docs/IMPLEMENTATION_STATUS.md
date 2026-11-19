@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.275**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.276**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.276 adds a [Windows preview](WINDOWS_PREVIEW.md) with a project
+launcher and a standalone sample. A fresh extraction launched Collection
+Room and completed its native replay after the export's source project was
+moved. The packaged CLI answered an MCP read and the packaged editor
+rendered a directly opened world. The launcher file-picker flow still
+needs a complete interaction check. The [asset handoff](ASSETS.md#use-a-unity-asset-store-library)
+was exercised with licensed FBX, texture and WAV source files from a blank
+Unity project. [Results](evidence/m2-windows-preview.json)
 
 Version 0.0.275 adds [hand clearance during blocked pickup fallback](ITEM_ATTACHMENTS.md#check-the-hand-when-a-late-obstruction-blocks-the-arm).
 The imported replay keeps all four sampled fingertips clear during the

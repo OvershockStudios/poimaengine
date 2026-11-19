@@ -48,16 +48,16 @@ internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uin
 
 internal static class Program
 {
-    public static LaunchOptions Options { get; private set; } = null!;
+    public static LaunchOptions? Options { get; private set; }
     [STAThread]
     public static int Main(string[] args)
     {
         try
         {
             if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("This desktop prototype currently targets Windows.");
-            Options = LaunchOptions.Parse(args);
+            Options = args.Length == 0 ? null : LaunchOptions.Parse(args);
             return AppBuilder.Configure<App>().UsePlatformDetect()
-                .With(new Win32PlatformOptions { RenderingMode = [Options.SoftwareUi ? Win32RenderingMode.Software : Win32RenderingMode.Vulkan] })
+                .With(new Win32PlatformOptions { RenderingMode = [Options?.SoftwareUi == true ? Win32RenderingMode.Software : Win32RenderingMode.Vulkan] })
                 .LogToTrace().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception error)
