@@ -12,6 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SESSION, CAMERA, HAND, ITEM, SKIN = (f"{n:032x}" for n in range(1, 6))
+SHOULDER, ELBOW = (f"{n:032x}" for n in (6, 7))
 
 
 def matrix(position, degrees):
@@ -48,14 +49,16 @@ def samples():
 
 
 class GripReview(unittest.TestCase):
-    def run_cli(self, requests, responses):
+    def run_cli(self, requests, responses, *, reach=False):
         with TemporaryDirectory() as temporary:
             inputs = [Path(temporary) / name for name in ("requests.jsonl", "responses.jsonl")]
             for path, messages in zip(inputs, (requests, responses)):
                 path.write_text("".join(json.dumps(row) + "\n" for row in messages), encoding="utf-8")
+            options = (["--reach", "--shoulder", SHOULDER, "--elbow", ELBOW] if reach else
+                       ["--finger-drawable", SKIN, "--contact-mm", "5"])
             return subprocess.run([sys.executable, str(ROOT / "scripts/review_grip_motion.py"), *map(str, inputs),
-                "--session", SESSION, "--camera", CAMERA, "--hand", HAND, "--item", ITEM, "--finger-drawable", SKIN,
-                "--first", "12", "--last", "14", "--contact-mm", "5"], text=True, capture_output=True, timeout=15)
+                "--session", SESSION, "--camera", CAMERA, "--hand", HAND, "--item", ITEM,
+                "--first", "12", "--last", "14", *options], text=True, capture_output=True, timeout=15)
 
     def test_camera_motion_is_removed_from_hand_step(self):
         attempt = self.run_cli(*samples())
@@ -82,6 +85,51 @@ class GripReview(unittest.TestCase):
         attempt = self.run_cli(requests, responses)
         self.assertNotEqual(attempt.returncode, 0)
         self.assertIn("probe definitions changed at tick 13", attempt.stderr)
+
+    def reach_samples(self):
+        requests, responses = samples()
+        for index in (0, 2, 4):
+            observe = requests[index]["params"]
+            observe["ids"].extend([SHOULDER, ELBOW])
+            poses = responses[index]["result"]["entities"]
+            wrist = poses[1]["state"]["world_matrix"]
+            for joint, height in ((SHOULDER, .5), (ELBOW, .2)):
+                basis = wrist.copy()
+                basis[13] += height
+                poses.append(dict(id=joint, state=dict(world_matrix=basis)))
+            receipt = requests[index + 1]
+            receipt["method"] = "runtime.attachment.outcomes"
+            del receipt["params"]["pairs"]
+            row = responses[index + 1]["result"]
+            del row["authored_revision"]
+            del row["pairs"]
+            row["outcomes"] = [dict(entity=ITEM, status="reach_blocked", pose="animation")] if index == 4 else []
+        return requests, responses
+
+    def test_reach_measures_arm_without_including_camera_turn(self):
+        attempt = self.run_cli(*self.reach_samples(), reach=True)
+        self.assertEqual(attempt.returncode, 0, attempt.stderr)
+        result = json.loads(attempt.stdout)
+        self.assertEqual(result["format"], "poima.reach-motion.v1")
+        first, moved, blocked = result["samples"]
+        self.assertIsNone(first["wrist_step_mm"])
+        self.assertIsNone(moved["outcome"])
+        self.assertEqual(moved["camera_step_mm"], 1000)
+        self.assertAlmostEqual(moved["elbow_step_mm"], 0)
+        self.assertAlmostEqual(moved["wrist_step_degrees"], 0)
+        self.assertAlmostEqual(blocked["wrist_step_degrees"], 30)
+        self.assertAlmostEqual(blocked["wrist_step_mm"], 25)
+        self.assertAlmostEqual(blocked["forearm_mm"], 200)
+        self.assertAlmostEqual(blocked["upper_arm_mm"], 300)
+        self.assertEqual(blocked["outcome"]["pose"], "animation")
+        self.assertEqual(result["peaks"]["elbow_step_mm"]["tick"], 14)
+
+    def test_reach_rejects_missing_receipt_at_the_observed_structure(self):
+        requests, responses = self.reach_samples()
+        requests[3]["params"]["structure_revision"] = responses[3]["result"]["structure_revision"] = 4
+        attempt = self.run_cli(requests, responses, reach=True)
+        self.assertNotEqual(attempt.returncode, 0)
+        self.assertIn("pickup outcome observations at ticks [13]", attempt.stderr)
 
 
 if __name__ == "__main__":

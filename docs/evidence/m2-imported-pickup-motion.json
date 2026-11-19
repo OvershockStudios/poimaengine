@@ -1,0 +1,107 @@
+{
+  "engine_version": "0.0.270",
+  "schema_revision": 158,
+  "scope": "A single imported first-person rig and held prop, a scripted approach, a physical obstacle introduced on the valid pickup tick, and a successful retry. The images use the gameplay camera and one native readback per committed tick.",
+  "analyzer": "scripts/review_grip_motion.py --reach",
+  "calibration": {
+    "arm_capsule_radius_m": 0.02,
+    "fingertip_contact_limit_m": 0.005
+  },
+  "linux_coreclr": {
+    "native_replies": 931,
+    "natural_owner_exits": 2,
+    "exact_whole_archive_pairs": 2,
+    "blocked_tick": 188,
+    "retry_pickup_tick": 240,
+    "final_tick": 254,
+    "selected_pose": "animation",
+    "blocked_segment": 2,
+    "corridor_penetration_mm": 15.938719734549522,
+    "committed_capsules_clear": true,
+    "fingertips_mm": [
+      0.9122699911955192,
+      3.234643305384149,
+      2.1632849586761216,
+      0.5902301725048309
+    ],
+    "blocked_tick_motion": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 79.7233194910557,
+      "wrist_step_mm": 39.161288466746306,
+      "wrist_step_degrees": 74.36657073968804,
+      "upper_arm_mm": 293.41515898839106,
+      "forearm_mm": 242.8552412986782
+    },
+    "largest_arm_steps": {
+      "elbow_step_mm": {
+        "tick": 188,
+        "value": 79.7233194910557
+      },
+      "wrist_step_mm": {
+        "tick": 188,
+        "value": 39.161288466746306
+      },
+      "wrist_step_degrees": {
+        "tick": 188,
+        "value": 74.36657073968804
+      }
+    },
+    "native_vulkan_capture_frames": 0
+  },
+  "windows_native_aot": {
+    "native_replies": 1107,
+    "natural_owner_exits": 2,
+    "exact_whole_archive_pairs": 2,
+    "blocked_tick": 188,
+    "retry_pickup_tick": 240,
+    "final_tick": 254,
+    "selected_pose": "animation",
+    "blocked_segment": 2,
+    "corridor_penetration_mm": 15.938714146614075,
+    "committed_capsules_clear": true,
+    "fingertips_mm": [
+      0.9122699911954115,
+      3.234643305384044,
+      2.1632849586761216,
+      0.5902301725045807
+    ],
+    "blocked_tick_motion": {
+      "camera_step_mm": 11.107404716312885,
+      "shoulder_step_mm": 0.0,
+      "elbow_step_mm": 79.72331383954727,
+      "wrist_step_mm": 39.16128846674615,
+      "wrist_step_degrees": 74.36657073968806,
+      "upper_arm_mm": 293.41515898839106,
+      "forearm_mm": 242.8552412986782
+    },
+    "largest_arm_steps": {
+      "elbow_step_mm": {
+        "tick": 188,
+        "value": 79.72331383954727
+      },
+      "wrist_step_mm": {
+        "tick": 188,
+        "value": 39.16128846674615
+      },
+      "wrist_step_degrees": {
+        "tick": 188,
+        "value": 74.36657073968806
+      }
+    },
+    "native_vulkan_capture_frames": 88
+  },
+  "native_render": {
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      800,
+      450
+    ],
+    "frames": 88,
+    "encode_rate": 60,
+    "seconds": 1.4666666666666666,
+    "sha256": "ec172acc46f3a4bb531f890d01fedde1f32707ff0b243e455a368e6ccbde6a05"
+  },
+  "finding": "The fallback keeps the item released and clears the tested arm capsules. It produces the largest measured arm steps in the take, with approximately 80 mm of elbow movement and 74 degrees of wrist rotation relative to the camera.",
+  "qualification_limits": "The evidence covers the selected rig at fixed simulation ticks. Continuous skin-to-obstacle clearance, real-time presentation cadence and smooth retraction remain unqualified."
+}

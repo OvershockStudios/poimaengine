@@ -9,6 +9,12 @@ The Carry Props fixture uses committed joint transforms and native capsule
 checks to verify which fallback reached the blocked tick, then resumes from
 an exact save and retries the pickup. [Results](evidence/m2-pickup-pose-fallback.json)
 
+The [reach review tool](PLAYBOOKS.md#review-a-blocked-reach) now pairs
+per-tick joint motion with pickup outcomes. An imported rig exercised the
+same fallback and a successful retry on both hosts. It cleared the measured
+arm capsules while producing a same-tick 74° wrist step, which remains a
+motion-quality defect. [Results](evidence/m2-imported-pickup-motion.json)
+
 Version 0.0.269 adds [per-control tint for cooked UI artwork](GAME_UI.md#use-cooked-images).
 The same asset can serve different palettes and opacities in contained, stretched
 and nine-slice layouts. The typed style is available through authoring and

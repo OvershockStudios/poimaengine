@@ -212,6 +212,28 @@ Use the [reach and pickup example](../examples/reach-pickup/README.md) to
 drive the same contact check from game input. Its compiled gameplay combines
 a timed reach, oriented IK, a finger layer and recoverable native pickup.
 
+#### Review a blocked reach
+
+Record one `runtime.observe` for the camera, shoulder, elbow and wrist
+and one `runtime.attachment.outcomes` for every tick of the take.
+Give both reads the same session, tick and structure revision. The outcome
+read may return an empty list. Include the same observations before contact,
+on the blocked tick and during the return or retry.
+
+```sh
+python3 scripts/review_grip_motion.py requests.jsonl responses.jsonl \
+  --reach --session "$SESSION" --camera "$CAMERA" \
+  --shoulder "$SHOULDER" --elbow "$ELBOW" --hand "$WRIST" --item "$ITEM" \
+  --first 168 --last 200 > reach-review.json
+```
+
+The report measures camera-relative elbow and wrist steps, wrist rotation,
+camera travel per tick and both arm segment lengths. The item outcome is
+included at the exact tick it was recorded. A clearance result alone cannot
+measure the size of the pose change. Use the measurements and fixed-tick
+frames together to review what the player sees.
+[Measured imported rig](evidence/m2-imported-pickup-motion.json)
+
 ### Third person
 
 For third person, select a visible weight shift or contact to verify. Keep the
